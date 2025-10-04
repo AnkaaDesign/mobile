@@ -1,0 +1,46 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2021"],
+    "allowJs": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@ankaa/utils/*": ["../../packages/utils/src/*"],
+      "@ankaa/types/*": ["../../packages/types/src/*"],
+      "@ankaa/schemas/*": ["../../packages/schemas/src/*"],
+      "@ankaa/constants/*": ["../../packages/constants/src/*"],
+      "@ankaa/services/*": ["../../packages/services/src/*"],
+      "@ankaa/api-client": ["../../packages/api-client/src"],
+      "@ankaa/hooks/*": ["../../packages/hooks/src/*"]
+    },
+    "typeRoots": ["./src/types", "../../node_modules/@types"],
+    "types": ["react", "lodash", "qs"]
+  },
+  "include": [
+    "src/**/*",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts",
+    "src/types/**/*.d.ts",
+    "src/types/react-19-compat.d.ts",
+    "src/types/icon-compat.d.ts"
+  ],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "**/__tests__/**"]
+}

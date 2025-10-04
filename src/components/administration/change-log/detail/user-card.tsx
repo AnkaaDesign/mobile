@@ -1,0 +1,225 @@
+import React from "react";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { router } from "expo-router";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar } from "@/components/ui/avatar";
+import { ThemedText } from "@/components/ui/themed-text";
+import { useTheme } from "@/lib/theme";
+import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { routes } from '../../../../constants';
+import { routeToMobilePath } from "@/lib/route-mapper";
+import type { ChangeLog } from '../../../../types';
+import { IconUser, IconChevronRight } from "@tabler/icons-react-native";
+
+interface UserCardProps {
+  changeLog: ChangeLog;
+}
+
+export function UserCard({ changeLog }: UserCardProps) {
+  const { colors } = useTheme();
+
+  if (!changeLog.user && !changeLog.userId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle style={styles.sectionTitle}>
+            <View style={styles.titleRow}>
+              <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
+                <IconUser size={18} color={colors.primary} />
+              </View>
+              <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
+                Usuário
+              </ThemedText>
+            </View>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <View style={styles.emptyState}>
+            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+              Alteração realizada pelo sistema
+            </ThemedText>
+          </View>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const handleUserPress = () => {
+    if (changeLog.userId) {
+      router.push(routeToMobilePath(routes.administration.collaborators.details(changeLog.userId)) as any);
+    }
+  };
+
+  const userName = changeLog.user?.name || "Usuário não identificado";
+  const userEmail = changeLog.user?.email;
+  const avatarUrl = changeLog.user?.avatarUrl;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle style={styles.sectionTitle}>
+          <View style={styles.titleRow}>
+            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
+              <IconUser size={18} color={colors.primary} />
+            </View>
+            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
+              Realizado por
+            </ThemedText>
+          </View>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <TouchableOpacity
+          style={[styles.userContainer, { backgroundColor: colors.muted + "40" }]}
+          onPress={handleUserPress}
+          activeOpacity={0.7}
+          disabled={!changeLog.userId}
+        >
+          <View style={styles.userInfo}>
+            <Avatar
+              src={avatarUrl}
+              fallback={userName.charAt(0).toUpperCase()}
+              size="md"
+            />
+            <View style={styles.userDetails}>
+              <ThemedText style={StyleSheet.flatten([styles.userName, { color: colors.foreground }])}>
+                {userName}
+              </ThemedText>
+              {userEmail && (
+                <ThemedText style={StyleSheet.flatten([styles.userEmail, { color: colors.mutedForeground }])}>
+                  {userEmail}
+                </ThemedText>
+              )}
+              {changeLog.userId && (
+                <ThemedText
+                  style={StyleSheet.flatten([styles.userId, { color: colors.mutedForeground }])}
+                  numberOfLines={1}
+                  ellipsizeMode="middle"
+                >
+                  ID: {changeLog.userId}
+                </ThemedText>
+              )}
+            </View>
+          </View>
+          {changeLog.userId && (
+            <IconChevronRight size={20} color={colors.mutedForeground} />
+          )}
+        </TouchableOpacity>
+
+        {/* Triggered By Information */}
+        {changeLog.triggeredBy && (
+          <View style={[styles.triggeredByContainer, { backgroundColor: colors.muted + "20", borderColor: colors.border }]}>
+            <View style={styles.triggeredByRow}>
+              <ThemedText style={StyleSheet.flatten([styles.triggeredByLabel, { color: colors.mutedForeground }])}>
+                Origem da Alteração
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.triggeredByValue, { color: colors.foreground }])}>
+                {changeLog.triggeredBy}
+              </ThemedText>
+            </View>
+            {changeLog.triggeredById && (
+              <View style={styles.triggeredByRow}>
+                <ThemedText style={StyleSheet.flatten([styles.triggeredByLabel, { color: colors.mutedForeground }])}>
+                  ID de Origem
+                </ThemedText>
+                <ThemedText
+                  style={StyleSheet.flatten([styles.triggeredByValue, styles.monoValue, { color: colors.foreground }])}
+                  numberOfLines={1}
+                  ellipsizeMode="middle"
+                >
+                  {changeLog.triggeredById}
+                </ThemedText>
+              </View>
+            )}
+          </View>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+const styles = StyleSheet.create({
+  sectionTitle: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  titleIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titleText: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+  },
+  userContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    gap: spacing.md,
+  },
+  userInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    flex: 1,
+  },
+  userDetails: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  userName: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+  },
+  userEmail: {
+    fontSize: fontSize.sm,
+  },
+  userId: {
+    fontSize: fontSize.xs,
+    fontFamily: "monospace",
+  },
+  emptyState: {
+    padding: spacing.lg,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: fontSize.sm,
+    fontStyle: "italic",
+  },
+  triggeredByContainer: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    gap: spacing.sm,
+  },
+  triggeredByRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  triggeredByLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  triggeredByValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    flex: 1,
+    textAlign: "right",
+  },
+  monoValue: {
+    fontFamily: "monospace",
+  },
+});

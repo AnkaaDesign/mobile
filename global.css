@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Smooth theme transitions */
+.theme-transitioning * {
+  transition: none !important;
+}
+
+/* Temporarily disabled for debugging
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: ease-in-out;
+  transition-duration: 1000ms;
+}
+*/
+
+@layer base {
+  :root {
+    /* Light mode - exactly matching web */
+    --background: 0 0% 87%; /* neutral-200 - matching web */
+    --foreground: 0 0% 20%; /* neutral-800 - matching web */
+
+    --card: 0 0% 96%; /* neutral-100 - matching web */
+    --card-foreground: 0 0% 20%; /* neutral-800 - matching web */
+
+    --popover: 0 0% 96%; /* neutral-100 - matching web */
+    --popover-foreground: 0 0% 20%; /* neutral-800 - matching web */
+
+    /* Primary green colors - exactly matching web */
+    --primary: 142 76% 36%; /* green-600 - matching web */
+    --primary-foreground: 0 0% 98%; /* neutral-50 - matching web */
+
+    /* Secondary using exact web values */
+    --secondary: 0 0% 91%; /* slightly darker neutral - matching web */
+    --secondary-foreground: 0 0% 20%; /* neutral-800 - matching web */
+
+    --muted: 0 0% 91%; /* neutral-100 - matching web */
+    --muted-foreground: 0 0% 50%; /* neutral-500 - matching web */
+
+    --accent: 142 76% 36%; /* green-600 - matching web */
+    --accent-foreground: 0 0% 98%; /* neutral-50 - matching web */
+
+    --destructive: 0 84% 60%; /* red-500 - matching web */
+    --destructive-foreground: 0 0% 98%; /* neutral-50 - matching web */
+
+    --border: 0 0% 80%; /* neutral-300 - matching web */
+    --input: 0 0% 100%; /* white - distinct from card - matching web */
+    --ring: 142 76% 50%; /* green-500 - matching web */
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark mode - exactly matching web */
+    --background: 0 0% 9%; /* neutral-900 - matching web */
+    --foreground: 0 0% 96%; /* neutral-100 - matching web */
+
+    --card: 0 0% 20%; /* neutral-800 - matching web */
+    --card-foreground: 0 0% 96%; /* neutral-100 - matching web */
+
+    --popover: 0 0% 20%; /* neutral-800 - matching web */
+    --popover-foreground: 0 0% 96%; /* neutral-100 - matching web */
+
+    /* Primary green colors - exactly matching web */
+    --primary: 142 76% 36%; /* green-600 - matching web */
+    --primary-foreground: 0 0% 98%; /* neutral-50 - matching web */
+
+    /* Secondary using exact web values */
+    --secondary: 0 0% 25%; /* neutral-700 - matching web */
+    --secondary-foreground: 0 0% 96%; /* neutral-100 - matching web */
+
+    --muted: 0 0% 25%; /* neutral-700 - matching web */
+    --muted-foreground: 0 0% 50%; /* neutral-500 - matching web */
+
+    --accent: 142 76% 36%; /* green-600 - matching web */
+    --accent-foreground: 0 0% 98%; /* neutral-50 - matching web */
+
+    --destructive: 0 84% 60%; /* red-500 - matching web */
+    --destructive-foreground: 0 0% 98%; /* neutral-50 - matching web */
+
+    --border: 0 0% 35%; /* slightly lighter for better visibility - matching web */
+    --input: 0 0% 10%; /* darker than card for better contrast - neutral-900+ */
+    --ring: 142 76% 50%; /* green-500 - matching web */
+  }
+}
+
+/* React Native optimizations */
+@layer utilities {
+  /* Custom utilities for React Native specific needs */
+  .force-color-scheme {
+    color-scheme: light dark;
+  }
+}
