@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
@@ -6,11 +6,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCustomerMutations } from '../../../../hooks';
 import { useCustomersInfiniteMobile } from "@/hooks";
 import type { CustomerGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
-import { CustomerTable } from "@/components/administration/customer/list/customer-table";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge, Button } from "@/components/ui";
+import { CustomerTable, createColumnDefinitions } from "@/components/administration/customer/list/customer-table";
 import type { SortConfig } from "@/components/administration/customer/list/customer-table";
-import { CustomerFilterModal } from "@/components/administration/customer/list/customer-filter-modal";
+import { CustomerFilterDrawer } from "@/components/administration/customer/list/customer-filter-drawer";
 import { CustomerFilterTags } from "@/components/administration/customer/list/customer-filter-tags";
+import { CustomerColumnVisibilityDrawer } from "@/components/administration/customer/list/customer-column-visibility-drawer";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { CustomerListSkeleton } from "@/components/administration/customer/skeleton/customer-list-skeleton";
@@ -30,14 +31,8 @@ export default function CustomerListScreen() {
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "fantasyName", direction: "asc" }]);
   const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>([
-    "fantasyName",
-    "document",
-    "email",
-    "phones",
-    "city",
-    "taskCount",
-  ]);
+  const [showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["fantasyName", "document"]);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -180,6 +175,13 @@ export default function CustomerListScreen() {
     setShowSelection(false);
   }, []);
 
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
+  }, []);
+
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
     ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
@@ -212,15 +214,26 @@ export default function CustomerListScreen() {
           debounceMs={300}
         />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-              pressed && styles.actionButtonPressed,
-            ]}
-            onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowColumnManager(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconList size={20} color={colors.foreground} />
+            </Button>
+            <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
+              <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
+            </Badge>
+          </View>
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowFilters(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconFilter size={20} color={colors.foreground} />
+            </Button>
             {activeFiltersCount > 0 && (
               <Badge style={styles.actionBadge} variant="destructive" size="sm">
                 <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>
@@ -228,7 +241,7 @@ export default function CustomerListScreen() {
                 </ThemedText>
               </Badge>
             )}
-          </Pressable>
+          </View>
         </View>
       </View>
 
@@ -284,12 +297,21 @@ export default function CustomerListScreen() {
 
       {hasCustomers && <FAB icon="plus" onPress={handleCreateCustomer} />}
 
-      {/* Filter Modal */}
-      <CustomerFilterModal
+      {/* Filter Drawer */}
+      <CustomerFilterDrawer
         visible={showFilters}
         onClose={() => setShowFilters(false)}
         onApply={handleApplyFilters}
         currentFilters={filters}
+      />
+
+      {/* Column Visibility Drawer */}
+      <CustomerColumnVisibilityDrawer
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        open={showColumnManager}
+        onOpenChange={setShowColumnManager}
       />
     </ThemedView>
   );
@@ -313,13 +335,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
+  actionButtonWrapper: {
+    position: "relative",
+  },
   actionButton: {
     height: 48,
     width: 48,
     borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
+    paddingHorizontal: 0,
   },
   actionBadge: {
     position: "absolute",
@@ -340,8 +363,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
 });

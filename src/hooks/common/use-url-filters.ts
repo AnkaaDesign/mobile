@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 
 // Type for filter configuration
@@ -9,41 +8,11 @@ interface FilterConfig<T> {
   debounceMs?: number;
 }
 
-// Helper function to parse filter value from URL
-function parseFilterValue(value: string | null, schema: z.ZodSchema): any {
-  if (value === null) return undefined;
-
-  // Handle empty string specially - it's a valid value
-  if (value === '""') return "";
-
-  // Try to parse as JSON first (for complex types like arrays, objects)
-  try {
-    const parsed = JSON.parse(value);
-    const result = schema.safeParse(parsed);
-    return result.success ? result.data : undefined;
-  } catch {
-    // If JSON parse fails, try direct parse (for simple types)
-    const result = schema.safeParse(value);
-    return result.success ? result.data : undefined;
-  }
-}
-
-// Helper function to serialize filter value for URL
-function serializeFilterValue(value: any): string | null {
-  if (value === undefined || value === null) return null;
-
-  // Empty string is a valid value, don't remove it
-  if (value === "") return '""'; // Serialize empty string as JSON
-
-  // For simple types, convert to string
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-
-  // For complex types, use JSON
-  return JSON.stringify(value);
-}
-
+/**
+ * Mobile-compatible URL filters hook
+ * Uses local state instead of URL parameters for React Native compatibility
+ * Maintains the same API as the web version for consistency
+ */
 export function useUrlFilters<T extends Record<string, any>>(filterConfigs: { [K in keyof T]: FilterConfig<T[K]> }): {
   filters: T;
   setFilter: <K extends keyof T>(key: K, value: T[K] | undefined) => void;
@@ -54,57 +23,60 @@ export function useUrlFilters<T extends Record<string, any>>(filterConfigs: { [K
   activeFilterCount: number;
   getFilter: <K extends keyof T>(key: K) => T[K] | undefined;
 } {
-  const [searchParams, setSearchParams] = useSearchParams();
   // Use a Map to store separate timeout for each field
   const debounceTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  // Initialize state with default values
+  const initialState = useMemo(() => {
+    const result = {} as T;
+    for (const [key, config] of Object.entries(filterConfigs) as Array<[keyof T, FilterConfig<any>]>) {
+      if (config.defaultValue !== undefined) {
+        result[key] = config.defaultValue;
+      }
+    }
+    return result;
+  }, [filterConfigs]);
+
+  const [filterState, setFilterState] = useState<Partial<T>>(initialState);
 
   // Use ref to track current filter values for stable references
   const filtersRef = useRef<T>({} as T);
 
-  // Parse filters from URL
+  // Compute filters from state
   const filters = useMemo(() => {
     const result = {} as T;
 
     for (const [key, config] of Object.entries(filterConfigs) as Array<[keyof T, FilterConfig<any>]>) {
-      const urlValue = searchParams.get(String(key));
-      const parsedValue = parseFilterValue(urlValue, config.schema);
+      const stateValue = filterState[key];
 
-      // Use parsed value if valid, otherwise use default
-      if (parsedValue !== undefined) {
-        result[key] = parsedValue;
+      // Use state value if valid, otherwise use default
+      if (stateValue !== undefined) {
+        result[key] = stateValue;
       } else if (config.defaultValue !== undefined) {
         result[key] = config.defaultValue;
       }
     }
 
     return result;
-  }, [searchParams, filterConfigs]);
+  }, [filterState, filterConfigs]);
 
   // Update ref after filters are computed
   useEffect(() => {
     filtersRef.current = filters;
   }, [filters]);
 
-  // Update URL immediately or with debouncing (per field)
-  const updateUrl = useCallback(
-    (updater: (params: URLSearchParams) => void, debounceMs?: number, fieldKey?: string) => {
+  // Update state immediately or with debouncing (per field)
+  const updateState = useCallback(
+    (updater: (prevState: Partial<T>) => Partial<T>, debounceMs?: number, fieldKey?: string) => {
       const doUpdate = () => {
-        setSearchParams(
-          (prev) => {
-            const newParams = new URLSearchParams(prev);
-            const oldParamsString = prev.toString();
-
-            updater(newParams);
-
-            // Only update if params actually changed
-            const newParamsString = newParams.toString();
-            if (oldParamsString !== newParamsString) {
-              return newParams;
-            }
-            return prev;
-          },
-          { replace: true },
-        );
+        setFilterState((prev) => {
+          const newState = updater(prev);
+          // Only update if state actually changed
+          if (JSON.stringify(prev) !== JSON.stringify(newState)) {
+            return newState;
+          }
+          return prev;
+        });
       };
 
       if (debounceMs !== undefined && debounceMs > 0 && fieldKey) {
@@ -127,7 +99,7 @@ export function useUrlFilters<T extends Record<string, any>>(filterConfigs: { [K
         doUpdate();
       }
     },
-    [setSearchParams],
+    [],
   );
 
   // Set a single filter
@@ -147,28 +119,32 @@ export function useUrlFilters<T extends Record<string, any>>(filterConfigs: { [K
       // Determine debounce time - use filter-specific or none (immediate)
       const debounceMs = config.debounceMs;
 
-      updateUrl(
-        (params) => {
-          const serialized = serializeFilterValue(value);
+      updateState(
+        (prevState) => {
+          const newState = { ...prevState };
 
-          if (serialized === null) {
-            params.delete(String(key));
+          if (value === undefined) {
+            delete newState[key];
           } else {
-            params.set(String(key), serialized);
+            newState[key] = value;
           }
+
+          return newState;
         },
         debounceMs,
         String(key),
       );
     },
-    [filterConfigs, updateUrl],
+    [filterConfigs, updateState],
   );
 
   // Set multiple filters at once
   const setFilters = useCallback(
     (newFilters: Partial<T>) => {
       // For batch updates, use immediate update (no debouncing)
-      updateUrl((params) => {
+      updateState((prevState) => {
+        const newState = { ...prevState };
+
         for (const [key, value] of Object.entries(newFilters) as Array<[keyof T, any]>) {
           const config = filterConfigs[key];
           if (!config) continue;
@@ -182,36 +158,44 @@ export function useUrlFilters<T extends Record<string, any>>(filterConfigs: { [K
             }
           }
 
-          const serialized = serializeFilterValue(value);
-          if (serialized === null) {
-            params.delete(String(key));
+          if (value === undefined) {
+            delete newState[key];
           } else {
-            params.set(String(key), serialized);
+            newState[key] = value;
           }
         }
+
+        return newState;
       }, 0); // Immediate update for batch operations
     },
-    [filterConfigs, updateUrl],
+    [filterConfigs, updateState],
   );
 
   // Reset a single filter
   const resetFilter = useCallback(
     <K extends keyof T>(key: K) => {
-      updateUrl((params) => {
-        params.delete(String(key));
+      updateState((prevState) => {
+        const newState = { ...prevState };
+        delete newState[key];
+        return newState;
       }, 0); // Immediate update for reset
     },
-    [updateUrl],
+    [updateState],
   );
 
   // Reset all filters
   const resetFilters = useCallback(() => {
-    updateUrl((params) => {
-      for (const key of Object.keys(filterConfigs)) {
-        params.delete(key);
+    updateState((prevState) => {
+      const newState: Partial<T> = {};
+      // Keep only default values
+      for (const [key, config] of Object.entries(filterConfigs) as Array<[keyof T, FilterConfig<any>]>) {
+        if (config.defaultValue !== undefined) {
+          newState[key] = config.defaultValue;
+        }
       }
+      return newState;
     }, 0); // Immediate update for reset
-  }, [filterConfigs, updateUrl]);
+  }, [filterConfigs, updateState]);
 
   // Check if a filter is active (different from default)
   const isFilterActive = useCallback(

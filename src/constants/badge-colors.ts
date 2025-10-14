@@ -52,6 +52,7 @@ import {
   VERIFICATION_ERROR_SEVERITY,
   SECTOR_PRIVILEGES,
   COMMISSION_STATUS,
+  GARAGE_STATUS,
 } from "./enums";
 
 /**
@@ -78,114 +79,96 @@ export type BadgeVariant =
   | "inProgress";
 
 /**
- * Badge Color Definitions
- * Maps variants to Tailwind CSS classes for consistent styling
+ * Badge Color Definitions for React Native
+ * Maps variants to color values for consistent styling
  */
 export const BADGE_COLORS: Record<
   BadgeVariant,
   {
     bg: string;
     text: string;
-    hover: string;
     border?: string;
   }
 > = {
   // Neutral variants
   default: {
-    bg: "bg-neutral-500",
-    text: "text-white",
-    hover: "hover:bg-neutral-600",
+    bg: "#6b7280", // neutral-500
+    text: "#ffffff",
   },
   secondary: {
-    bg: "bg-neutral-200 dark:bg-neutral-700",
-    text: "text-neutral-900 dark:text-neutral-100",
-    hover: "hover:bg-neutral-300 dark:hover:bg-neutral-600",
+    bg: "#e5e5e5", // neutral-200
+    text: "#171717", // neutral-900
   },
   muted: {
-    bg: "bg-gray-500",
-    text: "text-white",
-    hover: "hover:bg-gray-600",
+    bg: "#6b7280", // gray-500
+    text: "#ffffff",
   },
   outline: {
-    bg: "bg-transparent",
-    text: "text-neutral-900 dark:text-neutral-100",
-    hover: "hover:bg-neutral-100 dark:hover:bg-neutral-800",
-    border: "border border-neutral-300 dark:border-neutral-600",
+    bg: "transparent",
+    text: "#171717", // neutral-900
+    border: "#d4d4d4", // neutral-300
   },
 
   // Primary/Info variants (Blue tones)
   primary: {
-    bg: "bg-blue-600",
-    text: "text-white",
-    hover: "hover:bg-blue-700",
+    bg: "#1d4ed8", // blue-700
+    text: "#ffffff",
   },
   info: {
-    bg: "bg-sky-500",
-    text: "text-white",
-    hover: "hover:bg-sky-600",
+    bg: "#1d4ed8", // blue-700
+    text: "#ffffff",
   },
   inProgress: {
-    bg: "bg-blue-500",
-    text: "text-white",
-    hover: "hover:bg-blue-600",
+    bg: "#1d4ed8", // blue-700
+    text: "#ffffff",
   },
 
   // Success variants (Green tones - positive actions)
   success: {
-    bg: "bg-green-600",
-    text: "text-white",
-    hover: "hover:bg-green-700",
+    bg: "#15803d", // green-700
+    text: "#ffffff",
   },
   completed: {
-    bg: "bg-green-600",
-    text: "text-white",
-    hover: "hover:bg-green-700",
+    bg: "#15803d", // green-700
+    text: "#ffffff",
   },
   active: {
-    bg: "bg-green-600",
-    text: "text-white",
-    hover: "hover:bg-green-700",
+    bg: "#15803d", // green-700
+    text: "#ffffff",
   },
 
   // Warning variants (Orange/Amber tones - attention needed)
   warning: {
-    bg: "bg-orange-500",
-    text: "text-white",
-    hover: "hover:bg-orange-600",
+    bg: "#ea580c", // orange-600
+    text: "#ffffff",
   },
   pending: {
-    bg: "bg-amber-500",
-    text: "text-white",
-    hover: "hover:bg-amber-600",
+    bg: "#d97706", // amber-600
+    text: "#ffffff",
   },
   onHold: {
-    bg: "bg-orange-500",
-    text: "text-white",
-    hover: "hover:bg-orange-600",
+    bg: "#ea580c", // orange-600
+    text: "#ffffff",
   },
 
   // Error/Destructive variants (Red tones - negative actions)
   error: {
-    bg: "bg-red-600",
-    text: "text-white",
-    hover: "hover:bg-red-700",
+    bg: "#b91c1c", // red-700
+    text: "#ffffff",
   },
   destructive: {
-    bg: "bg-red-600",
-    text: "text-white",
-    hover: "hover:bg-red-700",
+    bg: "#b91c1c", // red-700
+    text: "#ffffff",
   },
   cancelled: {
-    bg: "bg-red-600",
-    text: "text-white",
-    hover: "hover:bg-red-700",
+    bg: "#b91c1c", // red-700
+    text: "#ffffff",
   },
 
   // Inactive variant (Gray - disabled/inactive states)
   inactive: {
-    bg: "bg-gray-500",
-    text: "text-white",
-    hover: "hover:bg-gray-600",
+    bg: "#6b7280", // gray-500
+    text: "#ffffff",
   },
 };
 
@@ -198,8 +181,8 @@ export const ENTITY_BADGE_CONFIG = {
   ORDER: {
     [ORDER_STATUS.CREATED]: "primary" as BadgeVariant,
     [ORDER_STATUS.PARTIALLY_FULFILLED]: "warning" as BadgeVariant,
-    [ORDER_STATUS.FULFILLED]: "success" as BadgeVariant,
-    [ORDER_STATUS.OVERDUE]: "warning" as BadgeVariant, // Changed from error to warning (orange)
+    [ORDER_STATUS.FULFILLED]: "pending" as BadgeVariant, // Yellow - Feito (matches web)
+    [ORDER_STATUS.OVERDUE]: "warning" as BadgeVariant,
     [ORDER_STATUS.PARTIALLY_RECEIVED]: "warning" as BadgeVariant,
     [ORDER_STATUS.RECEIVED]: "success" as BadgeVariant,
     [ORDER_STATUS.CANCELLED]: "cancelled" as BadgeVariant,
@@ -225,8 +208,8 @@ export const ENTITY_BADGE_CONFIG = {
 
   // User Status
   USER: {
-    [USER_STATUS.EXPERIENCE_PERIOD_1]: "pending" as BadgeVariant,  // Yellow - first trial period
-    [USER_STATUS.EXPERIENCE_PERIOD_2]: "primary" as BadgeVariant,  // Blue - second trial period
+    [USER_STATUS.EXPERIENCE_PERIOD_1]: "pending" as BadgeVariant,  // Yellow (amber-500) - matches LOW stock
+    [USER_STATUS.EXPERIENCE_PERIOD_2]: "warning" as BadgeVariant,  // Orange (orange-500) - matches CRITICAL stock
     [USER_STATUS.CONTRACTED]: "success" as BadgeVariant,           // Green - fully hired
     [USER_STATUS.DISMISSED]: "destructive" as BadgeVariant,        // Red - dismissed
   },
@@ -279,6 +262,13 @@ export const ENTITY_BADGE_CONFIG = {
     [BORROW_STATUS.ACTIVE]: "inProgress" as BadgeVariant, // Blue for active borrows
     [BORROW_STATUS.RETURNED]: "completed" as BadgeVariant, // Green for returned
     [BORROW_STATUS.LOST]: "destructive" as BadgeVariant, // Red for lost
+  },
+
+  // Garage Status
+  GARAGE: {
+    [GARAGE_STATUS.ACTIVE]: "active" as BadgeVariant, // Green for active
+    [GARAGE_STATUS.INACTIVE]: "inactive" as BadgeVariant, // Gray for inactive
+    [GARAGE_STATUS.MAINTENANCE]: "warning" as BadgeVariant, // Orange for maintenance
   },
 
   // PPE Request Status
@@ -492,6 +482,7 @@ export const ENTITY_BADGE_CONFIG = {
     [SECTOR_PRIVILEGES.LEADER]: "inProgress" as BadgeVariant,
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "warning" as BadgeVariant,
     [SECTOR_PRIVILEGES.EXTERNAL]: "outline" as BadgeVariant,
+    [SECTOR_PRIVILEGES.FINANCIAL]: "success" as BadgeVariant,
   },
 
   // Commission Status
@@ -524,10 +515,11 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   VERIFIED: "success",
   RETURNED: "completed",
   LOST: "destructive",
-  OVERDUE: "warning", // Changed from error to warning
+  OVERDUE: "warning",
   CREATED: "primary",
-  FULFILLED: "success",
+  FULFILLED: "pending", // Yellow - Feito (matches web)
   RECEIVED: "success",
+  MAINTENANCE: "warning",
   SENT: "info",
   ON_HOLD: "onHold",
   SUSPENDED: "warning",
@@ -593,14 +585,17 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   FULLY_RETURNED: "success",
 
   // Commission Status fallback
-  FULL_COMMISSION: "success",     // Green
-  PARTIAL_COMMISSION: "primary",  // Blue
-  NO_COMMISSION: "warning",       // Orange
-  SUSPENDED_COMMISSION: "destructive", // Red
+  FULL_COMMISSION: "success",
+  PARTIAL_COMMISSION: "primary",
+  NO_COMMISSION: "warning",
+  SUSPENDED_COMMISSION: "destructive",
+
+  // PPE Status
+  REPROVED: "cancelled",
 };
 
 /**
- * ABC Category Badge Colors
+ * ABC Category Badge Colors for React Native
  * Special color scheme for inventory analysis badges
  */
 export const ABC_BADGE_COLORS: Record<
@@ -608,28 +603,24 @@ export const ABC_BADGE_COLORS: Record<
   {
     bg: string;
     text: string;
-    hover: string;
   }
 > = {
   [ABC_CATEGORY.A]: {
-    bg: "bg-red-100 dark:bg-red-900/20",
-    text: "text-red-700 dark:text-red-400",
-    hover: "hover:bg-red-200 dark:hover:bg-red-900/30",
+    bg: "#fee2e2", // red-100
+    text: "#b91c1c", // red-700
   },
   [ABC_CATEGORY.B]: {
-    bg: "bg-yellow-100 dark:bg-yellow-900/20",
-    text: "text-yellow-700 dark:text-yellow-400",
-    hover: "hover:bg-yellow-200 dark:hover:bg-yellow-900/30",
+    bg: "#fef3c7", // yellow-100
+    text: "#a16207", // yellow-700
   },
   [ABC_CATEGORY.C]: {
-    bg: "bg-green-100 dark:bg-green-900/20",
-    text: "text-green-700 dark:text-green-400",
-    hover: "hover:bg-green-200 dark:hover:bg-green-900/30",
+    bg: "#dcfce7", // green-100
+    text: "#15803d", // green-700
   },
 };
 
 /**
- * XYZ Category Badge Colors
+ * XYZ Category Badge Colors for React Native
  * Special color scheme for inventory analysis badges
  */
 export const XYZ_BADGE_COLORS: Record<
@@ -637,23 +628,19 @@ export const XYZ_BADGE_COLORS: Record<
   {
     bg: string;
     text: string;
-    hover: string;
   }
 > = {
   [XYZ_CATEGORY.X]: {
-    bg: "bg-blue-100 dark:bg-blue-900/20",
-    text: "text-blue-700 dark:text-blue-400",
-    hover: "hover:bg-blue-200 dark:hover:bg-blue-900/30",
+    bg: "#dbeafe", // blue-100
+    text: "#1e40af", // blue-700
   },
   [XYZ_CATEGORY.Y]: {
-    bg: "bg-purple-100 dark:bg-purple-900/20",
-    text: "text-purple-700 dark:text-purple-400",
-    hover: "hover:bg-purple-200 dark:hover:bg-purple-900/30",
+    bg: "#f3e8ff", // purple-100
+    text: "#6b21a8", // purple-700
   },
   [XYZ_CATEGORY.Z]: {
-    bg: "bg-orange-100 dark:bg-orange-900/20",
-    text: "text-orange-700 dark:text-orange-400",
-    hover: "hover:bg-orange-200 dark:hover:bg-orange-900/30",
+    bg: "#fed7aa", // orange-100
+    text: "#9a3412", // orange-700
   },
 };
 
@@ -695,7 +682,7 @@ export const BOOLEAN_BADGE_CONFIG = {
     false: "pending" as BadgeVariant,
   },
   isOverdue: {
-    true: "warning" as BadgeVariant, // Changed from error to warning
+    true: "warning" as BadgeVariant,
     false: "default" as BadgeVariant,
   },
 };

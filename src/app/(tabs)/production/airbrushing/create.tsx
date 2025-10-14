@@ -251,7 +251,7 @@ export default function AirbrushingCreateScreen() {
                     ) : (
                       tasks.map((task) => (
                         <SelectItem key={task.id} value={task.id}>
-                          {task.name} - {(task.customer as any)?.name} - {task.truck?.plate}
+                          {task.name} - {task.customer?.fantasyName} - {task.truck?.plate}
                         </SelectItem>
                       ))
                     )}

@@ -1,24 +1,26 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
-import { FlatList, StyleSheet, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView } from "react-native";
+import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
+import { IconSelector } from "@tabler/icons-react-native";
 import type { ServiceOrder } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { formatDate } from '../../../../utils';
-import { ErrorScreen } from "@/components/ui/error-screen";
-import { LoadingScreen } from "@/components/ui/loading-screen";
-import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from '../../../../constants';
 import { Badge } from "@/components/ui/badge";
+import { useTheme } from "@/lib/theme";
+import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { ServiceOrderTableRowSwipe } from "./service-order-table-row-swipe";
+import { formatDate, formatDateTime } from '../../../../utils';
+import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from '../../../../constants';
+import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
 export interface TableColumn {
   key: string;
-  title: string;
+  header: string;
+  accessor: (serviceOrder: ServiceOrder) => React.ReactNode;
   width: number;
   align?: "left" | "center" | "right";
   sortable?: boolean;
-  render?: (serviceOrder: ServiceOrder) => React.ReactNode;
 }
 
 export interface SortConfig {
@@ -29,20 +31,19 @@ export interface SortConfig {
 interface ServiceOrderTableProps {
   serviceOrders: ServiceOrder[];
   onServiceOrderPress?: (serviceOrderId: string) => void;
-  onDelete?: (serviceOrderId: string) => void;
+  onServiceOrderEdit?: (serviceOrderId: string) => void;
+  onServiceOrderDelete?: (serviceOrderId: string) => void;
   onRefresh?: () => Promise<void>;
-  onEndReach?: () => void;
+  onEndReached?: () => void;
   refreshing?: boolean;
-  isLoading?: boolean;
+  loading?: boolean;
   loadingMore?: boolean;
-  error?: Error | null;
-  canLoadMore?: boolean;
   showSelection?: boolean;
   selectedServiceOrders?: Set<string>;
   onSelectionChange?: (selectedServiceOrders: Set<string>) => void;
   sortConfigs?: SortConfig[];
   onSort?: (configs: SortConfig[]) => void;
-  columns?: TableColumn[];
+  enableSwipeActions?: boolean;
   visibleColumnKeys?: string[];
 }
 
@@ -50,106 +51,249 @@ interface ServiceOrderTableProps {
 const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
-// Define all available columns with their renderers
-const ALL_COLUMN_DEFINITIONS: Record<string, Omit<TableColumn, "width">> = {
-  description: {
-    key: "description",
-    title: "Descrição",
-    align: "left",
-    sortable: true,
-  },
-  status: {
-    key: "status",
-    title: "Status",
-    align: "center",
-    sortable: true,
-  },
-  task: {
-    key: "task",
-    title: "Tarefa",
-    align: "left",
-    sortable: false,
-  },
-  createdAt: {
-    key: "createdAt",
-    title: "Criado em",
-    align: "left",
-    sortable: true,
-  },
-};
-
-const DEFAULT_COLUMN_KEYS = ["description", "status", "task", "createdAt"];
-
-const getStatusBadgeVariant = (status: SERVICE_ORDER_STATUS) => {
+const getStatusBadgeVariant = (status: string) => {
   switch (status) {
     case SERVICE_ORDER_STATUS.PENDING:
-      return "warning";
+      return { bg: badgeColors.warning.background, text: badgeColors.warning.text };
     case SERVICE_ORDER_STATUS.IN_PROGRESS:
-      return "info";
+      return { bg: badgeColors.info.background, text: badgeColors.info.text };
     case SERVICE_ORDER_STATUS.COMPLETED:
-      return "success";
+      return { bg: badgeColors.success.background, text: badgeColors.success.text };
     case SERVICE_ORDER_STATUS.CANCELLED:
-      return "destructive";
+      return { bg: badgeColors.muted.background, text: badgeColors.muted.text };
     default:
-      return "secondary";
+      return { bg: badgeColors.muted.background, text: badgeColors.muted.text };
   }
+};
+
+// Define all available columns with their renderers
+export const createColumnDefinitions = (): TableColumn[] => [
+  {
+    key: "description",
+    header: "DESCRIÇÃO",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (serviceOrder: ServiceOrder) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={2}>
+        {serviceOrder.description}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "status",
+    header: "STATUS",
+    align: "center",
+    sortable: true,
+    width: 0,
+    accessor: (serviceOrder: ServiceOrder) => {
+      if (!serviceOrder.status) {
+        return <ThemedText style={styles.cellText}>-</ThemedText>;
+      }
+      const colors = getStatusBadgeVariant(serviceOrder.status);
+      return (
+        <Badge
+          variant="secondary"
+          size="sm"
+          style={{
+            backgroundColor: colors.bg,
+            borderWidth: 0,
+          }}
+        >
+          <ThemedText
+            style={{
+              color: colors.text,
+              fontSize: fontSize.xs,
+              fontWeight: fontWeight.medium,
+            }}
+          >
+            {SERVICE_ORDER_STATUS_LABELS[serviceOrder.status]}
+          </ThemedText>
+        </Badge>
+      );
+    },
+  },
+  {
+    key: "task",
+    header: "TAREFA",
+    align: "left",
+    sortable: false,
+    width: 0,
+    accessor: (serviceOrder: ServiceOrder) => {
+      if (!serviceOrder.task) {
+        return <ThemedText style={styles.cellText}>-</ThemedText>;
+      }
+      const taskName = serviceOrder.task.name || serviceOrder.task.details || `#${serviceOrder.task.id.slice(-8).toUpperCase()}`;
+      const customerName = serviceOrder.task.customer
+        ? serviceOrder.task.customer.fantasyName || serviceOrder.task.customer.corporateName
+        : null;
+
+      return (
+        <View>
+          <ThemedText style={styles.cellText} numberOfLines={1}>
+            {taskName}
+          </ThemedText>
+          {customerName && (
+            <ThemedText style={StyleSheet.flatten([styles.cellText, styles.secondaryText])} numberOfLines={1}>
+              {customerName}
+            </ThemedText>
+          )}
+        </View>
+      );
+    },
+  },
+  {
+    key: "timing",
+    header: "CRONOMETRIA",
+    align: "left",
+    sortable: false,
+    width: 0,
+    accessor: (serviceOrder: ServiceOrder) => (
+      <View>
+        {serviceOrder.startedAt && (
+          <ThemedText style={styles.cellText} numberOfLines={1}>
+            Início: {formatDateTime(serviceOrder.startedAt)}
+          </ThemedText>
+        )}
+        {serviceOrder.finishedAt && (
+          <ThemedText style={StyleSheet.flatten([styles.cellText, styles.secondaryText])} numberOfLines={1}>
+            Fim: {formatDateTime(serviceOrder.finishedAt)}
+          </ThemedText>
+        )}
+        {!serviceOrder.startedAt && !serviceOrder.finishedAt && (
+          <ThemedText style={styles.cellText}>-</ThemedText>
+        )}
+      </View>
+    ),
+  },
+  {
+    key: "createdAt",
+    header: "CRIADO EM",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (serviceOrder: ServiceOrder) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
+        {formatDate(serviceOrder.createdAt)}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "updatedAt",
+    header: "ATUALIZADO EM",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (serviceOrder: ServiceOrder) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
+        {formatDate(serviceOrder.updatedAt)}
+      </ThemedText>
+    ),
+  },
+];
+
+export const getDefaultVisibleColumns = (): Set<string> => {
+  return new Set(["description", "status", "task"]);
 };
 
 export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
   ({
     serviceOrders,
     onServiceOrderPress,
-    onDelete,
+    onServiceOrderEdit,
+    onServiceOrderDelete,
     onRefresh,
-    onEndReach,
+    onEndReached,
     refreshing = false,
-    isLoading = false,
+    loading = false,
     loadingMore = false,
-    error = null,
-    canLoadMore = false,
     showSelection = false,
     selectedServiceOrders = new Set(),
     onSelectionChange,
     sortConfigs = [],
     onSort,
-    columns,
-    visibleColumnKeys = DEFAULT_COLUMN_KEYS,
+    enableSwipeActions = true,
+    visibleColumnKeys,
   }) => {
     const { colors, isDark } = useTheme();
+    const { activeRowId, closeActiveRow } = useSwipeRow();
     const [headerHeight, setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
-    // Build visible columns based on selection
+    // Column visibility - use prop if provided, otherwise use default
     const visibleColumns = useMemo(() => {
-      if (columns) return columns; // Use provided columns if any
+      if (visibleColumnKeys && visibleColumnKeys.length > 0) {
+        return new Set(visibleColumnKeys);
+      }
+      return getDefaultVisibleColumns();
+    }, [visibleColumnKeys]);
 
+    // Get all column definitions
+    const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+    // Build visible columns with dynamic widths
+    const displayColumns = useMemo(() => {
       // Define width ratios for each column type
       const columnWidthRatios: Record<string, number> = {
-        description: 3.0, // Largest - service order description needs more space
-        status: 1.0, // Medium - status badge
-        task: 2.0, // Medium - task name
-        createdAt: 1.2, // Medium - date
+        description: 3.0,
+        status: 1.0,
+        task: 2.5,
+        timing: 2.0,
+        createdAt: 1.2,
+        updatedAt: 1.2,
       };
 
+      // Filter to visible columns
+      const visible = allColumns.filter((col) => visibleColumns.has(col.key));
+
       // Calculate total ratio
-      const totalRatio = visibleColumnKeys.reduce((sum, key) => sum + (columnWidthRatios[key] || 1), 0);
+      const totalRatio = visible.reduce((sum, col) => sum + (columnWidthRatios[col.key] || 1.0), 0);
 
-      // Calculate actual column widths based on available space
-      return visibleColumnKeys.map((key) => {
-        const definition = ALL_COLUMN_DEFINITIONS[key as keyof typeof ALL_COLUMN_DEFINITIONS];
-        const ratio = columnWidthRatios[key] || 1;
+      // Calculate actual widths
+      return visible.map((col) => {
+        const ratio = columnWidthRatios[col.key] || 1.0;
         const width = Math.floor((availableWidth * ratio) / totalRatio);
-
-        return {
-          ...definition,
-          width,
-        } as TableColumn;
+        return { ...col, width };
       });
-    }, [visibleColumnKeys, columns, availableWidth]);
+    }, [allColumns, visibleColumns]);
 
-    const handleToggleSelection = useCallback(
+    // Handle taps outside of active row to close swipe actions
+    const handleContainerPress = useCallback(() => {
+      if (activeRowId) {
+        closeActiveRow();
+      }
+    }, [activeRowId, closeActiveRow]);
+
+    // Handle scroll events to close active row
+    const handleScroll = useCallback(() => {
+      if (activeRowId) {
+        closeActiveRow();
+      }
+    }, [activeRowId, closeActiveRow]);
+
+    // Calculate total table width
+    const tableWidth = useMemo(() => {
+      let width = displayColumns.reduce((sum, col) => sum + col.width, 0);
+      if (showSelection) width += 50; // Add checkbox column width
+      return width;
+    }, [displayColumns, showSelection]);
+
+    // Selection handlers
+    const handleSelectAll = useCallback(() => {
+      if (!onSelectionChange) return;
+
+      const allSelected = serviceOrders.every((so) => selectedServiceOrders.has(so.id));
+      if (allSelected) {
+        onSelectionChange(new Set());
+      } else {
+        onSelectionChange(new Set(serviceOrders.map((so) => so.id)));
+      }
+    }, [serviceOrders, selectedServiceOrders, onSelectionChange]);
+
+    const handleSelectServiceOrder = useCallback(
       (serviceOrderId: string) => {
         if (!onSelectionChange) return;
+
         const newSelection = new Set(selectedServiceOrders);
         if (newSelection.has(serviceOrderId)) {
           newSelection.delete(serviceOrderId);
@@ -161,306 +305,435 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
       [selectedServiceOrders, onSelectionChange],
     );
 
-    const handleToggleAll = useCallback(() => {
-      if (!onSelectionChange) return;
-      if (selectedServiceOrders.size === serviceOrders.length) {
-        onSelectionChange(new Set());
-      } else {
-        onSelectionChange(new Set(serviceOrders.map(so => so.id)));
-      }
-    }, [serviceOrders, selectedServiceOrders, onSelectionChange]);
-
+    // Sort handler - non-cumulative (only one sort at a time)
     const handleSort = useCallback(
       (columnKey: string) => {
         if (!onSort) return;
 
-        const existingConfig = sortConfigs.find(c => c.columnKey === columnKey);
+        const existingConfig = sortConfigs?.find((config) => config.columnKey === columnKey);
 
-        if (!existingConfig) {
-          // Add new sort
-          onSort([...sortConfigs, { columnKey, direction: "asc" }]);
-        } else if (existingConfig.direction === "asc") {
-          // Change to desc
-          onSort(sortConfigs.map(c =>
-            c.columnKey === columnKey
-              ? { ...c, direction: "desc" }
-              : c
-          ));
+        if (existingConfig) {
+          // Column already sorted, toggle direction or remove
+          if (existingConfig.direction === "asc") {
+            // Toggle to descending
+            onSort([{ columnKey, direction: "desc" as const }]);
+          } else {
+            // Remove sort (back to no sort)
+            onSort([]);
+          }
         } else {
-          // Remove sort
-          onSort(sortConfigs.filter(c => c.columnKey !== columnKey));
+          // Set new sort (replacing any existing sort)
+          onSort([{ columnKey, direction: "asc" as const }]);
         }
       },
       [sortConfigs, onSort],
     );
 
-    const getSortIndicator = useCallback(
-      (columnKey: string) => {
-        const config = sortConfigs.find(c => c.columnKey === columnKey);
-        if (!config) return null;
+    // Column renderer using accessor
+    const renderColumnValue = useCallback((serviceOrder: ServiceOrder, column: TableColumn) => {
+      return column.accessor(serviceOrder);
+    }, []);
 
-        const index = sortConfigs.indexOf(config);
-        return (
-          <View style={styles.sortIndicator}>
-            <Icon name={config.direction === "asc" ? "chevron-up" : "chevron-down"} size={14} color={colors.primary} />
-            {sortConfigs.length > 1 && (
-              <ThemedText style={StyleSheet.flatten([styles.sortIndex, { color: colors.primary }])}>{index + 1}</ThemedText>
-            )}
-          </View>
-        );
-      },
-      [sortConfigs, colors],
-    );
-
-    const renderColumnContent = useCallback(
-      (column: TableColumn, serviceOrder: ServiceOrder) => {
-        switch (column.key) {
-          case "description":
-            return (
-              <ThemedText style={styles.cellText} numberOfLines={2} ellipsizeMode="tail">
-                {serviceOrder.description}
-              </ThemedText>
-            );
-          case "status":
-            if (serviceOrder.status) {
-              return (
-                <Badge variant={getStatusBadgeVariant(serviceOrder.status)}>
-                  {SERVICE_ORDER_STATUS_LABELS[serviceOrder.status]}
-                </Badge>
-              );
-            }
-            return <ThemedText style={styles.cellText}>-</ThemedText>;
-          case "task":
-            return (
-              <ThemedText style={styles.cellText} numberOfLines={2} ellipsizeMode="tail">
-                {serviceOrder.task?.description || "-"}
-              </ThemedText>
-            );
-          case "createdAt":
-            return (
-              <ThemedText style={styles.cellText}>
-                {formatDate(serviceOrder.createdAt)}
-              </ThemedText>
-            );
-          default:
-            if (column.render) {
-              return column.render(serviceOrder);
-            }
-            return <ThemedText style={styles.cellText}>-</ThemedText>;
-        }
-      },
-      [],
-    );
-
-    const renderHeader = useCallback(() => {
-      return (
-        <View
-          style={StyleSheet.flatten([styles.headerContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }])}
-          onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
-        >
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} bounces={false}>
-            <View style={styles.header}>
+    // Header component
+    const renderHeader = useCallback(
+      () => (
+        <View style={styles.headerWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={tableWidth > availableWidth}
+            style={StyleSheet.flatten([
+              styles.headerContainer,
+              {
+                backgroundColor: isDark ? extendedColors.neutral[800] : extendedColors.neutral[100],
+                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+              },
+            ])}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+          >
+            <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
-                <View style={StyleSheet.flatten([styles.checkboxColumn, { borderRightColor: colors.border }])}>
-                  <Checkbox checked={selectedServiceOrders.size === serviceOrders.length && serviceOrders.length > 0} onCheckedChange={handleToggleAll} />
+                <View style={StyleSheet.flatten([styles.headerCell, styles.checkboxCell])}>
+                  <Checkbox
+                    checked={serviceOrders.length > 0 && serviceOrders.every((so) => selectedServiceOrders.has(so.id))}
+                    onCheckedChange={handleSelectAll}
+                    disabled={serviceOrders.length === 0}
+                  />
                 </View>
               )}
-              {visibleColumns.map((column, index) => (
-                <TouchableOpacity
-                  key={column.key}
-                  style={StyleSheet.flatten([
-                    styles.headerCell,
-                    { width: column.width },
-                    index < visibleColumns.length - 1 && { borderRightColor: colors.border, borderRightWidth: 1 },
-                  ])}
-                  onPress={() => column.sortable && handleSort(column.key)}
-                  disabled={!column.sortable}
-                >
-                  <View style={styles.headerContent}>
-                    <ThemedText style={StyleSheet.flatten([styles.headerText, { textAlign: column.align || "left" }])}>
-                      {column.title}
-                    </ThemedText>
-                    {column.sortable && getSortIndicator(column.key)}
-                  </View>
-                </TouchableOpacity>
-              ))}
+              {displayColumns.map((column) => {
+                const sortConfig = sortConfigs?.find((config) => config.columnKey === column.key);
+
+                return (
+                  <TouchableOpacity
+                    key={column.key}
+                    style={StyleSheet.flatten([styles.headerCell, { width: column.width }])}
+                    onPress={() => column.sortable && handleSort(column.key)}
+                    disabled={!column.sortable}
+                    activeOpacity={column.sortable ? 0.7 : 1}
+                  >
+                    <View style={styles.headerCellContent}>
+                      <View style={styles.headerTextContainer}>
+                        <ThemedText
+                          style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {column.header}
+                        </ThemedText>
+                      </View>
+                      {column.sortable && (
+                        <View style={styles.sortIconWrapper}>
+                          {sortConfig ? (
+                            <View style={styles.sortIconContainer}>
+                              {sortConfig.direction === "asc" ? (
+                                <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                              ) : (
+                                <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                              )}
+                            </View>
+                          ) : (
+                            <IconSelector size={16} color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
+                          )}
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </ScrollView>
         </View>
-      );
-    }, [visibleColumns, showSelection, selectedServiceOrders, serviceOrders, handleToggleAll, handleSort, getSortIndicator, colors]);
-
-    const renderServiceOrder = useCallback(
-      ({ item: serviceOrder }: { item: ServiceOrder }) => {
-        const isSelected = selectedServiceOrders.has(serviceOrder.id);
-
-        return (
-          <Pressable
-            onPress={() => onServiceOrderPress?.(serviceOrder.id)}
-            style={({ pressed }) => [
-              styles.row,
-              { backgroundColor: colors.card },
-              pressed && { opacity: 0.7 },
-              isSelected && { backgroundColor: colors.accent },
-            ]}
-          >
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} bounces={false}>
-              <View style={styles.rowContent}>
-                {showSelection && (
-                  <View style={StyleSheet.flatten([styles.checkboxColumn, { borderRightColor: colors.border }])}>
-                    <Checkbox checked={isSelected} onCheckedChange={() => handleToggleSelection(serviceOrder.id)} />
-                  </View>
-                )}
-                {visibleColumns.map((column, index) => (
-                  <View
-                    key={column.key}
-                    style={StyleSheet.flatten([
-                      styles.cell,
-                      { width: column.width },
-                      index < visibleColumns.length - 1 && { borderRightColor: colors.border, borderRightWidth: 1 },
-                    ])}
-                  >
-                    {renderColumnContent(column, serviceOrder)}
-                  </View>
-                ))}
-              </View>
-            </ScrollView>
-          </Pressable>
-        );
-      },
-      [visibleColumns, showSelection, selectedServiceOrders, handleToggleSelection, renderColumnContent, onServiceOrderPress, colors],
+      ),
+      [colors, isDark, tableWidth, displayColumns, showSelection, selectedServiceOrders, serviceOrders.length, sortConfigs, handleSelectAll, handleSort],
     );
 
-    const renderEmpty = useCallback(() => {
-      if (isLoading) return null;
+    // Row component
+    const renderRow = useCallback(
+      ({ item, index }: { item: ServiceOrder; index: number }) => {
+        const isSelected = selectedServiceOrders.has(item.id);
+        const isEven = index % 2 === 0;
+
+        if (enableSwipeActions && (onServiceOrderEdit || onServiceOrderDelete)) {
+          return (
+            <ServiceOrderTableRowSwipe
+              key={item.id}
+              serviceOrderId={item.id}
+              serviceOrderDescription={item.description}
+              onEdit={onServiceOrderEdit}
+              onDelete={onServiceOrderDelete}
+              disabled={showSelection}
+            >
+              {(isActive) => (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  scrollEnabled={tableWidth > availableWidth}
+                  style={StyleSheet.flatten([
+                    styles.row,
+                    {
+                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                      borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                    },
+                    isSelected && { backgroundColor: colors.primary + "20" },
+                  ])}
+                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                >
+                  <Pressable
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    onPress={() => onServiceOrderPress?.(item.id)}
+                    onLongPress={() => showSelection && handleSelectServiceOrder(item.id)}
+                    android_ripple={{ color: colors.primary + "20" }}
+                  >
+                    {showSelection && (
+                      <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
+                        <Checkbox checked={isSelected} onCheckedChange={() => handleSelectServiceOrder(item.id)} />
+                      </View>
+                    )}
+                    {displayColumns.map((column) => (
+                      <View
+                        key={column.key}
+                        style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
+                      >
+                        {renderColumnValue(item, column)}
+                      </View>
+                    ))}
+                  </Pressable>
+                </ScrollView>
+              )}
+            </ServiceOrderTableRowSwipe>
+          );
+        }
+
+        // Non-swipeable version
+        return (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={tableWidth > availableWidth}
+            style={StyleSheet.flatten([
+              styles.row,
+              {
+                backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+              },
+              isSelected && { backgroundColor: colors.primary + "20" },
+            ])}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+          >
+            <Pressable
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              onPress={() => onServiceOrderPress?.(item.id)}
+              onLongPress={() => showSelection && handleSelectServiceOrder(item.id)}
+              android_ripple={{ color: colors.primary + "20" }}
+            >
+              {showSelection && (
+                <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
+                  <Checkbox checked={isSelected} onCheckedChange={() => handleSelectServiceOrder(item.id)} />
+                </View>
+              )}
+              {displayColumns.map((column) => (
+                <View
+                  key={column.key}
+                  style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
+                >
+                  {renderColumnValue(item, column)}
+                </View>
+              ))}
+            </Pressable>
+          </ScrollView>
+        );
+      },
+      [
+        colors,
+        tableWidth,
+        displayColumns,
+        showSelection,
+        selectedServiceOrders,
+        onServiceOrderPress,
+        handleSelectServiceOrder,
+        renderColumnValue,
+        enableSwipeActions,
+        onServiceOrderEdit,
+        onServiceOrderDelete,
+        activeRowId,
+        closeActiveRow,
+        isDark,
+      ],
+    );
+
+    // Loading footer component
+    const renderFooter = useCallback(() => {
+      if (!loadingMore) return null;
+
       return (
-        <View style={styles.emptyContainer}>
-          <ThemedText style={styles.emptyText}>Nenhuma ordem de serviço encontrada</ThemedText>
+        <View style={styles.loadingFooter}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>Carregando mais...</ThemedText>
         </View>
       );
-    }, [isLoading]);
+    }, [loadingMore, colors.primary]);
 
-    const renderFooter = useCallback(() => {
-      if (loadingMore) {
-        return (
-          <View style={styles.loadingMore}>
-            <ActivityIndicator size="small" color={colors.primary} />
-          </View>
-        );
-      }
-      return null;
-    }, [loadingMore, colors]);
+    // Empty state component
+    const renderEmpty = useCallback(
+      () => (
+        <View style={styles.emptyContainer}>
+          <Icon name="clipboard-list" size="xl" variant="muted" />
+          <ThemedText style={styles.emptyTitle}>Nenhuma ordem de serviço encontrada</ThemedText>
+          <ThemedText style={styles.emptySubtitle}>Tente ajustar os filtros ou adicionar novas ordens de serviço</ThemedText>
+        </View>
+      ),
+      [colors.mutedForeground],
+    );
 
-    // Show loading screen for initial load
-    if (isLoading && serviceOrders.length === 0) {
-      return <LoadingScreen />;
-    }
-
-    // Show error screen if there's an error
-    if (error && serviceOrders.length === 0) {
+    // Main loading state
+    if (loading) {
       return (
-        <ErrorScreen
-          message="Erro ao carregar ordens de serviço"
-          detail={error.message}
-          onRetry={onRefresh}
-        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>Carregando ordens de serviço...</ThemedText>
+        </View>
       );
     }
 
     return (
-      <View style={styles.container}>
-        {renderHeader()}
-        <FlatList
-          ref={flatListRef}
-          data={serviceOrders}
-          renderItem={renderServiceOrder}
-          keyExtractor={(serviceOrder) => serviceOrder.id}
-          ListEmptyComponent={renderEmpty}
-          ListFooterComponent={renderFooter}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
-          onEndReached={onEndReach}
-          onEndReachedThreshold={0.1}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-        />
+      <View style={styles.wrapper}>
+        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])} onPress={handleContainerPress}>
+          {renderHeader()}
+          <FlatList
+            ref={flatListRef}
+            data={serviceOrders}
+            renderItem={renderRow}
+            keyExtractor={(item) => item.id}
+            refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} /> : undefined}
+            onEndReached={onEndReached}
+            onEndReachedThreshold={0.2}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            ListFooterComponent={renderFooter}
+            ListEmptyComponent={renderEmpty}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            windowSize={5}
+            initialNumToRender={15}
+            updateCellsBatchingPeriod={50}
+            getItemLayout={(data, index) => ({
+              length: 60, // Fixed row height
+              offset: 60 * index,
+              index,
+            })}
+            style={styles.flatList}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ flexGrow: 1 }}
+          />
+        </Pressable>
       </View>
     );
   },
 );
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingBottom: 16,
+    backgroundColor: "transparent",
+  },
   container: {
     flex: 1,
-  },
-  headerContainer: {
-    borderBottomWidth: 1,
+    backgroundColor: "white",
+    borderRadius: 8,
+    overflow: "hidden",
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 4,
   },
-  header: {
+  headerWrapper: {
+    marginTop: 12,
+    flexDirection: "column",
+  },
+  headerContainer: {
+    borderBottomWidth: 2,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  headerRow: {
     flexDirection: "row",
-    paddingHorizontal: spacing.md,
+    alignItems: "center",
+    minHeight: 56,
   },
   headerCell: {
-    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+    minHeight: 56,
     justifyContent: "center",
   },
-  headerContent: {
+  headerText: {
+    fontSize: 10, // Smaller than xs to prevent line breaks
+    fontWeight: fontWeight.bold,
+    textTransform: "uppercase",
+    lineHeight: 12,
+    color: "#000000", // black text like web
+  },
+  headerCellContent: {
+    display: "flex",
+    alignItems: "flex-start",
     flexDirection: "row",
-    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
     gap: 4,
   },
-  headerText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
+  headerTextContainer: {
+    flex: 1,
+    minWidth: 0, // Allow text to shrink below content size
   },
-  sortIndicator: {
+  sortIconWrapper: {
+    flexShrink: 0, // Prevent icon from shrinking
+    justifyContent: "center",
+    alignItems: "center",
+    width: 16,
+  },
+  sortIconContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
-  sortIndex: {
-    fontSize: fontSize.xs,
-    marginLeft: 2,
+  checkboxCell: {
+    width: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  flatList: {
+    flex: 1,
   },
   row: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e5e5", // neutral-200
   },
   rowContent: {
     flexDirection: "row",
-    paddingHorizontal: spacing.md,
-  },
-  checkboxColumn: {
-    width: 48,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: spacing.md,
-    borderRightWidth: 1,
+    alignItems: "stretch", // Changed from 'center' to 'stretch' to ensure all cells have same height
+    minHeight: 60,
   },
   cell: {
-    paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
     justifyContent: "center",
+    minHeight: 60,
+  },
+  centerAlign: {
+    alignItems: "center",
+  },
+  rightAlign: {
+    alignItems: "flex-end",
   },
   cellText: {
     fontSize: fontSize.sm,
   },
-  emptyContainer: {
-    padding: spacing.xl,
-    alignItems: "center",
+  nameText: {
+    fontWeight: fontWeight.medium,
+    fontSize: fontSize.sm,
   },
-  emptyText: {
-    fontSize: fontSize.md,
+  secondaryText: {
     opacity: 0.6,
+    marginTop: 2,
   },
-  loadingMore: {
-    padding: spacing.md,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
+    gap: spacing.md,
   },
-  listContent: {
-    flexGrow: 1,
+  loadingFooter: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
+  },
+  loadingText: {
+    fontSize: fontSize.sm,
+    opacity: 0.7,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: spacing.xxl,
+    gap: spacing.md,
+  },
+  emptyTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+  },
+  emptySubtitle: {
+    fontSize: fontSize.sm,
+    opacity: 0.7,
+    textAlign: "center",
+    paddingHorizontal: spacing.xl,
   },
 });
+
+ServiceOrderTable.displayName = "ServiceOrderTable";

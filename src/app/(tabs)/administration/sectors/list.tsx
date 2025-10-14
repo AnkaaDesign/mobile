@@ -1,13 +1,13 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { View, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { IconFilter, IconPlus } from "@tabler/icons-react-native";
+import { IconFilter, IconPlus, IconList } from "@tabler/icons-react-native";
 import { useSectorMutations } from '../../../../hooks';
 import { useSectorsInfiniteMobile } from "@/hooks";
 import type { SectorGetManyFormData } from '../../../../types';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
-import { SectorTable } from "@/components/administration/sector/list/sector-table";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge, Button } from "@/components/ui";
+import { SectorTable, createColumnDefinitions } from "@/components/administration/sector/list/sector-table";
 import { SectorFilterModal } from "@/components/administration/sector/list/sector-filter-modal";
 import { SectorFilterTags } from "@/components/administration/sector/list/sector-filter-tags";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -15,7 +15,7 @@ import { SectorListSkeleton } from "@/components/administration/sector/skeleton/
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { Pressable } from "react-native";
+import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
 
 export default function SectorListScreen() {
   const router = useRouter();
@@ -26,6 +26,8 @@ export default function SectorListScreen() {
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<SectorGetManyFormData>>({});
+  const [showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["name", "privileges"]);
 
   // Build query parameters
   const queryParams: SectorGetManyFormData = {
@@ -94,6 +96,13 @@ export default function SectorListScreen() {
     setDisplaySearchText("");
   }, []);
 
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
+  }, []);
+
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
     ([key, value]) => {
@@ -135,25 +144,34 @@ export default function SectorListScreen() {
           style={styles.searchBar}
           debounceMs={300}
         />
-        <Pressable
-          style={({ pressed }) => [
-            styles.filterButton,
-            {
-              backgroundColor: colors.card,
-              borderWidth: 1,
-              borderColor: colors.border,
-            },
-            pressed && styles.filterButtonPressed,
-          ]}
-          onPress={() => setShowFilters(true)}
-        >
-          <IconFilter size={24} color={colors.foreground} />
-          {activeFiltersCount > 0 && (
-            <Badge style={styles.filterBadge} variant="destructive" size="sm">
-              <ThemedText style={StyleSheet.flatten([styles.filterBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
+        <View style={styles.buttonContainer}>
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowColumnManager(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconList size={20} color={colors.foreground} />
+            </Button>
+            <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
+              <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
             </Badge>
-          )}
-        </Pressable>
+          </View>
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowFilters(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconFilter size={20} color={colors.foreground} />
+            </Button>
+            {activeFiltersCount > 0 && (
+              <Badge style={styles.actionBadge} variant="destructive" size="sm">
+                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
+              </Badge>
+            )}
+          </View>
+        </View>
       </View>
 
       {/* Filter tags */}
@@ -180,6 +198,7 @@ export default function SectorListScreen() {
           loading={isLoading && !isRefetching}
           loadingMore={isFetchingNextPage}
           enableSwipeActions={true}
+          visibleColumnKeys={visibleColumnKeys}
         />
       ) : (
         <View style={styles.emptyContainer}>
@@ -200,6 +219,15 @@ export default function SectorListScreen() {
 
       {/* Filter Modal */}
       <SectorFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
+
+      {/* Column Visibility Drawer */}
+      <ColumnVisibilityDrawerV2
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        open={showColumnManager}
+        onOpenChange={setShowColumnManager}
+      />
     </ThemedView>
   );
 }
@@ -218,15 +246,20 @@ const styles = StyleSheet.create({
   searchBar: {
     flex: 1,
   },
-  filterButton: {
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  actionButtonWrapper: {
+    position: "relative",
+  },
+  actionButton: {
     height: 48,
     width: 48,
     borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
+    paddingHorizontal: 0,
   },
-  filterBadge: {
+  actionBadge: {
     position: "absolute",
     top: -4,
     right: -4,
@@ -237,7 +270,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 3,
   },
-  filterBadgeText: {
+  actionBadgeText: {
     fontSize: 9,
     fontWeight: "600",
   },
@@ -245,8 +278,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  filterButtonPressed: {
-    opacity: 0.8,
   },
 });

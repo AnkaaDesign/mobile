@@ -1,9 +1,13 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, ScrollView, RefreshControl , StyleSheet} from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { FAB } from "@/components/ui/fab";
+import { Badge } from "@/components/ui/badge";
 import { SearchBar } from "@/components/ui/search-bar";
-import { TaskTable } from "@/components/production/task/list/task-table";
+import { Button } from "@/components/ui/button";
+import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
+import { getDefaultVisibleColumns } from "@/components/production/task/list/column-visibility-manager";
+import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
 import { IconButton } from "@/components/ui/icon-button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
@@ -18,6 +22,7 @@ import { FilterModal, FilterTag } from "@/components/ui/filter-modal";
 import { useDebounce } from "@/hooks/use-debounce";
 import { showToast } from "@/components/ui/toast";
 import { Alert, ActivityIndicator } from "react-native";
+import { IconList, IconFilter } from "@tabler/icons-react-native";
 
 export default function ScheduleListScreen() {
   const { colors } = useTheme();
@@ -38,6 +43,10 @@ export default function ScheduleListScreen() {
   // Selection state
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  // Column visibility state
+  const [showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(Array.from(getDefaultVisibleColumns()));
 
   // Debounced search
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -290,6 +299,14 @@ export default function ScheduleListScreen() {
     return count;
   }, [selectedStatus, sortBy, sortOrder]);
 
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  // Handle columns change
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
+  }, []);
+
   if (error) {
     return (
       <View style={styles.centerContainer}>
@@ -315,11 +332,32 @@ export default function ScheduleListScreen() {
           style={styles.searchBar}
         />
         <View style={styles.headerActions}>
-          <IconButton
-            name="filter"
-            variant="default"
-            onPress={() => setShowFilters(true)}
-          />
+          <View style={styles.buttonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowColumnManager(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconList size={20} color={colors.foreground} />
+            </Button>
+            <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
+              <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
+            </Badge>
+          </View>
+          <View style={styles.buttonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowFilters(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconFilter size={20} color={colors.foreground} />
+            </Button>
+            {activeFilterCount > 0 && (
+              <Badge style={styles.actionBadge} variant="destructive" size="sm">
+                <ThemedText style={{ ...styles.actionBadgeText, color: "white" }}>{activeFilterCount}</ThemedText>
+              </Badge>
+            )}
+          </View>
           {canEdit && (
             <IconButton
               name={isSelectionMode ? "x" : "check-square"}
@@ -385,6 +423,7 @@ export default function ScheduleListScreen() {
           selectedTasks={selectedTasks}
           onSelectionChange={setSelectedTasks}
           enableSwipeActions={!isSelectionMode}
+          visibleColumnKeys={visibleColumnKeys}
         />
       )}
 
@@ -399,6 +438,15 @@ export default function ScheduleListScreen() {
 
       {/* Filter modal */}
       {renderFilterModal()}
+
+      {/* Column Visibility Drawer */}
+      <ColumnVisibilityDrawerV2
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        open={showColumnManager}
+        onOpenChange={setShowColumnManager}
+      />
     </View>
   );
 }
@@ -410,21 +458,40 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 8,
   },
   searchBar: {
     flex: 1,
-    marginRight: spacing.sm,
   },
   headerActions: {
     flexDirection: "row",
-    gap: spacing.xs,
+    gap: 8,
+  },
+  buttonWrapper: {
+    position: "relative",
+  },
+  actionButton: {
+    height: 48,
+    width: 48,
+    borderRadius: 10,
+    paddingHorizontal: 0,
+  },
+  actionBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 3,
+  },
+  actionBadgeText: {
+    fontSize: 9,
+    fontWeight: "600",
   },
   selectionToolbar: {
     flexDirection: "row",

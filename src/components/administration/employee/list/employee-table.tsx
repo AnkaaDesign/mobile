@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
+import { IconSelector } from "@tabler/icons-react-native";
 import type { User } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Avatar } from "@/components/ui/avatar";
@@ -10,10 +11,11 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { EmployeeTableRowSwipe } from "./employee-table-row-swipe";
-import { formatCPF } from '../../../../utils';
+import { formatCPF, formatBrazilianPhone, formatDate, formatDateTime } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { USER_STATUS_LABELS } from '../../../../constants';
 import { USER_STATUS } from '../../../../constants';
+import { getUserStatusBadgeText } from '../../../../utils/user';
 
 export interface TableColumn {
   key: string;
@@ -57,19 +59,20 @@ const availableWidth = screenWidth - 32; // Account for padding
 const getStatusBadgeColors = (status: USER_STATUS) => {
   switch (status) {
     case USER_STATUS.CONTRACTED:
-      return { background: badgeColors.success.background, text: badgeColors.success.text };
+      return { background: badgeColors.success.background, text: badgeColors.success.text }; // green-700
     case USER_STATUS.EXPERIENCE_PERIOD_1:
+      return { background: badgeColors.pending.background, text: badgeColors.pending.text }; // amber-600
     case USER_STATUS.EXPERIENCE_PERIOD_2:
-      return { background: badgeColors.warning.background, text: badgeColors.warning.text };
+      return { background: badgeColors.warning.background, text: badgeColors.warning.text }; // orange-600
     case USER_STATUS.DISMISSED:
-      return { background: badgeColors.muted.background, text: badgeColors.muted.text };
+      return { background: badgeColors.error.background, text: badgeColors.error.text }; // red-700 NOT gray
     default:
       return { background: badgeColors.info.background, text: badgeColors.info.text };
   }
 };
 
 // Define all available columns with their renderers
-const createColumnDefinitions = (): TableColumn[] => [
+export const createColumnDefinitions = (): TableColumn[] => [
   {
     key: "avatar",
     header: "",
@@ -83,13 +86,25 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
+    key: "payrollNumber",
+    header: "Nº Folha",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.payrollNumber || "-"}
+      </ThemedText>
+    ),
+  },
+  {
     key: "name",
     header: "Nome",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (employee: User) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={2}>
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={1} ellipsizeMode="tail">
         {employee.name}
       </ThemedText>
     ),
@@ -107,6 +122,18 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
+    key: "phone",
+    header: "Telefone",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.phone ? formatBrazilianPhone(employee.phone) : "-"}
+      </ThemedText>
+    ),
+  },
+  {
     key: "cpf",
     header: "CPF",
     align: "left",
@@ -119,7 +146,19 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "position",
+    key: "pis",
+    header: "PIS",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText])} numberOfLines={1}>
+        {employee.pis || "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "position.hierarchy",
     header: "Cargo",
     align: "left",
     sortable: true,
@@ -137,53 +176,278 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "sector",
+    key: "sector.name",
     header: "Setor",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (employee: User) => (
-      <View style={styles.badgeContainer}>
-        {employee.sector ? (
-          <Badge variant="outline" size="sm" style={styles.sectorBadge}>
-            <ThemedText style={styles.badgeText}>{employee.sector.name}</ThemedText>
-          </Badge>
-        ) : (
-          <ThemedText style={styles.cellText}>-</ThemedText>
-        )}
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.sector?.name || "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "tasksCount",
+    header: "Tarefas",
+    align: "center",
+    sortable: false,
+    width: 0,
+    accessor: (employee: User) => (
+      <View style={styles.centerAlign}>
+        <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.info.background, borderWidth: 0 }}>
+          <ThemedText style={{ color: badgeColors.info.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
+            {employee._count?.createdTasks || 0}
+          </ThemedText>
+        </Badge>
       </View>
+    ),
+  },
+  {
+    key: "vacationsCount",
+    header: "Férias",
+    align: "center",
+    sortable: false,
+    width: 0,
+    accessor: (employee: User) => (
+      <View style={styles.centerAlign}>
+        <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.success.background, borderWidth: 0 }}>
+          <ThemedText style={{ color: badgeColors.success.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
+            {employee._count?.vacations || 0}
+          </ThemedText>
+        </Badge>
+      </View>
+    ),
+  },
+  {
+    key: "admissional",
+    header: "Data de Admissão",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.admissional ? formatDate(new Date(employee.admissional)) : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "birth",
+    header: "Data de Nascimento",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.birth ? formatDate(new Date(employee.birth)) : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "dismissal",
+    header: "Data de Demissão",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.dismissal ? formatDate(new Date(employee.dismissal)) : "-"}
+      </ThemedText>
     ),
   },
   {
     key: "status",
     header: "Status",
-    align: "center",
+    align: "left",
     sortable: true,
     width: 0,
     accessor: (employee: User) => {
       const statusColors = getStatusBadgeColors(employee.status);
       return (
-        <View style={styles.centerAlign}>
-          <Badge variant="secondary" size="sm" style={{ backgroundColor: statusColors.background, borderWidth: 0 }}>
-            <ThemedText style={{ color: statusColors.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>{USER_STATUS_LABELS[employee.status]}</ThemedText>
-          </Badge>
-        </View>
+        <Badge variant="secondary" size="sm" style={{ backgroundColor: statusColors.background, borderWidth: 0 }}>
+          <ThemedText style={{ color: statusColors.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
+            {getUserStatusBadgeText(employee)}
+          </ThemedText>
+        </Badge>
       );
     },
   },
   {
-    key: "phone",
-    header: "Telefone",
+    key: "performanceLevel",
+    header: "Nível de Performance",
+    align: "center",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <View style={styles.centerAlign}>
+        <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.warning.background, borderWidth: 0 }}>
+          <ThemedText style={{ color: badgeColors.warning.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
+            {employee.performanceLevel || 0}
+          </ThemedText>
+        </Badge>
+      </View>
+    ),
+  },
+  {
+    key: "verified",
+    header: "Verificado",
+    align: "center",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <View style={styles.centerAlign}>
+        {employee.verified ? (
+          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.success.background, borderWidth: 0 }}>
+            <ThemedText style={{ color: badgeColors.success.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>Sim</ThemedText>
+          </Badge>
+        ) : (
+          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.muted.background, borderWidth: 0 }}>
+            <ThemedText style={{ color: badgeColors.muted.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>Não</ThemedText>
+          </Badge>
+        )}
+      </View>
+    ),
+  },
+  {
+    key: "lastLoginAt",
+    header: "Último Login",
     align: "left",
-    sortable: false,
+    sortable: true,
     width: 0,
     accessor: (employee: User) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {employee.phone || "-"}
+        {employee.lastLoginAt ? formatDateTime(new Date(employee.lastLoginAt)) : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "managedSector.name",
+    header: "Setor Gerenciado",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.managedSector?.name || "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "city",
+    header: "Cidade",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.city || "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "state",
+    header: "Estado",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.state || "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "zipCode",
+    header: "CEP",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.zipCode || "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "address",
+    header: "Endereço",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1} ellipsizeMode="tail">
+        {employee.address
+          ? `${employee.address}${employee.addressNumber ? `, ${employee.addressNumber}` : ""}${employee.addressComplement ? ` - ${employee.addressComplement}` : ""}`
+          : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "neighborhood",
+    header: "Bairro",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.neighborhood || "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "requirePasswordChange",
+    header: "Requer Alteração de Senha",
+    align: "center",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <View style={styles.centerAlign}>
+        {employee.requirePasswordChange ? (
+          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.error.background, borderWidth: 0 }}>
+            <ThemedText style={{ color: badgeColors.error.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>Sim</ThemedText>
+          </Badge>
+        ) : (
+          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.muted.background, borderWidth: 0 }}>
+            <ThemedText style={{ color: badgeColors.muted.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>Não</ThemedText>
+          </Badge>
+        )}
+      </View>
+    ),
+  },
+  {
+    key: "createdAt",
+    header: "Data de Criação",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.createdAt ? formatDateTime(new Date(employee.createdAt)) : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "updatedAt",
+    header: "Última Atualização",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (employee: User) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {employee.updatedAt ? formatDateTime(new Date(employee.updatedAt)) : "-"}
       </ThemedText>
     ),
   },
 ];
+
+// Function to get default visible columns for employees
+export function getDefaultVisibleColumns(): Set<string> {
+  return new Set([
+    "name",
+    "sector.name",
+    "status"
+  ]);
+}
 
 export const EmployeeTable = React.memo<EmployeeTableProps>(
   ({
@@ -202,7 +466,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
     onSelectionChange,
     sortConfigs = [],
     onSort,
-    visibleColumnKeys = ["avatar", "name", "position", "sector", "status"],
+    visibleColumnKeys = ["name", "sector.name", "status"],
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
@@ -218,17 +482,39 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
       // Define width ratios for each column type
       const columnWidthRatios: Record<string, number> = {
         avatar: 0.6,
+        payrollNumber: 1.0,
         name: 2.0,
         email: 1.8,
+        phone: 1.3,
         cpf: 1.3,
-        position: 1.5,
-        sector: 1.3,
-        status: 1.2,
-        phone: 1.2,
+        pis: 1.3,
+        "position.hierarchy": 1.5,
+        "sector.name": 1.7,
+        tasksCount: 1.0,
+        vacationsCount: 1.0,
+        admissional: 1.4,
+        birth: 1.4,
+        dismissal: 1.4,
+        status: 1.5,
+        performanceLevel: 1.5,
+        verified: 1.1,
+        lastLoginAt: 1.6,
+        "managedSector.name": 1.5,
+        city: 1.3,
+        state: 1.0,
+        zipCode: 1.1,
+        address: 2.0,
+        neighborhood: 1.3,
+        requirePasswordChange: 2.0,
+        createdAt: 1.6,
+        updatedAt: 1.6,
       };
 
+      // Convert to Set for efficient lookup
+      const visibleColumnsSet = new Set(visibleColumnKeys);
+
       // Filter to visible columns
-      const visible = allColumns.filter((col) => visibleColumnKeys.includes(col.key));
+      const visible = allColumns.filter((col) => visibleColumnsSet.has(col.key));
 
       // Calculate total ratio
       const totalRatio = visible.reduce((sum, col) => sum + (columnWidthRatios[col.key] || 1.0), 0);
@@ -289,31 +575,25 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
       [selectedEmployees, onSelectionChange],
     );
 
-    // Sort handler
+    // Sort handler - non-cumulative (only one sort at a time)
     const handleSort = useCallback(
       (columnKey: string) => {
         if (!onSort) return;
 
-        const existingIndex = sortConfigs?.findIndex((config) => config.columnKey === columnKey) ?? -1;
+        const existingConfig = sortConfigs?.find((config) => config.columnKey === columnKey);
 
-        if (existingIndex !== -1) {
+        if (existingConfig) {
           // Column already sorted, toggle direction or remove
-          const newConfigs = [...(sortConfigs || [])];
-          if (newConfigs[existingIndex].direction === "asc") {
-            newConfigs[existingIndex].direction = "desc";
+          if (existingConfig.direction === "asc") {
+            // Toggle to descending
+            onSort([{ columnKey, direction: "desc" as const }]);
           } else {
-            // Remove from sorts
-            newConfigs.splice(existingIndex, 1);
+            // Remove sort (back to no sort)
+            onSort([]);
           }
-          onSort(newConfigs);
         } else {
-          // Add new sort as primary (at the beginning)
-          const newConfigs = [{ columnKey, direction: "asc" as const }, ...(sortConfigs || [])];
-          // Limit to 3 sorts max
-          if (newConfigs.length > 3) {
-            newConfigs.pop();
-          }
-          onSort(newConfigs);
+          // Set new sort (replacing any existing sort)
+          onSort([{ columnKey, direction: "asc" as const }]);
         }
       },
       [sortConfigs, onSort],
@@ -349,8 +629,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
                 </View>
               )}
               {displayColumns.map((column) => {
-                const sortIndex = sortConfigs?.findIndex((config) => config.columnKey === column.key) ?? -1;
-                const sortConfig = sortIndex !== -1 ? sortConfigs[sortIndex] : null;
+                const sortConfig = sortConfigs?.find((config) => config.columnKey === column.key);
 
                 return (
                   <TouchableOpacity
@@ -361,18 +640,30 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
                     activeOpacity={column.sortable ? 0.7 : 1}
                   >
                     <View style={styles.headerCellContent}>
-                      <ThemedText style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])} numberOfLines={1}>
-                        {column.header}
-                      </ThemedText>
-                      {column.sortable &&
-                        (sortConfig ? (
-                          <View style={styles.sortIconContainer}>
-                            {sortConfig.direction === "asc" ? <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} /> : <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />}
-                            {sortConfigs.length > 1 && <ThemedText style={StyleSheet.flatten([styles.sortOrder, { color: isDark ? extendedColors.neutral[300] : extendedColors.neutral[700] }])}>{sortIndex + 1}</ThemedText>}
-                          </View>
-                        ) : (
-                          <Icon name="arrows-sort" size="sm" color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
-                        ))}
+                      <View style={styles.headerTextContainer}>
+                        <ThemedText
+                          style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {column.header}
+                        </ThemedText>
+                      </View>
+                      {column.sortable && (
+                        <View style={styles.sortIconWrapper}>
+                          {sortConfig ? (
+                            <View style={styles.sortIconContainer}>
+                              {sortConfig.direction === "asc" ? (
+                                <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                              ) : (
+                                <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                              )}
+                            </View>
+                          ) : (
+                            <IconSelector size={16} color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
+                          )}
+                        </View>
+                      )}
                     </View>
                   </TouchableOpacity>
                 );
@@ -526,8 +817,8 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
             getItemLayout={(data, index) => ({
-              length: 60,
-              offset: 60 * index,
+              length: 50,
+              offset: 50 * index,
               index,
             })}
             style={styles.flatList}
@@ -591,11 +882,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
+    gap: 4,
+  },
+  headerTextContainer: {
+    flex: 1,
+    minWidth: 0, // Allow text to shrink below content size
+  },
+  sortIconWrapper: {
+    flexShrink: 0, // Prevent icon from shrinking
+    justifyContent: "center",
+    alignItems: "center",
+    width: 16,
+  },
+  sortIndicator: {
+    marginLeft: 4,
   },
   sortIconContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 4,
   },
   sortOrder: {
     fontSize: 10,
@@ -617,13 +921,13 @@ const styles = StyleSheet.create({
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch",
-    minHeight: 60,
+    minHeight: 50,
   },
   cell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.sm,
     justifyContent: "center",
-    minHeight: 60,
+    minHeight: 50,
   },
   centerAlign: {
     alignItems: "center",
@@ -650,15 +954,30 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "flex-start",
   },
+  badgeContainerFull: {
+    justifyContent: "center",
+    alignItems: "stretch",
+    width: "100%",
+  },
+  centerAlignFull: {
+    alignItems: "center",
+    width: "100%",
+  },
   positionBadge: {
     borderWidth: 0,
   },
   sectorBadge: {
     borderWidth: 1,
   },
+  sectorBadgeFull: {
+    borderWidth: 1,
+    width: "100%",
+    paddingVertical: 6,
+  },
   badgeText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
+    flexShrink: 1,
   },
   loadingContainer: {
     flex: 1,

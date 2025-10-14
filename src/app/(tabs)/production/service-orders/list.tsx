@@ -8,13 +8,15 @@ import { spacing } from "@/constants/design-system";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ErrorScreen } from "@/components/ui/error-screen";
-import { ServiceOrderTable } from "@/components/production/service-order/list/service-order-table";
+import { ServiceOrderTable, createColumnDefinitions, getDefaultVisibleColumns } from "@/components/production/service-order/list/service-order-table";
 import { ServiceOrderFilterModal } from "@/components/production/service-order/list/service-order-filter-modal";
 import { ServiceOrderFilterTags } from "@/components/production/service-order/list/service-order-filter-tags";
+import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
 import { SearchBar } from "@/components/ui/search-bar";
 import { FAB } from "@/components/ui/fab";
-import { IconClipboardList, IconPlus, IconFilter } from "@tabler/icons-react-native";
+import { IconClipboardList, IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
 import { useServiceOrdersInfiniteMobile } from "@/hooks/use-service-orders-infinite-mobile";
 import { useServiceOrderMutations } from '../../../../hooks';
 import { hasPrivilege } from '../../../../utils';
@@ -29,6 +31,8 @@ export default function ServiceOrderListScreen() {
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [filters, setFilters] = useState<Partial<ServiceOrderGetManyFormData>>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(Array.from(getDefaultVisibleColumns()));
   const [refreshing, setRefreshing] = useState(false);
   const { deleteAsync } = useServiceOrderMutations();
 
@@ -117,6 +121,19 @@ export default function ServiceOrderListScreen() {
     return Object.keys(filters).length > 0 || !!debouncedSearchText;
   }, [filters, debouncedSearchText]);
 
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  // Handle columns change
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
+  }, []);
+
+  // Count active filters
+  const activeFiltersCount = Object.entries(filters).filter(
+    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+  ).length;
+
   // Permission gate
   if (!canManageServiceOrders) {
     return (
@@ -164,7 +181,36 @@ export default function ServiceOrderListScreen() {
             value={searchText}
             onChangeText={setSearchText}
             placeholder="Buscar por cliente, veículo ou descrição..."
+            style={styles.searchBar}
           />
+          <View style={styles.buttonContainer}>
+            <View style={styles.buttonWrapper}>
+              <Button
+                variant="outline"
+                onPress={() => setShowColumnManager(true)}
+                style={{ ...styles.actionButton, backgroundColor: colors.input }}
+              >
+                <IconList size={20} color={colors.foreground} />
+              </Button>
+              <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
+                <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
+              </Badge>
+            </View>
+            <View style={styles.buttonWrapper}>
+              <Button
+                variant="outline"
+                onPress={() => setShowFilters(true)}
+                style={{ ...styles.actionButton, backgroundColor: colors.input }}
+              >
+                <IconFilter size={20} color={colors.foreground} />
+              </Button>
+              {activeFiltersCount > 0 && (
+                <Badge style={styles.actionBadge} variant="destructive" size="sm">
+                  <ThemedText style={{ ...styles.actionBadgeText, color: "white" }}>{activeFiltersCount}</ThemedText>
+                </Badge>
+              )}
+            </View>
+          </View>
         </View>
 
         {/* Active Filters */}
@@ -206,6 +252,7 @@ export default function ServiceOrderListScreen() {
           onEndReach={loadMore}
           canLoadMore={canLoadMore}
           loadingMore={isFetchingNextPage}
+          visibleColumnKeys={visibleColumnKeys}
         />
 
         {/* Create FAB */}
@@ -231,6 +278,15 @@ export default function ServiceOrderListScreen() {
           }}
           currentFilters={filters}
         />
+
+        {/* Column Visibility Drawer */}
+        <ColumnVisibilityDrawerV2
+          columns={allColumns}
+          visibleColumns={new Set(visibleColumnKeys)}
+          onVisibilityChange={handleColumnsChange}
+          open={showColumnManager}
+          onOpenChange={setShowColumnManager}
+        />
       </ThemedView>
     </>
   );
@@ -245,8 +301,42 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   searchContainer: {
-    padding: spacing.md,
-    paddingBottom: 0,
+    flexDirection: "row",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 8,
+    alignItems: "center",
+  },
+  searchBar: {
+    flex: 1,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  buttonWrapper: {
+    position: "relative",
+  },
+  actionButton: {
+    height: 48,
+    width: 48,
+    borderRadius: 10,
+    paddingHorizontal: 0,
+  },
+  actionBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 3,
+  },
+  actionBadgeText: {
+    fontSize: 9,
+    fontWeight: "600",
   },
   countContainer: {
     paddingHorizontal: spacing.md,

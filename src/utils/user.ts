@@ -1,5 +1,5 @@
 import type { User } from '../types';
-import { USER_STATUS, SECTOR_PRIVILEGES, VERIFICATION_TYPE } from '../constants';
+import { USER_STATUS, SECTOR_PRIVILEGES, VERIFICATION_TYPE, USER_STATUS_LABELS } from '../constants';
 import { getSectorPrivilegeLevel } from "./privilege";
 import { dateUtils } from "./date";
 import type { UserStatus, VerificationType, ShirtSize, BootSize, PantsSize, SleevesSize, MaskSize } from "@prisma/client";
@@ -42,6 +42,186 @@ export function mapSleevesSizeToPrisma(size: string | null | undefined): Sleeves
 
 export function mapMaskSizeToPrisma(size: string | null | undefined): MaskSize | null | undefined {
   return size as MaskSize | null | undefined;
+}
+
+/**
+ * Calculate days remaining for experience period status
+ * Returns null if status is not an experience period or if end date is not set
+ */
+export function getDaysRemainingInExperiencePeriod(user: User): number | null {
+  const now = new Date();
+
+  if (user.status === USER_STATUS.EXPERIENCE_PERIOD_1 && user.exp1EndAt) {
+    const endDate = new Date(user.exp1EndAt);
+    const diffTime = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  }
+
+  if (user.status === USER_STATUS.EXPERIENCE_PERIOD_2 && user.exp2EndAt) {
+    const endDate = new Date(user.exp2EndAt);
+    const diffTime = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  }
+
+  return null;
+}
+
+/**
+ * Calculate time since contracted or dismissed
+ * Returns an object with years, months, and days
+ */
+export function getTimeSinceStatusChange(user: User): { years: number; months: number; days: number } | null {
+  const now = new Date();
+  let startDate: Date | null = null;
+
+  if (user.status === USER_STATUS.CONTRACTED && user.contractedAt) {
+    startDate = new Date(user.contractedAt);
+  } else if (user.status === USER_STATUS.DISMISSED && user.dismissedAt) {
+    startDate = new Date(user.dismissedAt);
+  }
+
+  if (!startDate) {
+    return null;
+  }
+
+  let years = now.getFullYear() - startDate.getFullYear();
+  let months = now.getMonth() - startDate.getMonth();
+  let days = now.getDate() - startDate.getDate();
+
+  // Adjust for negative days
+  if (days < 0) {
+    months--;
+    const lastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    days += lastMonth.getDate();
+  }
+
+  // Adjust for negative months
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  return { years, months, days };
+}
+
+/**
+ * Format time since status change in compact YY:MM:DD format
+ */
+export function formatTimeSinceStatusChangeCompact(user: User): string | null {
+  const time = getTimeSinceStatusChange(user);
+
+  if (!time) {
+    return null;
+  }
+
+  // Format as YY:MM:DD with zero-padding
+  const years = String(time.years).padStart(2, '0');
+  const months = String(time.months).padStart(2, '0');
+  const days = String(time.days).padStart(2, '0');
+
+  return `${years}:${months}:${days}`;
+}
+
+/**
+ * Calculate days since experience period started
+ * For exp1: days since exp1StartAt
+ * For exp2: (exp1 duration) + (days into exp2)
+ *   - exp1 duration is calculated from exp1StartAt to exp1EndAt (or exp2StartAt if exp1EndAt not available)
+ *   - if neither is available, assumes standard 45 days for exp1
+ *   - days into exp2 is calculated from exp2StartAt (or exp1EndAt) to now
+ */
+export function getDaysSinceExperienceStart(user: User): number | null {
+  const now = new Date();
+
+  if (user.status === USER_STATUS.EXPERIENCE_PERIOD_1 && user.exp1StartAt) {
+    const startDate = new Date(user.exp1StartAt);
+    const diffTime = now.getTime() - startDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 ? diffDays : 0;
+  }
+
+  if (user.status === USER_STATUS.EXPERIENCE_PERIOD_2) {
+    let exp1Duration = 45; // Default to 45 days if we can't calculate
+    let exp2Start: Date | null = null;
+
+    // Calculate exp1 duration if we have the dates
+    if (user.exp1StartAt && user.exp1EndAt) {
+      const exp1StartDate = new Date(user.exp1StartAt);
+      const exp1EndDate = new Date(user.exp1EndAt);
+      exp1Duration = Math.floor((exp1EndDate.getTime() - exp1StartDate.getTime()) / (1000 * 60 * 60 * 24));
+      exp2Start = exp1EndDate;
+    } else if (user.exp1StartAt && user.exp2StartAt) {
+      // If exp1EndAt not available, use exp2StartAt
+      const exp1StartDate = new Date(user.exp1StartAt);
+      const exp2StartDate = new Date(user.exp2StartAt);
+      exp1Duration = Math.floor((exp2StartDate.getTime() - exp1StartDate.getTime()) / (1000 * 60 * 60 * 24));
+      exp2Start = exp2StartDate;
+    } else if (user.exp2StartAt) {
+      // Only exp2StartAt available, use it with default exp1 duration
+      exp2Start = new Date(user.exp2StartAt);
+    } else if (user.exp1EndAt) {
+      // Only exp1EndAt available, use it with default exp1 duration
+      exp2Start = new Date(user.exp1EndAt);
+    }
+
+    // Calculate days into exp2
+    let daysIntoExp2 = 0;
+    if (exp2Start) {
+      const diffTime = now.getTime() - exp2Start.getTime();
+      daysIntoExp2 = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      daysIntoExp2 = daysIntoExp2 >= 0 ? daysIntoExp2 : 0;
+    }
+
+    return exp1Duration + daysIntoExp2;
+  }
+
+  return null;
+}
+
+/**
+ * Get user status badge text with time information
+ */
+export function getUserStatusBadgeText(user: User): string {
+  const statusLabels: Record<USER_STATUS, string> = {
+    [USER_STATUS.EXPERIENCE_PERIOD_1]: "Exp1",
+    [USER_STATUS.EXPERIENCE_PERIOD_2]: "Exp2",
+    [USER_STATUS.CONTRACTED]: "Contratado",
+    [USER_STATUS.DISMISSED]: "Demitido",
+  };
+
+  const baseLabel = statusLabels[user.status] || user.status;
+
+  // For experience periods, show countdown of days remaining
+  const daysRemaining = getDaysRemainingInExperiencePeriod(user);
+  if (daysRemaining !== null) {
+    return `${baseLabel} - ${daysRemaining}d`;
+  }
+
+  // For contracted/dismissed, show time since status change in compact format
+  const timeSince = formatTimeSinceStatusChangeCompact(user);
+  if (timeSince) {
+    return `${baseLabel} - ${timeSince}`;
+  }
+
+  return baseLabel;
+}
+
+/**
+ * Check if experience period is about to expire (within 7 days)
+ */
+export function isExperiencePeriodExpiringSoon(user: User, daysThreshold: number = 7): boolean {
+  const daysRemaining = getDaysRemainingInExperiencePeriod(user);
+  return daysRemaining !== null && daysRemaining <= daysThreshold && daysRemaining > 0;
+}
+
+/**
+ * Check if experience period has expired
+ */
+export function isExperiencePeriodExpired(user: User): boolean {
+  const daysRemaining = getDaysRemainingInExperiencePeriod(user);
+  return daysRemaining !== null && daysRemaining === 0;
 }
 
 /**

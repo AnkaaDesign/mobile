@@ -1,20 +1,14 @@
 import * as React from "react";
-import { BackHandler, Dimensions, Modal, PanResponder, Platform, Pressable, View, ViewStyle , StyleSheet} from "react-native";
-import Animated, { 
-  FadeIn,
-  FadeOut,
-  SlideInLeft,
-  SlideOutLeft,
-  SlideInRight,
-  SlideOutRight,
+import { BackHandler, Dimensions, Modal, Platform, Pressable, View, ViewStyle , StyleSheet} from "react-native";
+import Animated, {
   runOnJS,
-  useAnimatedGestureHandler,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
  } from "react-native-reanimated";
-import { PanGestureHandler, GestureHandlerRootView } from "react-native-gesture-handler";
+import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, spacing, transitions } from "@/constants/design-system";
 
@@ -89,16 +83,18 @@ const Drawer: React.FC<DrawerProps> = ({
   // Animate in/out when open changes
   React.useEffect(() => {
     if (open) {
-      opacity.value = withTiming(1, { duration: transitions.fast });
+      opacity.value = withTiming(1, { duration: 200 });
       translateX.value = withSpring(0, {
-        damping: 20,
-        stiffness: 200,
+        damping: 30,
+        stiffness: 300,
+        mass: 0.8,
       });
     } else {
-      opacity.value = withTiming(0, { duration: transitions.fast });
+      opacity.value = withTiming(0, { duration: 200 });
       translateX.value = withSpring(side === "left" ? -drawerWidth : drawerWidth, {
-        damping: 20,
-        stiffness: 200,
+        damping: 30,
+        stiffness: 300,
+        mass: 0.8,
       });
     }
   }, [open, side, drawerWidth, opacity, translateX]);
@@ -107,14 +103,15 @@ const Drawer: React.FC<DrawerProps> = ({
     onOpenChange(false);
   }, [onOpenChange]);
 
-  const panGestureHandler = useAnimatedGestureHandler({
-    onStart: (_, context: any) => {
-      context.startX = translateX.value;
-    },
-    onActive: (event, context) => {
-      if (!closeOnSwipe) return;
+  const startX = useSharedValue(0);
 
-      const newX = context.startX + event.translationX;
+  const panGesture = Gesture.Pan()
+    .enabled(closeOnSwipe)
+    .onStart(() => {
+      startX.value = translateX.value;
+    })
+    .onUpdate((event) => {
+      const newX = startX.value + event.translationX;
 
       if (side === "left") {
         // Left drawer can only be swiped to the left to close
@@ -127,10 +124,8 @@ const Drawer: React.FC<DrawerProps> = ({
           translateX.value = Math.min(newX, drawerWidth);
         }
       }
-    },
-    onEnd: (event) => {
-      if (!closeOnSwipe) return;
-
+    })
+    .onEnd((event) => {
       const velocity = event.velocityX;
       const threshold = drawerWidth * 0.3;
 
@@ -143,12 +138,12 @@ const Drawer: React.FC<DrawerProps> = ({
         runOnJS(close)();
       } else {
         translateX.value = withSpring(0, {
-          damping: 20,
-          stiffness: 200,
+          damping: 30,
+          stiffness: 300,
+          mass: 0.8,
         });
       }
-    },
-  });
+    });
 
   const drawerStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -158,64 +153,49 @@ const Drawer: React.FC<DrawerProps> = ({
     opacity: opacity.value * backdropOpacity,
   }));
 
-  const drawerContentStyle: ViewStyle = {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    [side]: 0,
-    width: drawerWidth,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadow.lg,
-    ...(side === "left" && {
-      borderRightWidth: 1,
-      borderLeftWidth: 0,
-      borderTopRightRadius: borderRadius.lg,
-      borderBottomRightRadius: borderRadius.lg,
-    }),
-    ...(side === "right" && {
-      borderLeftWidth: 1,
-      borderRightWidth: 0,
-      borderTopLeftRadius: borderRadius.lg,
-      borderBottomLeftRadius: borderRadius.lg,
-    }),
-    ...style,
-  };
-
   if (!open) return null;
+
+  const drawerPositionStyle: ViewStyle = side === "left"
+    ? { left: 0 }
+    : { right: 0 };
 
   return (
     <Modal visible={open} transparent statusBarTranslucent onRequestClose={close}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={{ flex: 1 }}>
+      <GestureHandlerRootView style={styles.modalContainer}>
+        <View style={styles.container}>
           {/* Backdrop */}
           <Animated.View
-            style={StyleSheet.flatten([
-              {
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "black",
-              },
+            style={[
+              styles.backdrop,
               backdropStyle,
-            ])}
-          />
-
-          {/* Backdrop Pressable */}
-          <Pressable
-            style={{ flex: 1 }}
-            onPress={closeOnBackdropPress ? close : undefined}
-          />
+            ]}
+          >
+            <Pressable
+              style={styles.backdropPress}
+              onPress={closeOnBackdropPress ? close : undefined}
+            />
+          </Animated.View>
 
           {/* Drawer Content */}
-          <PanGestureHandler onGestureEvent={panGestureHandler}>
-            <Animated.View style={StyleSheet.flatten([drawerContentStyle, drawerStyle])}>
+          <GestureDetector gesture={panGesture}>
+            <Animated.View
+              style={[
+                styles.drawerContent,
+                drawerPositionStyle,
+                {
+                  width: drawerWidth,
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                },
+                side === "left" && styles.drawerLeft,
+                side === "right" && styles.drawerRight,
+                drawerStyle,
+                style,
+              ]}
+            >
               {children}
             </Animated.View>
-          </PanGestureHandler>
+          </GestureDetector>
         </View>
       </GestureHandlerRootView>
     </Modal>
@@ -234,9 +214,12 @@ const DrawerContent: React.FC<DrawerContentProps> = ({ children, style }) => {
 
 const DrawerHeader: React.FC<DrawerHeaderProps> = ({ children, style }) => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const headerStyle: ViewStyle = {
-    padding: spacing.lg,
+    paddingTop: Math.max(insets.top, spacing.lg),
+    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     ...style,
@@ -247,9 +230,13 @@ const DrawerHeader: React.FC<DrawerHeaderProps> = ({ children, style }) => {
 
 const DrawerFooter: React.FC<DrawerFooterProps> = ({ children, style }) => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const footerStyle: ViewStyle = {
-    padding: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: Math.max(insets.bottom + spacing.sm, spacing.lg),
+    paddingHorizontal: Math.max(insets.left + spacing.lg, spacing.lg),
+    paddingRight: Math.max(insets.right + spacing.lg, spacing.lg),
     borderTopWidth: 1,
     borderTopColor: colors.border,
     ...style,
@@ -257,5 +244,46 @@ const DrawerFooter: React.FC<DrawerFooterProps> = ({ children, style }) => {
 
   return <View style={footerStyle}>{children}</View>;
 };
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    position: 'relative',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  backdropPress: {
+    flex: 1,
+  },
+  drawerContent: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  drawerLeft: {
+    borderLeftWidth: 0,
+    borderTopRightRadius: borderRadius.lg,
+    borderBottomRightRadius: borderRadius.lg,
+  },
+  drawerRight: {
+    borderRightWidth: 0,
+    borderTopLeftRadius: borderRadius.lg,
+    borderBottomLeftRadius: borderRadius.lg,
+  },
+});
 
 export { Drawer, DrawerContent, DrawerHeader, DrawerFooter };

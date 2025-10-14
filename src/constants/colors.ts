@@ -1,48 +1,62 @@
 // Color palette for React Native based on the design system
-// Follows the same color scheme as the web app for consistency
+// FULLY SYNCED with web/src/index.css CSS variables
+// Updated to match web's neutral-based color palette exactly
 
 export const Colors = {
   light: {
-    // Background colors
-    background: "#FFFFFF",
-    foreground: "#0A0A0B",
+    // Background colors - matching web neutral palette
+    background: "#e5e5e5", // neutral-200 (HSL: 0 0% 91%) - web --background
+    foreground: "#404040", // neutral-700 (HSL: 0 0% 25%) - web --foreground
 
-    // Card colors
-    card: "#FFFFFF",
-    cardForeground: "#0A0A0B",
+    // Card colors - matching web
+    card: "#fafafa", // neutral-50 (HSL: 0 0% 98%) - web --card
+    cardForeground: "#404040", // neutral-700 - web --card-foreground
+    cardNested: "#f5f5f5", // neutral-100 (HSL: 0 0% 96%) - web --card-nested
 
-    // Popover colors
-    popover: "#FFFFFF",
-    popoverForeground: "#0A0A0B",
+    // Popover colors - matching web
+    popover: "#fafafa", // neutral-50 - web --popover
+    popoverForeground: "#404040", // neutral-700 - web --popover-foreground
 
-    // Primary colors
-    primary: "#18181B",
-    primaryForeground: "#FAFAFA",
+    // Primary colors - matching web green-700
+    primary: "#15803d", // green-700 (HSL: 142 72% 29%) - web --primary
+    primaryForeground: "#fafafa", // neutral-50 - web --primary-foreground
 
-    // Secondary colors
-    secondary: "#F4F4F5",
-    secondaryForeground: "#18181B",
+    // Secondary colors - matching web
+    secondary: "#e5e5e5", // neutral-150 (HSL: 0 0% 91%) - web --secondary
+    secondaryForeground: "#525252", // neutral-600 (HSL: 0 0% 30%) - web --secondary-foreground
 
-    // Muted colors
-    muted: "#F4F4F5",
-    mutedForeground: "#71717A",
+    // Muted colors - matching web
+    muted: "#e5e5e5", // neutral-200 (HSL: 0 0% 89%) - web --muted
+    mutedForeground: "#737373", // neutral-550 (HSL: 0 0% 45%) - web --muted-foreground
 
-    // Accent colors
-    accent: "#16a34a", // green-600 to match web
-    accentForeground: "#FFFFFF",
+    // Accent colors - matching web green-700
+    accent: "#15803d", // green-700 (HSL: 142 72% 29%) - web --accent
+    accentForeground: "#fafafa", // neutral-50 - web --accent-foreground
 
-    // Destructive colors
-    destructive: "#EF4444",
-    destructiveForeground: "#FAFAFA",
+    // Destructive colors - matching web
+    destructive: "#ef4444", // red-500 - web --destructive (HSL: 0 50% 50%)
+    destructiveForeground: "#fafafa", // neutral-50 - web --destructive-foreground
 
-    // Border colors
-    border: "#E4E4E7",
+    // Border colors - matching web
+    border: "#d4d4d4", // neutral-250 (HSL: 0 0% 83%) - web --border
 
-    // Input colors
-    input: "#E4E4E7",
+    // Input colors - matching web
+    input: "#ffffff", // white - web --input
 
-    // Ring colors (focus states)
-    ring: "#16a34a", // green-600 to match web
+    // Ring colors (focus states) - matching web
+    ring: "#15803d", // green-700 - web --ring
+
+    // Navigation/Sidebar colors - matching web sidebar variables
+    sidebar: {
+      background: "#fafafa", // neutral-50 (HSL: 0 0% 98%) - web --sidebar-background
+      foreground: "#525252", // neutral-600 (HSL: 0 0% 30%) - web --sidebar-foreground
+      primary: "#737373", // green with reduced saturation (HSL: 142 30% 45%) - web --sidebar-primary
+      primaryForeground: "#fafafa", // neutral-50 - web --sidebar-primary-foreground
+      accent: "#f5f5f5", // neutral-100 (HSL: 0 0% 95%) - web --sidebar-accent
+      accentForeground: "#525252", // neutral-600 - web --sidebar-accent-foreground
+      border: "#e5e5e5", // neutral-150 (HSL: 0 0% 91%) - web --sidebar-border
+      ring: "#737373", // green (HSL: 142 30% 50%) - web --sidebar-ring
+    },
 
     // Chart colors
     chart1: "#E34C26",
@@ -52,46 +66,59 @@ export const Colors = {
     chart5: "#F59E0B",
   },
   dark: {
-    // Background colors
-    background: "#0A0A0B",
-    foreground: "#FAFAFA",
+    // Background colors - matching web neutral palette
+    background: "#171717", // neutral-875 (HSL: 0 0% 11%) - web --background
+    foreground: "#d4d4d4", // neutral-250 (HSL: 0 0% 85%) - web --foreground
 
-    // Card colors
-    card: "#0A0A0B",
-    cardForeground: "#FAFAFA",
+    // Card colors - matching web
+    card: "#262626", // neutral-825 (HSL: 0 0% 15%) - web --card
+    cardForeground: "#d4d4d4", // neutral-250 - web --card-foreground
+    cardNested: "#2e2e2e", // neutral-800 (HSL: 0 0% 18%) - web --card-nested
 
-    // Popover colors
-    popover: "#0A0A0B",
-    popoverForeground: "#FAFAFA",
+    // Popover colors - matching web
+    popover: "#262626", // neutral-825 - web --popover
+    popoverForeground: "#d4d4d4", // neutral-250 - web --popover-foreground
 
-    // Primary colors
-    primary: "#FAFAFA",
-    primaryForeground: "#18181B",
+    // Primary colors - matching web green-700
+    primary: "#15803d", // green-700 (HSL: 142 72% 29%) - web --primary
+    primaryForeground: "#fafafa", // neutral-50 - web --primary-foreground
 
-    // Secondary colors
-    secondary: "#27272A",
-    secondaryForeground: "#FAFAFA",
+    // Secondary colors - matching web
+    secondary: "#333333", // neutral-800 (HSL: 0 0% 20%) - web --secondary
+    secondaryForeground: "#cccccc", // neutral-300 (HSL: 0 0% 80%) - web --secondary-foreground
 
-    // Muted colors
-    muted: "#27272A",
-    mutedForeground: "#A1A1AA",
+    // Muted colors - matching web
+    muted: "#3a3a3a", // neutral-750 (HSL: 0 0% 23%) - web --muted
+    mutedForeground: "#8c8c8c", // neutral-450 (HSL: 0 0% 55%) - web --muted-foreground
 
-    // Accent colors
-    accent: "#16a34a", // green-600 to match web
-    accentForeground: "#FFFFFF",
+    // Accent colors - matching web green-700
+    accent: "#15803d", // green-700 (HSL: 142 72% 29%) - web --accent
+    accentForeground: "#fafafa", // neutral-50 - web --accent-foreground
 
-    // Destructive colors
-    destructive: "#991B1B",
-    destructiveForeground: "#FAFAFA",
+    // Destructive colors - matching web
+    destructive: "#b91c1c", // red-700 - web --destructive (HSL: 0 40% 45%)
+    destructiveForeground: "#fafafa", // neutral-50 - web --destructive-foreground
 
-    // Border colors
-    border: "#27272A",
+    // Border colors - matching web
+    border: "#454545", // neutral-725 (HSL: 0 0% 27%) - web --border
 
-    // Input colors
-    input: "#27272A",
+    // Input colors - matching web
+    input: "#212121", // slightly darker than card - web --input
 
-    // Ring colors (focus states)
-    ring: "#16a34a", // green-600 to match web
+    // Ring colors (focus states) - matching web
+    ring: "#15803d", // green-700 - web --ring
+
+    // Navigation/Sidebar colors - matching web sidebar variables
+    sidebar: {
+      background: "#212121", // neutral-850 (HSL: 0 0% 13%) - web --sidebar-background
+      foreground: "#cccccc", // neutral-300 (HSL: 0 0% 80%) - web --sidebar-foreground
+      primary: "#5a7c5a", // green with reduced saturation (HSL: 142 25% 40%) - web --sidebar-primary
+      primaryForeground: "#fafafa", // neutral-50 - web --sidebar-primary-foreground
+      accent: "#2e2e2e", // neutral-800 (HSL: 0 0% 18%) - web --sidebar-accent
+      accentForeground: "#cccccc", // neutral-300 - web --sidebar-accent-foreground
+      border: "#333333", // neutral-800 (HSL: 0 0% 20%) - web --sidebar-border
+      ring: "#669966", // green (HSL: 142 25% 45%) - web --sidebar-ring
+    },
 
     // Chart colors
     chart1: "#2563EB",
@@ -112,75 +139,75 @@ export const getColors = (scheme: ColorScheme): ThemeColors => {
   return Colors[scheme];
 };
 
-// Semantic color mappings for common use cases
+// Semantic color mappings for common use cases - matching web
 export const SemanticColors = {
   light: {
-    text: Colors.light.foreground,
-    textSecondary: Colors.light.mutedForeground,
-    textInverse: Colors.light.background,
+    text: Colors.light.foreground, // neutral-700
+    textSecondary: Colors.light.mutedForeground, // neutral-550
+    textInverse: Colors.light.background, // neutral-200
 
-    surface: Colors.light.card,
-    surfaceVariant: Colors.light.muted,
+    surface: Colors.light.card, // neutral-50
+    surfaceVariant: Colors.light.muted, // neutral-200
 
-    error: Colors.light.destructive,
-    errorText: Colors.light.destructiveForeground,
+    error: Colors.light.destructive, // red-500
+    errorText: Colors.light.destructiveForeground, // neutral-50
 
-    success: "#16a34a", // green-600 to match web
+    success: "#15803d", // green-700 to match web --success
     successText: "#FFFFFF",
 
-    warning: "#F59E0B",
+    warning: "#d97706", // amber-600 (HSL: 45 40% 50%) - web --warning
     warningText: "#FFFFFF",
 
-    info: "#3B82F6",
+    info: "#3b82f6", // blue-500 (HSL: 210 30% 50%) - web --info
     infoText: "#FFFFFF",
 
-    divider: Colors.light.border,
+    divider: Colors.light.border, // neutral-250
     overlay: "rgba(0, 0, 0, 0.5)",
   },
   dark: {
-    text: Colors.dark.foreground,
-    textSecondary: Colors.dark.mutedForeground,
-    textInverse: Colors.dark.background,
+    text: Colors.dark.foreground, // neutral-250
+    textSecondary: Colors.dark.mutedForeground, // neutral-450
+    textInverse: Colors.dark.background, // neutral-875
 
-    surface: Colors.dark.card,
-    surfaceVariant: Colors.dark.muted,
+    surface: Colors.dark.card, // neutral-825
+    surfaceVariant: Colors.dark.muted, // neutral-750
 
-    error: Colors.dark.destructive,
-    errorText: Colors.dark.destructiveForeground,
+    error: Colors.dark.destructive, // red-700
+    errorText: Colors.dark.destructiveForeground, // neutral-50
 
-    success: "#16A34A",
+    success: "#15803d", // green-700 to match web --success
     successText: "#FFFFFF",
 
-    warning: "#D97706",
+    warning: "#b45309", // amber-700 (HSL: 45 30% 45%) - web --warning
     warningText: "#FFFFFF",
 
-    info: "#2563EB",
+    info: "#2563eb", // blue-600 (HSL: 210 25% 45%) - web --info
     infoText: "#FFFFFF",
 
-    divider: Colors.dark.border,
+    divider: Colors.dark.border, // neutral-725
     overlay: "rgba(0, 0, 0, 0.7)",
   },
 } as const;
 
-// Status colors for different states
+// Status colors for different states - matching web semantic colors
 export const StatusColors = {
   light: {
-    active: "#16a34a", // green-600 to match web
-    inactive: "#6B7280",
-    pending: "#F59E0B",
-    inProgress: "#3B82F6",
-    completed: "#16a34a", // green-600 to match web
-    cancelled: "#EF4444",
-    onHold: "#8B5CF6",
+    active: "#15803d", // green-700 to match web primary/success
+    inactive: "#737373", // neutral-500
+    pending: "#d97706", // amber-600 to match web warning
+    inProgress: "#3b82f6", // blue-500 to match web info
+    completed: "#15803d", // green-700 to match web success
+    cancelled: "#ef4444", // red-500 to match web error
+    onHold: "#8b5cf6", // purple-500
   },
   dark: {
-    active: "#16A34A",
-    inactive: "#4B5563",
-    pending: "#D97706",
-    inProgress: "#2563EB",
-    completed: "#16A34A",
-    cancelled: "#DC2626",
-    onHold: "#7C3AED",
+    active: "#15803d", // green-700 to match web primary/success
+    inactive: "#525252", // neutral-600
+    pending: "#b45309", // amber-700 to match web warning
+    inProgress: "#2563eb", // blue-600 to match web info
+    completed: "#15803d", // green-700 to match web success
+    cancelled: "#b91c1c", // red-700 to match web error
+    onHold: "#7c3aed", // purple-600
   },
 } as const;
 

@@ -1,7 +1,7 @@
-import { 
-  IconPackage, 
-  IconUsers, 
-  IconBriefcase, 
+import {
+  IconPackage,
+  IconUsers,
+  IconBriefcase,
   IconAlertTriangle,
   IconBuildingSkyscraper,
   IconClipboardList,
@@ -30,8 +30,8 @@ import {
   IconTools,
   IconRuler,
   IconStar
-} from "@tabler/icons-react";
-import type { Icon } from "@tabler/icons-react";
+} from "@tabler/icons-react-native";
+import type { Icon } from "@tabler/icons-react-native";
 import { FAVORITE_PAGES } from '../constants';
 
 // Map of page paths to icons and colors

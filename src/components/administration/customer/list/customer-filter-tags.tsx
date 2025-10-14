@@ -1,11 +1,11 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { BRAZILIAN_STATES_LABELS } from '../../../../constants';
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { BRAZILIAN_STATE_NAMES } from '../../../../constants';
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import type { CustomerGetManyFormData } from '../../../../schemas';
 import { formatDate } from '../../../../utils';
 
@@ -30,7 +30,12 @@ export function CustomerFilterTags({
   onSearchChange,
   onClearAll,
 }: CustomerFilterTagsProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+
+  // Memoized handlers for better performance
+  const handleClearAll = useCallback(() => {
+    onClearAll();
+  }, [onClearAll]);
 
   // Build array of active filter tags
   const filterTags = useMemo((): FilterTag[] => {
@@ -54,7 +59,7 @@ export function CustomerFilterTags({
         states.forEach((state) => {
           tags.push({
             key: `state-${state}`,
-            label: `Estado: ${BRAZILIAN_STATES_LABELS[state] || state}`,
+            label: `Estado: ${BRAZILIAN_STATE_NAMES[state] || state}`,
             onRemove: () => {
               const newStates = states.filter((s) => s !== state);
               const newWhere = { ...where };
@@ -215,8 +220,15 @@ export function CustomerFilterTags({
       >
         {/* Clear all button */}
         <TouchableOpacity
-          onPress={onClearAll}
-          style={[styles.clearAllButton, { borderColor: colors.border }]}
+          onPress={handleClearAll}
+          style={[
+            styles.clearAllButton,
+            {
+              borderColor: colors.border,
+              backgroundColor: isDark ? colors.card : colors.background,
+            }
+          ]}
+          activeOpacity={0.7}
         >
           <ThemedText style={[styles.clearAllText, { color: colors.destructive }]}>
             Limpar tudo
@@ -228,12 +240,23 @@ export function CustomerFilterTags({
           <Badge
             key={tag.key}
             variant="secondary"
-            style={[styles.filterTag, { backgroundColor: colors.secondary }]}
+            style={[
+              styles.filterTag,
+              {
+                backgroundColor: colors.secondary,
+                borderColor: colors.border,
+              }
+            ]}
           >
             <ThemedText style={[styles.filterTagText, { color: colors.secondaryForeground }]}>
               {tag.label}
             </ThemedText>
-            <TouchableOpacity onPress={tag.onRemove} style={styles.removeButton}>
+            <TouchableOpacity
+              onPress={tag.onRemove}
+              style={styles.removeButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              activeOpacity={0.7}
+            >
               <IconX size={14} color={colors.secondaryForeground} />
             </TouchableOpacity>
           </Badge>
@@ -246,33 +269,44 @@ export function CustomerFilterTags({
 const styles = StyleSheet.create({
   container: {
     paddingVertical: spacing.sm,
+    minHeight: 44, // Ensure consistent height
   },
   scrollContent: {
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     gap: spacing.sm,
     alignItems: "center",
   },
   clearAllButton: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 16,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
+    minHeight: 32,
+    justifyContent: "center",
+    alignItems: "center",
   },
   clearAllText: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.semibold,
   },
   filterTag: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+    paddingLeft: spacing.sm,
     paddingRight: spacing.xs,
-    borderRadius: 16,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    minHeight: 32,
   },
   filterTagText: {
     fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
   },
   removeButton: {
-    padding: 2,
+    padding: spacing.xs,
+    marginLeft: spacing.xxs,
+    borderRadius: borderRadius.sm,
   },
 });

@@ -25,7 +25,7 @@ export function FilterModal({
   onReset,
   style,
 }: FilterModalProps) {
-  const { colors, spacing, shadow } = useTheme();
+  const { colors, spacing } = useTheme();
 
   return (
     <Modal
@@ -51,7 +51,11 @@ export function FilterModal({
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               maxHeight: "80%",
-              ...shadow.lg,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+              elevation: 10,
             },
             style,
           ])}

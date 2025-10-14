@@ -94,12 +94,15 @@ export function filterMenuByPrivileges(menuItems: MenuItem[], userPrivilege?: SE
 
 /**
  * Filter menu items by platform
- * Note: MenuItem interface doesn't have platforms field anymore, but keeping for backward compatibility
+ * Respects the excludeFromMobile flag to hide specific items on mobile
  */
 export function filterMenuByPlatform(menuItems: MenuItem[], platform: "web" | "mobile"): MenuItem[] {
   return menuItems
-    .filter(() => {
-      // Since platforms field was removed, show all items on all platforms
+    .filter((item) => {
+      // Exclude items marked as excludeFromMobile when on mobile platform
+      if (platform === "mobile" && item.excludeFromMobile) {
+        return false;
+      }
       return true;
     })
     .map((item) => {

@@ -5,7 +5,6 @@ import type {
   ScheduleBackupRequest,
   BackupQueryParams,
 } from '../api-client';
-import { toast } from "sonner";
 
 // Query keys
 export const backupQueryKeys = {
@@ -82,11 +81,9 @@ export function useBackupMutations() {
   const createBackup = useMutation({
     mutationFn: (data: CreateBackupRequest) => backupApi.createBackup(data),
     onSuccess: (result) => {
-      toast.success(`Backup "${result.message}" iniciado com sucesso!`);
       queryClient.invalidateQueries({ queryKey: backupQueryKeys.all });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Erro ao iniciar backup");
     },
   });
 
@@ -94,44 +91,36 @@ export function useBackupMutations() {
     mutationFn: ({ id, targetPath }: { id: string; targetPath?: string }) =>
       backupApi.restoreBackup(id, targetPath),
     onSuccess: (result) => {
-      toast.success(result.message || "Backup restaurado com sucesso!");
       queryClient.invalidateQueries({ queryKey: backupQueryKeys.all });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Erro ao restaurar backup");
     },
   });
 
   const deleteBackup = useMutation({
     mutationFn: (id: string) => backupApi.deleteBackup(id),
     onSuccess: () => {
-      toast.success("Backup excluído com sucesso!");
       queryClient.invalidateQueries({ queryKey: backupQueryKeys.all });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Erro ao excluir backup");
     },
   });
 
   const scheduleBackup = useMutation({
     mutationFn: (data: ScheduleBackupRequest) => backupApi.scheduleBackup(data),
     onSuccess: (result) => {
-      toast.success(result.message || "Backup agendado com sucesso!");
       queryClient.invalidateQueries({ queryKey: backupQueryKeys.scheduled() });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Erro ao agendar backup");
     },
   });
 
   const removeScheduledBackup = useMutation({
     mutationFn: (id: string) => backupApi.removeScheduledBackup(id),
     onSuccess: () => {
-      toast.success("Agendamento de backup removido com sucesso!");
       queryClient.invalidateQueries({ queryKey: backupQueryKeys.scheduled() });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Erro ao remover agendamento de backup");
     },
   });
 
@@ -139,14 +128,11 @@ export function useBackupMutations() {
     mutationFn: (id: string) => backupApi.verifyBackup(id),
     onSuccess: (result, id) => {
       if (result.fileExists && result.archiveIntegrity && result.sizeMatch) {
-        toast.success("Backup verificado com sucesso!");
       } else {
-        toast.warning("Backup tem problemas de integridade");
       }
       queryClient.invalidateQueries({ queryKey: backupQueryKeys.verification(id) });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Erro ao verificar backup");
     },
   });
 

@@ -3,16 +3,26 @@
 export const routes = {
   // Administration - Administração - Administration
   administration: {
+    backups: "/administracao/backups",
     changeLogs: {
       details: (id: string) => `/administracao/registros-de-alteracoes/detalhes/${id}`,
       entity: (entityType: string, entityId: string) => `/administracao/registros-de-alteracoes/entidade/${entityType}/${entityId}`,
+      list: "/administracao/registros-de-alteracoes/listar",
       root: "/administracao/registros-de-alteracoes",
+    },
+    commissions: {
+      create: "/administracao/comissoes/cadastrar",
+      details: (id: string) => `/administracao/comissoes/detalhes/${id}`,
+      edit: (id: string) => `/administracao/comissoes/editar/${id}`,
+      list: "/administracao/comissoes/listar",
+      root: "/administracao/comissoes",
     },
     customers: {
       batchEdit: "/administracao/clientes/editar-em-lote",
       create: "/administracao/clientes/cadastrar",
       details: (id: string) => `/administracao/clientes/detalhes/${id}`,
       edit: (id: string) => `/administracao/clientes/editar/${id}`,
+      list: "/administracao/clientes/listar",
       root: "/administracao/clientes",
     },
     collaborators: {
@@ -20,10 +30,12 @@ export const routes = {
       create: "/administracao/colaboradores/cadastrar",
       details: (id: string) => `/administracao/colaboradores/detalhes/${id}`,
       edit: (id: string) => `/administracao/colaboradores/editar/${id}`,
+      list: "/administracao/colaboradores/listar",
       root: "/administracao/colaboradores",
     },
     files: {
       details: (id: string) => `/administracao/arquivos/detalhes/${id}`,
+      list: "/administracao/arquivos/listar",
       orphans: "/administracao/arquivos/orfaos",
       root: "/administracao/arquivos",
       upload: "/administracao/arquivos/upload",
@@ -32,7 +44,16 @@ export const routes = {
       create: "/administracao/notificacoes/cadastrar/enviar",
       details: (id: string) => `/administracao/notificacoes/detalhes/${id}`,
       edit: (id: string) => `/administracao/notificacoes/editar/${id}`,
+      list: "/administracao/notificacoes/listar",
       root: "/administracao/notificacoes",
+    },
+    preferences: {
+      backup: "/administracao/preferencias/backup",
+      general: "/administracao/preferencias/geral",
+      integrations: "/administracao/preferencias/integracoes",
+      list: "/administracao/preferencias/listar",
+      root: "/administracao/preferencias",
+      security: "/administracao/preferencias/seguranca",
     },
     root: "/administracao",
     sectors: {
@@ -40,13 +61,23 @@ export const routes = {
       create: "/administracao/setores/cadastrar",
       details: (id: string) => `/administracao/setores/detalhes/${id}`,
       edit: (id: string) => `/administracao/setores/editar/${id}`,
+      list: "/administracao/setores/listar",
       root: "/administracao/setores",
+    },
+    server: {
+      logs: "/administracao/servidor/logs",
+      maintenance: "/administracao/servidor/manutencao",
+      resources: "/administracao/servidor/recursos",
+      root: "/administracao/servidor",
+      services: "/administracao/servidor/servicos",
+      status: "/administracao/servidor/status",
     },
     users: {
       batchEdit: "/administracao/colaboradores/editar-em-lote",
       create: "/administracao/colaboradores/cadastrar",
       details: (id: string) => `/administracao/colaboradores/detalhes/${id}`,
       edit: (id: string) => `/administracao/colaboradores/editar/${id}`,
+      list: "/administracao/usuarios/listar",
       root: "/administracao/colaboradores",
     },
     monitoring: {
@@ -79,8 +110,19 @@ export const routes = {
 
   // Basic Catalog - Catálogo Básico - Basic catalog access for leaders
   catalog: {
-    details: (id: string) => `/pintura/catalogo/detalhes/${id}`,
-    root: "/pintura/catalogo-basico",
+    details: (id: string) => `/catalogo/detalhes/${id}`,
+    list: "/catalogo/listar",
+    root: "/catalogo",
+  },
+
+  // Dashboard - Painéis de Controle
+  dashboard: {
+    financial: "/painel/financeiro",
+    humanResources: "/painel/recursos-humanos",
+    index: "/painel",
+    inventory: "/painel/estoque",
+    production: "/painel/producao",
+    warehouse: "/painel/almoxarifado",
   },
 
   // Customers - Alias for administration customers for backward compatibility
@@ -105,9 +147,17 @@ export const routes = {
 
   // Human Resources - Recursos Humanos - Human Resources
   humanResources: {
+    bonusSimulation: "/recursos-humanos/simulacao-bonus",
     calculations: {
       list: "/recursos-humanos/calculos",
       root: "/recursos-humanos/calculos",
+    },
+    employees: {
+      create: "/recursos-humanos/colaboradores/cadastrar",
+      details: (id: string) => `/recursos-humanos/colaboradores/detalhes/${id}`,
+      edit: (id: string) => `/recursos-humanos/colaboradores/editar/${id}`,
+      list: "/recursos-humanos/colaboradores/listar",
+      root: "/recursos-humanos/colaboradores",
     },
     holidays: {
       calendar: "/recursos-humanos/feriados/calendario",
@@ -117,17 +167,26 @@ export const routes = {
       list: "/recursos-humanos/feriados",
       root: "/recursos-humanos/feriados",
     },
+    payroll: {
+      list: "/recursos-humanos/folha-de-pagamento/listar",
+      root: "/recursos-humanos/folha-de-pagamento",
+    },
     positions: {
       batchEdit: "/recursos-humanos/cargos/editar-em-lote",
       create: "/recursos-humanos/cargos/cadastrar",
       details: (id: string) => `/recursos-humanos/cargos/detalhes/${id}`,
       edit: (id: string) => `/recursos-humanos/cargos/editar/${id}`,
+      list: "/recursos-humanos/cargos/listar",
       remunerations: (positionId: string) => `/recursos-humanos/cargos/${positionId}/remuneracoes`,
       root: "/recursos-humanos/cargos",
     },
     performanceLevels: {
       list: "/recursos-humanos/niveis-desempenho",
       root: "/recursos-humanos/niveis-desempenho",
+    },
+    sectors: {
+      list: "/recursos-humanos/setores/listar",
+      root: "/recursos-humanos/setores",
     },
     ppe: {
       create: "/recursos-humanos/epi/cadastrar",
@@ -208,6 +267,11 @@ export const routes = {
 
   // Inventory - Estoque - Inventory Management
   inventory: {
+    activities: {
+      details: (id: string) => `/estoque/atividades/detalhes/${id}`,
+      list: "/estoque/atividades",
+      root: "/estoque/atividades",
+    },
     externalWithdrawals: {
       create: "/estoque/retiradas-externas/cadastrar",
       details: (id: string) => `/estoque/retiradas-externas/detalhes/${id}`,
@@ -252,6 +316,12 @@ export const routes = {
         edit: (id: string) => `/estoque/pedidos/automaticos/editar/${id}`,
         list: "/estoque/pedidos/automaticos/listar",
         root: "/estoque/pedidos/automaticos",
+      },
+      items: {
+        add: (orderId: string) => `/estoque/pedidos/${orderId}/itens/adicionar`,
+        details: (orderId: string, itemId: string) => `/estoque/pedidos/${orderId}/itens/detalhes/${itemId}`,
+        edit: (orderId: string, itemId: string) => `/estoque/pedidos/${orderId}/itens/editar/${itemId}`,
+        list: (orderId: string) => `/estoque/pedidos/${orderId}/itens`,
       },
       create: "/estoque/pedidos/cadastrar",
       details: (id: string) => `/estoque/pedidos/detalhes/${id}`,
@@ -344,8 +414,13 @@ export const routes = {
 
   // My Team - Meu Pessoal - Team management for leaders (simplified routes)
   myTeam: {
+    activities: "/meu-pessoal/atividades",
+    cuts: "/meu-pessoal/recortes",
     loans: "/meu-pessoal/emprestimos",
+    ppeDeliveries: "/meu-pessoal/entregas-epi",
     root: "/meu-pessoal",
+    timeCalculations: "/meu-pessoal/calculos-ponto",
+    users: "/meu-pessoal/usuarios",
     vacations: "/meu-pessoal/ferias",
     warnings: "/meu-pessoal/avisos",
   },
@@ -358,14 +433,14 @@ export const routes = {
       edit: (id: string) => `/pintura/catalogo/editar/${id}`,
       formulaDetails: (paintId: string, formulaId: string) => `/pintura/catalogo/detalhes/${paintId}/formulas/detalhes/${formulaId}`,
       formulas: (paintId: string) => `/pintura/catalogo/detalhes/${paintId}/formulas`,
+      list: "/pintura/catalogo/listar",
       root: "/pintura/catalogo",
     },
     components: {
-      create: "/pintura/componentes/cadastrar",
-      details: (id: string) => `/pintura/componentes/detalhes/${id}`,
-      edit: (id: string) => `/pintura/componentes/editar/${id}`,
-      list: "/pintura/componentes/listar",
-      root: "/pintura/componentes",
+      create: (formulaId: string) => `/pintura/formulas/${formulaId}/componentes/cadastrar`,
+      details: (formulaId: string, componentId: string) => `/pintura/formulas/${formulaId}/componentes/detalhes/${componentId}`,
+      edit: (formulaId: string, componentId: string) => `/pintura/formulas/${formulaId}/componentes/editar/${componentId}`,
+      list: (formulaId: string) => `/pintura/formulas/${formulaId}/componentes/listar`,
     },
     formulas: {
       create: "/pintura/formulas/cadastrar",
@@ -380,6 +455,13 @@ export const routes = {
       edit: (id: string) => `/pintura/formulacoes/editar/${id}`,
       list: "/pintura/formulacoes/listar",
       root: "/pintura/formulacoes",
+    },
+    paintGrounds: {
+      create: "/pintura/fundos/cadastrar",
+      details: (id: string) => `/pintura/fundos/detalhes/${id}`,
+      edit: (id: string) => `/pintura/fundos/editar/${id}`,
+      list: "/pintura/fundos/listar",
+      root: "/pintura/fundos",
     },
     paintTypes: {
       create: "/pintura/tipos-de-tinta/cadastrar",
@@ -406,7 +488,22 @@ export const routes = {
 
   // Personal - Pessoal - Personal (User-specific data)
   personal: {
+    myActivities: {
+      details: (id: string) => `/pessoal/minhas-atividades/detalhes/${id}`,
+      list: "/pessoal/minhas-atividades/listar",
+      root: "/pessoal/minhas-atividades",
+    },
+    myBorrows: {
+      details: (id: string) => `/pessoal/meus-emprestimos/detalhes/${id}`,
+      list: "/pessoal/meus-emprestimos/listar",
+      root: "/pessoal/meus-emprestimos",
+    },
+    myCommissions: {
+      details: (id: string) => `/pessoal/minhas-comissoes/detalhes/${id}`,
+      root: "/pessoal/minhas-comissoes",
+    },
     myHolidays: {
+      details: (id: string) => `/pessoal/meus-feriados/detalhes/${id}`,
       root: "/pessoal/meus-feriados",
     },
     myLoans: {
@@ -416,6 +513,14 @@ export const routes = {
     myNotifications: {
       details: (id: string) => `/pessoal/minhas-notificacoes/detalhes/${id}`,
       root: "/pessoal/minhas-notificacoes",
+      settings: "/pessoal/minhas-notificacoes/configuracoes",
+    },
+    myPayroll: {
+      root: "/pessoal/meu-holerite",
+    },
+    myPpeDeliveries: {
+      details: (id: string) => `/pessoal/minhas-entregas-epi/detalhes/${id}`,
+      root: "/pessoal/minhas-entregas-epi",
     },
     myPpes: {
       request: "/pessoal/meus-epis/solicitar",
@@ -423,6 +528,9 @@ export const routes = {
     },
     myProfile: {
       root: "/pessoal/meu-perfil",
+    },
+    myTimeCalculations: {
+      root: "/pessoal/meus-calculos-ponto",
     },
     myVacations: {
       details: (id: string) => `/pessoal/minhas-ferias/detalhes/${id}`,
@@ -432,10 +540,21 @@ export const routes = {
       details: (id: string) => `/pessoal/meus-avisos/detalhes/${id}`,
       root: "/pessoal/meus-avisos",
     },
+    payroll: {
+      details: (id: string) => `/pessoal/holerite/detalhes/${id}`,
+      root: "/pessoal/holerite",
+    },
     preferences: {
+      notifications: "/pessoal/preferencias/notificacoes",
+      privacy: "/pessoal/preferencias/privacidade",
       root: "/pessoal/preferencias",
+      theme: "/pessoal/preferencias/tema",
     },
     root: "/pessoal",
+    timeCalculations: {
+      details: (id: string) => `/pessoal/calculos-ponto/detalhes/${id}`,
+      root: "/pessoal/calculos-ponto",
+    },
   },
 
   // Production - Produção - Production Management
@@ -449,6 +568,20 @@ export const routes = {
     },
     cutting: {
       create: "/producao/recorte/cadastrar",
+      cuttingPlan: {
+        create: "/producao/recorte/plano-de-recorte/cadastrar",
+        details: (id: string) => `/producao/recorte/plano-de-recorte/detalhes/${id}`,
+        edit: (id: string) => `/producao/recorte/plano-de-recorte/editar/${id}`,
+        list: "/producao/recorte/plano-de-recorte/listar",
+        root: "/producao/recorte/plano-de-recorte",
+      },
+      cuttingRequest: {
+        create: "/producao/recorte/requisicao-de-recorte/cadastrar",
+        details: (id: string) => `/producao/recorte/requisicao-de-recorte/detalhes/${id}`,
+        edit: (id: string) => `/producao/recorte/requisicao-de-recorte/editar/${id}`,
+        list: "/producao/recorte/requisicao-de-recorte/listar",
+        root: "/producao/recorte/requisicao-de-recorte",
+      },
       details: (id: string) => `/producao/recorte/detalhes/${id}`,
       edit: (id: string) => `/producao/recorte/editar/${id}`,
       list: "/producao/recorte",
@@ -474,8 +607,21 @@ export const routes = {
     history: {
       cancelled: "/producao/historico/cancelados",
       completed: "/producao/historico/concluidos",
-      root: "/producao/historico",
       details: (id: string) => `/producao/historico/detalhes/${id}`,
+      root: "/producao/historico",
+    },
+    layouts: {
+      create: "/producao/layouts/cadastrar",
+      details: (id: string) => `/producao/layouts/detalhes/${id}`,
+      edit: (id: string) => `/producao/layouts/editar/${id}`,
+      list: "/producao/layouts/listar",
+      root: "/producao/layouts",
+      sections: {
+        create: (layoutId: string) => `/producao/layouts/${layoutId}/secoes/cadastrar`,
+        details: (layoutId: string, sectionId: string) => `/producao/layouts/${layoutId}/secoes/detalhes/${sectionId}`,
+        edit: (layoutId: string, sectionId: string) => `/producao/layouts/${layoutId}/secoes/editar/${sectionId}`,
+        list: (layoutId: string) => `/producao/layouts/${layoutId}/secoes/listar`,
+      },
     },
     observations: {
       create: "/producao/observacoes/cadastrar",
@@ -483,6 +629,13 @@ export const routes = {
       edit: (id: string) => `/producao/observacoes/editar/${id}`,
       list: "/producao/observacoes",
       root: "/producao/observacoes",
+    },
+    paints: {
+      create: "/producao/tintas/cadastrar",
+      details: (id: string) => `/producao/tintas/detalhes/${id}`,
+      edit: (id: string) => `/producao/tintas/editar/${id}`,
+      list: "/producao/tintas/listar",
+      root: "/producao/tintas",
     },
     root: "/producao",
     // Note: 'schedule' property name is kept for backward compatibility but routes point to 'cronograma'
@@ -504,18 +657,26 @@ export const routes = {
       edit: (id: string) => `/producao/ordens-de-servico/editar/${id}`,
       root: "/producao/ordens-de-servico",
     },
+    serviceOrders: {
+      create: "/producao/ordens-de-servico/cadastrar",
+      details: (id: string) => `/producao/ordens-de-servico/detalhes/${id}`,
+      edit: (id: string) => `/producao/ordens-de-servico/editar/${id}`,
+      list: "/producao/ordens-de-servico/listar",
+      root: "/producao/ordens-de-servico",
+    },
     services: {
       create: "/producao/servicos/cadastrar",
       details: (id: string) => `/producao/servicos/detalhes/${id}`,
       edit: (id: string) => `/producao/servicos/editar/${id}`,
-      list: "/producao/servicos",
+      list: "/producao/servicos/listar",
       root: "/producao/servicos",
     },
+    settings: "/producao/configuracoes",
     trucks: {
       create: "/producao/caminhoes/cadastrar",
       details: (id: string) => `/producao/caminhoes/detalhes/${id}`,
       edit: (id: string) => `/producao/caminhoes/editar/${id}`,
-      list: "/producao/caminhoes",
+      list: "/producao/caminhoes/listar",
       root: "/producao/caminhoes",
     },
   },
@@ -540,32 +701,25 @@ export const routes = {
     },
   },
 
-  // Statistics - Estatísticas - Statistics/Analytics
-  statistics: {
-    administration: "/estatisticas/administracao",
-    humanResources: "/estatisticas/recursos-humanos",
-    inventory: {
-      root: "/estatisticas/estoque",
-      consumption: "/estatisticas/estoque/consumo",
-      stockMovement: "/estatisticas/estoque/movimentacao",
-      trends: "/estatisticas/estoque/tendencias",
-      topItems: "/estatisticas/estoque/top-itens",
-    },
-    production: "/estatisticas/producao",
-    root: "/estatisticas",
-  },
-
   // Integrations - Integrações - System integrations
   integrations: {
     root: "/integracoes",
     secullum: {
       root: "/integracoes/secullum",
-      timeEntries: {
-        root: "/integracoes/secullum/registros-ponto",
-        details: (id: string) => `/integracoes/secullum/registros-ponto/detalhes/${id}`,
+      calculations: {
+        list: "/integracoes/secullum/calculos/listar",
+        root: "/integracoes/secullum/calculos",
       },
-      calculations: "/integracoes/secullum/calculos",
+      holidays: {
+        list: "/integracoes/secullum/feriados/listar",
+        root: "/integracoes/secullum/feriados",
+      },
       syncStatus: "/integracoes/secullum/status-sincronizacao",
+      timeEntries: {
+        details: (id: string) => `/integracoes/secullum/registros-ponto/detalhes/${id}`,
+        list: "/integracoes/secullum/registros-ponto/listar",
+        root: "/integracoes/secullum/registros-ponto",
+      },
     },
   },
 

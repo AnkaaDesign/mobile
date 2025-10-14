@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { View, ActivityIndicator, Pressable, Alert , StyleSheet} from "react-native";
 import { useRouter } from "expo-router";
 import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
@@ -6,12 +6,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useItemMutations } from '../../../../hooks';
 import { useItemsInfiniteMobile } from "@/hooks";
 import type { ItemGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
-import { ItemTable } from "@/components/inventory/item/list/item-table";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge, Button } from "@/components/ui";
+import { ItemTable, createColumnDefinitions } from "@/components/inventory/item/list/item-table";
 import type { SortConfig } from "@/components/inventory/item/list/item-table";
-import { ItemFilterModal } from "@/components/inventory/item/list/item-filter-modal";
+import { ItemFilterDrawerV2 } from "@/components/inventory/item/list/item-filter-drawer-v2";
 import { ItemFilterTags } from "@/components/inventory/item/list/item-filter-tags";
-import { ColumnVisibilityManager } from "@/components/inventory/item/list/column-visibility-manager";
+import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { ItemListSkeleton } from "@/components/inventory/item/skeleton/item-list-skeleton";
@@ -105,7 +105,7 @@ export default function ItemListScreen() {
     },
   };
 
-  const { items, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = useItemsInfiniteMobile(queryParams);
+  const { items, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useItemsInfiniteMobile(queryParams);
   const { delete: deleteItem } = useItemMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -189,20 +189,26 @@ export default function ItemListScreen() {
     setShowSelection(false);
   }, []);
 
-  const handleColumnsChange = useCallback((newColumns: string[]) => {
-    setVisibleColumnKeys(newColumns);
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
   }, []);
+
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
     ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
-  if (isLoading && !isRefetching) {
+  // Only show skeleton on initial load, not on refetch/sort
+  const isInitialLoad = isLoading && !isRefetching && items.length === 0;
+
+  if (isInitialLoad) {
     return <ItemListSkeleton />;
   }
 
-  if (error) {
+  if (error && items.length === 0) {
     return (
       <ThemedView style={styles.container}>
         <ErrorScreen message="Erro ao carregar produtos" detail={error.message} onRetry={handleRefresh} />
@@ -225,34 +231,32 @@ export default function ItemListScreen() {
           debounceMs={300}
         />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }, pressed && styles.actionButtonPressed]}
-            onPress={() => setShowColumnManager(true)}
-          >
-            <IconList size={24} color={colors.foreground} />
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowColumnManager(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconList size={20} color={colors.foreground} />
+            </Button>
             <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
               <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
             </Badge>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              {
-                backgroundColor: colors.card,
-                borderWidth: 1,
-                borderColor: colors.border,
-              },
-              pressed && styles.actionButtonPressed,
-            ]}
-            onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
+          </View>
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowFilters(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconFilter size={20} color={colors.foreground} />
+            </Button>
             {activeFiltersCount > 0 && (
               <Badge style={styles.actionBadge} variant="destructive" size="sm">
                 <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
               </Badge>
             )}
-          </Pressable>
+          </View>
         </View>
       </View>
 
@@ -278,8 +282,8 @@ export default function ItemListScreen() {
             onItemDuplicate={handleDuplicateProduct}
             onRefresh={handleRefresh}
             onEndReached={canLoadMore ? loadMore : undefined}
-            refreshing={refreshing}
-            loading={isLoading && !isRefetching}
+            refreshing={refreshing || isRefetching}
+            loading={false}
             loadingMore={isFetchingNextPage}
             showSelection={showSelection}
             selectedItems={selectedItems}
@@ -303,15 +307,21 @@ export default function ItemListScreen() {
       )}
 
       {/* Items count */}
-      {hasProducts && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />}
+      {hasProducts && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasProducts && <FAB icon="plus" onPress={handleCreateProduct} />}
 
-      {/* Filter Modal */}
-      <ItemFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
+      {/* Filter Drawer */}
+      <ItemFilterDrawerV2 visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
 
-      {/* Column Visibility Manager Modal */}
-      <ColumnVisibilityManager visible={showColumnManager} onClose={() => setShowColumnManager(false)} onColumnsChange={handleColumnsChange} currentColumns={visibleColumnKeys} />
+      {/* Column Visibility Drawer */}
+      <ColumnVisibilityDrawerV2
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        open={showColumnManager}
+        onOpenChange={setShowColumnManager}
+      />
     </ThemedView>
   );
 }
@@ -334,13 +344,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
+  actionButtonWrapper: {
+    position: "relative",
+  },
   actionButton: {
     height: 48,
     width: 48,
     borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
+    paddingHorizontal: 0,
   },
   actionBadge: {
     position: "absolute",
@@ -355,36 +366,6 @@ const styles = StyleSheet.create({
   },
   actionBadgeText: {
     fontSize: 9,
-    fontWeight: "600",
-  },
-  filterButton: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    height: 44,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-    gap: 6,
-  },
-  filterButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  filterBadge: {
-    position: "absolute",
-    top: -6,
-    right: -6,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 4,
-  },
-  filterBadgeText: {
-    fontSize: 10,
     fontWeight: "600",
   },
   emptyContainer: {
@@ -402,8 +383,5 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     opacity: 0.7,
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
 });

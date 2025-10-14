@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { View, Alert, Pressable , StyleSheet} from "react-native";
 import { useRouter } from "expo-router";
 import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
@@ -6,11 +6,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrderMutations } from '../../../../hooks';
 import { useOrdersInfiniteMobile } from "@/hooks";
 import type { OrderGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
-import { OrderTable } from "@/components/inventory/order/list/order-table";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge, Button } from "@/components/ui";
+import { OrderTable, createColumnDefinitions } from "@/components/inventory/order/list/order-table";
 import type { SortConfig } from "@/components/inventory/order/list/order-table";
 import { OrderFilterModal } from "@/components/inventory/order/list/order-filter-modal";
 import { OrderFilterTags } from "@/components/inventory/order/list/order-filter-tags";
+import { OrderColumnVisibilityDrawer } from "@/components/inventory/order/list/order-column-visibility-drawer";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { OrderListSkeleton } from "@/components/inventory/order/skeleton/order-list-skeleton";
@@ -34,7 +35,8 @@ export default function OrderListScreen() {
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "createdAt", direction: "desc" }]);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["description", "supplier", "status", "totalPrice"]);
+  const [showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["status", "supplier.fantasyName", "itemsCount"]);
 
   // Check permissions
   const canCreate = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
@@ -215,6 +217,14 @@ export default function OrderListScreen() {
     setShowSelection(false);
   }, []);
 
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  // Handle columns change
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
+  }, []);
+
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
     ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
@@ -247,25 +257,32 @@ export default function OrderListScreen() {
           debounceMs={300}
         />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              {
-                backgroundColor: colors.card,
-                borderWidth: 1,
-                borderColor: colors.border,
-              },
-              pressed && styles.actionButtonPressed,
-            ]}
-            onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowColumnManager(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconList size={20} color={colors.foreground} />
+            </Button>
+            <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
+              <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
+            </Badge>
+          </View>
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowFilters(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconFilter size={20} color={colors.foreground} />
+            </Button>
             {activeFiltersCount > 0 && (
               <Badge style={styles.actionBadge} variant="destructive" size="sm">
                 <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
               </Badge>
             )}
-          </Pressable>
+          </View>
         </View>
       </View>
 
@@ -327,6 +344,15 @@ export default function OrderListScreen() {
         onApply={handleApplyFilters}
         currentFilters={filters}
       />
+
+      {/* Column Visibility Drawer */}
+      <OrderColumnVisibilityDrawer
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        open={showColumnManager}
+        onOpenChange={setShowColumnManager}
+      />
     </ThemedView>
   );
 }
@@ -349,13 +375,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
+  actionButtonWrapper: {
+    position: "relative",
+  },
   actionButton: {
     height: 48,
     width: 48,
     borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
+    paddingHorizontal: 0,
   },
   actionBadge: {
     position: "absolute",
@@ -371,9 +398,6 @@ const styles = StyleSheet.create({
   actionBadgeText: {
     fontSize: 9,
     fontWeight: "600",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
   emptyContainer: {
     flex: 1,

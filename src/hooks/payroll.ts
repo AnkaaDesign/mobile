@@ -3,7 +3,6 @@
 import { createEntityHooks } from "./createEntityHooks";
 import { payrollService } from '../api-client';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import type {
   PayrollGetManyParams,
   PayrollGetManyResponse,
@@ -310,32 +309,16 @@ export const useFinalizePayrollMonth = () => {
       // Snapshot the previous value
       const previousPayrolls = queryClient.getQueryData(payrollQueryKeys.list());
 
-      // Show optimistic loading toast
-      const monthName = new Date(variables.year, variables.month - 1).toLocaleDateString('pt-BR', { month: 'long' });
-      toast.loading(`Finalizando folha de pagamento de ${monthName}...`, {
-        id: `finalize-${variables.year}-${variables.month}`
-      });
-
       return { previousPayrolls };
     },
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: payrollQueryKeys.all });
-
-      // Dismiss loading toast and show success
-      toast.dismiss(`finalize-${variables.year}-${variables.month}`);
-      const monthName = new Date(variables.year, variables.month - 1).toLocaleDateString('pt-BR', { month: 'long' });
-      toast.success(`Folha de pagamento de ${monthName} finalizada com sucesso!`);
     },
     onError: (error: any, variables, context) => {
       // Rollback optimistic update if needed
       if (context?.previousPayrolls) {
         queryClient.setQueryData(payrollQueryKeys.list(), context.previousPayrolls);
       }
-
-      // Dismiss loading toast and show error
-      toast.dismiss(`finalize-${variables.year}-${variables.month}`);
-      const message = error?.response?.data?.message ?? 'Erro ao finalizar folha de pagamento';
-      toast.error(message);
     },
   });
 };

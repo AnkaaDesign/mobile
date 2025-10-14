@@ -9,13 +9,15 @@ import { ThemedView, ThemedText, FAB, ErrorScreen } from "@/components/ui";
 import { useLayoutSectionDetail, useLayoutSectionMutations, useLayoutDetail } from '../../../../../../../hooks';
 import { layoutSectionUpdateSchema, type LayoutSectionUpdateFormData } from '../../../../../../../schemas';
 import { useTheme } from "@/lib/theme";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LayoutSectionEditScreen() {
   const router = useRouter();
   const { layoutId, id } = useLocalSearchParams<{ layoutId: string; id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { success, error: showError, warning, info } = useToast();
+
 
   const { data: section, isLoading, error, refetch } = useLayoutSectionDetail(id!);
   const { update: updateSection } = useLayoutSectionMutations();
@@ -55,10 +57,10 @@ export default function LayoutSectionEditScreen() {
     setIsSubmitting(true);
     try {
       await updateSection({ id, data });
-      toast.success("Seção atualizada com sucesso");
+      success("Seção atualizada com sucesso");
       router.back();
     } catch (error: any) {
-      toast.error(error?.message || "Erro ao atualizar seção");
+      showError(error?.message || "Erro ao atualizar seção");
     } finally {
       setIsSubmitting(false);
     }

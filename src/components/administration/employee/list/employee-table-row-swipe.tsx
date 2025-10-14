@@ -1,61 +1,80 @@
-import React, { useCallback, useRef, useEffect } from "react";
-import { View, TouchableOpacity, Animated, StyleSheet, Alert, Pressable } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
+import React, { useRef, useCallback, useEffect } from "react";
+import { View, StyleSheet, ViewStyle, Alert } from "react-native";
+import { IconEdit, IconTrash, IconEye } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
-import { ThemedText } from "@/components/ui/themed-text";
-import { useTheme } from "@/lib/theme";
+import { useTheme } from "@/contexts/theme-context";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { ReanimatedSwipeableRow, type SwipeAction, type Swipeable } from "@/components/ui/reanimated-swipeable-row";
+
+const ACTION_WIDTH = 80;
+
+interface CustomSwipeAction {
+  key: string;
+  label: string;
+  icon: string;
+  backgroundColor: string;
+  onPress: () => void;
+}
 
 interface EmployeeTableRowSwipeProps {
+  children: React.ReactNode | ((isActive: boolean) => React.ReactNode);
   employeeId: string;
   employeeName: string;
   onEdit?: (employeeId: string) => void;
   onDelete?: (employeeId: string) => void;
   onView?: (employeeId: string) => void;
+  customActions?: CustomSwipeAction[];
+  style?: ViewStyle;
   disabled?: boolean;
-  children: (isActive: boolean) => React.ReactNode;
 }
 
-export function EmployeeTableRowSwipe({ employeeId, employeeName, onEdit, onDelete, onView, disabled = false, children }: EmployeeTableRowSwipeProps) {
+const EmployeeTableRowSwipeComponent = ({
+  children,
+  employeeId,
+  employeeName,
+  onEdit,
+  onDelete,
+  onView,
+  customActions = [],
+  style,
+  disabled = false
+}: EmployeeTableRowSwipeProps) => {
   const { colors } = useTheme();
+  const { activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow } = useSwipeRow();
   const swipeableRef = useRef<Swipeable>(null);
-  const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow();
-  const isActive = activeRowId === employeeId;
+  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Close this row when another row becomes active
+  // Early return if colors are not available yet (during theme initialization)
+  if (!colors || !children) {
+    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
+  }
+
+  const isThisRowActive = activeRowId === employeeId;
+
+  // Watch for changes in activeRowId to close this row if another row becomes active
   useEffect(() => {
-    if (activeRowId !== employeeId && swipeableRef.current) {
-      swipeableRef.current.close();
+    if (!isThisRowActive && activeRowId !== null) {
+      // Another row became active, close this one immediately
+      swipeableRef.current?.close();
     }
-  }, [activeRowId, employeeId]);
+  }, [activeRowId, isThisRowActive]);
 
-  const handleSwipeOpen = useCallback(
-    (direction: "left" | "right") => {
-      if (!disabled) {
-        setActiveRowId(employeeId);
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoCloseTimerRef.current) {
+        clearTimeout(autoCloseTimerRef.current);
+        autoCloseTimerRef.current = null;
       }
-    },
-    [employeeId, setActiveRowId, disabled],
-  );
+      // Clean up if this row was active
+      if (activeRowId === employeeId) {
+        setActiveRowId(null);
+      }
+    };
+  }, [activeRowId, employeeId, setActiveRowId]);
 
-  const handleSwipeClose = useCallback(() => {
-    if (activeRowId === employeeId) {
-      closeActiveRow();
-    }
-  }, [activeRowId, employeeId, closeActiveRow]);
-
-  const handleEdit = useCallback(() => {
-    swipeableRef.current?.close();
-    setTimeout(() => onEdit?.(employeeId), 100);
-  }, [employeeId, onEdit]);
-
-  const handleView = useCallback(() => {
-    swipeableRef.current?.close();
-    setTimeout(() => onView?.(employeeId), 100);
-  }, [employeeId, onView]);
-
-  const handleDelete = useCallback(() => {
-    Alert.alert("Confirmar exclusão", `Tem certeza que deseja excluir ${employeeName}?`, [
+  const handleDeletePress = useCallback(() => {
+    Alert.alert("Confirmar exclusão", `Tem certeza que deseja excluir "${employeeName}"?`, [
       {
         text: "Cancelar",
         style: "cancel",
@@ -66,115 +85,146 @@ export function EmployeeTableRowSwipe({ employeeId, employeeName, onEdit, onDele
         style: "destructive",
         onPress: () => {
           swipeableRef.current?.close();
-          setTimeout(() => onDelete?.(employeeId), 100);
+          setTimeout(() => onDelete?.(employeeId), 300);
         },
       },
     ]);
   }, [employeeId, employeeName, onDelete]);
 
-  const renderRightActions = useCallback(
-    (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
-      const trans = dragX.interpolate({
-        inputRange: [-200, 0],
-        outputRange: [0, 200],
-        extrapolate: "clamp",
-      });
+  // Build actions array with consistent colors
+  // View button uses blue (#3b82f6)
+  // Edit button uses green (#15803d from optimal stock color)
+  // Delete button uses red (#b91c1c from critical/out-of-stock color)
+  const rightActions: SwipeAction[] = [
+    ...(onView
+      ? [
+          {
+            key: "view",
+            label: "Ver",
+            icon: <IconEye size={20} color="white" />,
+            backgroundColor: "#3b82f6", // blue-500
+            onPress: () => onView(employeeId),
+            closeOnPress: true,
+          },
+        ]
+      : []),
+    ...(onEdit
+      ? [
+          {
+            key: "edit",
+            label: "Editar",
+            icon: <IconEdit size={20} color="white" />,
+            backgroundColor: "#15803d", // green-700 (optimal stock color)
+            onPress: () => onEdit(employeeId),
+            closeOnPress: true,
+          },
+        ]
+      : []),
+    ...customActions.map((action) => ({
+      ...action,
+      icon: <Icon name={action.icon} size={20} color="white" />,
+      closeOnPress: true,
+    })),
+    ...(onDelete
+      ? [
+          {
+            key: "delete",
+            label: "Excluir",
+            icon: <IconTrash size={20} color="white" />,
+            backgroundColor: "#b91c1c", // red-700 (out of stock/critical color)
+            onPress: handleDeletePress,
+            closeOnPress: false, // Don't close automatically for delete confirmation
+          },
+        ]
+      : []),
+  ];
 
-      return (
-        <View style={styles.actionsContainer}>
-          {onView && (
-            <Animated.View
-              style={[
-                styles.actionButton,
-                {
-                  backgroundColor: colors.primary,
-                  transform: [{ translateX: trans }],
-                },
-              ]}
-            >
-              <Pressable onPress={handleView} style={styles.actionTouchable}>
-                <Icon name="eye" size="md" color="white" />
-                <ThemedText style={styles.actionText}>Ver</ThemedText>
-              </Pressable>
-            </Animated.View>
-          )}
-          {onEdit && (
-            <Animated.View
-              style={[
-                styles.actionButton,
-                {
-                  backgroundColor: "#3b82f6", // blue-500
-                  transform: [{ translateX: trans }],
-                },
-              ]}
-            >
-              <Pressable onPress={handleEdit} style={styles.actionTouchable}>
-                <Icon name="edit" size="md" color="white" />
-                <ThemedText style={styles.actionText}>Editar</ThemedText>
-              </Pressable>
-            </Animated.View>
-          )}
-          {onDelete && (
-            <Animated.View
-              style={[
-                styles.actionButton,
-                {
-                  backgroundColor: "#ef4444", // red-500
-                  transform: [{ translateX: trans }],
-                },
-              ]}
-            >
-              <Pressable onPress={handleDelete} style={styles.actionTouchable}>
-                <Icon name="trash" size="md" color="white" />
-                <ThemedText style={styles.actionText}>Excluir</ThemedText>
-              </Pressable>
-            </Animated.View>
-          )}
-        </View>
-      );
+  const handleWillOpen = useCallback(
+    (direction: "left" | "right") => {
+      // Clear any existing timer
+      if (autoCloseTimerRef.current) {
+        clearTimeout(autoCloseTimerRef.current);
+        autoCloseTimerRef.current = null;
+      }
+
+      // Close any other active row first
+      if (activeRowId && activeRowId !== employeeId) {
+        closeActiveRow();
+        closeOpenRow(); // Also close legacy rows
+      }
     },
-    [colors.primary, onEdit, onDelete, onView, handleEdit, handleDelete, handleView],
+    [activeRowId, employeeId, closeActiveRow, closeOpenRow],
   );
 
-  if (disabled || (!onEdit && !onDelete && !onView)) {
-    return <>{children(false)}</>;
+  const handleOpen = useCallback(
+    (direction: "left" | "right", swipeable: Swipeable) => {
+      setActiveRowId(employeeId);
+
+      // Register the close function for legacy compatibility
+      setOpenRow(() => swipeable.close());
+
+      // Auto-close after 5 seconds
+      autoCloseTimerRef.current = setTimeout(() => {
+        swipeable.close();
+      }, 5000);
+    },
+    [employeeId, setActiveRowId, setOpenRow],
+  );
+
+  const handleClose = useCallback(() => {
+    // Clear any auto-close timer
+    if (autoCloseTimerRef.current) {
+      clearTimeout(autoCloseTimerRef.current);
+      autoCloseTimerRef.current = null;
+    }
+
+    // Clear active row state if this was the active row
+    if (isThisRowActive) {
+      setActiveRowId(null);
+    }
+  }, [isThisRowActive, setActiveRowId]);
+
+  // Ensure children is always defined and is a valid React element or function
+  if (!children || (typeof children !== "object" && typeof children !== "string" && typeof children !== "number" && typeof children !== "function")) {
+    console.warn("EmployeeTableRowSwipe: children prop is invalid or undefined:", typeof children);
+    return <View style={style} />;
+  }
+
+  if (disabled || rightActions.length === 0) {
+    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
   }
 
   return (
-    <Swipeable
+    <ReanimatedSwipeableRow
       ref={swipeableRef}
-      renderRightActions={renderRightActions}
-      onSwipeableWillOpen={(direction) => handleSwipeOpen(direction as "left" | "right")}
-      onSwipeableClose={handleSwipeClose}
-      overshootRight={false}
+      rightActions={rightActions}
+      enabled={!disabled}
       friction={2}
       rightThreshold={40}
+      overshootRight={false}
+      onWillOpen={handleWillOpen}
+      onOpen={handleOpen}
+      onClose={handleClose}
+      containerStyle={[styles.container, style]}
+      childrenContainerStyle={styles.rowContainer}
+      actionWidth={ACTION_WIDTH}
     >
-      {children(isActive)}
-    </Swipeable>
+      <View style={{ flex: 1 }}>{typeof children === "function" ? children(isThisRowActive) : children}</View>
+    </ReanimatedSwipeableRow>
   );
-}
+};
+
+// Set displayName before memoization for React 19 compatibility
+EmployeeTableRowSwipeComponent.displayName = "EmployeeTableRowSwipe";
+
+export const EmployeeTableRowSwipe = React.memo(EmployeeTableRowSwipeComponent);
 
 const styles = StyleSheet.create({
-  actionsContainer: {
-    flexDirection: "row",
-    alignItems: "stretch",
+  container: {
+    position: "relative",
+    overflow: "hidden",
   },
-  actionButton: {
-    width: 70,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  actionTouchable: {
-    flex: 1,
-    width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 4,
-  },
-  actionText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
+  rowContainer: {
+    // The row content container - no special styles needed
   },
 });

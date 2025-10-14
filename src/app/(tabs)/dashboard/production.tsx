@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl , StyleSheet} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useProductionDashboard } from '../../../hooks';
-import { DashboardCard } from "@/components/ui/dashboard-card";
+import { useProductionDashboard, useTasks, useCuts, useBonuses, usePrivileges } from '../../../hooks';
+import { DashboardCard, QuickActionCard } from "@/components/ui/dashboard-card";
 import { Icon } from "@/components/ui/icon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency, formatNumber } from '../../../utils';
-import { DASHBOARD_TIME_PERIOD } from '../../../constants';
+import { DASHBOARD_TIME_PERIOD, TASK_STATUS, CUT_STATUS, SECTOR_PRIVILEGES } from '../../../constants';
+import { router } from 'expo-router';
 
 // Simple chart component using bars
 const BarChart: React.FC<{
@@ -81,8 +82,9 @@ const PieChart: React.FC<{
 export default function ProductionAnalyticsScreen() {
   const [timePeriod, setTimePeriod] = useState(DASHBOARD_TIME_PERIOD.THIS_MONTH);
   const [refreshing, setRefreshing] = useState(false);
+  const { canManageProduction, isProduction, isLeader, isAdmin } = usePrivileges();
 
-  const { data: dashboard, isLoading, error, refetch } = useProductionDashboard({
+  const { data: dashboard, isLoading: dashboardLoading, error: dashboardError, refetch: refetchDashboard } = useProductionDashboard({
     timePeriod: timePeriod as string,
     includeServiceOrders: true,
     includeCuts: true,
@@ -90,14 +92,63 @@ export default function ProductionAnalyticsScreen() {
     includeTrucks: true,
   });
 
+  // Fetch recent tasks
+  const { data: tasksData, isLoading: tasksLoading, refetch: refetchTasks } = useTasks({
+    where: {
+      status: { in: [TASK_STATUS.IN_PRODUCTION, TASK_STATUS.PENDING] }
+    },
+    include: { customer: true, truck: true },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+  });
+
+  // Fetch pending cuts
+  const { data: cutsData, isLoading: cutsLoading, refetch: refetchCuts } = useCuts({
+    where: {
+      status: { in: [CUT_STATUS.PENDING, CUT_STATUS.CUTTING] }
+    },
+    include: { plan: true },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+  });
+
+  // Fetch recent commissions for production users
+  const { data: commissionsData, isLoading: commissionsLoading, refetch: refetchCommissions } = useBonuses({
+    where: {},
+    include: { user: true },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+  });
+
+  const isLoading = dashboardLoading || tasksLoading || cutsLoading || commissionsLoading;
+  const error = dashboardError;
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      await Promise.all([refetchDashboard(), refetchTasks(), refetchCuts(), refetchCommissions()]);
     } finally {
       setRefreshing(false);
     }
   };
+
+  // Privilege guard
+  if (!canManageProduction) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Icon name="lock" size={48} color="#ef4444" />
+          <Text style={styles.errorTitle}>Acesso Negado</Text>
+          <Text style={styles.errorMessage}>
+            Você não tem permissão para acessar o dashboard de produção.
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
+            <Text style={styles.retryButtonText}>Voltar</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -125,6 +176,9 @@ export default function ProductionAnalyticsScreen() {
   }
 
   const data = dashboard?.data;
+  const tasks = tasksData?.data || [];
+  const cuts = cutsData?.data || [];
+  const commissions = commissionsData?.data || [];
 
   // Transform chart data
   const taskStatusData = data?.overview ? [
@@ -169,6 +223,154 @@ export default function ProductionAnalyticsScreen() {
             <Icon name="refresh" size={24} color="#6b7280" />
           </TouchableOpacity>
         </View>
+
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Acesso Rápido</Text>
+          <View style={styles.quickActionsGrid}>
+            {(isLeader || isAdmin) && (
+              <QuickActionCard
+                title="Nova Tarefa"
+                icon="plus-circle"
+                color="#3b82f6"
+                onPress={() => router.push('/production/schedule/create' as any)}
+              />
+            )}
+            <QuickActionCard
+              title="Cronograma"
+              icon="calendar"
+              color="#10b981"
+              onPress={() => router.push('/production/schedule/list' as any)}
+            />
+            <QuickActionCard
+              title="Recortes"
+              icon="scissors"
+              color="#f59e0b"
+              onPress={() => router.push('/production/cuts/list' as any)}
+              badge={cuts.length > 0 ? { text: cuts.length.toString(), variant: "destructive" as const } : undefined}
+            />
+            <QuickActionCard
+              title="Serviços"
+              icon="tool"
+              color="#8b5cf6"
+              onPress={() => router.push('/production/services/list' as any)}
+            />
+            <QuickActionCard
+              title="Aerografia"
+              icon="droplet"
+              color="#06b6d4"
+              onPress={() => router.push('/production/airbrushing/list' as any)}
+            />
+            <QuickActionCard
+              title="Ordens de Serviço"
+              icon="clipboard"
+              color="#ef4444"
+              onPress={() => router.push('/production/service-orders/list' as any)}
+            />
+          </View>
+        </View>
+
+        {/* Recent Tasks */}
+        {tasks.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Tarefas Recentes</Text>
+            <Card>
+              <CardContent>
+                {tasks.map((task, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.activityItem}
+                    onPress={() => router.push(`/production/schedule/details/${task.id}` as any)}
+                  >
+                    <View style={styles.activityIcon}>
+                      <Icon
+                        name={task.status === TASK_STATUS.IN_PRODUCTION ? "settings" : "clock"}
+                        size={16}
+                        color={task.status === TASK_STATUS.IN_PRODUCTION ? "#3b82f6" : "#f59e0b"}
+                      />
+                    </View>
+                    <View style={styles.activityContent}>
+                      <Text style={styles.activityTitle}>
+                        {task.customer?.fantasyName || "Cliente"} - {task.truck?.plate || "Veículo"}
+                      </Text>
+                      <Text style={styles.activityDescription}>
+                        {task.status === TASK_STATUS.IN_PRODUCTION ? "Em Produção" : "Pendente"}
+                      </Text>
+                    </View>
+                    <Icon name="chevron-right" size={20} color="#9ca3af" />
+                  </TouchableOpacity>
+                ))}
+              </CardContent>
+            </Card>
+          </View>
+        )}
+
+        {/* Cutting Queue */}
+        {cuts.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Fila de Recortes</Text>
+            <Card>
+              <CardHeader>
+                <CardTitle>Recortes Pendentes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {cuts.map((cut, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.activityItem}
+                    onPress={() => router.push(`/production/cuts/details/${cut.id}` as any)}
+                  >
+                    <View style={styles.activityIcon}>
+                      <Icon
+                        name="scissors"
+                        size={16}
+                        color={cut.status === CUT_STATUS.CUTTING ? "#f59e0b" : "#6b7280"}
+                      />
+                    </View>
+                    <View style={styles.activityContent}>
+                      <Text style={styles.activityTitle}>
+                        {cut.plan?.name || "Plano de Corte"}
+                      </Text>
+                      <Text style={styles.activityDescription}>
+                        {cut.status === CUT_STATUS.CUTTING ? "Em Corte" : "Pendente"} • {cut.quantity || 0} unidades
+                      </Text>
+                    </View>
+                    <Icon name="chevron-right" size={20} color="#9ca3af" />
+                  </TouchableOpacity>
+                ))}
+              </CardContent>
+            </Card>
+          </View>
+        )}
+
+        {/* Recent Commissions */}
+        {commissions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Comissões Recentes</Text>
+            <Card>
+              <CardContent>
+                {commissions.map((commission, index) => (
+                  <View key={index} style={styles.activityItem}>
+                    <View style={styles.activityIcon}>
+                      <Icon name="dollar-sign" size={16} color="#10b981" />
+                    </View>
+                    <View style={styles.activityContent}>
+                      <Text style={styles.activityTitle}>
+                        {commission.user?.name || "Funcionário"}
+                      </Text>
+                      <Text style={styles.activityDescription}>
+                        Bônus: {formatCurrency(commission.baseBonus || 0)}
+                      </Text>
+                    </View>
+                    <Text style={styles.commissionValue}>
+                      {formatCurrency(commission.baseBonus || 0)}
+                    </Text>
+                  </View>
+                ))}
+              </CardContent>
+            </Card>
+          </View>
+        )}
 
         {/* Overview Metrics */}
         <View style={styles.section}>
@@ -548,5 +750,16 @@ const styles = StyleSheet.create({
   },
   progress: {
     height: 8,
+  },
+  quickActionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginHorizontal: -8,
+    gap: 8,
+  },
+  commissionValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#10b981",
   },
 });

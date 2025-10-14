@@ -29,6 +29,8 @@ export default function ServerServicesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
+  const { success, error: showError, warning, info } = useToast();
+
 
   // Query for services
   const { data: servicesData, isLoading, error, refetch } = useQuery({
@@ -41,33 +43,33 @@ export default function ServerServicesScreen() {
   const startMutation = useMutation({
     mutationFn: startService,
     onSuccess: (data, serviceName) => {
-      toast.success(`Serviço ${serviceName} iniciado com sucesso`);
+      success(`Serviço ${serviceName} iniciado com sucesso`);
       queryClient.invalidateQueries({ queryKey: ['systemServices'] });
     },
     onError: (error, serviceName) => {
-      toast.error(`Erro ao iniciar serviço ${serviceName}`);
+      showError(`Erro ao iniciar serviço ${serviceName}`);
     },
   });
 
   const stopMutation = useMutation({
     mutationFn: stopService,
     onSuccess: (data, serviceName) => {
-      toast.success(`Serviço ${serviceName} parado com sucesso`);
+      success(`Serviço ${serviceName} parado com sucesso`);
       queryClient.invalidateQueries({ queryKey: ['systemServices'] });
     },
     onError: (error, serviceName) => {
-      toast.error(`Erro ao parar serviço ${serviceName}`);
+      showError(`Erro ao parar serviço ${serviceName}`);
     },
   });
 
   const restartMutation = useMutation({
     mutationFn: restartService,
     onSuccess: (data, serviceName) => {
-      toast.success(`Serviço ${serviceName} reiniciado com sucesso`);
+      success(`Serviço ${serviceName} reiniciado com sucesso`);
       queryClient.invalidateQueries({ queryKey: ['systemServices'] });
     },
     onError: (error, serviceName) => {
-      toast.error(`Erro ao reiniciar serviço ${serviceName}`);
+      showError(`Erro ao reiniciar serviço ${serviceName}`);
     },
   });
 

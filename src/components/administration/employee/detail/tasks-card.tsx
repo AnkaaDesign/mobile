@@ -22,8 +22,8 @@ interface TasksCardProps {
 export function TasksCard({ employee, maxItems = 5 }: TasksCardProps) {
   const { colors } = useTheme();
 
-  const tasks = employee.tasks?.slice(0, maxItems) || [];
-  const totalTasks = employee._count?.tasks || employee.tasks?.length || 0;
+  const tasks = employee.createdTasks?.slice(0, maxItems) || [];
+  const totalTasks = employee._count?.createdTasks || employee.createdTasks?.length || 0;
 
   const handleTaskPress = (taskId: string) => {
     router.push(routeToMobilePath(routes.production.schedule.details(taskId)) as any);
@@ -51,7 +51,7 @@ export function TasksCard({ employee, maxItems = 5 }: TasksCardProps) {
       <CardContent style={styles.content}>
         {tasks.length === 0 ? (
           <EmptyState
-            icon={IconClipboardList}
+            icon="clipboard-list"
             title="Nenhuma ordem de serviço"
             description="Este colaborador ainda não possui ordens de serviço atribuídas."
           />

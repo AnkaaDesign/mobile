@@ -219,7 +219,7 @@ export function NumberInput({
     }),
     ...(editable === false && {
       opacity: 0.5,
-      backgroundColor: isDark ? colors.muted : colors.background,
+      backgroundColor: colors.input,
     }),
   };
 

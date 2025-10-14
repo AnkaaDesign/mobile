@@ -14,31 +14,18 @@ export const useServiceOrdersInfiniteMobile = (filters?: Partial<ServiceOrderGet
         perPage: pageSize,
         orderBy: filters?.orderBy || { createdAt: "desc" },
         include: {
-          customer: true,
-          services: {
+          task: {
             include: {
-              service: true,
-            }
-          },
-          vehicle: {
-            include: {
-              vehicleModel: {
-                include: {
-                  manufacturer: true,
-                }
-              }
-            }
-          },
-          user: {
-            include: {
-              position: true,
-              sector: true,
-            }
-          },
-          _count: {
-            select: {
-              services: true,
-            }
+              customer: {
+                select: {
+                  id: true,
+                  fantasyName: true,
+                  corporateName: true,
+                  cnpj: true,
+                  cpf: true,
+                },
+              },
+            },
           },
         },
         ...filters,

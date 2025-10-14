@@ -196,7 +196,7 @@ export default function AirbrushingDetailsScreen() {
                       Cliente:
                     </ThemedText>
                     <ThemedText style={{ fontWeight: "500", fontSize: 14 }}>
-                      {(airbrushing.task.customer as any)?.name}
+                      {airbrushing.task.customer.fantasyName}
                     </ThemedText>
                   </View>
                 )}

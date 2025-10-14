@@ -1,254 +1,358 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
-import { Stack, router } from "expo-router";
+import React, { useState, useCallback, useMemo } from "react";
+import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "@/contexts/auth-context";
-import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
-import { ThemedView } from "@/components/ui/themed-view";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
-import { ErrorScreen } from "@/components/ui/error-screen";
-import { PpeTable } from "@/components/inventory/ppe/list/ppe-table";
+import { useItemMutations } from '../../../../hooks';
+import { useItemsInfiniteMobile } from "@/hooks";
+import type { ItemGetManyFormData } from '../../../../schemas';
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge, Button } from "@/components/ui";
+import { PpeTable, createColumnDefinitions } from "@/components/inventory/ppe/list/ppe-table";
+import type { SortConfig } from "@/components/inventory/ppe/list/ppe-table";
 import { PpeFilterModal } from "@/components/inventory/ppe/list/ppe-filter-modal";
 import { PpeFilterTags } from "@/components/inventory/ppe/list/ppe-filter-tags";
-import { SearchBar } from "@/components/ui/search-bar";
-import { FAB } from "@/components/ui/fab";
-import { IconShield, IconPlus, IconFilter } from "@tabler/icons-react-native";
-import { usePpeDeliveryMutations, usePpeDeliveriesInfinite } from '../../../../hooks';
-import { hasPrivilege } from '../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../constants';
-import type { PpeDeliveryGetManyFormData } from '../../../../schemas';
+import { PpeColumnVisibilityDrawer } from "@/components/inventory/ppe/list/ppe-column-visibility-drawer";
+import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
+import { ItemsCountDisplay } from "@/components/ui/items-count-display";
+import { useTheme } from "@/lib/theme";
+import { routes } from '../../../../constants';
+import { routeToMobilePath } from "@/lib/route-mapper";
+import { ITEM_CATEGORY_TYPE } from '../../../../constants';
 
 export default function PPEListScreen() {
+  const router = useRouter();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
-  const [searchText, setSearchText] = useState("");
-  const [debouncedSearchText, setDebouncedSearchText] = useState("");
-  const [filters, setFilters] = useState<Partial<PpeDeliveryGetManyFormData>>({});
-  const [showFilters, setShowFilters] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const { deleteMutation } = usePpeDeliveryMutations();
+  const [searchText, setSearchText] = useState("");
+  const [displaySearchText, setDisplaySearchText] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<Partial<ItemGetManyFormData>>({});
+  const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "name", direction: "asc" }]);
+  const [selectedPpes, setSelectedPpes] = useState<Set<string>>(new Set());
+  const [showSelection, setShowSelection] = useState(false);
+  const [showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["name", "ppeType", "ppeSize"]);
 
-  // Permission check - PPE management is available for HR, warehouse and admin
-  const canManagePpe = useMemo(() => {
-    if (!user) return false;
-    return hasPrivilege(user, SECTOR_PRIVILEGES.HUMAN_RESOURCES) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-  }, [user]);
+  // Build query parameters with sorting - filter for PPE items only
+  const buildOrderBy = () => {
+    if (!sortConfigs || sortConfigs.length === 0) return { name: "asc" };
 
-  const isAdmin = useMemo(() => {
-    if (!user) return false;
-    return hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-  }, [user]);
+    // If only one sort, return as object
+    if (sortConfigs.length === 1) {
+      const config = sortConfigs[0 as keyof typeof sortConfigs];
+      switch (config.columnKey) {
+        case "name":
+          return { name: config.direction };
+        case "uniCode":
+          return { uniCode: config.direction };
+        case "quantity":
+          return { quantity: config.direction };
+        case "brand.name":
+          return { brand: { name: config.direction } };
+        case "category.name":
+          return { category: { name: config.direction } };
+        case "price":
+          return { prices: { value: config.direction } };
+        case "totalPrice":
+          return { totalPrice: config.direction };
+        case "reorderPoint":
+          return { reorderPoint: config.direction };
+        case "reorderQuantity":
+          return { reorderQuantity: config.direction };
+        case "supplier.fantasyName":
+          return { supplier: { fantasyName: config.direction } };
+        case "shouldAssignToUser":
+          return { shouldAssignToUser: config.direction };
+        case "isActive":
+          return { isActive: config.direction };
+        case "createdAt":
+          return { createdAt: config.direction };
+        case "updatedAt":
+          return { updatedAt: config.direction };
+        case "ppeCA":
+          return { ppeCA: config.direction };
+        default:
+          return { name: "asc" };
+      }
+    }
 
-  // Build query with filters
-  const queryParams = useMemo(() => ({
-    orderBy: { createdAt: "desc" },
-    include: {
-      item: {
-        include: {
-          category: true,
-          brand: true,
-          supplier: true,
-        }
-      },
-      user: {
-        include: {
-          position: true,
-          sector: true,
-        }
+    // Multiple sorts, return as array
+    return sortConfigs.map((config) => {
+      switch (config.columnKey) {
+        case "name":
+          return { name: config.direction };
+        case "uniCode":
+          return { uniCode: config.direction };
+        case "quantity":
+          return { quantity: config.direction };
+        case "brand.name":
+          return { brand: { name: config.direction } };
+        case "category.name":
+          return { category: { name: config.direction } };
+        case "price":
+          return { prices: { value: config.direction } };
+        case "totalPrice":
+          return { totalPrice: config.direction };
+        case "reorderPoint":
+          return { reorderPoint: config.direction };
+        case "reorderQuantity":
+          return { reorderQuantity: config.direction };
+        case "supplier.fantasyName":
+          return { supplier: { fantasyName: config.direction } };
+        case "shouldAssignToUser":
+          return { shouldAssignToUser: config.direction };
+        case "isActive":
+          return { isActive: config.direction };
+        case "createdAt":
+          return { createdAt: config.direction };
+        case "updatedAt":
+          return { updatedAt: config.direction };
+        case "ppeCA":
+          return { ppeCA: config.direction };
+        default:
+          return { name: "asc" };
+      }
+    });
+  };
+
+  const queryParams = {
+    orderBy: buildOrderBy(),
+    ...(searchText ? { searchingFor: searchText } : {}),
+    ...filters,
+    where: {
+      ...filters.where,
+      category: {
+        type: ITEM_CATEGORY_TYPE.PPE,
       },
     },
-    ...(debouncedSearchText ? { searchingFor: debouncedSearchText } : {}),
-    ...filters,
-  }), [debouncedSearchText, filters]);
+    include: {
+      brand: true,
+      category: true,
+      supplier: true,
+      measures: true,
+      prices: {
+        where: {
+          isActive: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+      },
+    },
+  };
 
-  // Use the actual PPE deliveries infinite hook
-  const query = usePpeDeliveriesInfinite(queryParams);
+  const { items, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useItemsInfiniteMobile(queryParams);
+  const { delete: deletePpe } = useItemMutations();
 
-  // Extract the data properly from infinite query
-  const ppeDeliveries = query.data?.data || [];
-  const totalItemsLoaded = ppeDeliveries.length;
-  const canLoadMore = query.hasNextPage;
-  const isFetchingNextPage = query.isFetchingNextPage;
-  const loadMore = query.fetchNextPage;
-  const isLoading = query.isLoading;
-  const error = query.error;
-  const refresh = query.refresh;
-
-  // Handle pull to refresh
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refresh();
-    setRefreshing(false);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
   }, [refresh]);
 
-  // Handle navigation to details
-  const handlePpePress = useCallback((ppeId: string) => {
-    router.push(`/inventory/ppe/details/${ppeId}`);
+  const handleCreatePpe = () => {
+    router.push(routeToMobilePath(routes.inventory.ppe.create) as any);
+  };
+
+  const handlePpePress = (ppeId: string) => {
+    router.push(routeToMobilePath(routes.inventory.ppe.details(ppeId)) as any);
+  };
+
+  const handleEditPpe = (ppeId: string) => {
+    router.push(routeToMobilePath(routes.inventory.ppe.edit(ppeId)) as any);
+  };
+
+  const handleDeletePpe = useCallback(
+    async (ppeId: string) => {
+      try {
+        await deletePpe(ppeId);
+        // Clear selection if the deleted item was selected
+        if (selectedPpes.has(ppeId)) {
+          const newSelection = new Set(selectedPpes);
+          newSelection.delete(ppeId);
+          setSelectedPpes(newSelection);
+        }
+      } catch (error) {
+        Alert.alert("Erro", "Não foi possível excluir o EPI. Tente novamente.");
+      }
+    },
+    [deletePpe, selectedPpes],
+  );
+
+  const handleSort = useCallback((configs: SortConfig[]) => {
+    setSortConfigs(configs);
   }, []);
 
-  // Handle PPE delivery deletion
-  const handleDelete = useCallback(async (deliveryId: string) => {
-    Alert.alert(
-      "Excluir Entrega de EPI",
-      "Tem certeza que deseja excluir esta entrega de EPI? Esta ação é irreversível.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteMutation.mutateAsync(deliveryId);
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível excluir a entrega de EPI");
-            }
-          },
-        },
-      ]
-    );
-  }, [deleteMutation]);
+  const handleSelectionChange = useCallback((newSelection: Set<string>) => {
+    setSelectedPpes(newSelection);
+  }, []);
 
-  // Handle search with debounce
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchText(searchText);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchText]);
+  const handleSearch = useCallback((text: string) => {
+    setSearchText(text);
+  }, []);
 
-  // Clear all filters
+  const handleDisplaySearchChange = useCallback((text: string) => {
+    setDisplaySearchText(text);
+  }, []);
+
+  const handleApplyFilters = useCallback((newFilters: Partial<ItemGetManyFormData>) => {
+    setFilters(newFilters);
+    setShowFilters(false);
+  }, []);
+
   const handleClearFilters = useCallback(() => {
     setFilters({});
     setSearchText("");
-    setDebouncedSearchText("");
+    setDisplaySearchText("");
+    setSelectedPpes(new Set());
+    setShowSelection(false);
   }, []);
 
-  // Check active filters
-  const hasActiveFilters = useMemo(() => {
-    return Object.keys(filters).length > 0 || !!debouncedSearchText;
-  }, [filters, debouncedSearchText]);
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
+  }, []);
 
-  // Permission gate
-  if (!canManagePpe) {
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  // Count active filters
+  const activeFiltersCount = Object.entries(filters).filter(
+    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+  ).length;
+
+  // Only show skeleton on initial load, not on refetch/sort
+  const isInitialLoad = isLoading && !isRefetching && items.length === 0;
+
+  if (isInitialLoad) {
     return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Entregas de EPI",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
-        <ErrorScreen
-          message="Acesso negado"
-          detail="Você não tem permissão para acessar esta funcionalidade. É necessário privilégio de RH, Almoxarifado ou Administrador."
-        />
-      </>
+      <ThemedView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>Carregando EPIs...</ThemedText>
+        </View>
+      </ThemedView>
     );
   }
 
+  if (error && items.length === 0) {
+    return (
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar EPIs" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
+  }
+
+  const hasPpes = Array.isArray(items) && items.length > 0;
+
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Entregas de EPI",
-          headerStyle: { backgroundColor: colors.card },
-          headerTintColor: colors.foreground,
-          headerRight: () => (
-            <View style={styles.headerActions}>
-              <Button
-                variant="default"
-                size="icon"
-                onPress={() => setShowFilters(true)}
-              >
-                <IconFilter size={20} color={colors.foreground} />
-              </Button>
-            </View>
-          ),
+    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+      {/* Search, Filter and Sort */}
+      <View style={[styles.searchContainer]}>
+        <SearchBar
+          value={displaySearchText}
+          onChangeText={handleDisplaySearchChange}
+          onSearch={handleSearch}
+          placeholder="Buscar EPIs..."
+          style={styles.searchBar}
+          debounceMs={300}
+        />
+        <View style={styles.buttonContainer}>
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowColumnManager(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconList size={20} color={colors.foreground} />
+            </Button>
+            <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
+              <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
+            </Badge>
+          </View>
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowFilters(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconFilter size={20} color={colors.foreground} />
+            </Button>
+            {activeFiltersCount > 0 && (
+              <Badge style={styles.actionBadge} variant="destructive" size="sm">
+                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
+              </Badge>
+            )}
+          </View>
+        </View>
+      </View>
+
+      {/* Individual filter tags */}
+      <PpeFilterTags
+        filters={filters}
+        searchText={searchText}
+        onFilterChange={handleApplyFilters}
+        onSearchChange={(text) => {
+          setSearchText(text);
+          setDisplaySearchText(text);
         }}
+        onClearAll={handleClearFilters}
       />
 
-      <ThemedView style={styles.container}>
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <SearchBar
-            value={searchText}
-            onChangeText={setSearchText}
-            placeholder="Buscar por item ou usuário..."
+      {hasPpes ? (
+        <TableErrorBoundary onRetry={handleRefresh}>
+          <PpeTable
+            ppes={items}
+            onPpePress={handlePpePress}
+            onPpeEdit={handleEditPpe}
+            onPpeDelete={handleDeletePpe}
+            onRefresh={handleRefresh}
+            onEndReached={canLoadMore ? loadMore : undefined}
+            refreshing={refreshing || isRefetching}
+            loading={false}
+            loadingMore={isFetchingNextPage}
+            showSelection={showSelection}
+            selectedPpes={selectedPpes}
+            onSelectionChange={handleSelectionChange}
+            sortConfigs={sortConfigs}
+            onSort={handleSort}
+            visibleColumnKeys={visibleColumnKeys}
+            enableSwipeActions={true}
+          />
+        </TableErrorBoundary>
+      ) : (
+        <View style={styles.emptyContainer}>
+          <EmptyState
+            icon={searchText ? "search" : "shield"}
+            title={searchText ? "Nenhum EPI encontrado" : "Nenhum EPI cadastrado"}
+            description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando seu primeiro EPI no estoque"}
+            actionLabel={searchText ? undefined : "Cadastrar EPI"}
+            onAction={searchText ? undefined : handleCreatePpe}
           />
         </View>
+      )}
 
-        {/* Active Filters */}
-        {hasActiveFilters && (
-          <PpeFilterTags
-            filters={filters}
-            searchText={debouncedSearchText}
-            onClearAll={handleClearFilters}
-            onRemoveFilter={(key) => {
-              const newFilters = { ...filters };
-              delete (newFilters as any)[key];
-              setFilters(newFilters);
-            }}
-            onClearSearch={() => {
-              setSearchText("");
-              setDebouncedSearchText("");
-            }}
-          />
-        )}
+      {/* Items count */}
+      {hasPpes && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
-        {/* Results Count */}
-        {totalItemsLoaded > 0 && (
-          <View style={styles.countContainer}>
-            <ThemedText style={styles.countText}>
-              {totalItemsLoaded} Entrega{totalItemsLoaded === 1 ? "" : "s"} de EPI
-            </ThemedText>
-          </View>
-        )}
+      {hasPpes && <FAB icon="plus" onPress={handleCreatePpe} />}
 
-        {/* PPE Deliveries Table */}
-        <PpeTable
-          ppes={ppeDeliveries}
-          isLoading={isLoading}
-          error={error}
-          onPpePress={handlePpePress}
-          onDelete={handleDelete}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
-          onEndReach={loadMore}
-          canLoadMore={canLoadMore}
-          loadingMore={isFetchingNextPage}
-        />
+      {/* Filter Modal */}
+      <PpeFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
 
-        {/* Create FAB - Only for admin */}
-        {isAdmin && (
-          <FAB
-            onPress={() => router.push("/inventory/ppe/deliveries/create")}
-            style={{
-              bottom: insets.bottom + spacing.lg,
-              right: spacing.lg,
-            }}
-          >
-            <IconPlus size={24} color="white" />
-          </FAB>
-        )}
-
-        {/* Filter Modal */}
-        <PpeFilterModal
-          visible={showFilters}
-          onClose={() => setShowFilters(false)}
-          onApply={(newFilters) => {
-            setFilters(newFilters);
-            setShowFilters(false);
-          }}
-          currentFilters={filters}
-        />
-      </ThemedView>
-    </>
+      {/* Column Visibility Drawer */}
+      <PpeColumnVisibilityDrawer
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        open={showColumnManager}
+        onOpenChange={setShowColumnManager}
+      />
+    </ThemedView>
   );
 }
 
@@ -256,20 +360,58 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerActions: {
-    flexDirection: "row",
-    gap: spacing.xs,
-  },
   searchContainer: {
-    padding: spacing.md,
-    paddingBottom: 0,
+    flexDirection: "row",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 8,
+    alignItems: "center",
   },
-  countContainer: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xs,
+  searchBar: {
+    flex: 1,
   },
-  countText: {
-    fontSize: 14,
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  actionButtonWrapper: {
+    position: "relative",
+  },
+  actionButton: {
+    height: 48,
+    width: 48,
+    borderRadius: 10,
+    paddingHorizontal: 0,
+  },
+  actionBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 3,
+  },
+  actionBadgeText: {
+    fontSize: 9,
+    fontWeight: "600",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
     opacity: 0.7,
   },
 });

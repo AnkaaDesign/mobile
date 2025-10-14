@@ -5,7 +5,6 @@ import { useUser } from '../../../../../hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
 import { Card, CardContent } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Header } from "@/components/ui/header";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconUser, IconRefresh, IconEdit } from "@tabler/icons-react-native";
@@ -40,43 +39,17 @@ export default function EmployeeDetailsScreen() {
     refetch,
   } = useUser(id, {
     include: {
-      position: {
-        include: {
-          sector: true,
-        },
-      },
+      position: true,
       sector: true,
       managedSector: true,
       ppeSize: true,
-      tasks: {
-        include: {
-          customer: true,
-          services: true,
-        },
-        orderBy: { createdAt: "desc" },
-        take: 10,
-      },
-      bonuses: {
-        include: {
-          bonusDiscounts: true,
-        },
-        orderBy: { createdAt: "desc" },
-        take: 12,
-      },
-      vacations: {
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      },
-      warningsCollaborator: {
-        include: {
-          supervisor: { select: { name: true, id: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      },
+      createdTasks: true,
+      bonuses: true,
+      vacations: true,
+      warningsCollaborator: true,
       _count: {
         select: {
-          tasks: true,
+          createdTasks: true,
           bonuses: true,
           vacations: true,
           warningsCollaborator: true,
@@ -104,101 +77,78 @@ export default function EmployeeDetailsScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.screenContainer, { backgroundColor: colors.background }]}>
-        <Header
-          title="Detalhes do Colaborador"
-          showBackButton={true}
-          onBackPress={() => router.back()}
-        />
-        <EmployeeDetailSkeleton />
-      </View>
+      <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]}>
+        <View style={styles.container}>
+          <EmployeeDetailSkeleton />
+        </View>
+      </ScrollView>
     );
   }
 
   if (error || !employee || !id || id === "") {
     return (
-      <View style={[styles.screenContainer, { backgroundColor: colors.background }]}>
-        <Header
-          title="Detalhes do Colaborador"
-          showBackButton={true}
-          onBackPress={() => router.back()}
-        />
-        <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]}>
-          <View style={styles.container}>
-            <Card>
-              <CardContent style={styles.errorContent}>
-                <View style={[styles.errorIcon, { backgroundColor: colors.muted }]}>
-                  <IconUser size={32} color={colors.mutedForeground} />
-                </View>
-                <ThemedText style={[styles.errorTitle, { color: colors.foreground }]}>
-                  Colaborador não encontrado
-                </ThemedText>
-                <ThemedText style={[styles.errorDescription, { color: colors.mutedForeground }]}>
-                  O colaborador solicitado não foi encontrado ou pode ter sido removido.
-                </ThemedText>
-              </CardContent>
-            </Card>
-          </View>
-        </ScrollView>
-      </View>
+      <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]}>
+        <View style={styles.container}>
+          <Card>
+            <CardContent style={styles.errorContent}>
+              <View style={[styles.errorIcon, { backgroundColor: colors.muted }]}>
+                <IconUser size={32} color={colors.mutedForeground} />
+              </View>
+              <ThemedText style={[styles.errorTitle, { color: colors.foreground }]}>
+                Colaborador não encontrado
+              </ThemedText>
+              <ThemedText style={[styles.errorDescription, { color: colors.mutedForeground }]}>
+                O colaborador solicitado não foi encontrado ou pode ter sido removido.
+              </ThemedText>
+            </CardContent>
+          </Card>
+        </View>
+      </ScrollView>
     );
   }
 
   return (
-    <View style={[styles.screenContainer, { backgroundColor: colors.background }]}>
-      {/* Enhanced Header */}
-      <Header
-        title={employee.name}
-        showBackButton={true}
-        onBackPress={() => router.back()}
-        rightAction={
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={handleRefresh}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.muted,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-              disabled={refreshing}
-            >
-              <IconRefresh size={18} color={colors.foreground} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleEdit}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.primary,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-            >
-              <IconEdit size={18} color={colors.primaryForeground} />
-            </TouchableOpacity>
-          </View>
-        }
-      />
-
-      <ScrollView
-        style={[styles.scrollView, { backgroundColor: colors.background }]}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.container}>
+    <ScrollView
+      style={[styles.scrollView, { backgroundColor: colors.background }]}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.container}>
+        {/* Employee Name Header Card */}
+        <Card>
+          <CardContent style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <IconUser size={24} color={colors.primary} />
+              <ThemedText style={[styles.employeeName, { color: colors.foreground }]}>
+                {employee.name}
+              </ThemedText>
+            </View>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={handleRefresh}
+                style={[styles.actionButton, { backgroundColor: colors.muted }]}
+                activeOpacity={0.7}
+                disabled={refreshing}
+              >
+                <IconRefresh size={18} color={colors.foreground} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleEdit}
+                style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                activeOpacity={0.7}
+              >
+                <IconEdit size={18} color={colors.primaryForeground} />
+              </TouchableOpacity>
+            </View>
+          </CardContent>
+        </Card>
           {/* Main Employee Card */}
           <EmployeeCard employee={employee} />
 
@@ -247,17 +197,13 @@ export default function EmployeeDetailsScreen() {
           </UICard>
 
           {/* Bottom spacing for mobile navigation */}
-          <View style={{ height: spacing.xxl * 2 }} />
-        </View>
-      </ScrollView>
-    </View>
+        <View style={{ height: spacing.xxl * 2 }} />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-  },
   scrollView: {
     flex: 1,
   },
@@ -266,6 +212,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     gap: spacing.lg,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.lg,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    flex: 1,
+  },
+  employeeName: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    flex: 1,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
   },
   errorContent: {
     alignItems: "center",

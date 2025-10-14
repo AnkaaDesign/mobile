@@ -16,7 +16,6 @@ export * from "./usePrivileges";
 // =====================================================
 // Statistics & Analytics Hooks
 // =====================================================
-export * from "./use-inventory-statistics";
 // Re-export specific functions from other files to avoid conflicts
 export {
   useActivityAnalytics as useActivityAnalyticsDetailed,
@@ -101,6 +100,7 @@ export * from "./useNotification";
 export * from "./usePreferences";
 export * from "./useChangelog";
 export * from "./dashboard";
+export * from "./use-entity-details";
 
 // =====================================================
 // Other Module Hooks
@@ -122,6 +122,47 @@ export * from "./deployment";
 // Integration Hooks
 // =====================================================
 export * from "./secullum";
+
+// =====================================================
+// Mobile-Optimized Infinite Scroll Hooks
+// =====================================================
+// Core infinite mobile utility
+export * from "./use-infinite-mobile";
+
+// Entity-specific infinite mobile hooks
+export * from "./use-activities-infinite-mobile";
+export * from "./use-borrows-infinite-mobile";
+export * from "./use-change-logs-infinite-mobile";
+export * from "./use-commissions-infinite-mobile";
+export * from "./use-customers-infinite-mobile";
+export * from "./use-external-withdrawals-infinite-mobile";
+export * from "./use-files-infinite-mobile";
+export * from "./use-holidays-infinite-mobile";
+export * from "./use-item-brands-infinite-mobile";
+export * from "./use-item-categories-infinite-mobile";
+export * from "./use-items-infinite-mobile";
+export * from "./use-maintenance-infinite-mobile";
+export * from "./use-notifications-infinite-mobile";
+export * from "./use-orders-infinite-mobile";
+export * from "./use-paints-infinite-mobile";
+export * from "./use-positions-infinite-mobile";
+export * from "./use-ppe-deliveries-infinite-mobile";
+export * from "./use-ppe-infinite-mobile";
+export * from "./use-ppe-schedules-infinite-mobile";
+export * from "./use-ppe-sizes-infinite-mobile";
+export * from "./use-request-ppe-delivery";
+export * from "./use-sectors-infinite-mobile";
+export * from "./use-service-orders-infinite-mobile";
+export * from "./use-services-infinite-mobile";
+export * from "./use-suppliers-infinite-mobile";
+export * from "./use-tasks-infinite-mobile";
+export * from "./use-team-cuts-infinite-mobile";
+export * from "./use-team-ppe-deliveries-infinite-mobile";
+export * from "./use-team-users-infinite-mobile";
+export * from "./use-trucks-infinite-mobile";
+export * from "./use-users-infinite-mobile";
+export * from "./use-vacations-infinite-mobile";
+export * from "./use-warnings-infinite-mobile";
 
 // =====================================================
 // Monitoring & Utilities

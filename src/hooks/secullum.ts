@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { secullumService } from '../api-client';
 import type { SecullumAuthCredentials } from '../api-client';
-import { toast } from "sonner";
 
 // Query keys
 export const secullumKeys = {
@@ -29,11 +28,9 @@ export const useSecullumAuth = () => {
   return useMutation({
     mutationFn: (credentials: SecullumAuthCredentials) => secullumService.authenticate(credentials),
     onSuccess: (_data) => {
-      toast.success(_data.data.message || "Autenticação realizada com sucesso");
       queryClient.invalidateQueries({ queryKey: secullumKeys.authStatus() });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao autenticar com Secullum");
     },
   });
 };
@@ -52,11 +49,9 @@ export const useSecullumLogout = () => {
   return useMutation({
     mutationFn: (email?: string) => secullumService.logout(email),
     onSuccess: (_data) => {
-      toast.success(_data.data.message || "Logout realizado com sucesso");
       queryClient.invalidateQueries({ queryKey: secullumKeys.all });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao fazer logout");
     },
   });
 };
@@ -76,11 +71,9 @@ export const useSecullumSyncEmployees = () => {
   return useMutation({
     mutationFn: () => secullumService.syncEmployees(),
     onSuccess: (_data) => {
-      toast.success(_data.data.message || "Sincronização iniciada com sucesso");
       queryClient.invalidateQueries({ queryKey: secullumKeys.employees() });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao sincronizar funcionários");
     },
   });
 };
@@ -225,12 +218,10 @@ export const useSecullumApproveRequest = () => {
   return useMutation({
     mutationFn: ({ requestId, data }: { requestId: string; data: any }) => secullumService.approveRequest(requestId, data),
     onSuccess: (_data) => {
-      toast.success(_data.data.message || "Solicitação aprovada com sucesso");
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "requests"] });
       queryClient.invalidateQueries({ queryKey: secullumKeys.pendencias() });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao aprovar solicitação");
     },
   });
 };
@@ -241,12 +232,10 @@ export const useSecullumRejectRequest = () => {
   return useMutation({
     mutationFn: ({ requestId, data }: { requestId: string; data: any }) => secullumService.rejectRequest(requestId, data),
     onSuccess: (_data) => {
-      toast.success(_data.data.message || "Solicitação rejeitada com sucesso");
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "requests"] });
       queryClient.invalidateQueries({ queryKey: secullumKeys.pendencias() });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao rejeitar solicitação");
     },
   });
 };
@@ -267,12 +256,10 @@ export const useSecullumSyncTrigger = () => {
   return useMutation({
     mutationFn: (_params: { type: "full" | "partial" | "pause" | "resume" | "stop"; entityTypes?: string[] }) => secullumService.triggerSync(_params),
     onSuccess: (_data) => {
-      toast.success(_data.data.message || "Sincronização iniciada com sucesso");
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "sync-status"] });
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "sync-history"] });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao iniciar sincronização");
     },
   });
 };
@@ -299,11 +286,9 @@ export const useSecullumResolveConflict = () => {
   return useMutation({
     mutationFn: (_params: { conflictId: string; resolution: "use_ankaa" | "use_secullum" | "merge" | "ignore"; notes?: string }) => secullumService.resolveConflict(_params),
     onSuccess: (_data) => {
-      toast.success(_data.data.message || "Conflito resolvido com sucesso");
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "conflicts"] });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao resolver conflito");
     },
   });
 };
@@ -315,11 +300,9 @@ export const useSecullumBulkResolveConflicts = () => {
     mutationFn: (_params: { resolution: "use_ankaa" | "use_secullum" | "merge" | "ignore"; conflictIds?: string[]; filters?: any }) =>
       secullumService.bulkResolveConflicts(_params),
     onSuccess: (_data) => {
-      toast.success(_data.data.message || "Conflitos resolvidos em lote com sucesso");
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "conflicts"] });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao resolver conflitos em lote");
     },
   });
 };
@@ -338,11 +321,9 @@ export const useSecullumUpdateEntityMapping = () => {
   return useMutation({
     mutationFn: (_params: { entityType: string; mappingConfig: any }) => secullumService.updateEntityMapping(_params),
     onSuccess: (_data) => {
-      toast.success(_data.data.message || "Mapeamento atualizado com sucesso");
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "entity-mappings"] });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao atualizar mapeamento");
     },
   });
 };
@@ -361,12 +342,10 @@ export const useSecullumUpdateSyncConfig = () => {
   return useMutation({
     mutationFn: (config: any) => secullumService.updateSyncConfig(config),
     onSuccess: (_data) => {
-      toast.success(_data.data.message || "Configuração salva com sucesso");
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "sync-config"] });
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "sync-status"] });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao salvar configuração");
     },
   });
 };
@@ -375,10 +354,8 @@ export const useSecullumTestConnection = () => {
   return useMutation({
     mutationFn: () => secullumService.testConnection(),
     onSuccess: (_data) => {
-      toast.success(_data.data.message || "Conexão testada com sucesso");
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Falha no teste de conexão");
     },
   });
 };
@@ -431,12 +408,10 @@ export const useSecullumUpdateTimeEntry = () => {
         justification: _params.justification,
       }),
     onSuccess: (_data, _variables) => {
-      toast.success(_data.data.message || "Registro atualizado com sucesso");
       // Invalidate time entries queries to refresh the data
       queryClient.invalidateQueries({ queryKey: secullumKeys.timeEntries() });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao atualizar registro");
     },
   });
 };
@@ -451,11 +426,9 @@ export const useTimeClockEntryBatchUpdateWithJustification = () => {
       return Promise.resolve({ success: true, message: "Funcionalidade em desenvolvimento" });
     },
     onSuccess: (_data) => {
-      toast.info("Funcionalidade de edição em lote ainda não foi implementada");
       queryClient.invalidateQueries({ queryKey: secullumKeys.timeEntries() });
     },
     onError: (_error: any) => {
-      toast.error("Erro ao processar atualizações em lote");
     },
   });
 };
@@ -475,12 +448,10 @@ export const useSecullumCreateHoliday = () => {
   return useMutation({
     mutationFn: (_data: { Data: string; Descricao: string }) => secullumService.createHoliday(_data),
     onSuccess: (response) => {
-      toast.success(response.data.message || "Feriado criado com sucesso");
       // Invalidate holidays queries to refresh the list
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "holidays"] });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao criar feriado");
     },
   });
 };
@@ -491,12 +462,10 @@ export const useSecullumDeleteHoliday = () => {
   return useMutation({
     mutationFn: (holidayId: string | number) => secullumService.deleteHoliday(holidayId),
     onSuccess: (response) => {
-      toast.success(response.data.message || "Feriado excluído com sucesso");
       // Invalidate holidays queries to refresh the list
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "holidays"] });
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao excluir feriado");
     },
   });
 };
@@ -519,12 +488,10 @@ export const useSecullumSyncUserMapping = () => {
     onSuccess: (response, _variables) => {
       const data = response.data;
       if (data && !_variables?.dryRun) {
-        toast.success(`Mapeamento sincronizado: ${data.summary?.updated || 0} usuários atualizados`);
         queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "employees"] });
       }
     },
     onError: (_error: any) => {
-      toast.error(_error.response?.data?.message || "Erro ao sincronizar mapeamento de usuários");
     },
   });
 };

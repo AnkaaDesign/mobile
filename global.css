@@ -18,70 +18,70 @@
 @layer base {
   :root {
     /* Light mode - exactly matching web */
-    --background: 0 0% 87%; /* neutral-200 - matching web */
-    --foreground: 0 0% 20%; /* neutral-800 - matching web */
+    --background: 0 0% 91%; /* #e8e8e8 - matching web */
+    --foreground: 0 0% 25%; /* #404040 - matching web */
 
-    --card: 0 0% 96%; /* neutral-100 - matching web */
-    --card-foreground: 0 0% 20%; /* neutral-800 - matching web */
+    --card: 0 0% 98%; /* #fafafa - matching web */
+    --card-foreground: 0 0% 25%; /* #404040 - matching web */
 
-    --popover: 0 0% 96%; /* neutral-100 - matching web */
-    --popover-foreground: 0 0% 20%; /* neutral-800 - matching web */
+    --popover: 0 0% 98%; /* #fafafa - matching web */
+    --popover-foreground: 0 0% 25%; /* #404040 - matching web */
 
     /* Primary green colors - exactly matching web */
-    --primary: 142 76% 36%; /* green-600 - matching web */
-    --primary-foreground: 0 0% 98%; /* neutral-50 - matching web */
+    --primary: 142 72% 29%; /* green-700 #15803d - matching web */
+    --primary-foreground: 0 0% 100%; /* white - matching web */
 
     /* Secondary using exact web values */
-    --secondary: 0 0% 91%; /* slightly darker neutral - matching web */
-    --secondary-foreground: 0 0% 20%; /* neutral-800 - matching web */
+    --secondary: 0 0% 91%; /* #e8e8e8 - matching web */
+    --secondary-foreground: 0 0% 25%; /* #404040 - matching web */
 
-    --muted: 0 0% 91%; /* neutral-100 - matching web */
-    --muted-foreground: 0 0% 50%; /* neutral-500 - matching web */
+    --muted: 0 0% 89%; /* #e3e3e3 - matching web */
+    --muted-foreground: 0 0% 45%; /* #737373 neutral-500 - matching web */
 
-    --accent: 142 76% 36%; /* green-600 - matching web */
-    --accent-foreground: 0 0% 98%; /* neutral-50 - matching web */
+    --accent: 142 72% 29%; /* green-700 #15803d - matching web */
+    --accent-foreground: 0 0% 100%; /* white - matching web */
 
-    --destructive: 0 84% 60%; /* red-500 - matching web */
-    --destructive-foreground: 0 0% 98%; /* neutral-50 - matching web */
+    --destructive: 0 73% 51%; /* #dc2626 red-600 - matching web */
+    --destructive-foreground: 0 0% 100%; /* white - matching web */
 
-    --border: 0 0% 80%; /* neutral-300 - matching web */
-    --input: 0 0% 100%; /* white - distinct from card - matching web */
-    --ring: 142 76% 50%; /* green-500 - matching web */
+    --border: 0 0% 89%; /* #e3e3e3 - matching web */
+    --input: 0 0% 96%; /* #f5f5f5 - slightly darker than white for better contrast - matching web */
+    --ring: 142 72% 29%; /* green-700 #15803d - matching web */
 
     --radius: 0.5rem;
   }
 
   .dark {
     /* Dark mode - exactly matching web */
-    --background: 0 0% 9%; /* neutral-900 - matching web */
-    --foreground: 0 0% 96%; /* neutral-100 - matching web */
+    --background: 0 0% 11%; /* #1c1c1c - matching web */
+    --foreground: 0 0% 85%; /* #d9d9d9 - matching web */
 
-    --card: 0 0% 20%; /* neutral-800 - matching web */
-    --card-foreground: 0 0% 96%; /* neutral-100 - matching web */
+    --card: 0 0% 15%; /* #262626 - matching web */
+    --card-foreground: 0 0% 85%; /* #d9d9d9 - matching web */
 
-    --popover: 0 0% 20%; /* neutral-800 - matching web */
-    --popover-foreground: 0 0% 96%; /* neutral-100 - matching web */
+    --popover: 0 0% 15%; /* #262626 - matching web */
+    --popover-foreground: 0 0% 85%; /* #d9d9d9 - matching web */
 
     /* Primary green colors - exactly matching web */
-    --primary: 142 76% 36%; /* green-600 - matching web */
-    --primary-foreground: 0 0% 98%; /* neutral-50 - matching web */
+    --primary: 142 72% 29%; /* green-700 #15803d - matching web */
+    --primary-foreground: 0 0% 100%; /* white - matching web */
 
     /* Secondary using exact web values */
-    --secondary: 0 0% 25%; /* neutral-700 - matching web */
-    --secondary-foreground: 0 0% 96%; /* neutral-100 - matching web */
+    --secondary: 0 0% 20%; /* #333333 - matching web */
+    --secondary-foreground: 0 0% 85%; /* #d9d9d9 - matching web */
 
-    --muted: 0 0% 25%; /* neutral-700 - matching web */
-    --muted-foreground: 0 0% 50%; /* neutral-500 - matching web */
+    --muted: 0 0% 23%; /* #3a3a3a - matching web */
+    --muted-foreground: 0 0% 64%; /* #a3a3a3 neutral-400 - matching web */
 
-    --accent: 142 76% 36%; /* green-600 - matching web */
-    --accent-foreground: 0 0% 98%; /* neutral-50 - matching web */
+    --accent: 142 72% 29%; /* green-700 #15803d - matching web */
+    --accent-foreground: 0 0% 100%; /* white - matching web */
 
-    --destructive: 0 84% 60%; /* red-500 - matching web */
-    --destructive-foreground: 0 0% 98%; /* neutral-50 - matching web */
+    --destructive: 0 70% 70%; /* #f87171 red-400 - matching web */
+    --destructive-foreground: 0 0% 100%; /* white - matching web */
 
-    --border: 0 0% 35%; /* slightly lighter for better visibility - matching web */
-    --input: 0 0% 10%; /* darker than card for better contrast - neutral-900+ */
-    --ring: 142 76% 50%; /* green-500 - matching web */
+    --border: 0 0% 23%; /* #3a3a3a - matching web */
+    --input: 0 0% 15%; /* #262626 - same as card for visibility - matching web */
+    --ring: 142 72% 29%; /* green-700 #15803d - matching web */
   }
 }
 

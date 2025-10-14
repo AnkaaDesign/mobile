@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
-import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView , StyleSheet} from "react-native";
+import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
-import { IconButton } from "@/components/ui/icon-button";
+import { IconSelector } from "@tabler/icons-react-native";
 import type { Order } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,15 +12,18 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { OrderTableRowSwipe } from "./order-table-row-swipe";
 import { OrderStatusBadge } from "./order-status-badge";
 import { formatCurrency, formatDate } from '../../../../utils';
-import { ORDER_STATUS, ORDER_STATUS_LABELS } from '../../../../constants';
+import { extendedColors } from "@/lib/theme/extended-colors";
+
+// Import default visible columns function
+import { getDefaultVisibleColumns } from "./column-visibility-manager";
 
 export interface TableColumn {
   key: string;
-  title: string;
+  header: string;
+  accessor: (order: Order) => React.ReactNode;
   width: number;
   align?: "left" | "center" | "right";
   sortable?: boolean;
-  render?: (order: Order) => React.ReactNode;
 }
 
 export interface SortConfig {
@@ -44,9 +47,8 @@ interface OrderTableProps {
   onSelectionChange?: (selectedOrders: Set<string>) => void;
   sortConfigs?: SortConfig[];
   onSort?: (configs: SortConfig[]) => void;
-  columns?: TableColumn[];
-  visibleColumnKeys?: string[];
   enableSwipeActions?: boolean;
+  visibleColumnKeys?: string[];
 }
 
 // Get screen width for responsive design
@@ -54,52 +56,117 @@ const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
 // Define all available columns with their renderers
-const ALL_COLUMN_DEFINITIONS: Record<string, Omit<TableColumn, "width">> = {
-  description: {
+export const createColumnDefinitions = (): TableColumn[] => [
+  {
     key: "description",
-    title: "Descrição",
+    header: "DESCRIÇÃO",
     align: "left",
     sortable: true,
+    width: 0,
+    accessor: (order: Order) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={2}>
+        {order.description || "Sem descrição"}
+      </ThemedText>
+    ),
   },
-  supplier: {
-    key: "supplier",
-    title: "Fornecedor",
+  {
+    key: "supplier.fantasyName",
+    header: "FORNECEDOR",
     align: "left",
     sortable: true,
+    width: 0,
+    accessor: (order: Order) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {order.supplier?.fantasyName || "-"}
+      </ThemedText>
+    ),
   },
-  status: {
+  {
     key: "status",
-    title: "Status",
+    header: "STATUS",
     align: "center",
     sortable: true,
+    width: 0,
+    accessor: (order: Order) => (
+      <View style={styles.centerAlign}>
+        <OrderStatusBadge status={order.status} size="sm" />
+      </View>
+    ),
   },
-  itemsCount: {
+  {
     key: "itemsCount",
-    title: "Itens",
+    header: "ITENS",
     align: "center",
     sortable: true,
+    width: 0,
+    accessor: (order: Order) => (
+      <View style={styles.centerAlign}>
+        <Badge variant="outline" size="sm">
+          <ThemedText style={{ fontSize: fontSize.xs, fontFamily: 'monospace' }}>
+            {order._count?.items ?? order.items?.length ?? 0}
+          </ThemedText>
+        </Badge>
+      </View>
+    ),
   },
-  totalPrice: {
+  {
     key: "totalPrice",
-    title: "Total",
+    header: "VALOR TOTAL",
     align: "right",
     sortable: true,
+    width: 0,
+    accessor: (order: Order) => {
+      const total = order.items?.reduce((sum, item) => {
+        const quantity = item.orderedQuantity || 0;
+        const price = item.price || 0;
+        const tax = item.tax || 0;
+        const itemTotal = quantity * price * (1 + tax / 100);
+        return sum + itemTotal;
+      }, 0) || 0;
+      return (
+        <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
+          {formatCurrency(total)}
+        </ThemedText>
+      );
+    },
   },
-  createdAt: {
+  {
+    key: "forecast",
+    header: "PREVISÃO",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (order: Order) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
+        {order.forecast ? formatDate(order.forecast) : "-"}
+      </ThemedText>
+    ),
+  },
+  {
     key: "createdAt",
-    title: "Criado",
+    header: "CRIADO EM",
     align: "left",
     sortable: true,
+    width: 0,
+    accessor: (order: Order) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
+        {formatDate(order.createdAt)}
+      </ThemedText>
+    ),
   },
-  expectedDelivery: {
-    key: "expectedDelivery",
-    title: "Entrega",
+  {
+    key: "updatedAt",
+    header: "ATUALIZADO EM",
     align: "left",
     sortable: true,
+    width: 0,
+    accessor: (order: Order) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
+        {formatDate(order.updatedAt)}
+      </ThemedText>
+    ),
   },
-};
-
-const DEFAULT_COLUMN_KEYS = ["description", "supplier", "status", "totalPrice"];
+];
 
 export const OrderTable = React.memo<OrderTableProps>(
   ({
@@ -118,52 +185,90 @@ export const OrderTable = React.memo<OrderTableProps>(
     onSelectionChange,
     sortConfigs = [],
     onSort,
-    columns,
-    visibleColumnKeys = DEFAULT_COLUMN_KEYS,
     enableSwipeActions = true,
+    visibleColumnKeys,
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
     const [headerHeight, setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
-    // Build visible columns based on selection
+    // Column visibility - use prop if provided, otherwise use default
     const visibleColumns = useMemo(() => {
-      if (columns) return columns; // Use provided columns if any
+      if (visibleColumnKeys && visibleColumnKeys.length > 0) {
+        return new Set(visibleColumnKeys);
+      }
+      return getDefaultVisibleColumns();
+    }, [visibleColumnKeys]);
 
+    // Get all column definitions
+    const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+    // Build visible columns with dynamic widths
+    const displayColumns = useMemo(() => {
       // Define width ratios for each column type
       const columnWidthRatios: Record<string, number> = {
-        description: 2.5, // Largest - description needs more space
-        supplier: 2.0, // Large - supplier name
-        status: 1.0, // Medium - status badge
-        itemsCount: 0.8, // Small - count
-        totalPrice: 1.2, // Medium - currency
-        createdAt: 1.2, // Medium - date
-        expectedDelivery: 1.2, // Medium - date
+        description: 2.5,
+        "supplier.fantasyName": 2.0,
+        status: 1.0,
+        itemsCount: 0.8,
+        totalPrice: 1.2,
+        forecast: 1.2,
+        createdAt: 1.2,
+        updatedAt: 1.2,
       };
 
-      // Limit visible columns on mobile to 3 max (plus selection if enabled)
-      const limitedKeys = visibleColumnKeys.slice(0, 3);
+      // Filter to visible columns
+      const visible = allColumns.filter((col) => visibleColumns.has(col.key));
 
       // Calculate total ratio
-      const totalRatio = limitedKeys.reduce((sum, key) => sum + (columnWidthRatios[key] || 1), 0);
+      const totalRatio = visible.reduce((sum, col) => sum + (columnWidthRatios[col.key] || 1.0), 0);
 
-      // Calculate actual column widths based on available space
-      return limitedKeys.map((key) => {
-        const definition = ALL_COLUMN_DEFINITIONS[key as keyof typeof ALL_COLUMN_DEFINITIONS];
-        const ratio = columnWidthRatios[key] || 1;
+      // Calculate actual widths
+      return visible.map((col) => {
+        const ratio = columnWidthRatios[col.key] || 1.0;
         const width = Math.floor((availableWidth * ratio) / totalRatio);
-
-        return {
-          ...definition,
-          width,
-        } as TableColumn;
+        return { ...col, width };
       });
-    }, [visibleColumnKeys, columns, availableWidth]);
+    }, [allColumns, visibleColumns]);
 
-    const handleToggleSelection = useCallback(
+    // Handle taps outside of active row to close swipe actions
+    const handleContainerPress = useCallback(() => {
+      if (activeRowId) {
+        closeActiveRow();
+      }
+    }, [activeRowId, closeActiveRow]);
+
+    // Handle scroll events to close active row
+    const handleScroll = useCallback(() => {
+      if (activeRowId) {
+        closeActiveRow();
+      }
+    }, [activeRowId, closeActiveRow]);
+
+    // Calculate total table width
+    const tableWidth = useMemo(() => {
+      let width = displayColumns.reduce((sum, col) => sum + col.width, 0);
+      if (showSelection) width += 50; // Add checkbox column width
+      return width;
+    }, [displayColumns, showSelection]);
+
+    // Selection handlers
+    const handleSelectAll = useCallback(() => {
+      if (!onSelectionChange) return;
+
+      const allSelected = orders.every((order) => selectedOrders.has(order.id));
+      if (allSelected) {
+        onSelectionChange(new Set());
+      } else {
+        onSelectionChange(new Set(orders.map((order) => order.id)));
+      }
+    }, [orders, selectedOrders, onSelectionChange]);
+
+    const handleSelectOrder = useCallback(
       (orderId: string) => {
         if (!onSelectionChange) return;
+
         const newSelection = new Set(selectedOrders);
         if (newSelection.has(orderId)) {
           newSelection.delete(orderId);
@@ -175,336 +280,439 @@ export const OrderTable = React.memo<OrderTableProps>(
       [selectedOrders, onSelectionChange],
     );
 
-    const handleToggleAll = useCallback(() => {
-      if (!onSelectionChange) return;
-      if (selectedOrders.size === orders.length) {
-        onSelectionChange(new Set());
-      } else {
-        onSelectionChange(new Set(orders.map(o => o.id)));
-      }
-    }, [orders, selectedOrders, onSelectionChange]);
-
+    // Sort handler - non-cumulative (only one sort at a time)
     const handleSort = useCallback(
       (columnKey: string) => {
         if (!onSort) return;
 
-        const existingConfig = sortConfigs.find(c => c.columnKey === columnKey);
+        const existingConfig = sortConfigs?.find((config) => config.columnKey === columnKey);
 
-        if (!existingConfig) {
-          // Add new sort
-          onSort([...sortConfigs, { columnKey, direction: "asc" }]);
-        } else if (existingConfig.direction === "asc") {
-          // Change to desc
-          onSort(sortConfigs.map(c =>
-            c.columnKey === columnKey
-              ? { ...c, direction: "desc" }
-              : c
-          ));
+        if (existingConfig) {
+          // Column already sorted, toggle direction or remove
+          if (existingConfig.direction === "asc") {
+            // Toggle to descending
+            onSort([{ columnKey, direction: "desc" as const }]);
+          } else {
+            // Remove sort (back to no sort)
+            onSort([]);
+          }
         } else {
-          // Remove sort
-          onSort(sortConfigs.filter(c => c.columnKey !== columnKey));
+          // Set new sort (replacing any existing sort)
+          onSort([{ columnKey, direction: "asc" as const }]);
         }
       },
       [sortConfigs, onSort],
     );
 
-    const getSortIndicator = useCallback(
-      (columnKey: string) => {
-        const config = sortConfigs.find(c => c.columnKey === columnKey);
-        if (!config) return null;
+    // Column renderer using accessor
+    const renderColumnValue = useCallback((order: Order, column: TableColumn) => {
+      return column.accessor(order);
+    }, []);
 
-        const index = sortConfigs.indexOf(config);
-        return (
-          <View style={styles.sortIndicator}>
-            <Icon name={config.direction === "asc" ? "chevron-up" : "chevron-down"} size={14} color={colors.primary} />
-            {sortConfigs.length > 1 && (
-              <ThemedText style={StyleSheet.flatten([styles.sortIndex, { color: colors.primary }])}>{index + 1}</ThemedText>
-            )}
-          </View>
-        );
-      },
-      [sortConfigs, colors],
-    );
-
-    const renderColumnContent = useCallback(
-      (column: TableColumn, order: Order) => {
-        switch (column.key) {
-          case "description":
-            return (
-              <ThemedText style={styles.cellText} numberOfLines={2} ellipsizeMode="tail">
-                {order.description || "Sem descrição"}
-              </ThemedText>
-            );
-          case "supplier":
-            return (
-              <ThemedText style={styles.cellText} numberOfLines={1} ellipsizeMode="tail">
-                {order.supplier?.name || "-"}
-              </ThemedText>
-            );
-          case "status":
-            return <OrderStatusBadge status={order.status} />;
-          case "itemsCount":
-            return (
-              <ThemedText style={StyleSheet.flatten([styles.cellText, styles.centerText])}>
-                {order.items?.length || 0}
-              </ThemedText>
-            );
-          case "totalPrice":
-            return (
-              <ThemedText style={StyleSheet.flatten([styles.cellText, styles.rightText])}>
-                {formatCurrency(order.items?.reduce((sum, item) => sum + item.price, 0) || 0)}
-              </ThemedText>
-            );
-          case "createdAt":
-            return (
-              <ThemedText style={styles.cellText}>
-                {formatDate(order.createdAt)}
-              </ThemedText>
-            );
-          case "expectedDelivery":
-            return (
-              <ThemedText style={styles.cellText}>
-                {order.forecast ? formatDate(order.forecast) : "-"}
-              </ThemedText>
-            );
-          default:
-            if (column.render) {
-              return column.render(order);
-            }
-            return <ThemedText style={styles.cellText}>-</ThemedText>;
-        }
-      },
-      [],
-    );
-
-    const renderHeader = useCallback(() => {
-      return (
-        <View
-          style={StyleSheet.flatten([styles.headerContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }])}
-          onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
-        >
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} bounces={false}>
-            <View style={styles.header}>
+    // Header component
+    const renderHeader = useCallback(
+      () => (
+        <View style={styles.headerWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={tableWidth > availableWidth}
+            style={StyleSheet.flatten([
+              styles.headerContainer,
+              {
+                backgroundColor: isDark ? extendedColors.neutral[800] : extendedColors.neutral[100],
+                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+              },
+            ])}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+          >
+            <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
-                <View style={StyleSheet.flatten([styles.checkboxColumn, { borderRightColor: colors.border }])}>
-                  <Checkbox checked={selectedOrders.size === orders.length && orders.length > 0} onCheckedChange={handleToggleAll} />
+                <View style={StyleSheet.flatten([styles.headerCell, styles.checkboxCell])}>
+                  <Checkbox checked={orders.length > 0 && orders.every((order) => selectedOrders.has(order.id))} onCheckedChange={handleSelectAll} disabled={orders.length === 0} />
                 </View>
               )}
-              {visibleColumns.map((column, index) => (
-                <TouchableOpacity
-                  key={column.key}
-                  style={StyleSheet.flatten([
-                    styles.headerCell,
-                    { width: column.width },
-                    index < visibleColumns.length - 1 && { borderRightColor: colors.border, borderRightWidth: 1 },
-                  ])}
-                  onPress={() => column.sortable && handleSort(column.key)}
-                  disabled={!column.sortable}
-                >
-                  <View style={styles.headerContent}>
-                    <ThemedText style={StyleSheet.flatten([styles.headerText, { textAlign: column.align || "left" }])}>
-                      {column.title}
-                    </ThemedText>
-                    {column.sortable && getSortIndicator(column.key)}
-                  </View>
-                </TouchableOpacity>
-              ))}
+              {displayColumns.map((column) => {
+                const sortConfig = sortConfigs?.find((config) => config.columnKey === column.key);
+
+                return (
+                  <TouchableOpacity
+                    key={column.key}
+                    style={StyleSheet.flatten([styles.headerCell, { width: column.width }])}
+                    onPress={() => column.sortable && handleSort(column.key)}
+                    disabled={!column.sortable}
+                    activeOpacity={column.sortable ? 0.7 : 1}
+                  >
+                    <View style={styles.headerCellContent}>
+                      <View style={styles.headerTextContainer}>
+                        <ThemedText
+                          style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {column.header}
+                        </ThemedText>
+                      </View>
+                      {column.sortable && (
+                        <View style={styles.sortIconWrapper}>
+                          {sortConfig ? (
+                            <View style={styles.sortIconContainer}>
+                              {sortConfig.direction === "asc" ? (
+                                <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                              ) : (
+                                <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                              )}
+                            </View>
+                          ) : (
+                            <IconSelector size={16} color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
+                          )}
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </ScrollView>
         </View>
-      );
-    }, [visibleColumns, showSelection, selectedOrders, orders, handleToggleAll, handleSort, getSortIndicator, colors]);
+      ),
+      [colors, isDark, tableWidth, displayColumns, showSelection, selectedOrders, orders.length, sortConfigs, handleSelectAll, handleSort],
+    );
 
-    const renderOrder = useCallback(
-      ({ item: order }: { item: Order }) => {
-        const isSelected = selectedOrders.has(order.id);
+    // Row component
+    const renderRow = useCallback(
+      ({ item, index }: { item: Order; index: number }) => {
+        const isSelected = selectedOrders.has(item.id);
+        const isEven = index % 2 === 0;
 
-        const rowContent = (
-          <Pressable
-            onPress={() => onOrderPress?.(order.id)}
-            style={({ pressed }) => [
-              styles.row,
-              { backgroundColor: colors.card },
-              pressed && { opacity: 0.7 },
-              isSelected && { backgroundColor: colors.accent },
-            ]}
-          >
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} bounces={false}>
-              <View style={styles.rowContent}>
-                {showSelection && (
-                  <View style={StyleSheet.flatten([styles.checkboxColumn, { borderRightColor: colors.border }])}>
-                    <Checkbox checked={isSelected} onCheckedChange={() => handleToggleSelection(order.id)} />
-                  </View>
-                )}
-                {visibleColumns.map((column, index) => (
-                  <View
-                    key={column.key}
-                    style={StyleSheet.flatten([
-                      styles.cell,
-                      { width: column.width },
-                      index < visibleColumns.length - 1 && { borderRightColor: colors.border, borderRightWidth: 1 },
-                    ])}
-                  >
-                    {renderColumnContent(column, order)}
-                  </View>
-                ))}
-              </View>
-            </ScrollView>
-          </Pressable>
-        );
-
-        if (enableSwipeActions && !showSelection) {
+        if (enableSwipeActions && (onOrderEdit || onOrderDelete)) {
           return (
-            <OrderTableRowSwipe
-              orderId={order.id}
-              onEdit={() => onOrderEdit?.(order.id)}
-              onDelete={() => onOrderDelete?.(order.id)}
-              onDuplicate={() => onOrderDuplicate?.(order.id)}
-            >
-              {rowContent}
+            <OrderTableRowSwipe key={item.id} orderId={item.id} orderName={item.description} onEdit={onOrderEdit} onDelete={onOrderDelete} onDuplicate={onOrderDuplicate} disabled={showSelection}>
+              {(isActive) => (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  scrollEnabled={tableWidth > availableWidth}
+                  style={StyleSheet.flatten([
+                    styles.row,
+                    {
+                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                      borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                    },
+                    isSelected && { backgroundColor: colors.primary + "20" },
+                  ])}
+                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                >
+                  <Pressable
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    onPress={() => onOrderPress?.(item.id)}
+                    onLongPress={() => showSelection && handleSelectOrder(item.id)}
+                    android_ripple={{ color: colors.primary + "20" }}
+                  >
+                    {showSelection && (
+                      <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
+                        <Checkbox checked={isSelected} onCheckedChange={() => handleSelectOrder(item.id)} />
+                      </View>
+                    )}
+                    {displayColumns.map((column) => (
+                      <View
+                        key={column.key}
+                        style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
+                      >
+                        {renderColumnValue(item, column)}
+                      </View>
+                    ))}
+                  </Pressable>
+                </ScrollView>
+              )}
             </OrderTableRowSwipe>
           );
         }
 
-        return rowContent;
+        // Non-swipeable version
+        return (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={tableWidth > availableWidth}
+            style={StyleSheet.flatten([
+              styles.row,
+              {
+                backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+              },
+              isSelected && { backgroundColor: colors.primary + "20" },
+            ])}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+          >
+            <Pressable
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              onPress={() => onOrderPress?.(item.id)}
+              onLongPress={() => showSelection && handleSelectOrder(item.id)}
+              android_ripple={{ color: colors.primary + "20" }}
+            >
+              {showSelection && (
+                <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
+                  <Checkbox checked={isSelected} onCheckedChange={() => handleSelectOrder(item.id)} />
+                </View>
+              )}
+              {displayColumns.map((column) => (
+                <View
+                  key={column.key}
+                  style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
+                >
+                  {renderColumnValue(item, column)}
+                </View>
+              ))}
+            </Pressable>
+          </ScrollView>
+        );
       },
-      [visibleColumns, showSelection, selectedOrders, handleToggleSelection, renderColumnContent, enableSwipeActions, onOrderPress, onOrderEdit, onOrderDelete, onOrderDuplicate, colors],
+      [
+        colors,
+        tableWidth,
+        displayColumns,
+        showSelection,
+        selectedOrders,
+        onOrderPress,
+        handleSelectOrder,
+        renderColumnValue,
+        enableSwipeActions,
+        onOrderEdit,
+        onOrderDelete,
+        onOrderDuplicate,
+        activeRowId,
+        closeActiveRow,
+        isDark,
+      ],
     );
 
-    const renderEmpty = useCallback(() => {
-      if (loading) return null;
+    // Loading footer component
+    const renderFooter = useCallback(() => {
+      if (!loadingMore) return null;
+
       return (
-        <View style={styles.emptyContainer}>
-          <ThemedText style={styles.emptyText}>Nenhum pedido encontrado</ThemedText>
+        <View style={styles.loadingFooter}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>Carregando mais...</ThemedText>
         </View>
       );
-    }, [loading]);
+    }, [loadingMore, colors.primary]);
 
-    const renderFooter = useCallback(() => {
-      if (loadingMore) {
-        return (
-          <View style={styles.loadingMore}>
-            <ActivityIndicator size="small" color={colors.primary} />
-          </View>
-        );
-      }
-      return null;
-    }, [loadingMore, colors]);
+    // Empty state component
+    const renderEmpty = useCallback(
+      () => (
+        <View style={styles.emptyContainer}>
+          <Icon name="package" size="xl" variant="muted" />
+          <ThemedText style={styles.emptyTitle}>Nenhum pedido encontrado</ThemedText>
+          <ThemedText style={styles.emptySubtitle}>Tente ajustar os filtros ou adicionar novos pedidos</ThemedText>
+        </View>
+      ),
+      [colors.mutedForeground],
+    );
+
+    // Main loading state
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>Carregando pedidos...</ThemedText>
+        </View>
+      );
+    }
 
     return (
-      <View style={styles.container}>
-        {renderHeader()}
-        <FlatList
-          ref={flatListRef}
-          data={orders}
-          renderItem={renderOrder}
-          keyExtractor={(order) => order.id}
-          ListEmptyComponent={renderEmpty}
-          ListFooterComponent={renderFooter}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.2}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={10}
-          windowSize={5}
-          initialNumToRender={15}
-          updateCellsBatchingPeriod={50}
-          getItemLayout={(data, index) => {
-            // Calculate row height based on content
-            const baseHeight = 60; // Base row height
-            return {
-              length: baseHeight,
-              offset: baseHeight * index,
+      <View style={styles.wrapper}>
+        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])} onPress={handleContainerPress}>
+          {renderHeader()}
+          <FlatList
+            ref={flatListRef}
+            data={orders}
+            renderItem={renderRow}
+            keyExtractor={(order) => order.id}
+            refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} /> : undefined}
+            onEndReached={onEndReached}
+            onEndReachedThreshold={0.2}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            ListFooterComponent={renderFooter}
+            ListEmptyComponent={renderEmpty}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            windowSize={5}
+            initialNumToRender={15}
+            updateCellsBatchingPeriod={50}
+            getItemLayout={(data, index) => ({
+              length: 60, // Fixed row height
+              offset: 60 * index,
               index,
-            };
-          }}
-        />
+            })}
+            style={styles.flatList}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ flexGrow: 1 }}
+          />
+        </Pressable>
       </View>
     );
   },
 );
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingBottom: 16,
+    backgroundColor: "transparent",
+  },
   container: {
     flex: 1,
-  },
-  headerContainer: {
-    borderBottomWidth: 1,
+    backgroundColor: "white",
+    borderRadius: 8,
+    overflow: "hidden",
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 4,
   },
-  header: {
+  headerWrapper: {
+    marginTop: 12,
+    flexDirection: "column",
+  },
+  headerContainer: {
+    borderBottomWidth: 2,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  headerRow: {
     flexDirection: "row",
-    paddingHorizontal: spacing.md,
+    alignItems: "center",
+    minHeight: 56,
   },
   headerCell: {
-    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+    minHeight: 56,
     justifyContent: "center",
   },
-  headerContent: {
+  headerText: {
+    fontSize: 10, // Smaller than xs to prevent line breaks
+    fontWeight: fontWeight.bold,
+    textTransform: "uppercase",
+    lineHeight: 12,
+    color: "#000000", // black text like web
+  },
+  nonSortableHeader: {
+    opacity: 1,
+  },
+  sortIcon: {
+    marginLeft: spacing.xs,
+  },
+  headerCellContent: {
+    display: "flex",
+    alignItems: "flex-start",
     flexDirection: "row",
-    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
     gap: 4,
   },
-  headerText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
+  headerTextContainer: {
+    flex: 1,
+    minWidth: 0, // Allow text to shrink below content size
+  },
+  sortIconWrapper: {
+    flexShrink: 0, // Prevent icon from shrinking
+    justifyContent: "center",
+    alignItems: "center",
+    width: 16,
   },
   sortIndicator: {
+    marginLeft: 4,
+  },
+  sortIconContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
-  sortIndex: {
-    fontSize: fontSize.xs,
+  sortOrder: {
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
     marginLeft: 2,
   },
+  checkboxCell: {
+    width: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  flatList: {
+    flex: 1,
+  },
   row: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e5e5", // neutral-200
   },
   rowContent: {
     flexDirection: "row",
-    paddingHorizontal: spacing.md,
-  },
-  checkboxColumn: {
-    width: 48,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: spacing.md,
-    borderRightWidth: 1,
+    alignItems: "stretch", // Changed from 'center' to 'stretch' to ensure all cells have same height
+    minHeight: 60,
   },
   cell: {
-    paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
     justifyContent: "center",
+    minHeight: 60, // Changed from 72 to match row minHeight
+  },
+  centerAlign: {
+    alignItems: "center",
+  },
+  rightAlign: {
+    alignItems: "flex-end",
   },
   cellText: {
     fontSize: fontSize.sm,
   },
-  centerText: {
-    textAlign: "center",
+  nameText: {
+    fontWeight: fontWeight.medium,
+    fontSize: fontSize.sm,
   },
-  rightText: {
-    textAlign: "right",
+  numberText: {
+    fontWeight: fontWeight.normal,
+    fontSize: fontSize.sm,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  loadingFooter: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
+  },
+  loadingText: {
+    fontSize: fontSize.sm,
+    opacity: 0.7,
   },
   emptyContainer: {
-    padding: spacing.xl,
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
+    paddingVertical: spacing.xxl,
+    gap: spacing.md,
   },
-  emptyText: {
-    fontSize: fontSize.md,
-    opacity: 0.6,
+  emptyTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
   },
-  loadingMore: {
-    padding: spacing.md,
-    alignItems: "center",
-  },
-  listContent: {
-    flexGrow: 1,
+  emptySubtitle: {
+    fontSize: fontSize.sm,
+    opacity: 0.7,
+    textAlign: "center",
+    paddingHorizontal: spacing.xl,
   },
 });
+
+OrderTable.displayName = "OrderTable";

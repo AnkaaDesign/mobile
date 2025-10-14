@@ -242,6 +242,8 @@ const StorageProviderConfig = ({ provider, form }: { provider: string; form: any
 export default function BackupSettingsScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [backupStatus, setBackupStatus] = useState<BackupStatus>(mockBackupStatus);
+  const { success, error: showError, warning, info } = useToast();
+
 
   const form = useForm<BackupSettingsFormData>({
     resolver: zodResolver(backupSettingsSchema),
@@ -256,10 +258,10 @@ export default function BackupSettingsScreen() {
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       console.log("Backup settings saved:", data);
-      toast.success("Configurações de backup salvas com sucesso!");
+      success("Configurações de backup salvas com sucesso!");
     } catch (error) {
       console.error("Error saving backup settings:", error);
-      toast.error("Erro ao salvar configurações de backup");
+      showError("Erro ao salvar configurações de backup");
     } finally {
       setIsLoading(false);
     }
@@ -302,7 +304,7 @@ export default function BackupSettingsScreen() {
       lastBackupSize: "2.6 GB"
     }));
 
-    toast.success("Backup manual concluído com sucesso!");
+    success("Backup manual concluído com sucesso!");
   };
 
   const handleTestConnection = async () => {
@@ -315,12 +317,12 @@ export default function BackupSettingsScreen() {
       const success = Math.random() > 0.2; // 80% success rate
 
       if (success) {
-        toast.success(`Conexão com ${provider} testada com sucesso!`);
+        success(`Conexão com ${provider} testada com sucesso!`);
       } else {
-        toast.error(`Falha na conexão com ${provider}. Verifique as credenciais.`);
+        showError(`Falha na conexão com ${provider}. Verifique as credenciais.`);
       }
     } catch (error) {
-      toast.error("Erro ao testar conexão");
+      showError("Erro ao testar conexão");
     }
   };
 

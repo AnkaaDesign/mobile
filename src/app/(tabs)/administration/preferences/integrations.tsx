@@ -125,15 +125,17 @@ const testIntegration = async (type: string) => {
   const success = Math.random() > 0.3; // 70% success rate for demo
 
   if (success) {
-    toast.success(`Teste de ${type} realizado com sucesso!`);
+    success(`Teste de ${type} realizado com sucesso!`);
   } else {
-    toast.error(`Falha no teste de ${type}. Verifique as configurações.`);
+    showError(`Falha no teste de ${type}. Verifique as configurações.`);
   }
 };
 
 export default function IntegrationSettingsScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [testingIntegration, setTestingIntegration] = useState<string | null>(null);
+  const { success, error: showError, warning, info } = useToast();
+
 
   const form = useForm<IntegrationSettingsFormData>({
     resolver: zodResolver(integrationSettingsSchema),
@@ -148,10 +150,10 @@ export default function IntegrationSettingsScreen() {
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       console.log("Integration settings saved:", data);
-      toast.success("Configurações de integração salvas com sucesso!");
+      success("Configurações de integração salvas com sucesso!");
     } catch (error) {
       console.error("Error saving integration settings:", error);
-      toast.error("Erro ao salvar configurações de integração");
+      showError("Erro ao salvar configurações de integração");
     } finally {
       setIsLoading(false);
     }

@@ -1,7 +1,6 @@
 // packages/hooks/src/useLayoutSection.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { layoutSectionService } from '../api-client';
 import type { LayoutSectionCreateInput, LayoutSectionUpdateInput } from '../types';
 
@@ -65,12 +64,10 @@ export const useLayoutSectionMutations = () => {
       queryClient.invalidateQueries({
         queryKey: ["layouts", "detail", variables.layoutId],
       });
-      toast.success("Seção criada com sucesso");
       return response;
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || "Erro ao criar seção";
-      toast.error(message);
     },
   });
 
@@ -91,12 +88,10 @@ export const useLayoutSectionMutations = () => {
           queryKey: ["layouts", "detail", sectionData.layoutId],
         });
       }
-      toast.success("Seção atualizada com sucesso");
       return response;
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || "Erro ao atualizar seção";
-      toast.error(message);
     },
   });
 
@@ -116,11 +111,9 @@ export const useLayoutSectionMutations = () => {
         queryKey: ["layouts"],
       });
 
-      toast.success("Seção excluída com sucesso");
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || "Erro ao excluir seção";
-      toast.error(message);
     },
   });
 
@@ -141,12 +134,10 @@ export const useLayoutSectionMutations = () => {
         });
       });
 
-      toast.success(`${response.data.totalSuccess} seções criadas com sucesso`);
       return response;
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || "Erro ao criar seções em lote";
-      toast.error(message);
     },
   });
 
@@ -155,12 +146,10 @@ export const useLayoutSectionMutations = () => {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: layoutSectionQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: ["layouts"] });
-      toast.success(`${response.data.totalSuccess} seções excluídas com sucesso`);
       return response;
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || "Erro ao excluir seções em lote";
-      toast.error(message);
     },
   });
 

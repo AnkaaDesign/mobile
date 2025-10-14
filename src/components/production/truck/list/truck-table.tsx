@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
-import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView , StyleSheet} from "react-native";
+import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
-import { IconButton } from "@/components/ui/icon-button";
+import { IconSelector } from "@tabler/icons-react-native";
 import type { Truck } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,15 +9,18 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { formatDate } from '../../../../utils';
+import { TruckTableRowSwipe } from "./truck-table-row-swipe";
+import { formatDateTime } from '../../../../utils';
+import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { TRUCK_MANUFACTURER_LABELS } from '../../../../constants';
 
 export interface TableColumn {
   key: string;
-  title: string;
+  header: string;
+  accessor: (truck: Truck) => React.ReactNode;
   width: number;
   align?: "left" | "center" | "right";
   sortable?: boolean;
-  render?: (truck: Truck) => React.ReactNode;
 }
 
 export interface SortConfig {
@@ -26,15 +29,12 @@ export interface SortConfig {
 }
 
 interface TruckTableProps {
-  data?: Truck[];
-  isLoading?: boolean;
-  error?: any;
-  onRefresh?: () => void;
-  onItemPress?: (truck: Truck) => void;
+  trucks: Truck[];
   onTruckPress?: (truckId: string) => void;
   onTruckEdit?: (truckId: string) => void;
   onTruckDelete?: (truckId: string) => void;
   onTruckDuplicate?: (truckId: string) => void;
+  onRefresh?: () => Promise<void>;
   onEndReached?: () => void;
   refreshing?: boolean;
   loading?: boolean;
@@ -44,9 +44,8 @@ interface TruckTableProps {
   onSelectionChange?: (selectedTrucks: Set<string>) => void;
   sortConfigs?: SortConfig[];
   onSort?: (configs: SortConfig[]) => void;
-  columns?: TableColumn[];
-  visibleColumnKeys?: string[];
   enableSwipeActions?: boolean;
+  visibleColumnKeys?: string[];
 }
 
 // Get screen width for responsive design
@@ -54,381 +53,694 @@ const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
 // Define all available columns with their renderers
-const ALL_COLUMN_DEFINITIONS: Record<string, Omit<TableColumn, "width">> = {
-  plate: {
+export const createColumnDefinitions = (): TableColumn[] => [
+  {
     key: "plate",
-    title: "Placa",
+    header: "PLACA",
     align: "left",
     sortable: true,
+    width: 0,
+    accessor: (truck: Truck) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {truck.task?.plate || truck.plate || "-"}
+      </ThemedText>
+    ),
   },
-  model: {
+  {
+    key: "serialNumber",
+    header: "Nº DE SÉRIE",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (truck: Truck) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText])} numberOfLines={1}>
+        {truck.task?.serialNumber || "-"}
+      </ThemedText>
+    ),
+  },
+  {
     key: "model",
-    title: "Modelo",
+    header: "MODELO",
     align: "left",
     sortable: true,
+    width: 0,
+    accessor: (truck: Truck) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={2}>
+        {truck.model || "-"}
+      </ThemedText>
+    ),
   },
-  manufacturer: {
+  {
     key: "manufacturer",
-    title: "Fabricante",
+    header: "FABRICANTE",
     align: "left",
     sortable: true,
+    width: 0,
+    accessor: (truck: Truck) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {truck.manufacturer ? TRUCK_MANUFACTURER_LABELS[truck.manufacturer] || truck.manufacturer : "-"}
+      </ThemedText>
+    ),
   },
-  garage: {
+  {
+    key: "customer",
+    header: "CLIENTE",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (truck: Truck) => (
+      <ThemedText style={styles.cellText} numberOfLines={2}>
+        {truck.task?.customer?.fantasyName || truck.task?.customer?.corporateName || "-"}
+      </ThemedText>
+    ),
+  },
+  {
     key: "garage",
-    title: "Garagem",
+    header: "GARAGEM",
     align: "left",
     sortable: true,
+    width: 0,
+    accessor: (truck: Truck) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {truck.garage?.name || "-"}
+      </ThemedText>
+    ),
   },
-  task: {
-    key: "task",
-    title: "Tarefa Atual",
+  {
+    key: "position",
+    header: "POSIÇÃO",
     align: "left",
-    sortable: true,
+    sortable: false,
+    width: 0,
+    accessor: (truck: Truck) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText])} numberOfLines={1}>
+        {truck.xPosition !== null && truck.yPosition !== null ? `${truck.xPosition}, ${truck.yPosition}` : "-"}
+      </ThemedText>
+    ),
   },
-};
-
-// Default visible columns for mobile (limited to 3 for better UX)
-const DEFAULT_VISIBLE_COLUMNS = ["plate", "model", "manufacturer"];
-
-export function TruckTable({
-  data = [],
-  isLoading,
-  error,
-  onRefresh,
-  onItemPress,
-  onTruckPress,
-  onTruckEdit,
-  onTruckDelete,
-  onTruckDuplicate,
-  onEndReached,
-  refreshing = false,
-  loading = false,
-  loadingMore = false,
-  showSelection = false,
-  selectedTrucks = new Set(),
-  onSelectionChange,
-  sortConfigs = [],
-  onSort,
-  visibleColumnKeys = DEFAULT_VISIBLE_COLUMNS,
-  enableSwipeActions = false,
-}: TruckTableProps) {
-  const { colors, isDark } = useTheme();
-  const flatListRef = useRef<FlatList>(null);
-
-  // Build columns based on visible keys
-  const columns = useMemo(() => {
-    const visibleColumns = visibleColumnKeys
-      .map((key) => ALL_COLUMN_DEFINITIONS[key])
-      .filter(Boolean);
-
-    // Calculate widths based on available space
-    const totalWidth = availableWidth - (showSelection ? 50 : 0); // Reserve space for selection checkbox
-    const baseWidth = totalWidth / visibleColumns.length;
-
-    return visibleColumns.map((col, index) => ({
-      ...col,
-      width: baseWidth,
-    })) as TableColumn[];
-  }, [visibleColumnKeys, showSelection]);
-
-  // Handle truck press
-  const handleTruckPress = useCallback(
-    (truck: Truck) => {
-      if (onItemPress) {
-        onItemPress(truck);
-      } else if (onTruckPress) {
-        onTruckPress(truck.id);
-      }
-    },
-    [onItemPress, onTruckPress],
-  );
-
-  // Handle selection toggle
-  const handleSelectionToggle = useCallback(
-    (truckId: string) => {
-      if (!onSelectionChange) return;
-
-      const newSelection = new Set(selectedTrucks);
-      if (newSelection.has(truckId)) {
-        newSelection.delete(truckId);
-      } else {
-        newSelection.add(truckId);
-      }
-      onSelectionChange(newSelection);
-    },
-    [selectedTrucks, onSelectionChange],
-  );
-
-  // Render cell content
-  const renderCell = useCallback(
-    (truck: Truck, column: TableColumn) => {
-      if (column.render) {
-        return column.render(truck);
-      }
-
-      switch (column.key) {
-        case "plate":
-          return truck.plate || "-";
-        case "model":
-          return truck.model || "-";
-        case "manufacturer":
-          return truck.manufacturer || "-";
-        case "garage":
-          return truck.garage?.name || "-";
-        case "task":
-          return truck.task?.name || "-";
-        default:
-          return "-";
-      }
-    },
-    [],
-  );
-
-  // Render table row
-  const renderRow = useCallback(
-    ({ item: truck }: { item: Truck }) => {
-      const isSelected = selectedTrucks.has(truck.id);
+  {
+    key: "parkingStatus",
+    header: "STATUS",
+    align: "center",
+    sortable: false,
+    width: 0,
+    accessor: (truck: Truck) => {
+      const isParked = truck.garage && truck.xPosition !== null && truck.yPosition !== null;
+      const hasGarage = !!truck.garage;
 
       return (
-        <Pressable
-          style={[
-            styles.tableRow,
-            {
-              backgroundColor: colors.card,
-              borderBottomColor: colors.border,
-            },
-            isSelected && {
-              backgroundColor: `${colors.primary}10`,
-            },
-          ]}
-          onPress={() => handleTruckPress(truck)}
-        >
-          {/* Selection checkbox */}
-          {showSelection && (
-            <View style={StyleSheet.flatten([styles.cell, { width: 50 }])}>
-              <Checkbox
-                checked={isSelected}
-                onCheckedChange={() => handleSelectionToggle(truck.id)}
-              />
-            </View>
-          )}
-
-          {/* Data cells */}
-          {columns.map((column) => (
-            <View
-              key={column.key}
-              style={[
-                styles.cell,
-                { width: column.width },
-                column.align === "center" && styles.centerAlign,
-                column.align === "right" && styles.rightAlign,
-              ]}
-            >
-              <ThemedText
-                style={[
-                  styles.cellText,
-                  { color: colors.foreground },
-                ]}
-                numberOfLines={2}
-              >
-                {renderCell(truck, column)}
-              </ThemedText>
-            </View>
-          ))}
-        </Pressable>
-      );
-    },
-    [
-      colors,
-      columns,
-      showSelection,
-      selectedTrucks,
-      handleTruckPress,
-      handleSelectionToggle,
-      renderCell,
-    ],
-  );
-
-  // Render loading footer
-  const renderFooter = useCallback(() => {
-    if (!loadingMore) return null;
-
-    return (
-      <View style={styles.loadingFooter}>
-        <ActivityIndicator size="small" color={colors.primary} />
-        <ThemedText style={StyleSheet.flatten([styles.loadingText, { color: colors.mutedForeground }])}>
-          Carregando mais caminhões...
-        </ThemedText>
-      </View>
-    );
-  }, [loadingMore, colors]);
-
-  // Show loading state
-  if (loading && data.length === 0) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <ThemedText style={StyleSheet.flatten([styles.loadingText, { color: colors.mutedForeground }])}>
-          Carregando caminhões...
-        </ThemedText>
-      </View>
-    );
-  }
-
-  // Show error state
-  if (error && data.length === 0) {
-    return (
-      <View style={styles.errorContainer}>
-        <ThemedText style={StyleSheet.flatten([styles.errorText, { color: colors.destructive }])}>
-          Erro ao carregar caminhões
-        </ThemedText>
-        {onRefresh && (
-          <TouchableOpacity
-            style={StyleSheet.flatten([styles.retryButton, { borderColor: colors.border }])}
-            onPress={onRefresh}
-          >
-            <ThemedText style={{ color: colors.primary }}>Tentar Novamente</ThemedText>
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  }
-
-  // Show empty state
-  if (data.length === 0) {
-    return (
-      <View style={styles.emptyContainer}>
-        <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-          Nenhum caminhão encontrado
-        </ThemedText>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.container}>
-      {/* Table header */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={StyleSheet.flatten([styles.headerContainer, { backgroundColor: colors.muted }])}
-      >
-        <View style={styles.headerRow}>
-          {/* Selection header */}
-          {showSelection && (
-            <View style={StyleSheet.flatten([styles.headerCell, { width: 50 }])}>
-              <ThemedText style={StyleSheet.flatten([styles.headerText, { color: colors.foreground }])}>
-                {/* Could add select all checkbox here */}
-              </ThemedText>
-            </View>
-          )}
-
-          {/* Column headers */}
-          {columns.map((column) => (
-            <TouchableOpacity
-              key={column.key}
-              style={[
-                styles.headerCell,
-                { width: column.width },
-                column.align === "center" && styles.centerAlign,
-                column.align === "right" && styles.rightAlign,
-              ]}
-              onPress={() => {
-                if (column.sortable && onSort) {
-                  const currentSort = sortConfigs.find((s) => s.columnKey === column.key);
-                  const newDirection = currentSort?.direction === "asc" ? "desc" : "asc";
-                  onSort([{ columnKey: column.key, direction: newDirection }]);
-                }
+        <View style={styles.centerAlign}>
+          {isParked ? (
+            <Badge
+              variant="default"
+              size="sm"
+              style={{
+                backgroundColor: badgeColors.success.background,
+                borderWidth: 0,
               }}
             >
-              <View style={styles.headerContent}>
-                <ThemedText
-                  style={[
-                    styles.headerText,
-                    { color: colors.foreground },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {column.title}
-                </ThemedText>
-                {column.sortable && (
-                  <Icon
-                    name="chevron-up-down"
-                    size={16}
-                    color={colors.mutedForeground}
-                  />
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
+              <ThemedText
+                style={{
+                  color: badgeColors.success.text,
+                  fontSize: fontSize.xs,
+                  fontWeight: fontWeight.medium,
+                }}
+              >
+                Estacionado
+              </ThemedText>
+            </Badge>
+          ) : hasGarage ? (
+            <Badge
+              variant="default"
+              size="sm"
+              style={{
+                backgroundColor: badgeColors.warning.background,
+                borderWidth: 0,
+              }}
+            >
+              <ThemedText
+                style={{
+                  color: badgeColors.warning.text,
+                  fontSize: fontSize.xs,
+                  fontWeight: fontWeight.medium,
+                }}
+              >
+                Na Garagem
+              </ThemedText>
+            </Badge>
+          ) : (
+            <Badge
+              variant="secondary"
+              size="sm"
+              style={{
+                backgroundColor: badgeColors.muted.background,
+                borderWidth: 0,
+              }}
+            >
+              <ThemedText
+                style={{
+                  color: badgeColors.muted.text,
+                  fontSize: fontSize.xs,
+                  fontWeight: fontWeight.medium,
+                }}
+              >
+                Não Alocado
+              </ThemedText>
+            </Badge>
+          )}
         </View>
-      </ScrollView>
+      );
+    },
+  },
+  {
+    key: "createdAt",
+    header: "CRIADO EM",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (truck: Truck) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
+        {new Date(truck.createdAt).toLocaleDateString("pt-BR")}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "updatedAt",
+    header: "ATUALIZADO EM",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (truck: Truck) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
+        {new Date(truck.updatedAt).toLocaleDateString("pt-BR")}
+      </ThemedText>
+    ),
+  },
+];
 
-      {/* Table data */}
-      <FlatList
-        ref={flatListRef}
-        data={data}
-        keyExtractor={(item) => item.id}
-        renderItem={renderRow}
-        ListFooterComponent={renderFooter}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.1}
-        refreshControl={
-          onRefresh ? (
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
-            />
-          ) : undefined
-        }
-        showsVerticalScrollIndicator={false}
-        style={styles.flatList}
-      />
-    </View>
-  );
+// Default visible columns for mobile (limited for better UX)
+export function getDefaultVisibleColumns(): Set<string> {
+  return new Set([
+    "plate",
+    "model",
+    "customer"
+  ]);
 }
 
+export const TruckTable = React.memo<TruckTableProps>(
+  ({
+    trucks,
+    onTruckPress,
+    onTruckEdit,
+    onTruckDelete,
+    onTruckDuplicate,
+    onRefresh,
+    onEndReached,
+    refreshing = false,
+    loading = false,
+    loadingMore = false,
+    showSelection = false,
+    selectedTrucks = new Set(),
+    onSelectionChange,
+    sortConfigs = [],
+    onSort,
+    enableSwipeActions = true,
+    visibleColumnKeys,
+  }) => {
+    const { colors, isDark } = useTheme();
+    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const [headerHeight, setHeaderHeight] = useState(50);
+    const flatListRef = useRef<FlatList>(null);
+
+    // Column visibility - use prop if provided, otherwise use default
+    const visibleColumns = useMemo(() => {
+      if (visibleColumnKeys && visibleColumnKeys.length > 0) {
+        return new Set(visibleColumnKeys);
+      }
+      return getDefaultVisibleColumns();
+    }, [visibleColumnKeys]);
+
+    // Get all column definitions
+    const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+    // Build visible columns with dynamic widths
+    const displayColumns = useMemo(() => {
+      // Define width ratios for each column type
+      const columnWidthRatios: Record<string, number> = {
+        plate: 1.2,
+        serialNumber: 1.4,
+        model: 1.5,
+        manufacturer: 1.3,
+        customer: 1.6,
+        garage: 1.3,
+        position: 1.0,
+        parkingStatus: 1.2,
+        createdAt: 1.2,
+        updatedAt: 1.2,
+      };
+
+      // Filter to visible columns
+      const visible = allColumns.filter((col) => visibleColumns.has(col.key));
+
+      // Calculate total ratio
+      const totalRatio = visible.reduce((sum, col) => sum + (columnWidthRatios[col.key] || 1.0), 0);
+
+      // Calculate actual widths
+      return visible.map((col) => {
+        const ratio = columnWidthRatios[col.key] || 1.0;
+        const width = Math.floor((availableWidth * ratio) / totalRatio);
+        return { ...col, width };
+      });
+    }, [allColumns, visibleColumns]);
+
+    // Handle taps outside of active row to close swipe actions
+    const handleContainerPress = useCallback(() => {
+      if (activeRowId) {
+        closeActiveRow();
+      }
+    }, [activeRowId, closeActiveRow]);
+
+    // Handle scroll events to close active row
+    const handleScroll = useCallback(() => {
+      if (activeRowId) {
+        closeActiveRow();
+      }
+    }, [activeRowId, closeActiveRow]);
+
+    // Calculate total table width
+    const tableWidth = useMemo(() => {
+      let width = displayColumns.reduce((sum, col) => sum + col.width, 0);
+      if (showSelection) width += 50; // Add checkbox column width
+      return width;
+    }, [displayColumns, showSelection]);
+
+    // Selection handlers
+    const handleSelectAll = useCallback(() => {
+      if (!onSelectionChange) return;
+
+      const allSelected = trucks.every((truck) => selectedTrucks.has(truck.id));
+      if (allSelected) {
+        onSelectionChange(new Set());
+      } else {
+        onSelectionChange(new Set(trucks.map((truck) => truck.id)));
+      }
+    }, [trucks, selectedTrucks, onSelectionChange]);
+
+    const handleSelectTruck = useCallback(
+      (truckId: string) => {
+        if (!onSelectionChange) return;
+
+        const newSelection = new Set(selectedTrucks);
+        if (newSelection.has(truckId)) {
+          newSelection.delete(truckId);
+        } else {
+          newSelection.add(truckId);
+        }
+        onSelectionChange(newSelection);
+      },
+      [selectedTrucks, onSelectionChange],
+    );
+
+    // Sort handler - non-cumulative (only one sort at a time)
+    const handleSort = useCallback(
+      (columnKey: string) => {
+        if (!onSort) return;
+
+        const existingConfig = sortConfigs?.find((config) => config.columnKey === columnKey);
+
+        if (existingConfig) {
+          // Column already sorted, toggle direction or remove
+          if (existingConfig.direction === "asc") {
+            // Toggle to descending
+            onSort([{ columnKey, direction: "desc" as const }]);
+          } else {
+            // Remove sort (back to no sort)
+            onSort([]);
+          }
+        } else {
+          // Set new sort (replacing any existing sort)
+          onSort([{ columnKey, direction: "asc" as const }]);
+        }
+      },
+      [sortConfigs, onSort],
+    );
+
+    // Column renderer using accessor
+    const renderColumnValue = useCallback((truck: Truck, column: TableColumn) => {
+      return column.accessor(truck);
+    }, []);
+
+    // Header component
+    const renderHeader = useCallback(
+      () => (
+        <View style={styles.headerWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={tableWidth > availableWidth}
+            style={StyleSheet.flatten([
+              styles.headerContainer,
+              {
+                backgroundColor: isDark ? extendedColors.neutral[800] : extendedColors.neutral[100],
+                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+              },
+            ])}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+          >
+            <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
+              {showSelection && (
+                <View style={StyleSheet.flatten([styles.headerCell, styles.checkboxCell])}>
+                  <Checkbox checked={trucks.length > 0 && trucks.every((truck) => selectedTrucks.has(truck.id))} onCheckedChange={handleSelectAll} disabled={trucks.length === 0} />
+                </View>
+              )}
+              {displayColumns.map((column) => {
+                const sortConfig = sortConfigs?.find((config) => config.columnKey === column.key);
+
+                return (
+                  <TouchableOpacity
+                    key={column.key}
+                    style={StyleSheet.flatten([styles.headerCell, { width: column.width }])}
+                    onPress={() => column.sortable && handleSort(column.key)}
+                    disabled={!column.sortable}
+                    activeOpacity={column.sortable ? 0.7 : 1}
+                  >
+                    <View style={styles.headerCellContent}>
+                      <View style={styles.headerTextContainer}>
+                        <ThemedText
+                          style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {column.header}
+                        </ThemedText>
+                      </View>
+                      {column.sortable && (
+                        <View style={styles.sortIconWrapper}>
+                          {sortConfig ? (
+                            <View style={styles.sortIconContainer}>
+                              {sortConfig.direction === "asc" ? (
+                                <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                              ) : (
+                                <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                              )}
+                            </View>
+                          ) : (
+                            <IconSelector size={16} color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
+                          )}
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </View>
+      ),
+      [colors, isDark, tableWidth, displayColumns, showSelection, selectedTrucks, trucks.length, sortConfigs, handleSelectAll, handleSort],
+    );
+
+    // Row component
+    const renderRow = useCallback(
+      ({ item, index }: { item: Truck; index: number }) => {
+        const isSelected = selectedTrucks.has(item.id);
+        const isEven = index % 2 === 0;
+
+        if (enableSwipeActions && (onTruckEdit || onTruckDelete)) {
+          return (
+            <TruckTableRowSwipe key={item.id} truckId={item.id} truckPlate={item.plate} onEdit={onTruckEdit} onDelete={onTruckDelete} disabled={showSelection}>
+              {(isActive) => (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  scrollEnabled={tableWidth > availableWidth}
+                  style={StyleSheet.flatten([
+                    styles.row,
+                    {
+                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                      borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                    },
+                    isSelected && { backgroundColor: colors.primary + "20" },
+                  ])}
+                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                >
+                  <Pressable
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    onPress={() => onTruckPress?.(item.id)}
+                    onLongPress={() => showSelection && handleSelectTruck(item.id)}
+                    android_ripple={{ color: colors.primary + "20" }}
+                  >
+                    {showSelection && (
+                      <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
+                        <Checkbox checked={isSelected} onCheckedChange={() => handleSelectTruck(item.id)} />
+                      </View>
+                    )}
+                    {displayColumns.map((column) => (
+                      <View
+                        key={column.key}
+                        style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
+                      >
+                        {renderColumnValue(item, column)}
+                      </View>
+                    ))}
+                  </Pressable>
+                </ScrollView>
+              )}
+            </TruckTableRowSwipe>
+          );
+        }
+
+        // Non-swipeable version
+        return (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={tableWidth > availableWidth}
+            style={StyleSheet.flatten([
+              styles.row,
+              {
+                backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+              },
+              isSelected && { backgroundColor: colors.primary + "20" },
+            ])}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+          >
+            <Pressable
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              onPress={() => onTruckPress?.(item.id)}
+              onLongPress={() => showSelection && handleSelectTruck(item.id)}
+              android_ripple={{ color: colors.primary + "20" }}
+            >
+              {showSelection && (
+                <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
+                  <Checkbox checked={isSelected} onCheckedChange={() => handleSelectTruck(item.id)} />
+                </View>
+              )}
+              {displayColumns.map((column) => (
+                <View
+                  key={column.key}
+                  style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
+                >
+                  {renderColumnValue(item, column)}
+                </View>
+              ))}
+            </Pressable>
+          </ScrollView>
+        );
+      },
+      [
+        colors,
+        tableWidth,
+        displayColumns,
+        showSelection,
+        selectedTrucks,
+        onTruckPress,
+        handleSelectTruck,
+        renderColumnValue,
+        enableSwipeActions,
+        onTruckEdit,
+        onTruckDelete,
+        activeRowId,
+        closeActiveRow,
+        isDark,
+      ],
+    );
+
+    // Loading footer component
+    const renderFooter = useCallback(() => {
+      if (!loadingMore) return null;
+
+      return (
+        <View style={styles.loadingFooter}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>Carregando mais...</ThemedText>
+        </View>
+      );
+    }, [loadingMore, colors.primary]);
+
+    // Empty state component
+    const renderEmpty = useCallback(
+      () => (
+        <View style={styles.emptyContainer}>
+          <Icon name="truck" size="xl" variant="muted" />
+          <ThemedText style={styles.emptyTitle}>Nenhum caminhão encontrado</ThemedText>
+          <ThemedText style={styles.emptySubtitle}>Tente ajustar os filtros ou adicionar novos caminhões</ThemedText>
+        </View>
+      ),
+      [colors.mutedForeground],
+    );
+
+    // Main loading state
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>Carregando caminhões...</ThemedText>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.wrapper}>
+        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])} onPress={handleContainerPress}>
+          {renderHeader()}
+          <FlatList
+            ref={flatListRef}
+            data={trucks}
+            renderItem={renderRow}
+            keyExtractor={(item) => item.id}
+            refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} /> : undefined}
+            onEndReached={onEndReached}
+            onEndReachedThreshold={0.2}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            ListFooterComponent={renderFooter}
+            ListEmptyComponent={renderEmpty}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            windowSize={5}
+            initialNumToRender={15}
+            updateCellsBatchingPeriod={50}
+            getItemLayout={(data, index) => ({
+              length: 60, // Fixed row height
+              offset: 60 * index,
+              index,
+            })}
+            style={styles.flatList}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ flexGrow: 1 }}
+          />
+        </Pressable>
+      </View>
+    );
+  },
+);
+
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingBottom: 16,
+    backgroundColor: "transparent",
+  },
   container: {
     flex: 1,
+    backgroundColor: "white",
+    borderRadius: 8,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  headerWrapper: {
+    marginTop: 12,
+    flexDirection: "column",
   },
   headerContainer: {
-    borderBottomWidth: 1,
+    borderBottomWidth: 2,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 48,
+    minHeight: 56,
   },
   headerCell: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+    minHeight: 56,
     justifyContent: "center",
   },
-  headerContent: {
+  headerText: {
+    fontSize: 10, // Smaller than xs to prevent line breaks
+    fontWeight: fontWeight.bold,
+    textTransform: "uppercase",
+    lineHeight: 12,
+    color: "#000000", // black text like web
+  },
+  nonSortableHeader: {
+    opacity: 1,
+  },
+  sortIcon: {
+    marginLeft: spacing.xs,
+  },
+  headerCellContent: {
+    display: "flex",
+    alignItems: "flex-start",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    gap: 4,
+  },
+  headerTextContainer: {
+    flex: 1,
+    minWidth: 0, // Allow text to shrink below content size
+  },
+  sortIconWrapper: {
+    flexShrink: 0, // Prevent icon from shrinking
+    justifyContent: "center",
+    alignItems: "center",
+    width: 16,
+  },
+  sortIndicator: {
+    marginLeft: 4,
+  },
+  sortIconContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xs,
   },
-  headerText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
+  sortOrder: {
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
+    marginLeft: 2,
+  },
+  checkboxCell: {
+    width: 50,
+    justifyContent: "center",
+    alignItems: "center",
   },
   flatList: {
     flex: 1,
   },
-  tableRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 56,
+  row: {
     borderBottomWidth: 1,
+    borderBottomColor: "#e5e5e5", // neutral-200
+  },
+  rowContent: {
+    flexDirection: "row",
+    alignItems: "stretch", // Changed from 'center' to 'stretch' to ensure all cells have same height
+    minHeight: 60,
   },
   cell: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
     justifyContent: "center",
+    minHeight: 60, // Changed from 72 to match row minHeight
   },
   centerAlign: {
     alignItems: "center",
@@ -439,46 +751,52 @@ const styles = StyleSheet.create({
   cellText: {
     fontSize: fontSize.sm,
   },
+  monoText: {
+    fontFamily: "monospace",
+    fontSize: fontSize.xs, // Smaller for codes
+  },
+  nameText: {
+    fontWeight: fontWeight.medium,
+    fontSize: fontSize.sm,
+  },
+  numberText: {
+    fontWeight: fontWeight.normal,
+    fontSize: fontSize.sm,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     gap: spacing.md,
   },
-  errorContainer: {
-    flex: 1,
+  loadingFooter: {
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: spacing.md,
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
+  },
+  loadingText: {
+    fontSize: fontSize.sm,
+    opacity: 0.7,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: spacing.xl,
+    paddingVertical: spacing.xxl,
+    gap: spacing.md,
   },
-  loadingFooter: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
+  emptyTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
   },
-  loadingText: {
+  emptySubtitle: {
     fontSize: fontSize.sm,
-  },
-  errorText: {
-    fontSize: fontSize.base,
+    opacity: 0.7,
     textAlign: "center",
-  },
-  emptyText: {
-    fontSize: fontSize.base,
-    textAlign: "center",
-  },
-  retryButton: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
   },
 });
+
+TruckTable.displayName = "TruckTable";

@@ -1,16 +1,17 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { View, Pressable, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconFilter } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUserMutations } from '../../../../hooks';
 import { useUsersInfiniteMobile } from "@/hooks";
 import type { UserGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
-import { EmployeeTable } from "@/components/administration/employee/list/employee-table";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge, Button } from "@/components/ui";
+import { EmployeeTable, createColumnDefinitions, getDefaultVisibleColumns } from "@/components/administration/employee/list/employee-table";
 import type { SortConfig } from "@/components/administration/employee/list/employee-table";
-import { EmployeeFilterModal } from "@/components/administration/employee/list/employee-filter-modal";
+import { EmployeeFilterDrawer } from "@/components/administration/employee/list/employee-filter-drawer";
 import { EmployeeFilterTags } from "@/components/administration/employee/list/employee-filter-tags";
+import { EmployeeColumnVisibilityDrawer } from "@/components/administration/employee/list/employee-column-visibility-drawer";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { EmployeeListSkeleton } from "@/components/administration/employee/skeleton/employee-list-skeleton";
@@ -30,6 +31,8 @@ export default function AdministrationEmployeesListScreen() {
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "name", direction: "asc" }]);
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
+  const [showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(Array.from(getDefaultVisibleColumns()));
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -157,6 +160,13 @@ export default function AdministrationEmployeesListScreen() {
     setShowSelection(false);
   }, []);
 
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
+  }, []);
+
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
 
@@ -180,17 +190,32 @@ export default function AdministrationEmployeesListScreen() {
       <View style={[styles.searchContainer]}>
         <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar colaboradores..." style={styles.searchBar} debounceMs={300} />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }, pressed && styles.actionButtonPressed]}
-            onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowColumnManager(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconList size={20} color={colors.foreground} />
+            </Button>
+            <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
+              <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
+            </Badge>
+          </View>
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowFilters(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconFilter size={20} color={colors.foreground} />
+            </Button>
             {activeFiltersCount > 0 && (
               <Badge style={styles.actionBadge} variant="destructive" size="sm">
                 <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
               </Badge>
             )}
-          </Pressable>
+          </View>
         </View>
       </View>
 
@@ -224,6 +249,7 @@ export default function AdministrationEmployeesListScreen() {
             onSelectionChange={handleSelectionChange}
             sortConfigs={sortConfigs}
             onSort={handleSort}
+            visibleColumnKeys={visibleColumnKeys}
             enableSwipeActions={true}
           />
         </TableErrorBoundary>
@@ -244,8 +270,17 @@ export default function AdministrationEmployeesListScreen() {
 
       {hasEmployees && <FAB icon="plus" onPress={handleCreateEmployee} />}
 
-      {/* Filter Modal */}
-      <EmployeeFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
+      {/* Filter Drawer */}
+      <EmployeeFilterDrawer visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
+
+      {/* Column Visibility Drawer */}
+      <EmployeeColumnVisibilityDrawer
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        open={showColumnManager}
+        onOpenChange={setShowColumnManager}
+      />
     </ThemedView>
   );
 }
@@ -268,13 +303,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
+  actionButtonWrapper: {
+    position: "relative",
+  },
   actionButton: {
     height: 48,
     width: 48,
     borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
+    paddingHorizontal: 0,
   },
   actionBadge: {
     position: "absolute",
@@ -295,8 +331,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
 });

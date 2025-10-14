@@ -9,13 +9,15 @@ import { ThemedView, ThemedText, FAB, ErrorScreen, Badge } from "@/components/ui
 import { useLayoutDetail, useLayoutMutations } from '../../../../../hooks';
 import { layoutUpdateSchema, type LayoutUpdateFormData } from '../../../../../schemas';
 import { useTheme } from "@/lib/theme";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LayoutEditScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { success, error: showError, warning, info } = useToast();
+
 
   const { data: layout, isLoading, error, refetch } = useLayoutDetail(id!, {
     include: {
@@ -71,10 +73,10 @@ export default function LayoutEditScreen() {
     setIsSubmitting(true);
     try {
       await updateLayout({ id, data });
-      toast.success("Layout atualizado com sucesso");
+      success("Layout atualizado com sucesso");
       router.back();
     } catch (error: any) {
-      toast.error(error?.message || "Erro ao atualizar layout");
+      showError(error?.message || "Erro ao atualizar layout");
     } finally {
       setIsSubmitting(false);
     }

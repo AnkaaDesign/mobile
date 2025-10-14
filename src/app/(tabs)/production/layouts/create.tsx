@@ -9,13 +9,15 @@ import { ThemedView, ThemedText, FAB, ErrorScreen, Badge } from "@/components/ui
 import { useLayoutMutations } from '../../../../hooks';
 import { layoutCreateSchema, type LayoutCreateFormData } from '../../../../schemas';
 import { useTheme } from "@/lib/theme";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LayoutCreateScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { create: createLayout } = useLayoutMutations();
+  const { success, error: showError, warning, info } = useToast();
+
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,10 +48,10 @@ export default function LayoutCreateScreen() {
     setIsSubmitting(true);
     try {
       const result = await createLayout(data);
-      toast.success("Layout criado com sucesso");
+      success("Layout criado com sucesso");
       router.push(`/production/layouts/details/${(result as any)?.data?.id}` as any);
     } catch (error: any) {
-      toast.error(error?.message || "Erro ao criar layout");
+      showError(error?.message || "Erro ao criar layout");
     } finally {
       setIsSubmitting(false);
     }

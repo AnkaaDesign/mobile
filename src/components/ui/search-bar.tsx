@@ -4,7 +4,7 @@ import { ActivityIndicator, Animated, Keyboard, KeyboardAvoidingView,
   TextStyle, View, ViewStyle } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "./icon";
-import { borderRadius, shadow, fontSize, transitions } from "@/constants/design-system";
+import { borderRadius, fontSize, transitions } from "@/constants/design-system";
 
 export interface SearchBarProps {
   value?: string;
@@ -53,7 +53,6 @@ const SearchBar = React.forwardRef<TextInput, SearchBarProps>(
 
     // Animation values
     const borderColorAnim = React.useRef(new Animated.Value(0)).current;
-    const shadowAnim = React.useRef(new Animated.Value(0)).current;
     const clearButtonScale = React.useRef(new Animated.Value(0)).current;
 
     // Debounce timer ref
@@ -66,19 +65,12 @@ const SearchBar = React.forwardRef<TextInput, SearchBarProps>(
 
     // Animate focus state
     React.useEffect(() => {
-      Animated.parallel([
-        Animated.timing(borderColorAnim, {
-          toValue: isFocused ? 1 : 0,
-          duration: transitions.fast,
-          useNativeDriver: false,
-        }),
-        Animated.timing(shadowAnim, {
-          toValue: isFocused ? 1 : 0,
-          duration: transitions.fast,
-          useNativeDriver: false,
-        }),
-      ]).start();
-    }, [isFocused, borderColorAnim, shadowAnim]);
+      Animated.timing(borderColorAnim, {
+        toValue: isFocused ? 1 : 0,
+        duration: transitions.fast,
+        useNativeDriver: false,
+      }).start();
+    }, [isFocused, borderColorAnim]);
 
     // Animate clear button
     React.useEffect(() => {
@@ -142,21 +134,6 @@ const SearchBar = React.forwardRef<TextInput, SearchBarProps>(
       outputRange: [colors.border, colors.ring],
     });
 
-    const animatedShadowStyles = {
-      shadowOpacity: shadowAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [shadow.sm.shadowOpacity, 0.15],
-      }),
-      shadowRadius: shadowAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [shadow.sm.shadowRadius, 4],
-      }),
-      elevation: shadowAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [shadow.sm.elevation, 3],
-      }),
-    };
-
     const containerStyles: ViewStyle = {
       width: "100%",
       ...style,
@@ -165,12 +142,11 @@ const SearchBar = React.forwardRef<TextInput, SearchBarProps>(
     const searchBarStyles: ViewStyle = {
       flexDirection: "row",
       alignItems: "center",
-      height: 44,
+      height: 48,
       paddingHorizontal: 12,
       borderRadius: borderRadius.md,
       borderWidth: 1,
       backgroundColor: colors.input,
-      ...shadow.sm,
       ...(editable === false && {
         opacity: 0.5,
         backgroundColor: isDark ? colors.muted : colors.background,
@@ -197,10 +173,9 @@ const SearchBar = React.forwardRef<TextInput, SearchBarProps>(
 
     return (
       <View style={containerStyles} testID={testID}>
-        <Animated.View style={StyleSheet.flatten([animatedShadowStyles])}>
-          <Animated.View style={StyleSheet.flatten([searchBarStyles, { borderColor: animatedBorderColor }])}>
-            {/* Search Icon */}
-            <Icon name="search" size={20} color={isFocused ? colors.primary : colors.mutedForeground} />
+        <Animated.View style={StyleSheet.flatten([searchBarStyles, { borderColor: animatedBorderColor }])}>
+          {/* Search Icon */}
+          <Icon name="search" size={20} color={isFocused ? colors.primary : colors.mutedForeground} />
 
             {/* Text Input */}
             <TextInput
@@ -254,7 +229,6 @@ const SearchBar = React.forwardRef<TextInput, SearchBarProps>(
                 </Animated.View>
               )}
             </View>
-          </Animated.View>
         </Animated.View>
       </View>
     );

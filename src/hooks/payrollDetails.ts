@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { bonusService, payrollService } from '../api-client';
 import { bonusKeys } from "./queryKeys";
-import { toast } from "sonner";
 
 // =====================================================
 // Query Key Definitions
@@ -230,16 +229,13 @@ export const useCalculatePayrollBonuses = () => {
       const totalFailed = responseData?.data?.totalFailed || 0;
 
       if (totalSuccess > 0) {
-        toast.success(`Bonificações calculadas: ${totalSuccess} funcionários`);
       }
 
       if (totalFailed > 0) {
-        toast.warning(`${totalFailed} cálculos falharam`);
       }
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || 'Erro ao calcular bonificações';
-      toast.error(message);
     },
   });
 };
@@ -261,11 +257,9 @@ export const useSaveMonthlyBonuses = () => {
       // Access the result from the axios response
       const responseData = result?.data || result;
       const totalSuccess = responseData?.data?.totalSuccess || 0;
-      toast.success(`${totalSuccess} bonificações salvas com sucesso`);
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || 'Erro ao salvar bonificações';
-      toast.error(message);
     },
   });
 };

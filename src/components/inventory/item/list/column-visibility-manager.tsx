@@ -19,9 +19,19 @@ interface ItemColumn {
   align?: "left" | "center" | "right";
 }
 
-// Function to get default visible columns for items
+// Function to get default visible columns for items (matching web defaults)
 export function getDefaultVisibleColumns(): Set<string> {
-  return new Set(["uniCode", "name", "quantity"]);
+  return new Set([
+    "uniCode",
+    "name",
+    "brand.name",
+    "category.name",
+    "measures",
+    "quantity",
+    "monthlyConsumption",
+    "price",
+    "totalPrice"
+  ]);
 }
 
 interface ColumnVisibilityManagerProps {

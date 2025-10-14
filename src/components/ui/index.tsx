@@ -43,6 +43,7 @@ export * from "./themed-status-bar";
 export * from "./empty-state";
 export * from "./pagination";
 export * from "./swipe-actions";
+export * from "./swipe-action-button";
 export * from "./reanimated-swipeable-row";
 export * from "./date-picker";
 export * from "./time-picker";

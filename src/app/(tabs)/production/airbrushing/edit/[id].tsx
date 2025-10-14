@@ -278,7 +278,7 @@ export default function AirbrushingEditScreen() {
                 </ThemedText>
                 {airbrushing.task.customer && (
                   <ThemedText style={{ fontSize: 12, color: colors.muted }}>
-                    Cliente: {(airbrushing.task.customer as any)?.name}
+                    Cliente: {airbrushing.task.customer.fantasyName}
                   </ThemedText>
                 )}
                 {airbrushing.task.truck && (

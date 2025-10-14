@@ -30,17 +30,17 @@ export interface BadgeProps {
 }
 
 const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeProps["size"] = "default", colors: any, isDark: boolean): ViewStyle => {
-  // Size-based padding matching web
+  // Size-based padding matching web (increased vertical padding for better height)
   const sizePadding = {
-    sm: { paddingHorizontal: 8, paddingVertical: 1 },
-    default: { paddingHorizontal: 10, paddingVertical: 2 },
-    lg: { paddingHorizontal: 12, paddingVertical: 4 },
+    sm: { paddingHorizontal: 8, paddingVertical: 4 },
+    default: { paddingHorizontal: 10, paddingVertical: 5 },
+    lg: { paddingHorizontal: 12, paddingVertical: 6 },
   };
 
   const baseStyles: ViewStyle = {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start", // Changed from center to flex-start for left alignment
     borderRadius: borderRadius.DEFAULT,
     borderWidth: 1,
     ...sizePadding[size],
@@ -65,59 +65,59 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
       borderColor: colors.border,
     },
 
-    // Primary/Info variants (Blue tones)
+    // Primary/Info variants (Blue tones) - Matching web EXACTLY
     primary: {
-      backgroundColor: "#2563eb", // blue-600
+      backgroundColor: "#1d4ed8", // blue-700 (web line 19: bg-blue-700)
       borderColor: "transparent",
     },
     info: {
-      backgroundColor: "#0ea5e9", // sky-500
+      backgroundColor: "#1d4ed8", // blue-700 (web line 20: bg-blue-700)
       borderColor: "transparent",
     },
     inProgress: {
-      backgroundColor: "#3b82f6", // blue-500 (changed to match web)
+      backgroundColor: "#1d4ed8", // blue-700 (web line 21: bg-blue-700)
       borderColor: "transparent",
     },
 
-    // Success variants (Green tones - positive actions)
+    // Success variants (Green tones) - Matching web EXACTLY
     success: {
-      backgroundColor: "#16a34a", // green-600
+      backgroundColor: "#15803d", // green-700 (web line 25: bg-green-700)
       borderColor: "transparent",
     },
     completed: {
-      backgroundColor: "#16a34a", // green-600 (changed to match success)
+      backgroundColor: "#15803d", // green-700 (web line 26: bg-green-700)
       borderColor: "transparent",
     },
     active: {
-      backgroundColor: "#16a34a", // green-600 (changed to match success for consistency)
+      backgroundColor: "#15803d", // green-700 (web line 27: bg-green-700)
       borderColor: "transparent",
     },
 
-    // Warning variants (Orange/Amber tones - attention needed)
+    // Warning variants (Orange/Amber tones) - Matching web EXACTLY
     warning: {
-      backgroundColor: "#f97316", // orange-500 (changed to match web)
+      backgroundColor: "#ea580c", // orange-600 (web line 31: bg-orange-600)
       borderColor: "transparent",
     },
     pending: {
-      backgroundColor: "#f59e0b", // amber-500
+      backgroundColor: "#d97706", // amber-600 (web line 32: bg-amber-600) NOT yellow-600!
       borderColor: "transparent",
     },
     onHold: {
-      backgroundColor: "#eab308", // yellow-500
+      backgroundColor: "#ea580c", // orange-600 (web line 33: bg-orange-600)
       borderColor: "transparent",
     },
 
-    // Error/Destructive variants (Red tones - negative actions)
+    // Error/Destructive variants (Red tones) - Matching web EXACTLY
     error: {
-      backgroundColor: "#dc2626", // red-600
+      backgroundColor: "#b91c1c", // red-700 (web line 37: bg-red-700)
       borderColor: "transparent",
     },
     destructive: {
-      backgroundColor: "#dc2626", // red-600 (changed to match error)
+      backgroundColor: "#b91c1c", // red-700 (web line 38: bg-red-700)
       borderColor: "transparent",
     },
     cancelled: {
-      backgroundColor: "#dc2626", // red-600 (changed to match error)
+      backgroundColor: "#b91c1c", // red-700 (web line 39: bg-red-700)
       borderColor: "transparent",
     },
 
@@ -144,7 +144,7 @@ const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: Ba
 
   const baseStyles: TextStyle = {
     fontWeight: fontWeight.medium,
-    textAlign: "center",
+    textAlign: "left", // Changed from center to left
     ...sizeFont[size],
   };
 
@@ -221,7 +221,7 @@ function Badge({ children, variant = "default", size = "default", style, textSty
 
   const renderChildren = () => {
     if (typeof children === "string" || typeof children === "number") {
-      return <Text style={StyleSheet.flatten([badgeTextStyles, textStyle])}>{children}</Text>;
+      return <Text style={StyleSheet.flatten([badgeTextStyles, textStyle])} numberOfLines={1} ellipsizeMode="tail">{children}</Text>;
     }
 
     // For non-text children, wrap Text components with styles
@@ -229,6 +229,8 @@ function Badge({ children, variant = "default", size = "default", style, textSty
       if (React.isValidElement(child) && child.type === Text) {
         return React.cloneElement(child as React.ReactElement<any>, {
           style: [badgeTextStyles, child.props.style, textStyle],
+          numberOfLines: 1,
+          ellipsizeMode: "tail",
         });
       }
       return child;

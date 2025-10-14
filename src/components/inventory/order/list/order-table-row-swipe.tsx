@@ -1,201 +1,220 @@
-import React, { useRef, useContext, useEffect } from "react";
-import { Animated, StyleSheet, View, I18nManager } from "react-native";
-import { PanGestureHandler, RectButton } from "react-native-gesture-handler";
+import React, { useRef, useCallback, useEffect } from "react";
+import { View, StyleSheet, ViewStyle, Alert } from "react-native";
 import { IconEdit, IconTrash, IconCopy } from "@tabler/icons-react-native";
+import { Icon } from "@/components/ui/icon";
+import { useTheme } from "@/contexts/theme-context";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
-import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
-import { ThemedText } from "@/components/ui/themed-text";
-import { useHapticFeedback } from "@/hooks/use-haptic-feedback";
+import { ReanimatedSwipeableRow, type SwipeAction, type Swipeable } from "@/components/ui/reanimated-swipeable-row";
+
+const ACTION_WIDTH = 80;
+
+interface CustomSwipeAction {
+  key: string;
+  label: string;
+  icon: string;
+  backgroundColor: string;
+  onPress: () => void;
+}
 
 interface OrderTableRowSwipeProps {
-  children: React.ReactNode;
+  children: React.ReactNode | ((isActive: boolean) => React.ReactNode);
   orderId: string;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  onDuplicate?: () => void;
+  orderName: string;
+  onEdit?: (orderId: string) => void;
+  onDelete?: (orderId: string) => void;
+  onDuplicate?: (orderId: string) => void;
+  customActions?: CustomSwipeAction[];
+  style?: ViewStyle;
   disabled?: boolean;
 }
 
-export const OrderTableRowSwipe: React.FC<OrderTableRowSwipeProps> = ({
-  children,
-  orderId,
-  onEdit,
-  onDelete,
-  onDuplicate,
-  disabled = false,
-}) => {
+const OrderTableRowSwipeComponent = ({ children, orderId, orderName, onEdit, onDelete, onDuplicate, customActions = [], style, disabled = false }: OrderTableRowSwipeProps) => {
   const { colors } = useTheme();
-  const { activeRowId, openRowId, closeActiveRow } = useSwipeRow();
-  const swipeableRow = useRef<any>(null);
-  const translateX = useRef(new Animated.Value(0)).current;
-  const { selection } = useHapticFeedback();
+  const { activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow } = useSwipeRow();
+  const swipeableRef = useRef<Swipeable>(null);
+  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Close row if another row is opened
+  // Early return if colors are not available yet (during theme initialization)
+  if (!colors || !children) {
+    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
+  }
+
+  const isThisRowActive = activeRowId === orderId;
+
+  // Watch for changes in activeRowId to close this row if another row becomes active
   useEffect(() => {
-    if (activeRowId && activeRowId !== orderId) {
-      swipeableRow.current?.close();
+    if (!isThisRowActive && activeRowId !== null) {
+      // Another row became active, close this one immediately
+      swipeableRef.current?.close();
     }
-  }, [activeRowId, orderId]);
+  }, [activeRowId, isThisRowActive]);
 
-  // Handle when row becomes active
-  const handleSwipeableOpen = () => {
-    // openRowId(orderId);
-    // selection( "impactLight");
-  };
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoCloseTimerRef.current) {
+        clearTimeout(autoCloseTimerRef.current);
+        autoCloseTimerRef.current = null;
+      }
+      // Clean up if this row was active
+      if (activeRowId === orderId) {
+        setActiveRowId(null);
+      }
+    };
+  }, [activeRowId, orderId, setActiveRowId]);
 
-  // Handle when row is closed
-  const handleSwipeableClose = () => {
-    if (activeRowId === orderId) {
-      closeActiveRow();
+  const handleDeletePress = useCallback(() => {
+    Alert.alert("Confirmar exclusão", `Tem certeza que deseja excluir "${orderName}"?`, [
+      {
+        text: "Cancelar",
+        style: "cancel",
+        onPress: () => swipeableRef.current?.close(),
+      },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: () => {
+          swipeableRef.current?.close();
+          setTimeout(() => onDelete?.(orderId), 300);
+        },
+      },
+    ]);
+  }, [orderId, orderName, onDelete]);
+
+  // Build actions array with colors matching order status
+  // Edit button uses blue (#007AFF)
+  // Duplicate button uses orange (#FF9500)
+  // Delete button uses red (#FF3B30)
+  const rightActions: SwipeAction[] = [
+    ...(onEdit
+      ? [
+          {
+            key: "edit",
+            label: "Editar",
+            icon: <IconEdit size={20} color="white" />,
+            backgroundColor: "#007AFF", // blue
+            onPress: () => onEdit(orderId),
+            closeOnPress: true,
+          },
+        ]
+      : []),
+    ...(onDuplicate
+      ? [
+          {
+            key: "duplicate",
+            label: "Duplicar",
+            icon: <IconCopy size={20} color="white" />,
+            backgroundColor: "#FF9500", // orange
+            onPress: () => onDuplicate(orderId),
+            closeOnPress: true,
+          },
+        ]
+      : []),
+    ...customActions.map((action) => ({
+      ...action,
+      icon: <Icon name={action.icon} size={20} color="white" />,
+      closeOnPress: true,
+    })),
+    ...(onDelete
+      ? [
+          {
+            key: "delete",
+            label: "Excluir",
+            icon: <IconTrash size={20} color="white" />,
+            backgroundColor: "#FF3B30", // red
+            onPress: handleDeletePress,
+            closeOnPress: false, // Don't close automatically for delete confirmation
+          },
+        ]
+      : []),
+  ];
+
+  const handleWillOpen = useCallback(
+    (direction: "left" | "right") => {
+      // Clear any existing timer
+      if (autoCloseTimerRef.current) {
+        clearTimeout(autoCloseTimerRef.current);
+        autoCloseTimerRef.current = null;
+      }
+
+      // Close any other active row first
+      if (activeRowId && activeRowId !== orderId) {
+        closeActiveRow();
+        closeOpenRow(); // Also close legacy rows
+      }
+    },
+    [activeRowId, orderId, closeActiveRow, closeOpenRow],
+  );
+
+  const handleOpen = useCallback(
+    (direction: "left" | "right", swipeable: Swipeable) => {
+      setActiveRowId(orderId);
+
+      // Register the close function for legacy compatibility
+      setOpenRow(() => swipeable.close());
+
+      // Auto-close after 5 seconds
+      autoCloseTimerRef.current = setTimeout(() => {
+        swipeable.close();
+      }, 5000);
+    },
+    [orderId, setActiveRowId, setOpenRow],
+  );
+
+  const handleClose = useCallback(() => {
+    // Clear any auto-close timer
+    if (autoCloseTimerRef.current) {
+      clearTimeout(autoCloseTimerRef.current);
+      autoCloseTimerRef.current = null;
     }
-  };
 
-  const handleEdit = () => {
-    swipeableRow.current?.close();
-    // selection( "selection");
-    onEdit?.();
-  };
+    // Clear active row state if this was the active row
+    if (isThisRowActive) {
+      setActiveRowId(null);
+    }
+  }, [isThisRowActive, setActiveRowId]);
 
-  const handleDelete = () => {
-    swipeableRow.current?.close();
-    // selection( "notificationWarning");
-    onDelete?.();
-  };
+  // Ensure children is always defined and is a valid React element or function
+  if (!children || (typeof children !== "object" && typeof children !== "string" && typeof children !== "number" && typeof children !== "function")) {
+    console.warn("OrderTableRowSwipe: children prop is invalid or undefined:", typeof children);
+    return <View style={style} />;
+  }
 
-  const handleDuplicate = () => {
-    swipeableRow.current?.close();
-    // selection( "selection");
-    onDuplicate?.();
-  };
-
-  const renderRightActions = (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
-    const scale = dragX.interpolate({
-      inputRange: [-200, -100, 0],
-      outputRange: [1, 0.9, 0],
-      extrapolate: "clamp",
-    });
-
-    return (
-      <View style={styles.actionsContainer}>
-        {onEdit && (
-          <Animated.View style={{ transform: [{ scale }] }}>
-            <RectButton style={StyleSheet.flatten([styles.actionButton, styles.editButton])} onPress={handleEdit}>
-              <IconEdit size={20} color="#fff" />
-              <ThemedText style={styles.actionText}>Editar</ThemedText>
-            </RectButton>
-          </Animated.View>
-        )}
-        {onDuplicate && (
-          <Animated.View style={{ transform: [{ scale }] }}>
-            <RectButton style={StyleSheet.flatten([styles.actionButton, styles.duplicateButton])} onPress={handleDuplicate}>
-              <IconCopy size={20} color="#fff" />
-              <ThemedText style={styles.actionText}>Duplicar</ThemedText>
-            </RectButton>
-          </Animated.View>
-        )}
-        {onDelete && (
-          <Animated.View style={{ transform: [{ scale }] }}>
-            <RectButton style={StyleSheet.flatten([styles.actionButton, styles.deleteButton])} onPress={handleDelete}>
-              <IconTrash size={20} color="#fff" />
-              <ThemedText style={styles.actionText}>Excluir</ThemedText>
-            </RectButton>
-          </Animated.View>
-        )}
-      </View>
-    );
-  };
-
-  if (disabled) {
-    return <>{children}</>;
+  if (disabled || rightActions.length === 0) {
+    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
   }
 
   return (
-    <PanGestureHandler
-      onGestureEvent={Animated.event([{ nativeEvent: { translationX: translateX } }], { useNativeDriver: false })}
-      onHandlerStateChange={(e) => {
-        if (e.nativeEvent.oldState === 4) {
-          // Gesture ended
-          const { translationX } = e.nativeEvent;
-          if (translationX < -80) {
-            handleSwipeableOpen();
-          } else {
-            handleSwipeableClose();
-          }
-          Animated.spring(translateX, {
-            toValue: translationX < -80 ? -200 : 0,
-            useNativeDriver: false,
-            tension: 100,
-            friction: 10,
-          }).start();
-        }
-      }}
+    <ReanimatedSwipeableRow
+      ref={swipeableRef}
+      rightActions={rightActions}
+      enabled={!disabled}
+      friction={2}
+      rightThreshold={40}
+      overshootRight={false}
+      onWillOpen={handleWillOpen}
+      onOpen={handleOpen}
+      onClose={handleClose}
+      containerStyle={[styles.container, style]}
+      childrenContainerStyle={styles.rowContainer}
+      actionWidth={ACTION_WIDTH}
     >
-      <Animated.View style={{ transform: [{ translateX }] }}>
-        {children}
-        <Animated.View
-          style={[
-            styles.rightActionsContainer,
-            {
-              transform: [
-                {
-                  translateX: translateX.interpolate({
-                    inputRange: [-200, 0],
-                    outputRange: [0, 200],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          {renderRightActions(
-            translateX.interpolate({
-              inputRange: [-200, 0],
-              outputRange: [1, 0],
-            }),
-            translateX,
-          )}
-        </Animated.View>
-      </Animated.View>
-    </PanGestureHandler>
+      <View style={{ flex: 1 }}>{typeof children === "function" ? children(isThisRowActive) : children}</View>
+    </ReanimatedSwipeableRow>
   );
 };
 
+// Set displayName before memoization for React 19 compatibility
+OrderTableRowSwipeComponent.displayName = "OrderTableRowSwipe";
+
+export const OrderTableRowSwipe = React.memo(OrderTableRowSwipeComponent);
+
 const styles = StyleSheet.create({
-  actionsContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    paddingRight: spacing.md,
+  container: {
+    position: "relative",
+    overflow: "hidden",
   },
-  rightActionsContainer: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 200,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-  actionButton: {
-    justifyContent: "center",
-    alignItems: "center",
-    width: 64,
-    height: "100%",
-    paddingHorizontal: spacing.sm,
-  },
-  editButton: {
-    backgroundColor: "#007AFF",
-  },
-  duplicateButton: {
-    backgroundColor: "#FF9500",
-  },
-  deleteButton: {
-    backgroundColor: "#FF3B30",
-  },
-  actionText: {
-    color: "#fff",
-    fontSize: 10,
-    marginTop: 4,
+  rowContainer: {
+    // The row content container - no special styles needed
   },
 });

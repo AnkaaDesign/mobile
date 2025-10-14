@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
+import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet, Image } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { Customer } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
@@ -9,7 +9,8 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { CustomerTableRowSwipe } from "./customer-table-row-swipe";
-import { formatCNPJ, formatCPF, formatPhone } from '../../../../utils';
+import { formatCNPJ, formatCPF, formatBrazilianPhone, formatDateTime } from '../../../../utils';
+import { getFileUrl } from '@/utils/file';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
 export interface TableColumn {
@@ -50,7 +51,7 @@ const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
 // Define all available columns with their renderers
-const createColumnDefinitions = (): TableColumn[] => [
+export const createColumnDefinitions = (): TableColumn[] => [
   {
     key: "fantasyName",
     header: "Nome Fantasia",
@@ -59,11 +60,22 @@ const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (customer: Customer) => (
       <View style={styles.nameContainer}>
-        <View style={[styles.avatar, { backgroundColor: extendedColors.neutral[200] }]}>
-          <ThemedText style={[styles.avatarText, { color: extendedColors.neutral[600] }]}>
-            {customer.fantasyName?.charAt(0)?.toUpperCase() || "?"}
-          </ThemedText>
-        </View>
+        {customer.logo?.id ? (
+          <Image
+            source={{ uri: getFileUrl(customer.logo) }}
+            style={[styles.logoImage, { borderColor: extendedColors.neutral[300] }]}
+            onError={(e) => {
+              // On error, the fallback avatar will be shown via react-native's onError handling
+              console.log('Failed to load logo for customer:', customer.fantasyName);
+            }}
+          />
+        ) : (
+          <View style={[styles.avatar, { backgroundColor: extendedColors.neutral[200] }]}>
+            <ThemedText style={[styles.avatarText, { color: extendedColors.neutral[600] }]}>
+              {customer.fantasyName?.charAt(0)?.toUpperCase() || "?"}
+            </ThemedText>
+          </View>
+        )}
         <ThemedText style={styles.nameText} numberOfLines={2}>
           {customer.fantasyName}
         </ThemedText>
@@ -130,7 +142,7 @@ const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (customer: Customer) => {
       if (customer.phones && customer.phones.length > 0) {
-        const mainPhone = formatPhone(customer.phones[0]);
+        const mainPhone = formatBrazilianPhone(customer.phones[0]);
         const otherCount = customer.phones.length - 1;
 
         return (
@@ -243,6 +255,18 @@ const createColumnDefinitions = (): TableColumn[] => [
       );
     },
   },
+  {
+    key: "createdAt",
+    header: "Cadastrado Em",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (customer: Customer) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {customer.createdAt ? formatDateTime(new Date(customer.createdAt)) : "-"}
+      </ThemedText>
+    ),
+  },
 ];
 
 export const CustomerTable = React.memo<CustomerTableProps>(
@@ -261,7 +285,7 @@ export const CustomerTable = React.memo<CustomerTableProps>(
     onSelectionChange,
     sortConfigs = [],
     onSort,
-    visibleColumnKeys = ["fantasyName", "document", "email", "phones", "city", "taskCount"],
+    visibleColumnKeys = ["fantasyName", "document"],
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
@@ -282,6 +306,7 @@ export const CustomerTable = React.memo<CustomerTableProps>(
         city: 1.5,
         tags: 1.5,
         taskCount: 0.8,
+        createdAt: 1.8,
       };
 
       // Filter to visible columns
@@ -763,6 +788,12 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
+  },
+  logoImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    borderWidth: 1,
   },
   nameText: {
     flex: 1,

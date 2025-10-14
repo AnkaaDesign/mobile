@@ -128,6 +128,8 @@ const SecurityRisk = ({ level }: { level: "low" | "medium" | "high" }) => {
 
 export default function SecuritySettingsScreen() {
   const [isLoading, setIsLoading] = useState(false);
+  const { success, error: showError, warning, info } = useToast();
+
 
   const form = useForm<SecuritySettingsFormData>({
     resolver: zodResolver(securitySettingsSchema),
@@ -154,10 +156,10 @@ export default function SecuritySettingsScreen() {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       console.log("Security settings saved:", data);
-      toast.success("Configurações de segurança salvas com sucesso!");
+      success("Configurações de segurança salvas com sucesso!");
     } catch (error) {
       console.error("Error saving security settings:", error);
-      toast.error("Erro ao salvar configurações de segurança");
+      showError("Erro ao salvar configurações de segurança");
     } finally {
       setIsLoading(false);
     }

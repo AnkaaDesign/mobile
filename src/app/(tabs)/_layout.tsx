@@ -58,29 +58,29 @@ const SPACING = {
   xl: 24,
 };
 
-// Helper functions for complex style calculations
+// Helper functions for complex style calculations - UPDATED to use green-700
 const getMenuItemBackgroundColor = (isActive: boolean, pressed: boolean, isInPath: boolean, isDarkMode: boolean): string => {
   if (isActive) {
-    if (DEBUG_STYLES) console.log("Active item - returning green background");
-    return "#16a34a"; // green-600
+    if (DEBUG_STYLES) console.log("Active item - returning green-700 background");
+    return "#15803d"; // green-700 - web primary
   }
-  if (pressed) return isDarkMode ? "rgba(64, 64, 64, 0.5)" : "rgba(212, 212, 212, 0.5)"; // neutral-700/50 : neutral-300/50
-  if (isInPath) return isDarkMode ? "rgba(22, 163, 74, 0.1)" : "rgba(22, 163, 74, 0.05)";
+  if (pressed) return isDarkMode ? "rgba(46, 46, 46, 0.5)" : "rgba(245, 245, 245, 0.5)"; // neutral-800/50 : neutral-100/50
+  if (isInPath) return isDarkMode ? "rgba(21, 128, 61, 0.15)" : "rgba(21, 128, 61, 0.1)";
   return "transparent";
 };
 
 const getMenuItemBorderColor = (isInPath: boolean, isDarkMode: boolean): string => {
-  return isInPath ? (isDarkMode ? "rgba(22, 163, 74, 0.3)" : "rgba(22, 163, 74, 0.2)") : "transparent";
+  return isInPath ? (isDarkMode ? "rgba(21, 128, 61, 0.4)" : "rgba(21, 128, 61, 0.3)") : "transparent";
 };
 
 const getIconColor = (isActive: boolean, isInPath: boolean, isDarkMode: boolean): string => {
-  if (isActive) return "#f5f5f5";
-  if (isInPath) return "#16a34a";
-  return isDarkMode ? "#d4d4d4" : "#404040"; // neutral-300 : neutral-700
+  if (isActive) return "#fafafa"; // neutral-50
+  if (isInPath) return "#15803d"; // green-700
+  return isDarkMode ? "#cccccc" : "#525252"; // neutral-300 : neutral-600
 };
 
 const getPressedBackgroundColor = (isDarkMode: boolean): string => {
-  return isDarkMode ? "rgba(64, 64, 64, 0.5)" : "rgba(212, 212, 212, 0.5)"; // neutral-700/50 : neutral-300/50
+  return isDarkMode ? "rgba(46, 46, 46, 0.5)" : "rgba(245, 245, 245, 0.5)"; // neutral-800/50 : neutral-100/50
 };
 
 // Development-only style debugging tools
@@ -106,32 +106,32 @@ const debugStyleIssues = (componentName: string, styles: any) => {
 // Create styles outside component for better performance
 const createStyles = (isDarkMode: boolean) => {
   const colors = {
-    // Background colors - Matching web sidebar exactly
-    background: isDarkMode ? "#262626" : "#f5f5f5", // neutral-800 : neutral-100
-    foreground: isDarkMode ? "#f5f5f5" : "#404040", // neutral-100 : neutral-700
+    // Background colors - EXACTLY matching web sidebar (web --sidebar-background)
+    background: isDarkMode ? "#212121" : "#fafafa", // neutral-850 : neutral-50 - web sidebar
+    foreground: isDarkMode ? "#cccccc" : "#525252", // neutral-300 : neutral-600 - web sidebar-foreground
 
-    // Card and surface colors
-    card: isDarkMode ? "#262626" : "#f5f5f5", // neutral-800 : neutral-100
-    cardHover: isDarkMode ? "#404040" : "#e5e5e5", // neutral-700 : neutral-200
+    // Card and surface colors - matching web card colors
+    card: isDarkMode ? "#262626" : "#fafafa", // neutral-825 : neutral-50
+    cardHover: isDarkMode ? "#2e2e2e" : "#f5f5f5", // neutral-800 : neutral-100
 
-    // Text colors - Matching web
-    text: isDarkMode ? "#f5f5f5" : "#404040", // neutral-100 : neutral-700
-    itemText: isDarkMode ? "#d4d4d4" : "#404040", // neutral-300 : neutral-700
-    muted: isDarkMode ? "#a3a3a3" : "#737373", // neutral-400 : neutral-500
+    // Text colors - EXACTLY matching web
+    text: isDarkMode ? "#d4d4d4" : "#404040", // neutral-250 : neutral-700
+    itemText: isDarkMode ? "#cccccc" : "#525252", // neutral-300 : neutral-600 - sidebar text
+    muted: isDarkMode ? "#8c8c8c" : "#737373", // neutral-450 : neutral-500
 
-    // Border and surface colors - Matching web
-    border: isDarkMode ? "#404040" : "#d4d4d4", // neutral-700 : neutral-300
-    hover: isDarkMode ? "rgba(64, 64, 64, 0.5)" : "rgba(212, 212, 212, 0.5)", // neutral-700/50 : neutral-300/50
+    // Border and surface colors - EXACTLY matching web sidebar
+    border: isDarkMode ? "#333333" : "#e5e5e5", // neutral-800 : neutral-150 - web sidebar-border
+    hover: isDarkMode ? "rgba(46, 46, 46, 0.5)" : "rgba(245, 245, 245, 0.5)", // neutral-800/50 : neutral-100/50
 
-    // Active states - Matching web
-    active: "#16a34a", // green-600
-    activeText: "#f5f5f5", // white - high contrast on green
-    activeTextSecondary: isDarkMode ? "#dcfce7" : "#14532d", // Better contrast alternative
-    activePath: isDarkMode ? "rgba(22, 163, 74, 0.15)" : "rgba(22, 163, 74, 0.1)",
-    activePathBorder: isDarkMode ? "rgba(22, 163, 74, 0.4)" : "rgba(22, 163, 74, 0.3)",
+    // Active states - EXACTLY matching web with green-700 (#15803d)
+    active: "#15803d", // green-700 - web --primary (HSL: 142 72% 29%)
+    activeText: "#fafafa", // neutral-50 - high contrast on green
+    activeTextSecondary: isDarkMode ? "#dcfce7" : "#14532d", // green-100 : green-900
+    activePath: isDarkMode ? "rgba(21, 128, 61, 0.15)" : "rgba(21, 128, 61, 0.1)",
+    activePathBorder: isDarkMode ? "rgba(21, 128, 61, 0.4)" : "rgba(21, 128, 61, 0.3)",
 
-    // Destructive colors
-    destructive: isDarkMode ? "#f87171" : "#dc2626", // red-400 : red-600
+    // Destructive colors - matching web
+    destructive: isDarkMode ? "#b91c1c" : "#ef4444", // red-700 : red-500
     destructiveHover: isDarkMode ? "rgba(127, 29, 29, 0.3)" : "#fef2f2", // red-950/30 : red-50
   };
 
@@ -221,7 +221,7 @@ const createStyles = (isDarkMode: boolean) => {
       overflow: "hidden", // Ensure border radius is respected
     },
     menuItemPressableActive: {
-      backgroundColor: colors.active, // green-600
+      backgroundColor: colors.active, // green-700
     },
     menuItemPressableInPath: {
       backgroundColor: colors.activePath,
@@ -278,7 +278,7 @@ const createStyles = (isDarkMode: boolean) => {
       justifyContent: "center",
     },
     contextualBadge: {
-      backgroundColor: isDarkMode ? "rgba(22, 163, 74, 0.2)" : "rgba(22, 163, 74, 0.1)",
+      backgroundColor: isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.1)",
       paddingHorizontal: 6,
       paddingVertical: 2,
       borderRadius: 4,
@@ -286,7 +286,7 @@ const createStyles = (isDarkMode: boolean) => {
     },
     contextualBadgeText: {
       fontSize: 10,
-      color: colors.active,
+      color: colors.active, // green-700
       fontWeight: "600",
     },
     submenu: {
@@ -324,9 +324,9 @@ const createStyles = (isDarkMode: boolean) => {
       position: "absolute",
       left: SPACING.md,
       right: SPACING.md,
-      backgroundColor: isDarkMode ? "rgba(38, 38, 38, 0.98)" : "rgba(245, 245, 245, 0.98)", // neutral-800 : neutral-100 with opacity
+      backgroundColor: isDarkMode ? "rgba(33, 33, 33, 0.98)" : "rgba(250, 250, 250, 0.98)", // neutral-850 : neutral-50 with opacity
       borderWidth: 1,
-      borderColor: isDarkMode ? "rgba(64, 64, 64, 0.8)" : "rgba(212, 212, 212, 0.8)", // neutral-700 : neutral-300 with opacity
+      borderColor: isDarkMode ? "rgba(51, 51, 51, 0.8)" : "rgba(229, 229, 229, 0.8)", // neutral-800 : neutral-150 with opacity
       borderRadius: 12,
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 8 },
@@ -943,15 +943,15 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
               { marginLeft, marginRight },
               isActive
                 ? {
-                    backgroundColor: "#16a34a",
+                    backgroundColor: "#15803d", // green-700 - web primary
                     borderRadius: 8,
                   }
                 : undefined,
               !isActive && isInPath
                 ? {
-                    backgroundColor: isDarkMode ? "rgba(22, 163, 74, 0.15)" : "rgba(22, 163, 74, 0.1)",
+                    backgroundColor: isDarkMode ? "rgba(21, 128, 61, 0.15)" : "rgba(21, 128, 61, 0.1)",
                     borderWidth: 1,
-                    borderColor: isDarkMode ? "rgba(22, 163, 74, 0.4)" : "rgba(22, 163, 74, 0.3)",
+                    borderColor: isDarkMode ? "rgba(21, 128, 61, 0.4)" : "rgba(21, 128, 61, 0.3)",
                   }
                 : undefined,
             ].filter(Boolean)}
@@ -990,9 +990,9 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                       isActive && styles.menuItemTextActive,
                       !isActive && isInPath && styles.menuItemTextInPath,
                       { fontSize: level === 0 ? 14 : 13 },
-                      // FORCE: Always set text color inline
+                      // FORCE: Always set text color inline to match web exactly
                       {
-                        color: isActive ? "#f5f5f5" : isDarkMode ? "#e5e5e5" : "#1f2937",
+                        color: isActive ? "#fafafa" : isDarkMode ? "#cccccc" : "#525252",
                       },
                     ]}
                     numberOfLines={1}
@@ -1022,7 +1022,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                           <Icon name="chevron-right" size={16} variant={isActive ? "onPrimary" : isInPath ? "primary" : "navigation"} />
                         </Animated.View>
                       ) : (
-                        <IconChevronRight size={16} color={isActive ? "#f5f5f5" : isInPath ? "#16a34a" : isDarkMode ? "#d4d4d4" : "#262626"} />
+                        <IconChevronRight size={16} color={isActive ? "#fafafa" : isInPath ? "#15803d" : isDarkMode ? "#cccccc" : "#525252"} />
                       )}
                     </View>
                   </Pressable>
@@ -1041,7 +1041,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   return (
     <TouchableWithoutFeedback onPress={() => setShowUserMenu(false)}>
-      <View style={[styles.container, { flex: 1, backgroundColor: isDarkMode ? "#262626" : "#f5f5f5" }]}>
+      <View style={[styles.container, { flex: 1, backgroundColor: isDarkMode ? "#212121" : "#fafafa" }]}>
         {/* Header Section - User Profile & Theme Toggle */}
         <View style={[styles.header, { paddingTop: Platform.OS === "ios" ? Math.max(insets.top, 20) : Math.max(insets.top, 16) }]}>
           <View style={styles.headerContent}>
@@ -1064,10 +1064,10 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                       justifyContent: "center",
                     }}
                   >
-                    <Text style={StyleSheet.flatten([styles.userName, { color: isDarkMode ? "#f5f5f5" : "#171717" }])} numberOfLines={1}>
+                    <Text style={StyleSheet.flatten([styles.userName, { color: isDarkMode ? "#d4d4d4" : "#404040" }])} numberOfLines={1}>
                       {user?.name || "Usuário"}
                     </Text>
-                    <Text style={[styles.userDetail, { color: isDarkMode ? "#a3a3a3" : "#737373", marginTop: 2 }]} numberOfLines={1}>
+                    <Text style={[styles.userDetail, { color: isDarkMode ? "#8c8c8c" : "#737373", marginTop: 2 }]} numberOfLines={1}>
                       {user?.email || (user?.phone && maskPhone(user?.phone)) || "Email/Phone"}
                     </Text>
                   </View>
@@ -1086,7 +1086,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           {/* Menu items */}
           {filteredMenu.length === 0 ? (
             <View style={{ padding: 20, alignItems: "center" }}>
-              <Text style={{ color: isDarkMode ? "#a3a3a3" : "#6b7280" }}>Nenhum item de menu disponível</Text>
+              <Text style={{ color: isDarkMode ? "#8c8c8c" : "#737373" }}>Nenhum item de menu disponível</Text>
             </View>
           ) : (
             filteredMenu.map((item) => renderMenuItem(item, 0))
@@ -1364,13 +1364,17 @@ const getScreensToRegister = () => {
     { name: "personal/preferences/privacy", title: "Privacidade" },
     { name: "personal/preferences/theme", title: "Tema" },
 
-    // Statistics Module
-    { name: "statistics", title: "Estatísticas" },
-    { name: "statistics/administration", title: "Estatísticas - Administração" },
-    { name: "statistics/human-resources", title: "Estatísticas - Recursos Humanos" },
-    { name: "statistics/inventory", title: "Estatísticas - Estoque" },
-    { name: "statistics/production", title: "Estatísticas - Produção" },
-    { name: "statistics/statistics", title: "Estatísticas - Resumo" },
+    // My Team Module
+    { name: "my-team", title: "Meu Pessoal" },
+    { name: "my-team/warnings", title: "Advertências da Equipe" },
+    { name: "my-team/loans", title: "Empréstimos da Equipe" },
+    { name: "my-team/commissions", title: "Comissões da Equipe" },
+    { name: "my-team/vacations", title: "Férias da Equipe" },
+    { name: "my-team/activities", title: "Atividades da Equipe" },
+    { name: "my-team/ppe-deliveries", title: "Entregas de EPI da Equipe" },
+    { name: "my-team/users", title: "Usuários da Equipe" },
+    { name: "my-team/cuts", title: "Recortes da Equipe" },
+    { name: "my-team/time-calculations", title: "Cálculos de Ponto da Equipe" },
   ];
 
   return existingScreens;
@@ -1393,6 +1397,7 @@ function DrawerLayout() {
   const router = useRouter();
   const pathname = usePathname();
   const { canGoBack, goBack, getBackPath } = useNavigationHistory();
+  const insets = useSafeAreaInsets();
 
   const screensToRegister = getScreensToRegister();
 
@@ -1402,13 +1407,13 @@ function DrawerLayout() {
   const screenWidth = Dimensions.get("window").width;
   const drawerWidth = screenWidth < 360 ? screenWidth * 0.85 : Math.min(320, screenWidth * 0.8);
 
-  // Use neutral colors to match web version
+  // Use EXACT colors to match web sidebar
   const drawerColors = {
-    background: isDarkMode ? "#262626" : "#f5f5f5", // neutral-800 : neutral-100
-    headerBackground: isDarkMode ? "#262626" : "#f5f5f5", // neutral-800 : neutral-100
-    text: isDarkMode ? "#f5f5f5" : "#404040", // neutral-100 : neutral-700
-    active: "#16a34a", // green-600 for active items
-    activeText: "#f5f5f5", // white text on green background
+    background: isDarkMode ? "#212121" : "#fafafa", // neutral-850 : neutral-50 - web sidebar
+    headerBackground: isDarkMode ? "#212121" : "#fafafa", // neutral-850 : neutral-50 - web sidebar
+    text: isDarkMode ? "#d4d4d4" : "#404040", // neutral-250 : neutral-700
+    active: "#15803d", // green-700 for active items - web primary
+    activeText: "#fafafa", // neutral-50 text on green background
   };
 
   return (
@@ -1421,12 +1426,15 @@ function DrawerLayout() {
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: StyleSheet.hairlineWidth,
-          borderBottomColor: isDarkMode ? "#404040" : "#d4d4d4", // neutral-700 : neutral-300
+          borderBottomColor: isDarkMode ? "#333333" : "#e5e5e5", // neutral-800 : neutral-150 - web sidebar-border
         },
         headerTintColor: drawerColors.text,
         headerTitleStyle: {
           fontWeight: "600",
           fontSize: 18,
+        },
+        headerRightContainerStyle: {
+          paddingRight: Math.max(16, insets.right + 8),
         },
         headerLeft: () => {
           if (!shouldShowBackButton(pathname, canGoBack)) return null;
@@ -1454,7 +1462,6 @@ function DrawerLayout() {
               navigation.openDrawer();
             }}
             style={({ pressed }) => ({
-              marginRight: 16,
               padding: 8,
               borderRadius: 6,
               backgroundColor: pressed ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') : 'transparent',

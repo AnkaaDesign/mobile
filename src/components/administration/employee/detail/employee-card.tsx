@@ -1,7 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { User } from '../../../../types';
-import { USER_STATUS_LABELS } from '../../../../constants';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
@@ -9,7 +8,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconUser, IconBriefcase, IconBuilding } from "@tabler/icons-react-native";
-import { getBadgeVariant } from '../../../../constants';
+import { getBadgeVariant } from '../../../../constants/badge-colors';
+import { getUserStatusBadgeText } from '../../../../utils/user';
 
 interface EmployeeCardProps {
   employee: User;
@@ -18,7 +18,7 @@ interface EmployeeCardProps {
 export function EmployeeCard({ employee }: EmployeeCardProps) {
   const { colors } = useTheme();
 
-  const statusVariant = getBadgeVariant("USER_STATUS", employee.status);
+  const statusVariant = getBadgeVariant(employee.status, "USER");
 
   return (
     <Card>
@@ -39,7 +39,7 @@ export function EmployeeCard({ employee }: EmployeeCardProps) {
               </ThemedText>
             )}
             <Badge variant={statusVariant} style={styles.statusBadge}>
-              {USER_STATUS_LABELS[employee.status]}
+              {getUserStatusBadgeText(employee)}
             </Badge>
           </View>
         </View>

@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl , StyleSheet} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useHRDashboard } from '../../../hooks';
-import { DashboardCard } from "@/components/ui/dashboard-card";
+import { useHRDashboard, useUsers, useVacations, useWarnings, usePayrolls, usePrivileges } from '../../../hooks';
+import { DashboardCard, QuickActionCard } from "@/components/ui/dashboard-card";
 import { Icon } from "@/components/ui/icon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatNumber } from '../../../utils';
-import { DASHBOARD_TIME_PERIOD, VACATION_STATUS_LABELS } from '../../../constants';
+import { formatCurrency, formatNumber } from '../../../utils';
+import { DASHBOARD_TIME_PERIOD, VACATION_STATUS_LABELS, VACATION_STATUS, WARNING_SEVERITY, USER_STATUS } from '../../../constants';
+import { router } from 'expo-router';
 
 // Simple chart component using bars
 const BarChart: React.FC<{
@@ -80,20 +81,74 @@ const PieChart: React.FC<{
 export default function HRAnalyticsScreen() {
   const [timePeriod, setTimePeriod] = useState(DASHBOARD_TIME_PERIOD.THIS_MONTH);
   const [refreshing, setRefreshing] = useState(false);
+  const { canManageHR, isHR, isAdmin } = usePrivileges();
 
-  const { data: dashboard, isLoading, error, refetch } = useHRDashboard({
+  const { data: dashboard, isLoading: dashboardLoading, error: dashboardError, refetch: refetchDashboard } = useHRDashboard({
     timePeriod,
     includeInactive: false,
   });
 
+  // Fetch all employees
+  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useUsers({
+    where: {
+      status: { in: [USER_STATUS.CONTRACTED, USER_STATUS.EXPERIENCE_PERIOD_1, USER_STATUS.EXPERIENCE_PERIOD_2, USER_STATUS.DISMISSED] }
+    },
+    include: { sector: true, position: true },
+  });
+
+  // Fetch pending/upcoming vacations
+  const { data: vacationsData, isLoading: vacationsLoading, refetch: refetchVacations } = useVacations({
+    where: {
+      status: { in: [VACATION_STATUS.PENDING, VACATION_STATUS.APPROVED] }
+    },
+    include: { user: true },
+    orderBy: { startAt: 'asc' },
+    take: 5,
+  });
+
+  // Fetch recent warnings
+  const { data: warningsData, isLoading: warningsLoading, refetch: refetchWarnings } = useWarnings({
+    include: { user: true, createdBy: true },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+  });
+
+  // Fetch recent payrolls
+  const { data: payrollsData, isLoading: payrollsLoading, refetch: refetchPayrolls } = usePayrolls({
+    include: { user: true },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+  });
+
+  const isLoading = dashboardLoading || usersLoading || vacationsLoading || warningsLoading || payrollsLoading;
+  const error = dashboardError;
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      await Promise.all([refetchDashboard(), refetchUsers(), refetchVacations(), refetchWarnings(), refetchPayrolls()]);
     } finally {
       setRefreshing(false);
     }
   };
+
+  // Privilege guard
+  if (!canManageHR) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Icon name="lock" size={48} color="#ef4444" />
+          <Text style={styles.errorTitle}>Acesso Negado</Text>
+          <Text style={styles.errorMessage}>
+            Você não tem permissão para acessar o dashboard de RH.
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
+            <Text style={styles.retryButtonText}>Voltar</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -121,6 +176,15 @@ export default function HRAnalyticsScreen() {
   }
 
   const data = dashboard?.data;
+  const users = usersData?.data || [];
+  const vacations = vacationsData?.data || [];
+  const warnings = warningsData?.data || [];
+  const payrolls = payrollsData?.data || [];
+
+  // Calculate additional stats
+  const activeEmployees = users.filter(u => u.status === USER_STATUS.CONTRACTED).length;
+  const dismissedEmployees = users.filter(u => u.status === USER_STATUS.DISMISSED).length;
+  const pendingVacations = vacations.filter(v => v.status === VACATION_STATUS.PENDING).length;
 
   // Transform chart data
   const employeesBySectorData = data?.sectorAnalysis?.employeesBySector?.labels?.map((label, index) => ({
@@ -164,6 +228,166 @@ export default function HRAnalyticsScreen() {
             <Icon name="refresh" size={24} color="#6b7280" />
           </TouchableOpacity>
         </View>
+
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Acesso Rápido</Text>
+          <View style={styles.quickActionsGrid}>
+            <QuickActionCard
+              title="Colaboradores"
+              icon="users"
+              color="#3b82f6"
+              onPress={() => router.push('/administration/users/list' as any)}
+            />
+            <QuickActionCard
+              title="Férias"
+              icon="calendar"
+              color="#10b981"
+              onPress={() => router.push('/human-resources/vacations/list' as any)}
+              badge={pendingVacations > 0 ? { text: pendingVacations.toString(), variant: "destructive" as const } : undefined}
+            />
+            <QuickActionCard
+              title="Avisos"
+              icon="alert-triangle"
+              color="#ef4444"
+              onPress={() => router.push('/human-resources/warnings/list' as any)}
+            />
+            <QuickActionCard
+              title="Folha de Pagamento"
+              icon="dollar-sign"
+              color="#f59e0b"
+              onPress={() => router.push('/human-resources/payroll/list' as any)}
+            />
+            <QuickActionCard
+              title="Cargos"
+              icon="briefcase"
+              color="#8b5cf6"
+              onPress={() => router.push('/human-resources/positions/list' as any)}
+            />
+            <QuickActionCard
+              title="EPIs"
+              icon="shield"
+              color="#06b6d4"
+              onPress={() => router.push('/inventory/ppe/list' as any)}
+            />
+          </View>
+        </View>
+
+        {/* Pending Vacations */}
+        {pendingVacations > 0 && vacations.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Férias Pendentes de Aprovação</Text>
+            <Card>
+              <CardHeader>
+                <CardTitle>{pendingVacations} Solicitações Pendentes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {vacations.filter(v => v.status === VACATION_STATUS.PENDING).map((vacation, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.activityItem}
+                    onPress={() => router.push(`/human-resources/vacations/details/${vacation.id}` as any)}
+                  >
+                    <View style={styles.activityIcon}>
+                      <Icon name="calendar" size={16} color="#f59e0b" />
+                    </View>
+                    <View style={styles.activityContent}>
+                      <Text style={styles.activityTitle}>
+                        {vacation.user?.name || "Funcionário"}
+                      </Text>
+                      <Text style={styles.activityDescription}>
+                        {new Date(vacation.startAt).toLocaleDateString("pt-BR")} - {new Date(vacation.endAt).toLocaleDateString("pt-BR")}
+                      </Text>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: "#fef3c7" }]}>
+                      <Text style={[styles.statusBadgeText, { color: "#92400e" }]}>
+                        Pendente
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </CardContent>
+            </Card>
+          </View>
+        )}
+
+        {/* Recent Warnings */}
+        {warnings.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Avisos Recentes</Text>
+            <Card>
+              <CardContent>
+                {warnings.map((warning, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.activityItem}
+                    onPress={() => router.push(`/human-resources/warnings/details/${warning.id}` as any)}
+                  >
+                    <View style={styles.activityIcon}>
+                      <Icon
+                        name="alert-triangle"
+                        size={16}
+                        color={
+                          warning.severity === WARNING_SEVERITY.FINAL_WARNING ||
+                          warning.severity === WARNING_SEVERITY.SUSPENSION
+                            ? "#ef4444"
+                            : "#f59e0b"
+                        }
+                      />
+                    </View>
+                    <View style={styles.activityContent}>
+                      <Text style={styles.activityTitle}>
+                        {warning.user?.name || "Funcionário"}
+                      </Text>
+                      <Text style={styles.activityDescription}>
+                        {warning.severity === WARNING_SEVERITY.VERBAL && "Verbal"}
+                        {warning.severity === WARNING_SEVERITY.WRITTEN && "Escrita"}
+                        {warning.severity === WARNING_SEVERITY.SUSPENSION && "Suspensão"}
+                        {warning.severity === WARNING_SEVERITY.FINAL_WARNING && "Final"}
+                        {" • "}
+                        {new Date(warning.createdAt).toLocaleDateString("pt-BR")}
+                      </Text>
+                    </View>
+                    <Icon name="chevron-right" size={20} color="#9ca3af" />
+                  </TouchableOpacity>
+                ))}
+              </CardContent>
+            </Card>
+          </View>
+        )}
+
+        {/* Recent Payrolls */}
+        {payrolls.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Folhas de Pagamento Recentes</Text>
+            <Card>
+              <CardContent>
+                {payrolls.map((payroll, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.activityItem}
+                    onPress={() => router.push(`/human-resources/payroll/details/${payroll.id}` as any)}
+                  >
+                    <View style={styles.activityIcon}>
+                      <Icon name="dollar-sign" size={16} color="#10b981" />
+                    </View>
+                    <View style={styles.activityContent}>
+                      <Text style={styles.activityTitle}>
+                        {payroll.user?.name || "Funcionário"}
+                      </Text>
+                      <Text style={styles.activityDescription}>
+                        {formatCurrency(payroll.baseRemuneration || 0)} • {new Date(payroll.createdAt).toLocaleDateString("pt-BR")}
+                      </Text>
+                    </View>
+                    <Text style={styles.payrollValue}>
+                      {formatCurrency(payroll.baseRemuneration || 0)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </CardContent>
+            </Card>
+          </View>
+        )}
 
         {/* Overview Metrics */}
         <View style={styles.section}>
@@ -693,5 +917,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#9ca3af",
     fontWeight: "500",
+  },
+  quickActionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginHorizontal: -8,
+    gap: 8,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  payrollValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#10b981",
   },
 });

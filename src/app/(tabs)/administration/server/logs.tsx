@@ -51,6 +51,8 @@ export default function ServerLogsScreen() {
   const [levelFilter, setLevelFilter] = useState<string>('');
   const [autoRefresh, setAutoRefresh] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const { success, error: showError, warning, info } = useToast();
+
 
   // Query for available services
   const { data: servicesData } = useQuery({
@@ -100,7 +102,7 @@ export default function ServerLogsScreen() {
           style: 'destructive',
           onPress: () => {
             // This would typically call an API to clear logs
-            toast.success('Visualização de logs limpa');
+            success('Visualização de logs limpa');
           },
         },
       ]

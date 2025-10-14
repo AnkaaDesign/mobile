@@ -1,15 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useUnifiedDashboard } from '../../../hooks';
+import { useUnifiedDashboard, usePrivileges } from '../../../hooks';
 import { DashboardCard, QuickActionCard } from "@/components/ui/dashboard-card";
 import { Icon } from "@/components/ui/icon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatNumber } from '../../../utils';
+import { router } from 'expo-router';
+import { SECTOR_PRIVILEGES } from '../../../constants';
 
 export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const { data: dashboard, isLoading, error, refetch } = useUnifiedDashboard();
+  const {
+    isAdmin,
+    isLeader,
+    isHR,
+    isWarehouse,
+    isProduction,
+    canManageProduction,
+    canManageWarehouse,
+    canManageHR,
+    canViewStatistics,
+    currentPrivilege,
+  } = usePrivileges();
+
+  // Auto-redirect to sector-specific dashboard based on privileges
+  useEffect(() => {
+    if (!isLoading && currentPrivilege) {
+      // Redirect logic based on highest privilege
+      if (isAdmin) {
+        // Admin sees unified dashboard - no redirect
+        return;
+      } else if (isLeader) {
+        router.replace('/dashboard/leader' as any);
+      } else if (isHR) {
+        router.replace('/dashboard/human-resources' as any);
+      } else if (isWarehouse) {
+        router.replace('/dashboard/warehouse' as any);
+      } else if (isProduction) {
+        router.replace('/dashboard/production' as any);
+      }
+    }
+  }, [isLoading, currentPrivilege, isAdmin, isLeader, isHR, isWarehouse, isProduction]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -209,34 +242,58 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Sector Dashboards */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Acesso Rápido</Text>
+          <Text style={styles.sectionTitle}>Dashboards por Setor</Text>
           <View style={styles.quickActionsGrid}>
-            <QuickActionCard
-              title="Produção"
-              icon="settings"
-              color="#3b82f6"
-              onPress={() => {/* Navigate to production */}}
-            />
-            <QuickActionCard
-              title="Estoque"
-              icon="package"
-              color="#16a34a"
-              onPress={() => {/* Navigate to inventory */}}
-            />
-            <QuickActionCard
-              title="RH"
-              icon="users"
-              color="#8b5cf6"
-              onPress={() => {/* Navigate to HR */}}
-            />
-            <QuickActionCard
-              title="Finanças"
-              icon="currency-dollar"
-              color="#10b981"
-              onPress={() => {/* Navigate to financials */}}
-            />
+            {canManageProduction && (
+              <QuickActionCard
+                title="Produção"
+                icon="settings"
+                color="#3b82f6"
+                onPress={() => router.push('/dashboard/production' as any)}
+              />
+            )}
+            {canManageWarehouse && (
+              <QuickActionCard
+                title="Almoxarifado"
+                icon="package"
+                color="#16a34a"
+                onPress={() => router.push('/dashboard/warehouse' as any)}
+              />
+            )}
+            {(isLeader || isAdmin) && (
+              <QuickActionCard
+                title="Liderança"
+                icon="users"
+                color="#f59e0b"
+                onPress={() => router.push('/dashboard/leader' as any)}
+              />
+            )}
+            {canManageHR && (
+              <QuickActionCard
+                title="RH"
+                icon="user-check"
+                color="#8b5cf6"
+                onPress={() => router.push('/dashboard/human-resources' as any)}
+              />
+            )}
+            {canViewStatistics && (
+              <QuickActionCard
+                title="Finanças"
+                icon="currency-dollar"
+                color="#10b981"
+                onPress={() => router.push('/dashboard/financial' as any)}
+              />
+            )}
+            {isAdmin && (
+              <QuickActionCard
+                title="Administração"
+                icon="briefcase"
+                color="#ef4444"
+                onPress={() => router.push('/dashboard/administration' as any)}
+              />
+            )}
           </View>
         </View>
 

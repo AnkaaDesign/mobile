@@ -1,132 +1,234 @@
-import React from "react";
+import React, { useState, useMemo, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
+import { router } from "expo-router";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from '../../../constants';
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
-import { View, ScrollView , StyleSheet} from "react-native";
-import { IconPackage, IconUser, IconClock, IconCheck } from "@tabler/icons-react-native";
-
-// Mock data for demonstration
-const mockLoans = [
-  {
-    id: "1",
-    employeeName: "Marcos Pereira",
-    item: "Furadeira Elétrica",
-    loanDate: "10/07/2025",
-    returnDate: "17/07/2025",
-    status: "Ativo",
-    daysRemaining: 3,
-  },
-  {
-    id: "2",
-    employeeName: "Juliana Rocha",
-    item: "Kit de Ferramentas",
-    loanDate: "05/07/2025",
-    returnDate: "15/07/2025",
-    status: "Devolvido",
-    daysRemaining: 0,
-  },
-  {
-    id: "3",
-    employeeName: "Eduardo Santos",
-    item: "Equipamento de Segurança",
-    loanDate: "12/07/2025",
-    returnDate: "19/07/2025",
-    status: "Atrasado",
-    daysRemaining: -2,
-  },
-];
+import { Button } from "@/components/ui/button";
+import { Loading } from "@/components/ui/loading";
+import { EmptyState } from "@/components/ui/empty-state";
+import { TeamBorrowStatsCard } from "@/components/my-team/borrow/team-borrow-stats-card";
+import { TeamBorrowTable } from "@/components/my-team/borrow/team-borrow-table";
+import { TeamBorrowFilterModal, type TeamBorrowFilters } from "@/components/my-team/borrow/team-borrow-filter-modal";
+import { TeamBorrowFilterTags } from "@/components/my-team/borrow/team-borrow-filter-tags";
+import { useBorrowsInfiniteMobile } from "@/hooks";
+import { useAuth } from '../../../hooks';
+import { IconPackage, IconFilter } from "@tabler/icons-react-native";
+import { useTheme } from "@/lib/theme";
+import type { User } from '../../../types';
 
 export default function MyTeamLoansScreen() {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Ativo":
-        return "#3b82f6";
-      case "Devolvido":
-        return "#10b981";
-      case "Atrasado":
-        return "#ef4444";
-      default:
-        return "#6b7280";
+  const { colors } = useTheme();
+  const { user: currentUser, isLoading: isLoadingAuth } = useAuth();
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [filters, setFilters] = useState<TeamBorrowFilters>({});
+
+  // Build query params for borrows
+  const queryParams = useMemo(() => {
+    const params: any = {
+      include: {
+        item: {
+          include: {
+            brand: true,
+            category: true,
+            supplier: true,
+          },
+        },
+        user: {
+          include: {
+            position: true,
+            sector: true,
+          },
+        },
+      },
+      where: {
+        // Only show borrows for users in the same sector
+        user: {
+          sectorId: currentUser?.sectorId,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    };
+
+    // Apply filters
+    if (filters.userIds && filters.userIds.length > 0) {
+      params.where.userId = {
+        in: filters.userIds,
+      };
     }
+
+    if (filters.statuses && filters.statuses.length > 0) {
+      params.where.status = {
+        in: filters.statuses,
+      };
+    }
+
+    if (filters.startDate || filters.endDate) {
+      params.where.createdAt = {};
+      if (filters.startDate) {
+        params.where.createdAt.gte = filters.startDate;
+      }
+      if (filters.endDate) {
+        params.where.createdAt.lte = filters.endDate;
+      }
+    }
+
+    if (filters.returnStartDate || filters.returnEndDate) {
+      params.where.returnedAt = {};
+      if (filters.returnStartDate) {
+        params.where.returnedAt.gte = filters.returnStartDate;
+      }
+      if (filters.returnEndDate) {
+        params.where.returnedAt.lte = filters.returnEndDate;
+      }
+    }
+
+    return params;
+  }, [currentUser?.sectorId, filters]);
+
+  // Fetch borrows with infinite scroll
+  const {
+    data: borrows,
+    isLoading: isLoadingBorrows,
+    error: borrowsError,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    refetch: refetchBorrows,
+  } = useBorrowsInfiniteMobile({
+    ...queryParams,
+    enabled: !!currentUser?.sectorId,
+  });
+
+  // Get unique team members for filter
+  const teamMembers = useMemo(() => {
+    const members = new Map<string, User>();
+    borrows.forEach((borrow) => {
+      if (borrow.user && !members.has(borrow.user.id)) {
+        members.set(borrow.user.id, borrow.user);
+      }
+    });
+    return Array.from(members.values());
+  }, [borrows]);
+
+  const handleApplyFilters = useCallback((newFilters: TeamBorrowFilters) => {
+    setFilters(newFilters);
+    setFilterModalVisible(false);
+  }, []);
+
+  const handleRemoveFilter = useCallback((filterKey: keyof TeamBorrowFilters, value?: string) => {
+    setFilters((prev) => {
+      const newFilters = { ...prev };
+
+      if (value && (filterKey === "userIds" || filterKey === "statuses")) {
+        // Remove specific value from array
+        const currentArray = newFilters[filterKey] || [];
+        newFilters[filterKey] = currentArray.filter((item) => item !== value) as any;
+        if (newFilters[filterKey]?.length === 0) {
+          delete newFilters[filterKey];
+        }
+      } else {
+        // Remove entire filter
+        delete newFilters[filterKey];
+      }
+
+      return newFilters;
+    });
+  }, []);
+
+  const handleBorrowPress = useCallback((borrowId: string) => {
+    // Navigate to borrow details if needed
+    // router.push(`/inventory/borrows/details/${borrowId}`);
+  }, []);
+
+  const handleRefresh = async () => {
+    await refetchBorrows();
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "Ativo":
-        return IconClock;
-      case "Devolvido":
-        return IconCheck;
-      case "Atrasado":
-        return IconClock;
-      default:
-        return IconClock;
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const isLoading = isLoadingAuth || isLoadingBorrows;
+
+  if (isLoading && borrows.length === 0) {
+    return (
+      <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
+        <ThemedView style={styles.container}>
+          <Loading />
+        </ThemedView>
+      </PrivilegeGuard>
+    );
+  }
+
+  if (!currentUser?.sectorId) {
+    return (
+      <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
+        <ThemedView style={styles.container}>
+          <EmptyState icon="alert-circle" title="Setor não encontrado" description="Você precisa estar associado a um setor para visualizar os empréstimos da equipe" />
+        </ThemedView>
+      </PrivilegeGuard>
+    );
+  }
+
+  const activeFilterCount = Object.values(filters).filter((v) => {
+    if (Array.isArray(v)) return v.length > 0;
+    return v !== undefined && v !== "";
+  }).length;
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
       <ThemedView style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
-          <IconPackage size={24} color="#3b82f6" />
-          <ThemedText style={styles.title}>Empréstimos da Equipe</ThemedText>
+          <View style={styles.headerContent}>
+            <IconPackage size={24} color={colors.primary} />
+            <ThemedText style={styles.title}>Empréstimos da Equipe</ThemedText>
+          </View>
+          <Button variant="outline" size="sm" onPress={() => setFilterModalVisible(true)} style={styles.filterButton}>
+            <IconFilter size={18} color={colors.text} />
+            {activeFilterCount > 0 && (
+              <View style={[styles.filterBadge, { backgroundColor: colors.primary }]}>
+                <ThemedText style={styles.filterBadgeText}>{activeFilterCount}</ThemedText>
+              </View>
+            )}
+          </Button>
         </View>
 
-        <ThemedText style={styles.description}>Acompanhe os empréstimos de equipamentos pelos colaboradores do seu setor</ThemedText>
+        <ThemedText style={styles.description}>Visualize e gerencie os empréstimos dos colaboradores do seu setor</ThemedText>
 
-        <ScrollView style={styles.content}>
-          {mockLoans.map((loan) => {
-            const StatusIcon = getStatusIcon(loan.status);
-            return (
-              <View key={loan.id} style={styles.loanCard}>
-                <View style={styles.loanHeader}>
-                  <View style={styles.employeeInfo}>
-                    <View style={styles.employeeIcon}>
-                      <IconUser size={20} color="#6b7280" />
-                    </View>
-                    <View style={styles.employeeDetails}>
-                      <ThemedText style={styles.employeeName}>{loan.employeeName}</ThemedText>
-                      <ThemedText style={styles.itemName}>{loan.item}</ThemedText>
-                    </View>
-                  </View>
+        {/* Filter Tags */}
+        {activeFilterCount > 0 && <TeamBorrowFilterTags filters={filters} onRemoveFilter={handleRemoveFilter} teamMembers={teamMembers} />}
 
-                  <View style={styles.statusSection}>
-                    <View style={StyleSheet.flatten([styles.statusBadge, { backgroundColor: getStatusColor(loan.status) + "20" }])}>
-                      <StatusIcon size={12} color={getStatusColor(loan.status)} />
-                      <ThemedText style={StyleSheet.flatten([styles.statusText, { color: getStatusColor(loan.status) }])}>{loan.status}</ThemedText>
-                    </View>
-                  </View>
-                </View>
+        {/* Stats Card */}
+        {borrows.length > 0 && <TeamBorrowStatsCard borrows={borrows} />}
 
-                <View style={styles.loanDetails}>
-                  <View style={styles.dateInfo}>
-                    <ThemedText style={styles.dateLabel}>Empréstimo:</ThemedText>
-                    <ThemedText style={styles.dateValue}>{loan.loanDate}</ThemedText>
-                  </View>
+        {/* Borrow Table */}
+        {borrows.length > 0 ? (
+          <TeamBorrowTable borrows={borrows} onBorrowPress={handleBorrowPress} onRefresh={handleRefresh} refreshing={isLoadingBorrows} loading={isLoadingBorrows} />
+        ) : (
+          <EmptyState
+            icon="package"
+            title="Nenhum empréstimo encontrado"
+            description={activeFilterCount > 0 ? "Tente ajustar os filtros para ver mais resultados" : "Os empréstimos da sua equipe aparecerão aqui"}
+            action={
+              activeFilterCount > 0
+                ? {
+                    label: "Limpar Filtros",
+                    onPress: () => setFilters({}),
+                  }
+                : undefined
+            }
+          />
+        )}
 
-                  <View style={styles.dateInfo}>
-                    <ThemedText style={styles.dateLabel}>Devolução:</ThemedText>
-                    <ThemedText style={styles.dateValue}>{loan.returnDate}</ThemedText>
-                  </View>
-
-                  {loan.status === "Ativo" && (
-                    <View style={styles.remainingInfo}>
-                      <ThemedText style={styles.remainingLabel}>Dias restantes:</ThemedText>
-                      <ThemedText style={StyleSheet.flatten([styles.remainingValue, { color: loan.daysRemaining <= 1 ? "#ef4444" : "#3b82f6" }])}>{loan.daysRemaining} dias</ThemedText>
-                    </View>
-                  )}
-
-                  {loan.status === "Atrasado" && (
-                    <View style={styles.remainingInfo}>
-                      <ThemedText style={styles.remainingLabel}>Atraso:</ThemedText>
-                      <ThemedText style={StyleSheet.flatten([styles.remainingValue, { color: "#ef4444" }])}>{Math.abs(loan.daysRemaining)} dias</ThemedText>
-                    </View>
-                  )}
-                </View>
-              </View>
-            );
-          })}
-        </ScrollView>
+        {/* Filter Modal */}
+        <TeamBorrowFilterModal visible={filterModalVisible} onClose={() => setFilterModalVisible(false)} onApply={handleApplyFilters} currentFilters={filters} teamMembers={teamMembers} />
       </ThemedView>
     </PrivilegeGuard>
   );
@@ -135,119 +237,46 @@ export default function MyTeamLoansScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 16,
   },
   header: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
   },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
   title: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: "700",
     marginLeft: 8,
+  },
+  filterButton: {
+    position: "relative",
+  },
+  filterBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  filterBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#fff",
   },
   description: {
     fontSize: 14,
     opacity: 0.7,
-    marginBottom: 20,
+    marginBottom: 16,
     lineHeight: 20,
-  },
-  content: {
-    flex: 1,
-  },
-  loanCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  loanHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  employeeInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  employeeIcon: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#f3f4f6",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  employeeDetails: {
-    flex: 1,
-  },
-  employeeName: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  itemName: {
-    fontSize: 14,
-    color: "#3b82f6",
-    fontWeight: "500",
-  },
-  statusSection: {
-    alignItems: "flex-end",
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  loanDetails: {
-    gap: 8,
-  },
-  dateInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  dateLabel: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  dateValue: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  remainingInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
-  },
-  remainingLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  remainingValue: {
-    fontSize: 14,
-    fontWeight: "bold",
   },
 });

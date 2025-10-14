@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
-import { Button } from "@/components/ui/button";
+import { IconSelector } from "@tabler/icons-react-native";
 import type { Item } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,7 +11,7 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { ItemTableRowSwipe } from "./item-table-row-swipe";
 import { StockStatusIndicator } from "./stock-status-indicator";
-import { ColumnVisibilityManager, getDefaultVisibleColumns } from "./column-visibility-manager";
+import { getDefaultVisibleColumns } from "./column-visibility-manager";
 import { formatCurrency } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
@@ -46,6 +46,7 @@ interface ItemTableProps {
   sortConfigs?: SortConfig[];
   onSort?: (configs: SortConfig[]) => void;
   enableSwipeActions?: boolean;
+  visibleColumnKeys?: string[];
 }
 
 // Get screen width for responsive design
@@ -53,10 +54,10 @@ const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
 // Define all available columns with their renderers
-const createColumnDefinitions = (): TableColumn[] => [
+export const createColumnDefinitions = (): TableColumn[] => [
   {
     key: "uniCode",
-    header: "Código",
+    header: "CÓDIGO",
     align: "left",
     sortable: true,
     width: 0,
@@ -68,7 +69,7 @@ const createColumnDefinitions = (): TableColumn[] => [
   },
   {
     key: "name",
-    header: "Nome",
+    header: "NOME",
     align: "left",
     sortable: true,
     width: 0,
@@ -79,8 +80,57 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
+    key: "brand.name",
+    header: "MARCA",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (item: Item) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {item.brand?.name || "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "category.name",
+    header: "CATEGORIA",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (item: Item) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {item.category?.name || "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "measures",
+    header: "MEDIDAS",
+    align: "left",
+    sortable: false,
+    width: 0,
+    accessor: (item: Item) => {
+      // Display measures in compact format
+      if (!item.measures || item.measures.length === 0) {
+        return (
+          <ThemedText style={styles.cellText} numberOfLines={1}>
+            -
+          </ThemedText>
+        );
+      }
+      const measureText = item.measures
+        .map((m) => `${m.value || '-'}${m.unit || ''}`)
+        .join(' × ');
+      return (
+        <ThemedText style={styles.cellText} numberOfLines={1}>
+          {measureText}
+        </ThemedText>
+      );
+    },
+  },
+  {
     key: "quantity",
-    header: "Qnt",
+    header: "QUANTIDADE",
     align: "left",
     sortable: true,
     width: 0,
@@ -94,32 +144,56 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "maxQuantity",
-    header: "Máx",
-    align: "center",
+    key: "monthlyConsumption",
+    header: "CONSUMO MENSAL",
+    align: "left",
     sortable: true,
     width: 0,
-    accessor: (item: Item) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
-        {item.maxQuantity || "-"}
-      </ThemedText>
-    ),
-  },
-  {
-    key: "reorderPoint",
-    header: "Reposição",
-    align: "center",
-    sortable: true,
-    width: 0,
-    accessor: (item: Item) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
-        {item.reorderPoint || "-"}
-      </ThemedText>
-    ),
+    accessor: (item: Item) => {
+      const consumption = item.monthlyConsumption;
+      const trend = item.monthlyConsumptionTrendPercent;
+
+      if (!consumption) {
+        return (
+          <ThemedText style={styles.cellText} numberOfLines={1}>
+            -
+          </ThemedText>
+        );
+      }
+
+      const formattedConsumption = consumption % 1 === 0
+        ? consumption.toLocaleString("pt-BR")
+        : consumption.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      return (
+        <View style={styles.consumptionCell}>
+          <ThemedText style={styles.cellText} numberOfLines={1}>
+            {formattedConsumption}
+          </ThemedText>
+          {trend !== null && trend !== 0 && (
+            <View style={styles.trendContainer}>
+              <Icon
+                name={trend > 0 ? "trending-up" : "trending-down"}
+                size="xs"
+                color={trend > 0 ? badgeColors.error.text : badgeColors.success.text}
+              />
+              <ThemedText
+                style={[
+                  styles.trendText,
+                  { color: trend > 0 ? badgeColors.error.text : badgeColors.success.text }
+                ]}
+              >
+                {Math.abs(trend).toFixed(1)}%
+              </ThemedText>
+            </View>
+          )}
+        </View>
+      );
+    },
   },
   {
     key: "price",
-    header: "Preço",
+    header: "PREÇO",
     align: "right",
     sortable: true,
     width: 0,
@@ -131,7 +205,7 @@ const createColumnDefinitions = (): TableColumn[] => [
   },
   {
     key: "totalPrice",
-    header: "Total",
+    header: "VALOR TOTAL",
     align: "right",
     sortable: true,
     width: 0,
@@ -142,25 +216,13 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "tax",
-    header: "Imposto",
-    align: "right",
-    sortable: true,
-    width: 0,
-    accessor: (item: Item) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
-        {item.tax ? `${item.tax}%` : "-"}
-      </ThemedText>
-    ),
-  },
-  {
-    key: "abcCategory",
-    header: "ABC",
+    key: "abcxyz",
+    header: "ABC/XYZ",
     align: "center",
-    sortable: true,
+    sortable: false,
     width: 0,
     accessor: (item: Item) => (
-      <View style={StyleSheet.flatten([styles.centerAlign, styles.headerContainer])}>
+      <View style={styles.abcXyzContainer}>
         <Badge
           variant="secondary"
           size="sm"
@@ -179,17 +241,6 @@ const createColumnDefinitions = (): TableColumn[] => [
             {item.abcCategory || "C"}
           </ThemedText>
         </Badge>
-      </View>
-    ),
-  },
-  {
-    key: "xyzCategory",
-    header: "XYZ",
-    align: "center",
-    sortable: true,
-    width: 0,
-    accessor: (item: Item) => (
-      <View style={styles.centerAlign}>
         <Badge
           variant="secondary"
           size="sm"
@@ -213,32 +264,110 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "brand.name",
-    header: "Marca",
+    key: "CA",
+    header: "CA",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (item: Item) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {item.brand?.name || "-"}
+        {item.ppeCA || "-"}
       </ThemedText>
     ),
   },
   {
-    key: "category.name",
-    header: "Categoria",
+    key: "barcodes",
+    header: "CÓDIGOS DE BARRAS",
     align: "left",
+    sortable: false,
+    width: 0,
+    accessor: (item: Item) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText])} numberOfLines={1}>
+        {item.barcodes?.length > 0 ? item.barcodes.join(", ") : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "maxQuantity",
+    header: "QTD. MÁXIMA",
+    align: "center",
     sortable: true,
     width: 0,
     accessor: (item: Item) => (
-      <ThemedText style={styles.cellText} numberOfLines={1}>
-        {item.category?.name || "-"}
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
+        {item.maxQuantity !== null && item.maxQuantity !== undefined
+          ? item.maxQuantity % 1 === 0
+            ? item.maxQuantity.toLocaleString("pt-BR")
+            : item.maxQuantity.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          : "-"}
       </ThemedText>
     ),
   },
   {
-    key: "supplier",
-    header: "Fornecedor",
+    key: "reorderPoint",
+    header: "PONTO DE REPOSIÇÃO",
+    align: "center",
+    sortable: true,
+    width: 0,
+    accessor: (item: Item) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
+        {item.reorderPoint !== null && item.reorderPoint !== undefined
+          ? item.reorderPoint % 1 === 0
+            ? item.reorderPoint.toLocaleString("pt-BR")
+            : item.reorderPoint.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "reorderQuantity",
+    header: "QTD. DE REPOSIÇÃO",
+    align: "center",
+    sortable: true,
+    width: 0,
+    accessor: (item: Item) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
+        {item.reorderQuantity !== null && item.reorderQuantity !== undefined
+          ? item.reorderQuantity % 1 === 0
+            ? item.reorderQuantity.toLocaleString("pt-BR")
+            : item.reorderQuantity.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "boxQuantity",
+    header: "QTD. POR CAIXA",
+    align: "center",
+    sortable: true,
+    width: 0,
+    accessor: (item: Item) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
+        {item.boxQuantity !== null && item.boxQuantity !== undefined
+          ? item.boxQuantity % 1 === 0
+            ? item.boxQuantity.toLocaleString("pt-BR")
+            : item.boxQuantity.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "tax",
+    header: "TAXA",
+    align: "right",
+    sortable: true,
+    width: 0,
+    accessor: (item: Item) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
+        {item.tax !== null && item.tax !== undefined
+          ? `${item.tax % 1 === 0 ? item.tax.toLocaleString("pt-BR") : item.tax.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
+          : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "supplier.fantasyName",
+    header: "FORNECEDOR",
     align: "left",
     sortable: true,
     width: 0,
@@ -249,8 +378,107 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "active",
-    header: "Status",
+    key: "ppeType",
+    header: "TIPO EPI",
+    align: "left",
+    sortable: false,
+    width: 0,
+    accessor: (item: Item) => {
+      if (!item.ppeType) {
+        return (
+          <ThemedText style={styles.cellText} numberOfLines={1}>
+            -
+          </ThemedText>
+        );
+      }
+      // Map PPE_TYPE values to labels (simplified for mobile)
+      const ppeTypeLabels: Record<string, string> = {
+        'HEAD': 'Cabeça',
+        'EYES': 'Olhos',
+        'EARS': 'Ouvidos',
+        'RESPIRATORY': 'Respiratório',
+        'HANDS': 'Mãos',
+        'FEET': 'Pés',
+        'BODY': 'Corpo',
+        'FALL_PROTECTION': 'Queda',
+        'OTHER': 'Outro'
+      };
+      return (
+        <Badge variant="outline" size="sm">
+          <ThemedText style={{ fontSize: fontSize.xs }}>
+            {ppeTypeLabels[item.ppeType] || item.ppeType}
+          </ThemedText>
+        </Badge>
+      );
+    },
+  },
+  {
+    key: "ppeSize",
+    header: "TAMANHO EPI",
+    align: "left",
+    sortable: false,
+    width: 0,
+    accessor: (item: Item) => {
+      if (!item.ppeSize) {
+        return (
+          <ThemedText style={styles.cellText} numberOfLines={1}>
+            -
+          </ThemedText>
+        );
+      }
+      return (
+        <Badge variant="outline" size="sm">
+          <ThemedText style={{ fontSize: fontSize.xs }}>
+            {item.ppeSize.replace("SIZE_", "")}
+          </ThemedText>
+        </Badge>
+      );
+    },
+  },
+  {
+    key: "shouldAssignToUser",
+    header: "ATRIBUIR AO USUÁRIO",
+    align: "center",
+    sortable: true,
+    width: 0,
+    accessor: (item: Item) => (
+      <View style={styles.centerAlign}>
+        <Badge
+          variant={item.shouldAssignToUser ? "default" : "secondary"}
+          size="sm"
+          style={{
+            backgroundColor: item.shouldAssignToUser ? badgeColors.success.background : badgeColors.muted.background,
+            borderWidth: 0,
+          }}
+        >
+          <ThemedText
+            style={{
+              color: item.shouldAssignToUser ? badgeColors.success.text : badgeColors.muted.text,
+              fontSize: fontSize.xs,
+              fontWeight: fontWeight.medium,
+            }}
+          >
+            {item.shouldAssignToUser ? "Sim" : "Não"}
+          </ThemedText>
+        </Badge>
+      </View>
+    ),
+  },
+  {
+    key: "estimatedLeadTime",
+    header: "PRAZO ESTIMADO",
+    align: "center",
+    sortable: true,
+    width: 0,
+    accessor: (item: Item) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
+        {item.estimatedLeadTime ? `${item.estimatedLeadTime} dias` : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "isActive",
+    header: "STATUS",
     align: "center",
     sortable: true,
     width: 0,
@@ -278,14 +506,74 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "barcode",
-    header: "Cód. Barras",
-    align: "left",
+    key: "activitiesCount",
+    header: "ATIVIDADES",
+    align: "center",
     sortable: false,
     width: 0,
     accessor: (item: Item) => (
-      <ThemedText style={styles.cellText} numberOfLines={1}>
-        {item.barcodes?.length > 0 ? item.barcodes[0] : "-"}
+      <View style={styles.centerAlign}>
+        <Badge variant="outline" size="sm">
+          <ThemedText style={{ fontSize: fontSize.xs, fontFamily: 'monospace' }}>
+            {(item as any)._count?.activities || 0}
+          </ThemedText>
+        </Badge>
+      </View>
+    ),
+  },
+  {
+    key: "borrowsCount",
+    header: "EMPRÉSTIMOS",
+    align: "center",
+    sortable: false,
+    width: 0,
+    accessor: (item: Item) => (
+      <View style={styles.centerAlign}>
+        <Badge variant="outline" size="sm">
+          <ThemedText style={{ fontSize: fontSize.xs, fontFamily: 'monospace' }}>
+            {(item as any)._count?.borrows || 0}
+          </ThemedText>
+        </Badge>
+      </View>
+    ),
+  },
+  {
+    key: "pricesCount",
+    header: "HISTÓRICO PREÇOS",
+    align: "center",
+    sortable: false,
+    width: 0,
+    accessor: (item: Item) => (
+      <View style={styles.centerAlign}>
+        <Badge variant="outline" size="sm">
+          <ThemedText style={{ fontSize: fontSize.xs, fontFamily: 'monospace' }}>
+            {(item as any)._count?.prices || 0}
+          </ThemedText>
+        </Badge>
+      </View>
+    ),
+  },
+  {
+    key: "createdAt",
+    header: "CRIADO EM",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (item: Item) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
+        {new Date(item.createdAt).toLocaleDateString("pt-BR")}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "updatedAt",
+    header: "ATUALIZADO EM",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (item: Item) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
+        {new Date(item.updatedAt).toLocaleDateString("pt-BR")}
       </ThemedText>
     ),
   },
@@ -309,15 +597,20 @@ export const ItemTable = React.memo<ItemTableProps>(
     sortConfigs = [],
     onSort,
     enableSwipeActions = true,
+    visibleColumnKeys,
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
     const [headerHeight, setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
-    // Column visibility state
-    const [visibleColumns, setVisibleColumns] = useState<Set<string>>(getDefaultVisibleColumns());
-    const [columnManagerOpen, setColumnManagerOpen] = useState(false);
+    // Column visibility - use prop if provided, otherwise use default
+    const visibleColumns = useMemo(() => {
+      if (visibleColumnKeys && visibleColumnKeys.length > 0) {
+        return new Set(visibleColumnKeys);
+      }
+      return getDefaultVisibleColumns();
+    }, [visibleColumnKeys]);
 
     // Get all column definitions
     const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -326,21 +619,34 @@ export const ItemTable = React.memo<ItemTableProps>(
     const displayColumns = useMemo(() => {
       // Define width ratios for each column type
       const columnWidthRatios: Record<string, number> = {
-        name: 2.0,
         uniCode: 1.2,
-        quantity: 0.8,
-        maxQuantity: 0.8,
-        reorderPoint: 1.0,
-        price: 1.0,
-        totalPrice: 1.2,
-        tax: 0.8,
-        abcCategory: 0.6,
-        xyzCategory: 0.6,
+        name: 2.0,
         "brand.name": 1.2,
         "category.name": 1.2,
-        supplier: 1.4,
-        active: 0.8,
-        barcode: 1.4,
+        measures: 1.4,
+        quantity: 0.9,
+        monthlyConsumption: 1.5,
+        price: 1.0,
+        totalPrice: 1.2,
+        abcxyz: 1.0,
+        CA: 1.0,
+        barcodes: 1.6,
+        maxQuantity: 1.0,
+        reorderPoint: 1.2,
+        reorderQuantity: 1.2,
+        boxQuantity: 1.0,
+        tax: 0.8,
+        "supplier.fantasyName": 1.4,
+        ppeType: 1.2,
+        ppeSize: 1.0,
+        shouldAssignToUser: 1.4,
+        estimatedLeadTime: 1.2,
+        isActive: 0.9,
+        activitiesCount: 1.0,
+        borrowsCount: 1.0,
+        pricesCount: 1.2,
+        createdAt: 1.2,
+        updatedAt: 1.2,
       };
 
       // Filter to visible columns
@@ -405,31 +711,25 @@ export const ItemTable = React.memo<ItemTableProps>(
       [selectedItems, onSelectionChange],
     );
 
-    // Sort handler
+    // Sort handler - non-cumulative (only one sort at a time)
     const handleSort = useCallback(
       (columnKey: string) => {
         if (!onSort) return;
 
-        const existingIndex = sortConfigs?.findIndex((config) => config.columnKey === columnKey) ?? -1;
+        const existingConfig = sortConfigs?.find((config) => config.columnKey === columnKey);
 
-        if (existingIndex !== -1) {
+        if (existingConfig) {
           // Column already sorted, toggle direction or remove
-          const newConfigs = [...(sortConfigs || [])];
-          if (newConfigs[existingIndex].direction === "asc") {
-            newConfigs[existingIndex].direction = "desc";
+          if (existingConfig.direction === "asc") {
+            // Toggle to descending
+            onSort([{ columnKey, direction: "desc" as const }]);
           } else {
-            // Remove from sorts
-            newConfigs.splice(existingIndex, 1);
+            // Remove sort (back to no sort)
+            onSort([]);
           }
-          onSort(newConfigs);
         } else {
-          // Add new sort as primary (at the beginning)
-          const newConfigs = [{ columnKey, direction: "asc" as const }, ...(sortConfigs || [])];
-          // Limit to 3 sorts max
-          if (newConfigs.length > 3) {
-            newConfigs.pop();
-          }
-          onSort(newConfigs);
+          // Set new sort (replacing any existing sort)
+          onSort([{ columnKey, direction: "asc" as const }]);
         }
       },
       [sortConfigs, onSort],
@@ -465,43 +765,41 @@ export const ItemTable = React.memo<ItemTableProps>(
                 </View>
               )}
               {displayColumns.map((column) => {
-                const sortIndex = sortConfigs?.findIndex((config) => config.columnKey === column.key) ?? -1;
-                const sortConfig = sortIndex !== -1 ? sortConfigs[sortIndex] : null;
+                const sortConfig = sortConfigs?.find((config) => config.columnKey === column.key);
 
                 return (
                   <TouchableOpacity
                     key={column.key}
                     style={StyleSheet.flatten([styles.headerCell, { width: column.width }])}
                     onPress={() => column.sortable && handleSort(column.key)}
-                    onLongPress={() => {
-                      if (column.sortable && sortConfig) {
-                        // Remove this specific sort
-                        const newSorts = sortConfigs.filter((config) => config.columnKey !== column.key);
-                        onSort?.(newSorts);
-                      }
-                    }}
                     disabled={!column.sortable}
                     activeOpacity={column.sortable ? 0.7 : 1}
                   >
                     <View style={styles.headerCellContent}>
-                      <ThemedText style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])} numberOfLines={1}>
-                        {column.header}
-                      </ThemedText>
-                      {column.sortable &&
-                        (sortConfig ? (
-                          <View style={styles.sortIconContainer}>
-                            {sortConfig.direction === "asc" ? (
-                              <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900 as keyof typeof neutral]} />
-                            ) : (
-                              <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900 as keyof typeof neutral]} />
-                            )}
-                            {sortConfigs.length > 1 && (
-                              <ThemedText style={StyleSheet.flatten([styles.sortOrder, { color: isDark ? extendedColors.neutral[300] : extendedColors.neutral[700 as keyof typeof neutral] }])}>{sortIndex + 1}</ThemedText>
-                            )}
-                          </View>
-                        ) : (
-                          <Icon name="arrows-sort" size="sm" color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600 as keyof typeof neutral]} />
-                        ))}
+                      <View style={styles.headerTextContainer}>
+                        <ThemedText
+                          style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {column.header}
+                        </ThemedText>
+                      </View>
+                      {column.sortable && (
+                        <View style={styles.sortIconWrapper}>
+                          {sortConfig ? (
+                            <View style={styles.sortIconContainer}>
+                              {sortConfig.direction === "asc" ? (
+                                <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                              ) : (
+                                <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                              )}
+                            </View>
+                          ) : (
+                            <IconSelector size={16} color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
+                          )}
+                        </View>
+                      )}
                     </View>
                   </TouchableOpacity>
                 );
@@ -656,16 +954,6 @@ export const ItemTable = React.memo<ItemTableProps>(
 
     return (
       <View style={styles.wrapper}>
-        {/* Column Manager Button */}
-        <View style={styles.toolbarContainer}>
-          <Button variant="outline" size="sm" onPress={() => setColumnManagerOpen(true)} style={styles.columnManagerButton}>
-            <Icon name="columns-3" size="sm" />
-            <ThemedText style={styles.columnManagerButtonText}>
-              Colunas ({visibleColumns.size}/{allColumns.length})
-            </ThemedText>
-          </Button>
-        </View>
-
         <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])} onPress={handleContainerPress}>
           {renderHeader()}
           <FlatList
@@ -695,9 +983,6 @@ export const ItemTable = React.memo<ItemTableProps>(
             contentContainerStyle={{ flexGrow: 1 }}
           />
         </Pressable>
-
-        {/* Column Manager Modal */}
-        <ColumnVisibilityManager columns={allColumns} visibleColumns={visibleColumns} onVisibilityChange={setVisibleColumns} open={columnManagerOpen} onOpenChange={setColumnManagerOpen} />
       </View>
     );
   },
@@ -709,23 +994,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingBottom: 16,
     backgroundColor: "transparent",
-  },
-  toolbarContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    paddingHorizontal: spacing.xs,
-    paddingBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  columnManagerButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  columnManagerButtonText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
   },
   container: {
     flex: 1,
@@ -777,6 +1045,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
+    gap: 4,
+  },
+  headerTextContainer: {
+    flex: 1,
+    minWidth: 0, // Allow text to shrink below content size
+  },
+  sortIconWrapper: {
+    flexShrink: 0, // Prevent icon from shrinking
+    justifyContent: "center",
+    alignItems: "center",
+    width: 16,
   },
   sortIndicator: {
     marginLeft: 4,
@@ -784,7 +1063,6 @@ const styles = StyleSheet.create({
   sortIconContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 4,
   },
   sortOrder: {
     fontSize: 10,
@@ -879,6 +1157,29 @@ const styles = StyleSheet.create({
   quantityText: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
+  },
+  consumptionCell: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    minWidth: 0,
+  },
+  trendContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flexShrink: 0,
+  },
+  trendText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+  },
+  abcXyzContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
   },
 });
 

@@ -6,13 +6,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen, FAB, Badge } from "@/components/ui";
 import { useLayoutSectionDetail, useLayoutSectionMutations, useLayoutDetail } from '../../../../../../../hooks';
 import { useTheme } from "@/lib/theme";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LayoutSectionDetailScreen() {
   const router = useRouter();
   const { layoutId, id } = useLocalSearchParams<{ layoutId: string; id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { success, error: showError } = useToast();
 
   const { data: section, isLoading, error, refetch } = useLayoutSectionDetail(id!);
   const { data: layout } = useLayoutDetail(layoutId!);
@@ -30,10 +31,10 @@ export default function LayoutSectionDetailScreen() {
     setIsDeleting(true);
     try {
       await deleteSection(section.data.id);
-      toast.success("Seção excluída com sucesso");
+      success("Seção excluída com sucesso");
       router.back();
     } catch (error: any) {
-      toast.error(error?.message || "Erro ao excluir seção");
+      showError(error?.message || "Erro ao excluir seção");
     } finally {
       setIsDeleting(false);
     }

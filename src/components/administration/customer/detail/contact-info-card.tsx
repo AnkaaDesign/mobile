@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconPhone, IconMail, IconExternalLink } from "@tabler/icons-react-native";
+import { IconPhone, IconMail, IconPhoneCall, IconWorld, IconBrandWhatsapp } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
-import { formatPhoneNumber } from '../../../../utils';
+import { formatBrazilianPhone } from '../../../../utils';
 import { showToast } from "@/components/ui/toast";
 
 interface ContactInfoCardProps {
@@ -26,6 +26,17 @@ export function ContactInfoCard({ customer }: ContactInfoCardProps) {
     });
   };
 
+  const handleWhatsAppPress = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, "");
+    const whatsappNumber = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+    Linking.openURL(`https://wa.me/${whatsappNumber}`).catch(() => {
+      showToast({
+        message: "Não foi possível abrir o WhatsApp",
+        type: "error",
+      });
+    });
+  };
+
   const handleEmailPress = (email: string) => {
     Linking.openURL(`mailto:${email}`).catch(() => {
       showToast({
@@ -35,10 +46,48 @@ export function ContactInfoCard({ customer }: ContactInfoCardProps) {
     });
   };
 
-  const hasContactInfo = customer.email || (customer.phones && customer.phones.length > 0);
+  const handleWebsitePress = (site: string) => {
+    const url = site.startsWith("http") ? site : `https://${site}`;
+    Linking.openURL(url).catch(() => {
+      showToast({
+        message: "Não foi possível abrir o site",
+        type: "error",
+      });
+    });
+  };
+
+  const hasContactInfo = customer.email || (customer.phones && customer.phones.length > 0) || customer.site;
 
   if (!hasContactInfo) {
-    return null;
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle style={styles.sectionTitle}>
+            <View style={styles.titleRow}>
+              <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
+                <IconPhoneCall size={18} color={colors.primary} />
+              </View>
+              <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
+                Informações de Contato
+              </ThemedText>
+            </View>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <View style={styles.emptyState}>
+            <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted + "30" }])}>
+              <IconPhoneCall size={32} color={colors.mutedForeground} />
+            </View>
+            <ThemedText style={StyleSheet.flatten([styles.emptyTitle, { color: colors.foreground }])}>
+              Nenhuma informação de contato
+            </ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.emptyDescription, { color: colors.mutedForeground }])}>
+              Este cliente não possui informações de contato cadastradas.
+            </ThemedText>
+          </View>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -47,7 +96,7 @@ export function ContactInfoCard({ customer }: ContactInfoCardProps) {
         <CardTitle style={styles.sectionTitle}>
           <View style={styles.titleRow}>
             <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-              <IconPhone size={18} color={colors.primary} />
+              <IconPhoneCall size={18} color={colors.primary} />
             </View>
             <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
               Informações de Contato
@@ -57,62 +106,100 @@ export function ContactInfoCard({ customer }: ContactInfoCardProps) {
       </CardHeader>
       <CardContent>
         <View style={styles.contactContainer}>
-          {/* Email */}
+          {/* Email Section */}
           {customer.email && (
-            <TouchableOpacity
-              onPress={() => handleEmailPress(customer.email!)}
-              style={StyleSheet.flatten([styles.contactRow, { borderBottomColor: colors.border }])}
-              activeOpacity={0.7}
-            >
-              <View style={styles.contactInfo}>
-                <View style={StyleSheet.flatten([styles.contactIcon, { backgroundColor: colors.muted }])}>
-                  <IconMail size={20} color={colors.foreground} />
-                </View>
-                <View style={styles.contactText}>
-                  <ThemedText style={StyleSheet.flatten([styles.contactLabel, { color: colors.mutedForeground }])}>
-                    Email
-                  </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.contactValue, { color: colors.primary }])}>
-                    {customer.email}
+            <View style={styles.section}>
+              <ThemedText style={StyleSheet.flatten([styles.sectionHeader, { color: colors.foreground }])}>
+                E-mail
+              </ThemedText>
+              <TouchableOpacity
+                onPress={() => handleEmailPress(customer.email!)}
+                style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}
+                activeOpacity={0.7}
+              >
+                <View style={styles.fieldLabelWithIcon}>
+                  <IconMail size={16} color={colors.mutedForeground} />
+                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                    E-mail Principal
                   </ThemedText>
                 </View>
-              </View>
-              <IconExternalLink size={16} color={colors.mutedForeground} />
-            </TouchableOpacity>
+                <ThemedText style={StyleSheet.flatten([styles.fieldValueLink, { color: "#16a34a" }])}>
+                  {customer.email}
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
           )}
 
-          {/* Phones */}
+          {/* Phone Numbers Section */}
           {customer.phones && customer.phones.length > 0 && (
-            <View style={styles.phonesSection}>
-              <ThemedText style={StyleSheet.flatten([styles.sectionLabel, { color: colors.mutedForeground }])}>
+            <View style={StyleSheet.flatten([
+              styles.section,
+              customer.email && styles.sectionWithBorder,
+              customer.email && { borderTopColor: colors.border + "50" }
+            ])}>
+              <ThemedText style={StyleSheet.flatten([styles.sectionHeader, { color: colors.foreground }])}>
                 Telefones
               </ThemedText>
-              <View style={styles.phonesList}>
+              <View style={styles.fieldsContainer}>
                 {customer.phones.map((phone, index) => (
-                  <TouchableOpacity
+                  <View
                     key={index}
-                    onPress={() => handlePhonePress(phone)}
-                    style={StyleSheet.flatten([
-                      styles.phoneItem,
-                      {
-                        backgroundColor: colors.muted + "30",
-                        borderColor: colors.border,
-                      },
-                    ])}
-                    activeOpacity={0.7}
+                    style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}
                   >
-                    <View style={styles.phoneInfo}>
-                      <View style={StyleSheet.flatten([styles.phoneIcon, { backgroundColor: colors.primary + "15" }])}>
-                        <IconPhone size={16} color={colors.primary} />
-                      </View>
-                      <ThemedText style={StyleSheet.flatten([styles.phoneNumber, { color: colors.foreground }])}>
-                        {formatPhoneNumber(phone)}
+                    <View style={styles.fieldLabelWithIcon}>
+                      <IconPhone size={16} color={colors.mutedForeground} />
+                      <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                        Telefone {customer.phones.length > 1 ? `${index + 1}` : ""}
                       </ThemedText>
                     </View>
-                    <IconExternalLink size={14} color={colors.mutedForeground} />
-                  </TouchableOpacity>
+                    <View style={styles.phoneActions}>
+                      <TouchableOpacity
+                        onPress={() => handlePhonePress(phone)}
+                        activeOpacity={0.7}
+                      >
+                        <ThemedText style={StyleSheet.flatten([styles.fieldValueLink, { color: "#16a34a" }])}>
+                          {formatBrazilianPhone(phone)}
+                        </ThemedText>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleWhatsAppPress(phone)}
+                        activeOpacity={0.7}
+                        style={styles.whatsappButton}
+                      >
+                        <IconBrandWhatsapp size={20} color="#16a34a" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                 ))}
               </View>
+            </View>
+          )}
+
+          {/* Website Section */}
+          {customer.site && (
+            <View style={StyleSheet.flatten([
+              styles.section,
+              (customer.email || (customer.phones && customer.phones.length > 0)) && styles.sectionWithBorder,
+              (customer.email || (customer.phones && customer.phones.length > 0)) && { borderTopColor: colors.border + "50" }
+            ])}>
+              <ThemedText style={StyleSheet.flatten([styles.sectionHeader, { color: colors.foreground }])}>
+                Website
+              </ThemedText>
+              <TouchableOpacity
+                onPress={() => handleWebsitePress(customer.site!)}
+                style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}
+                activeOpacity={0.7}
+              >
+                <View style={styles.fieldLabelWithIcon}>
+                  <IconWorld size={16} color={colors.mutedForeground} />
+                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                    Site
+                  </ThemedText>
+                </View>
+                <ThemedText style={StyleSheet.flatten([styles.fieldValueLink, { color: "#16a34a" }])}>
+                  {customer.site}
+                </ThemedText>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -143,71 +230,71 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
   contactContainer: {
+    gap: spacing.xl,
+  },
+  section: {
     gap: spacing.lg,
   },
-  contactRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: spacing.lg,
-    borderBottomWidth: 1,
+  sectionWithBorder: {
+    paddingTop: spacing.xl,
+    borderTopWidth: 1,
   },
-  contactInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    flex: 1,
-  },
-  contactIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  contactText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  contactLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  contactValue: {
+  sectionHeader: {
     fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
   },
-  phonesSection: {
+  fieldsContainer: {
     gap: spacing.md,
   },
-  sectionLabel: {
+  fieldRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+  },
+  fieldLabel: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
   },
-  phonesList: {
-    gap: spacing.sm,
-  },
-  phoneItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-  },
-  phoneInfo: {
+  fieldLabelWithIcon: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  phoneIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
+  fieldValueLink: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  phoneActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  whatsappButton: {
+    padding: spacing.xs,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: spacing.xxl,
+    gap: spacing.md,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: spacing.sm,
   },
-  phoneNumber: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium,
+  emptyTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+  },
+  emptyDescription: {
+    fontSize: fontSize.sm,
+    textAlign: "center",
+    paddingHorizontal: spacing.xl,
   },
 });

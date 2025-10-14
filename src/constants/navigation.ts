@@ -9,6 +9,7 @@ export interface MenuItem {
   requiredPrivilege?: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]; // Support single privilege or array
   isControlPanel?: boolean; // Indicates if this is a control panel/dashboard
   isDynamic?: boolean; // Indicates if this is a dynamic route
+  excludeFromMobile?: boolean; // Exclude this item from mobile navigation
 }
 
 // Comprehensive Tabler icon mapping for Brazilian manufacturing system
@@ -436,7 +437,7 @@ export const TABLER_ICONS = {
 } as const;
 
 export const NAVIGATION_MENU: MenuItem[] = [
-  // HOME - Página Inicial (Exceção - sempre primeiro)
+  // HOME - Página Inicial (Exceção - sempre primeiro - sem restrição de privilégio)
   {
     id: "home",
     title: "Início",
@@ -457,10 +458,11 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Clientes",
         icon: "users",
         path: "/administracao/clientes",
+        requiredPrivilege: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
         children: [
-          { id: "clientes-cadastrar", title: "Cadastrar", icon: "plus", path: "/administracao/clientes/cadastrar" },
-          { id: "clientes-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/clientes/detalhes/:id", isDynamic: true },
-          { id: "clientes-editar", title: "Editar", icon: "edit", path: "/administracao/clientes/editar/:id", isDynamic: true },
+          { id: "clientes-cadastrar", title: "Cadastrar", icon: "plus", path: "/administracao/clientes/cadastrar", requiredPrivilege: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] },
+          { id: "clientes-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/clientes/detalhes/:id", isDynamic: true, requiredPrivilege: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] },
+          { id: "clientes-editar", title: "Editar", icon: "edit", path: "/administracao/clientes/editar/:id", isDynamic: true, requiredPrivilege: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] },
         ],
       },
 
@@ -522,32 +524,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
     path: "/pintura/catalogo-basico",
     requiredPrivilege: [SECTOR_PRIVILEGES.LEADER],
     children: [{ id: "catalogo-detalhes", title: "Detalhes", icon: "eye", path: "/pintura/catalogo-basico/detalhes/:id", isDynamic: true }],
-  },
-
-  // ESTATÍSTICAS
-  {
-    id: "estatisticas",
-    title: "Estatísticas",
-    icon: "barChart",
-    path: "/estatisticas",
-    requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-    children: [
-      { id: "stats-administracao", title: "Administração", icon: "cog", path: "/estatisticas/administracao" },
-      {
-        id: "stats-estoque",
-        title: "Estoque",
-        icon: "box",
-        path: "/estatisticas/estoque",
-        children: [
-          { id: "stats-estoque-consumo", title: "Análise de Consumo", icon: "trendingDown", path: "/estatisticas/estoque/consumo" },
-          { id: "stats-estoque-movimentacao", title: "Movimentação", icon: "movement", path: "/estatisticas/estoque/movimentacao" },
-          { id: "stats-estoque-tendencias", title: "Tendências", icon: "trendingUp", path: "/estatisticas/estoque/tendencias" },
-          { id: "stats-estoque-top-itens", title: "Top Itens", icon: "trophy", path: "/estatisticas/estoque/top-itens" },
-        ],
-      },
-      { id: "stats-producao", title: "Produção", icon: "building", path: "/estatisticas/producao" },
-      { id: "stats-recursos-humanos", title: "Recursos Humanos", icon: "users", path: "/estatisticas/recursos-humanos" },
-    ],
   },
 
   // ESTOQUE
@@ -865,10 +841,38 @@ export const NAVIGATION_MENU: MenuItem[] = [
         requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
       },
       {
-        id: "ferias-equipe",
-        title: "Férias",
-        icon: "vacation",
-        path: "/meu-pessoal/ferias",
+        id: "atividades-equipe",
+        title: "Atividades",
+        icon: "activity",
+        path: "/meu-pessoal/atividades",
+        requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
+      },
+      {
+        id: "entregas-epi-equipe",
+        title: "Entregas de EPI",
+        icon: "safety",
+        path: "/meu-pessoal/entregas-epi",
+        requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
+      },
+      {
+        id: "usuarios-equipe",
+        title: "Usuários",
+        icon: "users",
+        path: "/meu-pessoal/usuarios",
+        requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
+      },
+      {
+        id: "recortes-equipe",
+        title: "Recortes",
+        icon: "cutting",
+        path: "/meu-pessoal/recortes",
+        requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
+      },
+      {
+        id: "calculos-ponto-equipe",
+        title: "Cálculos de Ponto",
+        icon: "calculator",
+        path: "/meu-pessoal/calculos-ponto",
         requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
       },
     ],

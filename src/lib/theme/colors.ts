@@ -51,7 +51,7 @@ export const themeColors: Record<"light" | "dark", ThemeColors> = {
     destructive: "#f87171", // red-400 - matching web dark
     destructiveForeground: "#ffffff", // white - matching web
     border: "#3a3a3a", // HSL: 0 0% 23% - matching web dark border
-    input: "#1c1c1c", // darker than card for better contrast
+    input: "#262626", // Same as card - distinct from background for visibility
     ring: "#15803d", // HSL: 142 72% 29% - green-700 matching web
     // Additional semantic colors
     error: "#f87171", // alias for destructive

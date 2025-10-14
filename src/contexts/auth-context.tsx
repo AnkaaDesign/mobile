@@ -105,6 +105,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // Clear React Query cache
           if (queryClient) {
             queryClient.removeQueries({ queryKey: USER_QUERY_KEYS.all });
+            queryClient.clear();
+          }
+
+          // Clear persisted React Query cache
+          try {
+            const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
+            await AsyncStorage.removeItem("react-query-cache");
+            console.log("[AUTH DEBUG] Cleared persisted cache during auth error");
+          } catch (storageError) {
+            console.warn("Failed to clear persisted cache during auth error:", storageError);
           }
 
           // Navigate to login page
@@ -550,9 +560,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         if (queryClient) {
           queryClient.removeQueries({ queryKey: USER_QUERY_KEYS.all });
+          // Also clear the entire cache to prevent stale data issues
+          queryClient.clear();
         }
       } catch (cacheError) {
         console.warn("Failed to clear React Query cache during logout:", cacheError);
+      }
+      // Clear persisted React Query cache to prevent auth issues on next login
+      try {
+        const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
+        await AsyncStorage.removeItem("react-query-cache");
+        console.log("[AUTH DEBUG] Cleared persisted React Query cache");
+      } catch (storageError) {
+        console.warn("Failed to clear persisted cache:", storageError);
       }
       // Show alert if requested
       if (showAlert && alertMessage) {

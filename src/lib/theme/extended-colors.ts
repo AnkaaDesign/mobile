@@ -89,6 +89,21 @@ export const extendedColors = {
     950: "#422006",
   },
 
+  // Amber Scale
+  amber: {
+    50: "#fffbeb",
+    100: "#fef3c7",
+    200: "#fde68a",
+    300: "#fcd34d",
+    400: "#fbbf24",
+    500: "#f59e0b",
+    600: "#d97706",
+    700: "#b45309",
+    800: "#92400e",
+    900: "#78350f",
+    950: "#451a03",
+  },
+
   // Gray Scale (same as neutral for compatibility)
   gray: {
     50: "#fafafa",
@@ -142,27 +157,72 @@ export const extendedColors = {
   },
 } as const;
 
-// Badge Colors (with opacity)
+// Badge Colors (solid backgrounds with white text - matching web exactly)
 export const badgeColors = {
-  success: {
-    background: "rgba(21, 128, 61, 0.15)", // green-700 with 15% opacity
-    text: "#15803d", // green-700
-  },
-  warning: {
-    background: "rgba(161, 98, 7, 0.15)", // amber-700 with 15% opacity
-    text: "#a16207", // amber-700
-  },
-  error: {
-    background: "rgba(185, 28, 28, 0.15)", // red-700 with 15% opacity
-    text: "#b91c1c", // red-700
+  // Primary/Info variants (Blue tones)
+  primary: {
+    background: "#1d4ed8", // blue-700 (web: bg-blue-700)
+    text: "#ffffff", // white
   },
   info: {
-    background: "rgba(37, 99, 235, 0.15)", // blue-600 with 15% opacity
-    text: "#2563eb", // blue-600
+    background: "#1d4ed8", // blue-700 (web: bg-blue-700)
+    text: "#ffffff", // white
+  },
+  inProgress: {
+    background: "#1d4ed8", // blue-700 (web: bg-blue-700)
+    text: "#ffffff", // white
+  },
+
+  // Success variants (Green tones)
+  success: {
+    background: "#15803d", // green-700 (web: bg-green-700)
+    text: "#ffffff", // white
+  },
+  completed: {
+    background: "#15803d", // green-700 (web: bg-green-700)
+    text: "#ffffff", // white
+  },
+  active: {
+    background: "#15803d", // green-700 (web: bg-green-700)
+    text: "#ffffff", // white
+  },
+
+  // Warning variants (Orange/Amber tones)
+  warning: {
+    background: "#ea580c", // orange-600 (web: bg-orange-600)
+    text: "#ffffff", // white
+  },
+  pending: {
+    background: "#d97706", // amber-600 (web: bg-amber-600)
+    text: "#ffffff", // white
+  },
+  onHold: {
+    background: "#ea580c", // orange-600 (web: bg-orange-600)
+    text: "#ffffff", // white
+  },
+
+  // Error/Destructive variants (Red tones)
+  error: {
+    background: "#b91c1c", // red-700 (web: bg-red-700)
+    text: "#ffffff", // white
+  },
+  destructive: {
+    background: "#b91c1c", // red-700 (web: bg-red-700)
+    text: "#ffffff", // white
+  },
+  cancelled: {
+    background: "#b91c1c", // red-700 (web: bg-red-700)
+    text: "#ffffff", // white
+  },
+
+  // Inactive/Muted variants (Gray)
+  inactive: {
+    background: "#6b7280", // gray-500
+    text: "#ffffff", // white
   },
   muted: {
-    background: "#e3e3e3", // muted background
-    text: "#737373", // muted foreground
+    background: "#6b7280", // gray-500
+    text: "#ffffff", // white
   },
 } as const;
 

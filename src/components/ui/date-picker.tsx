@@ -137,7 +137,7 @@ export function DatePicker({ value, onChange, label, type = "date", style, place
       paddingHorizontal: spacing.md,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.background,
+      backgroundColor: colors.input,
     },
     displayText: {
       color: value ? colors.foreground : colors.mutedForeground,

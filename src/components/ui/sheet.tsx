@@ -9,10 +9,9 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import {
-  PanGestureHandler,
+  Gesture,
+  GestureDetector,
   GestureHandlerRootView,
-  PanGestureHandlerGestureEvent,
-  State
 } from "react-native-gesture-handler";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, spacing, transitions } from "@/constants/design-system";
@@ -120,18 +119,22 @@ const Sheet: React.FC<SheetProps> = ({
     [snapHeights, translateY]
   );
 
-  const handleGestureEvent = (event: PanGestureHandlerGestureEvent) => {
-    "worklet";
-    const { translationY, velocityY, state } = event.nativeEvent;
+  const startY = useSharedValue(0);
 
-    if (state === State.ACTIVE) {
-      const newY = SCREEN_HEIGHT - snapHeights[currentSnapIndex] + translationY;
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      startY.value = translateY.value;
+    })
+    .onUpdate((event) => {
+      const newY = SCREEN_HEIGHT - snapHeights[currentSnapIndex] + event.translationY;
       const minY = SCREEN_HEIGHT - snapHeights[snapHeights.length - 1];
       const maxY = SCREEN_HEIGHT;
 
       translateY.value = Math.min(Math.max(newY, minY), maxY);
-    } else if (state === State.END || state === State.CANCELLED) {
+    })
+    .onEnd((event) => {
       const currentY = translateY.value;
+      const velocityY = event.velocityY;
 
       // Find closest snap point
       let closestIndex = 0;
@@ -166,8 +169,7 @@ const Sheet: React.FC<SheetProps> = ({
       }
 
       runOnJS(snapToIndex)(closestIndex);
-    }
-  };
+    });
 
   const sheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -232,12 +234,12 @@ const Sheet: React.FC<SheetProps> = ({
           />
 
           {/* Sheet Content */}
-          <PanGestureHandler onGestureEvent={handleGestureEvent}>
+          <GestureDetector gesture={panGesture}>
             <Animated.View style={StyleSheet.flatten([sheetContentStyle, sheetStyle])}>
               {dragIndicator && <View style={dragIndicatorStyle} />}
               {children}
             </Animated.View>
-          </PanGestureHandler>
+          </GestureDetector>
         </View>
       </GestureHandlerRootView>
     </Modal>

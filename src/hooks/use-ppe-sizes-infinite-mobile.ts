@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ppeSizeKeys } from './src/queryKeys';
+import { ppeSizeKeys } from './queryKeys';
 import { getPpeSizes } from '../api-client';
 import type { PpeSizeGetManyFormData } from '../schemas';
 import type { PpeSize } from '../types';

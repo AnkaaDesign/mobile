@@ -78,7 +78,7 @@ export function EntityLinkCard({ changeLog, entityName }: EntityLinkCardProps) {
       case CHANGE_LOG_ENTITY_TYPE.TRUCK:
         return routes.production.trucks.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.AIRBRUSHING:
-        return routes.production.airbrushing.details(entityId);
+        return routes.production.airbrushings.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.CUT:
         return routes.production.cutting.details(entityId);
 

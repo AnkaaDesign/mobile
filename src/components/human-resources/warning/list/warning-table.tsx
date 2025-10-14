@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
-import { Button } from "@/components/ui/button";
+import { IconSelector } from "@tabler/icons-react-native";
 import type { Warning } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { WarningTableRowSwipe } from "./warning-table-row-swipe";
+import { getDefaultVisibleColumns } from "./column-visibility-drawer-v2";
 import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from '../../../../constants';
 import { formatDate } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
@@ -42,8 +44,8 @@ interface WarningTableProps {
   onSelectionChange?: (selectedWarnings: Set<string>) => void;
   sortConfigs?: SortConfig[];
   onSort?: (configs: SortConfig[]) => void;
-  visibleColumnKeys?: string[];
   enableSwipeActions?: boolean;
+  visibleColumnKeys?: string[];
 }
 
 // Get screen width for responsive design
@@ -51,150 +53,103 @@ const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
 // Define all available columns with their renderers
-const createColumnDefinitions = (): TableColumn[] => [
+export const createColumnDefinitions = (): TableColumn[] => [
   {
-    key: "collaborator",
-    header: "Colaborador",
+    key: "collaborator.name",
+    header: "FUNCIONÁRIO",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (warning: Warning) => (
       <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={2}>
-        {warning.collaborator?.name || "-"}
+        {warning.collaborator?.name || "—"}
       </ThemedText>
     ),
   },
   {
     key: "category",
-    header: "Categoria",
+    header: "CATEGORIA",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (warning: Warning) => {
       const categoryLabel = WARNING_CATEGORY_LABELS[warning.category as keyof typeof WARNING_CATEGORY_LABELS] || warning.category;
       return (
-        <ThemedText style={styles.cellText} numberOfLines={1}>
-          {categoryLabel}
-        </ThemedText>
+        <Badge variant="primary" size="sm">
+          <ThemedText
+            style={{
+              fontSize: fontSize.xs,
+              fontWeight: fontWeight.normal,
+            }}
+            numberOfLines={1}
+          >
+            {categoryLabel}
+          </ThemedText>
+        </Badge>
       );
     },
   },
   {
     key: "severity",
-    header: "Gravidade",
-    align: "center",
+    header: "SEVERIDADE",
+    align: "left",
     sortable: true,
     width: 0,
     accessor: (warning: Warning) => {
       const severityLabel = WARNING_SEVERITY_LABELS[warning.severity as keyof typeof WARNING_SEVERITY_LABELS] || warning.severity;
-      const severityColor = getSeverityColor(warning.severity);
-
       return (
-        <View style={styles.centerAlign}>
-          <Badge
-            variant="secondary"
-            size="sm"
+        <Badge variant="secondary" size="sm">
+          <ThemedText
             style={{
-              backgroundColor: severityColor.background,
-              borderWidth: 0,
+              fontSize: fontSize.xs,
+              fontWeight: fontWeight.normal,
             }}
+            numberOfLines={1}
           >
-            <ThemedText
-              style={{
-                color: severityColor.text,
-                fontSize: fontSize.xs,
-                fontWeight: fontWeight.medium,
-              }}
-            >
-              {severityLabel}
-            </ThemedText>
-          </Badge>
-        </View>
+            {severityLabel}
+          </ThemedText>
+        </Badge>
       );
     },
   },
   {
-    key: "reason",
-    header: "Motivo",
+    key: "followUpDate",
+    header: "DATA",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (warning: Warning) => (
-      <ThemedText style={styles.cellText} numberOfLines={2}>
-        {warning.reason}
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {formatDate(warning.followUpDate)}
       </ThemedText>
     ),
   },
   {
-    key: "followUpDate",
-    header: "Acompanhamento",
+    key: "attachments",
+    header: "ANEXO",
     align: "center",
-    sortable: true,
+    sortable: false,
     width: 0,
-    accessor: (warning: Warning) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.dateText])} numberOfLines={1}>
-        {warning.followUpDate ? formatDate(warning.followUpDate) : "-"}
-      </ThemedText>
-    ),
+    accessor: (warning: Warning) =>
+      warning.attachments && warning.attachments.length > 0 ? (
+        <Icon name="paperclip" size="sm" variant="muted" />
+      ) : (
+        <ThemedText style={StyleSheet.flatten([styles.cellText, styles.mutedText])}>—</ThemedText>
+      ),
   },
   {
     key: "createdAt",
-    header: "Emitida em",
-    align: "center",
+    header: "CRIADO EM",
+    align: "left",
     sortable: true,
     width: 0,
     accessor: (warning: Warning) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.dateText])} numberOfLines={1}>
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.mutedText])} numberOfLines={1}>
         {formatDate(warning.createdAt)}
       </ThemedText>
     ),
   },
-  {
-    key: "isActive",
-    header: "Status",
-    align: "center",
-    sortable: true,
-    width: 0,
-    accessor: (warning: Warning) => (
-      <View style={styles.centerAlign}>
-        <Badge
-          variant={warning.isActive ? "default" : "secondary"}
-          size="sm"
-          style={{
-            backgroundColor: warning.isActive ? badgeColors.success.background : badgeColors.muted.background,
-            borderWidth: 0,
-          }}
-        >
-          <ThemedText
-            style={{
-              color: warning.isActive ? badgeColors.success.text : badgeColors.muted.text,
-              fontSize: fontSize.xs,
-              fontWeight: fontWeight.medium,
-            }}
-          >
-            {warning.isActive ? "Ativa" : "Resolvida"}
-          </ThemedText>
-        </Badge>
-      </View>
-    ),
-  },
 ];
-
-// Helper function to get severity colors
-const getSeverityColor = (severity: string) => {
-  switch (severity) {
-    case "VERBAL":
-      return { background: badgeColors.info.background, text: badgeColors.info.text };
-    case "WRITTEN":
-      return { background: badgeColors.warning.background, text: badgeColors.warning.text };
-    case "SUSPENSION":
-      return { background: "rgba(255, 152, 0, 0.15)", text: "#ff9800" }; // orange-500
-    case "FINAL_WARNING":
-      return { background: badgeColors.error.background, text: badgeColors.error.text };
-    default:
-      return { background: badgeColors.muted.background, text: badgeColors.muted.text };
-  }
-};
 
 export const WarningTable = React.memo<WarningTableProps>(
   ({
@@ -212,13 +167,21 @@ export const WarningTable = React.memo<WarningTableProps>(
     onSelectionChange,
     sortConfigs = [],
     onSort,
-    visibleColumnKeys = ["collaborator", "category", "severity", "createdAt"],
     enableSwipeActions = true,
+    visibleColumnKeys,
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
     const [headerHeight, setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
+
+    // Column visibility - use prop if provided, otherwise use default
+    const visibleColumns = useMemo(() => {
+      if (visibleColumnKeys && visibleColumnKeys.length > 0) {
+        return new Set(visibleColumnKeys);
+      }
+      return getDefaultVisibleColumns();
+    }, [visibleColumnKeys]);
 
     // Get all column definitions
     const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -227,17 +190,16 @@ export const WarningTable = React.memo<WarningTableProps>(
     const displayColumns = useMemo(() => {
       // Define width ratios for each column type
       const columnWidthRatios: Record<string, number> = {
-        collaborator: 2.0,
+        "collaborator.name": 2.0,
         category: 1.5,
         severity: 1.2,
-        reason: 2.5,
-        followUpDate: 1.3,
-        createdAt: 1.3,
-        isActive: 1.0,
+        followUpDate: 1.2,
+        attachments: 0.8,
+        createdAt: 1.2,
       };
 
       // Filter to visible columns
-      const visible = allColumns.filter((col) => visibleColumnKeys.includes(col.key));
+      const visible = allColumns.filter((col) => visibleColumns.has(col.key));
 
       // Calculate total ratio
       const totalRatio = visible.reduce((sum, col) => sum + (columnWidthRatios[col.key] || 1.0), 0);
@@ -248,7 +210,7 @@ export const WarningTable = React.memo<WarningTableProps>(
         const width = Math.floor((availableWidth * ratio) / totalRatio);
         return { ...col, width };
       });
-    }, [allColumns, visibleColumnKeys]);
+    }, [allColumns, visibleColumns]);
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
@@ -298,31 +260,25 @@ export const WarningTable = React.memo<WarningTableProps>(
       [selectedWarnings, onSelectionChange],
     );
 
-    // Sort handler
+    // Sort handler - non-cumulative (only one sort at a time)
     const handleSort = useCallback(
       (columnKey: string) => {
         if (!onSort) return;
 
-        const existingIndex = sortConfigs?.findIndex((config) => config.columnKey === columnKey) ?? -1;
+        const existingConfig = sortConfigs?.find((config) => config.columnKey === columnKey);
 
-        if (existingIndex !== -1) {
+        if (existingConfig) {
           // Column already sorted, toggle direction or remove
-          const newConfigs = [...(sortConfigs || [])];
-          if (newConfigs[existingIndex].direction === "asc") {
-            newConfigs[existingIndex].direction = "desc";
+          if (existingConfig.direction === "asc") {
+            // Toggle to descending
+            onSort([{ columnKey, direction: "desc" as const }]);
           } else {
-            // Remove from sorts
-            newConfigs.splice(existingIndex, 1);
+            // Remove sort (back to no sort)
+            onSort([]);
           }
-          onSort(newConfigs);
         } else {
-          // Add new sort as primary (at the beginning)
-          const newConfigs = [{ columnKey, direction: "asc" as const }, ...(sortConfigs || [])];
-          // Limit to 3 sorts max
-          if (newConfigs.length > 3) {
-            newConfigs.pop();
-          }
-          onSort(newConfigs);
+          // Set new sort (replacing any existing sort)
+          onSort([{ columnKey, direction: "asc" as const }]);
         }
       },
       [sortConfigs, onSort],
@@ -358,43 +314,41 @@ export const WarningTable = React.memo<WarningTableProps>(
                 </View>
               )}
               {displayColumns.map((column) => {
-                const sortIndex = sortConfigs?.findIndex((config) => config.columnKey === column.key) ?? -1;
-                const sortConfig = sortIndex !== -1 ? sortConfigs[sortIndex] : null;
+                const sortConfig = sortConfigs?.find((config) => config.columnKey === column.key);
 
                 return (
                   <TouchableOpacity
                     key={column.key}
                     style={StyleSheet.flatten([styles.headerCell, { width: column.width }])}
                     onPress={() => column.sortable && handleSort(column.key)}
-                    onLongPress={() => {
-                      if (column.sortable && sortConfig) {
-                        // Remove this specific sort
-                        const newSorts = sortConfigs.filter((config) => config.columnKey !== column.key);
-                        onSort?.(newSorts);
-                      }
-                    }}
                     disabled={!column.sortable}
                     activeOpacity={column.sortable ? 0.7 : 1}
                   >
                     <View style={styles.headerCellContent}>
-                      <ThemedText style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])} numberOfLines={1}>
-                        {column.header}
-                      </ThemedText>
-                      {column.sortable &&
-                        (sortConfig ? (
-                          <View style={styles.sortIconContainer}>
-                            {sortConfig.direction === "asc" ? (
-                              <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
-                            ) : (
-                              <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
-                            )}
-                            {sortConfigs.length > 1 && (
-                              <ThemedText style={StyleSheet.flatten([styles.sortOrder, { color: isDark ? extendedColors.neutral[300] : extendedColors.neutral[700] }])}>{sortIndex + 1}</ThemedText>
-                            )}
-                          </View>
-                        ) : (
-                          <Icon name="arrows-sort" size="sm" color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
-                        ))}
+                      <View style={styles.headerTextContainer}>
+                        <ThemedText
+                          style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {column.header}
+                        </ThemedText>
+                      </View>
+                      {column.sortable && (
+                        <View style={styles.sortIconWrapper}>
+                          {sortConfig ? (
+                            <View style={styles.sortIconContainer}>
+                              {sortConfig.direction === "asc" ? (
+                                <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                              ) : (
+                                <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                              )}
+                            </View>
+                          ) : (
+                            <IconSelector size={16} color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
+                          )}
+                        </View>
+                      )}
                     </View>
                   </TouchableOpacity>
                 );
@@ -412,6 +366,58 @@ export const WarningTable = React.memo<WarningTableProps>(
         const isSelected = selectedWarnings.has(item.id);
         const isEven = index % 2 === 0;
 
+        if (enableSwipeActions && (onWarningEdit || onWarningDelete)) {
+          return (
+            <WarningTableRowSwipe
+              key={item.id}
+              warningId={item.id}
+              collaboratorName={item.collaborator?.name || "N/A"}
+              onEdit={onWarningEdit}
+              onDelete={onWarningDelete}
+              disabled={showSelection}
+            >
+              {(isActive) => (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  scrollEnabled={tableWidth > availableWidth}
+                  style={StyleSheet.flatten([
+                    styles.row,
+                    {
+                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                      borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                    },
+                    isSelected && { backgroundColor: colors.primary + "20" },
+                  ])}
+                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                >
+                  <Pressable
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    onPress={() => onWarningPress?.(item.id)}
+                    onLongPress={() => showSelection && handleSelectWarning(item.id)}
+                    android_ripple={{ color: colors.primary + "20" }}
+                  >
+                    {showSelection && (
+                      <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
+                        <Checkbox checked={isSelected} onCheckedChange={() => handleSelectWarning(item.id)} />
+                      </View>
+                    )}
+                    {displayColumns.map((column) => (
+                      <View
+                        key={column.key}
+                        style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
+                      >
+                        {renderColumnValue(item, column)}
+                      </View>
+                    ))}
+                  </Pressable>
+                </ScrollView>
+              )}
+            </WarningTableRowSwipe>
+          );
+        }
+
+        // Non-swipeable version
         return (
           <ScrollView
             horizontal
@@ -450,7 +456,22 @@ export const WarningTable = React.memo<WarningTableProps>(
           </ScrollView>
         );
       },
-      [colors, tableWidth, displayColumns, showSelection, selectedWarnings, onWarningPress, handleSelectWarning, renderColumnValue, isDark],
+      [
+        colors,
+        tableWidth,
+        displayColumns,
+        showSelection,
+        selectedWarnings,
+        onWarningPress,
+        handleSelectWarning,
+        renderColumnValue,
+        enableSwipeActions,
+        onWarningEdit,
+        onWarningDelete,
+        activeRowId,
+        closeActiveRow,
+        isDark,
+      ],
     );
 
     // Loading footer component
@@ -574,11 +595,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
+    gap: 4,
+  },
+  headerTextContainer: {
+    flex: 1,
+    minWidth: 0, // Allow text to shrink below content size
+  },
+  sortIconWrapper: {
+    flexShrink: 0, // Prevent icon from shrinking
+    justifyContent: "center",
+    alignItems: "center",
+    width: 16,
+  },
+  sortIndicator: {
+    marginLeft: 4,
   },
   sortIconContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 4,
   },
   sortOrder: {
     fontSize: 10,
@@ -599,14 +633,14 @@ const styles = StyleSheet.create({
   },
   rowContent: {
     flexDirection: "row",
-    alignItems: "stretch",
+    alignItems: "stretch", // Changed from 'center' to 'stretch' to ensure all cells have same height
     minHeight: 60,
   },
   cell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.sm,
     justifyContent: "center",
-    minHeight: 60,
+    minHeight: 60, // Changed from 72 to match row minHeight
   },
   centerAlign: {
     alignItems: "center",
@@ -624,6 +658,9 @@ const styles = StyleSheet.create({
   dateText: {
     fontWeight: fontWeight.normal,
     fontSize: fontSize.sm,
+  },
+  mutedText: {
+    opacity: 0.6,
   },
   loadingContainer: {
     flex: 1,

@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl , StyleSheet} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { usePayrolls, useBonuses, useTasks } from '../../../hooks';
-import { DashboardCard } from "@/components/ui/dashboard-card";
+import { usePayrolls, useBonuses, useTasks, usePrivileges } from '../../../hooks';
+import { DashboardCard, QuickActionCard } from "@/components/ui/dashboard-card";
 import { Icon } from "@/components/ui/icon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatNumber } from '../../../utils';
-import { DASHBOARD_TIME_PERIOD } from '../../../constants';
+import { DASHBOARD_TIME_PERIOD, SECTOR_PRIVILEGES } from '../../../constants';
+import { router } from 'expo-router';
 
 // Simple chart component using bars
 const BarChart: React.FC<{
@@ -82,6 +83,7 @@ const PieChart: React.FC<{
 export default function FinancialAnalyticsScreen() {
   const [timePeriod, setTimePeriod] = useState(DASHBOARD_TIME_PERIOD.THIS_MONTH);
   const [refreshing, setRefreshing] = useState(false);
+  const { isAdmin, canViewStatistics } = usePrivileges();
 
   // Get date filter for current time period
   const dateFilters = useMemo(() => {
@@ -178,6 +180,24 @@ export default function FinancialAnalyticsScreen() {
       setRefreshing(false);
     }
   };
+
+  // Privilege guard
+  if (!isAdmin && !canViewStatistics) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Icon name="lock" size={48} color="#ef4444" />
+          <Text style={styles.errorTitle}>Acesso Negado</Text>
+          <Text style={styles.errorMessage}>
+            Você não tem permissão para acessar o dashboard financeiro.
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
+            <Text style={styles.retryButtonText}>Voltar</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -290,6 +310,37 @@ export default function FinancialAnalyticsScreen() {
           <TouchableOpacity onPress={handleRefresh} disabled={refreshing}>
             <Icon name="refresh" size={24} color="#6b7280" />
           </TouchableOpacity>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Acesso Rápido</Text>
+          <View style={styles.quickActionsGrid}>
+            <QuickActionCard
+              title="Folha de Pagamento"
+              icon="file-text"
+              color="#10b981"
+              onPress={() => router.push('/human-resources/payroll/list' as any)}
+            />
+            <QuickActionCard
+              title="Comissões"
+              icon="dollar-sign"
+              color="#3b82f6"
+              onPress={() => router.push('/administration/commissions/list' as any)}
+            />
+            <QuickActionCard
+              title="Tarefas"
+              icon="clipboard"
+              color="#8b5cf6"
+              onPress={() => router.push('/production/schedule/list' as any)}
+            />
+            <QuickActionCard
+              title="Relatórios"
+              icon="bar-chart"
+              color="#f59e0b"
+              onPress={() => router.push('/statistics' as any)}
+            />
+          </View>
         </View>
 
         {/* Overview Metrics */}
@@ -679,5 +730,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#10b981",
+  },
+  quickActionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginHorizontal: -8,
+    gap: 8,
   },
 });

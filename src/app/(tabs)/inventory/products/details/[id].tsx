@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Separator } from "@/components/ui/separator";
 import { ProgressWithMarkers } from "@/components/ui/progress-with-markers";
-import { Header } from "@/components/ui/header";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight, shadow } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
@@ -178,53 +177,38 @@ export default function ItemDetailScreen() {
   const currentPrice = item.prices?.[0]?.value;
 
   return (
-    <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>
-      {/* Enhanced Header Card */}
-      <Header
-        title={item.name}
-        showBackButton={true}
-        onBackPress={() => router.back()}
-        rightAction={
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={handleRefresh}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.muted,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-              disabled={refreshing}
-            >
-              <IconRefresh size={18} color={colors.foreground} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleEdit}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.primary,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-            >
-              <IconEdit size={18} color={colors.primaryForeground} />
-            </TouchableOpacity>
-          </View>
-        }
-      />
-
-      <ScrollView
-        style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.container}>
+    <ScrollView
+      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.container}>
+        {/* Item Name Header Card */}
+        <Card>
+          <CardContent style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <IconPackage size={24} color={colors.primary} />
+              <ThemedText style={StyleSheet.flatten([styles.itemName, { color: colors.foreground }])}>{item.name}</ThemedText>
+            </View>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={handleRefresh}
+                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
+                activeOpacity={0.7}
+                disabled={refreshing}
+              >
+                <IconRefresh size={18} color={colors.foreground} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleEdit}
+                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
+                activeOpacity={0.7}
+              >
+                <IconEdit size={18} color={colors.primaryForeground} />
+              </TouchableOpacity>
+            </View>
+          </CardContent>
+        </Card>
           {/* Quick Stats Cards */}
           <View style={styles.statsGrid}>
             <Card style={styles.statCard}>
@@ -357,21 +341,17 @@ export default function ItemDetailScreen() {
             </CardContent>
           </Card>
 
-          {/* Bottom spacing for mobile navigation */}
-          <View style={{ height: spacing.xxl * 2 }} />
-        </View>
-      </ScrollView>
+        {/* Bottom spacing for mobile navigation */}
+        <View style={{ height: spacing.xxl * 2 }} />
+      </View>
 
       {/* Loading overlay for actions */}
       <LoadingOverlay isVisible={!!actionLoading} message="Processando movimentação..." />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-  },
   scrollView: {
     flex: 1,
   },
@@ -380,6 +360,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     gap: spacing.lg,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.lg,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    flex: 1,
+  },
+  itemName: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    flex: 1,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
   },
   skeletonContainer: {
     gap: spacing.lg,

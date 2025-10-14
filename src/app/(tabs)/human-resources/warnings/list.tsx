@@ -1,16 +1,17 @@
-import React, { useState, useCallback } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import React, { useState, useCallback, useMemo } from "react";
+import { View, ActivityIndicator, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useWarningMutations } from '../../../../hooks';
 import { useWarningsInfiniteMobile } from "@/hooks";
 import type { WarningGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
-import { WarningTable } from "@/components/human-resources/warning/list/warning-table";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge, Button } from "@/components/ui";
+import { WarningTable, createColumnDefinitions } from "@/components/human-resources/warning/list/warning-table";
 import type { SortConfig } from "@/components/human-resources/warning/list/warning-table";
 import { WarningFilterModal } from "@/components/human-resources/warning/list/warning-filter-modal";
 import { WarningFilterTags } from "@/components/human-resources/warning/list/warning-filter-tags";
+import { ColumnVisibilityDrawerV2 } from "@/components/human-resources/warning/list/column-visibility-drawer-v2";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { WarningListSkeleton } from "@/components/human-resources/warning/skeleton/warning-list-skeleton";
@@ -30,7 +31,8 @@ export default function WarningListScreen() {
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "createdAt", direction: "desc" }]);
   const [selectedWarnings, setSelectedWarnings] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["collaborator", "category", "severity", "createdAt"]);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["collaborator.name", "severity", "createdAt"]);
+  const [showColumnManager, setShowColumnManager] = useState(false);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -40,20 +42,16 @@ export default function WarningListScreen() {
     if (sortConfigs.length === 1) {
       const config = sortConfigs[0 as keyof typeof sortConfigs];
       switch (config.columnKey) {
-        case "collaborator":
+        case "collaborator.name":
           return { collaborator: { name: config.direction } };
         case "category":
           return { category: config.direction };
         case "severity":
           return { severityOrder: config.direction };
-        case "reason":
-          return { reason: config.direction };
         case "followUpDate":
           return { followUpDate: config.direction };
         case "createdAt":
           return { createdAt: config.direction };
-        case "isActive":
-          return { isActive: config.direction };
         default:
           return { createdAt: "desc" };
       }
@@ -62,20 +60,16 @@ export default function WarningListScreen() {
     // Multiple sorts, return as array
     return sortConfigs.map((config) => {
       switch (config.columnKey) {
-        case "collaborator":
+        case "collaborator.name":
           return { collaborator: { name: config.direction } };
         case "category":
           return { category: config.direction };
         case "severity":
           return { severityOrder: config.direction };
-        case "reason":
-          return { reason: config.direction };
         case "followUpDate":
           return { followUpDate: config.direction };
         case "createdAt":
           return { createdAt: config.direction };
-        case "isActive":
-          return { isActive: config.direction };
         default:
           return { createdAt: "desc" };
       }
@@ -88,7 +82,7 @@ export default function WarningListScreen() {
     ...filters,
     include: {
       collaborator: true,
-      supervisor: true,
+      attachments: true,
     },
   };
 
@@ -162,6 +156,13 @@ export default function WarningListScreen() {
     setShowSelection(false);
   }, []);
 
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
+  }, []);
+
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
 
@@ -185,25 +186,32 @@ export default function WarningListScreen() {
       <View style={[styles.searchContainer]}>
         <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar advertências..." style={styles.searchBar} debounceMs={300} />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              {
-                backgroundColor: colors.card,
-                borderWidth: 1,
-                borderColor: colors.border,
-              },
-              pressed && styles.actionButtonPressed,
-            ]}
-            onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowColumnManager(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconList size={20} color={colors.foreground} />
+            </Button>
+            <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
+              <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
+            </Badge>
+          </View>
+          <View style={styles.actionButtonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowFilters(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconFilter size={20} color={colors.foreground} />
+            </Button>
             {activeFiltersCount > 0 && (
               <Badge style={styles.actionBadge} variant="destructive" size="sm">
                 <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
               </Badge>
             )}
-          </Pressable>
+          </View>
         </View>
       </View>
 
@@ -259,6 +267,15 @@ export default function WarningListScreen() {
 
       {/* Filter Modal */}
       <WarningFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
+
+      {/* Column Visibility Drawer */}
+      <ColumnVisibilityDrawerV2
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        open={showColumnManager}
+        onOpenChange={setShowColumnManager}
+      />
     </ThemedView>
   );
 }
@@ -281,13 +298,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
+  actionButtonWrapper: {
+    position: "relative",
+  },
   actionButton: {
     height: 48,
     width: 48,
     borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
+    paddingHorizontal: 0,
   },
   actionBadge: {
     position: "absolute",
@@ -319,8 +337,5 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     opacity: 0.7,
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
 });

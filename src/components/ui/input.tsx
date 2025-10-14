@@ -52,8 +52,8 @@ const Input = React.forwardRef<TextInput, InputProps>(({ style, containerStyle, 
     borderRadius: borderRadius.md,
     borderWidth: 1,
 
-    // Background - transparent
-    backgroundColor: "transparent",
+    // Background - use input color for visibility
+    backgroundColor: colors.input,
 
     // Error state
     ...(error && {
@@ -63,7 +63,7 @@ const Input = React.forwardRef<TextInput, InputProps>(({ style, containerStyle, 
     // Disabled state
     ...(editable === false && {
       opacity: 0.5,
-      backgroundColor: "transparent",
+      backgroundColor: colors.input,
     }),
 
     // Custom styles (ViewStyle only)

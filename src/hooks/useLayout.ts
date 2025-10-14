@@ -1,7 +1,6 @@
 // packages/hooks/src/useLayout.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { layoutService } from '../api-client';
 import type { LayoutCreateFormData, LayoutUpdateFormData } from '../schemas';
 
@@ -54,12 +53,10 @@ export const useLayoutMutations = () => {
     mutationFn: layoutService.create,
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: layoutQueryKeys.all });
-      toast.success("Layout criado com sucesso");
       return response;
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || "Erro ao criar layout";
-      toast.error(message);
     },
   });
 
@@ -70,12 +67,10 @@ export const useLayoutMutations = () => {
       queryClient.invalidateQueries({
         queryKey: layoutQueryKeys.detail(variables.id),
       });
-      toast.success("Layout atualizado com sucesso");
       return response;
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || "Erro ao atualizar layout";
-      toast.error(message);
     },
   });
 
@@ -86,11 +81,9 @@ export const useLayoutMutations = () => {
       queryClient.invalidateQueries({
         queryKey: layoutQueryKeys.detail(id),
       });
-      toast.success("Layout excluído com sucesso");
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || "Erro ao excluir layout";
-      toast.error(message);
     },
   });
 
@@ -106,12 +99,10 @@ export const useLayoutMutations = () => {
         queryKey: ["trucks", "detail", variables.truckId],
       });
       const sideLabel = variables.side === "left" ? "esquerdo" : variables.side === "right" ? "direito" : "traseiro";
-      toast.success(`Layout ${sideLabel} salvo com sucesso`);
       return response;
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || "Erro ao salvar layout do caminhão";
-      toast.error(message);
     },
   });
 
@@ -132,10 +123,8 @@ export const useLayoutSVGDownload = () => {
   const downloadSVG = async (id: string, filename?: string) => {
     try {
       await layoutService.downloadSVG(id, filename);
-      toast.success("SVG baixado com sucesso");
     } catch (error: any) {
       const message = error?.response?.data?.message || "Erro ao baixar SVG";
-      toast.error(message);
     }
   };
 

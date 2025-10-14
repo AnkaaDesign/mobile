@@ -18,10 +18,6 @@ export function AddressCard({ customer }: AddressCardProps) {
 
   const hasAddress = customer.address || customer.city || customer.state || customer.zipCode;
 
-  if (!hasAddress) {
-    return null;
-  }
-
   const handleOpenMaps = () => {
     const addressParts = [
       customer.address,
@@ -101,93 +97,136 @@ export function AddressCard({ customer }: AddressCardProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <TouchableOpacity
-          onPress={handleOpenMaps}
-          style={StyleSheet.flatten([
-            styles.addressContainer,
-            {
-              backgroundColor: colors.muted + "20",
-              borderColor: colors.border,
-            },
-          ])}
-          activeOpacity={0.7}
-        >
-          <View style={styles.addressContent}>
-            <View style={StyleSheet.flatten([styles.mapIcon, { backgroundColor: colors.primary + "15" }])}>
-              <IconMapPin size={24} color={colors.primary} />
-            </View>
-            <View style={styles.addressText}>
-              <ThemedText style={StyleSheet.flatten([styles.addressValue, { color: colors.foreground }])}>
-                {fullAddress}
-              </ThemedText>
-              <View style={styles.openMapsRow}>
-                <ThemedText style={StyleSheet.flatten([styles.openMapsText, { color: colors.primary }])}>
-                  Abrir no Google Maps
-                </ThemedText>
-                <IconExternalLink size={14} color={colors.primary} />
-              </View>
+        {hasAddress ? (
+          <View style={styles.addressContainer}>
+            {/* Full Address Display */}
+            {fullAddress && (
+              <TouchableOpacity
+                onPress={handleOpenMaps}
+                style={StyleSheet.flatten([
+                  styles.fullAddressBox,
+                  {
+                    backgroundColor: colors.muted + "30",
+                  },
+                ])}
+                activeOpacity={0.7}
+              >
+                <View style={styles.addressBoxContent}>
+                  <View style={styles.addressBoxHeader}>
+                    <IconMapPin size={16} color={colors.mutedForeground} />
+                    <ThemedText style={StyleSheet.flatten([styles.addressBoxLabel, { color: colors.mutedForeground }])}>
+                      Endereço Completo
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={StyleSheet.flatten([styles.addressBoxValue, { color: colors.foreground }])}>
+                    {fullAddress}
+                  </ThemedText>
+                  <View style={styles.openMapsRow}>
+                    <ThemedText style={StyleSheet.flatten([styles.openMapsText, { color: colors.primary }])}>
+                      Abrir no Google Maps
+                    </ThemedText>
+                    <IconExternalLink size={14} color={colors.primary} />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {/* Address Components */}
+            <View style={styles.fieldsContainer}>
+              {customer.address && (
+                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                  <View style={styles.fieldLabelWithIcon}>
+                    <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                      Logradouro
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                    {customer.address}
+                  </ThemedText>
+                </View>
+              )}
+
+              {customer.addressNumber && (
+                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                    Número
+                  </ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                    {customer.addressNumber}
+                  </ThemedText>
+                </View>
+              )}
+
+              {customer.addressComplement && (
+                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                    Complemento
+                  </ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                    {customer.addressComplement}
+                  </ThemedText>
+                </View>
+              )}
+
+              {customer.neighborhood && (
+                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                    Bairro
+                  </ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                    {customer.neighborhood}
+                  </ThemedText>
+                </View>
+              )}
+
+              {customer.city && (
+                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                    Cidade
+                  </ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                    {customer.city}
+                  </ThemedText>
+                </View>
+              )}
+
+              {customer.state && (
+                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                    Estado
+                  </ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                    {customer.state}
+                  </ThemedText>
+                </View>
+              )}
+
+              {customer.zipCode && (
+                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                    CEP
+                  </ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground, fontFamily: "monospace" }])}>
+                    {formatCEP(customer.zipCode)}
+                  </ThemedText>
+                </View>
+              )}
             </View>
           </View>
-        </TouchableOpacity>
-
-        {/* Individual Address Fields */}
-        <View style={styles.addressDetails}>
-          {customer.address && (
-            <View style={styles.detailRow}>
-              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                Logradouro
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                {customer.address}
-                {customer.addressNumber ? `, ${customer.addressNumber}` : ""}
-              </ThemedText>
+        ) : (
+          /* Empty State */
+          <View style={styles.emptyState}>
+            <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted + "30" }])}>
+              <IconMapPin size={32} color={colors.mutedForeground} />
             </View>
-          )}
-
-          {customer.addressComplement && (
-            <View style={styles.detailRow}>
-              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                Complemento
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                {customer.addressComplement}
-              </ThemedText>
-            </View>
-          )}
-
-          {customer.neighborhood && (
-            <View style={styles.detailRow}>
-              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                Bairro
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                {customer.neighborhood}
-              </ThemedText>
-            </View>
-          )}
-
-          {(customer.city || customer.state) && (
-            <View style={styles.detailRow}>
-              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                Cidade/Estado
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                {[customer.city, customer.state].filter(Boolean).join(" - ")}
-              </ThemedText>
-            </View>
-          )}
-
-          {customer.zipCode && (
-            <View style={styles.detailRow}>
-              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                CEP
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                {formatCEP(customer.zipCode)}
-              </ThemedText>
-            </View>
-          )}
-        </View>
+            <ThemedText style={StyleSheet.flatten([styles.emptyTitle, { color: colors.foreground }])}>
+              Nenhum endereço cadastrado
+            </ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.emptyDescription, { color: colors.mutedForeground }])}>
+              Este cliente não possui endereço cadastrado.
+            </ThemedText>
+          </View>
+        )}
       </CardContent>
     </Card>
   );
@@ -215,27 +254,27 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
   addressContainer: {
+    gap: spacing.xl,
+  },
+  fullAddressBox: {
     borderRadius: borderRadius.lg,
-    borderWidth: 1,
     padding: spacing.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
-  addressContent: {
+  addressBoxContent: {
+    gap: spacing.md,
+  },
+  addressBoxHeader: {
     flexDirection: "row",
-    gap: spacing.md,
-  },
-  mapIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
     alignItems: "center",
-    justifyContent: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  addressText: {
-    flex: 1,
-    gap: spacing.md,
+  addressBoxLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
   },
-  addressValue: {
+  addressBoxValue: {
     fontSize: fontSize.base,
     lineHeight: fontSize.base * 1.5,
   },
@@ -243,22 +282,56 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+    marginTop: spacing.xs,
   },
   openMapsText: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
   },
-  addressDetails: {
+  fieldsContainer: {
     gap: spacing.md,
   },
-  detailRow: {
-    gap: spacing.xs,
+  fieldRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
   },
-  detailLabel: {
+  fieldLabel: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
   },
-  detailValue: {
-    fontSize: fontSize.base,
+  fieldLabelWithIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  fieldValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: spacing.xxl,
+    gap: spacing.md,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  emptyTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+  },
+  emptyDescription: {
+    fontSize: fontSize.sm,
+    textAlign: "center",
+    paddingHorizontal: spacing.xl,
   },
 });

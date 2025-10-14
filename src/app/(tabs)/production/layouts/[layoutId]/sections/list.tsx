@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, Badge } from "@/components/ui";
 import { useLayoutSections, useLayoutSectionMutations, useLayoutDetail } from '../../../../../../hooks';
 import { useTheme } from "@/lib/theme";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LayoutSectionListScreen() {
   const router = useRouter();

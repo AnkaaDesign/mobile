@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Header } from "@/components/ui/header";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
@@ -24,7 +23,7 @@ import { TouchableOpacity } from "react-native";
 import { showToast } from "@/components/ui/toast";
 
 // Import modular components
-import { CustomerCard, ContactInfoCard, AddressCard, TasksCard } from "@/components/administration/customer/detail";
+import { CustomerCard, ContactInfoCard, AddressCard, TasksTable } from "@/components/administration/customer/detail";
 import { CustomerDetailSkeleton } from "@/components/administration/customer/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
@@ -82,48 +81,36 @@ export default function CustomerDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>
-        <Header
-          title="Detalhes do Cliente"
-          showBackButton={true}
-          onBackPress={() => router.back()}
-        />
-        <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
+      <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
+        <View style={styles.container}>
           <CustomerDetailSkeleton />
-        </ScrollView>
-      </View>
+        </View>
+      </ScrollView>
     );
   }
 
   if (error || !customer || !id || id === "") {
     return (
-      <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>
-        <Header
-          title="Detalhes do Cliente"
-          showBackButton={true}
-          onBackPress={() => router.back()}
-        />
-        <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
-          <View style={styles.container}>
-            <Card>
-              <CardContent style={styles.errorContent}>
-                <View style={StyleSheet.flatten([styles.errorIcon, { backgroundColor: colors.muted }])}>
-                  <IconBuilding size={32} color={colors.mutedForeground} />
-                </View>
-                <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
-                  Cliente não encontrado
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
-                  O cliente solicitado não foi encontrado ou pode ter sido removido.
-                </ThemedText>
-                <Button onPress={() => router.back()}>
-                  <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
-                </Button>
-              </CardContent>
-            </Card>
-          </View>
-        </ScrollView>
-      </View>
+      <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
+        <View style={styles.container}>
+          <Card>
+            <CardContent style={styles.errorContent}>
+              <View style={StyleSheet.flatten([styles.errorIcon, { backgroundColor: colors.muted }])}>
+                <IconBuilding size={32} color={colors.mutedForeground} />
+              </View>
+              <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
+                Cliente não encontrado
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
+                O cliente solicitado não foi encontrado ou pode ter sido removido.
+              </ThemedText>
+              <Button onPress={() => router.back()}>
+                <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
+              </Button>
+            </CardContent>
+          </Card>
+        </View>
+      </ScrollView>
     );
   }
 
@@ -132,60 +119,47 @@ export default function CustomerDetailScreen() {
   const totalServices = customer._count?.services || 0;
 
   return (
-    <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>
-      {/* Enhanced Header */}
-      <Header
-        title={customer.fantasyName}
-        showBackButton={true}
-        onBackPress={() => router.back()}
-        rightAction={
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={handleRefresh}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.muted,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-              disabled={refreshing}
-            >
-              <IconRefresh size={18} color={colors.foreground} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleEdit}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.primary,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-            >
-              <IconEdit size={18} color={colors.primaryForeground} />
-            </TouchableOpacity>
-          </View>
-        }
-      />
-
-      <ScrollView
-        style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.container}>
+    <ScrollView
+      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.container}>
+        {/* Customer Name Header Card */}
+        <Card>
+          <CardContent style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <IconBuilding size={24} color={colors.primary} />
+              <ThemedText style={StyleSheet.flatten([styles.customerName, { color: colors.foreground }])}>
+                {customer.fantasyName}
+              </ThemedText>
+            </View>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={handleRefresh}
+                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
+                activeOpacity={0.7}
+                disabled={refreshing}
+              >
+                <IconRefresh size={18} color={colors.foreground} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleEdit}
+                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
+                activeOpacity={0.7}
+              >
+                <IconEdit size={18} color={colors.primaryForeground} />
+              </TouchableOpacity>
+            </View>
+          </CardContent>
+        </Card>
           {/* Quick Stats Cards */}
           <View style={styles.statsGrid}>
             <Card style={styles.statCard}>
@@ -245,7 +219,7 @@ export default function CustomerDetailScreen() {
           <CustomerCard customer={customer} />
           <ContactInfoCard customer={customer} />
           <AddressCard customer={customer} />
-          <TasksCard customer={customer} maxHeight={400} />
+          <TasksTable customer={customer} maxHeight={400} />
 
           {/* Changelog Timeline */}
           <Card>
@@ -271,17 +245,13 @@ export default function CustomerDetailScreen() {
           </Card>
 
           {/* Bottom spacing for mobile navigation */}
-          <View style={{ height: spacing.xxl * 2 }} />
-        </View>
-      </ScrollView>
-    </View>
+        <View style={{ height: spacing.xxl * 2 }} />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-  },
   scrollView: {
     flex: 1,
   },
@@ -290,6 +260,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     gap: spacing.lg,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.lg,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    flex: 1,
+  },
+  customerName: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    flex: 1,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
   },
   errorContent: {
     alignItems: "center",

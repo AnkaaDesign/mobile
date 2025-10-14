@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from "react";
-import { View, Alert, Pressable , StyleSheet} from "react-native";
+import React, { useState, useCallback, useMemo } from "react";
+import { View, Alert, StyleSheet} from "react-native";
 import { useRouter } from "expo-router";
 import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,11 +12,11 @@ export interface SortConfig {
   columnKey: string;
   direction: "asc" | "desc";
 }
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
-import { TruckTable } from "@/components/production/truck/list/truck-table";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge, Button } from "@/components/ui";
+import { TruckTable, createColumnDefinitions, getDefaultVisibleColumns } from "@/components/production/truck/list/truck-table";
 import { TruckFilterModal } from "@/components/production/truck/list/truck-filter-modal";
 import { TruckFilterTags } from "@/components/production/truck/list/truck-filter-tags";
-import { ColumnVisibilityManager } from "@/components/production/truck/list/column-visibility-manager";
+import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { TruckListSkeleton } from "@/components/production/truck/skeleton/truck-list-skeleton";
@@ -37,7 +37,7 @@ export default function TruckListScreen() {
   const [selectedTrucks, setSelectedTrucks] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const [showColumnManager, setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["plate", "model", "manufacturer"]);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(Array.from(getDefaultVisibleColumns()));
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -201,8 +201,11 @@ export default function TruckListScreen() {
     setShowSelection(false);
   }, []);
 
-  const handleColumnsChange = useCallback((newColumns: string[]) => {
-    setVisibleColumnKeys(newColumns);
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
   }, []);
 
   // Count active filters
@@ -237,34 +240,32 @@ export default function TruckListScreen() {
           debounceMs={300}
         />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }, pressed && styles.actionButtonPressed]}
-            onPress={() => setShowColumnManager(true)}
-          >
-            <IconList size={24} color={colors.foreground} />
+          <View style={styles.buttonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowColumnManager(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconList size={20} color={colors.foreground} />
+            </Button>
             <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
               <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
             </Badge>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              {
-                backgroundColor: colors.card,
-                borderWidth: 1,
-                borderColor: colors.border,
-              },
-              pressed && styles.actionButtonPressed,
-            ]}
-            onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
+          </View>
+          <View style={styles.buttonWrapper}>
+            <Button
+              variant="outline"
+              onPress={() => setShowFilters(true)}
+              style={{ ...styles.actionButton, backgroundColor: colors.input }}
+            >
+              <IconFilter size={20} color={colors.foreground} />
+            </Button>
             {activeFiltersCount > 0 && (
               <Badge style={styles.actionBadge} variant="destructive" size="sm">
                 <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
               </Badge>
             )}
-          </Pressable>
+          </View>
         </View>
       </View>
 
@@ -324,8 +325,14 @@ export default function TruckListScreen() {
       {/* Filter Modal */}
       <TruckFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
 
-      {/* Column Visibility Manager Modal */}
-      <ColumnVisibilityManager visible={showColumnManager} onClose={() => setShowColumnManager(false)} onColumnsChange={handleColumnsChange} currentColumns={visibleColumnKeys} />
+      {/* Column Visibility Drawer */}
+      <ColumnVisibilityDrawerV2
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        open={showColumnManager}
+        onOpenChange={setShowColumnManager}
+      />
     </ThemedView>
   );
 }
@@ -348,13 +355,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
+  buttonWrapper: {
+    position: "relative",
+  },
   actionButton: {
     height: 48,
     width: 48,
     borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
+    paddingHorizontal: 0,
   },
   actionBadge: {
     position: "absolute",
@@ -375,8 +383,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
 });

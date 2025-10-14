@@ -174,7 +174,7 @@ export function CurrencyInput({ value, onChange, onBlur, placeholder = "R$ 0,00"
     // Disabled state
     ...(editable === false && {
       opacity: 0.5,
-      backgroundColor: isDark ? colors.muted : colors.background,
+      backgroundColor: colors.input,
     }),
 
     // Custom styles (only ViewStyle properties)

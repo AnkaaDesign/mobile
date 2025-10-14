@@ -6,13 +6,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen, FAB, Badge } from "@/components/ui";
 import { useLayoutDetail, useLayoutMutations, useLayoutSVGDownload } from '../../../../../hooks';
 import { useTheme } from "@/lib/theme";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LayoutDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { success, error: showError, warning, info } = useToast();
+
 
   const { data: layout, isLoading, error, refetch } = useLayoutDetail(id!, {
     include: {
@@ -49,10 +51,10 @@ export default function LayoutDetailScreen() {
     setIsDeleting(true);
     try {
       await deleteLayout(layout.data.id);
-      toast.success("Layout excluído com sucesso");
+      success("Layout excluído com sucesso");
       router.back();
     } catch (error: any) {
-      toast.error(error?.message || "Erro ao excluir layout");
+      showError(error?.message || "Erro ao excluir layout");
     } finally {
       setIsDeleting(false);
     }

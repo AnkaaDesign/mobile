@@ -6,23 +6,9 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { router } from "expo-router";
 import { View, StyleSheet, ScrollView } from "react-native";
-import { IconUsers, IconCurrencyDollar, IconCalendar, IconAlertTriangle, IconPackage } from "@tabler/icons-react-native";
+import { IconUsers, IconCurrencyDollar, IconAlertTriangle, IconPackage, IconActivity, IconShieldCheck, IconScissors, IconClock } from "@tabler/icons-react-native";
 
 const teamMenuItems = [
-  {
-    id: "commissions",
-    title: "Comissões",
-    description: "Gerencie as comissões da sua equipe",
-    icon: IconCurrencyDollar,
-    route: "/my-team/commissions",
-  },
-  {
-    id: "vacations",
-    title: "Férias",
-    description: "Aprove solicitações de férias",
-    icon: IconCalendar,
-    route: "/my-team/vacations",
-  },
   {
     id: "warnings",
     title: "Advertências",
@@ -36,6 +22,41 @@ const teamMenuItems = [
     description: "Controle empréstimos da equipe",
     icon: IconPackage,
     route: "/my-team/loans",
+  },
+  {
+    id: "activities",
+    title: "Atividades",
+    description: "Acompanhe atividades da equipe",
+    icon: IconActivity,
+    route: "/my-team/activities",
+  },
+  {
+    id: "ppe-deliveries",
+    title: "Entregas de EPI",
+    description: "Gerencie entregas de EPIs",
+    icon: IconShieldCheck,
+    route: "/my-team/ppe-deliveries",
+  },
+  {
+    id: "users",
+    title: "Usuários",
+    description: "Visualize colaboradores do setor",
+    icon: IconUsers,
+    route: "/my-team/users",
+  },
+  {
+    id: "cuts",
+    title: "Recortes",
+    description: "Acompanhe recortes da equipe",
+    icon: IconScissors,
+    route: "/my-team/cuts",
+  },
+  {
+    id: "time-calculations",
+    title: "Cálculos de Ponto",
+    description: "Consulte cálculos de ponto",
+    icon: IconClock,
+    route: "/my-team/time-calculations",
   },
 ];
 

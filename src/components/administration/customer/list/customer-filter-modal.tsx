@@ -3,7 +3,7 @@ import { Modal, View, ScrollView, TouchableOpacity, StyleSheet } from "react-nat
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconChevronUp, IconChevronDown, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { BRAZILIAN_STATES, BRAZILIAN_STATES_LABELS } from '../../../../constants';
+import { BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from '../../../../constants';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -164,9 +164,9 @@ export function CustomerFilterModal({ visible, onClose, onApply, currentFilters 
   };
 
   // State options
-  const stateOptions = Object.values(BRAZILIAN_STATES).map((state) => ({
+  const stateOptions = BRAZILIAN_STATES.map((state) => ({
     value: state,
-    label: BRAZILIAN_STATES_LABELS[state] || state,
+    label: BRAZILIAN_STATE_NAMES[state] || state,
   }));
 
   // Render section header
@@ -223,8 +223,8 @@ export function CustomerFilterModal({ visible, onClose, onApply, currentFilters 
                 <View style={styles.filterGroup}>
                   <Label>Estados</Label>
                   <MultiCombobox
-                    value={filters.states || []}
-                    onChange={(value) => handleArrayChange("states", value)}
+                    selectedValues={filters.states || []}
+                    onValueChange={(value) => handleArrayChange("states", value)}
                     options={stateOptions}
                     placeholder="Selecione estados..."
                     searchPlaceholder="Buscar estado..."

@@ -70,7 +70,9 @@ const SectorTableRowSwipeComponent = ({ children, sectorId, sectorName, onEdit, 
     ]);
   }, [sectorId, sectorName, onDelete]);
 
-  // Build actions array with fallback colors
+  // Build actions array with colors matching item table pattern
+  // Edit button uses optimal stock green (#15803d from STOCK_LEVEL.OPTIMAL)
+  // Delete button uses critical/out-of-stock red (#b91c1c from STOCK_LEVEL.OUT_OF_STOCK)
   const rightActions: SwipeAction[] = [
     ...(onEdit
       ? [
@@ -78,7 +80,7 @@ const SectorTableRowSwipeComponent = ({ children, sectorId, sectorName, onEdit, 
             key: "edit",
             label: "Editar",
             icon: <IconEdit size={20} color="white" />,
-            backgroundColor: colors?.primary || "#16a34a",
+            backgroundColor: "#15803d", // green-700 (optimal stock color)
             onPress: () => onEdit(sectorId),
             closeOnPress: true,
           },
@@ -90,7 +92,7 @@ const SectorTableRowSwipeComponent = ({ children, sectorId, sectorName, onEdit, 
             key: "delete",
             label: "Excluir",
             icon: <IconTrash size={20} color="white" />,
-            backgroundColor: colors?.destructive || "#ef4444",
+            backgroundColor: "#b91c1c", // red-700 (out of stock/critical color)
             onPress: handleDeletePress,
             closeOnPress: false, // Don't close automatically for delete confirmation
           },

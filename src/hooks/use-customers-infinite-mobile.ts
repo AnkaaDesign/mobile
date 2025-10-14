@@ -24,5 +24,11 @@ export function useCustomersInfiniteMobile(params?: Partial<CustomerGetManyFormD
   const infiniteQuery = useCustomersInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  const result = useInfiniteMobile(infiniteQuery);
+
+  // Rename items to customers for better semantics
+  return {
+    ...result,
+    customers: result.items,
+  };
 }

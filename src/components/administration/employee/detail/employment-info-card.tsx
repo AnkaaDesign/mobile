@@ -25,9 +25,10 @@ export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
   const getTimeAtCompany = () => {
     if (!employee.hireDate) return "Não informado";
 
-    const now = employee.dismissal || new Date();
-    const years = Math.floor((now.getTime() - new Date(employee.hireDate).getTime()) / (1000 * 60 * 60 * 24 * 365));
-    const months = Math.floor((now.getTime() - new Date(employee.hireDate).getTime()) / (1000 * 60 * 60 * 24 * 30)) % 12;
+    const now = employee.dismissal ? new Date(employee.dismissal) : new Date();
+    const hireDate = new Date(employee.hireDate);
+    const years = Math.floor((now.getTime() - hireDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
+    const months = Math.floor((now.getTime() - hireDate.getTime()) / (1000 * 60 * 60 * 24 * 30)) % 12;
 
     if (years > 0) {
       return `${years} ano${years > 1 ? "s" : ""} e ${months} ${months === 1 ? "mês" : "meses"}`;

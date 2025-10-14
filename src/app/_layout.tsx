@@ -74,22 +74,40 @@ const asyncStoragePersister = createAsyncStoragePersister({
   storage: AsyncStorage,
   key: "react-query-cache",
 });
-// Setup persistence
-persistQueryClient({
-  queryClient,
-  persister: asyncStoragePersister,
-  // Cache for up to 7 days
-  maxAge: 1000 * 60 * 60 * 24 * 7,
-  // Dehydrate/hydrate the cache on certain events
-  hydrateOptions: {
-    // Don't stop the app if there's an error during hydration
-    defaultOptions: {
-      queries: {
-        structuralSharing: true,
+
+// Only setup persistence in production to avoid auth issues during development
+if (process.env.NODE_ENV === "production") {
+  persistQueryClient({
+    queryClient,
+    persister: asyncStoragePersister,
+    // Cache for up to 7 days
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+    // Dehydrate/hydrate the cache on certain events
+    hydrateOptions: {
+      // Don't stop the app if there's an error during hydration
+      defaultOptions: {
+        queries: {
+          structuralSharing: true,
+        },
       },
     },
-  },
-});
+    // Exclude auth queries from persistence to avoid stale auth state
+    dehydrateOptions: {
+      shouldDehydrateQuery: (query) => {
+        // Don't persist auth-related queries
+        const queryKey = query.queryKey[0];
+        if (typeof queryKey === 'string' && (queryKey.includes('auth') || queryKey.includes('users'))) {
+          return false;
+        }
+        return true;
+      },
+    },
+  });
+} else {
+  // In development, clear any existing persisted cache on start
+  console.log("[Dev] Clearing persisted React Query cache to avoid auth issues");
+  AsyncStorage.removeItem("react-query-cache").catch(() => {});
+}
 export default function RootLayout() {
   const [isConnected, setIsConnected] = useState(null);
   const [isHydrated, setIsHydrated] = useState(false);

@@ -10,6 +10,7 @@ export * from "./changelog";
 export * from "./customer";
 export * from "./cut";
 export * from "./epi";
+export * from "./ppe-request";
 export * from "./externalWithdrawal";
 export * from "./file";
 export * from "./garage";
@@ -164,6 +165,6 @@ export {
   type DiscountOrderBy,
   type DiscountWhere,
 } from "./discount";
-export * from "./statistics";
+// export * from "./statistics"; // Disabled - file doesn't exist
 export * from "./deployment";
 // export * from "./driver"; // Disabled - not currently used

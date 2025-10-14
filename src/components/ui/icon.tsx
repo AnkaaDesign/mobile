@@ -145,6 +145,28 @@ import {
 
   // Additional missing icons
   IconPlayerStop,
+  IconArrowsUpDown,
+  IconApi,
+  IconFlask,
+  IconCalculator,
+  IconReceipt,
+  IconFileText,
+  IconUserCog,
+  IconFolderShare,
+  IconDatabaseImport,
+  IconColorSwatch,
+  IconListDetails,
+  IconBeach,
+  IconCalendarMinus,
+  IconCalendarTime,
+  IconHelmet,
+  IconBuildingBank,
+  IconFileReport,
+  IconListSearch,
+  IconDroplet,
+  IconQuestionMark,
+  IconCircle,
+  IconPhotoPlus,
 } from "@tabler/icons-react-native";
 
 // Apply cssInterop to all Tabler icons to support className prop
@@ -165,7 +187,10 @@ const tablerIcons = [
   IconLocation, IconRocket, IconTrendingUp, IconTrendingDown, IconActivity, IconScissors,
   IconNote, IconClipboardList, IconTools, IconSend, IconArrowsExchange, IconBook, IconList, IconBellRinging,
   IconSpeakerphone, IconShieldCheck, IconTruck, IconRuler, IconCalendarPlus, IconFolderX, IconBadge, IconCalendarEvent,
-  IconPlayerStop
+  IconPlayerStop, IconArrowsUpDown, IconApi, IconFlask, IconCalculator, IconReceipt, IconFileText, IconUserCog,
+  IconFolderShare, IconDatabaseImport, IconColorSwatch, IconListDetails, IconBeach, IconCalendarMinus,
+  IconCalendarTime, IconHelmet, IconBuildingBank, IconFileReport, IconListSearch, IconDroplet, IconQuestionMark,
+  IconCircle, IconPhotoPlus
 ];
 
 tablerIcons.forEach(icon => {
@@ -365,6 +390,82 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   // Additional missing icons
   "player-stop": IconPlayerStop,
   stop: IconPlayerStop, // Alias
+
+  // New icon mappings for missing icons
+  "arrows-up-down": IconArrowsUpDown,
+  movement: IconArrowsUpDown, // Alias for movement
+  api: IconApi,
+  flask: IconFlask,
+  beaker: IconFlask, // Alias
+  calculator: IconCalculator,
+  formula: IconCalculator, // Alias
+  receipt: IconReceipt,
+  payroll: IconReceipt, // Alias
+  "file-text": IconFileText,
+  "system-logs": IconFileText, // Alias
+  "user-cog": IconUserCog,
+  "system-users": IconUserCog, // Alias
+  "folder-share": IconFolderShare,
+  "shared-folders": IconFolderShare, // Alias
+  "database-import": IconDatabaseImport,
+  "color-swatch": IconColorSwatch,
+  color: IconColorSwatch, // Alias
+  "list-details": IconListDetails,
+  log: IconListDetails, // Alias
+  beach: IconBeach,
+  vacation: IconBeach, // Alias
+  "calendar-minus": IconCalendarMinus,
+  "time-off": IconCalendarMinus, // Alias
+  "calendar-time": IconCalendarTime,
+  helmet: IconHelmet,
+  "hard-hat": IconHelmet, // Alias
+  "building-bank": IconBuildingBank,
+  sector: IconBuildingBank, // Alias
+  "file-report": IconFileReport,
+  report: IconFileReport, // Alias
+  "list-search": IconListSearch,
+  inspection: IconListSearch, // Alias
+  droplet: IconDroplet,
+  "question-mark": IconQuestionMark,
+  question: IconQuestionMark, // Alias
+  help: IconQuestionMark, // Alias
+  circle: IconCircle,
+  radio: IconCircle, // Alias
+  "photo-plus": IconPhotoPlus,
+  image: IconPhotoPlus, // Alias
+
+  // Common aliases used in navigation
+  cog: IconSettings, // Alias for settings
+  auditLog: IconList, // Alias
+  "audit-log": IconList, // kebab-case version
+  entity: IconDatabase, // Alias
+  catalog: IconBook, // Alias
+  borrowing: IconArrowsExchange, // Alias
+  schedule: IconCalendarPlus, // Alias
+  maintenance: IconTools, // Alias
+  automation: IconBolt, // Alias
+  brand: IconBadge, // Alias
+  external: IconSend, // Alias
+  team: IconUsers, // Alias
+  warning: IconAlertTriangle, // Alias
+  loan: IconArrowsExchange, // Alias
+  safety: IconShieldCheck, // Alias
+  cutting: IconScissors, // Alias
+  userCircle: IconUserCircle, // camelCase version
+  announcement: IconSpeakerphone, // Alias
+  notification: IconBellRinging, // Alias
+  paintBrush: IconBrush, // camelCase version
+  dollarSign: IconCurrencyDollar, // camelCase version
+  trendingUp: IconTrendingUp, // camelCase version
+  trendingDown: IconTrendingDown, // camelCase version
+  systemMetrics: IconChartLine, // Alias
+  "system-metrics": IconChartLine, // kebab-case version
+  systemLogs: IconFileText, // camelCase version
+  services: IconSettings, // Alias
+  systemUsers: IconUserCog, // camelCase version
+  sharedFolders: IconFolderShare, // camelCase version
+  databaseImport: IconDatabaseImport, // camelCase version
+  clipboardList: IconClipboardList, // camelCase version
 };
 
 interface IconProps {

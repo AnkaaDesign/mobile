@@ -79,6 +79,8 @@ const dateFormatOptions = [
 
 export default function GeneralSettingsScreen() {
   const [isLoading, setIsLoading] = useState(false);
+  const { success, error: showError, warning, info } = useToast();
+
 
   const form = useForm<GeneralSettingsFormData>({
     resolver: zodResolver(generalSettingsSchema),
@@ -95,10 +97,10 @@ export default function GeneralSettingsScreen() {
       // Here you would typically call your API to save the settings
       console.log("General settings saved:", data);
 
-      toast.success("Configurações salvas com sucesso!");
+      success("Configurações salvas com sucesso!");
     } catch (error) {
       console.error("Error saving general settings:", error);
-      toast.error("Erro ao salvar configurações");
+      showError("Erro ao salvar configurações");
     } finally {
       setIsLoading(false);
     }

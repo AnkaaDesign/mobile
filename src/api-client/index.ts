@@ -105,6 +105,6 @@ export {
   refreshServerRaidStatus,
   refreshSsdHealth,
 } from "./services/monitoring";
-export * from "./services/statistics";
+// export * from "./services/statistics"; // Disabled - file doesn't exist
 export * from "./services/deployment";
 export * from "./platform-utils";

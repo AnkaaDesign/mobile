@@ -212,7 +212,7 @@ export default function ScheduleDetailsScreen() {
           </ThemedText>
           {task.serialNumber && (
             <ThemedText style={styles.subtitle}>
-              NS: {task.serialNumber}
+              SN: {task.serialNumber}
             </ThemedText>
           )}
         </View>

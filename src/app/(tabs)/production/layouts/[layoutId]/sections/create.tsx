@@ -9,13 +9,15 @@ import { ThemedView, ThemedText, FAB, ErrorScreen } from "@/components/ui";
 import { useLayoutSectionMutations, useLayoutSections, useLayoutDetail } from '../../../../../../hooks';
 import { layoutSectionCreateSchema, type LayoutSectionCreateFormData } from '../../../../../../schemas';
 import { useTheme } from "@/lib/theme";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LayoutSectionCreateScreen() {
   const router = useRouter();
   const { layoutId } = useLocalSearchParams<{ layoutId: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { success, error: showError, warning, info } = useToast();
+
 
   const { create: createSection } = useLayoutSectionMutations();
   const { data: sectionsResponse } = useLayoutSections(layoutId!);
@@ -45,10 +47,10 @@ export default function LayoutSectionCreateScreen() {
     setIsSubmitting(true);
     try {
       const result = await createSection({ ...data, layoutId });
-      toast.success("Seção criada com sucesso");
+      success("Seção criada com sucesso");
       router.push(`/production/layouts/${layoutId}/sections/details/${(result as any)?.data?.id}` as any);
     } catch (error: any) {
-      toast.error(error?.message || "Erro ao criar seção");
+      showError(error?.message || "Erro ao criar seção");
     } finally {
       setIsSubmitting(false);
     }

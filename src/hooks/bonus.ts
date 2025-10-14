@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { bonusService, type BonusCalculationResult } from '../api-client';
 import { bonusKeys, userKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
-import { toast } from "sonner";
 
 // Import proper types from packages
 import type {
@@ -160,7 +159,6 @@ export const useCalculateBonuses = () => {
 
       // Optimistically update - show loading state
       const monthName = new Date(variables.year, variables.month - 1).toLocaleDateString('pt-BR', { month: 'long' });
-      toast.loading(`Calculando bônus de ${monthName}...`, { id: `calc-${variables.year}-${variables.month}` });
 
       return { previousBonuses };
     },
@@ -174,12 +172,9 @@ export const useCalculateBonuses = () => {
       const failedCount = result.data?.totalFailed ?? 0;
 
       // Dismiss loading toast and show success
-      toast.dismiss(`calc-${variables.year}-${variables.month}`);
 
       if (failedCount > 0) {
-        toast.warning(`Bônus calculados: ${successCount} sucessos, ${failedCount} falhas`);
       } else {
-        toast.success(`Bônus de ${monthName} calculados com sucesso! ${successCount} funcionários processados.`);
       }
     },
     onError: (error: any, variables, context) => {
@@ -189,9 +184,7 @@ export const useCalculateBonuses = () => {
       }
 
       // Dismiss loading toast and show error
-      toast.dismiss(`calc-${variables.year}-${variables.month}`);
       const message = error?.response?.data?.message ?? 'Erro ao calcular bônus';
-      toast.error(message);
     }
   });
 };
@@ -294,11 +287,9 @@ export const useExportPayroll = () => {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      toast.success('Folha de pagamento exportada com sucesso!');
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message ?? 'Erro ao exportar folha de pagamento';
-      toast.error(message);
     }
   });
 };
@@ -323,11 +314,9 @@ export const useBonusDiscountMutations = () => {
       mutationFn: (data: BonusDiscountCreateFormData) => bonusService.createDiscount(data),
       onSuccess: () => {
         invalidateQueries();
-        toast.success('Desconto adicionado com sucesso');
       },
       onError: (error: any) => {
         const message = error?.response?.data?.message ?? 'Erro ao adicionar desconto';
-        toast.error(message);
       }
     }),
 
@@ -335,11 +324,9 @@ export const useBonusDiscountMutations = () => {
       mutationFn: (id: string) => bonusService.deleteDiscount(id),
       onSuccess: () => {
         invalidateQueries();
-        toast.success('Desconto removido com sucesso');
       },
       onError: (error: any) => {
         const message = error?.response?.data?.message ?? 'Erro ao remover desconto';
-        toast.error(message);
       }
     })
   };
@@ -373,11 +360,9 @@ export const useSaveMonthlyBonuses = () => {
       const successCount = result.data?.totalSuccess ?? 0;
       const failedCount = result.data?.totalFailed ?? 0;
 
-      toast.success(`Bônus mensais de ${monthName} salvos: ${successCount} sucessos, ${failedCount} falhas`);
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message ?? 'Erro ao salvar bônus mensais';
-      toast.error(message);
     }
   });
 };
