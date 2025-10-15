@@ -132,6 +132,12 @@ export interface Order extends BaseEntity {
   ppeSchedule?: PpeDeliverySchedule;
   items?: OrderItem[];
   activities?: Activity[];
+
+  // Prisma count fields
+  _count?: {
+    items?: number;
+    activities?: number;
+  };
 }
 
 // =====================
