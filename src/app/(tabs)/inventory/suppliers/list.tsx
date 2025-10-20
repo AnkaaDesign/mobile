@@ -3,7 +3,7 @@ import { View, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { IconList, IconFilter } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ThemedView, ThemedText, FAB, SearchBar, ErrorScreen, EmptyState, ItemsCountDisplay, Badge, Button } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, SearchBar, ErrorScreen, EmptyState, ItemsCountDisplay, ListActionButton } from "@/components/ui";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
@@ -59,7 +59,7 @@ export default function SuppliersListScreen() {
   ).length;
 
   // Fetch suppliers with infinite scroll
-  const { items: suppliers, isLoading, error, refetch, refresh, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded } = useSuppliersInfiniteMobile(queryParams);
+  const { items: suppliers, isLoading, error, refetch, refresh, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount } = useSuppliersInfiniteMobile(queryParams);
 
   // Handlers
   const handleApplyFilters = useCallback((newFilters: Partial<any>) => {
@@ -131,32 +131,19 @@ export default function SuppliersListScreen() {
         <View style={styles.searchContainer}>
           <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar fornecedores..." style={styles.searchBar} />
           <View style={styles.buttonContainer}>
-            <View style={styles.actionButtonWrapper}>
-              <Button
-                variant="outline"
-                onPress={() => setShowColumnManager(true)}
-                style={{ ...styles.actionButton, backgroundColor: colors.input }}
-              >
-                <IconList size={20} color={colors.foreground} />
-              </Button>
-              <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
-                <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
-              </Badge>
-            </View>
-            <View style={styles.actionButtonWrapper}>
-              <Button
-                variant="outline"
-                onPress={() => setShowFilters(true)}
-                style={{ ...styles.actionButton, backgroundColor: colors.input }}
-              >
-                <IconFilter size={20} color={colors.foreground} />
-              </Button>
-              {activeFiltersCount > 0 && (
-                <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                  <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-                </Badge>
-              )}
-            </View>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={() => setShowColumnManager(true)}
+              badgeCount={visibleColumnKeys.length}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={() => setShowFilters(true)}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
           </View>
         </View>
 
@@ -205,7 +192,7 @@ export default function SuppliersListScreen() {
         )}
 
         {/* Suppliers count */}
-        {suppliers.length > 0 && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} itemType="fornecedor" itemTypePlural="fornecedores" />}
+        {suppliers.length > 0 && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} itemType="fornecedor" itemTypePlural="fornecedores" />}
 
         {/* FAB */}
         <FAB icon="plus" onPress={handleCreateSupplier} />
@@ -248,30 +235,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     gap: 8,
-  },
-  actionButtonWrapper: {
-    position: "relative",
-  },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    paddingHorizontal: 0,
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
   },
   emptyContainer: {
     flex: 1,

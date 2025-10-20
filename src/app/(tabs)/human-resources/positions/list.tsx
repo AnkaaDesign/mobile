@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from "react";
 import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter } from "@tabler/icons-react-native";
+import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePositionMutations } from '../../../../hooks';
 import { usePositionsInfiniteMobile } from "@/hooks";
 import type { PositionGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { PositionTable } from "@/components/human-resources/position/list/position-table";
 import type { SortConfig } from "@/components/human-resources/position/list/position-table";
 import { PositionFilterModal } from "@/components/human-resources/position/list/position-filter-modal";
@@ -28,6 +28,8 @@ export default function PositionListScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<PositionGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "name", direction: "asc" }]);
+  const [showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["name", "bonifiable", "remuneration"]);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -77,7 +79,7 @@ export default function PositionListScreen() {
     },
   };
 
-  const { items: positions, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = usePositionsInfiniteMobile(queryParams);
+  const { items: positions, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePositionsInfiniteMobile(queryParams);
   const { delete: deletePosition } = usePositionMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -103,11 +105,7 @@ export default function PositionListScreen() {
 
   const handleDeletePosition = useCallback(
     async (positionId: string) => {
-      try {
-        await deletePosition(positionId);
-      } catch (error) {
-        Alert.alert("Erro", "Não foi possível excluir o cargo. Tente novamente.");
-      }
+      await deletePosition(positionId);
     },
     [deletePosition],
   );
@@ -158,25 +156,19 @@ export default function PositionListScreen() {
       <View style={[styles.searchContainer]}>
         <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar cargos..." style={styles.searchBar} debounceMs={300} />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              {
-                backgroundColor: colors.card,
-                borderWidth: 1,
-                borderColor: colors.border,
-              },
-              pressed && styles.actionButtonPressed,
-            ]}
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={() => setShowColumnManager(true)}
+            badgeCount={visibleColumnKeys.length}
+            badgeVariant="primary"
+          />
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
             onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
-            {activeFiltersCount > 0 && (
-              <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-              </Badge>
-            )}
-          </Pressable>
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
         </View>
       </View>
 
@@ -222,7 +214,7 @@ export default function PositionListScreen() {
       )}
 
       {/* Items count */}
-      {hasPositions && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />}
+      {hasPositions && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasPositions && <FAB icon="plus" onPress={handleCreatePosition} />}
 
@@ -250,35 +242,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
 });

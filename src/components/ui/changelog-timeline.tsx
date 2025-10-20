@@ -398,20 +398,24 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
       {changeStats.totalChanges > 0 && (
         <View style={styles.summaryContainer}>
           <View style={styles.summaryRow}>
-            <View style={StyleSheet.flatten([styles.summaryCard, { backgroundColor: colors.muted + "30" }])}>
-              <View style={StyleSheet.flatten([styles.summaryIcon, { backgroundColor: colors.primary + "10" }])}>
-                <IconEdit size={16} color={colors.mutedForeground} />
+            <View style={StyleSheet.flatten([styles.summaryCard, { backgroundColor: colors.muted + "20", borderColor: colors.border }])}>
+              <View style={styles.summaryCardContent}>
+                <IconEdit size={18} color={colors.mutedForeground} />
+                <View style={styles.summaryText}>
+                  <ThemedText style={StyleSheet.flatten([styles.summaryLabel, { color: colors.mutedForeground }])}>Total de Alterações</ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.summaryValue, { color: colors.foreground }])}>{changeStats.totalChanges}</ThemedText>
+                </View>
               </View>
-              <ThemedText style={StyleSheet.flatten([styles.summaryLabel, { color: colors.mutedForeground }])}>Total de Alterações</ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.summaryValue, { color: colors.foreground }])}>{changeStats.totalChanges}</ThemedText>
             </View>
 
-            <View style={StyleSheet.flatten([styles.summaryCard, { backgroundColor: colors.muted + "30" }])}>
-              <View style={StyleSheet.flatten([styles.summaryIcon, { backgroundColor: colors.primary + "10" }])}>
-                <IconClock size={16} color={colors.mutedForeground} />
+            <View style={StyleSheet.flatten([styles.summaryCard, { backgroundColor: colors.muted + "20", borderColor: colors.border }])}>
+              <View style={styles.summaryCardContent}>
+                <IconClock size={18} color={colors.mutedForeground} />
+                <View style={styles.summaryText}>
+                  <ThemedText style={StyleSheet.flatten([styles.summaryLabel, { color: colors.mutedForeground }])}>Últimos 7 Dias</ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.summaryValue, { color: colors.foreground }])}>{changeStats.recentChanges}</ThemedText>
+                </View>
               </View>
-              <ThemedText style={StyleSheet.flatten([styles.summaryLabel, { color: colors.mutedForeground }])}>Últimos 7 Dias</ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.summaryValue, { color: colors.foreground }])}>{changeStats.recentChanges}</ThemedText>
             </View>
           </View>
         </View>
@@ -479,13 +483,13 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                           style={StyleSheet.flatten([
                             styles.contentCard,
                             {
-                              backgroundColor: colors.muted + "30",
+                              backgroundColor: colors.card,
                               borderColor: colors.border,
                             },
                           ])}
                         >
                           {/* Header */}
-                          <View style={styles.cardHeader}>
+                          <View style={StyleSheet.flatten([styles.cardHeader, { borderBottomColor: colors.border }])}>
                             <ThemedText style={StyleSheet.flatten([styles.actionText, { color: colors.foreground }])}>{actionLabel}</ThemedText>
                             <ThemedText style={StyleSheet.flatten([styles.timeText, { color: colors.mutedForeground }])}>{formatRelativeTime(firstChange.createdAt)}</ThemedText>
                           </View>
@@ -680,67 +684,65 @@ const styles = StyleSheet.create({
 
   // Summary Statistics
   summaryContainer: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingBottom: spacing.sm,
   },
   summaryRow: {
     flexDirection: "row",
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   summaryCard: {
     flex: 1,
     padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: "transparent",
-  },
-  summaryIcon: {
-    width: 32,
-    height: 32,
     borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  summaryCardContent: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    alignItems: "flex-start",
+  },
+  summaryText: {
+    flex: 1,
+    gap: 2,
   },
   summaryLabel: {
-    fontSize: fontSize.xs,
-    marginBottom: spacing.xs,
+    fontSize: fontSize.sm,
+    fontWeight: "500",
   },
   summaryValue: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
+    fontSize: fontSize.lg,
+    fontWeight: "600",
   },
 
   // Timeline
   timeline: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
   },
   dateGroup: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
   },
   dateHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   dateLine: {
     flex: 1,
-    height: 1,
+    height: StyleSheet.hairlineWidth,
   },
   dateContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    marginHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginHorizontal: spacing.sm,
   },
   dateText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    fontSize: fontSize.xs,
+    fontWeight: "500",
   },
   dayChanges: {
     position: "relative",
@@ -755,30 +757,30 @@ const styles = StyleSheet.create({
   timelineItem: {
     flexDirection: "row",
     position: "relative",
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   timelineLine: {
     position: "absolute",
-    left: 20,
-    top: 40,
-    bottom: -spacing.lg,
-    width: 1,
+    left: 16,
+    top: 36,
+    bottom: -spacing.md,
+    width: StyleSheet.hairlineWidth,
   },
   timelineDot: {
     width: 32,
     height: 32,
     borderRadius: borderRadius.full,
-    borderWidth: 2,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
 
   // Content Card
   contentCard: {
     flex: 1,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
   cardHeader: {
@@ -786,44 +788,50 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   actionText: {
     fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
   },
   timeText: {
     fontSize: fontSize.xs,
+    fontWeight: "500",
   },
 
   // Changes
   changesContainer: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
+    padding: spacing.md,
+    gap: spacing.sm,
   },
   changeSeparator: {
-    height: 1,
-    marginVertical: spacing.sm,
+    height: StyleSheet.hairlineWidth,
+    marginVertical: spacing.xs,
   },
   changeItem: {
-    marginBottom: spacing.sm,
+    gap: spacing.xs,
   },
   fieldLabel: {
     fontSize: fontSize.sm,
-    marginBottom: spacing.xs,
+    fontWeight: "500",
   },
   fieldValues: {
-    gap: spacing.xs,
+    gap: 2,
   },
   valueRow: {
     flexDirection: "row",
     gap: spacing.xs,
+    alignItems: "flex-start",
   },
   valueLabel: {
     fontSize: fontSize.sm,
+    fontWeight: "500",
   },
   valueText: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    fontWeight: "600",
+    flex: 1,
   },
   removedValue: {
     flexDirection: "row",
@@ -851,8 +859,9 @@ const styles = StyleSheet.create({
 
   // Footer
   cardFooter: {
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     padding: spacing.md,
+    paddingTop: spacing.sm,
   },
   userInfo: {
     flexDirection: "row",
@@ -861,9 +870,10 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: fontSize.sm,
+    fontWeight: "500",
   },
   userNameValue: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    fontWeight: "600",
   },
 });

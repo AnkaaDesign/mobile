@@ -1,5 +1,11 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 export default function HumanResourcesPositionsScreen() {
-  return <UnderConstruction title="Cargos" />;
+  useEffect(() => {
+    // Redirect to positions list page
+    router.replace("/(tabs)/human-resources/positions/list");
+  }, []);
+
+  return null;
 }

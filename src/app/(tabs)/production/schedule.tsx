@@ -1,5 +1,11 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 export default function ScheduleListScreen() {
-  return <UnderConstruction title="Cronograma - Listar" />;
+  useEffect(() => {
+    // Redirect to schedule list page
+    router.replace("/(tabs)/production/schedule/list");
+  }, []);
+
+  return null;
 }

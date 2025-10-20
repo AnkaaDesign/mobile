@@ -5,6 +5,22 @@ import { dateUtils } from "./date";
 import { numberUtils } from "./number";
 import type { TaskStatus } from "@prisma/client";
 
+// Tailwind color equivalents for React Native
+const TASK_ROW_COLORS = {
+  light: {
+    neutral: '#f5f5f5',      // bg-neutral-100
+    red: '#fca5a5',          // bg-red-300 (darker for better visibility)
+    green: '#bbf7d0',        // bg-green-200
+    orange: '#fed7aa',       // bg-orange-200
+  },
+  dark: {
+    neutral: '#262626',      // bg-neutral-800
+    red: 'rgba(127, 29, 29, 0.5)',   // bg-red-900/50
+    green: 'rgba(20, 83, 45, 0.5)',  // bg-green-900/50
+    orange: 'rgba(124, 45, 18, 0.5)', // bg-orange-900/50
+  },
+};
+
 /**
  * Map TASK_STATUS enum to Prisma TaskStatus enum
  * This is needed because TypeScript doesn't recognize that the string values are compatible
@@ -322,4 +338,55 @@ export function calculateTaskStats(tasks: Task[]) {
 
 export function getTaskObservationTypeLabel(type: TASK_OBSERVATION_TYPE): string {
   return TASK_OBSERVATION_TYPE_LABELS[type] || type;
+}
+
+/**
+ * Get the appropriate row background color for a task based on its status and deadline
+ * Matches web version color scheme:
+ * - Neutral: Non-production tasks or tasks without deadline
+ * - Green: IN_PRODUCTION with more than 4 hours remaining
+ * - Orange: IN_PRODUCTION with 0-4 hours remaining
+ * - Red: Overdue tasks (past deadline)
+ */
+export function getTaskRowColor(task: Task, isDark: boolean = false): string {
+  const colors = isDark ? TASK_ROW_COLORS.dark : TASK_ROW_COLORS.light;
+
+  // Non-production tasks (PENDING, COMPLETED, CANCELLED, ON_HOLD) use neutral
+  if (task.status !== TASK_STATUS.IN_PRODUCTION) {
+    return colors.neutral;
+  }
+
+  // Tasks with no deadline use neutral
+  if (!task.term) {
+    return colors.neutral;
+  }
+
+  // Check if task is overdue
+  const termDate = new Date(task.term);
+  const now = new Date();
+  const isOverdue = termDate < now;
+
+  if (isOverdue) {
+    return colors.red;
+  }
+
+  // Calculate hours remaining for active production tasks
+  const diffMs = termDate.getTime() - now.getTime();
+  const hoursRemaining = diffMs / (1000 * 60 * 60);
+
+  if (hoursRemaining > 4) {
+    return colors.green;
+  } else {
+    return colors.orange;
+  }
+}
+
+/**
+ * Get hours between two dates
+ */
+export function getHoursBetween(startDate: Date | string, endDate: Date | string): number {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffMs = Math.abs(end.getTime() - start.getTime());
+  return Math.floor(diffMs / (1000 * 60 * 60));
 }

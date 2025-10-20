@@ -1,15 +1,14 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconUpload } from "@tabler/icons-react-native";
+import { IconPlus, IconFilter, IconUpload, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileMutations } from '../../../../hooks';
 import { useFilesInfiniteMobile } from "@/hooks";
 import type { FileGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, ListActionButton } from "@/components/ui";
 import { FileTable } from "@/components/administration/file/list/file-table";
 import type { SortConfig } from "@/components/administration/file/list/file-table";
-import { FileFilterModal } from "@/components/administration/file/list/file-filter-modal";
 import { FileFilterTags } from "@/components/administration/file/list/file-filter-tags";
 import { FilePreviewModal } from "@/components/file/file-preview-modal";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
@@ -22,69 +21,110 @@ import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system/legacy";
 import { getFileUrl } from '../../../../utils';
 
+// New hooks and components
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
+import { useTableSort } from "@/hooks/useTableSort";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+import { BaseFilterDrawer, MultiSelectFilter, NumericRangeFilter, DateRangeFilter } from "@/components/common/filters";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+
+// Common MIME type presets
+const COMMON_MIME_TYPES = [
+  { value: "image/*", label: "Imagens" },
+  { value: "application/pdf", label: "PDF" },
+  { value: "application/vnd.ms-excel", label: "Excel" },
+  { value: "application/msword", label: "Word" },
+  { value: "video/*", label: "Vídeos" },
+  { value: "audio/*", label: "Áudio" },
+];
+
 export default function FileListScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [displaySearchText, setDisplaySearchText] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<Partial<FileGetManyFormData>>({});
-  const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "createdAt", direction: "desc" }]);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const [previewFileIndex, setPreviewFileIndex] = useState<number | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showColumnManager, setShowColumnManager] = useState(false);
 
-  // Build query parameters with sorting
-  const buildOrderBy = () => {
-    if (!sortConfigs || sortConfigs.length === 0) return { createdAt: "desc" };
+  // Filter state
+  const [filters, setFilters] = useState<{
+    mimeTypes?: string[];
+    sizeRange?: { min?: number; max?: number };
+    createdDateRange?: { from?: Date; to?: Date };
+    updatedDateRange?: { from?: Date; to?: Date };
+  }>({});
 
-    if (sortConfigs.length === 1) {
-      const config = sortConfigs[0];
-      switch (config.columnKey) {
-        case "filename":
-          return { filename: config.direction };
-        case "mimetype":
-          return { mimetype: config.direction };
-        case "size":
-          return { size: config.direction };
-        case "createdAt":
-          return { createdAt: config.direction };
-        case "updatedAt":
-          return { updatedAt: config.direction };
-        default:
-          return { createdAt: "desc" };
-      }
+  // Use new hooks
+  const { displayText, searchText, setDisplayText } = useDebouncedSearch("", 300);
+
+  const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
+    [{ column: "createdAt", direction: "desc", order: 0 }],
+    3,
+    false
+  );
+
+  const {
+    visibleColumns,
+    setVisibleColumns,
+    isLoading: isColumnsLoading,
+  } = useColumnVisibility(
+    "files",
+    ["filename", "mimetype", "size", "createdAt"],
+    ["filename", "mimetype", "size", "createdAt", "updatedAt"]
+  );
+
+  // Build API query
+  const buildWhereClause = useCallback(() => {
+    const where: any = {};
+
+    if (filters.mimeTypes?.length) {
+      where.mimetype = { in: filters.mimeTypes };
     }
 
-    return sortConfigs.map((config) => {
-      switch (config.columnKey) {
-        case "filename":
-          return { filename: config.direction };
-        case "mimetype":
-          return { mimetype: config.direction };
-        case "size":
-          return { size: config.direction };
-        case "createdAt":
-          return { createdAt: config.direction };
-        case "updatedAt":
-          return { updatedAt: config.direction };
-        default:
-          return { createdAt: "desc" };
-      }
-    });
-  };
+    if (filters.sizeRange?.min !== undefined || filters.sizeRange?.max !== undefined) {
+      where.size = {
+        ...(filters.sizeRange.min !== undefined ? { gte: filters.sizeRange.min * 1024 } : {}), // Convert KB to bytes
+        ...(filters.sizeRange.max !== undefined ? { lte: filters.sizeRange.max * 1024 } : {}),
+      };
+    }
 
-  const queryParams = {
-    orderBy: buildOrderBy(),
+    return Object.keys(where).length > 0 ? where : undefined;
+  }, [filters]);
+
+  const queryParams = useMemo(() => ({
+    orderBy: buildOrderBy(
+      {
+        filename: "filename",
+        mimetype: "mimetype",
+        size: "size",
+        createdAt: "createdAt",
+        updatedAt: "updatedAt",
+      },
+      { createdAt: "desc" }
+    ),
     ...(searchText ? { searchingFor: searchText } : {}),
-    ...filters,
+    ...(buildWhereClause() ? { where: buildWhereClause() } : {}),
+    ...(filters.createdDateRange?.from || filters.createdDateRange?.to ? {
+      createdAt: {
+        ...(filters.createdDateRange.from && { gte: filters.createdDateRange.from }),
+        ...(filters.createdDateRange.to && { lte: filters.createdDateRange.to }),
+      },
+    } : {}),
+    ...(filters.updatedDateRange?.from || filters.updatedDateRange?.to ? {
+      updatedAt: {
+        ...(filters.updatedDateRange.from && { gte: filters.updatedDateRange.from }),
+        ...(filters.updatedDateRange.to && { lte: filters.updatedDateRange.to }),
+      },
+    } : {}),
     include: {},
-  };
+  }), [searchText, buildWhereClause, buildOrderBy, filters]);
 
-  const { items: files, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = useFilesInfiniteMobile(queryParams);
+  const { items: files, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useFilesInfiniteMobile(queryParams);
   const { delete: deleteFile } = useFileMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -114,15 +154,11 @@ export default function FileListScreen() {
 
   const handleFileDelete = useCallback(
     async (fileId: string) => {
-      try {
-        await deleteFile(fileId);
-        if (selectedFiles.has(fileId)) {
-          const newSelection = new Set(selectedFiles);
-          newSelection.delete(fileId);
-          setSelectedFiles(newSelection);
-        }
-      } catch (error) {
-        Alert.alert("Erro", "Não foi possível excluir o arquivo. Tente novamente.");
+      await deleteFile(fileId);
+      if (selectedFiles.has(fileId)) {
+        const newSelection = new Set(selectedFiles);
+        newSelection.delete(fileId);
+        setSelectedFiles(newSelection);
       }
     },
     [deleteFile, selectedFiles],
@@ -158,37 +194,131 @@ export default function FileListScreen() {
     [files],
   );
 
-  const handleSort = useCallback((configs: SortConfig[]) => {
-    setSortConfigs(configs);
-  }, []);
-
   const handleSelectionChange = useCallback((newSelection: Set<string>) => {
     setSelectedFiles(newSelection);
   }, []);
 
-  const handleSearch = useCallback((text: string) => {
-    setSearchText(text);
-  }, []);
-
-  const handleDisplaySearchChange = useCallback((text: string) => {
-    setDisplaySearchText(text);
-  }, []);
-
-  const handleApplyFilters = useCallback((newFilters: Partial<FileGetManyFormData>) => {
-    setFilters(newFilters);
+  const handleApplyFilters = useCallback(() => {
     setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
-    setSearchText("");
-    setDisplaySearchText("");
+    setDisplayText("");
     setSelectedFiles(new Set());
     setShowSelection(false);
-  }, []);
+  }, [setDisplayText]);
+
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumns(Array.from(newColumns));
+  }, [setVisibleColumns]);
 
   // Count active filters
-  const activeFiltersCount = Object.entries(filters).filter(([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
+  const activeFiltersCount = Object.values(filters).filter(
+    (value) => {
+      if (value === undefined || value === null) return false;
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "object") {
+        // Check ranges (size, date)
+        return Object.values(value).some(v => v !== undefined && v !== null);
+      }
+      return true;
+    }
+  ).length;
+
+  // Toggle MIME type selection
+  const toggleMimeType = useCallback((mimeType: string) => {
+    setFilters(prev => {
+      const current = prev.mimeTypes || [];
+      const updated = current.includes(mimeType)
+        ? current.filter(m => m !== mimeType)
+        : [...current, mimeType];
+      return {
+        ...prev,
+        mimeTypes: updated.length > 0 ? updated : undefined,
+      };
+    });
+  }, []);
+
+  // MIME type options
+  const mimeTypeOptions = useMemo(() =>
+    COMMON_MIME_TYPES.map(type => ({
+      value: type.value,
+      label: type.label,
+    })),
+    []
+  );
+
+  // Filter sections for BaseFilterDrawer
+  const filterSections = useMemo(() => [
+    {
+      id: "mimeTypes",
+      title: "Tipo de Arquivo",
+      defaultOpen: true,
+      badge: filters.mimeTypes?.length || 0,
+      content: (
+        <View>
+          <ThemedText style={{ fontSize: 14, marginBottom: 8, color: colors.mutedForeground }}>
+            Selecione os tipos de arquivo:
+          </ThemedText>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {COMMON_MIME_TYPES.map((type) => (
+              <Badge
+                key={type.value}
+                variant={filters.mimeTypes?.includes(type.value) ? "default" : "outline"}
+                style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+                onPress={() => toggleMimeType(type.value)}
+              >
+                <ThemedText style={[
+                  { fontSize: 14 },
+                  filters.mimeTypes?.includes(type.value) && { color: colors.primaryForeground }
+                ]}>
+                  {type.label}
+                </ThemedText>
+              </Badge>
+            ))}
+          </View>
+        </View>
+      ),
+    },
+    {
+      id: "size",
+      title: "Tamanho",
+      defaultOpen: false,
+      badge: (filters.sizeRange?.min !== undefined || filters.sizeRange?.max !== undefined) ? 1 : 0,
+      content: (
+        <NumericRangeFilter
+          label="Tamanho (KB)"
+          value={filters.sizeRange}
+          onChange={(range) => setFilters(prev => ({ ...prev, sizeRange: range }))}
+          suffix=" KB"
+          decimalPlaces={0}
+        />
+      ),
+    },
+    {
+      id: "dates",
+      title: "Datas",
+      defaultOpen: false,
+      badge: (filters.createdDateRange?.from || filters.createdDateRange?.to ? 1 : 0) + (filters.updatedDateRange?.from || filters.updatedDateRange?.to ? 1 : 0),
+      content: (
+        <>
+          <DateRangeFilter
+            label="Data de Criação"
+            value={filters.createdDateRange}
+            onChange={(range) => setFilters(prev => ({ ...prev, createdDateRange: range }))}
+            showPresets={true}
+          />
+          <DateRangeFilter
+            label="Data de Atualização"
+            value={filters.updatedDateRange}
+            onChange={(range) => setFilters(prev => ({ ...prev, updatedDateRange: range }))}
+            showPresets={true}
+          />
+        </>
+      ),
+    },
+  ], [filters, colors, toggleMimeType]);
 
   if (isLoading && !isRefetching) {
     return <FileListSkeleton />;
@@ -208,38 +338,59 @@ export default function FileListScreen() {
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Search, Filter and Sort */}
       <View style={[styles.searchContainer]}>
-        <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar arquivos..." style={styles.searchBar} debounceMs={300} />
+        <Input
+          value={displayText}
+          onChangeText={setDisplayText}
+          placeholder="Buscar arquivos..."
+          style={styles.searchBar}
+        />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              {
-                backgroundColor: colors.card,
-                borderWidth: 1,
-                borderColor: colors.border,
-              },
-              pressed && styles.actionButtonPressed,
-            ]}
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={() => setShowColumnManager(true)}
+            badgeCount={visibleColumns.length}
+            badgeVariant="primary"
+          />
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
             onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
-            {activeFiltersCount > 0 && (
-              <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-              </Badge>
-            )}
-          </Pressable>
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
         </View>
       </View>
 
       {/* Individual filter tags */}
       <FileFilterTags
-        filters={filters}
+        filters={queryParams}
         searchText={searchText}
-        onFilterChange={handleApplyFilters}
+        onFilterChange={(newFilters) => {
+          const where = newFilters.where as any;
+          if (where?.mimetype?.in) {
+            setFilters(prev => ({ ...prev, mimeTypes: where.mimetype.in }));
+          }
+          if (where?.size) {
+            setFilters(prev => ({ ...prev, sizeRange: {
+              min: where.size.gte ? where.size.gte / 1024 : undefined,
+              max: where.size.lte ? where.size.lte / 1024 : undefined,
+            }}));
+          }
+          if (newFilters.createdAt) {
+            setFilters(prev => ({ ...prev, createdDateRange: {
+              from: newFilters.createdAt?.gte,
+              to: newFilters.createdAt?.lte
+            }}));
+          }
+          if (newFilters.updatedAt) {
+            setFilters(prev => ({ ...prev, updatedDateRange: {
+              from: newFilters.updatedAt?.gte,
+              to: newFilters.updatedAt?.lte
+            }}));
+          }
+        }}
         onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
+          setDisplayText(text);
         }}
         onClearAll={handleClearFilters}
       />
@@ -260,8 +411,8 @@ export default function FileListScreen() {
             showSelection={showSelection}
             selectedFiles={selectedFiles}
             onSelectionChange={handleSelectionChange}
-            sortConfigs={sortConfigs}
-            onSort={handleSort}
+            sortConfigs={sortConfigs as SortConfig[]}
+            onSort={(configs) => handleSort(configs[0]?.columnKey || "createdAt")}
             enableSwipeActions={true}
           />
         </TableErrorBoundary>
@@ -278,12 +429,21 @@ export default function FileListScreen() {
       )}
 
       {/* Items count */}
-      {hasFiles && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />}
+      {hasFiles && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasFiles && <FAB icon="upload" onPress={handleUpload} />}
 
-      {/* Filter Modal */}
-      <FileFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
+      {/* New BaseFilterDrawer */}
+      <BaseFilterDrawer
+        open={showFilters}
+        onOpenChange={setShowFilters}
+        sections={filterSections}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+        title="Filtros de Arquivos"
+        description="Configure os filtros para refinar sua busca"
+      />
 
       {/* File Preview Modal */}
       {showPreview && previewFileIndex !== null && (
@@ -320,35 +480,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
 });

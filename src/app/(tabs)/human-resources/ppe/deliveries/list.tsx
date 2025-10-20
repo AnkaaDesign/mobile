@@ -51,7 +51,7 @@ export default function PpeDeliveriesListScreen() {
     };
   }, [searchText, filters]);
 
-  const { deliveries, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = usePpeDeliveriesInfiniteMobile(queryParams);
+  const { deliveries, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePpeDeliveriesInfiniteMobile(queryParams);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -200,7 +200,7 @@ export default function PpeDeliveriesListScreen() {
       )}
 
       {/* Items count */}
-      {hasDeliveries && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />}
+      {hasDeliveries && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasDeliveries && <FAB icon="plus" onPress={handleCreateDelivery} />}
 

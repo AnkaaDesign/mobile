@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useTasksInfinite } from './';
+import { useTasksInfinite } from './useTask';
 import { TaskGetManyFormData } from '../schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useVacationsInfinite } from './';
+import { useVacationsInfinite } from './useVacation';
 import { VacationGetManyFormData } from '../schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 

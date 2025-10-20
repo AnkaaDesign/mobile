@@ -1,5 +1,11 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 export default function MovementsScreen() {
-  return <UnderConstruction title="Movimentações de Estoque" />;
+  useEffect(() => {
+    // Redirect to activities list since movements and activities are the same
+    router.replace("/(tabs)/inventory/activities/list");
+  }, []);
+
+  return null;
 }

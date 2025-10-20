@@ -1,12 +1,11 @@
-import React from "react";
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 export default function ListNotificationsScreen() {
-  return (
-    <UnderConstruction
-      title="Notificações do Sistema"
-      description="Gerenciamento centralizado de todas as notificações enviadas pelo sistema para usuários e administradores."
-      icon="bell-ring"
-    />
-  );
+  useEffect(() => {
+    // Redirect to notifications list page
+    router.replace("/(tabs)/administration/notifications/list");
+  }, []);
+
+  return null;
 }

@@ -176,7 +176,7 @@ export default function ExternalWithdrawalListScreen() {
 
         {/* Withdrawals count */}
         {withdrawals.length > 0 && (
-          <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} itemType="retirada" itemTypePlural="retiradas" />
+          <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} itemType="retirada" itemTypePlural="retiradas" />
         )}
 
         {/* FAB */}

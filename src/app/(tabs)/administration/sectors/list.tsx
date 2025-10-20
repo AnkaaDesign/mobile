@@ -6,9 +6,8 @@ import { IconFilter, IconPlus, IconList } from "@tabler/icons-react-native";
 import { useSectorMutations } from '../../../../hooks';
 import { useSectorsInfiniteMobile } from "@/hooks";
 import type { SectorGetManyFormData } from '../../../../types';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge, Button } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
 import { SectorTable, createColumnDefinitions } from "@/components/administration/sector/list/sector-table";
-import { SectorFilterModal } from "@/components/administration/sector/list/sector-filter-modal";
 import { SectorFilterTags } from "@/components/administration/sector/list/sector-filter-tags";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { SectorListSkeleton } from "@/components/administration/sector/skeleton/sector-list-skeleton";
@@ -16,6 +15,12 @@ import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
+
+// New hooks and components
+import { useTableSort } from "@/hooks/useTableSort";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+import { BaseFilterDrawer, BooleanFilter, MultiSelectFilter, DateRangeFilter } from "@/components/common/filters";
+import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from '../../../../constants';
 
 export default function SectorListScreen() {
   const router = useRouter();
@@ -25,24 +30,80 @@ export default function SectorListScreen() {
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<Partial<SectorGetManyFormData>>({});
   const [showColumnManager, setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["name", "privileges"]);
+
+  // Filter state
+  const [filters, setFilters] = useState<{
+    privileges?: string[];
+    hasUsers?: boolean;
+    createdDateRange?: { from?: Date; to?: Date };
+    updatedDateRange?: { from?: Date; to?: Date };
+  }>({});
+
+  const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
+    [{ column: "name", direction: "asc", order: 0 }],
+    3,
+    false
+  );
+
+  const {
+    visibleColumns,
+    setVisibleColumns,
+    isLoading: isColumnsLoading,
+  } = useColumnVisibility(
+    "sectors",
+    ["name", "privileges"],
+    ["name", "privileges", "createdAt", "updatedAt"]
+  );
+
+  // Build API query
+  const buildWhereClause = useCallback(() => {
+    const where: any = {};
+
+    if (filters.privileges?.length) {
+      where.privileges = { in: filters.privileges };
+    }
+
+    return Object.keys(where).length > 0 ? where : undefined;
+  }, [filters]);
 
   // Build query parameters
-  const queryParams: SectorGetManyFormData = {
-    orderBy: { name: "asc" as const },
+  const queryParams = useMemo<SectorGetManyFormData>(() => ({
+    orderBy: buildOrderBy(
+      {
+        name: "name",
+        privileges: "privileges",
+        createdAt: "createdAt",
+        updatedAt: "updatedAt",
+      },
+      { name: "asc" }
+    ),
     ...(searchText ? { searchingFor: searchText } : {}),
-    ...filters,
+    ...(buildWhereClause() ? { where: buildWhereClause() } : {}),
+    ...(filters.hasUsers !== undefined ? { hasUsers: filters.hasUsers } : {}),
+    ...(filters.createdDateRange?.from || filters.createdDateRange?.to ? {
+      createdAt: {
+        ...(filters.createdDateRange.from && { gte: filters.createdDateRange.from }),
+        ...(filters.createdDateRange.to && { lte: filters.createdDateRange.to }),
+      },
+    } : {}),
+    ...(filters.updatedDateRange?.from || filters.updatedDateRange?.to ? {
+      updatedAt: {
+        ...(filters.updatedDateRange.from && { gte: filters.updatedDateRange.from }),
+        ...(filters.updatedDateRange.to && { lte: filters.updatedDateRange.to }),
+      },
+    } : {}),
     include: {
       _count: {
-        users: true,
-        tasks: true,
+        select: {
+          users: true,
+          tasks: true,
+        },
       },
     },
-  };
+  }), [searchText, buildWhereClause, buildOrderBy, filters]);
 
-  const { items: sectors, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = useSectorsInfiniteMobile(queryParams);
+  const { items: sectors, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useSectorsInfiniteMobile(queryParams);
   const { delete: deleteSector } = useSectorMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -68,11 +129,7 @@ export default function SectorListScreen() {
 
   const handleDeleteSector = useCallback(
     async (sectorId: string) => {
-      try {
-        await deleteSector(sectorId);
-      } catch (error) {
-        Alert.alert("Erro", "Não foi possível excluir o setor. Tente novamente.");
-      }
+      await deleteSector(sectorId);
     },
     [deleteSector],
   );
@@ -85,8 +142,7 @@ export default function SectorListScreen() {
     setDisplaySearchText(text);
   }, []);
 
-  const handleApplyFilters = useCallback((newFilters: Partial<SectorGetManyFormData>) => {
-    setFilters(newFilters);
+  const handleApplyFilters = useCallback(() => {
     setShowFilters(false);
   }, []);
 
@@ -97,32 +153,97 @@ export default function SectorListScreen() {
   }, []);
 
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {
-    setVisibleColumnKeys(Array.from(newColumns));
-  }, []);
+    setVisibleColumns(Array.from(newColumns));
+  }, [setVisibleColumns]);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
 
   // Count active filters
-  const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => {
-      // Skip include and orderBy
-      if (key === "include" || key === "orderBy") return false;
-      // Count if value is defined and not empty
+  const activeFiltersCount = Object.values(filters).filter(
+    (value) => {
       if (value === undefined || value === null) return false;
-      if (typeof value === "object" && !Array.isArray(value)) {
-        // Count nested objects like where
-        return Object.keys(value).length > 0;
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "object") {
+        // Check date ranges
+        return Object.values(value).some(v => v !== undefined && v !== null);
       }
-      return true;
-    },
+      return value === true;
+    }
   ).length;
 
-  if (isLoading && !isRefetching) {
+  // Privilege options for multi-select
+  const privilegeOptions = useMemo(() =>
+    Object.values(SECTOR_PRIVILEGES).map((privilege) => ({
+      value: privilege,
+      label: SECTOR_PRIVILEGES_LABELS[privilege],
+    })),
+    []
+  );
+
+  // Filter sections for BaseFilterDrawer
+  const filterSections = useMemo(() => [
+    {
+      id: "privileges",
+      title: "Nível de Privilégio",
+      defaultOpen: true,
+      badge: filters.privileges?.length || 0,
+      content: (
+        <MultiSelectFilter
+          label="Níveis de Privilégio"
+          value={filters.privileges || []}
+          onChange={(value) => setFilters(prev => ({ ...prev, privileges: value.length > 0 ? value : undefined }))}
+          options={privilegeOptions}
+          placeholder="Selecione os níveis..."
+        />
+      ),
+    },
+    {
+      id: "status",
+      title: "Status",
+      defaultOpen: false,
+      badge: filters.hasUsers !== undefined ? 1 : 0,
+      content: (
+        <BooleanFilter
+          label="Apenas com funcionários"
+          description="Filtrar por setores que possuem funcionários"
+          value={!!filters.hasUsers}
+          onChange={(value) => setFilters(prev => ({ ...prev, hasUsers: value || undefined }))}
+        />
+      ),
+    },
+    {
+      id: "dates",
+      title: "Datas",
+      defaultOpen: false,
+      badge: (filters.createdDateRange?.from || filters.createdDateRange?.to ? 1 : 0) + (filters.updatedDateRange?.from || filters.updatedDateRange?.to ? 1 : 0),
+      content: (
+        <>
+          <DateRangeFilter
+            label="Data de Criação"
+            value={filters.createdDateRange}
+            onChange={(range) => setFilters(prev => ({ ...prev, createdDateRange: range }))}
+            showPresets={true}
+          />
+          <DateRangeFilter
+            label="Data de Atualização"
+            value={filters.updatedDateRange}
+            onChange={(range) => setFilters(prev => ({ ...prev, updatedDateRange: range }))}
+            showPresets={true}
+          />
+        </>
+      ),
+    },
+  ], [filters, privilegeOptions]);
+
+  // Only show skeleton on initial load, not on refetch/sort
+  const isInitialLoad = isLoading && !isRefetching && sectors.length === 0;
+
+  if (isInitialLoad) {
     return <SectorListSkeleton />;
   }
 
-  if (error) {
+  if (error && sectors.length === 0) {
     return (
       <ThemedView style={styles.container}>
         <ErrorScreen message="Erro ao carregar setores" detail={error.message} onRetry={handleRefresh} />
@@ -145,40 +266,48 @@ export default function SectorListScreen() {
           debounceMs={300}
         />
         <View style={styles.buttonContainer}>
-          <View style={styles.actionButtonWrapper}>
-            <Button
-              variant="outline"
-              onPress={() => setShowColumnManager(true)}
-              style={{ ...styles.actionButton, backgroundColor: colors.input }}
-            >
-              <IconList size={20} color={colors.foreground} />
-            </Button>
-            <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
-              <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
-            </Badge>
-          </View>
-          <View style={styles.actionButtonWrapper}>
-            <Button
-              variant="outline"
-              onPress={() => setShowFilters(true)}
-              style={{ ...styles.actionButton, backgroundColor: colors.input }}
-            >
-              <IconFilter size={20} color={colors.foreground} />
-            </Button>
-            {activeFiltersCount > 0 && (
-              <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-              </Badge>
-            )}
-          </View>
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={() => setShowColumnManager(true)}
+            badgeCount={visibleColumns.length}
+            badgeVariant="primary"
+          />
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
+            onPress={() => setShowFilters(true)}
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
         </View>
       </View>
 
       {/* Filter tags */}
       <SectorFilterTags
-        filters={filters}
+        filters={queryParams}
         searchText={searchText}
-        onFilterChange={handleApplyFilters}
+        onFilterChange={(newFilters) => {
+          // Extract filter state from query params
+          const where = newFilters.where as any;
+          if (where?.privileges?.in) {
+            setFilters(prev => ({ ...prev, privileges: where.privileges.in }));
+          }
+          if (newFilters.hasUsers !== undefined) {
+            setFilters(prev => ({ ...prev, hasUsers: newFilters.hasUsers }));
+          }
+          if (newFilters.createdAt) {
+            setFilters(prev => ({ ...prev, createdDateRange: {
+              from: newFilters.createdAt?.gte,
+              to: newFilters.createdAt?.lte
+            }}));
+          }
+          if (newFilters.updatedAt) {
+            setFilters(prev => ({ ...prev, updatedDateRange: {
+              from: newFilters.updatedAt?.gte,
+              to: newFilters.updatedAt?.lte
+            }}));
+          }
+        }}
         onSearchChange={(text) => {
           setSearchText(text);
           setDisplaySearchText(text);
@@ -194,11 +323,11 @@ export default function SectorListScreen() {
           onSectorDelete={handleDeleteSector}
           onRefresh={handleRefresh}
           onEndReached={canLoadMore ? loadMore : undefined}
-          refreshing={refreshing}
-          loading={isLoading && !isRefetching}
+          refreshing={refreshing || isRefetching}
+          loading={false}
           loadingMore={isFetchingNextPage}
           enableSwipeActions={true}
-          visibleColumnKeys={visibleColumnKeys}
+          visibleColumnKeys={visibleColumns}
         />
       ) : (
         <View style={styles.emptyContainer}>
@@ -213,17 +342,26 @@ export default function SectorListScreen() {
       )}
 
       {/* Items count */}
-      {hasSectors && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />}
+      {hasSectors && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasSectors && <FAB icon="plus" onPress={handleCreateSector} />}
 
-      {/* Filter Modal */}
-      <SectorFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
+      {/* New BaseFilterDrawer */}
+      <BaseFilterDrawer
+        open={showFilters}
+        onOpenChange={setShowFilters}
+        sections={filterSections}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+        title="Filtros de Setores"
+        description="Configure os filtros para refinar sua busca"
+      />
 
       {/* Column Visibility Drawer */}
       <ColumnVisibilityDrawerV2
         columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
+        visibleColumns={new Set(visibleColumns)}
         onVisibilityChange={handleColumnsChange}
         open={showColumnManager}
         onOpenChange={setShowColumnManager}
@@ -249,30 +387,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     gap: 8,
-  },
-  actionButtonWrapper: {
-    position: "relative",
-  },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    paddingHorizontal: 0,
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
   },
   emptyContainer: {
     flex: 1,

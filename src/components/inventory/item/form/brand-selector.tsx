@@ -44,25 +44,12 @@ export function BrandSelector({ disabled, required }: BrandSelectorProps) {
       });
 
       if (result.success && result.data) {
-        showToast({
-          title: "Marca criada",
-          message: `A marca "${name}" foi criada com sucesso.`,
-          type: "success",
-        });
-
         // Refetch brands to update the list
         await refetch();
 
         // Return the newly created brand ID
         return result.data.id;
       }
-    } catch (error) {
-      showToast({
-        title: "Erro ao criar marca",
-        message: "Não foi possível criar a marca. Tente novamente.",
-        type: "error",
-      });
-      throw error;
     } finally {
       setIsCreating(false);
     }

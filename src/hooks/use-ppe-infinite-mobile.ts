@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { itemService } from '../api-client';
-import { itemKeys } from './';
+import { itemKeys } from './queryKeys';
 import type { ItemGetManyFormData } from '../schemas';
 
 export const usePpeInfiniteMobile = (filters?: Partial<ItemGetManyFormData>) => {

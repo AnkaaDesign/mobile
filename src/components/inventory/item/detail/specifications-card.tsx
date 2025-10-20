@@ -21,7 +21,7 @@ import {
 } from "@tabler/icons-react-native";
 import type { Item } from '../../../../types';
 import { MEASURE_UNIT_LABELS, MEASURE_TYPE_LABELS, MEASURE_TYPE } from '../../../../constants';
-import { getMeasureUnitCategory, convertValue, canConvertUnits, getUnitsInCategory } from '../../../../types';
+import { getMeasureUnitCategory, convertValue, canConvertUnits, getUnitsInCategory, MEASURE_CATEGORIES } from '../../../../types/measure';
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
