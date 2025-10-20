@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useWarningMutations } from '../../../../hooks';
 import { useWarningsInfiniteMobile } from "@/hooks";
 import type { WarningGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge, Button } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { WarningTable, createColumnDefinitions } from "@/components/human-resources/warning/list/warning-table";
 import type { SortConfig } from "@/components/human-resources/warning/list/warning-table";
 import { WarningFilterModal } from "@/components/human-resources/warning/list/warning-filter-modal";
@@ -86,7 +86,7 @@ export default function WarningListScreen() {
     },
   };
 
-  const { items: warnings, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = useWarningsInfiniteMobile(queryParams);
+  const { items: warnings, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useWarningsInfiniteMobile(queryParams);
   const { delete: deleteWarning } = useWarningMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -112,16 +112,12 @@ export default function WarningListScreen() {
 
   const handleDeleteWarning = useCallback(
     async (warningId: string) => {
-      try {
-        await deleteWarning(warningId);
-        // Clear selection if the deleted warning was selected
-        if (selectedWarnings.has(warningId)) {
-          const newSelection = new Set(selectedWarnings);
-          newSelection.delete(warningId);
-          setSelectedWarnings(newSelection);
-        }
-      } catch (error) {
-        Alert.alert("Erro", "Não foi possível excluir a advertência. Tente novamente.");
+      await deleteWarning(warningId);
+      // Clear selection if the deleted warning was selected
+      if (selectedWarnings.has(warningId)) {
+        const newSelection = new Set(selectedWarnings);
+        newSelection.delete(warningId);
+        setSelectedWarnings(newSelection);
       }
     },
     [deleteWarning, selectedWarnings],
@@ -186,32 +182,19 @@ export default function WarningListScreen() {
       <View style={[styles.searchContainer]}>
         <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar advertências..." style={styles.searchBar} debounceMs={300} />
         <View style={styles.buttonContainer}>
-          <View style={styles.actionButtonWrapper}>
-            <Button
-              variant="outline"
-              onPress={() => setShowColumnManager(true)}
-              style={{ ...styles.actionButton, backgroundColor: colors.input }}
-            >
-              <IconList size={20} color={colors.foreground} />
-            </Button>
-            <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
-              <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
-            </Badge>
-          </View>
-          <View style={styles.actionButtonWrapper}>
-            <Button
-              variant="outline"
-              onPress={() => setShowFilters(true)}
-              style={{ ...styles.actionButton, backgroundColor: colors.input }}
-            >
-              <IconFilter size={20} color={colors.foreground} />
-            </Button>
-            {activeFiltersCount > 0 && (
-              <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-              </Badge>
-            )}
-          </View>
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={() => setShowColumnManager(true)}
+            badgeCount={visibleColumnKeys.length}
+            badgeVariant="primary"
+          />
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
+            onPress={() => setShowFilters(true)}
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
         </View>
       </View>
 
@@ -261,7 +244,7 @@ export default function WarningListScreen() {
       )}
 
       {/* Items count */}
-      {hasWarnings && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />}
+      {hasWarnings && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasWarnings && <FAB icon="plus" onPress={handleCreateWarning} />}
 
@@ -297,30 +280,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     gap: 8,
-  },
-  actionButtonWrapper: {
-    position: "relative",
-  },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    paddingHorizontal: 0,
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
   },
   emptyContainer: {
     flex: 1,

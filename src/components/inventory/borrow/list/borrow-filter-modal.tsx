@@ -72,18 +72,18 @@ export const BorrowFilterModal = ({
   // Handle status filter
   const handleStatusChange = useCallback((status: string, checked: boolean) => {
     setFilters(prev => {
-      const statuses = prev.statuses || [];
+      const statusIds = prev.statusIds || [];
       if (checked) {
-        return { ...prev, statuses: [...statuses, status as any] };
+        return { ...prev, statusIds: [...statusIds, status as any] };
       } else {
-        return { ...prev, statuses: statuses.filter(s => s !== status) };
+        return { ...prev, statusIds: statusIds.filter(s => s !== status) };
       }
     });
   }, []);
 
   // Clear all filters
   const handleClear = useCallback(() => {
-    setFilters({ statuses: [BORROW_STATUS.ACTIVE] });
+    setFilters({ statusIds: [BORROW_STATUS.ACTIVE] });
   }, []);
 
   // Apply filters
@@ -94,7 +94,7 @@ export const BorrowFilterModal = ({
   // Count active filters
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (filters.statuses && filters.statuses.length !== 1) count++;
+    if (filters.statusIds && filters.statusIds.length !== 1) count++;
     if (filters.itemIds?.length) count++;
     if (filters.userIds?.length) count++;
     if (filters.createdAt?.gte || filters.createdAt?.lte) count++;
@@ -150,10 +150,10 @@ export const BorrowFilterModal = ({
                   <TouchableOpacity
                     key={key}
                     style={styles.checkboxRow}
-                    onPress={() => handleStatusChange(key, !filters.statuses?.includes(key as any))}
+                    onPress={() => handleStatusChange(key, !filters.statusIds?.includes(key as any))}
                   >
                     <Checkbox
-                      checked={filters.statuses?.includes(key as any) || false}
+                      checked={filters.statusIds?.includes(key as any) || false}
                       onCheckedChange={(checked) => handleStatusChange(key, checked as boolean)}
                     />
                     <ThemedText style={styles.checkboxLabel}>{label}</ThemedText>

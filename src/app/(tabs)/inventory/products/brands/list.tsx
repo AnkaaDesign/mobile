@@ -134,7 +134,7 @@ export default function ListarMarcasScreen() {
         )}
 
         {/* Brands count */}
-        {brands.length > 0 && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} itemType="marca" itemTypePlural="marcas" />}
+        {brands.length > 0 && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} itemType="marca" itemTypePlural="marcas" />}
 
         {/* FAB */}
         <FAB icon="plus" onPress={handleCreateBrand} />

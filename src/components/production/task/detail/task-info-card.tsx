@@ -3,6 +3,7 @@ import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formatDate, formatDateTime } from '../../../../utils';
@@ -16,119 +17,131 @@ import {
   IconFlag,
   IconHash,
   IconBuildingFactory2,
+  IconBuilding,
+  IconCar,
+  IconBarcode,
+  IconTruck,
+  IconFileText,
+  IconClipboardList,
 } from "@tabler/icons-react-native";
 
 interface TaskInfoCardProps {
-  task: Task;
+  task: Task & {
+    plate?: string;
+    chassisNumber?: string;
+    truck?: {
+      id: string;
+      name?: string;
+      width?: number;
+      height?: number;
+    };
+    customer?: {
+      fantasyName: string;
+    };
+    details?: string;
+  };
+  truckDimensions?: {
+    width: number;
+    height: number;
+  } | null;
 }
 
-export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task }) => {
+export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimensions }) => {
   const { colors } = useTheme();
-
-  const isOverdue = task.term && new Date(task.term) < new Date() &&
-    task.status !== "COMPLETED" && task.status !== "CANCELLED";
 
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
-        <ThemedText style={styles.title}>Informações da Tarefa</ThemedText>
+        <View style={styles.headerLeft}>
+          <IconClipboardList size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Informações Gerais</ThemedText>
+        </View>
         <TaskStatusBadge status={task.status} size="md" />
       </View>
 
       <View style={styles.content}>
-        {/* Serial number */}
-        {task.serialNumber && (
-          <View style={styles.row}>
-            <View style={styles.labelContainer}>
-              <IconHash size={16} color={colors.foreground} />
-              <ThemedText style={styles.label}>Número de Série:</ThemedText>
+        {/* Customer */}
+        {task.customer && (
+          <View style={styles.infoItem}>
+            <IconBuilding size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Cliente</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.customer.fantasyName}</ThemedText>
             </View>
-            <ThemedText style={styles.value}>{task.serialNumber}</ThemedText>
           </View>
         )}
-
-        {/* Priority */}
-        <View style={styles.row}>
-          <View style={styles.labelContainer}>
-            <IconFlag size={16} color={colors.foreground} />
-            <ThemedText style={styles.label}>Prioridade:</ThemedText>
-          </View>
-          <TaskPriorityIndicator priority={task.priority || PRIORITY_TYPE.MEDIUM} showLabel />
-        </View>
 
         {/* Sector */}
         {task.sector && (
-          <View style={styles.row}>
-            <View style={styles.labelContainer}>
-              <IconBuildingFactory2 size={16} color={colors.foreground} />
-              <ThemedText style={styles.label}>Setor:</ThemedText>
-            </View>
-            <View style={styles.sectorBadge}>
-              <View
-                style={StyleSheet.flatten([styles.sectorDot, { backgroundColor: "#3B82F6" }
-                ])}
-              />
-              <ThemedText style={styles.value}>{task.sector.name}</ThemedText>
+          <View style={styles.infoItem}>
+            <IconBuildingFactory2 size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Setor</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.sector.name}</ThemedText>
             </View>
           </View>
         )}
 
-        {/* Term */}
-        {task.term && (
-          <View style={styles.row}>
-            <View style={styles.labelContainer}>
-              <IconCalendar size={16} color={colors.foreground} />
-              <ThemedText style={styles.label}>Prazo:</ThemedText>
+        {/* Serial Number */}
+        {task.serialNumber && (
+          <View style={styles.infoItem}>
+            <IconHash size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Número de Série</ThemedText>
+              <ThemedText style={[styles.value, styles.monoValue, { color: colors.foreground }]}>{task.serialNumber}</ThemedText>
             </View>
-            <ThemedText
-              style={[
-                styles.value,
-                isOverdue && { color: colors.destructive, fontWeight: "600" }
-              ]}
-            >
-              {formatDate(task.term)}
-              {isOverdue && " (Atrasado)"}
-            </ThemedText>
           </View>
         )}
 
-        {/* Created at */}
-        <View style={styles.row}>
-          <View style={styles.labelContainer}>
-            <IconClock size={16} color={colors.foreground} />
-            <ThemedText style={styles.label}>Criado em:</ThemedText>
-          </View>
-          <ThemedText style={styles.value}>{formatDateTime(task.createdAt)}</ThemedText>
-        </View>
-
-        {/* Started at */}
-        {task.startedAt && (
-          <View style={styles.row}>
-            <View style={styles.labelContainer}>
-              <IconClock size={16} color={colors.foreground} />
-              <ThemedText style={styles.label}>Iniciado em:</ThemedText>
+        {/* Plate */}
+        {task.plate && (
+          <View style={styles.infoItem}>
+            <IconCar size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Placa</ThemedText>
+              <ThemedText style={[styles.value, styles.monoValue, { color: colors.foreground }]}>{task.plate.toUpperCase()}</ThemedText>
             </View>
-            <ThemedText style={styles.value}>{formatDateTime(task.startedAt)}</ThemedText>
           </View>
         )}
 
-        {/* Finished at */}
-        {task.finishedAt && (
-          <View style={styles.row}>
-            <View style={styles.labelContainer}>
-              <IconClock size={16} color={colors.foreground} />
-              <ThemedText style={styles.label}>Concluído em:</ThemedText>
+        {/* Chassis Number */}
+        {task.chassisNumber && (
+          <View style={styles.infoItem}>
+            <IconBarcode size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Nº Chassi</ThemedText>
+              <ThemedText style={[styles.value, styles.monoValue, { color: colors.foreground }]}>{task.chassisNumber}</ThemedText>
             </View>
-            <ThemedText style={styles.value}>{formatDateTime(task.finishedAt)}</ThemedText>
           </View>
         )}
 
-        {/* Description */}
-        {task.observation?.content && (
-          <View style={styles.descriptionContainer}>
-            <ThemedText style={styles.descriptionLabel}>Descrição:</ThemedText>
-            <ThemedText style={styles.descriptionText}>{task.observation?.content}</ThemedText>
+        {/* Truck Dimensions */}
+        {task.truck && truckDimensions && (
+          <View style={styles.infoItem}>
+            <IconTruck size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Caminhão</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                {truckDimensions.width}cm × {truckDimensions.height}cm
+              </ThemedText>
+            </View>
           </View>
+        )}
+
+        {/* Details - at bottom with separator */}
+        {task.details && (
+          <>
+            <Separator style={styles.separator} />
+            <View>
+              <View style={styles.detailsHeader}>
+                <IconFileText size={20} color={colors.mutedForeground} />
+                <ThemedText style={[styles.detailsTitle, { color: colors.foreground }]}>Detalhes</ThemedText>
+              </View>
+              <ThemedText style={[styles.detailsText, { color: colors.mutedForeground, backgroundColor: colors.muted + '50' }]}>
+                {task.details}
+              </ThemedText>
+            </View>
+          </>
         )}
       </View>
     </Card>
@@ -147,59 +160,55 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-  },
-  content: {
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
   },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
-  labelContainer: {
+  content: {
+    gap: spacing.md,
+  },
+  infoItem: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
+    gap: spacing.sm,
+    alignItems: "flex-start",
+  },
+  infoText: {
     flex: 1,
-  },
-  icon: {
-    opacity: 0.6,
+    gap: 2,
   },
   label: {
     fontSize: fontSize.sm,
-    opacity: 0.7,
+    fontWeight: "500",
   },
   value: {
     fontSize: fontSize.sm,
-    fontWeight: "500",
-    textAlign: "right",
-    flex: 1,
+    fontWeight: "600",
   },
-  sectorBadge: {
+  monoValue: {
+    fontFamily: "monospace",
+  },
+  separator: {
+    marginVertical: spacing.md,
+  },
+  detailsHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xs,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
-  sectorDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  descriptionContainer: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  descriptionLabel: {
+  detailsTitle: {
     fontSize: fontSize.sm,
-    opacity: 0.7,
-    marginBottom: spacing.xs,
+    fontWeight: "600",
   },
-  descriptionText: {
+  detailsText: {
     fontSize: fontSize.sm,
     lineHeight: 20,
+    padding: spacing.md,
+    borderRadius: 8,
   },
 });

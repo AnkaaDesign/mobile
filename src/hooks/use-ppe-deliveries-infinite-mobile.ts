@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ppeDeliveryService } from '../api-client';
-import { ppeDeliveryKeys } from './';
+import { ppeDeliveryKeys } from './queryKeys';
 import type { PpeDeliveryGetManyFormData } from '../schemas';
 
 export const usePpeDeliveriesInfiniteMobile = (filters?: Partial<PpeDeliveryGetManyFormData>) => {

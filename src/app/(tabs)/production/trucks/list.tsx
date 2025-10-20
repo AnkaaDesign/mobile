@@ -12,7 +12,7 @@ export interface SortConfig {
   columnKey: string;
   direction: "asc" | "desc";
 }
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge, Button } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { TruckTable, createColumnDefinitions, getDefaultVisibleColumns } from "@/components/production/truck/list/truck-table";
 import { TruckFilterModal } from "@/components/production/truck/list/truck-filter-modal";
 import { TruckFilterTags } from "@/components/production/truck/list/truck-filter-tags";
@@ -43,58 +43,34 @@ export default function TruckListScreen() {
   const buildOrderBy = () => {
     if (!sortConfigs || sortConfigs.length === 0) return { plate: "asc" };
 
+    // Helper function to convert column key to orderBy object
+    const convertColumnKeyToOrderBy = (columnKey: string, direction: "asc" | "desc") => {
+      // Split column key by dots to handle nested fields
+      const parts = columnKey.split(".");
+
+      if (parts.length === 1) {
+        // Direct field
+        return { [columnKey]: direction };
+      } else if (parts.length === 2) {
+        // One level nested (e.g., "garage.name")
+        return { [parts[0]]: { [parts[1]]: direction } };
+      } else if (parts.length === 3) {
+        // Two levels nested (e.g., "task.customer.fantasyName")
+        return { [parts[0]]: { [parts[1]]: { [parts[2]]: direction } } };
+      } else {
+        // Fallback for unknown structure
+        return { [columnKey]: direction };
+      }
+    };
+
     // If only one sort, return as object
     if (sortConfigs.length === 1) {
       const config = sortConfigs[0 as keyof typeof sortConfigs];
-      switch (config.columnKey) {
-        case "plate":
-          return { plate: config.direction };
-        case "model":
-          return { model: config.direction };
-        case "manufacturer":
-          return { manufacturer: config.direction };
-        case "xPosition":
-          return { xPosition: config.direction };
-        case "yPosition":
-          return { yPosition: config.direction };
-        case "createdAt":
-          return { createdAt: config.direction };
-        case "updatedAt":
-          return { updatedAt: config.direction };
-        case "taskName":
-          return { task: { name: config.direction } };
-        case "garageName":
-          return { garage: { name: config.direction } };
-        default:
-          return { plate: "asc" };
-      }
+      return convertColumnKeyToOrderBy(config.columnKey, config.direction);
     }
 
     // Multiple sorts, return as array
-    return sortConfigs.map((config) => {
-      switch (config.columnKey) {
-        case "plate":
-          return { plate: config.direction };
-        case "model":
-          return { model: config.direction };
-        case "manufacturer":
-          return { manufacturer: config.direction };
-        case "xPosition":
-          return { xPosition: config.direction };
-        case "yPosition":
-          return { yPosition: config.direction };
-        case "createdAt":
-          return { createdAt: config.direction };
-        case "updatedAt":
-          return { updatedAt: config.direction };
-        case "taskName":
-          return { task: { name: config.direction } };
-        case "garageName":
-          return { garage: { name: config.direction } };
-        default:
-          return { plate: "asc" };
-      }
-    });
+    return sortConfigs.map((config) => convertColumnKeyToOrderBy(config.columnKey, config.direction));
   };
 
   const queryParams = {
@@ -117,7 +93,7 @@ export default function TruckListScreen() {
     },
   };
 
-  const { trucks, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = useTrucksInfiniteMobile(queryParams);
+  const { trucks, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useTrucksInfiniteMobile(queryParams);
   const { delete: deleteTruck } = useTruckMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -143,16 +119,12 @@ export default function TruckListScreen() {
 
   const handleDeleteTruck = useCallback(
     async (truckId: string) => {
-      try {
-        await deleteTruck(truckId);
-        // Clear selection if the deleted truck was selected
-        if (selectedTrucks.has(truckId)) {
-          const newSelection = new Set(selectedTrucks);
-          newSelection.delete(truckId);
-          setSelectedTrucks(newSelection);
-        }
-      } catch (error) {
-        Alert.alert("Erro", "Não foi possível excluir o caminhão. Tente novamente.");
+      await deleteTruck(truckId);
+      // Clear selection if the deleted truck was selected
+      if (selectedTrucks.has(truckId)) {
+        const newSelection = new Set(selectedTrucks);
+        newSelection.delete(truckId);
+        setSelectedTrucks(newSelection);
       }
     },
     [deleteTruck, selectedTrucks],
@@ -240,32 +212,19 @@ export default function TruckListScreen() {
           debounceMs={300}
         />
         <View style={styles.buttonContainer}>
-          <View style={styles.buttonWrapper}>
-            <Button
-              variant="outline"
-              onPress={() => setShowColumnManager(true)}
-              style={{ ...styles.actionButton, backgroundColor: colors.input }}
-            >
-              <IconList size={20} color={colors.foreground} />
-            </Button>
-            <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
-              <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
-            </Badge>
-          </View>
-          <View style={styles.buttonWrapper}>
-            <Button
-              variant="outline"
-              onPress={() => setShowFilters(true)}
-              style={{ ...styles.actionButton, backgroundColor: colors.input }}
-            >
-              <IconFilter size={20} color={colors.foreground} />
-            </Button>
-            {activeFiltersCount > 0 && (
-              <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-              </Badge>
-            )}
-          </View>
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={() => setShowColumnManager(true)}
+            badgeCount={visibleColumnKeys.length}
+            badgeVariant="primary"
+          />
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
+            onPress={() => setShowFilters(true)}
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
         </View>
       </View>
 
@@ -318,7 +277,7 @@ export default function TruckListScreen() {
       )}
 
       {/* Items count */}
-      {hasTrucks && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />}
+      {hasTrucks && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasTrucks && <FAB icon="plus" onPress={handleCreateTruck} />}
 
@@ -354,30 +313,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     gap: 8,
-  },
-  buttonWrapper: {
-    position: "relative",
-  },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    paddingHorizontal: 0,
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
   },
   emptyContainer: {
     flex: 1,

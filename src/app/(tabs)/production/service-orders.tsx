@@ -1,5 +1,11 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 export default function ServiceOrdersScreen() {
-  return <UnderConstruction title="Ordens de Serviço" />;
+  useEffect(() => {
+    // Redirect to service orders list page
+    router.replace("/(tabs)/production/service-orders/list");
+  }, []);
+
+  return null;
 }

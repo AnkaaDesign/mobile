@@ -14,6 +14,8 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { SwipeRowProvider } from "@/contexts/swipe-row-context";
 import { NavigationHistoryProvider } from "@/contexts/navigation-history-context";
+import { FavoritesProvider } from "@/contexts/favorites-context";
+import { FileViewerProvider } from "@/components/file";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { PortalHost } from "@rn-primitives/portal";
 import { useEffect, useState } from "react";
@@ -139,10 +141,12 @@ export default function RootLayout() {
           <ThemeProvider>
             <QueryClientProvider client={queryClient}>
               <AuthProvider>
-                <NavigationHistoryProvider>
-                  <SwipeRowProvider>
-                    <AppStatusBar />
-                    {!isHydrated ? (
+                <FavoritesProvider>
+                  <FileViewerProvider baseUrl={process.env.EXPO_PUBLIC_API_URL}>
+                    <NavigationHistoryProvider>
+                      <SwipeRowProvider>
+                      <AppStatusBar />
+                      {!isHydrated ? (
                       // Show loading screen during hydration
                       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                         <ActivityIndicator size="large" className="text-primary" />
@@ -174,8 +178,10 @@ export default function RootLayout() {
                         <PortalHost />
                       </>
                     )}
-                  </SwipeRowProvider>
-                </NavigationHistoryProvider>
+                      </SwipeRowProvider>
+                    </NavigationHistoryProvider>
+                  </FileViewerProvider>
+                </FavoritesProvider>
               </AuthProvider>
             </QueryClientProvider>
           </ThemeProvider>

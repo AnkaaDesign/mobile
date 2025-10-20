@@ -50,7 +50,7 @@ export function EntityLinkCard({ changeLog, entityName }: EntityLinkCardProps) {
       case CHANGE_LOG_ENTITY_TYPE.ACTIVITY:
         return routes.inventory.activities.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.BORROW:
-        return routes.inventory.loans.details(entityId);
+        return routes.inventory.borrows.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.SUPPLIER:
         return routes.inventory.suppliers.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL:

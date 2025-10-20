@@ -20,20 +20,20 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.production.airbrushings.list]: "/production/airbrushing/list",
   [routes.production.cutting.root]: "/production/cutting",
   [routes.production.cutting.create]: "/production/cutting/create",
-  [routes.production.garages.root]: "/production/garages/list",
+  [routes.production.garages.root]: "/production/garages",
   [routes.production.garages.create]: "/production/garages/create",
   [routes.production.garages.list]: "/production/garages/list",
   [routes.production.history.root]: "/production/history",
   [routes.production.history.cancelled]: "/production/history/cancelled",
   [routes.production.history.completed]: "/production/history/completed",
-  [routes.production.observations.root]: "/production/observations/list",
+  [routes.production.observations.root]: "/production/observations",
   [routes.production.observations.create]: "/production/observations/create",
   [routes.production.observations.list]: "/production/observations/list",
   [routes.production.schedule.root]: "/production/schedule",
   [routes.production.schedule.create]: "/production/schedule/create",
   [routes.production.schedule.list]: "/production/schedule/list",
   [routes.production.scheduleOnHold.root]: "/production/on-hold",
-  [routes.production.serviceOrders.root]: "/production/service-orders/list",
+  [routes.production.serviceOrders.root]: "/production/service-orders",
   [routes.production.serviceOrders.create]: "/production/service-orders/create",
   [routes.production.serviceOrders.list]: "/production/service-orders/list",
   [routes.production.services.root]: "/production/services",
@@ -46,12 +46,7 @@ export const routeEnglishMap: Record<string, string> = {
 
   // ========== MY TEAM ROUTES ==========
   [routes.myTeam.root]: "/my-team",
-  [routes.myTeam.activities]: "/my-team/activities",
-  [routes.myTeam.cuts]: "/my-team/cuts",
-  [routes.myTeam.loans]: "/my-team/loans",
-  [routes.myTeam.ppeDeliveries]: "/my-team/ppe-deliveries",
-  [routes.myTeam.timeCalculations]: "/my-team/time-calculations",
-  [routes.myTeam.users]: "/my-team/users",
+  [routes.myTeam.borrows]: "/my-team/borrows",
   [routes.myTeam.vacations]: "/my-team/vacations",
   [routes.myTeam.warnings]: "/my-team/warnings",
 
@@ -60,49 +55,47 @@ export const routeEnglishMap: Record<string, string> = {
 
   // ========== INVENTORY ROUTES ==========
   [routes.inventory.root]: "/inventory",
-  [routes.inventory.activities.root]: "/inventory/activities",
-  [routes.inventory.activities.list]: "/inventory/activities/list",
-  [routes.inventory.externalWithdrawals.root]: "/inventory/external-withdrawals/list",
+  [routes.inventory.externalWithdrawals.root]: "/inventory/external-withdrawals",
   [routes.inventory.externalWithdrawals.create]: "/inventory/external-withdrawals/create",
   [routes.inventory.externalWithdrawals.list]: "/inventory/external-withdrawals/list",
-  [routes.inventory.loans.root]: "/inventory/loans/list",
-  [routes.inventory.loans.create]: "/inventory/loans/create",
-  [routes.inventory.loans.list]: "/inventory/loans/list",
-  [routes.inventory.maintenance.root]: "/inventory/maintenance/list",
+  [routes.inventory.borrows.root]: "/inventory/borrows",
+  [routes.inventory.borrows.create]: "/inventory/borrows/create",
+  [routes.inventory.borrows.list]: "/inventory/borrows/list",
+  [routes.inventory.maintenance.root]: "/inventory/maintenance",
   [routes.inventory.maintenance.create]: "/inventory/maintenance/create",
   [routes.inventory.maintenance.list]: "/inventory/maintenance/list",
-  [routes.inventory.movements.root]: "/inventory/movements/list",
+  [routes.inventory.movements.root]: "/inventory/movements",
   [routes.inventory.movements.create]: "/inventory/movements/create",
   [routes.inventory.movements.list]: "/inventory/movements/list",
-  [routes.inventory.orders.root]: "/inventory/orders/list",
+  [routes.inventory.orders.root]: "/inventory/orders",
   [routes.inventory.orders.create]: "/inventory/orders/create",
   [routes.inventory.orders.list]: "/inventory/orders/list",
   [routes.inventory.orders.automatic.root]: "/inventory/orders/automatic",
   [routes.inventory.orders.automatic.configure]: "/inventory/orders/automatic/configure",
   [routes.inventory.orders.automatic.create]: "/inventory/orders/automatic/create",
   [routes.inventory.orders.automatic.list]: "/inventory/orders/automatic/list",
-  [routes.inventory.orders.schedules.root]: "/inventory/orders/schedules/list",
+  [routes.inventory.orders.schedules.root]: "/inventory/orders/schedules",
   [routes.inventory.orders.schedules.create]: "/inventory/orders/schedules/create",
   [routes.inventory.orders.schedules.list]: "/inventory/orders/schedules/list",
-  [routes.inventory.ppe.root]: "/inventory/ppe/list",
+  [routes.inventory.ppe.root]: "/inventory/ppe",
   [routes.inventory.ppe.create]: "/inventory/ppe/create",
   [routes.inventory.ppe.list]: "/inventory/ppe/list",
-  [routes.inventory.ppe.deliveries.root]: "/inventory/ppe/deliveries/list",
+  [routes.inventory.ppe.deliveries.root]: "/inventory/ppe/deliveries",
   [routes.inventory.ppe.deliveries.create]: "/inventory/ppe/deliveries/create",
   [routes.inventory.ppe.deliveries.list]: "/inventory/ppe/deliveries/list",
-  [routes.inventory.ppe.schedules.root]: "/inventory/ppe/schedules/list",
+  [routes.inventory.ppe.schedules.root]: "/inventory/ppe/schedules",
   [routes.inventory.ppe.schedules.create]: "/inventory/ppe/schedules/create",
   [routes.inventory.ppe.schedules.list]: "/inventory/ppe/schedules/list",
   [routes.inventory.products.root]: "/inventory/products",
   [routes.inventory.products.create]: "/inventory/products/create",
   [routes.inventory.products.list]: "/inventory/products/list",
-  [routes.inventory.products.brands.root]: "/inventory/products/brands/list",
+  [routes.inventory.products.brands.root]: "/inventory/products/brands",
   [routes.inventory.products.brands.create]: "/inventory/products/brands/create",
   [routes.inventory.products.brands.list]: "/inventory/products/brands/list",
-  [routes.inventory.products.categories.root]: "/inventory/products/categories/list",
+  [routes.inventory.products.categories.root]: "/inventory/products/categories",
   [routes.inventory.products.categories.create]: "/inventory/products/categories/create",
   [routes.inventory.products.categories.list]: "/inventory/products/categories/list",
-  [routes.inventory.suppliers.root]: "/inventory/suppliers/list",
+  [routes.inventory.suppliers.root]: "/inventory/suppliers",
   [routes.inventory.suppliers.create]: "/inventory/suppliers/create",
   [routes.inventory.suppliers.list]: "/inventory/suppliers/list",
 
@@ -111,13 +104,13 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.painting.catalog.root]: "/painting/catalog",
   [routes.painting.catalog.create]: "/painting/catalog/create",
   [routes.painting.catalog.list]: "/painting/catalog/list",
-  [routes.painting.paintBrands.root]: "/painting/paint-brands/list",
+  [routes.painting.paintBrands.root]: "/painting/paint-brands",
   [routes.painting.paintBrands.create]: "/painting/paint-brands/create",
   [routes.painting.paintBrands.list]: "/painting/paint-brands/list",
   [routes.painting.paintGrounds.root]: "/painting/paint-grounds",
   [routes.painting.paintGrounds.create]: "/painting/paint-grounds/create",
   [routes.painting.paintGrounds.list]: "/painting/paint-grounds/list",
-  [routes.painting.paintTypes.root]: "/painting/paint-types/list",
+  [routes.painting.paintTypes.root]: "/painting/paint-types",
   [routes.painting.paintTypes.create]: "/painting/paint-types/create",
   [routes.painting.paintTypes.list]: "/painting/paint-types/list",
   [routes.painting.productions.root]: "/painting/productions",
@@ -136,45 +129,45 @@ export const routeEnglishMap: Record<string, string> = {
 
   // ========== ADMINISTRATION ROUTES ==========
   [routes.administration.root]: "/administration",
-  [routes.administration.backups]: "/administration/backups",
-  [routes.administration.changeLogs.root]: "/administration/change-logs/list",
-  [routes.administration.changeLogs.list]: "/administration/change-logs/list",
-  [routes.administration.commissions.root]: "/administration/commissions",
-  [routes.administration.commissions.create]: "/administration/commissions/create",
-  [routes.administration.commissions.list]: "/administration/commissions/list",
-  [routes.administration.customers.root]: "/administration/customers/list",
+  [routes.administration.customers.root]: "/administration/customers",
   [routes.administration.customers.create]: "/administration/customers/create",
   [routes.administration.customers.list]: "/administration/customers/list",
-  [routes.administration.collaborators.root]: "/administration/employees/list",
-  [routes.administration.collaborators.create]: "/administration/employees/create",
-  [routes.administration.collaborators.list]: "/administration/employees/list",
+  [routes.administration.collaborators.root]: "/administration/collaborators",
+  [routes.administration.collaborators.create]: "/administration/collaborators/create",
+  [routes.administration.collaborators.list]: "/administration/collaborators/list",
   [routes.administration.files.root]: "/administration/files",
   [routes.administration.files.list]: "/administration/files/list",
   [routes.administration.files.upload]: "/administration/files/upload",
   [routes.administration.files.orphans]: "/administration/files/orphans",
-  [routes.administration.monitoring.root]: "/administration/monitoring",
-  [routes.administration.monitoring.dashboard]: "/administration/monitoring/dashboard",
-  [routes.administration.monitoring.metrics.list]: "/administration/monitoring/metrics/list",
-  [routes.administration.monitoring.alerts.list]: "/administration/monitoring/alerts/list",
   [routes.administration.notifications.root]: "/administration/notifications",
   [routes.administration.notifications.create]: "/administration/notifications/create",
   [routes.administration.notifications.list]: "/administration/notifications/list",
-  [routes.administration.preferences.root]: "/administration/preferences",
-  [routes.administration.preferences.backup]: "/administration/preferences/backup",
-  [routes.administration.preferences.general]: "/administration/preferences/general",
-  [routes.administration.preferences.integrations]: "/administration/preferences/integrations",
-  [routes.administration.preferences.list]: "/administration/preferences/list",
-  [routes.administration.preferences.security]: "/administration/preferences/security",
   [routes.administration.sectors.root]: "/administration/sectors",
   [routes.administration.sectors.create]: "/administration/sectors/create",
   [routes.administration.sectors.list]: "/administration/sectors/list",
-  [routes.administration.server.root]: "/administration/server",
-  [routes.administration.server.logs]: "/administration/server/logs",
-  [routes.administration.server.maintenance]: "/administration/server/maintenance",
-  [routes.administration.server.resources]: "/administration/server/resources",
-  [routes.administration.server.services]: "/administration/server/services",
-  [routes.administration.server.status]: "/administration/server/status",
-  [routes.administration.users.list]: "/administration/users/list",
+
+  // ========== SERVER ROUTES ==========
+  [routes.server.root]: "/server",
+  [routes.server.backups.root]: "/server/backups",
+  [routes.server.backups.create]: "/server/backups/create",
+  [routes.server.backups.list]: "/server/backups/list",
+  [routes.server.changeLogs.root]: "/server/change-logs",
+  [routes.server.changeLogs.list]: "/server/change-logs/list",
+  [routes.server.databaseSync]: "/server/database-sync",
+  [routes.server.deployments.root]: "/server/deployments",
+  [routes.server.deployments.create]: "/server/deployments/create",
+  [routes.server.deployments.list]: "/server/deployments/list",
+  [routes.server.logs]: "/server/logs",
+  [routes.server.maintenance]: "/server/maintenance",
+  [routes.server.metrics]: "/server/metrics",
+  [routes.server.rateLimiting]: "/server/rate-limiting",
+  [routes.server.resources]: "/server/resources",
+  [routes.server.services]: "/server/services",
+  [routes.server.sharedFolders]: "/server/shared-folders",
+  [routes.server.status]: "/server/status",
+  [routes.server.systemUsers.root]: "/server/system-users",
+  [routes.server.systemUsers.create]: "/server/system-users/create",
+  [routes.server.systemUsers.list]: "/server/system-users/list",
 
   // ========== HUMAN RESOURCES ROUTES ==========
   [routes.humanResources.root]: "/human-resources",
@@ -192,46 +185,36 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.humanResources.positions.root]: "/human-resources/positions",
   [routes.humanResources.positions.create]: "/human-resources/positions/create",
   [routes.humanResources.positions.list]: "/human-resources/positions/list",
-  [routes.humanResources.ppe.root]: "/human-resources/ppe/list",
+  [routes.humanResources.ppe.root]: "/human-resources/ppe",
   [routes.humanResources.ppe.create]: "/human-resources/ppe/create",
-  [routes.humanResources.ppe.deliveries.root]: "/human-resources/ppe/deliveries/list",
+  [routes.humanResources.ppe.deliveries.root]: "/human-resources/ppe/deliveries",
   [routes.humanResources.ppe.deliveries.create]: "/human-resources/ppe/deliveries/create",
-  [routes.humanResources.ppe.schedules.root]: "/human-resources/ppe/schedules/list",
+  [routes.humanResources.ppe.schedules.root]: "/human-resources/ppe/schedules",
   [routes.humanResources.ppe.schedules.create]: "/human-resources/ppe/schedules/create",
-  [routes.humanResources.ppe.sizes.root]: "/human-resources/ppe/sizes/list",
+  [routes.humanResources.ppe.sizes.root]: "/human-resources/ppe/sizes",
   [routes.humanResources.ppe.sizes.create]: "/human-resources/ppe/sizes/create",
   [routes.humanResources.sectors.list]: "/human-resources/sectors/list",
-  [routes.humanResources.vacations.root]: "/human-resources/vacations/list",
+  [routes.humanResources.vacations.root]: "/human-resources/vacations",
   [routes.humanResources.vacations.calendar]: "/human-resources/vacations/calendar",
   [routes.humanResources.vacations.create]: "/human-resources/vacations/create",
-  [routes.humanResources.warnings.root]: "/human-resources/warnings/list",
+  [routes.humanResources.warnings.root]: "/human-resources/warnings",
   [routes.humanResources.warnings.create]: "/human-resources/warnings/create",
 
   // ========== PERSONAL ROUTES ==========
   [routes.personal.root]: "/personal",
-  [routes.personal.myActivities.root]: "/personal/my-activities",
-  [routes.personal.myActivities.list]: "/personal/my-activities/list",
-  [routes.personal.myBorrows.root]: "/personal/my-borrows",
-  [routes.personal.myBorrows.list]: "/personal/my-borrows/list",
-  [routes.personal.myCommissions.root]: "/personal/my-commissions",
   [routes.personal.myHolidays.root]: "/personal/my-holidays",
-  [routes.personal.myLoans.root]: "/personal/my-loans",
+  [routes.personal.myBorrows.root]: "/personal/my-borrows",
   [routes.personal.myNotifications.root]: "/personal/my-notifications",
   [routes.personal.myNotifications.settings]: "/personal/my-notifications/settings",
-  [routes.personal.myPayroll.root]: "/personal/my-payroll",
-  [routes.personal.myPpeDeliveries.root]: "/personal/my-ppe-deliveries",
   [routes.personal.myPpes.root]: "/personal/my-ppes",
   [routes.personal.myPpes.request]: "/personal/my-ppes/request",
   [routes.personal.myProfile.root]: "/personal/my-profile",
-  [routes.personal.myTimeCalculations.root]: "/personal/my-time-calculations",
   [routes.personal.myVacations.root]: "/personal/my-vacations",
   [routes.personal.myWarnings.root]: "/personal/my-warnings",
-  [routes.personal.payroll.root]: "/personal/payroll",
   [routes.personal.preferences.root]: "/personal/preferences",
   [routes.personal.preferences.notifications]: "/personal/preferences/notifications",
   [routes.personal.preferences.privacy]: "/personal/preferences/privacy",
   [routes.personal.preferences.theme]: "/personal/preferences/theme",
-  [routes.personal.timeCalculations.root]: "/personal/time-calculations",
 
   // ========== DETAIL PAGE ROUTES (DYNAMIC) ==========
   // These are handled dynamically by the functions but we include base patterns for reference
@@ -258,7 +241,7 @@ export const routeEnglishMap: Record<string, string> = {
   "/estoque/epi/entregas/editar": "/inventory/ppe/deliveries/edit",
   "/estoque/epi/agendamentos/detalhes": "/inventory/ppe/schedules/details",
   "/estoque/epi/agendamentos/editar": "/inventory/ppe/schedules/edit",
-  "/estoque/emprestimos/detalhes": "/inventory/loans/details",
+  "/estoque/emprestimos/detalhes": "/inventory/borrows/details",
   "/estoque/produtos/categorias/detalhes": "/inventory/products/categories/details",
   "/estoque/produtos/categorias/editar": "/inventory/products/categories/edit",
   "/estoque/produtos/marcas/detalhes": "/inventory/products/brands/details",
@@ -272,7 +255,7 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.integrations.secullum.holidays.root]: "/integrations/secullum/holidays",
   [routes.integrations.secullum.holidays.list]: "/integrations/secullum/holidays/list",
   [routes.integrations.secullum.syncStatus]: "/integrations/secullum/sync-status",
-  [routes.integrations.secullum.timeEntries.root]: "/integrations/secullum/time-entries/list",
+  [routes.integrations.secullum.timeEntries.root]: "/integrations/secullum/time-entries",
   [routes.integrations.secullum.timeEntries.list]: "/integrations/secullum/time-entries/list",
 };
 
@@ -385,6 +368,73 @@ export function getEnglishTitle(inputPath: string): string {
 }
 
 /**
+ * Get screen title from MENU_ITEMS structure by matching path
+ * This provides proper Portuguese titles instead of file paths
+ * @param path - The route path (Portuguese or English)
+ * @returns The proper Portuguese title from menu structure
+ */
+export function getTitleFromMenuItems(path: string): string | null {
+  // Import MENU_ITEMS dynamically to avoid circular dependencies
+  const { MENU_ITEMS } = require('../constants/navigation');
+
+  // Normalize path - remove leading slash and trailing slashes
+  const normalizedPath = path.replace(/^\/+|\/+$/g, '');
+
+  // Recursive function to search through menu items
+  function searchMenuItems(items: any[], pathToMatch: string): string | null {
+    for (const item of items) {
+      // Normalize menu item path
+      const itemPath = item.path?.replace(/^\/+|\/+$/g, '') || '';
+
+      // Check for exact match (ignoring leading/trailing slashes)
+      if (itemPath === pathToMatch) {
+        return item.title;
+      }
+
+      // Check for dynamic route match (replace :id with actual ID pattern)
+      if (item.isDynamic && itemPath.includes(':id')) {
+        // Replace :id with UUID pattern
+        const pattern = itemPath.replace(':id', '[a-f0-9-]{36}');
+        const regex = new RegExp(`^${pattern}$`);
+        if (regex.test(pathToMatch)) {
+          return item.title;
+        }
+      }
+
+      // Search in children
+      if (item.children && item.children.length > 0) {
+        const foundInChildren = searchMenuItems(item.children, pathToMatch);
+        if (foundInChildren) {
+          return foundInChildren;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  const title = searchMenuItems(MENU_ITEMS, normalizedPath);
+  return title;
+}
+
+/**
+ * Get screen title with fallback to kebab-case conversion
+ * Tries to find title from MENU_ITEMS first, falls back to simple conversion
+ * @param path - The route path
+ * @returns The screen title
+ */
+export function getScreenTitle(path: string): string {
+  // Try to get title from menu structure first
+  const menuTitle = getTitleFromMenuItems(path);
+  if (menuTitle) {
+    return menuTitle;
+  }
+
+  // Fallback to simple kebab-case conversion
+  return getEnglishTitle(path);
+}
+
+/**
  * Navigation utility function to convert English routes to mobile navigation paths
  * @param englishPath - The English route path from routes.ts
  * @returns The mobile navigation path formatted for expo-router
@@ -494,7 +544,7 @@ export function routeToMobilePath(routeConstant: string): string {
       catalogo: "catalog",
       categorias: "categories",
       clientes: "customers",
-      colaboradores: "employees",
+      colaboradores: "collaborators",
       comissoes: "commissions",
       componentes: "components",
       concluidos: "completed",
@@ -507,7 +557,7 @@ export function routeToMobilePath(routeConstant: string): string {
       detalhes: "details",
       editar: "edit",
       "em-espera": "on-hold",
-      emprestimos: "loans",
+      emprestimos: "borrows",
       entregas: "deliveries",
       "entregas-epi": "ppe-deliveries",
       enviar: "send",
@@ -541,8 +591,7 @@ export function routeToMobilePath(routeConstant: string): string {
       "meu-perfil": "my-profile",
       "meu-pessoal": "my-team",
       "meus-avisos": "my-warnings",
-      "meus-calculos-ponto": "my-time-calculations",
-      "meus-emprestimos": "my-loans",
+      "meus-emprestimos": "my-borrows",
       "meus-epis": "my-ppes",
       "meus-feriados": "my-holidays",
       metricas: "metrics",

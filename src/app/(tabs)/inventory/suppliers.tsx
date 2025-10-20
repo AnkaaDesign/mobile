@@ -1,5 +1,11 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 export default function SuppliersScreen() {
-  return <UnderConstruction title="Fornecedores" />;
+  useEffect(() => {
+    // Redirect to suppliers list page
+    router.replace("/(tabs)/inventory/suppliers/list");
+  }, []);
+
+  return null;
 }

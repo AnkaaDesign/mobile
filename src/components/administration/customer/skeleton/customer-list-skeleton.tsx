@@ -1,113 +1,120 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import { ThemedView } from "@/components/ui/themed-view";
-import { Skeleton } from "@/components/ui/skeleton";
+import { View, ScrollView, StyleSheet } from "react-native";
+import { SkeletonCard, SkeletonText } from "@/components/ui/loading";
+import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 
 export function CustomerListSkeleton() {
   const { colors } = useTheme();
 
-  return (
-    <ThemedView style={styles.container}>
-      {/* Search bar skeleton */}
-      <View style={styles.searchContainer}>
-        <Skeleton style={styles.searchBar} />
-        <Skeleton style={styles.filterButton} />
-        <Skeleton style={styles.filterButton} />
-      </View>
+  const styles = {
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      padding: spacing.md,
+      gap: spacing.md,
+    },
+    searchSkeleton: {
+      height: 48,
+      borderRadius: 8,
+    },
+    filterRow: {
+      flexDirection: "row" as const,
+      gap: spacing.sm,
+    },
+    filterSkeleton: {
+      height: 40,
+      flex: 1,
+      borderRadius: 8,
+    },
+    list: {
+      padding: spacing.md,
+      gap: spacing.md,
+    },
+    customerCard: {
+      marginBottom: spacing.md,
+      padding: spacing.md,
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    customerHeader: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      marginBottom: spacing.sm,
+      gap: spacing.md,
+    },
+    logo: {
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+    },
+    customerInfo: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    customerDetails: {
+      gap: spacing.xs,
+      marginTop: spacing.sm,
+    },
+    customerFooter: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "center" as const,
+      marginTop: spacing.md,
+      paddingTop: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    badge: {
+      height: 24,
+      width: 100,
+      borderRadius: 12,
+    },
+  };
 
-      {/* Table skeleton */}
-      <View style={[styles.tableContainer, { backgroundColor: colors.card }]}>
-        {/* Header skeleton */}
-        <View style={[styles.headerRow, { backgroundColor: colors.muted }]}>
-          <Skeleton style={styles.headerCell} />
-          <Skeleton style={styles.headerCell} />
-          <Skeleton style={styles.headerCell} />
+  return (
+    <View style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Search and filters skeleton */}
+        <View style={styles.header}>
+          <SkeletonCard style={styles.searchSkeleton} />
+          <View style={styles.filterRow}>
+            <SkeletonCard style={StyleSheet.flatten([styles.filterSkeleton, { flex: 0, width: 48 }])} />
+            <SkeletonCard style={StyleSheet.flatten([styles.filterSkeleton, { flex: 0, width: 48 }])} />
+          </View>
         </View>
 
-        {/* Row skeletons */}
-        {[...Array(8)].map((_, index) => (
-          <View key={index} style={[styles.row, { borderBottomColor: colors.border }]}>
-            <View style={styles.rowContent}>
-              <Skeleton style={styles.avatar} />
-              <View style={styles.textContainer}>
-                <Skeleton style={styles.titleSkeleton} />
-                <Skeleton style={styles.subtitleSkeleton} />
+        {/* List items skeleton */}
+        <View style={styles.list}>
+          {Array.from({ length: 8 }).map((_, index) => (
+            <View key={index} style={styles.customerCard}>
+              <View style={styles.customerHeader}>
+                <SkeletonCard style={styles.logo} />
+                <View style={styles.customerInfo}>
+                  <SkeletonText width="70%" height={18} />
+                  <SkeletonText width="50%" height={14} />
+                </View>
+                <SkeletonCard style={styles.badge} />
+              </View>
+
+              <View style={styles.customerDetails}>
+                <SkeletonText width="60%" height={14} />
+                <SkeletonText width="55%" height={14} />
+                <SkeletonText width="45%" height={14} />
+              </View>
+
+              <View style={styles.customerFooter}>
+                <SkeletonCard style={StyleSheet.flatten([styles.badge, { width: 80 }])} />
+                <SkeletonCard style={StyleSheet.flatten([styles.badge, { width: 90 }])} />
               </View>
             </View>
-          </View>
-        ))}
-      </View>
-    </ThemedView>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    gap: 8,
-    alignItems: "center",
-  },
-  searchBar: {
-    flex: 1,
-    height: 48,
-    borderRadius: 10,
-  },
-  filterButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-  },
-  tableContainer: {
-    flex: 1,
-    marginHorizontal: 8,
-    marginBottom: 16,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  headerRow: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
-  },
-  headerCell: {
-    height: 20,
-    width: 80,
-    borderRadius: 4,
-  },
-  row: {
-    borderBottomWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  rowContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-  },
-  textContainer: {
-    flex: 1,
-    gap: 6,
-  },
-  titleSkeleton: {
-    height: 16,
-    width: "60%",
-    borderRadius: 4,
-  },
-  subtitleSkeleton: {
-    height: 14,
-    width: "40%",
-    borderRadius: 4,
-  },
-});

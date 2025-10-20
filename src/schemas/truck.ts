@@ -107,6 +107,7 @@ export const truckOrderBySchema = z.union([
       yPosition: orderByDirectionSchema.optional(),
       taskId: orderByDirectionSchema.optional(),
       garageId: orderByDirectionSchema.optional(),
+      laneId: orderByDirectionSchema.optional(),
       createdAt: orderByDirectionSchema.optional(),
       updatedAt: orderByDirectionSchema.optional(),
 
@@ -153,6 +154,7 @@ export const truckOrderBySchema = z.union([
         yPosition: orderByDirectionSchema.optional(),
         taskId: orderByDirectionSchema.optional(),
         garageId: orderByDirectionSchema.optional(),
+        laneId: orderByDirectionSchema.optional(),
         createdAt: orderByDirectionSchema.optional(),
         updatedAt: orderByDirectionSchema.optional(),
       })
@@ -198,6 +200,19 @@ export const truckWhereSchema: z.ZodSchema = z.lazy(() =>
         .optional(),
 
       garageId: z
+        .union([
+          z.string(),
+          z.null(),
+          z.object({
+            equals: z.union([z.string(), z.null()]).optional(),
+            not: z.union([z.string(), z.null()]).optional(),
+            in: z.array(z.string()).optional(),
+            notIn: z.array(z.string()).optional(),
+          }),
+        ])
+        .optional(),
+
+      laneId: z
         .union([
           z.string(),
           z.null(),
@@ -591,6 +606,7 @@ export const truckCreateSchema = z.object({
 
   // Optional relations
   garageId: z.string().uuid("Garagem inválida").nullable().optional(),
+  laneId: z.string().uuid("Faixa inválida").nullable().optional(),
   leftSideLayoutId: z.string().uuid("Layout inválido").nullable().optional(),
   rightSideLayoutId: z.string().uuid("Layout inválido").nullable().optional(),
   backSideLayoutId: z.string().uuid("Layout inválido").nullable().optional(),
@@ -621,6 +637,7 @@ export const truckUpdateSchema = z.object({
   // Optional relations
   taskId: z.string().uuid("Tarefa inválida").optional(),
   garageId: z.string().uuid("Garagem inválida").nullable().optional(),
+  laneId: z.string().uuid("Faixa inválida").nullable().optional(),
   leftSideLayoutId: z.string().uuid("Layout inválido").nullable().optional(),
   rightSideLayoutId: z.string().uuid("Layout inválido").nullable().optional(),
   backSideLayoutId: z.string().uuid("Layout inválido").nullable().optional(),
@@ -699,6 +716,7 @@ export const mapTruckToFormData = createMapToFormDataHelper<Truck, TruckUpdateFo
   yPosition: truck.yPosition || undefined,
   taskId: truck.taskId,
   garageId: truck.garageId || undefined,
+  laneId: truck.laneId || undefined,
   leftSideLayoutId: truck.leftSideLayoutId || undefined,
   rightSideLayoutId: truck.rightSideLayoutId || undefined,
   backSideLayoutId: truck.backSideLayoutId || undefined,

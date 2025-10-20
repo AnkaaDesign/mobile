@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from "react";
 import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter } from "@tabler/icons-react-native";
+import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNotificationMutations } from '../../../../hooks';
 import { useNotificationsInfiniteMobile } from "@/hooks";
 import type { NotificationGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { NotificationTable } from "@/components/administration/notification/list/notification-table";
 import type { SortConfig } from "@/components/administration/notification/list/notification-table";
 import { NotificationFilterModal } from "@/components/administration/notification/list/notification-filter-modal";
@@ -30,7 +30,8 @@ export default function NotificationListScreen() {
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "sentAt", direction: "desc" }]);
   const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [visibleColumnKeys] = useState<string[]>(["title", "importance", "type", "sentAt"]);
+  const [showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["title", "importance", "type", "sentAt"]);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -87,7 +88,7 @@ export default function NotificationListScreen() {
     },
   };
 
-  const { items: notifications, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = useNotificationsInfiniteMobile(queryParams);
+  const { items: notifications, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useNotificationsInfiniteMobile(queryParams);
   const { delete: deleteNotification } = useNotificationMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -109,16 +110,12 @@ export default function NotificationListScreen() {
 
   const handleDeleteNotification = useCallback(
     async (notificationId: string) => {
-      try {
-        await deleteNotification(notificationId);
-        // Clear selection if the deleted notification was selected
-        if (selectedNotifications.has(notificationId)) {
-          const newSelection = new Set(selectedNotifications);
-          newSelection.delete(notificationId);
-          setSelectedNotifications(newSelection);
-        }
-      } catch (error) {
-        Alert.alert("Erro", "Não foi possível excluir a notificação. Tente novamente.");
+      await deleteNotification(notificationId);
+      // Clear selection if the deleted notification was selected
+      if (selectedNotifications.has(notificationId)) {
+        const newSelection = new Set(selectedNotifications);
+        newSelection.delete(notificationId);
+        setSelectedNotifications(newSelection);
       }
     },
     [deleteNotification, selectedNotifications],
@@ -185,25 +182,19 @@ export default function NotificationListScreen() {
           debounceMs={300}
         />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              {
-                backgroundColor: colors.card,
-                borderWidth: 1,
-                borderColor: colors.border,
-              },
-              pressed && styles.actionButtonPressed,
-            ]}
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={() => setShowColumnManager(true)}
+            badgeCount={visibleColumnKeys.length}
+            badgeVariant="primary"
+          />
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
             onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
-            {activeFiltersCount > 0 && (
-              <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-              </Badge>
-            )}
-          </Pressable>
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
         </View>
       </View>
 
@@ -252,7 +243,7 @@ export default function NotificationListScreen() {
       )}
 
       {/* Items count */}
-      {hasNotifications && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />}
+      {hasNotifications && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasNotifications && <FAB icon="plus" onPress={handleCreateNotification} />}
 
@@ -280,35 +271,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
 });

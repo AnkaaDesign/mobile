@@ -220,14 +220,14 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "admissional",
-    header: "Data de Admissão",
+    key: "contractedAt",
+    header: "Data de Contratação",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (employee: User) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {employee.admissional ? formatDate(new Date(employee.admissional)) : "-"}
+        {employee.contractedAt ? formatDate(new Date(employee.contractedAt)) : "-"}
       </ThemedText>
     ),
   },
@@ -439,6 +439,9 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
 ];
+
+// Alias for backward compatibility with list page import
+export const createEmployeeColumnDefinitions = createColumnDefinitions;
 
 // Function to get default visible columns for employees
 export function getDefaultVisibleColumns(): Set<string> {
@@ -850,7 +853,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   headerWrapper: {
-    marginTop: 12,
     flexDirection: "column",
   },
   headerContainer: {
@@ -861,12 +863,12 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 56,
+    minHeight: 40,
   },
   headerCell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.sm,
-    minHeight: 56,
+    minHeight: 40,
     justifyContent: "center",
   },
   headerText: {
@@ -921,13 +923,13 @@ const styles = StyleSheet.create({
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch",
-    minHeight: 50,
+    minHeight: 36,
   },
   cell: {
     paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
+    paddingVertical: 6,
     justifyContent: "center",
-    minHeight: 50,
+    minHeight: 36,
   },
   centerAlign: {
     alignItems: "center",
@@ -936,7 +938,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   cellText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   monoText: {
     fontFamily: "monospace",
@@ -944,7 +946,7 @@ const styles = StyleSheet.create({
   },
   nameText: {
     fontWeight: fontWeight.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   avatarContainer: {
     justifyContent: "center",

@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useVacationMutations } from '../../../../hooks';
 import { useVacationsInfiniteMobile } from "@/hooks";
 import type { VacationGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { VacationTable } from "@/components/human-resources/vacation/list/vacation-table";
 import { VacationFilterModal } from "@/components/human-resources/vacation/list/vacation-filter-modal";
 import { VacationFilterTags } from "@/components/human-resources/vacation/list/vacation-filter-tags";
@@ -36,7 +36,7 @@ export default function VacationListScreen() {
     },
   };
 
-  const { items: vacations, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = useVacationsInfiniteMobile(queryParams);
+  const { items: vacations, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useVacationsInfiniteMobile(queryParams);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -77,11 +77,11 @@ export default function VacationListScreen() {
   // Count active filters
   const activeFiltersCount = (() => {
     let count = 0;
-    if ((filters.where?.status as any)?.in?.length > 0) count++;
-    if ((filters.where?.type as any)?.in?.length > 0) count++;
-    if (filters.where?.userId) count++;
-    if (filters.where?.startAt) count++;
-    if (filters.where?.endAt) count++;
+    if (filters.statuses && filters.statuses.length > 0) count++;
+    if (filters.types && filters.types.length > 0) count++;
+    if (filters.userIds && filters.userIds.length > 0) count++;
+    if (filters.startAtRange?.gte) count++;
+    if (filters.endAtRange?.lte) count++;
     return count;
   })();
 
@@ -112,17 +112,13 @@ export default function VacationListScreen() {
           debounceMs={300}
         />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }, pressed && styles.actionButtonPressed]}
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
             onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
-            {activeFiltersCount > 0 && (
-              <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-              </Badge>
-            )}
-          </Pressable>
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
         </View>
       </View>
 
@@ -151,7 +147,7 @@ export default function VacationListScreen() {
             canLoadMore={canLoadMore}
             loadingMore={isFetchingNextPage}
           />
-          <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />
+          <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />
         </>
       ) : (
         <View style={styles.emptyContainer}>
@@ -191,35 +187,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
 });

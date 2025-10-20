@@ -27,8 +27,8 @@ export const BorrowFilterTags = ({
   const filterTags: { key: string; label: string; value: string }[] = [];
 
   // Add status filters
-  if (filters.statuses?.length) {
-    filters.statuses.forEach(status => {
+  if (filters.statusIds?.length) {
+    filters.statusIds.forEach(status => {
       filterTags.push({
         key: `status_${status}`,
         label: "Status",

@@ -1,30 +1,37 @@
 import React, { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useWarning } from '../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE, WARNING_SEVERITY_LABELS } from '../../../../../constants';
-import { formatDate } from '../../../../../utils';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useWarning, useWarningMutations } from '../../../../../hooks';
+import { routes, CHANGE_LOG_ENTITY_TYPE, WARNING_SEVERITY_LABELS, SECTOR_PRIVILEGES } from '../../../../../constants';
+import { formatDate, hasPrivilege } from '../../../../../utils';
+import { Card, CardContent } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Header } from "@/components/ui/header";
+import { LoadingScreen } from "@/components/ui/loading-screen";
+import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
+import { useAuth } from "@/contexts/auth-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
-import { IconAlertTriangle, IconRefresh, IconEdit, IconHistory, IconCalendar } from "@tabler/icons-react-native";
+import { IconAlertTriangle, IconRefresh, IconEdit, IconTrash, IconHistory, IconCalendar } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { showToast } from "@/components/ui/toast";
 
 // Import modular components
-import { WarningCard, EmployeeCard, DescriptionCard, IssuerCard } from "@/components/human-resources/warning/detail";
-import { WarningDetailSkeleton } from "@/components/human-resources/warning/skeleton/warning-detail-skeleton";
+import { WarningCard, EmployeeCard, DescriptionCard, IssuerCard, AttachmentsCard, WitnessCard } from "@/components/human-resources/warning/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function WarningDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors, isDark } = useTheme();
+  const { user } = useAuth();
+  const { delete: deleteAsync } = useWarningMutations();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
+
+  // Check permissions
+  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.HUMAN_RESOURCES);
+  const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
   const {
     data: response,
@@ -52,7 +59,12 @@ export default function WarningDetailScreen() {
           sector: true,
         },
       },
-      witness: true,
+      witness: {
+        include: {
+          position: true,
+          sector: true,
+        },
+      },
       attachments: true,
     },
     enabled: !!id && id !== "",
@@ -60,19 +72,53 @@ export default function WarningDetailScreen() {
 
   const warning = response?.data;
 
+  // Handle refresh
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+    showToast({ message: "Detalhes atualizados", type: "success" });
+  }, [refetch]);
+
+  // Handle edit
   const handleEdit = () => {
+    if (!canEdit) {
+      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      return;
+    }
     if (warning) {
       router.push(routeToMobilePath(routes.humanResources.warnings.edit(warning.id)) as any);
     }
   };
 
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    refetch().finally(() => {
-      setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
-    });
-  }, [refetch]);
+  // Handle delete
+  const handleDelete = () => {
+    if (!canDelete) {
+      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      return;
+    }
+
+    Alert.alert(
+      "Excluir Advertência",
+      "Tem certeza que deseja excluir esta advertência? Esta ação não pode ser desfeita.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteAsync(id as string);
+              showToast({ message: "Advertência excluída com sucesso", type: "success" });
+              router.back();
+            } catch (error) {
+              showToast({ message: "Erro ao excluir advertência", type: "error" });
+            }
+          },
+        },
+      ]
+    );
+  };
 
   // Get severity color
   const getSeverityColor = () => {
@@ -93,38 +139,15 @@ export default function WarningDetailScreen() {
   };
 
   if (isLoading) {
-    return (
-      <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>
-        <Header title="Detalhes da Advertência" showBackButton={true} onBackPress={() => router.back()} />
-        <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
-          <View style={styles.container}>
-            <WarningDetailSkeleton />
-          </View>
-        </ScrollView>
-      </View>
-    );
+    return <LoadingScreen message="Carregando detalhes da advertência..." />;
   }
 
   if (error || !warning || !id || id === "") {
     return (
-      <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>
-        <Header title="Detalhes da Advertência" showBackButton={true} onBackPress={() => router.back()} />
-        <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
-          <View style={styles.container}>
-            <Card>
-              <CardContent style={styles.errorContent}>
-                <View style={StyleSheet.flatten([styles.errorIcon, { backgroundColor: colors.muted }])}>
-                  <IconAlertTriangle size={32} color={colors.mutedForeground} />
-                </View>
-                <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>Advertência não encontrada</ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
-                  A advertência solicitada não foi encontrada ou pode ter sido removida.
-                </ThemedText>
-              </CardContent>
-            </Card>
-          </View>
-        </ScrollView>
-      </View>
+      <ErrorScreen
+        message="Erro ao carregar detalhes da advertência"
+        onRetry={refetch}
+      />
     );
   }
 
@@ -132,215 +155,155 @@ export default function WarningDetailScreen() {
   const daysUntilFollowUp = warning.followUpDate ? Math.ceil((new Date(warning.followUpDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
 
   return (
-    <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>
-      {/* Enhanced Header */}
-      <Header
-        title={`${WARNING_SEVERITY_LABELS[warning.severity]}`}
-        subtitle={warning.collaborator?.name}
-        showBackButton={true}
-        onBackPress={() => router.back()}
-        rightAction={
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={handleRefresh}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.muted,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-              disabled={refreshing}
-            >
-              <IconRefresh size={18} color={colors.foreground} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleEdit}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.primary,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-            >
-              <IconEdit size={18} color={colors.primaryForeground} />
-            </TouchableOpacity>
+    <ScrollView
+      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor={colors.primary}
+        />
+      }
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.content}>
+        {/* Warning Name Header Card */}
+        <Card>
+          <CardContent style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <ThemedText style={StyleSheet.flatten([styles.warningTitle, { color: colors.foreground }])} numberOfLines={2}>
+                {WARNING_SEVERITY_LABELS[warning.severity]} - {warning.collaborator?.name}
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.warningSubtitle, { color: colors.mutedForeground }])}>
+                {warning.reason}
+              </ThemedText>
+            </View>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={handleRefresh}
+                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
+                activeOpacity={0.7}
+                disabled={refreshing}
+              >
+                <IconRefresh size={18} color={colors.foreground} />
+              </TouchableOpacity>
+              {canEdit && (
+                <TouchableOpacity
+                  onPress={handleEdit}
+                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
+                  activeOpacity={0.7}
+                >
+                  <IconEdit size={18} color={colors.primaryForeground} />
+                </TouchableOpacity>
+              )}
+              {canDelete && (
+                <TouchableOpacity
+                  onPress={handleDelete}
+                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.destructive }])}
+                  activeOpacity={0.7}
+                >
+                  <IconTrash size={18} color={colors.destructiveForeground} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </CardContent>
+        </Card>
+
+        {/* Warning Information Card - Status and Severity */}
+        <WarningCard warning={warning} />
+
+        {/* Employee Information */}
+        <EmployeeCard warning={warning} />
+
+        {/* Warning Details */}
+        <DescriptionCard warning={warning} />
+
+        {/* Supervisor/Manager Information */}
+        <IssuerCard warning={warning} />
+
+        {/* Witnesses */}
+        <WitnessCard warning={warning} />
+
+        {/* Attachments */}
+        <AttachmentsCard warning={warning} />
+
+        {/* Changelog History */}
+        <Card style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <IconHistory size={20} color={colors.primary} />
+            <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
           </View>
-        }
-      />
-
-      <ScrollView
-        style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.container}>
-          {/* Quick Stats Cards */}
-          <View style={styles.statsGrid}>
-            {/* Severity Card */}
-            <Card style={styles.statCard}>
-              <CardContent style={styles.statContent}>
-                <View style={[styles.statIcon, { backgroundColor: severityColor.bg }]}>
-                  <IconAlertTriangle size={20} color={severityColor.icon} />
-                </View>
-                <View style={styles.statInfo}>
-                  <ThemedText style={StyleSheet.flatten([styles.statValue, { color: severityColor.text }])}>{WARNING_SEVERITY_LABELS[warning.severity]}</ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: colors.mutedForeground }])}>gravidade</ThemedText>
-                </View>
-              </CardContent>
-            </Card>
-
-            {/* Follow-up Date Card */}
-            {warning.followUpDate && (
-              <Card style={styles.statCard}>
-                <CardContent style={styles.statContent}>
-                  <View
-                    style={[
-                      styles.statIcon,
-                      {
-                        backgroundColor: daysUntilFollowUp && daysUntilFollowUp < 0 ? extendedColors.red[100] : daysUntilFollowUp && daysUntilFollowUp <= 7 ? extendedColors.yellow[100] : extendedColors.blue[100],
-                      },
-                    ]}
-                  >
-                    <IconCalendar
-                      size={20}
-                      color={daysUntilFollowUp && daysUntilFollowUp < 0 ? extendedColors.red[600] : daysUntilFollowUp && daysUntilFollowUp <= 7 ? extendedColors.yellow[600] : extendedColors.blue[600]}
-                    />
-                  </View>
-                  <View style={styles.statInfo}>
-                    <ThemedText style={StyleSheet.flatten([styles.statValue, { color: colors.foreground }])}>{formatDate(warning.followUpDate)}</ThemedText>
-                    <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: colors.mutedForeground }])}>
-                      acompanhamento{daysUntilFollowUp !== null && daysUntilFollowUp > 0 ? ` (${daysUntilFollowUp}d)` : ""}
-                    </ThemedText>
-                  </View>
-                </CardContent>
-              </Card>
-            )}
+          <View style={{ paddingHorizontal: spacing.md }}>
+            <ChangelogTimeline
+              entityType={CHANGE_LOG_ENTITY_TYPE.WARNING}
+              entityId={warning.id}
+              entityName={`Advertência - ${warning.collaborator?.name}`}
+              entityCreatedAt={warning.createdAt}
+              maxHeight={400}
+            />
           </View>
+        </Card>
 
-          {/* Modular Components */}
-          <WarningCard warning={warning} />
-          <EmployeeCard warning={warning} />
-          <DescriptionCard warning={warning} />
-          <IssuerCard warning={warning} />
-
-          {/* Changelog Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle style={styles.sectionTitle}>
-                <View style={styles.titleRow}>
-                  <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                    <IconHistory size={18} color={colors.primary} />
-                  </View>
-                  <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Histórico de Alterações</ThemedText>
-                </View>
-              </CardTitle>
-            </CardHeader>
-            <CardContent style={{ paddingHorizontal: 0 }}>
-              <ChangelogTimeline entityType={CHANGE_LOG_ENTITY_TYPE.WARNING} entityId={warning.id} entityName={`Advertência - ${warning.collaborator?.name}`} entityCreatedAt={warning.createdAt} maxHeight={400} />
-            </CardContent>
-          </Card>
-
-          {/* Bottom spacing for mobile navigation */}
-          <View style={{ height: spacing.xxl * 2 }} />
-        </View>
-      </ScrollView>
-    </View>
+        {/* Bottom spacing for mobile navigation */}
+        <View style={{ height: spacing.xxl * 2 }} />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-  },
   scrollView: {
     flex: 1,
   },
-  container: {
+  content: {
     flex: 1,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     gap: spacing.lg,
   },
-  errorContent: {
+  headerContent: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.xxl * 2,
+    justifyContent: "space-between",
+    paddingVertical: spacing.md,
   },
-  errorIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
+  headerLeft: {
+    flex: 1,
+    marginRight: spacing.sm,
   },
-  errorTitle: {
+  warningTitle: {
     fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.sm,
-    textAlign: "center",
-  },
-  errorDescription: {
-    fontSize: fontSize.base,
-    textAlign: "center",
-    marginBottom: spacing.xl,
-    paddingHorizontal: spacing.xl,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  statCard: {
-    flex: 1,
-  },
-  statContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingVertical: spacing.lg,
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statInfo: {
-    flex: 1,
-  },
-  statValue: {
-    fontSize: fontSize.base,
     fontWeight: fontWeight.bold,
   },
-  statLabel: {
-    fontSize: fontSize.xs,
-    marginTop: 2,
+  warningSubtitle: {
+    fontSize: fontSize.sm,
+    marginTop: spacing.xs,
   },
-  sectionTitle: {
+  headerActions: {
     flexDirection: "row",
-    alignItems: "center",
+    gap: spacing.sm,
   },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
+  actionButton: {
+    width: 36,
+    height: 36,
     borderRadius: borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
   },
-  titleText: {
+  card: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "600",
+    marginLeft: spacing.sm,
+    flex: 1,
   },
 });

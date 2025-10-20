@@ -13,8 +13,8 @@ export interface ActivityColumn {
 // Function to get default visible columns for activities
 export function getDefaultVisibleColumns(): Set<string> {
   return new Set([
-    "operation",
     "item.name",
+    "user.name",
     "quantity"
   ]);
 }

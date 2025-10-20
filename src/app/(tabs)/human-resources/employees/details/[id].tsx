@@ -29,7 +29,7 @@ import {
 } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { showToast } from "@/components/ui/toast";
-import { EmployeeDetailSkeleton } from "@/components/human-resources/employee/skeleton";
+import { EmployeeDetailSkeleton } from "@/components/administration/employee/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";

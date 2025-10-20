@@ -3,8 +3,8 @@
 
 export function getDefaultVisibleColumns(): Set<string> {
   return new Set([
+    "description",
     "status",
-    "supplier.fantasyName",
     "itemsCount"
   ]);
 }

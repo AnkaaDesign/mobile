@@ -7,10 +7,11 @@ const Text = RNText;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "@/components/ui/icon-button";
 import { useAuth } from "@/contexts/auth-context";
+import { useFavorites } from "@/contexts/favorites-context";
 import { useTheme } from "@/lib/theme";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Icon } from "@/components/ui/icon";
-import { IconChevronRight, IconLogout, IconUser, IconSettings, IconArrowLeft, IconMenu2 } from "@tabler/icons-react-native";
+import { IconChevronRight, IconLogout, IconUser, IconSettings, IconArrowLeft, IconMenu2, IconStar, IconStarFilled, IconChevronDown } from "@tabler/icons-react-native";
 import { useRouter, useSegments, usePathname } from "expo-router";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { MENU_ITEMS, routes } from '../../constants';
@@ -309,9 +310,7 @@ const createStyles = (isDarkMode: boolean) => {
       borderRadius: 8,
       minHeight: 48,
       backgroundColor: isDarkMode ? "rgba(239, 68, 68, 0.1)" : "rgba(239, 68, 68, 0.05)",
-    },
-    logoutIcon: {
-      marginRight: SPACING.sm,
+      gap: SPACING.sm,
     },
     logoutText: {
       fontSize: 16,
@@ -375,6 +374,7 @@ const createStyles = (isDarkMode: boolean) => {
  */
 function CustomDrawerContent(props: DrawerContentComponentProps) {
   const { user, logout } = useAuth();
+  const { favorites, showFavorites, toggleShowFavorites, isFavorite, toggleFavorite } = useFavorites();
   const { isDark, theme } = useTheme();
   const router = useRouter();
   const segments = useSegments();
@@ -544,27 +544,36 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   // Memoized filtered menu with contextual items
   const filteredMenu = useMemo(() => {
+    // Always return at least the home item as fallback
+    const homeFallback = [
+      {
+        id: "home",
+        title: "Início",
+        path: routes.home,
+        icon: "home",
+      },
+    ];
+
     if (!user) {
-      if (DEBUG_STYLES) {
-        console.log("No user found for menu filtering");
-      }
-      return [];
+      console.log("[MENU] No user found for menu filtering, showing home only");
+      return homeFallback;
     }
 
-    const baseMenu = getFilteredMenuForUser(MENU_ITEMS, user as any, "mobile");
-    const menuWithContextual = addContextualMenuItems(baseMenu);
-    const menuWithoutDynamicAndCadastrar = filterOutDynamicAndCadastrarItems(menuWithContextual);
+    console.log("[MENU] Filtering menu for user:", user?.name, "with privilege:", user?.sector?.privileges || user?.position?.sector?.privileges);
 
-    // If no menu items after filtering, add at least home
+    const baseMenu = getFilteredMenuForUser(MENU_ITEMS, user as any, "mobile");
+    console.log("[MENU] Base menu after privilege filtering:", baseMenu.length, "items", baseMenu.map(m => m.id));
+
+    const menuWithContextual = addContextualMenuItems(baseMenu);
+    console.log("[MENU] Menu with contextual items:", menuWithContextual.length, "items");
+
+    const menuWithoutDynamicAndCadastrar = filterOutDynamicAndCadastrarItems(menuWithContextual);
+    console.log("[MENU] Final menu after filtering dynamic/cadastrar:", menuWithoutDynamicAndCadastrar.length, "items");
+
+    // If no menu items after filtering, return home fallback
     if (menuWithoutDynamicAndCadastrar.length === 0) {
-      return [
-        {
-          id: "home",
-          title: "Início",
-          path: "/home",
-          icon: "home",
-        },
-      ];
+      console.log("[MENU] No items after filtering, returning home fallback");
+      return homeFallback;
     }
 
     return menuWithoutDynamicAndCadastrar;
@@ -632,48 +641,70 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     }
   };
 
-  // Memoized submenu toggle with animation
+  // Memoized submenu toggle with animation - IMPROVED accordion behavior
   const toggleSubmenu = useCallback(
     (itemId: string, event?: any) => {
       if (event) {
         event.stopPropagation();
       }
 
-      const isCurrentlyExpanded = expandedMenus[itemId as keyof typeof expandedMenus];
-      const animation = getChevronAnimation(itemId);
+      setExpandedMenus((prev) => {
+        const isCurrentlyExpanded = prev[itemId];
+        const newExpanded = { ...prev };
+        const animation = getChevronAnimation(itemId);
 
-      // Animate chevron rotation
-      Animated.timing(animation, {
-        toValue: isCurrentlyExpanded ? 0 : 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
+        // Animate chevron rotation for the clicked item
+        Animated.timing(animation, {
+          toValue: isCurrentlyExpanded ? 0 : 1,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
 
-      // If opening a new menu, close all others
-      if (!isCurrentlyExpanded) {
-        // Animate all other chevrons back to closed position
-        Object.entries(expandedMenus).forEach(([id, isExpanded]) => {
-          if (isExpanded && id !== itemId) {
-            const otherAnimation = getChevronAnimation(id);
-            Animated.timing(otherAnimation, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }).start();
-          }
-        });
+        if (!isCurrentlyExpanded) {
+          // If expanding this menu, find and close all sibling menus at the same level
+          const findAndCloseSiblings = (items: any[], targetId: string, parentPath: string[] = []): boolean => {
+            for (let i = 0; i < items.length; i++) {
+              const item = items[i];
 
-        // Set the current menu as expanded while preserving others
-        setExpandedMenus((prev) => ({ ...prev, [itemId]: true }));
-      } else {
-        // Just close the current menu
-        setExpandedMenus((prev) => ({
-          ...prev,
-          [itemId]: false,
-        }));
-      }
+              if (item.id === targetId) {
+                // Found our target item, close its siblings at this level
+                items.forEach((sibling) => {
+                  if (sibling.id !== targetId && sibling.children && sibling.children.length > 0) {
+                    if (newExpanded[sibling.id]) {
+                      newExpanded[sibling.id] = false;
+                      const siblingAnimation = getChevronAnimation(sibling.id);
+                      Animated.timing(siblingAnimation, {
+                        toValue: 0,
+                        duration: 200,
+                        useNativeDriver: true,
+                      }).start();
+                    }
+                  }
+                });
+                return true;
+              }
+
+              // Recursively search in children
+              if (item.children && item.children.length > 0) {
+                const foundInChildren = findAndCloseSiblings(item.children, targetId, [...parentPath, item.id]);
+                if (foundInChildren) {
+                  return true;
+                }
+              }
+            }
+            return false;
+          };
+
+          findAndCloseSiblings(filteredMenu, itemId);
+        }
+
+        // Toggle the clicked item
+        newExpanded[itemId] = !isCurrentlyExpanded;
+
+        return newExpanded;
+      });
     },
-    [expandedMenus, getChevronAnimation],
+    [filteredMenu, getChevronAnimation],
   );
 
   // Get first submenu path for direct navigation
@@ -781,23 +812,26 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     [pathname],
   );
 
-  // Main item click handler
+  // Main item click handler with immediate visual feedback
   const handleMainItemClick = useCallback(
     (item: any, event: any) => {
       event.preventDefault();
       event.stopPropagation();
 
-      // Set loading state
+      // Set loading state immediately for instant visual feedback
       setNavigatingItemId(item.id);
 
-      // Navigate to the item's path or first child
-      const targetPath = getFirstSubmenuPath(item);
-      if (targetPath) {
-        navigateToPath(targetPath);
-      }
+      // Use requestAnimationFrame to ensure the state update is rendered before navigation
+      requestAnimationFrame(() => {
+        // Navigate to the item's path or first child
+        const targetPath = getFirstSubmenuPath(item);
+        if (targetPath) {
+          navigateToPath(targetPath);
+        }
 
-      // Clear loading state after navigation
-      setTimeout(() => setNavigatingItemId(null), 200);
+        // Clear loading state after a visible delay
+        setTimeout(() => setNavigatingItemId(null), 800);
+      });
     },
     [navigateToPath, getFirstSubmenuPath],
   );
@@ -893,6 +927,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       const isExpanded = expandedMenus[item.id];
       const isActive = isItemActive(item);
       const isInPath = isInActivePath(item);
+      const isNavigating = navigatingItemId === item.id;
       const chevronAnimation = hasChildren ? getChevronAnimation(item.id) : null;
 
       // Interpolate chevron rotation
@@ -937,14 +972,29 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
       return (
         <View key={item.id} style={styles.menuItem}>
-          <View
-            style={[
+          <Pressable
+            onPress={() => {
+              // For items with children and a path, navigate directly
+              if (hasChildren && item.path) {
+                handleMainItemClick(item, { preventDefault: () => {}, stopPropagation: () => {} });
+              } else if (!hasChildren) {
+                // For leaf items, navigate
+                handleMainItemClick(item, { preventDefault: () => {}, stopPropagation: () => {} });
+              } else {
+                // For parent items without a path, just expand/collapse
+                toggleSubmenu(item.id);
+              }
+            }}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            onLongPress={handleLongPress}
+            delayLongPress={500}
+            style={({ pressed }) => [
               styles.menuItemPressable,
               { marginLeft, marginRight },
               isActive
                 ? {
                     backgroundColor: "#15803d", // green-700 - web primary
-                    borderRadius: 8,
                   }
                 : undefined,
               !isActive && isInPath
@@ -954,35 +1004,22 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                     borderColor: isDarkMode ? "rgba(21, 128, 61, 0.4)" : "rgba(21, 128, 61, 0.3)",
                   }
                 : undefined,
-            ].filter(Boolean)}
+              (pressed || isNavigating) && !isActive
+                ? {
+                    backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)",
+                  }
+                : undefined,
+              {
+                transform: pressed || isNavigating ? [{ scale: 0.98 }] : [{ scale: 1 }],
+                opacity: isNavigating ? 0.7 : 1,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={item.title}
+            accessibilityState={{ expanded: isExpanded, selected: isActive }}
           >
-            <Pressable
-              onPress={() => {
-                // For items with children and a path, navigate directly
-                if (hasChildren && item.path) {
-                  handleMainItemClick(item, { preventDefault: () => {}, stopPropagation: () => {} });
-                } else if (!hasChildren) {
-                  // For leaf items, navigate
-                  handleMainItemClick(item, { preventDefault: () => {}, stopPropagation: () => {} });
-                } else {
-                  // For parent items without a path, just expand/collapse
-                  toggleSubmenu(item.id);
-                }
-              }}
-              onPressIn={handlePressIn}
-              onPressOut={handlePressOut}
-              onLongPress={handleLongPress}
-              delayLongPress={500}
-              style={({ pressed }) => ({
-                flex: 1,
-                transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
-              })}
-              accessibilityRole="button"
-              accessibilityLabel={item.title}
-              accessibilityState={{ expanded: isExpanded, selected: isActive }}
-            >
-              <View style={styles.menuItemInner}>
-                <View style={StyleSheet.flatten([styles.menuItemContent, { paddingLeft }])}>
+            <View style={styles.menuItemInner}>
+              <View style={StyleSheet.flatten([styles.menuItemContent, { paddingLeft }])}>
                   <View style={styles.menuItemIcon}>{getIconComponentLocal(item.icon, isActive ? "onPrimary" : isInPath ? "primary" : "navigation")}</View>
                   <Text
                     style={[
@@ -1006,6 +1043,34 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                     </View>
                   )}
                 </View>
+
+                {/* Favorite toggle button - only for items with paths */}
+                {item.path && !item.isContextual && (
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite({
+                        path: item.path,
+                        title: item.title,
+                        icon: item.icon,
+                      });
+                    }}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: hasChildren ? 0 : SPACING.xs,
+                    }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    {isFavorite(item.path) ? (
+                      <IconStarFilled size={16} color="#eab308" />
+                    ) : (
+                      <IconStar size={16} color={isActive ? "#fafafa" : isDarkMode ? "#cccccc" : "#525252"} opacity={0.5} />
+                    )}
+                  </Pressable>
+                )}
 
                 {hasChildren && (
                   <Pressable
@@ -1036,7 +1101,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         </View>
       );
     },
-    [expandedMenus, styles, isDarkMode, isItemActive, isInActivePath, getChevronAnimation, toggleSubmenu, handleMainItemClick, navigateToPath, getFirstSubmenuPath],
+    [expandedMenus, navigatingItemId, styles, isDarkMode, isItemActive, isInActivePath, getChevronAnimation, toggleSubmenu, handleMainItemClick, navigateToPath, getFirstSubmenuPath, isFavorite, toggleFavorite],
   );
 
   return (
@@ -1083,6 +1148,125 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
         {/* Main navigation area */}
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {/* Favorites Section */}
+          {favorites.length > 0 && (
+            <View style={{ marginBottom: SPACING.xs }}>
+              {/* Favorites Header - matching menu item design */}
+              <View style={[styles.menuItem]}>
+                <Pressable
+                  onPress={toggleShowFavorites}
+                  style={({ pressed }) => [
+                    styles.menuItemPressable,
+                    { marginLeft: SPACING.sm, marginRight: SPACING.sm },
+                    pressed && {
+                      backgroundColor: isDarkMode ? "rgba(46, 46, 46, 0.5)" : "rgba(245, 245, 245, 0.5)",
+                    },
+                  ]}
+                >
+                  <View style={styles.menuItemInner}>
+                    <View style={[styles.menuItemContent, { paddingLeft: SPACING.md }]}>
+                      <View style={styles.menuItemIcon}>
+                        <IconStarFilled size={20} color="#eab308" />
+                      </View>
+                      <Text
+                        style={[
+                          styles.menuItemText,
+                          {
+                            color: isDarkMode ? "#cccccc" : "#525252",
+                            fontWeight: "600",
+                          },
+                        ]}
+                      >
+                        Favoritos
+                      </Text>
+                    </View>
+                    <View style={styles.chevronContainer}>
+                      <Animated.View
+                        style={{
+                          transform: [{ rotate: showFavorites ? "90deg" : "0deg" }],
+                        }}
+                      >
+                        <IconChevronRight size={16} color={isDarkMode ? "#cccccc" : "#525252"} />
+                      </Animated.View>
+                    </View>
+                  </View>
+                </Pressable>
+              </View>
+
+              {/* Favorites List - using same menu item styling */}
+              {showFavorites && (
+                <View style={styles.submenu}>
+                  {favorites.map((favorite) => {
+                    // Check if this favorite is the current page
+                    const currentPath = pathname.replace(/^\/\(tabs\)/, "");
+                    const favoriteEnglishPath = getEnglishPath(favorite.path);
+                    const isFavoriteActive = currentPath === favoriteEnglishPath;
+
+                    return (
+                      <View key={favorite.id} style={styles.menuItem}>
+                        <View
+                          style={[
+                            styles.menuItemPressable,
+                            { marginLeft: SPACING.sm + SPACING.sm * 4, marginRight: SPACING.sm },
+                            isFavoriteActive && {
+                              backgroundColor: "#15803d",
+                            },
+                          ]}
+                        >
+                          <Pressable
+                            onPress={() => {
+                              setNavigatingItemId(favorite.id);
+                              navigateToPath(favorite.path);
+                              setTimeout(() => setNavigatingItemId(null), 300);
+                            }}
+                            style={({ pressed }) => ({
+                              flex: 1,
+                              transform: pressed || navigatingItemId === favorite.id ? [{ scale: 0.98 }] : [{ scale: 1 }],
+                              opacity: navigatingItemId === favorite.id ? 0.7 : 1,
+                            })}
+                          >
+                            <View style={styles.menuItemInner}>
+                              <View style={[styles.menuItemContent, { paddingLeft: SPACING.md }]}>
+                                {favorite.icon && (
+                                  <View style={styles.menuItemIcon}>
+                                    {getIconComponentLocal(favorite.icon, isFavoriteActive ? "onPrimary" : "navigation")}
+                                  </View>
+                                )}
+                                <Text
+                                  style={[
+                                    styles.menuItemText,
+                                    {
+                                      color: isFavoriteActive ? "#fafafa" : isDarkMode ? "#cccccc" : "#525252",
+                                      fontSize: 13,
+                                    },
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  {favorite.title}
+                                </Text>
+                              </View>
+                            </View>
+                          </Pressable>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* Divider */}
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: isDarkMode ? "#333333" : "#e5e5e5",
+                  marginTop: SPACING.md,
+                  marginBottom: SPACING.xs,
+                  marginHorizontal: SPACING.md,
+                }}
+              />
+            </View>
+          )}
+
           {/* Menu items */}
           {filteredMenu.length === 0 ? (
             <View style={{ padding: 20, alignItems: "center" }}>
@@ -1109,8 +1293,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
             accessibilityHint="Faz logout e retorna à tela de login"
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Icon name="logout" size="md" variant="error" />
-              <Text style={StyleSheet.flatten([styles.logoutText, { marginLeft: 8 }])}>Sair</Text>
+              <Icon name="logout" size={20} variant="error" />
+              <Text style={styles.logoutText}>Sair</Text>
             </View>
           </Pressable>
         </View>
@@ -1169,15 +1353,22 @@ const getScreensToRegister = () => {
 
     // Production Module
     { name: "production", title: "Produção" },
+    { name: "production/airbrushing", title: "Aerografia" },
+    { name: "production/airbrushing/create", title: "Cadastrar Aerografia" },
+    { name: "production/airbrushing/details/[id]", title: "Detalhes da Aerografia" },
+    { name: "production/airbrushing/edit/[id]", title: "Editar Aerografia" },
+    { name: "production/airbrushing/list", title: "Listar Aerografias" },
     { name: "production/schedule", title: "Cronograma" },
     { name: "production/schedule/create", title: "Cronograma - Cadastrar" },
     { name: "production/schedule/details/[id]", title: "Detalhes do Cronograma" },
     { name: "production/schedule/edit/[id]", title: "Editar Cronograma" },
+    { name: "production/schedule/list", title: "Listar Cronogramas" },
     { name: "production/schedule/on-hold", title: "Cronograma - Em Espera" },
     { name: "production/history", title: "Histórico" },
     { name: "production/history/cancelled", title: "Histórico - Canceladas" },
     { name: "production/history/completed", title: "Histórico - Finalizadas" },
     { name: "production/cutting", title: "Recorte" },
+    { name: "production/cutting/list", title: "Listar Recortes" },
     { name: "production/cutting/cutting-plan/create", title: "Criar Plano de Recorte" },
     { name: "production/cutting/cutting-plan/details/[id]", title: "Detalhes do Plano de Recorte" },
     { name: "production/cutting/cutting-plan/edit/[id]", title: "Editar Plano de Recorte" },
@@ -1202,6 +1393,16 @@ const getScreensToRegister = () => {
     { name: "production/service-orders/details/[id]", title: "Detalhes da Ordem de Serviço" },
     { name: "production/service-orders/edit/[id]", title: "Editar Ordem de Serviço" },
     { name: "production/service-orders/list", title: "Listar Ordens de Serviço" },
+    { name: "production/services", title: "Serviços" },
+    { name: "production/services/create", title: "Cadastrar Serviço" },
+    { name: "production/services/details/[id]", title: "Detalhes do Serviço" },
+    { name: "production/services/edit/[id]", title: "Editar Serviço" },
+    { name: "production/services/list", title: "Listar Serviços" },
+    { name: "production/trucks", title: "Caminhões" },
+    { name: "production/trucks/create", title: "Cadastrar Caminhão" },
+    { name: "production/trucks/details/[id]", title: "Detalhes do Caminhão" },
+    { name: "production/trucks/edit/[id]", title: "Editar Caminhão" },
+    { name: "production/trucks/list", title: "Listar Caminhões" },
 
     // Inventory Module
     { name: "inventory", title: "Estoque" },
@@ -1230,8 +1431,10 @@ const getScreensToRegister = () => {
     { name: "inventory/orders/details/[id]", title: "Detalhes do Pedido" },
     { name: "inventory/orders/edit/[id]", title: "Editar Pedido" },
     { name: "inventory/orders/list", title: "Listar Pedidos" },
+    { name: "inventory/orders/[orderId]/items/list", title: "Itens do Pedido" },
     { name: "inventory/orders/automatic", title: "Pedidos Automáticos" },
     { name: "inventory/orders/automatic/configure", title: "Configurar Pedidos Automáticos" },
+    { name: "inventory/orders/automatic/list", title: "Listar Pedidos Automáticos" },
     { name: "inventory/orders/schedules/create", title: "Cadastrar Agendamento" },
     { name: "inventory/orders/schedules/details/[id]", title: "Detalhes do Agendamento" },
     { name: "inventory/orders/schedules/edit/[id]", title: "Editar Agendamento" },
@@ -1256,55 +1459,88 @@ const getScreensToRegister = () => {
     { name: "inventory/ppe/deliveries/details/[id]", title: "Detalhes da Entrega de PPE" },
     { name: "inventory/ppe/deliveries/edit/[id]", title: "Editar Entrega de PPE" },
     { name: "inventory/ppe/deliveries/list", title: "Listar Entregas de PPE" },
-    { name: "inventory/loans/create", title: "Cadastrar Empréstimo" },
-    { name: "inventory/loans/details/[id]", title: "Detalhes do Empréstimo" },
-    { name: "inventory/loans/edit/[id]", title: "Editar Empréstimo" },
-    { name: "inventory/loans/list", title: "Listar Empréstimos" },
-    { name: "inventory/loans/loans-temp/create", title: "Cadastrar Empréstimo Temporário" },
-    { name: "inventory/loans/loans-temp/details/[id]", title: "Detalhes do Empréstimo Temporário" },
-    { name: "inventory/loans/loans-temp/edit/[id]", title: "Editar Empréstimo Temporário" },
-    { name: "inventory/loans/loans-temp/list", title: "Listar Empréstimos Temporários" },
+    { name: "inventory/borrows/create", title: "Cadastrar Empréstimo" },
+    { name: "inventory/borrows/details/[id]", title: "Detalhes do Empréstimo" },
+    { name: "inventory/borrows/edit/[id]", title: "Editar Empréstimo" },
+    { name: "inventory/borrows/list", title: "Listar Empréstimos" },
 
-    // Paint Module
+    // Painting Module
     { name: "painting", title: "Pintura" },
     { name: "painting/catalog/create", title: "Cadastrar Catálogo" },
     { name: "painting/catalog/details/[id]", title: "Detalhes do Catálogo" },
     { name: "painting/catalog/edit/[id]", title: "Editar Catálogo" },
     { name: "painting/catalog/list", title: "Listar Catálogos" },
-    { name: "painting/productions", title: "Produções" },
-    { name: "painting/productions/details/[id]", title: "Detalhes da Produção" },
+    { name: "painting/formulas", title: "Fórmulas" },
+    { name: "painting/formulas/create", title: "Criar Fórmula" },
+    { name: "painting/formulas/details/[id]", title: "Detalhes da Fórmula" },
+    { name: "painting/formulas/edit/[id]", title: "Editar Fórmula" },
+    { name: "painting/formulas/list", title: "Listar Fórmulas" },
+    { name: "painting/formulas/[formulaId]/components/list", title: "Componentes da Fórmula" },
+    { name: "painting/paint-brands", title: "Marcas de Tinta" },
+    { name: "painting/paint-brands/create", title: "Cadastrar Marca de Tinta" },
+    { name: "painting/paint-brands/details/[id]", title: "Detalhes da Marca de Tinta" },
+    { name: "painting/paint-brands/edit/[id]", title: "Editar Marca de Tinta" },
+    { name: "painting/paint-brands/list", title: "Listar Marcas de Tinta" },
+    { name: "painting/paint-types", title: "Tipos de Tinta" },
     { name: "painting/paint-types/create", title: "Cadastrar Tipo de Tinta" },
     { name: "painting/paint-types/details/[id]", title: "Detalhes do Tipo de Tinta" },
     { name: "painting/paint-types/edit/[id]", title: "Editar Tipo de Tinta" },
     { name: "painting/paint-types/list", title: "Listar Tipos de Tinta" },
+    { name: "painting/productions", title: "Produções" },
+    { name: "painting/productions/create", title: "Criar Produção" },
+    { name: "painting/productions/details/[id]", title: "Detalhes da Produção" },
+    { name: "painting/productions/edit/[id]", title: "Editar Produção" },
+    { name: "painting/productions/list", title: "Listar Produções" },
 
     // Administration Module
     { name: "administration", title: "Administração" },
-    { name: "administration/change-logs", title: "Registros de Alterações" },
-    { name: "administration/change-logs/details/[id]", title: "Detalhes do Registro" },
-    { name: "administration/change-logs/entity/[entityType]/[entityId]", title: "Registros por Entidade" },
-    { name: "administration/change-logs/list", title: "Listar Registros de Alterações" },
-    { name: "administration/commissions", title: "Comissões" },
-    { name: "administration/commissions/details/[id]", title: "Detalhes da Comissão" },
-    { name: "administration/commissions/edit/[id]", title: "Editar Comissão" },
-    { name: "administration/commissions/list", title: "Listar Comissões" },
+    { name: "administration/collaborators", title: "Colaboradores" },
+    { name: "administration/collaborators/index", title: "Colaboradores" },
+    { name: "administration/collaborators/create", title: "Cadastrar Colaborador" },
+    { name: "administration/collaborators/details/[id]", title: "Detalhes do Colaborador" },
+    { name: "administration/collaborators/edit/[id]", title: "Editar Colaborador" },
+    { name: "administration/collaborators/list", title: "Listar Colaboradores" },
     { name: "administration/customers", title: "Clientes" },
     { name: "administration/customers/create", title: "Cadastrar Cliente" },
     { name: "administration/customers/details/[id]", title: "Detalhes do Cliente" },
     { name: "administration/customers/list", title: "Listar Clientes" },
-    { name: "administration/employees", title: "Funcionários" },
-    { name: "administration/employees/list", title: "Listar Funcionários" },
     { name: "administration/files", title: "Arquivos" },
     { name: "administration/files/details/[id]", title: "Detalhes do Arquivo" },
+    { name: "administration/files/list", title: "Listar Arquivos" },
     { name: "administration/files/orphans", title: "Arquivos Órfãos" },
     { name: "administration/files/upload", title: "Fazer Upload de Arquivo" },
     { name: "administration/notifications", title: "Notificações" },
     { name: "administration/notifications/create", title: "Cadastrar Notificação" },
     { name: "administration/notifications/create/send", title: "Enviar Notificação" },
+    { name: "administration/notifications/list", title: "Listar Notificações" },
     { name: "administration/sectors", title: "Setores" },
     { name: "administration/sectors/create", title: "Cadastrar Setor" },
     { name: "administration/sectors/details/[id]", title: "Detalhes do Setor" },
     { name: "administration/sectors/edit/[id]", title: "Editar Setor" },
+    { name: "administration/sectors/list", title: "Listar Setores" },
+
+    // Server Module
+    { name: "server", title: "Servidor" },
+    { name: "server/backups", title: "Backups" },
+    { name: "server/backups/create", title: "Criar Backup" },
+    { name: "server/backups/details/[id]", title: "Detalhes do Backup" },
+    { name: "server/backups/list", title: "Listar Backups" },
+    { name: "server/change-logs", title: "Registros de Alterações" },
+    { name: "server/change-logs/details/[id]", title: "Detalhes do Registro" },
+    { name: "server/change-logs/entity/[entityType]/[entityId]", title: "Registros por Entidade" },
+    { name: "server/change-logs/list", title: "Listar Registros de Alterações" },
+    { name: "server/database-sync", title: "Sincronização de Banco de Dados" },
+    { name: "server/deployments", title: "Implantações" },
+    { name: "server/deployments/details/[id]", title: "Detalhes da Implantação" },
+    { name: "server/deployments/list", title: "Listar Implantações" },
+    { name: "server/logs", title: "Logs do Servidor" },
+    { name: "server/maintenance", title: "Manutenção do Servidor" },
+    { name: "server/rate-limiting", title: "Limitação de Taxa" },
+    { name: "server/resources", title: "Recursos do Servidor" },
+    { name: "server/services", title: "Serviços" },
+    { name: "server/shared-folders", title: "Pastas Compartilhadas" },
+    { name: "server/status", title: "Status do Servidor" },
+    { name: "server/system-users", title: "Usuários do Sistema" },
 
     // Human Resources Module
     { name: "human-resources", title: "Recursos Humanos" },
@@ -1329,9 +1565,32 @@ const getScreensToRegister = () => {
     { name: "human-resources/ppe/sizes/edit/[id]", title: "Editar Tamanho de EPI" },
     { name: "human-resources/ppe/sizes/list", title: "Listar Tamanhos de EPI" },
     { name: "human-resources/holidays", title: "Feriados" },
+    { name: "human-resources/holidays/create", title: "Cadastrar Feriado" },
+    { name: "human-resources/holidays/details/[id]", title: "Detalhes do Feriado" },
+    { name: "human-resources/holidays/edit/[id]", title: "Editar Feriado" },
+    { name: "human-resources/holidays/list", title: "Listar Feriados" },
     { name: "human-resources/holidays/calendar", title: "Calendário de Feriados" },
+    { name: "human-resources/payroll", title: "Folha de Pagamento" },
+    { name: "human-resources/payroll/create", title: "Criar Folha de Pagamento" },
+    { name: "human-resources/payroll/details/[id]", title: "Detalhes da Folha de Pagamento" },
+    { name: "human-resources/payroll/edit/[id]", title: "Editar Folha de Pagamento" },
+    { name: "human-resources/payroll/list", title: "Listar Folhas de Pagamento" },
+    { name: "human-resources/performance-levels", title: "Níveis de Desempenho" },
+    { name: "human-resources/performance-levels/create", title: "Cadastrar Nível de Desempenho" },
+    { name: "human-resources/performance-levels/details/[id]", title: "Detalhes do Nível de Desempenho" },
+    { name: "human-resources/performance-levels/edit/[id]", title: "Editar Nível de Desempenho" },
+    { name: "human-resources/performance-levels/list", title: "Listar Níveis de Desempenho" },
     { name: "human-resources/positions", title: "Cargos" },
+    { name: "human-resources/positions/create", title: "Cadastrar Cargo" },
+    { name: "human-resources/positions/details/[id]", title: "Detalhes do Cargo" },
+    { name: "human-resources/positions/edit/[id]", title: "Editar Cargo" },
+    { name: "human-resources/positions/list", title: "Listar Cargos" },
     { name: "human-resources/positions/[positionId]/remunerations", title: "Remunerações do Cargo" },
+    { name: "human-resources/sectors", title: "Setores" },
+    { name: "human-resources/sectors/create", title: "Cadastrar Setor" },
+    { name: "human-resources/sectors/details/[id]", title: "Detalhes do Setor" },
+    { name: "human-resources/sectors/edit/[id]", title: "Editar Setor" },
+    { name: "human-resources/sectors/list", title: "Listar Setores" },
     { name: "human-resources/vacations/create", title: "Cadastrar Férias" },
     { name: "human-resources/vacations/details/[id]", title: "Detalhes das Férias" },
     { name: "human-resources/vacations/list", title: "Listar Férias" },
@@ -1343,38 +1602,31 @@ const getScreensToRegister = () => {
 
     // Personal Module
     { name: "personal", title: "Pessoal" },
-    { name: "personal/my-commissions", title: "Minhas Comissões" },
-    { name: "personal/my-commissions/details/[id]", title: "Detalhes da Comissão" },
-    { name: "personal/my-profile", title: "Meus Dados" },
+    { name: "personal/my-profile", title: "Meu Perfil" },
     { name: "personal/my-holidays", title: "Meus Feriados" },
-    { name: "personal/my-holidays/details/[id]", title: "Detalhes do Feriado" },
-    { name: "personal/my-loans", title: "Meus Empréstimos" },
-    { name: "personal/my-loans/details/[id]", title: "Detalhes do Empréstimo" },
+    { name: "personal/my-borrows", title: "Meus Empréstimos" },
+    { name: "personal/my-borrows/details/[id]", title: "Detalhes do Empréstimo" },
     { name: "personal/my-notifications", title: "Minhas Notificações" },
     { name: "personal/my-notifications/details/[id]", title: "Detalhes da Notificação" },
-    { name: "personal/my-notifications/settings", title: "Configurações de Notificação" },
-    { name: "personal/my-ppes", title: "Meus PPEs" },
-    { name: "personal/my-ppes/request", title: "Solicitar PPE" },
+    { name: "personal/my-ppes", title: "Meus EPIs" },
+    { name: "personal/my-ppes/request", title: "Solicitar EPI" },
     { name: "personal/my-vacations", title: "Minhas Férias" },
     { name: "personal/my-vacations/details/[id]", title: "Detalhes das Férias" },
-    { name: "personal/my-warnings", title: "Minhas Advertências" },
-    { name: "personal/my-warnings/details/[id]", title: "Detalhes da Advertência" },
+    { name: "personal/my-warnings", title: "Meus Avisos" },
+    { name: "personal/my-warnings/details/[id]", title: "Detalhes do Aviso" },
     { name: "personal/preferences", title: "Preferências" },
-    { name: "personal/preferences/notifications", title: "Preferências de Notificação" },
-    { name: "personal/preferences/privacy", title: "Privacidade" },
-    { name: "personal/preferences/theme", title: "Tema" },
 
-    // My Team Module
+    // Integrations Module
+    { name: "integrations/secullum/sync-status", title: "Status de Sincronização" },
+    { name: "integrations/secullum/calculations/list", title: "Listar Cálculos" },
+    { name: "integrations/secullum/time-entries/list", title: "Listar Registros de Ponto" },
+    { name: "integrations/secullum/time-entries/details/[id]", title: "Detalhes do Registro de Ponto" },
+
+    // My Team Module (Meu Pessoal)
     { name: "my-team", title: "Meu Pessoal" },
-    { name: "my-team/warnings", title: "Advertências da Equipe" },
-    { name: "my-team/loans", title: "Empréstimos da Equipe" },
-    { name: "my-team/commissions", title: "Comissões da Equipe" },
-    { name: "my-team/vacations", title: "Férias da Equipe" },
-    { name: "my-team/activities", title: "Atividades da Equipe" },
-    { name: "my-team/ppe-deliveries", title: "Entregas de EPI da Equipe" },
-    { name: "my-team/users", title: "Usuários da Equipe" },
-    { name: "my-team/cuts", title: "Recortes da Equipe" },
-    { name: "my-team/time-calculations", title: "Cálculos de Ponto da Equipe" },
+    { name: "my-team/borrows", title: "Empréstimos" },
+    { name: "my-team/vacations", title: "Férias" },
+    { name: "my-team/warnings", title: "Avisos" },
   ];
 
   return existingScreens;

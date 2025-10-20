@@ -13,6 +13,7 @@ import { MultiCombobox } from "@/components/ui/multi-combobox";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Drawer } from "@/components/ui/drawer";
+import { DatePicker } from "@/components/ui/date-picker";
 import type { UserGetManyFormData } from '../../../../schemas';
 
 interface EmployeeFilterDrawerProps {
@@ -26,10 +27,18 @@ interface FilterState {
   statuses?: string[];
   positionIds?: string[];
   sectorIds?: string[];
-  verified?: boolean;
+  isVerified?: boolean;
+  birth?: {
+    gte?: Date;
+    lte?: Date;
+  };
+  dismissedAt?: {
+    gte?: Date;
+    lte?: Date;
+  };
 }
 
-type SectionKey = "status" | "entities" | "verification";
+type SectionKey = "status" | "entities" | "verification" | "dates";
 
 interface FilterSection {
   key: SectionKey;
@@ -81,23 +90,29 @@ export function EmployeeFilterDrawer({ visible, onClose, onApply, currentFilters
 
   useEffect(() => {
     if (visible) {
-      // Parse current filters from where clause
+      // Parse current filters from convenience filters
       const parsedFilters: FilterState = {};
-      if (currentFilters.where) {
-        const where = currentFilters.where as any;
-        if (where.status?.in) {
-          parsedFilters.statuses = where.status.in;
-        }
-        if (where.positionId?.in) {
-          parsedFilters.positionIds = where.positionId.in;
-        }
-        if (where.sectorId?.in) {
-          parsedFilters.sectorIds = where.sectorId.in;
-        }
-        if (where.verified !== undefined) {
-          parsedFilters.verified = where.verified;
-        }
+
+      // Use convenience filter fields from schema
+      if (currentFilters.statuses && Array.isArray(currentFilters.statuses)) {
+        parsedFilters.statuses = currentFilters.statuses;
       }
+      if (currentFilters.positionIds && Array.isArray(currentFilters.positionIds)) {
+        parsedFilters.positionIds = currentFilters.positionIds;
+      }
+      if (currentFilters.sectorIds && Array.isArray(currentFilters.sectorIds)) {
+        parsedFilters.sectorIds = currentFilters.sectorIds;
+      }
+      if (currentFilters.isVerified !== undefined) {
+        parsedFilters.isVerified = currentFilters.isVerified;
+      }
+      if (currentFilters.birth) {
+        parsedFilters.birth = currentFilters.birth;
+      }
+      if (currentFilters.dismissedAt) {
+        parsedFilters.dismissedAt = currentFilters.dismissedAt;
+      }
+
       setFilters(parsedFilters);
     }
   }, [currentFilters, visible]);
@@ -107,7 +122,9 @@ export function EmployeeFilterDrawer({ visible, onClose, onApply, currentFilters
     if (filters.statuses?.length) count++;
     if (filters.positionIds?.length) count++;
     if (filters.sectorIds?.length) count++;
-    if (filters.verified !== undefined) count++;
+    if (filters.isVerified !== undefined) count++;
+    if (filters.birth?.gte || filters.birth?.lte) count++;
+    if (filters.dismissedAt?.gte || filters.dismissedAt?.lte) count++;
     return count;
   }, [filters]);
 
@@ -125,6 +142,27 @@ export function EmployeeFilterDrawer({ visible, onClose, onApply, currentFilters
     }));
   }, []);
 
+  const handleDateRangeChange = useCallback((key: 'birth' | 'dismissedAt', field: 'gte' | 'lte', date: Date | null) => {
+    setFilters((prev) => {
+      const currentRange = prev[key] || {};
+      const newRange = {
+        ...currentRange,
+        [field]: date || undefined,
+      };
+
+      // Remove the range if both gte and lte are undefined
+      if (!newRange.gte && !newRange.lte) {
+        const { [key]: _, ...rest } = prev;
+        return rest;
+      }
+
+      return {
+        ...prev,
+        [key]: newRange,
+      };
+    });
+  }, []);
+
   const toggleSection = useCallback((sectionKey: SectionKey) => {
     setExpandedSections((prev) => {
       const newSet = new Set(prev);
@@ -138,24 +176,26 @@ export function EmployeeFilterDrawer({ visible, onClose, onApply, currentFilters
   }, []);
 
   const handleApply = useCallback(() => {
-    const where: any = {};
+    // Use convenience filter fields that match the schema
+    const queryFilters: Partial<UserGetManyFormData> = {};
 
     if (filters.statuses?.length) {
-      where.status = { in: filters.statuses };
+      queryFilters.statuses = filters.statuses;
     }
     if (filters.positionIds?.length) {
-      where.positionId = { in: filters.positionIds };
+      queryFilters.positionIds = filters.positionIds;
     }
     if (filters.sectorIds?.length) {
-      where.sectorId = { in: filters.sectorIds };
+      queryFilters.sectorIds = filters.sectorIds;
     }
-    if (filters.verified !== undefined) {
-      where.verified = filters.verified;
+    if (filters.isVerified !== undefined) {
+      queryFilters.isVerified = filters.isVerified;
     }
-
-    const queryFilters: Partial<UserGetManyFormData> = {};
-    if (Object.keys(where).length > 0) {
-      queryFilters.where = where;
+    if (filters.birth) {
+      queryFilters.birth = filters.birth;
+    }
+    if (filters.dismissedAt) {
+      queryFilters.dismissedAt = filters.dismissedAt;
     }
 
     onApply(queryFilters);
@@ -231,17 +271,71 @@ export function EmployeeFilterDrawer({ visible, onClose, onApply, currentFilters
           <View style={styles.row}>
             <Label style={styles.label}>Apenas verificados</Label>
             <RNSwitch
-              value={!!filters.verified}
-              onValueChange={(value) => handleToggle("verified", value)}
+              value={!!filters.isVerified}
+              onValueChange={(value) => handleToggle("isVerified", value)}
               trackColor={{ false: colors.muted, true: colors.primary }}
-              thumbColor={!!filters.verified ? colors.primaryForeground : "#f4f3f4"}
+              thumbColor={!!filters.isVerified ? colors.primaryForeground : "#f4f3f4"}
               ios_backgroundColor={colors.muted}
             />
           </View>
         </View>
       ),
     },
-  ], [filters, positions, sectors, colors, handleToggle, handleArrayChange]);
+    {
+      key: "dates" as const,
+      title: "Datas",
+      component: (
+        <View style={styles.sectionContent}>
+          <View style={styles.field}>
+            <Label style={styles.fieldLabel}>Data de Nascimento</Label>
+            <View style={styles.dateRangeRow}>
+              <View style={styles.dateRangeField}>
+                <Label style={styles.dateRangeLabel}>De</Label>
+                <DatePicker
+                  type="date"
+                  value={filters.birth?.gte}
+                  onChange={(date) => handleDateRangeChange('birth', 'gte', date || null)}
+                  placeholder="Selecionar"
+                />
+              </View>
+              <View style={styles.dateRangeField}>
+                <Label style={styles.dateRangeLabel}>Até</Label>
+                <DatePicker
+                  type="date"
+                  value={filters.birth?.lte}
+                  onChange={(date) => handleDateRangeChange('birth', 'lte', date || null)}
+                  placeholder="Selecionar"
+                />
+              </View>
+            </View>
+          </View>
+          <View style={styles.field}>
+            <Label style={styles.fieldLabel}>Data de Demissão</Label>
+            <View style={styles.dateRangeRow}>
+              <View style={styles.dateRangeField}>
+                <Label style={styles.dateRangeLabel}>De</Label>
+                <DatePicker
+                  type="date"
+                  value={filters.dismissedAt?.gte}
+                  onChange={(date) => handleDateRangeChange('dismissedAt', 'gte', date || null)}
+                  placeholder="Selecionar"
+                />
+              </View>
+              <View style={styles.dateRangeField}>
+                <Label style={styles.dateRangeLabel}>Até</Label>
+                <DatePicker
+                  type="date"
+                  value={filters.dismissedAt?.lte}
+                  onChange={(date) => handleDateRangeChange('dismissedAt', 'lte', date || null)}
+                  placeholder="Selecionar"
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      ),
+    },
+  ], [filters, positions, sectors, colors, handleToggle, handleArrayChange, handleDateRangeChange]);
 
   const renderSection = useCallback(({ item }: { item: FilterSection }) => {
     const isExpanded = expandedSections.has(item.key);
@@ -388,6 +482,19 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  dateRangeRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  dateRangeField: {
+    flex: 1,
+    gap: 4,
+  },
+  dateRangeLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+    opacity: 0.7,
   },
   separator: {
     marginVertical: 8,

@@ -1,5 +1,11 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 export default function PaintsScreen() {
-  return <UnderConstruction title="Tintas" />;
+  useEffect(() => {
+    // Redirect to paints list page
+    router.replace("/(tabs)/production/paints/list");
+  }, []);
+
+  return null;
 }

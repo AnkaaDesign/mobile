@@ -1,22 +1,5 @@
-import { Stack } from "expo-router";
-import { useTheme } from "@/lib/theme";
+import { UnderConstruction } from "@/components/ui/under-construction";
 
-export default function MyBorrowsLayout() {
-  const { colors } = useTheme();
-
-  return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.card },
-        headerTintColor: colors.foreground,
-      }}
-    >
-      <Stack.Screen
-        name="list"
-        options={{
-          title: "Meus Empréstimos",
-        }}
-      />
-    </Stack>
-  );
+export default function MyLoansScreen() {
+  return <UnderConstruction title="Meus Empréstimos" description="Solicite e acompanhe empréstimos, parcelas e histórico de pagamentos em breve." />;
 }

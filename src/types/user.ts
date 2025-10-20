@@ -14,6 +14,7 @@ import type { Activity, ActivityIncludes } from "./activity";
 import type { Borrow, BorrowIncludes } from "./borrow";
 import type { ChangeLog, ChangeLogIncludes } from "./changelog";
 import type { Bonus, BonusIncludes } from "./bonus";
+import type { File } from "./file";
 
 // =====================
 // Main Entity Interface
@@ -22,7 +23,7 @@ import type { Bonus, BonusIncludes } from "./bonus";
 export interface User extends BaseEntity {
   email: string | null;
   name: string;
-  avatarUrl?: string | null;
+  avatarId: string | null;
   status: USER_STATUS;
   statusOrder: number; // 1=Ativo, 2=Inativo, 3=Suspenso
   phone: string | null;
@@ -52,18 +53,18 @@ export interface User extends BaseEntity {
   sessionToken: string | null;
   secullumId: string | null;
   payrollNumber: number | null;
-  admissional: Date; // Admission date (required)
   dismissal: Date | null; // Dismissal date (optional)
 
   // Status timestamp tracking
-  contractedAt: Date | null; // When user became permanently contracted
-  exp1StartAt: Date | null; // Start of first experience period (45 days)
-  exp1EndAt: Date | null; // End of first experience period
-  exp2StartAt: Date | null; // Start of second experience period (45 days)
-  exp2EndAt: Date | null; // End of second experience period
-  dismissedAt: Date | null; // When user was dismissed/terminated
+  contractedAt: Date | null;
+  exp1StartAt: Date | null;
+  exp1EndAt: Date | null;
+  exp2StartAt: Date | null;
+  exp2EndAt: Date | null;
+  dismissedAt: Date | null;
 
   // Relations
+  avatar?: File;
   ppeSize?: PpeSize;
   preference?: Preferences;
   position?: Position;
@@ -109,6 +110,7 @@ export interface User extends BaseEntity {
 // =====================
 
 export interface UserIncludes {
+  avatar?: boolean;
   ppeSize?:
     | boolean
     | {
@@ -219,6 +221,7 @@ export interface UserOrderBy {
   id?: ORDER_BY_DIRECTION;
   email?: ORDER_BY_DIRECTION;
   name?: ORDER_BY_DIRECTION;
+  avatarId?: ORDER_BY_DIRECTION;
   token?: ORDER_BY_DIRECTION;
   status?: ORDER_BY_DIRECTION;
   statusOrder?: ORDER_BY_DIRECTION;
@@ -228,9 +231,7 @@ export interface UserOrderBy {
   cpf?: ORDER_BY_DIRECTION;
   verified?: ORDER_BY_DIRECTION;
   payrollNumber?: ORDER_BY_DIRECTION;
-  hireDate?: ORDER_BY_DIRECTION;
   birth?: ORDER_BY_DIRECTION;
-  admissional?: ORDER_BY_DIRECTION;
   dismissal?: ORDER_BY_DIRECTION;
   contractedAt?: ORDER_BY_DIRECTION;
   exp1StartAt?: ORDER_BY_DIRECTION;

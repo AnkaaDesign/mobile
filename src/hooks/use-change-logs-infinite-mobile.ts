@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useChangeLogsInfinite } from './';
+import { useChangeLogsInfinite } from './useChangelog';
 import { ChangeLogGetManyFormData } from '../schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 

@@ -3,7 +3,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ppeDeliveryScheduleService } from '../api-client';
 import type { PpeDeliveryScheduleGetManyFormData } from '../schemas';
-import { ppeDeliveryScheduleKeys } from './';
+import { ppeDeliveryScheduleKeys } from './queryKeys';
 
 const ITEMS_PER_PAGE = 40;
 

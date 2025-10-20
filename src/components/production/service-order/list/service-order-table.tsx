@@ -579,8 +579,8 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
             getItemLayout={(data, index) => ({
-              length: 60, // Fixed row height
-              offset: 60 * index,
+              length: 36, // Fixed row height
+              offset: 36 * index,
               index,
             })}
             style={styles.flatList}
@@ -612,7 +612,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   headerWrapper: {
-    marginTop: 12,
     flexDirection: "column",
   },
   headerContainer: {
@@ -623,12 +622,12 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 56,
+    minHeight: 40, // Reduced to match smaller fonts
   },
   headerCell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.sm,
-    minHeight: 56,
+    minHeight: 40, // Reduced to match smaller fonts
     justifyContent: "center",
   },
   headerText: {
@@ -675,13 +674,13 @@ const styles = StyleSheet.create({
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch", // Changed from 'center' to 'stretch' to ensure all cells have same height
-    minHeight: 60,
+    minHeight: 36, // Reduced to match smaller fonts
   },
   cell: {
     paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
+    paddingVertical: 6, // Reduced padding
     justifyContent: "center",
-    minHeight: 60,
+    minHeight: 36, // Reduced to match smaller fonts
   },
   centerAlign: {
     alignItems: "center",
@@ -690,11 +689,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   cellText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs, // Match serial number size
   },
   nameText: {
     fontWeight: fontWeight.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs, // Match serial number size
   },
   secondaryText: {
     opacity: 0.6,

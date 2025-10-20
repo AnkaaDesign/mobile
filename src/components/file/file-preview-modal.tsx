@@ -11,33 +11,26 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
+  Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PanGestureHandler, PinchGestureHandler, State } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS, interpolate, Extrapolate } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-// import { BlurView } from "expo-blur";
 import {
-  IconArrowLeft,
-  IconArrowRight,
   IconX,
-  IconZoomIn,
-  IconZoomOut,
   IconDownload,
   IconExternalLink,
   IconVectorBezier,
   IconRotateClockwise,
   IconRotate2,
-  IconMaximize,
 } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { File as AnkaaFile } from '../../types';
-import { isImageFile, getFileUrl, getFileThumbnailUrl, formatFileSize, getFileExtension } from '../../utils';
+import { isImageFile, formatFileSize, getFileExtension } from '../../utils';
 import * as FileSystem from "expo-file-system/legacy";
-// import * as MediaLibrary from "expo-media-library";
-// import * as Sharing from "expo-sharing";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MIN_ZOOM = 0.5;
@@ -81,6 +74,41 @@ export function FilePreviewModal({
   showImageCounter = true,
 }: FilePreviewModalProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  // Constants for padding calculations
+  const HEADER_BASE_PADDING = 16;
+  const FOOTER_BASE_PADDING = 16;
+  const STATUSBAR_HEIGHT = Platform.OS === 'ios' ? 44 : 24;
+
+  // State-based padding that recalculates when modal opens
+  const [safeTopPadding, setSafeTopPadding] = useState(STATUSBAR_HEIGHT + HEADER_BASE_PADDING);
+  const [safeBottomPadding, setSafeBottomPadding] = useState(FOOTER_BASE_PADDING);
+
+  // Recalculate safe padding when modal becomes visible or insets change
+  useEffect(() => {
+    if (visible) {
+      // Small delay to ensure SafeArea context is fully initialized
+      const timer = setTimeout(() => {
+        const topPadding = Math.max(insets.top || STATUSBAR_HEIGHT, STATUSBAR_HEIGHT) + HEADER_BASE_PADDING;
+        const bottomPadding = Math.max(insets.bottom || 0, 0) + FOOTER_BASE_PADDING;
+
+        setSafeTopPadding(topPadding);
+        setSafeBottomPadding(bottomPadding);
+
+        console.log('📐 [FilePreviewModal] SafeArea Recalculated:', {
+          insetsTop: insets.top,
+          insetsBottom: insets.bottom,
+          calculatedTopPadding: topPadding,
+          calculatedBottomPadding: bottomPadding,
+          platform: Platform.OS,
+          timestamp: new Date().toISOString()
+        });
+      }, 100); // 100ms delay to ensure context is ready
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible, insets.top, insets.bottom]);
 
   // State management
   const [currentIndex, setCurrentIndex] = useState(initialFileIndex);
@@ -95,6 +123,8 @@ export function FilePreviewModal({
   const focalY = useSharedValue(0);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
+  const baseTranslateX = useSharedValue(0);
+  const baseTranslateY = useSharedValue(0);
   const swipeTranslateX = useSharedValue(0);
   const opacity = useSharedValue(1);
 
@@ -120,6 +150,8 @@ export function FilePreviewModal({
     scale.value = 1;
     translateX.value = 0;
     translateY.value = 0;
+    baseTranslateX.value = 0;
+    baseTranslateY.value = 0;
     focalX.value = 0;
     focalY.value = 0;
     swipeTranslateX.value = 0;
@@ -226,31 +258,23 @@ export function FilePreviewModal({
     showControls();
   }, [showControls]);
 
-  // Download/Share functions
+  // Download/Share/Open functions
   const handleDownload = useCallback(async () => {
     if (!currentFile) return;
 
     try {
       showControls();
 
-      // TODO: Implement media library permissions when expo-media-library is available
-      // const { status } = await MediaLibrary.requestPermissionsAsync();
-      // if (status !== "granted") {
-      //   Alert.alert("Permissão necessária", "É necessária permissão para salvar arquivos na galeria.");
-      //   return;
-      // }
-
       const fileUrl = getFileUrl(currentFile, baseUrl);
       const fileUri = FileSystem.documentDirectory + currentFile.filename;
+
+      Alert.alert("Baixando arquivo...", "Aguarde enquanto o arquivo é baixado.");
 
       // Download file
       const { uri } = await FileSystem.downloadAsync(fileUrl, fileUri);
 
-      // TODO: Save to media library when expo-media-library is available
-      // await MediaLibrary.saveToLibraryAsync(uri);
-
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      Alert.alert("Sucesso", "Arquivo salvo na galeria!");
+      Alert.alert("Sucesso", "Arquivo salvo com sucesso!");
     } catch (error) {
       console.error("Error downloading file:", error);
       Alert.alert("Erro", "Não foi possível baixar o arquivo.");
@@ -263,26 +287,40 @@ export function FilePreviewModal({
     try {
       showControls();
 
+      const Sharing = await import("expo-sharing");
+      const isAvailable = await Sharing.isAvailableAsync();
+
+      if (!isAvailable) {
+        Alert.alert("Compartilhamento não disponível", "Seu dispositivo não suporta compartilhamento de arquivos.");
+        return;
+      }
+
       const fileUrl = getFileUrl(currentFile, baseUrl);
       const fileUri = FileSystem.cacheDirectory + currentFile.filename;
 
       // Download to cache
       const { uri } = await FileSystem.downloadAsync(fileUrl, fileUri);
 
-      // TODO: Share file when expo-sharing is available
-      // await Sharing.shareAsync(uri, {
-      //   mimeType: currentFile.mimetype,
-      //   dialogTitle: "Compartilhar arquivo",
-      // });
+      // Share file - on iOS this opens share sheet, on Android opens with appropriate app
+      await Sharing.shareAsync(uri, {
+        mimeType: currentFile.mimetype,
+        dialogTitle: "Abrir com...",
+        UTI: currentFile.mimetype,
+      });
 
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error) {
-      console.error("Error sharing file:", error);
-      Alert.alert("Erro", "Não foi possível compartilhar o arquivo.");
+      console.error("Error sharing/opening file:", error);
+      Alert.alert("Erro", "Não foi possível abrir o arquivo.");
     }
   }, [currentFile, baseUrl, showControls]);
 
-  // Pinch gesture handler
+  // Open file with appropriate viewer (uses share sheet which allows opening)
+  const handleOpenFile = useCallback(async () => {
+    await handleShare(); // Share sheet allows opening with appropriate apps
+  }, [handleShare]);
+
+  // Pinch gesture handler - improved for smoother scaling
   const pinchGestureHandler = (event: any) => {
     'worklet';
     if (event.nativeEvent.state === State.BEGAN) {
@@ -291,10 +329,11 @@ export function FilePreviewModal({
     } else if (event.nativeEvent.state === State.ACTIVE) {
       if (!enablePinchZoom) return;
 
+      // Clamp scale value for smooth zooming
       const newScale = Math.max(MIN_ZOOM, Math.min(event.nativeEvent.scale, MAX_ZOOM));
-      scale.value = newScale;
+      scale.value = newScale; // Direct assignment for responsive feel
 
-      // Handle focal point
+      // Handle focal point for zoom center
       if (event.nativeEvent.scale > 1) {
         const focal = {
           x: event.nativeEvent.focalX - SCREEN_WIDTH / 2,
@@ -305,27 +344,32 @@ export function FilePreviewModal({
         translateY.value = focal.y * (1 - 1 / event.nativeEvent.scale);
       }
     } else if (event.nativeEvent.state === State.END) {
-      // Snap to boundaries
+      // Snap to boundaries with smooth spring animation
       if (scale.value < 1) {
-        scale.value = withSpring(1);
-        translateX.value = withSpring(0);
-        translateY.value = withSpring(0);
+        scale.value = withSpring(1, { damping: 15, stiffness: 150 });
+        translateX.value = withSpring(0, { damping: 15, stiffness: 150 });
+        translateY.value = withSpring(0, { damping: 15, stiffness: 150 });
+      } else if (scale.value > MAX_ZOOM) {
+        scale.value = withSpring(MAX_ZOOM, { damping: 15, stiffness: 150 });
       }
 
       runOnJS(showControls)();
     }
   };
 
-  // Pan gesture handler for zoomed images
+  // Pan gesture handler for zoomed images - improved for smoothness
   const panGestureHandler = (event: any) => {
     'worklet';
     if (event.nativeEvent.state === State.BEGAN) {
+      // Store current position as base for this gesture
+      baseTranslateX.value = translateX.value;
+      baseTranslateY.value = translateY.value;
       runOnJS(showControls)();
     } else if (event.nativeEvent.state === State.ACTIVE) {
       if (scale.value > 1) {
-        // Pan when zoomed
-        translateX.value = event.nativeEvent.translationX;
-        translateY.value = event.nativeEvent.translationY;
+        // Pan when zoomed - add delta to base for smooth continuous panning
+        translateX.value = baseTranslateX.value + event.nativeEvent.translationX;
+        translateY.value = baseTranslateY.value + event.nativeEvent.translationY;
       } else if (enableSwipeNavigation) {
         // Swipe for navigation
         swipeTranslateX.value = event.nativeEvent.translationX;
@@ -333,12 +377,19 @@ export function FilePreviewModal({
       }
     } else if (event.nativeEvent.state === State.END) {
       if (scale.value > 1) {
-        // Boundary check for panning
+        // Boundary check for panning with smooth spring animation
         const maxTranslateX = (SCREEN_WIDTH * scale.value - SCREEN_WIDTH) / 2;
         const maxTranslateY = (SCREEN_HEIGHT * scale.value - SCREEN_HEIGHT) / 2;
 
-        translateX.value = withSpring(Math.max(-maxTranslateX, Math.min(maxTranslateX, translateX.value)));
-        translateY.value = withSpring(Math.max(-maxTranslateY, Math.min(maxTranslateY, translateY.value)));
+        const clampedX = Math.max(-maxTranslateX, Math.min(maxTranslateX, translateX.value));
+        const clampedY = Math.max(-maxTranslateY, Math.min(maxTranslateY, translateY.value));
+
+        translateX.value = withSpring(clampedX, { damping: 15, stiffness: 150 });
+        translateY.value = withSpring(clampedY, { damping: 15, stiffness: 150 });
+
+        // Update base values for next gesture
+        baseTranslateX.value = clampedX;
+        baseTranslateY.value = clampedY;
       } else if (enableSwipeNavigation) {
         // Handle swipe navigation
         const shouldNavigate = Math.abs(event.nativeEvent.translationX) > SWIPE_THRESHOLD;
@@ -351,21 +402,20 @@ export function FilePreviewModal({
           }
         }
 
-        // Reset swipe state
-        swipeTranslateX.value = withSpring(0);
-        opacity.value = withSpring(1);
+        // Reset swipe state with smooth animation
+        swipeTranslateX.value = withSpring(0, { damping: 15, stiffness: 150 });
+        opacity.value = withSpring(1, { damping: 15, stiffness: 150 });
       }
     }
   };
 
-  // Animated styles
+  // Animated styles (pinch/pan zoom only, no rotation)
   const animatedImageStyle = useAnimatedStyle(() => {
     return {
       transform: [
         { translateX: translateX.value + swipeTranslateX.value },
         { translateY: translateY.value },
         { scale: scale.value },
-        { rotate: `${rotation}deg` as any }
       ],
       opacity: opacity.value,
     } as any;
@@ -393,18 +443,92 @@ export function FilePreviewModal({
   const isPDF = getFileExtension(currentFile.filename).toLowerCase() === "pdf";
   const isEPS = isEpsFile(currentFile);
 
+  // Helper function to get proper file URL
+  const getFileUrl = (file: AnkaaFile): string => {
+    const apiUrl = baseUrl || (global as any).__ANKAA_API_URL__ || "http://localhost:3030";
+
+    // Check if file has a URL property that might contain localhost
+    if (file.url && file.url.startsWith('http')) {
+      const urlObj = new URL(file.url);
+      const correctedUrl = `${apiUrl}${urlObj.pathname}${urlObj.search}`;
+      console.log('🔍 [FilePreviewModal] Corrected file URL:', {
+        original: file.url,
+        corrected: correctedUrl
+      });
+      return correctedUrl;
+    }
+
+    const url = `${apiUrl}/files/serve/${file.id}`;
+    console.log('🔍 [FilePreviewModal] getFileUrl:', {
+      filename: file.filename,
+      fileId: file.id,
+      baseUrl,
+      globalUrl: (global as any).__ANKAA_API_URL__,
+      finalUrl: url
+    });
+    return url;
+  };
+
+  // Helper function to get thumbnail URL
+  const getFileThumbnailUrl = (file: AnkaaFile, size: "small" | "medium" | "large" = "medium"): string => {
+    const apiUrl = baseUrl || (global as any).__ANKAA_API_URL__ || "http://localhost:3030";
+
+    console.log('🔍 [getFileThumbnailUrl] Called with:', {
+      filename: file.filename,
+      baseUrl,
+      apiUrl,
+      fileThumbnailUrl: file.thumbnailUrl,
+      requestedSize: size
+    });
+
+    // If file has thumbnailUrl, use it
+    if (file.thumbnailUrl) {
+      // If already absolute URL, replace localhost with correct API URL and ensure size parameter
+      if (file.thumbnailUrl.startsWith('http')) {
+        // Extract the path from the URL
+        const urlObj = new URL(file.thumbnailUrl);
+        // Always add or update the size parameter
+        const correctedUrl = `${apiUrl}${urlObj.pathname}?size=${size}`;
+        console.log('🔍 [FilePreviewModal] Corrected thumbnailUrl with size:', {
+          original: file.thumbnailUrl,
+          corrected: correctedUrl,
+          size: size
+        });
+        return correctedUrl;
+      }
+      // Otherwise construct URL
+      const url = `${apiUrl}/files/thumbnail/${file.id}?size=${size}`;
+      console.log('🔍 [FilePreviewModal] Constructed thumbnail URL:', url);
+      return url;
+    }
+
+    // For images, use the serve endpoint
+    if (isImageFile(file)) {
+      const url = `${apiUrl}/files/serve/${file.id}`;
+      console.log('🔍 [FilePreviewModal] Using serve URL for image:', url);
+      return url;
+    }
+
+    console.log('⚠️ [FilePreviewModal] No URL generated for file:', file.filename);
+    return "";
+  };
+
   return (
     <Modal visible={visible} animationType="fade" statusBarTranslucent>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       <View style={styles.container}>
-        {/* Background Blur */}
-        <View style={StyleSheet.flatten([StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.8)' }])} />
+        {/* Background */}
+        <View style={StyleSheet.flatten([StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.95)' }])} />
 
         {/* Main Content */}
-        <SafeAreaView style={styles.content}>
+        <View style={styles.content}>
           {/* Header */}
-          <Animated.View style={StyleSheet.flatten([styles.header, animatedControlsStyle])}>
+          <Animated.View style={StyleSheet.flatten([
+            styles.header,
+            animatedControlsStyle,
+            { paddingTop: safeTopPadding }
+          ])}>
             <View style={styles.headerLeft}>
               <View style={styles.fileInfo}>
                 <Text style={styles.fileName} numberOfLines={1}>
@@ -413,7 +537,7 @@ export function FilePreviewModal({
                 <Text style={styles.fileSize}>{formatFileSize(currentFile.size)}</Text>
                 {isCurrentFilePreviewable && totalImages > 1 && showImageCounter && (
                   <Badge style={styles.imageCounter} textStyle={styles.imageCounterText}>
-                    {currentImageIndex + 1} de {totalImages}
+                    {`${currentImageIndex + 1} de ${totalImages}`}
                   </Badge>
                 )}
               </View>
@@ -435,57 +559,82 @@ export function FilePreviewModal({
                     <PanGestureHandler onHandlerStateChange={panGestureHandler}>
                       <Animated.View style={styles.imageWrapper}>
                         <TouchableOpacity activeOpacity={1} onPress={showControls} style={styles.imageWrapper}>
+                          <Animated.View style={animatedImageStyle}>
+                            <Image
+                              key={`main-image-${currentFile.id}-${currentIndex}`}
+                              source={{
+                                uri: (() => {
+                                  const url = isEPS && currentFile.thumbnailUrl
+                                    ? getFileThumbnailUrl(currentFile, "large")
+                                    : getFileUrl(currentFile);
+                                  console.log('🖼️ [MainImage] About to load:', {
+                                    filename: currentFile.filename,
+                                    isEPS,
+                                    hasThumbnailUrl: !!currentFile.thumbnailUrl,
+                                    finalUrl: url,
+                                    imageLoading,
+                                    imageError
+                                  });
+                                  return url;
+                                })(),
+                                cache: 'reload'
+                              }}
+                              style={styles.image}
+                              resizeMode="contain"
+                              onLoadStart={() => {
+                                console.log('⏳ [MainImage] Load started:', currentFile.filename);
+                              }}
+                              onLoad={() => {
+                                console.log('✅ [MainImage] Loaded successfully:', currentFile.filename);
+                                handleImageLoad();
+                              }}
+                              onError={(error) => {
+                                console.error('❌ [MainImage] Failed to load:', {
+                                  filename: currentFile.filename,
+                                  url: isEPS && currentFile.thumbnailUrl
+                                    ? getFileThumbnailUrl(currentFile, "large")
+                                    : getFileUrl(currentFile),
+                                  error: error.nativeEvent
+                                });
+                                handleImageError();
+                              }}
+                              onLoadEnd={() => {
+                                console.log('🏁 [MainImage] Load ended (success or error):', currentFile.filename);
+                              }}
+                            />
+                          </Animated.View>
+
+                          {/* Loading Overlay */}
                           {imageLoading && (
-                            <View style={styles.loadingContainer}>
+                            <View style={styles.imageOverlay}>
                               <ActivityIndicator size="large" color={colors.primary} />
                               <Text style={styles.loadingText}>Carregando...</Text>
                             </View>
                           )}
 
-                          {imageError ? (
-                            <View style={styles.errorContainer}>
+                          {/* Error Overlay */}
+                          {imageError && (
+                            <View style={styles.imageOverlay}>
                               <Text style={styles.errorIcon}>⚠️</Text>
                               <Text style={styles.errorTitle}>Erro ao carregar</Text>
                               <Text style={styles.errorText}>Não foi possível carregar a imagem</Text>
-                              <TouchableOpacity style={styles.errorButton} onPress={handleShare} activeOpacity={0.7}>
-                                <IconDownload size={16} color={colors.background} />
-                                <Text style={styles.errorButtonText}>Baixar</Text>
-                              </TouchableOpacity>
+                              <View style={styles.errorButtonRow}>
+                                <TouchableOpacity style={styles.errorButton} onPress={handleOpenFile} activeOpacity={0.7}>
+                                  <IconExternalLink size={16} color={colors.background} />
+                                  <Text style={styles.errorButtonText}>Abrir</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.errorButton} onPress={handleDownload} activeOpacity={0.7}>
+                                  <IconDownload size={16} color={colors.background} />
+                                  <Text style={styles.errorButtonText}>Salvar</Text>
+                                </TouchableOpacity>
+                              </View>
                             </View>
-                          ) : (
-                            <Animated.Image
-                              source={{
-                                uri:
-                                  isEPS && currentFile.thumbnailUrl
-                                    ? currentFile.thumbnailUrl.startsWith("http")
-                                      ? currentFile.thumbnailUrl
-                                      : `/api/files/thumbnail/${currentFile.id}?size=large`
-                                    : getFileUrl(currentFile, baseUrl),
-                              }}
-                              style={StyleSheet.flatten([styles.image, animatedImageStyle])}
-                              resizeMode="contain"
-                              onLoad={handleImageLoad}
-                              onError={handleImageError}
-                            />
                           )}
                         </TouchableOpacity>
                       </Animated.View>
                     </PanGestureHandler>
                   </Animated.View>
                 </PinchGestureHandler>
-
-                {/* Navigation Arrows */}
-                {totalImages > 1 && (
-                  <Animated.View style={StyleSheet.flatten([styles.navigationContainer, animatedControlsStyle])}>
-                    <TouchableOpacity style={StyleSheet.flatten([styles.navButton, styles.navButtonLeft])} onPress={handlePrevious} activeOpacity={0.7}>
-                      <IconArrowLeft size={28} color={colors.foreground} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={StyleSheet.flatten([styles.navButton, styles.navButtonRight])} onPress={handleNext} activeOpacity={0.7}>
-                      <IconArrowRight size={28} color={colors.foreground} />
-                    </TouchableOpacity>
-                  </Animated.View>
-                )}
               </>
             ) : (
               // Non-previewable files
@@ -497,13 +646,13 @@ export function FilePreviewModal({
                       <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
                       <Text style={styles.filePreviewSubtitle}>Documento PDF • {formatFileSize(currentFile.size)}</Text>
                       <View style={styles.filePreviewActions}>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleShare} activeOpacity={0.7}>
+                        <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
                           <IconExternalLink size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Compartilhar</Text>
+                          <Text style={styles.fileActionButtonText}>Abrir</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
                           <IconDownload size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Baixar</Text>
+                          <Text style={styles.fileActionButtonText}>Salvar</Text>
                         </TouchableOpacity>
                       </View>
                     </>
@@ -513,20 +662,32 @@ export function FilePreviewModal({
                       <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
                       <Text style={styles.filePreviewSubtitle}>Arquivo EPS • {formatFileSize(currentFile.size)}</Text>
                       <Text style={styles.filePreviewNote}>Visualização não disponível</Text>
-                      <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
-                        <IconDownload size={18} color={colors.background} />
-                        <Text style={styles.fileActionButtonText}>Baixar</Text>
-                      </TouchableOpacity>
+                      <View style={styles.filePreviewActions}>
+                        <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
+                          <IconExternalLink size={18} color={colors.background} />
+                          <Text style={styles.fileActionButtonText}>Abrir</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
+                          <IconDownload size={18} color={colors.background} />
+                          <Text style={styles.fileActionButtonText}>Salvar</Text>
+                        </TouchableOpacity>
+                      </View>
                     </>
                   ) : (
                     <>
                       <Text style={styles.filePreviewIcon}>📎</Text>
                       <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
                       <Text style={styles.filePreviewSubtitle}>{formatFileSize(currentFile.size)}</Text>
-                      <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
-                        <IconDownload size={18} color={colors.background} />
-                        <Text style={styles.fileActionButtonText}>Baixar</Text>
-                      </TouchableOpacity>
+                      <View style={styles.filePreviewActions}>
+                        <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
+                          <IconExternalLink size={18} color={colors.background} />
+                          <Text style={styles.fileActionButtonText}>Abrir</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
+                          <IconDownload size={18} color={colors.background} />
+                          <Text style={styles.fileActionButtonText}>Salvar</Text>
+                        </TouchableOpacity>
+                      </View>
                     </>
                   )}
                 </TouchableOpacity>
@@ -538,47 +699,9 @@ export function FilePreviewModal({
           {isCurrentFilePreviewable && (
             <Animated.View style={StyleSheet.flatten([styles.bottomControls, animatedControlsStyle])}>
               <View style={styles.controlsRow}>
-                {/* Zoom Controls */}
-                <View style={styles.zoomControls}>
-                  <TouchableOpacity
-                    style={StyleSheet.flatten([styles.controlButton, scale.value <= MIN_ZOOM && styles.controlButtonDisabled])}
-                    onPress={handleZoomOut}
-                    disabled={scale.value <= MIN_ZOOM}
-                    activeOpacity={0.7}
-                  >
-                    <IconZoomOut size={20} color={scale.value <= MIN_ZOOM ? colors.muted : colors.foreground} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.resetButton} onPress={handleResetZoom} activeOpacity={0.7}>
-                    <Text style={styles.zoomText}>{Math.round(scale.value * 100)}%</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={StyleSheet.flatten([styles.controlButton, scale.value >= MAX_ZOOM && styles.controlButtonDisabled])}
-                    onPress={handleZoomIn}
-                    disabled={scale.value >= MAX_ZOOM}
-                    activeOpacity={0.7}
-                  >
-                    <IconZoomIn size={20} color={scale.value >= MAX_ZOOM ? colors.muted : colors.foreground} />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Rotation Controls */}
-                {enableRotation && (
-                  <View style={styles.rotationControls}>
-                    <TouchableOpacity style={styles.controlButton} onPress={handleRotateLeft} activeOpacity={0.7}>
-                      <IconRotate2 size={20} color={colors.foreground} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.controlButton} onPress={handleRotateRight} activeOpacity={0.7}>
-                      <IconRotateClockwise size={20} color={colors.foreground} />
-                    </TouchableOpacity>
-                  </View>
-                )}
-
                 {/* Action Controls */}
                 <View style={styles.actionControls}>
-                  <TouchableOpacity style={styles.controlButton} onPress={handleShare} activeOpacity={0.7}>
+                  <TouchableOpacity style={styles.controlButton} onPress={handleOpenFile} activeOpacity={0.7}>
                     <IconExternalLink size={20} color={colors.foreground} />
                   </TouchableOpacity>
 
@@ -592,7 +715,11 @@ export function FilePreviewModal({
 
           {/* Thumbnail Strip */}
           {isCurrentFilePreviewable && totalImages > 1 && showThumbnailStrip && (
-            <Animated.View style={StyleSheet.flatten([styles.thumbnailStrip, animatedControlsStyle])}>
+            <Animated.View style={StyleSheet.flatten([
+              styles.thumbnailStrip,
+              animatedControlsStyle,
+              { paddingBottom: safeBottomPadding }
+            ])}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbnailScrollContent}>
                 {previewableFiles.map(({ file, originalIndex }, index) => {
                   const isActive = originalIndex === currentIndex;
@@ -609,10 +736,20 @@ export function FilePreviewModal({
                     >
                       <Image
                         source={{
-                          uri: getFileThumbnailUrl(file, "small", baseUrl) || getFileUrl(file, baseUrl),
+                          uri: getFileThumbnailUrl(file, "small"),
                         }}
                         style={styles.thumbnailImage}
                         resizeMode="cover"
+                        onError={(error) => {
+                          console.error('❌ [Thumbnail] Failed to load:', {
+                            filename: file.filename,
+                            url: getFileThumbnailUrl(file, "small"),
+                            error: error.nativeEvent
+                          });
+                        }}
+                        onLoad={() => {
+                          console.log('✅ [Thumbnail] Loaded successfully:', file.filename);
+                        }}
                       />
                       {isActive && <View style={styles.thumbnailActiveOverlay} />}
                     </TouchableOpacity>
@@ -621,7 +758,7 @@ export function FilePreviewModal({
               </ScrollView>
             </Animated.View>
           )}
-        </SafeAreaView>
+        </View>
       </View>
     </Modal>
   );
@@ -630,7 +767,9 @@ export function FilePreviewModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.95)",
+  },
+  safeArea: {
+    flex: 1,
   },
   content: {
     flex: 1,
@@ -696,6 +835,13 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT - 200, // Account for header and controls
   },
+  imageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    gap: 16,
+  },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
@@ -743,6 +889,10 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 14,
     fontWeight: "500",
+  },
+  errorButtonRow: {
+    flexDirection: "row",
+    gap: 8,
   },
   navigationContainer: {
     position: "absolute",
@@ -883,6 +1033,8 @@ const styles = StyleSheet.create({
   thumbnailScrollContent: {
     paddingHorizontal: 16,
     gap: 12,
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   thumbnailButton: {
     width: 56,

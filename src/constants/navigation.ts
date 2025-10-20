@@ -237,6 +237,7 @@ export const TABLER_ICONS = {
   revenue: "IconCurrencyDollar",
   profit: "IconTrendingUp",
   cost: "IconCalculator",
+  financial: "IconCurrencyDollar",
 
   // ==================== COMMON ACTIONS ====================
   // CRUD Operations
@@ -492,22 +493,10 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
 
       {
-        id: "registros-de-alteracoes",
-        title: "Registros de Alterações",
-        icon: "auditLog",
-        path: "/administracao/registros-de-alteracoes",
-        children: [
-          { id: "registros-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/registros-de-alteracoes/detalhes/:id", isDynamic: true },
-          { id: "registros-entidade", title: "Por Entidade", icon: "entity", path: "/administracao/registros-de-alteracoes/entidade", isDynamic: false },
-        ],
-        requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-      },
-
-      {
         id: "setores",
         title: "Setores",
         icon: "building",
-        path: "/administracao/setores",
+        path: "/administracao/setores/listar",
         children: [
           { id: "setores-cadastrar", title: "Cadastrar", icon: "plus", path: "/administracao/setores/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
           { id: "setores-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/setores/detalhes/:id", isDynamic: true },
@@ -524,6 +513,55 @@ export const NAVIGATION_MENU: MenuItem[] = [
     path: "/pintura/catalogo-basico",
     requiredPrivilege: [SECTOR_PRIVILEGES.LEADER],
     children: [{ id: "catalogo-detalhes", title: "Detalhes", icon: "eye", path: "/pintura/catalogo-basico/detalhes/:id", isDynamic: true }],
+  },
+
+  // FINANCEIRO
+  {
+    id: "financeiro",
+    title: "Financeiro",
+    icon: "financial",
+    path: "/financeiro",
+    requiredPrivilege: SECTOR_PRIVILEGES.FINANCIAL,
+    children: [
+      {
+        id: "clientes-financeiro",
+        title: "Clientes",
+        icon: "users",
+        path: "/financeiro/clientes",
+      },
+      {
+        id: "producao-financeiro",
+        title: "Produção",
+        icon: "factory",
+        path: "/financeiro/producao",
+        children: [
+          {
+            id: "aerografia-financeiro",
+            title: "Aerografia",
+            icon: "paintBrush",
+            path: "/financeiro/producao/aerografia",
+          },
+          {
+            id: "cronograma-financeiro",
+            title: "Cronograma",
+            icon: "clock",
+            path: "/financeiro/producao/cronograma",
+          },
+          {
+            id: "em-espera-financeiro",
+            title: "Em Espera",
+            icon: "pause",
+            path: "/financeiro/producao/em-espera",
+          },
+          {
+            id: "historico-tarefas-financeiro",
+            title: "Histórico de Tarefas",
+            icon: "history",
+            path: "/financeiro/producao/historico-tarefas",
+          },
+        ],
+      },
+    ],
   },
 
   // ESTOQUE
@@ -949,7 +987,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Catálogo",
         icon: "catalog",
         path: "/pintura/catalogo",
-        requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
+        requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
         children: [
           {
             id: "catalogo-cadastrar",
@@ -1035,13 +1073,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Produção",
     icon: "factory",
     path: "/producao",
-    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
+    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
     children: [
       {
         id: "aerografia",
         title: "Aerografia",
         icon: "paintBrush",
         path: "/producao/aerografia",
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
         children: [
           {
             id: "aerografia-cadastrar",
@@ -1098,7 +1137,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Em Espera",
         icon: "pause",
         path: "/producao/em-espera",
-        requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
       },
 
       {
@@ -1106,6 +1145,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Garagens",
         icon: "warehouse",
         path: "/producao/garagens",
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
         children: [
           {
             id: "garagens-cadastrar",
@@ -1137,7 +1177,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Histórico",
         icon: "history",
         path: "/producao/historico",
-        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
       },
 
       {
@@ -1170,7 +1210,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Recorte",
         icon: "scissors",
         path: "/producao/recorte",
-        requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
       },
     ],
   },
@@ -1347,6 +1387,12 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Backup do Sistema",
         icon: "databaseImport",
         path: "/servidor/backup",
+      },
+      {
+        id: "registros-de-alteracoes",
+        title: "Registros de Alterações",
+        icon: "auditLog",
+        path: "/servidor/registros-de-alteracoes/listar",
       },
       {
         id: "servidor-implantacoes",

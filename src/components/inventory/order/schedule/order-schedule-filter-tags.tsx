@@ -66,10 +66,10 @@ export function OrderScheduleFilterTags({
         )}
 
         {/* Frequency filter */}
-        {filters.frequency && (
+        {filters.frequency && Array.isArray(filters.frequency) && filters.frequency.length > 0 && (
           <Badge variant="secondary" style={styles.tag}>
             <ThemedText style={styles.tagText}>
-              Frequência: {SCHEDULE_FREQUENCY_LABELS[filters.frequency] || filters.frequency}
+              Frequências: {filters.frequency.length}
             </ThemedText>
             <Pressable
               onPress={() => removeFilter("frequency")}
@@ -98,13 +98,13 @@ export function OrderScheduleFilterTags({
         )}
 
         {/* Supplier filter */}
-        {filters.supplierId && (
+        {filters.supplierIds && Array.isArray(filters.supplierIds) && filters.supplierIds.length > 0 && (
           <Badge variant="secondary" style={styles.tag}>
             <ThemedText style={styles.tagText}>
-              Fornecedor selecionado
+              Fornecedores: {filters.supplierIds.length}
             </ThemedText>
             <Pressable
-              onPress={() => removeFilter("supplierId")}
+              onPress={() => removeFilter("supplierIds")}
               style={styles.removeButton}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
@@ -114,13 +114,13 @@ export function OrderScheduleFilterTags({
         )}
 
         {/* Date range filters */}
-        {(filters.createdAt?.gte || filters.createdAt?.lte) && (
+        {(filters.createdAtRange?.gte || filters.createdAtRange?.lte) && (
           <Badge variant="secondary" style={styles.tag}>
             <ThemedText style={styles.tagText}>
               Período de criação
             </ThemedText>
             <Pressable
-              onPress={() => removeFilter("createdAt")}
+              onPress={() => removeFilter("createdAtRange")}
               style={styles.removeButton}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
@@ -129,13 +129,13 @@ export function OrderScheduleFilterTags({
           </Badge>
         )}
 
-        {(filters.nextRun?.gte || filters.nextRun?.lte) && (
+        {(filters.specificDateRange?.gte || filters.specificDateRange?.lte) && (
           <Badge variant="secondary" style={styles.tag}>
             <ThemedText style={styles.tagText}>
-              Período de próxima execução
+              Período de data agendada
             </ThemedText>
             <Pressable
-              onPress={() => removeFilter("nextRun")}
+              onPress={() => removeFilter("specificDateRange")}
               style={styles.removeButton}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >

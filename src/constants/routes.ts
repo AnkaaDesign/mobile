@@ -3,20 +3,6 @@
 export const routes = {
   // Administration - Administração - Administration
   administration: {
-    backups: "/administracao/backups",
-    changeLogs: {
-      details: (id: string) => `/administracao/registros-de-alteracoes/detalhes/${id}`,
-      entity: (entityType: string, entityId: string) => `/administracao/registros-de-alteracoes/entidade/${entityType}/${entityId}`,
-      list: "/administracao/registros-de-alteracoes/listar",
-      root: "/administracao/registros-de-alteracoes",
-    },
-    commissions: {
-      create: "/administracao/comissoes/cadastrar",
-      details: (id: string) => `/administracao/comissoes/detalhes/${id}`,
-      edit: (id: string) => `/administracao/comissoes/editar/${id}`,
-      list: "/administracao/comissoes/listar",
-      root: "/administracao/comissoes",
-    },
     customers: {
       batchEdit: "/administracao/clientes/editar-em-lote",
       create: "/administracao/clientes/cadastrar",
@@ -47,14 +33,6 @@ export const routes = {
       list: "/administracao/notificacoes/listar",
       root: "/administracao/notificacoes",
     },
-    preferences: {
-      backup: "/administracao/preferencias/backup",
-      general: "/administracao/preferencias/geral",
-      integrations: "/administracao/preferencias/integracoes",
-      list: "/administracao/preferencias/listar",
-      root: "/administracao/preferencias",
-      security: "/administracao/preferencias/seguranca",
-    },
     root: "/administracao",
     sectors: {
       batchEdit: "/administracao/setores/editar-em-lote",
@@ -64,37 +42,13 @@ export const routes = {
       list: "/administracao/setores/listar",
       root: "/administracao/setores",
     },
-    server: {
-      logs: "/administracao/servidor/logs",
-      maintenance: "/administracao/servidor/manutencao",
-      resources: "/administracao/servidor/recursos",
-      root: "/administracao/servidor",
-      services: "/administracao/servidor/servicos",
-      status: "/administracao/servidor/status",
-    },
     users: {
-      batchEdit: "/administracao/colaboradores/editar-em-lote",
-      create: "/administracao/colaboradores/cadastrar",
-      details: (id: string) => `/administracao/colaboradores/detalhes/${id}`,
-      edit: (id: string) => `/administracao/colaboradores/editar/${id}`,
+      batchEdit: "/administracao/usuarios/editar-em-lote",
+      create: "/administracao/usuarios/cadastrar",
+      details: (id: string) => `/administracao/usuarios/detalhes/${id}`,
+      edit: (id: string) => `/administracao/usuarios/editar/${id}`,
       list: "/administracao/usuarios/listar",
-      root: "/administracao/colaboradores",
-    },
-    monitoring: {
-      dashboard: "/administracao/monitoramento/dashboard",
-      root: "/administracao/monitoramento",
-      metrics: {
-        list: "/administracao/monitoramento/metricas",
-        root: "/administracao/monitoramento/metricas",
-      },
-      alerts: {
-        list: "/administracao/monitoramento/alertas",
-        root: "/administracao/monitoramento/alertas",
-      },
-      logs: {
-        list: "/administracao/monitoramento/logs",
-        root: "/administracao/monitoramento/logs",
-      },
+      root: "/administracao/usuarios",
     },
   },
 
@@ -166,10 +120,6 @@ export const routes = {
       edit: (id: string) => `/recursos-humanos/feriados/editar/${id}`,
       list: "/recursos-humanos/feriados",
       root: "/recursos-humanos/feriados",
-    },
-    payroll: {
-      list: "/recursos-humanos/folha-de-pagamento/listar",
-      root: "/recursos-humanos/folha-de-pagamento",
     },
     positions: {
       batchEdit: "/recursos-humanos/cargos/editar-em-lote",
@@ -267,11 +217,6 @@ export const routes = {
 
   // Inventory - Estoque - Inventory Management
   inventory: {
-    activities: {
-      details: (id: string) => `/estoque/atividades/detalhes/${id}`,
-      list: "/estoque/atividades",
-      root: "/estoque/atividades",
-    },
     externalWithdrawals: {
       create: "/estoque/retiradas-externas/cadastrar",
       details: (id: string) => `/estoque/retiradas-externas/detalhes/${id}`,
@@ -279,7 +224,7 @@ export const routes = {
       list: "/estoque/retiradas-externas",
       root: "/estoque/retiradas-externas",
     },
-    loans: {
+    borrows: {
       batchEdit: "/estoque/emprestimos/editar-lote",
       create: "/estoque/emprestimos/cadastrar",
       details: (id: string) => `/estoque/emprestimos/detalhes/${id}`,
@@ -414,13 +359,8 @@ export const routes = {
 
   // My Team - Meu Pessoal - Team management for leaders (simplified routes)
   myTeam: {
-    activities: "/meu-pessoal/atividades",
-    cuts: "/meu-pessoal/recortes",
-    loans: "/meu-pessoal/emprestimos",
-    ppeDeliveries: "/meu-pessoal/entregas-epi",
+    borrows: "/meu-pessoal/emprestimos",
     root: "/meu-pessoal",
-    timeCalculations: "/meu-pessoal/calculos-ponto",
-    users: "/meu-pessoal/usuarios",
     vacations: "/meu-pessoal/ferias",
     warnings: "/meu-pessoal/avisos",
   },
@@ -486,41 +426,58 @@ export const routes = {
     root: "/pintura",
   },
 
+  // Server - Servidor - Server Administration
+  server: {
+    backups: {
+      create: "/servidor/backups/criar",
+      details: (id: string) => `/servidor/backups/detalhes/${id}`,
+      list: "/servidor/backups/listar",
+      root: "/servidor/backups",
+    },
+    changeLogs: {
+      details: (id: string) => `/servidor/registros-de-alteracoes/detalhes/${id}`,
+      entity: (entityType: string, entityId: string) => `/servidor/registros-de-alteracoes/entidade/${entityType}/${entityId}`,
+      list: "/servidor/registros-de-alteracoes/listar",
+      root: "/servidor/registros-de-alteracoes",
+    },
+    databaseSync: "/servidor/sincronizacao-bd",
+    deployments: {
+      create: "/servidor/implantacoes/cadastrar",
+      details: (id: string) => `/servidor/implantacoes/detalhes/${id}`,
+      list: "/servidor/implantacoes/listar",
+      root: "/servidor/implantacoes",
+    },
+    logs: "/servidor/logs",
+    maintenance: "/servidor/manutencao",
+    metrics: "/servidor/metricas",
+    rateLimiting: "/servidor/rate-limiting",
+    resources: "/servidor/recursos",
+    root: "/servidor",
+    services: "/servidor/servicos",
+    sharedFolders: "/servidor/pastas-compartilhadas",
+    status: "/servidor/status",
+    systemUsers: {
+      create: "/servidor/usuarios/cadastrar",
+      details: (id: string) => `/servidor/usuarios/detalhes/${id}`,
+      list: "/servidor/usuarios/listar",
+      root: "/servidor/usuarios",
+    },
+  },
+
   // Personal - Pessoal - Personal (User-specific data)
   personal: {
-    myActivities: {
-      details: (id: string) => `/pessoal/minhas-atividades/detalhes/${id}`,
-      list: "/pessoal/minhas-atividades/listar",
-      root: "/pessoal/minhas-atividades",
-    },
     myBorrows: {
       details: (id: string) => `/pessoal/meus-emprestimos/detalhes/${id}`,
-      list: "/pessoal/meus-emprestimos/listar",
       root: "/pessoal/meus-emprestimos",
-    },
-    myCommissions: {
-      details: (id: string) => `/pessoal/minhas-comissoes/detalhes/${id}`,
-      root: "/pessoal/minhas-comissoes",
     },
     myHolidays: {
       details: (id: string) => `/pessoal/meus-feriados/detalhes/${id}`,
       root: "/pessoal/meus-feriados",
     },
-    myLoans: {
-      details: (id: string) => `/pessoal/meus-emprestimos/detalhes/${id}`,
-      root: "/pessoal/meus-emprestimos",
-    },
     myNotifications: {
       details: (id: string) => `/pessoal/minhas-notificacoes/detalhes/${id}`,
       root: "/pessoal/minhas-notificacoes",
       settings: "/pessoal/minhas-notificacoes/configuracoes",
-    },
-    myPayroll: {
-      root: "/pessoal/meu-holerite",
-    },
-    myPpeDeliveries: {
-      details: (id: string) => `/pessoal/minhas-entregas-epi/detalhes/${id}`,
-      root: "/pessoal/minhas-entregas-epi",
     },
     myPpes: {
       request: "/pessoal/meus-epis/solicitar",
@@ -528,9 +485,6 @@ export const routes = {
     },
     myProfile: {
       root: "/pessoal/meu-perfil",
-    },
-    myTimeCalculations: {
-      root: "/pessoal/meus-calculos-ponto",
     },
     myVacations: {
       details: (id: string) => `/pessoal/minhas-ferias/detalhes/${id}`,
@@ -540,10 +494,6 @@ export const routes = {
       details: (id: string) => `/pessoal/meus-avisos/detalhes/${id}`,
       root: "/pessoal/meus-avisos",
     },
-    payroll: {
-      details: (id: string) => `/pessoal/holerite/detalhes/${id}`,
-      root: "/pessoal/holerite",
-    },
     preferences: {
       notifications: "/pessoal/preferencias/notificacoes",
       privacy: "/pessoal/preferencias/privacidade",
@@ -551,10 +501,6 @@ export const routes = {
       theme: "/pessoal/preferencias/tema",
     },
     root: "/pessoal",
-    timeCalculations: {
-      details: (id: string) => `/pessoal/calculos-ponto/detalhes/${id}`,
-      root: "/pessoal/calculos-ponto",
-    },
   },
 
   // Production - Produção - Production Management
@@ -655,12 +601,6 @@ export const routes = {
       create: "/producao/ordens-de-servico/cadastrar",
       details: (id: string) => `/producao/ordens-de-servico/detalhes/${id}`,
       edit: (id: string) => `/producao/ordens-de-servico/editar/${id}`,
-      root: "/producao/ordens-de-servico",
-    },
-    serviceOrders: {
-      create: "/producao/ordens-de-servico/cadastrar",
-      details: (id: string) => `/producao/ordens-de-servico/detalhes/${id}`,
-      edit: (id: string) => `/producao/ordens-de-servico/editar/${id}`,
       list: "/producao/ordens-de-servico/listar",
       root: "/producao/ordens-de-servico",
     },
@@ -678,26 +618,6 @@ export const routes = {
       edit: (id: string) => `/producao/caminhoes/editar/${id}`,
       list: "/producao/caminhoes/listar",
       root: "/producao/caminhoes",
-    },
-  },
-
-  // Server - Servidor - Server Management
-  server: {
-    backup: "/servidor/backup",
-    deployments: {
-      create: "/servidor/implantacoes/cadastrar",
-      details: (id: string) => `/servidor/implantacoes/detalhes/${id}`,
-      edit: (id: string) => `/servidor/implantacoes/editar/${id}`,
-      root: "/servidor/implantacoes",
-    },
-    logs: "/servidor/logs",
-    metrics: "/servidor/metricas",
-    root: "/servidor",
-    services: "/servidor/servicos",
-    sharedFolders: "/servidor/pastas-compartilhadas",
-    users: {
-      create: "/servidor/usuarios/cadastrar",
-      root: "/servidor/usuarios",
     },
   },
 
@@ -721,15 +641,6 @@ export const routes = {
         root: "/integracoes/secullum/registros-ponto",
       },
     },
-  },
-
-  // Users - Alias for administration users (collaborators) for backward compatibility
-  users: {
-    batchEdit: "/administracao/colaboradores/editar-em-lote",
-    create: "/administracao/colaboradores/cadastrar",
-    details: (id: string) => `/administracao/colaboradores/detalhes/${id}`,
-    edit: (id: string) => `/administracao/colaboradores/editar/${id}`,
-    root: "/administracao/colaboradores",
   },
 } as const;
 

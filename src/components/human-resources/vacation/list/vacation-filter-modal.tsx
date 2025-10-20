@@ -53,23 +53,17 @@ export const VacationFilterModal = ({ visible, onClose, onApply, currentFilters 
   // Handle status filter
   const handleStatusChange = useCallback((status: string, checked: boolean) => {
     setFilters((prev) => {
-      const currentStatuses = (prev.where?.status as any)?.in || [];
+      const currentStatuses = prev.statuses || [];
       if (checked) {
         return {
           ...prev,
-          where: {
-            ...prev.where,
-            status: { in: [...currentStatuses, status] },
-          },
+          statuses: [...currentStatuses, status as any],
         };
       } else {
-        const newStatuses = currentStatuses.filter((s: string) => s !== status);
+        const newStatuses = currentStatuses.filter((s) => s !== status);
         return {
           ...prev,
-          where: {
-            ...prev.where,
-            status: newStatuses.length > 0 ? { in: newStatuses } : undefined,
-          },
+          statuses: newStatuses.length > 0 ? newStatuses : undefined,
         };
       }
     });
@@ -78,23 +72,17 @@ export const VacationFilterModal = ({ visible, onClose, onApply, currentFilters 
   // Handle type filter
   const handleTypeChange = useCallback((type: string, checked: boolean) => {
     setFilters((prev) => {
-      const currentTypes = (prev.where?.type as any)?.in || [];
+      const currentTypes = prev.types || [];
       if (checked) {
         return {
           ...prev,
-          where: {
-            ...prev.where,
-            type: { in: [...currentTypes, type] },
-          },
+          types: [...currentTypes, type as any],
         };
       } else {
-        const newTypes = currentTypes.filter((t: string) => t !== type);
+        const newTypes = currentTypes.filter((t) => t !== type);
         return {
           ...prev,
-          where: {
-            ...prev.where,
-            type: newTypes.length > 0 ? { in: newTypes } : undefined,
-          },
+          types: newTypes.length > 0 ? newTypes : undefined,
         };
       }
     });
@@ -104,20 +92,14 @@ export const VacationFilterModal = ({ visible, onClose, onApply, currentFilters 
   const handleStartDateChange = useCallback((date: Date | undefined) => {
     setFilters((prev) => ({
       ...prev,
-      where: {
-        ...prev.where,
-        startAt: date ? { gte: date } : undefined,
-      },
+      startAtRange: date ? { gte: date, lte: prev.startAtRange?.lte } : undefined,
     }));
   }, []);
 
   const handleEndDateChange = useCallback((date: Date | undefined) => {
     setFilters((prev) => ({
       ...prev,
-      where: {
-        ...prev.where,
-        endAt: date ? { lte: date } : undefined,
-      },
+      endAtRange: date ? { lte: date, gte: prev.endAtRange?.gte } : undefined,
     }));
   }, []);
 
@@ -134,16 +116,16 @@ export const VacationFilterModal = ({ visible, onClose, onApply, currentFilters 
   // Count active filters
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if ((filters.where?.status as any)?.in?.length > 0) count++;
-    if ((filters.where?.type as any)?.in?.length > 0) count++;
-    if (filters.where?.userId) count++;
-    if (filters.where?.startAt) count++;
-    if (filters.where?.endAt) count++;
+    if (filters.statuses && filters.statuses.length > 0) count++;
+    if (filters.types && filters.types.length > 0) count++;
+    if (filters.userIds && filters.userIds.length > 0) count++;
+    if (filters.startAtRange?.gte) count++;
+    if (filters.endAtRange?.lte) count++;
     return count;
   }, [filters]);
 
-  const currentStatuses = (filters.where?.status as any)?.in || [];
-  const currentTypes = (filters.where?.type as any)?.in || [];
+  const currentStatuses = filters.statuses || [];
+  const currentTypes = filters.types || [];
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -215,14 +197,11 @@ export const VacationFilterModal = ({ visible, onClose, onApply, currentFilters 
               <View style={styles.sectionContent}>
                 <Combobox
                   options={users}
-                  value={filters.where?.userId as string}
+                  value={(filters.userIds && filters.userIds.length > 0) ? filters.userIds[0] : ""}
                   onValueChange={(value) => {
                     setFilters((prev) => ({
                       ...prev,
-                      where: {
-                        ...prev.where,
-                        userId: value || undefined,
-                      },
+                      userIds: value ? [value] : undefined,
                     }));
                   }}
                   placeholder="Selecione um colaborador"
@@ -244,12 +223,12 @@ export const VacationFilterModal = ({ visible, onClose, onApply, currentFilters 
               <View style={styles.sectionContent}>
                 <View style={styles.datePickerContainer}>
                   <ThemedText style={styles.dateLabel}>Data inicial (a partir de)</ThemedText>
-                  <DatePicker value={(filters.where?.startAt as any)?.gte} onChange={handleStartDateChange} placeholder="Selecione a data inicial" />
+                  <DatePicker value={filters.startAtRange?.gte} onChange={handleStartDateChange} placeholder="Selecione a data inicial" />
                 </View>
 
                 <View style={styles.datePickerContainer}>
                   <ThemedText style={styles.dateLabel}>Data final (até)</ThemedText>
-                  <DatePicker value={(filters.where?.endAt as any)?.lte} onChange={handleEndDateChange} placeholder="Selecione a data final" />
+                  <DatePicker value={filters.endAtRange?.lte} onChange={handleEndDateChange} placeholder="Selecione a data final" />
                 </View>
               </View>
             )}

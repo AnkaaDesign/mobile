@@ -76,7 +76,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
             </ThemedText>
           </View>
         )}
-        <ThemedText style={styles.nameText} numberOfLines={2}>
+        <ThemedText style={styles.nameText} numberOfLines={1}>
           {customer.fantasyName}
         </ThemedText>
       </View>
@@ -661,8 +661,8 @@ export const CustomerTable = React.memo<CustomerTableProps>(
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
             getItemLayout={(data, index) => ({
-              length: 70,
-              offset: 70 * index,
+              length: 36,
+              offset: 36 * index,
               index,
             })}
             style={styles.flatList}
@@ -694,7 +694,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   headerWrapper: {
-    marginTop: 12,
     flexDirection: "column",
   },
   headerContainer: {
@@ -705,12 +704,12 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 56,
+    minHeight: 40,
   },
   headerCell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.sm,
-    minHeight: 56,
+    minHeight: 40,
     justifyContent: "center",
   },
   headerText: {
@@ -752,13 +751,13 @@ const styles = StyleSheet.create({
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch",
-    minHeight: 70,
+    minHeight: 36,
   },
   cell: {
     paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
+    paddingVertical: 6,
     justifyContent: "center",
-    minHeight: 70,
+    minHeight: 36,
   },
   centerAlign: {
     alignItems: "center",
@@ -767,10 +766,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   cellText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   mutedText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
     opacity: 0.5,
   },
   nameContainer: {
@@ -798,7 +797,7 @@ const styles = StyleSheet.create({
   nameText: {
     flex: 1,
     fontWeight: fontWeight.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   emailText: {
     color: "#16a34a", // green-600

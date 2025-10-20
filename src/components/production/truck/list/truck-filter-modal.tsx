@@ -5,6 +5,34 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { IconX } from "@tabler/icons-react-native";
 
+/**
+ * TODO: Implement full filter functionality matching web implementation
+ *
+ * Required Filter Categories (from web/src/components/fleet/truck/list/truck-filters.tsx):
+ *
+ * 1. Basic Filters (truck-basic-filters.tsx):
+ *    - hasGarage: boolean | undefined (ternary switch: Yes/No/Any)
+ *    - hasPosition: boolean | undefined (ternary switch: Yes/No/Any)
+ *    - isParked: boolean | undefined (ternary switch: Yes/No/Any)
+ *
+ * 2. Entity Selectors (truck-entity-selectors.tsx):
+ *    - taskIds: string[] (multi-select with search)
+ *    - garageIds: string[] (multi-select with search)
+ *    - manufacturers: TRUCK_MANUFACTURER[] (multi-select with chips)
+ *    - plates: string[] (input with chips)
+ *    - models: string[] (input with chips)
+ *
+ * 3. Range Filters (truck-range-filters.tsx):
+ *    - xPositionRange: { min?: number; max?: number }
+ *    - yPositionRange: { min?: number; max?: number }
+ *
+ * 4. Date Filters (truck-date-filters.tsx):
+ *    - createdAt: { gte?: Date; lte?: Date }
+ *    - updatedAt: { gte?: Date; lte?: Date }
+ *
+ * Should match schema: TruckGetManyFormData from schemas/truck.ts
+ */
+
 interface TruckFilterModalProps {
   visible: boolean;
   onClose: () => void;
@@ -41,7 +69,7 @@ export function TruckFilterModal({
           }}
         >
           <ThemedText size="lg" weight="semibold">Filtros</ThemedText>
-          {/* Add filter controls here */}
+          {/* TODO: Add filter controls here - see comment block above for required fields */}
         </View>
       </View>
     </Modal>

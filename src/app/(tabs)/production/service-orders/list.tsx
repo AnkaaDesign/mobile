@@ -7,8 +7,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { ListActionButton } from "@/components/ui/list-action-button";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { ServiceOrderTable, createColumnDefinitions, getDefaultVisibleColumns } from "@/components/production/service-order/list/service-order-table";
 import { ServiceOrderFilterModal } from "@/components/production/service-order/list/service-order-filter-modal";
@@ -184,33 +183,20 @@ export default function ServiceOrderListScreen() {
             style={styles.searchBar}
           />
           <View style={styles.buttonContainer}>
-            <View style={styles.buttonWrapper}>
-              <Button
-                variant="outline"
-                onPress={() => setShowColumnManager(true)}
-                style={{ ...styles.actionButton, backgroundColor: colors.input }}
-              >
-                <IconList size={20} color={colors.foreground} />
-              </Button>
-              <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
-                <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
-              </Badge>
-            </View>
-            <View style={styles.buttonWrapper}>
-              <Button
-                variant="outline"
-                onPress={() => setShowFilters(true)}
-                style={{ ...styles.actionButton, backgroundColor: colors.input }}
-              >
-                <IconFilter size={20} color={colors.foreground} />
-              </Button>
-              {activeFiltersCount > 0 && (
-                <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                  <ThemedText style={{ ...styles.actionBadgeText, color: "white" }}>{activeFiltersCount}</ThemedText>
-                </Badge>
-              )}
-            </View>
-          </View>
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={() => setShowColumnManager(true)}
+            badgeCount={visibleColumnKeys.length}
+            badgeVariant="primary"
+          />
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
+            onPress={() => setShowFilters(true)}
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
+        </View>
         </View>
 
         {/* Active Filters */}
@@ -313,30 +299,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     gap: 8,
-  },
-  buttonWrapper: {
-    position: "relative",
-  },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    paddingHorizontal: 0,
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
   },
   countContainer: {
     paddingHorizontal: spacing.md,

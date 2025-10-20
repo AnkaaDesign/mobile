@@ -1,5 +1,11 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 export default function HumanResourcesHolidaysScreen() {
-  return <UnderConstruction title="Feriados" />;
+  useEffect(() => {
+    // Redirect to holidays list page
+    router.replace("/(tabs)/human-resources/holidays/list");
+  }, []);
+
+  return null;
 }

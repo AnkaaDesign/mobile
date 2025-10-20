@@ -9,7 +9,7 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row";
 import { formatCurrency } from '../../../../utils';
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { extendedColors } from "@/lib/theme/extended-colors";
 
 export interface TableColumn {
   key: string;
@@ -38,6 +38,7 @@ interface PositionTableProps {
   sortConfigs?: SortConfig[];
   onSort?: (configs: SortConfig[]) => void;
   enableSwipeActions?: boolean;
+  visibleColumnKeys?: string[];
 }
 
 // Get screen width for responsive design
@@ -53,9 +54,29 @@ const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (position: Position) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={2}>
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={1} ellipsizeMode="tail">
         {position.name}
       </ThemedText>
+    ),
+  },
+  {
+    key: "hierarchy",
+    header: "Hierarquia",
+    align: "center",
+    sortable: true,
+    width: 0,
+    accessor: (position: Position) => (
+      <View style={styles.centerAlign}>
+        {position.hierarchy !== null && position.hierarchy !== undefined ? (
+          <Badge variant="secondary" size="sm">
+            {position.hierarchy}
+          </Badge>
+        ) : (
+          <ThemedText style={StyleSheet.flatten([styles.cellText, { opacity: 0.5 }])} numberOfLines={1}>
+            -
+          </ThemedText>
+        )}
+      </View>
     ),
   },
   {
@@ -67,22 +88,10 @@ const createColumnDefinitions = (): TableColumn[] => [
     accessor: (position: Position) => (
       <View style={styles.centerAlign}>
         <Badge
-          variant={position.bonifiable ? "default" : "secondary"}
+          variant={position.bonifiable ? "success" : "muted"}
           size="sm"
-          style={{
-            backgroundColor: position.bonifiable ? badgeColors.success.background : badgeColors.muted.background,
-            borderWidth: 0,
-          }}
         >
-          <ThemedText
-            style={{
-              color: position.bonifiable ? badgeColors.success.text : badgeColors.muted.text,
-              fontSize: fontSize.xs,
-              fontWeight: fontWeight.medium,
-            }}
-          >
-            {position.bonifiable ? "Sim" : "Não"}
-          </ThemedText>
+          {position.bonifiable ? "Sim" : "Não"}
         </Badge>
       </View>
     ),
@@ -93,11 +102,15 @@ const createColumnDefinitions = (): TableColumn[] => [
     align: "right",
     sortable: true,
     width: 0,
-    accessor: (position: Position) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
-        {position.remuneration ? formatCurrency(position.remuneration) : "-"}
-      </ThemedText>
-    ),
+    accessor: (position: Position) => {
+      // Use the virtual remuneration field (populated by backend from monetaryValues or remunerations)
+      const currentRemuneration = position.remuneration || 0;
+      return (
+        <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
+          {currentRemuneration > 0 ? formatCurrency(currentRemuneration) : "-"}
+        </ThemedText>
+      );
+    },
   },
   {
     key: "users",
@@ -106,9 +119,11 @@ const createColumnDefinitions = (): TableColumn[] => [
     sortable: false,
     width: 0,
     accessor: (position: Position) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
-        {position._count?.users || 0}
-      </ThemedText>
+      <View style={styles.centerAlign}>
+        <Badge variant="outline" size="sm">
+          {position._count?.users || 0}
+        </Badge>
+      </View>
     ),
   },
 ];
@@ -188,12 +203,25 @@ function PositionTableRowSwipe({ positionId, positionName, onEdit, onDelete, chi
   );
 }
 
+// Default visible columns
+const getDefaultVisibleColumns = (): Set<string> => {
+  return new Set(["name", "hierarchy", "remuneration", "users"]);
+};
+
 export const PositionTable = React.memo<PositionTableProps>(
-  ({ positions, onPositionPress, onPositionEdit, onPositionDelete, onRefresh, onEndReached, refreshing = false, loading = false, loadingMore = false, sortConfigs = [], onSort, enableSwipeActions = true }) => {
+  ({ positions, onPositionPress, onPositionEdit, onPositionDelete, onRefresh, onEndReached, refreshing = false, loading = false, loadingMore = false, sortConfigs = [], onSort, enableSwipeActions = true, visibleColumnKeys }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
     const [headerHeight, setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
+
+    // Column visibility - use prop if provided, otherwise use default
+    const visibleColumns = useMemo(() => {
+      if (visibleColumnKeys && visibleColumnKeys.length > 0) {
+        return new Set(visibleColumnKeys);
+      }
+      return getDefaultVisibleColumns();
+    }, [visibleColumnKeys]);
 
     // Get all column definitions
     const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -203,21 +231,25 @@ export const PositionTable = React.memo<PositionTableProps>(
       // Define width ratios for each column type
       const columnWidthRatios: Record<string, number> = {
         name: 2.0,
+        hierarchy: 1.0,
         bonifiable: 1.0,
         remuneration: 1.3,
         users: 0.8,
       };
 
+      // Filter to visible columns
+      const visible = allColumns.filter((col) => visibleColumns.has(col.key));
+
       // Calculate total ratio
-      const totalRatio = allColumns.reduce((sum, col) => sum + (columnWidthRatios[col.key] || 1.0), 0);
+      const totalRatio = visible.reduce((sum, col) => sum + (columnWidthRatios[col.key] || 1.0), 0);
 
       // Calculate actual widths
-      return allColumns.map((col) => {
+      return visible.map((col) => {
         const ratio = columnWidthRatios[col.key] || 1.0;
         const width = Math.floor((availableWidth * ratio) / totalRatio);
         return { ...col, width };
       });
-    }, [allColumns]);
+    }, [allColumns, visibleColumns]);
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
@@ -499,7 +531,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   headerWrapper: {
-    marginTop: 12,
     flexDirection: "column",
   },
   headerContainer: {
@@ -510,12 +541,12 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 56,
+    minHeight: 40,
   },
   headerCell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.sm,
-    minHeight: 56,
+    minHeight: 40,
     justifyContent: "center",
   },
   headerText: {
@@ -552,13 +583,13 @@ const styles = StyleSheet.create({
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch",
-    minHeight: 60,
+    minHeight: 36,
   },
   cell: {
     paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
+    paddingVertical: 6,
     justifyContent: "center",
-    minHeight: 60,
+    minHeight: 36,
   },
   centerAlign: {
     alignItems: "center",
@@ -567,15 +598,15 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   cellText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   nameText: {
     fontWeight: fontWeight.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   numberText: {
     fontWeight: fontWeight.normal,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   loadingContainer: {
     flex: 1,

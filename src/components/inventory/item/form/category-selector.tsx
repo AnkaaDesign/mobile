@@ -47,12 +47,6 @@ export function CategorySelector({ disabled, required, onCategoryChange }: Categ
       });
 
       if (result.success && result.data) {
-        showToast({
-          title: "Categoria criada",
-          message: `A categoria "${name}" foi criada com sucesso.`,
-          type: "success",
-        });
-
         // Refetch categories to update the list
         await refetch();
 
@@ -60,13 +54,6 @@ export function CategorySelector({ disabled, required, onCategoryChange }: Categ
         const newCategoryId = result.data.id;
         return newCategoryId;
       }
-    } catch (error) {
-      showToast({
-        title: "Erro ao criar categoria",
-        message: "Não foi possível criar a categoria. Tente novamente.",
-        type: "error",
-      });
-      throw error;
     } finally {
       setIsCreating(false);
     }

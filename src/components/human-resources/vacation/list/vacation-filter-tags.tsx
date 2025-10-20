@@ -22,9 +22,9 @@ export const VacationFilterTags = ({ filters, searchText, onFilterChange, onSear
   const filterTags: { key: string; label: string; value: string }[] = [];
 
   // Add status filters
-  const statuses = (filters.where?.status as any)?.in || [];
+  const statuses = filters.statuses || [];
   if (statuses.length > 0) {
-    statuses.forEach((status: string) => {
+    statuses.forEach((status) => {
       filterTags.push({
         key: `status_${status}`,
         label: "Status",
@@ -34,9 +34,9 @@ export const VacationFilterTags = ({ filters, searchText, onFilterChange, onSear
   }
 
   // Add type filters
-  const types = (filters.where?.type as any)?.in || [];
+  const types = filters.types || [];
   if (types.length > 0) {
-    types.forEach((type: string) => {
+    types.forEach((type) => {
       filterTags.push({
         key: `type_${type}`,
         label: "Tipo",
@@ -46,7 +46,7 @@ export const VacationFilterTags = ({ filters, searchText, onFilterChange, onSear
   }
 
   // Add user filter
-  if (filters.where?.userId) {
+  if (filters.userIds && filters.userIds.length > 0) {
     filterTags.push({
       key: "userId",
       label: "Colaborador",
@@ -55,19 +55,19 @@ export const VacationFilterTags = ({ filters, searchText, onFilterChange, onSear
   }
 
   // Add date range filters
-  if ((filters.where?.startAt as any)?.gte) {
+  if (filters.startAtRange?.gte) {
     filterTags.push({
       key: "startAt",
       label: "Início a partir de",
-      value: formatDate((filters.where?.startAt as any).gte),
+      value: formatDate(filters.startAtRange.gte),
     });
   }
 
-  if ((filters.where?.endAt as any)?.lte) {
+  if (filters.endAtRange?.lte) {
     filterTags.push({
       key: "endAt",
       label: "Término até",
-      value: formatDate((filters.where?.endAt as any).lte),
+      value: formatDate(filters.endAtRange.lte),
     });
   }
 
@@ -76,41 +76,30 @@ export const VacationFilterTags = ({ filters, searchText, onFilterChange, onSear
 
     if (key.startsWith("status_")) {
       const statusToRemove = key.replace("status_", "");
-      const currentStatuses = (newFilters.where?.status as any)?.in || [];
-      const newStatuses = currentStatuses.filter((s: string) => s !== statusToRemove);
+      const currentStatuses = newFilters.statuses || [];
+      const newStatuses = currentStatuses.filter((s) => s !== statusToRemove);
 
       if (newStatuses.length > 0) {
-        newFilters.where = {
-          ...newFilters.where,
-          status: { in: newStatuses },
-        };
+        newFilters.statuses = newStatuses as any;
       } else {
-        const { status, ...restWhere } = newFilters.where || {};
-        newFilters.where = restWhere;
+        delete newFilters.statuses;
       }
     } else if (key.startsWith("type_")) {
       const typeToRemove = key.replace("type_", "");
-      const currentTypes = (newFilters.where?.type as any)?.in || [];
-      const newTypes = currentTypes.filter((t: string) => t !== typeToRemove);
+      const currentTypes = newFilters.types || [];
+      const newTypes = currentTypes.filter((t) => t !== typeToRemove);
 
       if (newTypes.length > 0) {
-        newFilters.where = {
-          ...newFilters.where,
-          type: { in: newTypes },
-        };
+        newFilters.types = newTypes as any;
       } else {
-        const { type, ...restWhere } = newFilters.where || {};
-        newFilters.where = restWhere;
+        delete newFilters.types;
       }
     } else if (key === "userId") {
-      const { userId, ...restWhere } = newFilters.where || {};
-      newFilters.where = restWhere;
+      delete newFilters.userIds;
     } else if (key === "startAt") {
-      const { startAt, ...restWhere } = newFilters.where || {};
-      newFilters.where = restWhere;
+      delete newFilters.startAtRange;
     } else if (key === "endAt") {
-      const { endAt, ...restWhere } = newFilters.where || {};
-      newFilters.where = restWhere;
+      delete newFilters.endAtRange;
     }
 
     onFilterChange(newFilters);

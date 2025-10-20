@@ -23,8 +23,15 @@ export interface BadgeProps {
     | "completed"
     | "cancelled"
     | "onHold"
-    | "inProgress";
-  size?: "default" | "sm" | "lg";
+    | "inProgress"
+    | "purple"
+    | "blue"
+    | "orange"
+    | "green"
+    | "teal"
+    | "indigo"
+    | "pink";
+  size?: "default" | "sm" | "md" | "lg";
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
@@ -32,9 +39,10 @@ export interface BadgeProps {
 const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeProps["size"] = "default", colors: any, isDark: boolean): ViewStyle => {
   // Size-based padding matching web (increased vertical padding for better height)
   const sizePadding = {
-    sm: { paddingHorizontal: 8, paddingVertical: 4 },
-    default: { paddingHorizontal: 10, paddingVertical: 5 },
-    lg: { paddingHorizontal: 12, paddingVertical: 6 },
+    sm: { paddingHorizontal: 8, paddingVertical: 5 },
+    default: { paddingHorizontal: 10, paddingVertical: 7 },
+    md: { paddingHorizontal: 10, paddingVertical: 5 },
+    lg: { paddingHorizontal: 12, paddingVertical: 8 },
   };
 
   const baseStyles: ViewStyle = {
@@ -126,6 +134,36 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
       backgroundColor: "#6b7280", // gray-500
       borderColor: "transparent",
     },
+
+    // Additional color variants - Matching web EXACTLY
+    purple: {
+      backgroundColor: "#9333ea", // purple-600 (web line 42: bg-purple-600)
+      borderColor: "transparent",
+    },
+    blue: {
+      backgroundColor: "#2563eb", // blue-600 (web line 22: bg-blue-600)
+      borderColor: "transparent",
+    },
+    orange: {
+      backgroundColor: "#f97316", // orange-500 (web line 34: bg-orange-500)
+      borderColor: "transparent",
+    },
+    green: {
+      backgroundColor: "#16a34a", // green-600 (web line 28: bg-green-600)
+      borderColor: "transparent",
+    },
+    teal: {
+      backgroundColor: "#0d9488", // teal-600
+      borderColor: "transparent",
+    },
+    indigo: {
+      backgroundColor: "#4f46e5", // indigo-600
+      borderColor: "transparent",
+    },
+    pink: {
+      backgroundColor: "#db2777", // pink-600
+      borderColor: "transparent",
+    },
   };
 
   return {
@@ -139,6 +177,7 @@ const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: Ba
   const sizeFont = {
     sm: { fontSize: 11 }, // 0.688rem
     default: { fontSize: fontSize.xs },
+    md: { fontSize: fontSize.xs },
     lg: { fontSize: fontSize.sm },
   };
 
@@ -198,6 +237,27 @@ const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: Ba
       color: "#ffffff", // white
     },
     inProgress: {
+      color: "#ffffff", // white
+    },
+    purple: {
+      color: "#ffffff", // white
+    },
+    blue: {
+      color: "#ffffff", // white
+    },
+    orange: {
+      color: "#ffffff", // white
+    },
+    green: {
+      color: "#ffffff", // white
+    },
+    teal: {
+      color: "#ffffff", // white
+    },
+    indigo: {
+      color: "#ffffff", // white
+    },
+    pink: {
       color: "#ffffff", // white
     },
   };

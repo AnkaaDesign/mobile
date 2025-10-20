@@ -4,7 +4,6 @@ import { Icon } from "@/components/ui/icon";
 import { IconSelector } from "@tabler/icons-react-native";
 import type { Task } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
@@ -12,8 +11,10 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TaskTableRowSwipe } from "./task-table-row-swipe";
 import { TaskStatusBadge } from "./task-status-badge";
 import { TaskPriorityIndicator } from "./task-priority-indicator";
+import { DeadlineCountdown } from "./deadline-countdown";
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
 import { formatDate, formatCurrency } from '../../../../utils';
+import { getDaysUntilDeadline, getTaskRowColor } from '../../../../utils/task';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { TASK_STATUS } from '../../../../constants';
 
@@ -43,9 +44,6 @@ interface TaskTableProps {
   refreshing?: boolean;
   loading?: boolean;
   loadingMore?: boolean;
-  showSelection?: boolean;
-  selectedTasks?: Set<string>;
-  onSelectionChange?: (selectedTasks: Set<string>) => void;
   sortConfigs?: SortConfig[];
   onSort?: (configs: SortConfig[]) => void;
   enableSwipeActions?: boolean;
@@ -73,14 +71,14 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (task: Task) => (
-      <View>
-        <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={2}>
-          {task.name}
-        </ThemedText>
-        {task.serialNumber && (
-          <ThemedText style={styles.cellSubtext} numberOfLines={1}>
-            SN: {task.serialNumber}
+      <View style={styles.nameColumn}>
+        <View style={styles.nameContent}>
+          <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={1}>
+            {task.name}
           </ThemedText>
+        </View>
+        {task.generalPainting?.hex && (
+          <View style={[styles.paintSquare, { backgroundColor: task.generalPainting.hex }]} />
         )}
       </View>
     ),
@@ -143,17 +141,20 @@ export const createColumnDefinitions = (): TableColumn[] => [
     align: "left",
     sortable: true,
     width: 0,
-    accessor: (task: Task) => (
-      <ThemedText
-        style={StyleSheet.flatten([
-          styles.cellText,
-          isOverdue(task) && { color: badgeColors.error.text, fontWeight: fontWeight.semibold }
-        ])}
-        numberOfLines={1}
-      >
-        {task.term ? formatDate(task.term) : "-"}
-      </ThemedText>
-    ),
+    accessor: (task: Task) => {
+      const overdueTask = isOverdue(task);
+      return (
+        <ThemedText
+          style={StyleSheet.flatten([
+            styles.cellText,
+            overdueTask && { color: "#dc2626", fontWeight: fontWeight.semibold } // Red-600 for overdue
+          ])}
+          numberOfLines={1}
+        >
+          {task.term ? formatDate(task.term) : "-"}
+        </ThemedText>
+      );
+    },
   },
   {
     key: "price",
@@ -178,7 +179,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
       return (
         <View style={styles.centerAlign}>
           <Badge variant="outline" size="sm">
-            <ThemedText style={{ fontSize: fontSize.xs, fontFamily: 'monospace' }}>
+            <ThemedText style={styles.monoText}>
               {serviceCount}
             </ThemedText>
           </Badge>
@@ -247,6 +248,18 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
+    key: "remainingTime",
+    header: "TEMPO RESTANTE",
+    align: "center",
+    sortable: false,
+    width: 0,
+    accessor: (task: Task) => (
+      <View style={styles.centerAlign}>
+        <DeadlineCountdown task={task} />
+      </View>
+    ),
+  },
+  {
     key: "createdBy.name",
     header: "CRIADO POR",
     align: "left",
@@ -297,9 +310,6 @@ export const TaskTable = React.memo<TaskTableProps>(
     refreshing = false,
     loading = false,
     loadingMore = false,
-    showSelection = false,
-    selectedTasks = new Set(),
-    onSelectionChange,
     sortConfigs = [],
     onSort,
     enableSwipeActions = true,
@@ -338,6 +348,7 @@ export const TaskTable = React.memo<TaskTableProps>(
         finishedAt: 1.2,
         plate: 1.0,
         serialNumber: 1.5,
+        remainingTime: 1.3,
         "createdBy.name": 1.5,
         createdAt: 1.2,
         updatedAt: 1.2,
@@ -373,37 +384,9 @@ export const TaskTable = React.memo<TaskTableProps>(
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
-      let width = displayColumns.reduce((sum, col) => sum + col.width, 0);
-      if (showSelection) width += 50; // Add checkbox column width
-      return width;
-    }, [displayColumns, showSelection]);
+      return displayColumns.reduce((sum, col) => sum + col.width, 0);
+    }, [displayColumns]);
 
-    // Selection handlers
-    const handleSelectAll = useCallback(() => {
-      if (!onSelectionChange) return;
-
-      const allSelected = tasks.every((task) => selectedTasks.has(task.id));
-      if (allSelected) {
-        onSelectionChange(new Set());
-      } else {
-        onSelectionChange(new Set(tasks.map((task) => task.id)));
-      }
-    }, [tasks, selectedTasks, onSelectionChange]);
-
-    const handleSelectTask = useCallback(
-      (taskId: string) => {
-        if (!onSelectionChange) return;
-
-        const newSelection = new Set(selectedTasks);
-        if (newSelection.has(taskId)) {
-          newSelection.delete(taskId);
-        } else {
-          newSelection.add(taskId);
-        }
-        onSelectionChange(newSelection);
-      },
-      [selectedTasks, onSelectionChange],
-    );
 
     // Sort handler - non-cumulative (only one sort at a time)
     const handleSort = useCallback(
@@ -453,11 +436,6 @@ export const TaskTable = React.memo<TaskTableProps>(
             onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
-              {showSelection && (
-                <View style={StyleSheet.flatten([styles.headerCell, styles.checkboxCell])}>
-                  <Checkbox checked={tasks.length > 0 && tasks.every((task) => selectedTasks.has(task.id))} onCheckedChange={handleSelectAll} disabled={tasks.length === 0} />
-                </View>
-              )}
               {displayColumns.map((column) => {
                 const sortConfig = sortConfigs?.find((config) => config.columnKey === column.key);
 
@@ -502,15 +480,15 @@ export const TaskTable = React.memo<TaskTableProps>(
           </ScrollView>
         </View>
       ),
-      [colors, isDark, tableWidth, displayColumns, showSelection, selectedTasks, tasks.length, sortConfigs, handleSelectAll, handleSort],
+      [colors, isDark, tableWidth, displayColumns, sortConfigs, handleSort],
     );
 
     // Row component
     const renderRow = useCallback(
       ({ item, index }: { item: Task; index: number }) => {
-        const isSelected = selectedTasks.has(item.id);
         const isEven = index % 2 === 0;
-        const overdue = isOverdue(item);
+        // Get row color based on task status and deadline (matches web version)
+        const rowColor = getTaskRowColor(item, isDark);
 
         if (enableSwipeActions && (onTaskEdit || onTaskDelete || onTaskStatusChange)) {
           return (
@@ -522,7 +500,7 @@ export const TaskTable = React.memo<TaskTableProps>(
               onEdit={onTaskEdit}
               onDelete={onTaskDelete}
               onStatusChange={onTaskStatusChange}
-              disabled={showSelection}
+              disabled={false}
             >
               {(isActive) => (
                 <ScrollView
@@ -532,25 +510,17 @@ export const TaskTable = React.memo<TaskTableProps>(
                   style={StyleSheet.flatten([
                     styles.row,
                     {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                      backgroundColor: rowColor,
                       borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
                     },
-                    isSelected && { backgroundColor: colors.primary + "20" },
-                    overdue && !isSelected && { backgroundColor: badgeColors.error.background },
                   ])}
                   contentContainerStyle={{ paddingHorizontal: 16 }}
                 >
                   <Pressable
                     style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
                     onPress={() => onTaskPress?.(item.id)}
-                    onLongPress={() => showSelection && handleSelectTask(item.id)}
                     android_ripple={{ color: colors.primary + "20" }}
                   >
-                    {showSelection && (
-                      <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
-                        <Checkbox checked={isSelected} onCheckedChange={() => handleSelectTask(item.id)} />
-                      </View>
-                    )}
                     {displayColumns.map((column) => (
                       <View
                         key={column.key}
@@ -575,25 +545,17 @@ export const TaskTable = React.memo<TaskTableProps>(
             style={StyleSheet.flatten([
               styles.row,
               {
-                backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                backgroundColor: rowColor,
                 borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
               },
-              isSelected && { backgroundColor: colors.primary + "20" },
-              overdue && !isSelected && { backgroundColor: badgeColors.error.background },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
               style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
               onPress={() => onTaskPress?.(item.id)}
-              onLongPress={() => showSelection && handleSelectTask(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
             >
-              {showSelection && (
-                <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
-                  <Checkbox checked={isSelected} onCheckedChange={() => handleSelectTask(item.id)} />
-                </View>
-              )}
               {displayColumns.map((column) => (
                 <View
                   key={column.key}
@@ -610,10 +572,7 @@ export const TaskTable = React.memo<TaskTableProps>(
         colors,
         tableWidth,
         displayColumns,
-        showSelection,
-        selectedTasks,
         onTaskPress,
-        handleSelectTask,
         renderColumnValue,
         enableSwipeActions,
         onTaskEdit,
@@ -681,8 +640,8 @@ export const TaskTable = React.memo<TaskTableProps>(
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
             getItemLayout={(data, index) => ({
-              length: 60, // Fixed row height
-              offset: 60 * index,
+              length: 48, // Fixed row height
+              offset: 48 * index,
               index,
             })}
             style={styles.flatList}
@@ -699,7 +658,7 @@ const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
     paddingHorizontal: 8,
-    paddingBottom: 16,
+    paddingBottom: 24,
     backgroundColor: "transparent",
   },
   container: {
@@ -714,7 +673,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   headerWrapper: {
-    marginTop: 12,
     flexDirection: "column",
   },
   headerContainer: {
@@ -725,12 +683,12 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 56,
+    minHeight: 40, // Reduced to match smaller fonts
   },
   headerCell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.sm,
-    minHeight: 56,
+    minHeight: 40, // Reduced to match smaller fonts
     justifyContent: "center",
   },
   headerText: {
@@ -791,13 +749,13 @@ const styles = StyleSheet.create({
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch", // Changed from 'center' to 'stretch' to ensure all cells have same height
-    minHeight: 60,
+    minHeight: 36, // Reduced to match smaller fonts
   },
   cell: {
     paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
+    paddingVertical: 6, // Reduced padding
     justifyContent: "center",
-    minHeight: 60,
+    minHeight: 36, // Reduced to match smaller fonts
   },
   centerAlign: {
     alignItems: "center",
@@ -806,7 +764,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   cellText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs, // Match serial number size
+    // Color is handled by ThemedText component automatically
   },
   cellSubtext: {
     fontSize: fontSize.xs,
@@ -815,15 +774,15 @@ const styles = StyleSheet.create({
   },
   monoText: {
     fontFamily: "monospace",
-    fontSize: fontSize.xs, // Smaller for codes
+    fontSize: fontSize.xs,
   },
   nameText: {
     fontWeight: fontWeight.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs, // Match serial number size
   },
   numberText: {
     fontWeight: fontWeight.normal,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs, // Match serial number size
   },
   sectorCell: {
     flexDirection: "row",
@@ -868,6 +827,24 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     textAlign: "center",
     paddingHorizontal: spacing.xl,
+  },
+  nameColumn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    width: "100%",
+  },
+  nameContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+  paintSquare: {
+    width: 24,
+    height: 24,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
   },
 });
 

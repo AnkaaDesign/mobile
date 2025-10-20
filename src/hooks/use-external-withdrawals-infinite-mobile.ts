@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useExternalWithdrawalsInfinite } from './';
+import { useExternalWithdrawalsInfinite } from './useExternalWithdrawal';
 import { ExternalWithdrawalGetManyFormData } from '../schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 

@@ -135,7 +135,7 @@ export default function ListarCategoriasScreen() {
 
         {/* Categories count */}
         {categories.length > 0 && (
-          <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} itemType="categoria" itemTypePlural="categorias" />
+          <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} itemType="categoria" itemTypePlural="categorias" />
         )}
 
         {/* FAB */}

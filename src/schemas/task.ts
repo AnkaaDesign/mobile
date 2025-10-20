@@ -310,7 +310,6 @@ export const taskOrderBySchema = z
       term: orderByDirectionSchema.optional(),
       startedAt: orderByDirectionSchema.optional(),
       finishedAt: orderByDirectionSchema.optional(),
-      price: orderByDirectionSchema.optional(),
       createdAt: orderByDirectionSchema.optional(),
       updatedAt: orderByDirectionSchema.optional(),
     }),
@@ -326,7 +325,6 @@ export const taskOrderBySchema = z
         term: orderByDirectionSchema.optional(),
         startedAt: orderByDirectionSchema.optional(),
         finishedAt: orderByDirectionSchema.optional(),
-        price: orderByDirectionSchema.optional(),
           createdAt: orderByDirectionSchema.optional(),
         updatedAt: orderByDirectionSchema.optional(),
       }),
@@ -351,7 +349,6 @@ export const taskWhereSchema: z.ZodSchema<any> = z.lazy(() =>
       serialNumber: z.union([z.string(), z.object({ contains: z.string().optional() })]).optional(),
       plate: z.union([z.string(), z.object({ contains: z.string().optional() })]).optional(),
       details: z.union([z.string(), z.object({ contains: z.string().optional() })]).optional(),
-      price: z.union([z.number(), z.object({ gte: z.number().optional(), lte: z.number().optional() })]).optional(),
       commission: z.union([z.string(), z.object({ in: z.array(z.string()).optional(), notIn: z.array(z.string()).optional() })]).optional(),
       entryDate: z.object({ gte: z.coerce.date().optional(), lte: z.coerce.date().optional() }).optional(),
       term: z.object({ gte: z.coerce.date().optional(), lte: z.coerce.date().optional() }).optional(),
@@ -684,17 +681,6 @@ const taskTransform = (data: any): any => {
   }
 
 
-  // Range filters
-  if (data.priceRange && typeof data.priceRange === "object") {
-    const condition: any = {};
-    if (typeof data.priceRange.from === "number") condition.gte = data.priceRange.from;
-    if (typeof data.priceRange.to === "number") condition.lte = data.priceRange.to;
-    if (Object.keys(condition).length > 0) {
-      andConditions.push({ price: condition });
-    }
-    delete data.priceRange;
-  }
-
   // Date range filters
   if (data.entryDateRange && typeof data.entryDateRange === "object") {
     const condition: any = {};
@@ -914,12 +900,6 @@ export const taskGetManySchema = z
     createdByIds: z.array(z.string()).optional(),
     truckIds: z.array(z.string()).optional(),
     // Numeric range filters
-    priceRange: z
-      .object({
-        from: z.number().optional(),
-        to: z.number().optional(),
-      })
-      .optional(),
     progressRange: z
       .object({
         from: z.number().min(0).max(100).optional(),
@@ -1165,7 +1145,6 @@ export const taskCreateSchema = z
     budgetId: z.string().uuid("Orçamento inválido").nullable().optional(),
     nfeId: z.string().uuid("NFe inválida").nullable().optional(),
     receiptId: z.string().uuid("Recibo inválido").nullable().optional(),
-    price: moneySchema.nullable().optional(),
 
     // Relations
     artworkIds: z.array(z.string().uuid("Arquivo inválido")).optional(),
@@ -1260,7 +1239,6 @@ export const taskUpdateSchema = z
     budgetId: z.string().uuid("Orçamento inválido").nullable().optional(),
     nfeId: z.string().uuid("NFe inválida").nullable().optional(),
     receiptId: z.string().uuid("Recibo inválido").nullable().optional(),
-    price: moneySchema.nullable().optional(),
 
     // Relations
     artworkIds: z.array(z.string().uuid("Arquivo inválido")).optional(),
@@ -1411,7 +1389,6 @@ export const mapTaskToFormData = createMapToFormDataHelper<Task, TaskUpdateFormD
   budgetId: task.budgetId,
   nfeId: task.nfeId,
   receiptId: task.receiptId,
-  price: task.price,
   // Relations
   artworkIds: task.artworks?.map((artwork) => artwork.id),
   paintIds: task.logoPaints?.map((paint) => paint.id),

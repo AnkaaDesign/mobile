@@ -87,6 +87,7 @@ export * from "./icon-original-broken";
 export * from "./info-row";
 export * from "./input-otp";
 export * from "./list";
+export * from "./list-action-button";
 export * from "./loading";
 export * from "./loading-screen";
 export * from "./loading-spinner";

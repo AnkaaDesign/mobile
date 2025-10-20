@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useCustomersInfinite } from './';
+import { useCustomersInfinite } from './useCustomer';
 import { CustomerGetManyFormData } from '../schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 

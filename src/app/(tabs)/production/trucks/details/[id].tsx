@@ -1,31 +1,47 @@
 import React, { useState } from "react";
-import { View, ScrollView, Alert, Pressable , StyleSheet} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { IconEdit, IconTrash, IconTruck, IconMap, IconSettings, IconHistory, IconTool } from "@tabler/icons-react-native";
-import { useTruck, useTruckMutations } from '../../../../../hooks';
-import { TRUCK_MANUFACTURER_LABELS } from '../../../../../constants';
-import { ThemedView, ThemedText, Card, Badge, ErrorScreen, Skeleton, FAB } from "@/components/ui";
-import { InfoRow } from "@/components/ui/info-row";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { DateTimeDisplay } from "@/components/ui/date-time-display";
-import { MaintenanceHistorySection } from "@/components/production/truck/detail/maintenance-history-section";
-import { TruckPositionMap } from "@/components/production/truck/detail/truck-position-map";
-import { TaskInfoSection } from "@/components/production/truck/detail/task-info-section";
-import { GarageInfoSection } from "@/components/production/truck/detail/garage-info-section";
-import { LayoutsSection } from "@/components/production/truck/detail/layouts-section";
+import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
+import { ThemedText } from "@/components/ui/themed-text";
+import { LoadingScreen } from "@/components/ui/loading-screen";
+import { ErrorScreen } from "@/components/ui/error-screen";
+import { Card, CardContent } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
-import { routes } from '../../../../../constants';
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { useAuth } from "@/contexts/auth-context";
+import { useTruck, useTruckMutations } from "../../../../../hooks";
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "../../../../../constants";
+import { hasPrivilege } from "../../../../../utils";
+import { showToast } from "@/components/ui/toast";
+import { TruckInfoCard } from "@/components/production/truck/detail/truck-info-card";
+import { TruckTaskInfoCard } from "@/components/production/truck/detail/truck-task-info-card";
+import { TruckLocationCard } from "@/components/production/truck/detail/truck-location-card";
+import { TruckLayoutsCard } from "@/components/production/truck/detail/truck-layouts-card";
+import { TruckMetadataCard } from "@/components/production/truck/detail/truck-metadata-card";
+import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import {
+  IconTruck,
+  IconRefresh,
+  IconEdit,
+  IconTrash,
+  IconHistory,
+} from "@tabler/icons-react-native";
 
-export default function TruckDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
+export default function TruckDetailsScreen() {
+  const { id } = useLocalSearchParams();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState<'info' | 'maintenance' | 'position'>('info');
+  const { user } = useAuth();
+  const { delete: deleteAsync } = useTruckMutations();
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data: truck, isLoading, error, refetch } = useTruck(id!, {
+  // Check permissions
+  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) || hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+  const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+
+  // Check if user is from Warehouse sector (should hide changelog)
+  const isWarehouseSector = user?.sector?.privileges === SECTOR_PRIVILEGES.WAREHOUSE;
+
+  // Fetch truck details
+  const { data: response, isLoading, error, refetch } = useTruck(id as string, {
     include: {
       task: {
         include: {
@@ -34,22 +50,53 @@ export default function TruckDetailScreen() {
         },
       },
       garage: true,
-      leftSideLayout: true,
-      rightSideLayout: true,
-      backSideLayout: true,
+      leftSideLayout: {
+        include: {
+          layoutSections: true,
+        },
+      },
+      rightSideLayout: {
+        include: {
+          layoutSections: true,
+        },
+      },
+      backSideLayout: {
+        include: {
+          layoutSections: true,
+        },
+      },
     },
   });
 
-  const { delete: deleteTruck } = useTruckMutations();
+  const truck = response?.data;
 
-  const handleEdit = () => {
-    router.push(routeToMobilePath(routes.production.trucks.edit(id!)) as any);
+  // Handle refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+    showToast({ message: "Detalhes atualizados", type: "success" });
   };
 
+  // Handle edit
+  const handleEdit = () => {
+    if (!canEdit) {
+      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      return;
+    }
+    router.push(`/production/trucks/edit/${id}`);
+  };
+
+  // Handle delete
   const handleDelete = () => {
+    if (!canDelete) {
+      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      return;
+    }
+
     Alert.alert(
       "Excluir Caminhão",
-      `Tem certeza que deseja excluir o caminhão ${truck?.data?.plate}?`,
+      "Tem certeza que deseja excluir este caminhão? Esta ação não pode ser desfeita.",
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -57,245 +104,199 @@ export default function TruckDetailScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteTruck(id!);
+              await deleteAsync(id as string);
+              showToast({ message: "Caminhão excluído com sucesso", type: "success" });
               router.back();
             } catch (error) {
-              Alert.alert("Erro", "Não foi possível excluir o caminhão. Tente novamente.");
+              showToast({ message: "Erro ao excluir caminhão", type: "error" });
             }
           },
         },
-      ],
+      ]
     );
-  };
-
-  const handleGoToTask = () => {
-    if (truck?.data?.task?.id) {
-      router.push(routeToMobilePath(routes.production.schedule.details(truck.data.task.id)) as any);
-    }
-  };
-
-  const handleGoToGarage = () => {
-    if (truck?.data?.garage?.id) {
-      router.push(routeToMobilePath(routes.production.garages.details(truck.data.garage.id)) as any);
-    }
   };
 
   if (isLoading) {
+    return <LoadingScreen message="Carregando detalhes do caminhão..." />;
+  }
+
+  if (error || !truck) {
     return (
-      <ThemedView style={styles.container}>
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.section}>
-            <Skeleton height={24} width="60%" />
-            <View style={styles.skeletonRows}>
-              <Skeleton height={16} width="100%" />
-              <Skeleton height={16} width="80%" />
-              <Skeleton height={16} width="90%" />
-            </View>
-          </View>
-        </ScrollView>
-      </ThemedView>
+      <ErrorScreen
+        message="Erro ao carregar detalhes do caminhão"
+        onRetry={refetch}
+      />
     );
   }
 
-  if (error || !truck?.data) {
-    return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen
-          message="Erro ao carregar caminhão"
-          detail={error?.message || "Caminhão não encontrado"}
-          onRetry={refetch}
-        />
-      </ThemedView>
-    );
-  }
+  const displayTitle = truck.task?.plate || truck.task?.name || `Caminhão ${truck.id.slice(0, 8)}`;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.headerContent}>
-          <View style={styles.titleSection}>
-            <IconTruck size={24} color={colors.primary} />
-            <ThemedText style={styles.title}>{truck.data.plate}</ThemedText>
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.subtitle, { color: colors.mutedForeground }])}>
-            {TRUCK_MANUFACTURER_LABELS[truck.data.manufacturer]} {truck.data.model}
-          </ThemedText>
-        </View>
-      </View>
-
-      {/* Tab Navigation */}
-      <View style={[styles.tabContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <Pressable
-          style={StyleSheet.flatten([styles.tab, activeTab === 'info' && { borderBottomColor: colors.primary }])}
-          onPress={() => setActiveTab('info')}
-        >
-          <IconSettings size={20} color={activeTab === 'info' ? colors.primary : colors.mutedForeground} />
-          <ThemedText style={StyleSheet.flatten([styles.tabText, { color: activeTab === 'info' ? colors.primary : colors.mutedForeground }])}>
-            Informações
-          </ThemedText>
-        </Pressable>
-        <Pressable
-          style={StyleSheet.flatten([styles.tab, activeTab === 'maintenance' && { borderBottomColor: colors.primary }])}
-          onPress={() => setActiveTab('maintenance')}
-        >
-          <IconTool size={20} color={activeTab === 'maintenance' ? colors.primary : colors.mutedForeground} />
-          <ThemedText style={StyleSheet.flatten([styles.tabText, { color: activeTab === 'maintenance' ? colors.primary : colors.mutedForeground }])}>
-            Manutenção
-          </ThemedText>
-        </Pressable>
-        <Pressable
-          style={StyleSheet.flatten([styles.tab, activeTab === 'position' && { borderBottomColor: colors.primary }])}
-          onPress={() => setActiveTab('position')}
-        >
-          <IconMap size={20} color={activeTab === 'position' ? colors.primary : colors.mutedForeground} />
-          <ThemedText style={StyleSheet.flatten([styles.tabText, { color: activeTab === 'position' ? colors.primary : colors.mutedForeground }])}>
-            Posição
-          </ThemedText>
-        </Pressable>
-      </View>
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeTab === 'info' && (
-          <>
-            {/* Basic Information */}
-            <Card style={styles.section}>
-              <ThemedText style={styles.sectionTitle}>Identificação</ThemedText>
-              <InfoRow label="Placa" value={truck.data.plate} />
-              <InfoRow label="Modelo" value={truck.data.model} />
-              <InfoRow label="Montadora" value={TRUCK_MANUFACTURER_LABELS[truck.data.manufacturer]} />
-            </Card>
-
-            {/* Task Information */}
-            {truck.data.task && (
-              <TaskInfoSection
-                data={truck.data.task}
-              />
-            )}
-
-            {/* Garage Information */}
-            {truck.data.garage && (
-              <GarageInfoSection
-                data={truck.data.garage}
-              />
-            )}
-
-            {/* Position Information */}
-            <Card style={styles.section}>
-              <ThemedText style={styles.sectionTitle}>Posição</ThemedText>
-              {truck.data.xPosition !== null && truck.data.yPosition !== null ? (
-                <>
-                  <InfoRow label="Posição X" value={`${truck.data.xPosition}m`} />
-                  <InfoRow label="Posição Y" value={`${truck.data.yPosition}m`} />
-                </>
-              ) : (
-                <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-                  Posição não definida
+    <ScrollView
+      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor={colors.primary}
+        />
+      }
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.content}>
+        {/* Header Card */}
+        <Card>
+          <CardContent style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <IconTruck size={24} color={colors.primary} />
+              <View style={styles.headerTextContainer}>
+                <ThemedText style={StyleSheet.flatten([styles.truckTitle, { color: colors.foreground }])} numberOfLines={2}>
+                  {displayTitle}
                 </ThemedText>
+                {truck.model && (
+                  <ThemedText style={[styles.truckSubtitle, { color: colors.mutedForeground }]}>
+                    {truck.model}
+                  </ThemedText>
+                )}
+              </View>
+            </View>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={handleRefresh}
+                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
+                activeOpacity={0.7}
+                disabled={refreshing}
+              >
+                <IconRefresh size={18} color={colors.foreground} />
+              </TouchableOpacity>
+              {canEdit && (
+                <TouchableOpacity
+                  onPress={handleEdit}
+                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
+                  activeOpacity={0.7}
+                >
+                  <IconEdit size={18} color={colors.primaryForeground} />
+                </TouchableOpacity>
               )}
-            </Card>
+              {canDelete && (
+                <TouchableOpacity
+                  onPress={handleDelete}
+                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.destructive }])}
+                  activeOpacity={0.7}
+                >
+                  <IconTrash size={18} color={colors.destructiveForeground} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </CardContent>
+        </Card>
 
-            {/* Layouts Section */}
-            <LayoutsSection
-              data={{
-                leftSideLayout: truck.data.leftSideLayout,
-                rightSideLayout: truck.data.rightSideLayout,
-                backSideLayout: truck.data.backSideLayout
-              }}
-            />
+        {/* Basic Information */}
+        <TruckInfoCard truck={truck} />
 
-            {/* Timestamps */}
-            <Card style={styles.section}>
-              <ThemedText style={styles.sectionTitle}>Registro</ThemedText>
-              <InfoRow
-                label="Criado em"
-                value={<DateTimeDisplay>{new Date(truck.data.createdAt).toLocaleDateString('pt-BR')}</DateTimeDisplay>}
+        {/* Task/Service Order Information */}
+        {truck.task && <TruckTaskInfoCard task={truck.task} />}
+
+        {/* Location Information */}
+        <TruckLocationCard truck={truck} />
+
+        {/* Layouts Information */}
+        <TruckLayoutsCard
+          layouts={{
+            leftSideLayout: truck.leftSideLayout,
+            rightSideLayout: truck.rightSideLayout,
+            backSideLayout: truck.backSideLayout,
+          }}
+        />
+
+        {/* Metadata */}
+        <TruckMetadataCard truck={truck} />
+
+        {/* Changelog History - Hidden for Warehouse sector users */}
+        {!isWarehouseSector && (
+          <Card style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <IconHistory size={20} color={colors.primary} />
+              <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
+            </View>
+            <View style={{ paddingHorizontal: spacing.md }}>
+              <ChangelogTimeline
+                entityType={CHANGE_LOG_ENTITY_TYPE.TRUCK}
+                entityId={truck.id}
+                entityName={displayTitle}
+                entityCreatedAt={truck.createdAt}
+                maxHeight={400}
               />
-              <InfoRow
-                label="Atualizado em"
-                value={<DateTimeDisplay>{new Date(truck.data.updatedAt).toLocaleDateString('pt-BR')}</DateTimeDisplay>}
-              />
-            </Card>
-          </>
+            </View>
+          </Card>
         )}
 
-        {activeTab === 'maintenance' && (
-          <MaintenanceHistorySection data={{ truckId: truck.data.id }} />
-        )}
-
-        {activeTab === 'position' && (
-          <TruckPositionMap />
-        )}
-      </ScrollView>
-
-      {/* Floating Action Button */}
-      <FAB icon="edit" onPress={handleEdit} />
-    </ThemedView>
+        {/* Bottom spacing for mobile navigation */}
+        <View style={{ height: spacing.xxl * 2 }} />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  headerContent: {
-    gap: 4,
-  },
-  titleSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 14,
-    marginLeft: 32,
-  },
-  tabContainer: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    gap: 4,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: "500",
   },
   content: {
     flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    gap: spacing.lg,
   },
-  section: {
-    margin: 16,
-    marginBottom: 0,
-    marginTop: 16,
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.md,
+  },
+  headerLeft: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginRight: spacing.sm,
+  },
+  headerTextContainer: {
+    flex: 1,
+    gap: 2,
+  },
+  truckTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+  },
+  truckSubtitle: {
+    fontSize: fontSize.sm,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  card: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: fontSize.lg,
     fontWeight: "600",
-    marginBottom: 12,
-  },
-  skeletonRows: {
-    gap: 8,
-  },
-  emptyText: {
-    textAlign: "center",
-    fontStyle: "italic",
-    paddingVertical: 12,
+    marginLeft: spacing.sm,
+    flex: 1,
   },
 });

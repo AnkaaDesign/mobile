@@ -135,7 +135,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (activity: Activity) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={2}>
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={1} ellipsizeMode="tail">
         {activity.item?.name || "Item não encontrado"}
       </ThemedText>
     ),
@@ -194,7 +194,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (activity: Activity) => (
-      <ThemedText style={styles.cellText} numberOfLines={1}>
+      <ThemedText style={styles.cellText} numberOfLines={1} ellipsizeMode="tail">
         {activity.user?.name || "-"}
       </ThemedText>
     ),
@@ -265,10 +265,10 @@ export const ActivityTable = React.memo<ActivityTableProps>(
       const columnWidthRatios: Record<string, number> = {
         operation: 1.2,
         "item.uniCode": 1.0,
-        "item.name": 2.0,
+        "item.name": 1.8,
         quantity: 1.0,
-        reason: 1.3,
-        "user.name": 1.2,
+        reason: 1.5,
+        "user.name": 1.1,
         "order.id": 1.0,
         createdAt: 1.5,
       };
@@ -636,7 +636,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   headerWrapper: {
-    marginTop: 12,
     flexDirection: "column",
   },
   headerContainer: {
@@ -647,12 +646,12 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 56,
+    minHeight: 40,
   },
   headerCell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.sm,
-    minHeight: 56,
+    minHeight: 40,
     justifyContent: "center",
   },
   headerText: {
@@ -713,13 +712,13 @@ const styles = StyleSheet.create({
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch",
-    minHeight: 60,
+    minHeight: 36,
   },
   cell: {
     paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
+    paddingVertical: 6,
     justifyContent: "center",
-    minHeight: 60,
+    minHeight: 36,
   },
   centerAlign: {
     alignItems: "center",
@@ -728,7 +727,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   cellText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   monoText: {
     fontFamily: "monospace",
@@ -736,11 +735,11 @@ const styles = StyleSheet.create({
   },
   nameText: {
     fontWeight: fontWeight.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   quantityText: {
     fontWeight: fontWeight.bold,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   loadingContainer: {
     flex: 1,

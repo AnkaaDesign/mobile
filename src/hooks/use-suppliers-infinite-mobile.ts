@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useSuppliersInfinite } from './';
+import { useSuppliersInfinite } from './useSupplier';
 import { SupplierGetManyFormData } from '../schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 

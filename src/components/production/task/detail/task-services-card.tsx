@@ -36,17 +36,7 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services }) 
           >
             <View style={styles.serviceInfo}>
               <ThemedText style={styles.serviceName}>{service.description}</ThemedText>
-              {service.description && (
-                <ThemedText style={styles.serviceDescription}>
-                  {service.description}
-                </ThemedText>
-              )}
             </View>
-            {true && (
-              <Badge variant="outline" style={styles.statusBadge}>
-                {true}
-              </Badge>
-            )}
           </View>
         ))}
       </View>

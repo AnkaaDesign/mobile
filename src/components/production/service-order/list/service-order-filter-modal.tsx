@@ -35,10 +35,23 @@ export const ServiceOrderFilterModal: React.FC<ServiceOrderFilterModalProps> = (
   }, []);
 
   const handleFilterChange = useCallback((key: string, value: any) => {
-    setLocalFilters(prev => ({
-      ...prev,
-      [key]: value,
-    }));
+    setLocalFilters(prev => {
+      // Handle nested updates for date ranges
+      if (key.includes('.')) {
+        const [parentKey, childKey] = key.split('.');
+        return {
+          ...prev,
+          [parentKey]: {
+            ...(prev[parentKey as keyof ServiceOrderGetManyFormData] as any),
+            [childKey]: value,
+          },
+        };
+      }
+      return {
+        ...prev,
+        [key]: value,
+      };
+    });
   }, []);
 
   const handleClearAll = useCallback(() => {
@@ -71,11 +84,8 @@ export const ServiceOrderFilterModal: React.FC<ServiceOrderFilterModalProps> = (
         <View style={styles.filterGroup}>
           <ThemedText style={styles.filterLabel}>Status</ThemedText>
           <Select
-            value={localFilters.where?.status || ""}
-            onValueChange={(value) => handleFilterChange("where", {
-              ...localFilters.where,
-              status: value || undefined,
-            })}
+            value={localFilters.statusIn?.[0] || ""}
+            onValueChange={(value) => handleFilterChange("statusIn", value ? [value] : undefined)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione um status" />
@@ -97,14 +107,8 @@ export const ServiceOrderFilterModal: React.FC<ServiceOrderFilterModalProps> = (
             <View style={styles.dateRangeItem}>
               <ThemedText style={styles.dateLabel}>De:</ThemedText>
               <DatePicker
-                value={localFilters.where?.createdAt?.gte ? new Date(localFilters.where.createdAt.gte) : undefined}
-                onChange={(date) => handleFilterChange("where", {
-                  ...localFilters.where,
-                  createdAt: {
-                    ...localFilters.where?.createdAt,
-                    gte: date?.toISOString(),
-                  },
-                })}
+                value={localFilters.createdAt?.gte ? new Date(localFilters.createdAt.gte) : undefined}
+                onChange={(date) => handleFilterChange("createdAt.gte", date)}
                 placeholder="Data inicial"
                 style={styles.datePicker}
               />
@@ -112,14 +116,8 @@ export const ServiceOrderFilterModal: React.FC<ServiceOrderFilterModalProps> = (
             <View style={styles.dateRangeItem}>
               <ThemedText style={styles.dateLabel}>Até:</ThemedText>
               <DatePicker
-                value={localFilters.where?.createdAt?.lte ? new Date(localFilters.where.createdAt.lte) : undefined}
-                onChange={(date) => handleFilterChange("where", {
-                  ...localFilters.where,
-                  createdAt: {
-                    ...localFilters.where?.createdAt,
-                    lte: date?.toISOString(),
-                  },
-                })}
+                value={localFilters.createdAt?.lte ? new Date(localFilters.createdAt.lte) : undefined}
+                onChange={(date) => handleFilterChange("createdAt.lte", date)}
                 placeholder="Data final"
                 style={styles.datePicker}
               />
@@ -134,14 +132,8 @@ export const ServiceOrderFilterModal: React.FC<ServiceOrderFilterModalProps> = (
             <View style={styles.dateRangeItem}>
               <ThemedText style={styles.dateLabel}>De:</ThemedText>
               <DatePicker
-                value={localFilters.where?.startedAt?.gte ? new Date(localFilters.where.startedAt.gte) : undefined}
-                onChange={(date) => handleFilterChange("where", {
-                  ...localFilters.where,
-                  startedAt: {
-                    ...localFilters.where?.startedAt,
-                    gte: date?.toISOString(),
-                  },
-                })}
+                value={localFilters.startedAt?.gte ? new Date(localFilters.startedAt.gte) : undefined}
+                onChange={(date) => handleFilterChange("startedAt.gte", date)}
                 placeholder="Data inicial"
                 style={styles.datePicker}
               />
@@ -149,14 +141,8 @@ export const ServiceOrderFilterModal: React.FC<ServiceOrderFilterModalProps> = (
             <View style={styles.dateRangeItem}>
               <ThemedText style={styles.dateLabel}>Até:</ThemedText>
               <DatePicker
-                value={localFilters.where?.startedAt?.lte ? new Date(localFilters.where.startedAt.lte) : undefined}
-                onChange={(date) => handleFilterChange("where", {
-                  ...localFilters.where,
-                  startedAt: {
-                    ...localFilters.where?.startedAt,
-                    lte: date?.toISOString(),
-                  },
-                })}
+                value={localFilters.startedAt?.lte ? new Date(localFilters.startedAt.lte) : undefined}
+                onChange={(date) => handleFilterChange("startedAt.lte", date)}
                 placeholder="Data final"
                 style={styles.datePicker}
               />
@@ -171,14 +157,8 @@ export const ServiceOrderFilterModal: React.FC<ServiceOrderFilterModalProps> = (
             <View style={styles.dateRangeItem}>
               <ThemedText style={styles.dateLabel}>De:</ThemedText>
               <DatePicker
-                value={localFilters.where?.finishedAt?.gte ? new Date(localFilters.where.finishedAt.gte) : undefined}
-                onChange={(date) => handleFilterChange("where", {
-                  ...localFilters.where,
-                  finishedAt: {
-                    ...localFilters.where?.finishedAt,
-                    gte: date?.toISOString(),
-                  },
-                })}
+                value={localFilters.finishedAt?.gte ? new Date(localFilters.finishedAt.gte) : undefined}
+                onChange={(date) => handleFilterChange("finishedAt.gte", date)}
                 placeholder="Data inicial"
                 style={styles.datePicker}
               />
@@ -186,14 +166,8 @@ export const ServiceOrderFilterModal: React.FC<ServiceOrderFilterModalProps> = (
             <View style={styles.dateRangeItem}>
               <ThemedText style={styles.dateLabel}>Até:</ThemedText>
               <DatePicker
-                value={localFilters.where?.finishedAt?.lte ? new Date(localFilters.where.finishedAt.lte) : undefined}
-                onChange={(date) => handleFilterChange("where", {
-                  ...localFilters.where,
-                  finishedAt: {
-                    ...localFilters.where?.finishedAt,
-                    lte: date?.toISOString(),
-                  },
-                })}
+                value={localFilters.finishedAt?.lte ? new Date(localFilters.finishedAt.lte) : undefined}
+                onChange={(date) => handleFilterChange("finishedAt.lte", date)}
                 placeholder="Data final"
                 style={styles.datePicker}
               />

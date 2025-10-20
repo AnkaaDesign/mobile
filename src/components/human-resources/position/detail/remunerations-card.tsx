@@ -19,8 +19,11 @@ interface RemunerationsCardProps {
 export function RemunerationsCard({ position }: RemunerationsCardProps) {
   const { colors, isDark } = useTheme();
 
+  // Use monetaryValues (new) or fallback to remunerations (deprecated)
+  const monetaryValues = position.monetaryValues || [];
   const remunerations = position.remunerations || [];
-  const hasRemunerations = remunerations.length > 0;
+  const values = monetaryValues.length > 0 ? monetaryValues : remunerations;
+  const hasRemunerations = values.length > 0;
 
   const handleViewRemunerations = () => {
     router.push(routeToMobilePath(routes.humanResources.positions.remunerations(position.id)) as any);
@@ -59,8 +62,8 @@ export function RemunerationsCard({ position }: RemunerationsCardProps) {
         ) : (
           <View style={styles.remunerationsContent}>
             <View style={styles.remunerationsList}>
-              {remunerations.slice(0, 5).map((remuneration, index) => {
-                const previousValue = index < remunerations.length - 1 ? remunerations[index + 1].value : null;
+              {values.slice(0, 5).map((remuneration, index) => {
+                const previousValue = index < values.length - 1 ? values[index + 1].value : null;
                 const trend = getTrend(remuneration.value, previousValue);
 
                 const getTrendColor = () => {
@@ -98,7 +101,7 @@ export function RemunerationsCard({ position }: RemunerationsCardProps) {
                       styles.remunerationItem,
                       {
                         backgroundColor: colors.muted + "20",
-                        borderBottomWidth: index < Math.min(remunerations.length, 5) - 1 ? 1 : 0,
+                        borderBottomWidth: index < Math.min(values.length, 5) - 1 ? 1 : 0,
                         borderBottomColor: colors.border,
                       },
                     ])}
@@ -128,14 +131,14 @@ export function RemunerationsCard({ position }: RemunerationsCardProps) {
               })}
             </View>
 
-            {remunerations.length > 5 && (
+            {values.length > 5 && (
               <TouchableOpacity
                 onPress={handleViewRemunerations}
                 style={StyleSheet.flatten([styles.viewAllButton, { backgroundColor: colors.primary + "10" }])}
                 activeOpacity={0.7}
               >
                 <ThemedText style={StyleSheet.flatten([styles.viewAllText, { color: colors.primary }])}>
-                  Ver todos os {remunerations.length} registros
+                  Ver todos os {values.length} registros
                 </ThemedText>
                 <IconChevronRight size={18} color={colors.primary} />
               </TouchableOpacity>

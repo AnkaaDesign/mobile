@@ -67,7 +67,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "serialNumber",
+    key: "task.serialNumber",
     header: "Nº DE SÉRIE",
     align: "left",
     sortable: true,
@@ -103,7 +103,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "customer",
+    key: "task.customer.fantasyName",
     header: "CLIENTE",
     align: "left",
     sortable: true,
@@ -115,7 +115,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "garage",
+    key: "garage.name",
     header: "GARAGEM",
     align: "left",
     sortable: true,
@@ -243,7 +243,7 @@ export function getDefaultVisibleColumns(): Set<string> {
   return new Set([
     "plate",
     "model",
-    "customer"
+    "task.customer.fantasyName"
   ]);
 }
 
@@ -288,11 +288,11 @@ export const TruckTable = React.memo<TruckTableProps>(
       // Define width ratios for each column type
       const columnWidthRatios: Record<string, number> = {
         plate: 1.2,
-        serialNumber: 1.4,
+        "task.serialNumber": 1.4,
         model: 1.5,
         manufacturer: 1.3,
-        customer: 1.6,
-        garage: 1.3,
+        "task.customer.fantasyName": 1.6,
+        "garage.name": 1.3,
         position: 1.0,
         parkingStatus: 1.2,
         createdAt: 1.2,
@@ -624,8 +624,8 @@ export const TruckTable = React.memo<TruckTableProps>(
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
             getItemLayout={(data, index) => ({
-              length: 60, // Fixed row height
-              offset: 60 * index,
+              length: 36, // Fixed row height
+              offset: 36 * index,
               index,
             })}
             style={styles.flatList}
@@ -657,7 +657,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   headerWrapper: {
-    marginTop: 12,
     flexDirection: "column",
   },
   headerContainer: {
@@ -668,12 +667,12 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 56,
+    minHeight: 40, // Reduced to match smaller fonts
   },
   headerCell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.sm,
-    minHeight: 56,
+    minHeight: 40, // Reduced to match smaller fonts
     justifyContent: "center",
   },
   headerText: {
@@ -734,13 +733,13 @@ const styles = StyleSheet.create({
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch", // Changed from 'center' to 'stretch' to ensure all cells have same height
-    minHeight: 60,
+    minHeight: 36, // Reduced to match smaller fonts
   },
   cell: {
     paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
+    paddingVertical: 6, // Reduced padding
     justifyContent: "center",
-    minHeight: 60, // Changed from 72 to match row minHeight
+    minHeight: 36, // Reduced to match smaller fonts
   },
   centerAlign: {
     alignItems: "center",
@@ -749,19 +748,19 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   cellText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs, // Match serial number size
   },
   monoText: {
     fontFamily: "monospace",
-    fontSize: fontSize.xs, // Smaller for codes
+    fontSize: fontSize.xs,
   },
   nameText: {
     fontWeight: fontWeight.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs, // Match serial number size
   },
   numberText: {
     fontWeight: fontWeight.normal,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs, // Match serial number size
   },
   loadingContainer: {
     flex: 1,

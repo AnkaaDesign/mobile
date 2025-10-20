@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { maintenanceService } from '../api-client';
-import { maintenanceKeys } from './';
+import { maintenanceKeys } from './queryKeys';
 import type { MaintenanceGetManyFormData } from '../schemas';
 
 export const useMaintenanceInfiniteMobile = (filters?: Partial<MaintenanceGetManyFormData>) => {

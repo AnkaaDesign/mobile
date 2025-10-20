@@ -1,10 +1,9 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { View, FlatList, RefreshControl, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { FAB } from "@/components/ui/fab";
-import { Badge } from "@/components/ui/badge";
 import { SearchBar } from "@/components/ui/search-bar";
-import { Button } from "@/components/ui/button";
+import { ListActionButton } from "@/components/ui/list-action-button";
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 import { getDefaultVisibleColumns } from "@/components/production/task/list/column-visibility-manager";
 import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
@@ -16,33 +15,26 @@ import { useTasksInfiniteMobile } from "@/hooks/use-tasks-infinite-mobile";
 import { useTaskMutations } from '../../../../hooks';
 import { spacing } from "@/constants/design-system";
 import { TASK_STATUS, SECTOR_PRIVILEGES, TASK_STATUS_LABELS } from '../../../../constants';
-import { hasPrivilege } from '../../../../utils';
+import { hasPrivilege, groupTasksBySector } from '../../../../utils';
 import type { Task } from '../../../../types';
-import { FilterModal, FilterTag } from "@/components/ui/filter-modal";
 import { useDebounce } from "@/hooks/use-debounce";
 import { showToast } from "@/components/ui/toast";
 import { Alert, ActivityIndicator } from "react-native";
-import { IconList, IconFilter } from "@tabler/icons-react-native";
+import { IconList } from "@tabler/icons-react-native";
+
+// Type for sector group data
+type SectorGroup = {
+  sectorName: string;
+  tasks: Task[];
+};
 
 export default function ScheduleListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { delete: deleteTask, update } = useTaskMutations();
 
-  // Filter states
+  // Filter states - simplified for schedule view (only search, no filter drawer)
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<TASK_STATUS[]>([
-    TASK_STATUS.PENDING,
-    TASK_STATUS.IN_PRODUCTION,
-    TASK_STATUS.ON_HOLD,
-  ]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState<"createdAt" | "term" | "priority">("term");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-
-  // Selection state
-  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   // Column visibility state
   const [showColumnManager, setShowColumnManager] = useState(false);
@@ -56,13 +48,16 @@ export default function ScheduleListScreen() {
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   const isProduction = user?.sector?.name === "Produção";
+  const isAdmin = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
   // Build query params with sector filtering
+  // Schedule view shows: PENDING, IN_PRODUCTION, ON_HOLD tasks by default, sorted by deadline (term)
   const queryParams = useMemo(() => {
     const params: any = {
       include: {
         customer: true,
         sector: true,
+        generalPainting: true,
         services: {
           select: {
             id: true,
@@ -70,25 +65,21 @@ export default function ScheduleListScreen() {
           },
         },
       },
-      orderBy: { [sortBy]: sortOrder },
+      orderBy: { term: "asc" }, // Always sort by deadline for schedule view
     };
 
     const whereConditions: any[] = [];
 
-    // Status filter
-    if (selectedStatus.length > 0) {
-      whereConditions.push({ status: { in: selectedStatus } });
-    }
+    // Default status filter for schedule view
+    whereConditions.push({
+      status: {
+        in: [TASK_STATUS.PENDING, TASK_STATUS.IN_PRODUCTION, TASK_STATUS.ON_HOLD],
+      },
+    });
 
     // Search filter
     if (debouncedSearch) {
-      whereConditions.push({
-        OR: [
-          { name: { contains: debouncedSearch, mode: "insensitive" } },
-          { serialNumber: { contains: debouncedSearch } },
-          { customer: { name: { contains: debouncedSearch, mode: "insensitive" } } },
-        ],
-      });
+      params.search = debouncedSearch;
     }
 
     // Sector-based filtering for production users
@@ -106,7 +97,7 @@ export default function ScheduleListScreen() {
     }
 
     return params;
-  }, [selectedStatus, debouncedSearch, sortBy, sortOrder, isProduction, user?.sectorId]);
+  }, [debouncedSearch, isProduction, user?.sectorId]);
 
   // Fetch tasks
   const {
@@ -189,115 +180,38 @@ export default function ScheduleListScreen() {
     router.push(`/production/schedule/details/${taskId}`);
   };
 
-  // Handle batch actions
-  const handleBatchDelete = () => {
-    if (!canDelete) {
-      showToast({ message: "Você não tem permissão para excluir tarefas", type: "error" });
-      return;
+
+  // Group tasks by sector and convert to array for FlatList
+  const sectorGroups = useMemo(() => {
+    if (!tasks) return [];
+
+    const grouped = groupTasksBySector(tasks);
+
+    // For admin, return all sectors
+    let sectorsToShow = grouped;
+
+    // For non-admin users, return only their sector and "Sem setor"
+    if (!isAdmin) {
+      const userSectorName = user?.sector?.name || "";
+      const filtered: Record<string, Task[]> = {};
+
+      if (grouped[userSectorName]) {
+        filtered[userSectorName] = grouped[userSectorName];
+      }
+      if (grouped["Sem setor"]) {
+        filtered["Sem setor"] = grouped["Sem setor"];
+      }
+
+      sectorsToShow = filtered;
     }
 
-    Alert.alert(
-      "Excluir Tarefas Selecionadas",
-      `Tem certeza que deseja excluir ${selectedTasks.size} tarefas? Esta ação não pode ser desfeita.`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // Delete tasks one by one
-              for (const taskId of selectedTasks) {
-                await deleteTask(taskId);
-              }
-              showToast({ message: `${selectedTasks.size} tarefas excluídas`, type: "success" });
-              setSelectedTasks(new Set());
-              setIsSelectionMode(false);
-            } catch (error) {
-              showToast({ message: "Erro ao excluir tarefas", type: "error" });
-            }
-          },
-        },
-      ]
-    );
-  };
+    // Convert to array format for FlatList
+    return Object.entries(sectorsToShow).map(([sectorName, sectorTasks]): SectorGroup => ({
+      sectorName,
+      tasks: sectorTasks,
+    }));
+  }, [tasks, isAdmin, user?.sector?.name]);
 
-  // Filter modal content
-  const renderFilterModal = () => (
-    <FilterModal
-      visible={showFilters}
-      onClose={() => setShowFilters(false)}
-      title="Filtrar Tarefas"
-    >
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Status</ThemedText>
-        <View style={styles.filterOptions}>
-          {Object.values(TASK_STATUS).map((status) => (
-            <FilterTag
-              key={status}
-              label={TASK_STATUS_LABELS[status as keyof typeof TASK_STATUS_LABELS]}
-              selected={selectedStatus.includes(status)}
-              onPress={() => {
-                if (selectedStatus.includes(status)) {
-                  setSelectedStatus(selectedStatus.filter((s) => s !== status));
-                } else {
-                  setSelectedStatus([...selectedStatus, status]);
-                }
-              }}
-            />
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Ordenar por</ThemedText>
-        <View style={styles.filterOptions}>
-          <FilterTag
-            label="Data de Criação"
-            selected={sortBy === "createdAt"}
-            onPress={() => setSortBy("createdAt")}
-          />
-          <FilterTag
-            label="Prazo"
-            selected={sortBy === "term"}
-            onPress={() => setSortBy("term")}
-          />
-          <FilterTag
-            label="Prioridade"
-            selected={sortBy === "priority"}
-            onPress={() => setSortBy("priority")}
-          />
-        </View>
-      </View>
-
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Ordem</ThemedText>
-        <View style={styles.filterOptions}>
-          <FilterTag
-            label="Crescente"
-            selected={sortOrder === "asc"}
-            onPress={() => setSortOrder("asc")}
-          />
-          <FilterTag
-            label="Decrescente"
-            selected={sortOrder === "desc"}
-            onPress={() => setSortOrder("desc")}
-          />
-        </View>
-      </View>
-    </FilterModal>
-  );
-
-  // Active filter count
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (selectedStatus.length > 0 && selectedStatus.length !== Object.values(TASK_STATUS).length) {
-      count++;
-    }
-    if (sortBy !== "term") count++;
-    if (sortOrder !== "asc") count++;
-    return count;
-  }, [selectedStatus, sortBy, sortOrder]);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -324,7 +238,7 @@ export default function ScheduleListScreen() {
   return (
     <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
       {/* Header */}
-      <View style={StyleSheet.flatten([styles.header, { backgroundColor: colors.card }])}>
+      <View style={StyleSheet.flatten([styles.header, { backgroundColor: colors.background }])}>
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -332,62 +246,14 @@ export default function ScheduleListScreen() {
           style={styles.searchBar}
         />
         <View style={styles.headerActions}>
-          <View style={styles.buttonWrapper}>
-            <Button
-              variant="outline"
-              onPress={() => setShowColumnManager(true)}
-              style={{ ...styles.actionButton, backgroundColor: colors.input }}
-            >
-              <IconList size={20} color={colors.foreground} />
-            </Button>
-            <Badge style={{ ...styles.actionBadge, backgroundColor: colors.primary }} size="sm">
-              <ThemedText style={{ ...styles.actionBadgeText, color: colors.primaryForeground }}>{visibleColumnKeys.length}</ThemedText>
-            </Badge>
-          </View>
-          <View style={styles.buttonWrapper}>
-            <Button
-              variant="outline"
-              onPress={() => setShowFilters(true)}
-              style={{ ...styles.actionButton, backgroundColor: colors.input }}
-            >
-              <IconFilter size={20} color={colors.foreground} />
-            </Button>
-            {activeFilterCount > 0 && (
-              <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                <ThemedText style={{ ...styles.actionBadgeText, color: "white" }}>{activeFilterCount}</ThemedText>
-              </Badge>
-            )}
-          </View>
-          {canEdit && (
-            <IconButton
-              name={isSelectionMode ? "x" : "check-square"}
-              variant="default"
-              onPress={() => {
-                setIsSelectionMode(!isSelectionMode);
-                setSelectedTasks(new Set());
-              }}
-            />
-          )}
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={() => setShowColumnManager(true)}
+            badgeCount={visibleColumnKeys.length}
+            badgeVariant="primary"
+          />
         </View>
       </View>
-
-      {/* Selection toolbar */}
-      {isSelectionMode && selectedTasks.size > 0 && (
-        <View style={StyleSheet.flatten([styles.selectionToolbar, { backgroundColor: colors.primary }])}>
-          <ThemedText style={styles.selectionText}>
-            {selectedTasks.size} selecionada{selectedTasks.size > 1 ? "s" : ""}
-          </ThemedText>
-          <View style={styles.selectionActions}>
-            {canDelete && (
-              <IconButton
-                name="trash"
-                variant="default"
-                onPress={handleBatchDelete}
-              />
-            )}
-          </View>
-        </View>
-      )}
 
       {/* Sector notice for production users */}
       {isProduction && !hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) && (
@@ -398,32 +264,45 @@ export default function ScheduleListScreen() {
         </View>
       )}
 
-      {/* Task table */}
+      {/* Task list grouped by sector */}
       {isLoading ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <ThemedText style={styles.loadingText}>Carregando tarefas...</ThemedText>
         </View>
       ) : (
-        <TaskTable
-          tasks={tasks || []}
-          onTaskPress={handleTaskPress}
-          onTaskEdit={canEdit ? handleEditTask : undefined}
-          onTaskDelete={canDelete ? handleDeleteTask : undefined}
-          onTaskStatusChange={canEdit ? handleStatusChange : undefined}
-          onRefresh={handleRefresh}
-          refreshing={isRefetching}
-          onEndReached={() => {
-            if (hasNextPage && !isFetchingNextPage) {
-              fetchNextPage();
-            }
-          }}
-          loadingMore={isFetchingNextPage}
-          showSelection={isSelectionMode}
-          selectedTasks={selectedTasks}
-          onSelectionChange={setSelectedTasks}
-          enableSwipeActions={!isSelectionMode}
-          visibleColumnKeys={visibleColumnKeys}
+        <FlatList
+          data={sectorGroups}
+          keyExtractor={(item) => item.sectorName}
+          renderItem={({ item }) => (
+            <View style={styles.sectorGroup}>
+              <ThemedText style={styles.sectorTitle}>{item.sectorName}</ThemedText>
+              <TaskTable
+                tasks={item.tasks}
+                onTaskPress={handleTaskPress}
+                onTaskEdit={canEdit ? handleEditTask : undefined}
+                onTaskDelete={canDelete ? handleDeleteTask : undefined}
+                onTaskStatusChange={canEdit ? handleStatusChange : undefined}
+                onEndReached={() => {
+                  if (hasNextPage && !isFetchingNextPage) {
+                    fetchNextPage();
+                  }
+                }}
+                loadingMore={isFetchingNextPage}
+                enableSwipeActions={true}
+                visibleColumnKeys={visibleColumnKeys}
+              />
+            </View>
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <ThemedText style={styles.emptyText}>Nenhuma tarefa encontrada</ThemedText>
+            </View>
+          }
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+          }
+          contentContainerStyle={sectorGroups.length === 0 ? styles.emptyListContainer : undefined}
         />
       )}
 
@@ -435,9 +314,6 @@ export default function ScheduleListScreen() {
           style={styles.fab}
         />
       )}
-
-      {/* Filter modal */}
-      {renderFilterModal()}
 
       {/* Column Visibility Drawer */}
       <ColumnVisibilityDrawerV2
@@ -469,45 +345,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  buttonWrapper: {
-    position: "relative",
-  },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    paddingHorizontal: 0,
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
-  },
-  selectionToolbar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  selectionText: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-  selectionActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
   notice: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -535,17 +372,26 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: spacing.md,
   },
-  filterSection: {
+  emptyListContainer: {
+    flex: 1,
+  },
+  sectorGroup: {
     marginBottom: spacing.lg,
   },
-  filterLabel: {
+  sectorTitle: {
+    fontSize: 14,
     fontWeight: "600",
-    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  filterOptions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
+  emptyContainer: {
+    padding: spacing.xl,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    opacity: 0.6,
   },
   fab: {
     position: "absolute",

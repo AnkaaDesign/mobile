@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatPhone, formatCPF, formatCNPJ } from '../../../../utils';
+import { formatBrazilianPhone, formatCPF, formatCNPJ } from '../../../../utils';
 import type { Customer } from '../../../../types';
 import { IconUser, IconPhone, IconMail, IconMapPin, IconId } from "@tabler/icons-react-native";
 
@@ -74,10 +74,10 @@ export const TaskCustomerCard: React.FC<TaskCustomerCardProps> = ({ customer }) 
 
         {customer.phones && customer.phones.length > 0 && (
           <View style={styles.phoneContainer}>
-            <View style={styles.infoRow}>
+            <View style={styles.phoneInfo}>
               <IconPhone size={14} color={colors.foreground} />
-              <ThemedText style={styles.infoText}>
-                {formatPhone(customer.phones[0])}
+              <ThemedText style={styles.phoneText}>
+                {formatBrazilianPhone(customer.phones[0])}
               </ThemedText>
             </View>
             <View style={styles.phoneActions}>
@@ -180,12 +180,24 @@ const styles = StyleSheet.create({
   },
   phoneContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: spacing.sm,
+  },
+  phoneInfo: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.xs,
+    flex: 1,
+  },
+  phoneText: {
+    fontSize: fontSize.sm,
+    flex: 1,
+    flexWrap: "wrap",
   },
   phoneActions: {
     flexDirection: "row",
     gap: spacing.xs,
+    flexShrink: 0,
   },
   phoneButton: {
     width: 32,

@@ -177,7 +177,6 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     entryDate: "Data de Entrada",
     term: "Prazo",
     commission: "Comissão",
-    price: "Preço",
     statusOrder: "Ordem do Status",
     customerId: "Cliente",
     sectorId: "Setor",
@@ -409,6 +408,11 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     users: "Usuários",
     positions: "Cargos",
     tasks: "Tarefas",
+  },
+  [CHANGE_LOG_ENTITY_TYPE.GARAGE]: {
+    name: "Nome",
+    width: "Largura",
+    length: "Comprimento",
   },
   [CHANGE_LOG_ENTITY_TYPE.GARAGE_LANE]: {
     width: "Largura",

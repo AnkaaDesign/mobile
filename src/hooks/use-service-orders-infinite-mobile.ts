@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { serviceOrderService } from '../api-client';
-import { serviceOrderKeys } from './';
+import { serviceOrderKeys } from './queryKeys';
 import type { ServiceOrderGetManyFormData } from '../schemas';
 
 export const useServiceOrdersInfiniteMobile = (filters?: Partial<ServiceOrderGetManyFormData>) => {

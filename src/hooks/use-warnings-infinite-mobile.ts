@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useWarningsInfinite } from './';
+import { useWarningsInfinite } from './useWarning';
 import { WarningGetManyFormData } from '../schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 

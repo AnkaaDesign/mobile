@@ -61,13 +61,8 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
   }, [form.watch("itemId"), items]);
 
   const handleSubmit = async (data: PpeDeliveryCreateFormData) => {
-    try {
-      await createAsync(data);
-      showToast({ message: "EPI entregue com sucesso", type: "success" });
-      onSuccess?.();
-    } catch (error) {
-      showToast({ message: "Erro ao registrar entrega de EPI", type: "error" });
-    }
+    await createAsync(data);
+    onSuccess?.();
   };
 
   const isLoading = createMutation.isPending;

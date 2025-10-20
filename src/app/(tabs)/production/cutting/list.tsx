@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { useTeamCutsInfiniteMobile } from "@/hooks/use-team-cuts-infinite-mobile";
+import { useCutsInfiniteMobile } from "@/hooks/use-cuts-infinite-mobile";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES, CUT_STATUS, CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from '../../../../constants';
 import { hasPrivilege, formatDateTime } from '../../../../utils';
@@ -155,7 +155,7 @@ export default function CuttingListScreen() {
     error,
     refetch,
     isRefetching,
-  } = useTeamCutsInfiniteMobile({ ...queryParams, enabled: canView });
+  } = useCutsInfiniteMobile({ ...queryParams, enabled: canView });
 
   // Handle refresh
   const handleRefresh = async () => {

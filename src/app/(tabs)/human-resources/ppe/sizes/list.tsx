@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePpeSizeMutations } from '../../../../../hooks';
 import { usePpeSizesInfiniteMobile } from "@/hooks";
 import type { PpeSizeGetManyFormData } from '../../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { PpeSizeTable } from "@/components/human-resources/ppe/size/list/ppe-size-table";
 import type { SortConfig } from "@/components/human-resources/ppe/size/list/ppe-size-table";
 import { PpeSizeFilterModal } from "@/components/human-resources/ppe/size/list/ppe-size-filter-modal";
@@ -81,7 +81,7 @@ export default function PpeSizeListScreen() {
     },
   };
 
-  const { ppeSizes, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = usePpeSizesInfiniteMobile(queryParams);
+  const { ppeSizes, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePpeSizesInfiniteMobile(queryParams);
   const { delete: deletePpeSize } = usePpeSizeMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -165,25 +165,13 @@ export default function PpeSizeListScreen() {
       <View style={[styles.searchContainer]}>
         <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar por funcionário..." style={styles.searchBar} debounceMs={300} />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              {
-                backgroundColor: colors.card,
-                borderWidth: 1,
-                borderColor: colors.border,
-              },
-              pressed && styles.actionButtonPressed,
-            ]}
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
             onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
-            {activeFiltersCount > 0 && (
-              <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-              </Badge>
-            )}
-          </Pressable>
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
         </View>
       </View>
 
@@ -246,7 +234,7 @@ export default function PpeSizeListScreen() {
       )}
 
       {/* Items count */}
-      {hasPpeSizes && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />}
+      {hasPpeSizes && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasPpeSizes && <FAB icon="plus" onPress={handleCreatePpeSize} />}
 
@@ -273,32 +261,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     gap: 8,
-  },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
   statisticsContainer: {
     marginHorizontal: 8,
