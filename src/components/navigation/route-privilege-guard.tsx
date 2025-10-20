@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 import { useSegments } from "expo-router";
-import { SECTOR_PRIVILEGES } from '../../constants';
+import { SECTOR_PRIVILEGES, MENU_ITEMS, type MenuItem } from '../../constants';
 import { PrivilegeGuard } from "./privilege-guard";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { routes } from '../../constants';
@@ -11,79 +11,180 @@ interface RoutePrivilegeGuardProps {
 }
 
 /**
- * Route-based privilege mapping for mobile app
- * Maps route segments to required privileges
+ * Get required privilege for current route by searching navigation menu
+ * Uses navigation.ts as single source of truth for privilege requirements
  */
-const MOBILE_ROUTE_PRIVILEGES: Record<string, SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]> = {
-  // Administration routes
-  administration: SECTOR_PRIVILEGES.ADMIN,
+function getRequiredPrivilegeFromNavigation(segments: string[]): SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[] | null {
+  if (!segments.length) return null;
 
-  // Inventory routes
-  inventory: SECTOR_PRIVILEGES.WAREHOUSE,
+  // Build current path from segments
+  const currentPath = `/(tabs)/${segments.join('/')}`;
 
-  // Production routes
-  production: SECTOR_PRIVILEGES.PRODUCTION,
+  // Try to find matching menu item by traversing the navigation tree
+  const matchedItem = findMenuItemForPath(MENU_ITEMS, currentPath, segments);
 
-  // Paint routes
-  painting: SECTOR_PRIVILEGES.WAREHOUSE,
+  if (matchedItem?.requiredPrivilege) {
+    return matchedItem.requiredPrivilege;
+  }
 
-  // Human Resources routes
-  "human-resources": SECTOR_PRIVILEGES.HUMAN_RESOURCES,
-
-  // Statistics routes
-  statistics: SECTOR_PRIVILEGES.LEADER,
-
-  // Personal routes (accessible to all authenticated users)
-  personal: SECTOR_PRIVILEGES.BASIC,
-
-  // Home/Dashboard (accessible to all authenticated users)
-  home: SECTOR_PRIVILEGES.BASIC,
-
-  // Examples of array-based privileges (can be uncommented and customized)
-  // 'maintenance': [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.MAINTENANCE, SECTOR_PRIVILEGES.ADMIN],
-  // 'ppe': [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
-};
+  // If no specific privilege found, default to BASIC (authenticated access)
+  return SECTOR_PRIVILEGES.BASIC;
+}
 
 /**
- * Sensitive operations that require elevated privileges
- * These routes require higher privileges regardless of their parent module
+ * Find menu item that matches the current path
+ * Supports both exact matches and parent module matches
  */
-const SENSITIVE_OPERATIONS: Record<string, SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]> = {
-  create: SECTOR_PRIVILEGES.LEADER, // Creation operations
-  edit: SECTOR_PRIVILEGES.LEADER, // Edit operations
-  delete: SECTOR_PRIVILEGES.ADMIN, // Delete operations (admin only)
+function findMenuItemForPath(menuItems: MenuItem[], currentPath: string, segments: string[]): MenuItem | null {
+  // First try exact path matching
+  for (const item of menuItems) {
+    if (item.path) {
+      // Convert navigation path to file path for comparison
+      const navPath = convertNavigationPathToFilePath(item.path);
+      if (pathMatches(navPath, segments)) {
+        return item;
+      }
+    }
 
-  // Specific sensitive operations
-  employees: SECTOR_PRIVILEGES.ADMIN, // Employee management
-  sectors: SECTOR_PRIVILEGES.ADMIN, // Department management
-  positions: SECTOR_PRIVILEGES.ADMIN, // Position management
-  commissions: SECTOR_PRIVILEGES.LEADER, // Commission management
-  automatic: SECTOR_PRIVILEGES.ADMIN, // Automatic orders
-  deliveries: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN], // PPE deliveries
-};
+    // Recursively search children
+    if (item.children) {
+      const childMatch = findMenuItemForPath(item.children, currentPath, segments);
+      if (childMatch) return childMatch;
+    }
+  }
+
+  // If no exact match, find the parent module and use its privileges
+  for (const item of menuItems) {
+    if (item.path) {
+      const navPath = convertNavigationPathToFilePath(item.path);
+      const pathSegments = navPath.split('/').filter(Boolean);
+
+      // Check if this is a parent module (first segment matches)
+      if (pathSegments.length > 0 && segments.length > 0 && pathSegments[0] === segments[0]) {
+        // Check if we're in a child route of this module
+        const isChildRoute = segments.length > pathSegments.length;
+        if (isChildRoute || pathSegments.every((seg, i) => segments[i] === seg)) {
+          return item;
+        }
+      }
+    }
+
+    if (item.children) {
+      const childMatch = findMenuItemForPath(item.children, currentPath, segments);
+      if (childMatch) return childMatch;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Convert navigation Portuguese path to English file path
+ * Examples:
+ * - /administracao/setores -> administration/sectors
+ * - /estoque/produtos -> inventory/products
+ * - /producao/cronograma -> production/schedule
+ */
+function convertNavigationPathToFilePath(navPath: string): string {
+  const pathMap: Record<string, string> = {
+    'administracao': 'administration',
+    'clientes': 'customers',
+    'colaboradores': 'employees',
+    'setores': 'sectors',
+    'notificacoes': 'notifications',
+    'registros-de-alteracoes': 'change-logs',
+    'estoque': 'inventory',
+    'emprestimos': 'loans',
+    'fornecedores': 'suppliers',
+    'manutencao': 'maintenance',
+    'movimentacoes': 'movements',
+    'pedidos': 'orders',
+    'produtos': 'products',
+    'categorias': 'categories',
+    'marcas': 'brands',
+    'retiradas-externas': 'external-withdrawals',
+    'agendamentos': 'schedules',
+    'automaticos': 'automatic',
+    'epi': 'ppe',
+    'entregas': 'deliveries',
+    'tamanhos': 'sizes',
+    'producao': 'production',
+    'aerografia': 'airbrushing',
+    'cronograma': 'schedule',
+    'em-espera': 'on-hold',
+    'garagens': 'garages',
+    'historico': 'history',
+    'observacoes': 'observations',
+    'recorte': 'cutting',
+    'pintura': 'painting',
+    'catalogo': 'catalog',
+    'catalogo-basico': 'catalog',
+    'marcas-de-tinta': 'paint-brands',
+    'tipos-de-tinta': 'paint-types',
+    'producoes': 'productions',
+    'recursos-humanos': 'human-resources',
+    'avisos': 'warnings',
+    'cargos': 'positions',
+    'controle-ponto': 'time-clock',
+    'feriados': 'holidays',
+    'ferias': 'vacations',
+    'folha-de-pagamento': 'payroll',
+    'niveis-desempenho': 'performance-levels',
+    'requisicoes': 'requisitions',
+    'simulacao-bonus': 'bonus-simulation',
+    'calculos': 'calculations',
+    'integracoes': 'integrations',
+    'secullum': 'secullum',
+    'registros-ponto': 'time-entries',
+    'status-sincronizacao': 'sync-status',
+    'meu-pessoal': 'my-team',
+    'atividades': 'activities',
+    'usuarios': 'users',
+    'calculos-ponto': 'time-calculations',
+    'pessoal': 'personal',
+    'meus-avisos': 'my-warnings',
+    'meus-emprestimos': 'my-loans',
+    'meus-epis': 'my-ppes',
+    'meus-feriados': 'my-holidays',
+    'minhas-ferias': 'my-vacations',
+    'minhas-notificacoes': 'my-notifications',
+    'cadastrar': 'create',
+    'listar': 'list',
+    'detalhes': 'details',
+    'editar': 'edit',
+  };
+
+  return navPath
+    .split('/')
+    .filter(Boolean)
+    .map(segment => {
+      // Remove :id parameters
+      if (segment.startsWith(':')) return '[id]';
+      return pathMap[segment] || segment;
+    })
+    .join('/');
+}
+
+/**
+ * Check if a navigation path matches the current route segments
+ */
+function pathMatches(navPath: string, segments: string[]): boolean {
+  const navSegments = navPath.split('/').filter(Boolean);
+
+  if (navSegments.length !== segments.length) return false;
+
+  return navSegments.every((navSeg, i) => {
+    // Match exact segments or dynamic parameters
+    return navSeg === segments[i] || navSeg === '[id]' || navSeg.startsWith(':');
+  });
+}
 
 /**
  * Get required privilege for current route
+ * Now uses navigation.ts as the single source of truth
  */
 function getRequiredPrivilegeForRoute(segments: string[]): SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[] | null {
-  if (!segments.length) return null;
-
-  // Check for sensitive operations first (highest priority)
-  for (const segment of segments) {
-    if (SENSITIVE_OPERATIONS[segment]) {
-      return SENSITIVE_OPERATIONS[segment];
-    }
-  }
-
-  // Check main route privileges
-  for (const segment of segments) {
-    if (MOBILE_ROUTE_PRIVILEGES[segment]) {
-      return MOBILE_ROUTE_PRIVILEGES[segment];
-    }
-  }
-
-  // Default: if no specific privilege found, require BASIC (authenticated access)
-  return SECTOR_PRIVILEGES.BASIC;
+  return getRequiredPrivilegeFromNavigation(segments);
 }
 
 /**
@@ -127,7 +228,3 @@ export function withPrivilegeGuard<T extends object>(
   };
 }
 
-/**
- * Export route privilege mapping for external use
- */
-export { MOBILE_ROUTE_PRIVILEGES, SENSITIVE_OPERATIONS };

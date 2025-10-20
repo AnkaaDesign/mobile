@@ -64,8 +64,8 @@ export function SectorListSkeleton() {
         <View style={styles.header}>
           <SkeletonCard style={styles.searchSkeleton} />
           <View style={styles.filterRow}>
-            <SkeletonCard style={styles.filterSkeleton} />
-            <SkeletonCard style={StyleSheet.flatten([styles.filterSkeleton, { flex: 0, width: 100 }])} />
+            <SkeletonCard style={StyleSheet.flatten([styles.filterSkeleton, { flex: 0, width: 48 }])} />
+            <SkeletonCard style={StyleSheet.flatten([styles.filterSkeleton, { flex: 0, width: 48 }])} />
           </View>
         </View>
 

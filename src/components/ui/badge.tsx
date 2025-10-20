@@ -24,7 +24,7 @@ export interface BadgeProps {
     | "cancelled"
     | "onHold"
     | "inProgress";
-  size?: "default" | "sm" | "lg";
+  size?: "default" | "sm" | "md" | "lg";
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
@@ -32,9 +32,10 @@ export interface BadgeProps {
 const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeProps["size"] = "default", colors: any, isDark: boolean): ViewStyle => {
   // Size-based padding matching web (increased vertical padding for better height)
   const sizePadding = {
-    sm: { paddingHorizontal: 8, paddingVertical: 4 },
-    default: { paddingHorizontal: 10, paddingVertical: 5 },
-    lg: { paddingHorizontal: 12, paddingVertical: 6 },
+    sm: { paddingHorizontal: 8, paddingVertical: 5 },
+    default: { paddingHorizontal: 10, paddingVertical: 7 },
+    md: { paddingHorizontal: 10, paddingVertical: 5 },
+    lg: { paddingHorizontal: 12, paddingVertical: 8 },
   };
 
   const baseStyles: ViewStyle = {
@@ -139,6 +140,7 @@ const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: Ba
   const sizeFont = {
     sm: { fontSize: 11 }, // 0.688rem
     default: { fontSize: fontSize.xs },
+    md: { fontSize: fontSize.xs },
     lg: { fontSize: fontSize.sm },
   };
 

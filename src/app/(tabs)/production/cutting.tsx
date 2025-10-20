@@ -1,5 +1,11 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 export default function ProductionCuttingScreen() {
-  return <UnderConstruction title="Recorte" />;
+  useEffect(() => {
+    // Redirect to cutting list page
+    router.replace("/(tabs)/production/cutting/list");
+  }, []);
+
+  return null;
 }

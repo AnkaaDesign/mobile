@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useItemsInfinite } from './';
+import { useItemsInfinite } from './useItem';
 import { ItemGetManyFormData } from '../schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 

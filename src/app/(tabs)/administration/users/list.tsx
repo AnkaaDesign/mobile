@@ -1,15 +1,14 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { View, Pressable, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconFilter } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUserMutations } from '../../../../hooks';
 import { useUsersInfiniteMobile } from "@/hooks";
 import type { UserGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, ListActionButton } from "@/components/ui";
 import { UserTable } from "@/components/administration/user/list/user-table";
 import type { SortConfig } from "@/components/administration/user/list/user-table";
-import { UserFilterModal } from "@/components/administration/user/list/user-filter-modal";
 import { UserFilterTags } from "@/components/administration/user/list/user-filter-tags";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -18,77 +17,118 @@ import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 
+// New hooks and components
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
+import { useTableSort } from "@/hooks/useTableSort";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+import { BaseFilterDrawer, BooleanFilter, MultiSelectFilter } from "@/components/common/filters";
+import { usePositions, useSectors } from '../../../../hooks';
+import { USER_STATUS, USER_STATUS_LABELS } from '../../../../constants';
+import { Input } from "@/components/ui/input";
+import { UserColumnVisibilityDrawer } from "@/components/administration/user/list/user-column-visibility-drawer";
+
 export default function AdministrationUsersListScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [displaySearchText, setDisplaySearchText] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<Partial<UserGetManyFormData>>({});
-  const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "name", direction: "asc" }]);
+  const [showColumnManager, setShowColumnManager] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
 
-  // Build query parameters with sorting
-  const buildOrderBy = () => {
-    if (!sortConfigs || sortConfigs.length === 0) return { name: "asc" };
+  // Filter state
+  const [filters, setFilters] = useState<{
+    statuses?: string[];
+    positionIds?: string[];
+    sectorIds?: string[];
+    managedSectorIds?: string[];
+    verified?: boolean;
+    hasManagedSector?: boolean;
+  }>({});
 
-    // If only one sort, return as object
-    if (sortConfigs.length === 1) {
-      const config = sortConfigs[0];
-      switch (config.columnKey) {
-        case "name":
-          return { name: config.direction };
-        case "email":
-          return { email: config.direction };
-        case "cpf":
-          return { cpf: config.direction };
-        case "status":
-          return { statusOrder: config.direction };
-        case "position":
-          return { position: { name: config.direction } };
-        case "sector":
-          return { sector: { name: config.direction } };
-        default:
-          return { name: "asc" };
-      }
+  // Use new hooks
+  const { displayText, searchText, setDisplayText } = useDebouncedSearch("", 300);
+
+  const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
+    [{ column: "name", direction: "asc", order: 0 }],
+    3,
+    false
+  );
+
+  const {
+    visibleColumns,
+    setVisibleColumns,
+    isLoading: isColumnsLoading,
+  } = useColumnVisibility(
+    "users",
+    ["name", "email"],
+    ["name", "email", "cpf", "status", "position", "sector", "createdAt", "updatedAt"]
+  );
+
+  // Load filter options
+  const { data: positionsData } = usePositions({ limit: 100, orderBy: { name: "asc" } });
+  const { data: sectorsData } = useSectors({ limit: 100, orderBy: { name: "asc" } });
+
+  const positions = positionsData?.data || [];
+  const sectors = sectorsData?.data || [];
+
+  // Build API query
+  const buildWhereClause = useCallback(() => {
+    const where: any = {};
+
+    if (filters.statuses?.length) {
+      where.status = { in: filters.statuses };
     }
 
-    // Multiple sorts, return as array
-    return sortConfigs.map((config) => {
-      switch (config.columnKey) {
-        case "name":
-          return { name: config.direction };
-        case "email":
-          return { email: config.direction };
-        case "cpf":
-          return { cpf: config.direction };
-        case "status":
-          return { statusOrder: config.direction };
-        case "position":
-          return { position: { name: config.direction } };
-        case "sector":
-          return { sector: { name: config.direction } };
-        default:
-          return { name: "asc" };
-      }
-    });
-  };
+    if (filters.positionIds?.length) {
+      where.positionId = { in: filters.positionIds };
+    }
 
-  const queryParams = {
-    orderBy: buildOrderBy(),
+    if (filters.sectorIds?.length) {
+      where.sectorId = { in: filters.sectorIds };
+    }
+
+    if (filters.managedSectorIds?.length) {
+      where.managedSectorId = { in: filters.managedSectorIds };
+    }
+
+    if (filters.verified !== undefined) {
+      where.verified = filters.verified;
+    }
+
+    if (filters.hasManagedSector !== undefined) {
+      where.hasManagedSector = filters.hasManagedSector;
+    }
+
+    return Object.keys(where).length > 0 ? where : undefined;
+  }, [filters]);
+
+  const queryParams = useMemo(() => ({
+    orderBy: buildOrderBy(
+      {
+        name: "name",
+        email: "email",
+        cpf: "cpf",
+        status: "statusOrder",
+        position: { position: { name: "name" } },
+        sector: { sector: { name: "name" } },
+        createdAt: "createdAt",
+        updatedAt: "updatedAt",
+      },
+      { name: "asc" }
+    ),
     ...(searchText ? { searchingFor: searchText } : {}),
-    ...filters,
+    ...(buildWhereClause() ? { where: buildWhereClause() } : {}),
     include: {
+      avatar: true,
       position: true,
       sector: true,
       managedSector: true,
     },
-  };
+  }), [searchText, buildWhereClause, buildOrderBy]);
 
-  const { items: users, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = useUsersInfiniteMobile(queryParams);
+  const { items: users, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useUsersInfiniteMobile(queryParams);
   const { delete: deleteUser } = useUserMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -114,52 +154,139 @@ export default function AdministrationUsersListScreen() {
 
   const handleDeleteUser = useCallback(
     async (userId: string) => {
-      try {
-        await deleteUser(userId);
-        // Clear selection if the deleted user was selected
-        if (selectedUsers.has(userId)) {
-          const newSelection = new Set(selectedUsers);
-          newSelection.delete(userId);
-          setSelectedUsers(newSelection);
-        }
-      } catch (error) {
-        Alert.alert("Erro", "Não foi possível excluir o usuário. Tente novamente.");
+      await deleteUser(userId);
+      // Clear selection if the deleted user was selected
+      if (selectedUsers.has(userId)) {
+        const newSelection = new Set(selectedUsers);
+        newSelection.delete(userId);
+        setSelectedUsers(newSelection);
       }
     },
     [deleteUser, selectedUsers],
   );
 
-  const handleSort = useCallback((configs: SortConfig[]) => {
-    setSortConfigs(configs);
-  }, []);
-
   const handleSelectionChange = useCallback((newSelection: Set<string>) => {
     setSelectedUsers(newSelection);
   }, []);
 
-  const handleSearch = useCallback((text: string) => {
-    setSearchText(text);
-  }, []);
-
-  const handleDisplaySearchChange = useCallback((text: string) => {
-    setDisplaySearchText(text);
-  }, []);
-
-  const handleApplyFilters = useCallback((newFilters: Partial<UserGetManyFormData>) => {
-    setFilters(newFilters);
+  const handleApplyFilters = useCallback(() => {
     setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
     setFilters({});
-    setSearchText("");
-    setDisplaySearchText("");
+    setDisplayText("");
     setSelectedUsers(new Set());
     setShowSelection(false);
-  }, []);
+  }, [setDisplayText]);
+
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumns(Array.from(newColumns));
+  }, [setVisibleColumns]);
 
   // Count active filters
-  const activeFiltersCount = Object.entries(filters).filter(([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
+  const activeFiltersCount = Object.values(filters).filter(
+    (value) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : value === true)
+  ).length;
+
+  // Status options for multi-select
+  const statusOptions = useMemo(() =>
+    Object.values(USER_STATUS).map((status) => ({
+      value: status,
+      label: USER_STATUS_LABELS[status],
+    })),
+    []
+  );
+
+  // Position options
+  const positionOptions = useMemo(() =>
+    positions.map((position) => ({
+      value: position.id,
+      label: position.name,
+    })),
+    [positions]
+  );
+
+  // Sector options
+  const sectorOptions = useMemo(() =>
+    sectors.map((sector) => ({
+      value: sector.id,
+      label: sector.name,
+    })),
+    [sectors]
+  );
+
+  // Filter sections for BaseFilterDrawer
+  const filterSections = useMemo(() => [
+    {
+      id: "status",
+      title: "Status",
+      defaultOpen: true,
+      badge: filters.statuses?.length || 0,
+      content: (
+        <MultiSelectFilter
+          label="Status do Usuário"
+          value={filters.statuses || []}
+          onChange={(value) => setFilters(prev => ({ ...prev, statuses: value.length > 0 ? value : undefined }))}
+          options={statusOptions}
+          placeholder="Selecione status..."
+        />
+      ),
+    },
+    {
+      id: "entities",
+      title: "Cargo e Setor",
+      defaultOpen: false,
+      badge: (filters.positionIds?.length || 0) + (filters.sectorIds?.length || 0) + (filters.managedSectorIds?.length || 0),
+      content: (
+        <>
+          <MultiSelectFilter
+            label="Cargos"
+            value={filters.positionIds || []}
+            onChange={(value) => setFilters(prev => ({ ...prev, positionIds: value.length > 0 ? value : undefined }))}
+            options={positionOptions}
+            placeholder="Selecione cargos..."
+          />
+          <MultiSelectFilter
+            label="Setores"
+            value={filters.sectorIds || []}
+            onChange={(value) => setFilters(prev => ({ ...prev, sectorIds: value.length > 0 ? value : undefined }))}
+            options={sectorOptions}
+            placeholder="Selecione setores..."
+          />
+          <MultiSelectFilter
+            label="Setores Gerenciados"
+            value={filters.managedSectorIds || []}
+            onChange={(value) => setFilters(prev => ({ ...prev, managedSectorIds: value.length > 0 ? value : undefined }))}
+            options={sectorOptions}
+            placeholder="Selecione setores gerenciados..."
+          />
+        </>
+      ),
+    },
+    {
+      id: "verification",
+      title: "Verificação e Permissões",
+      defaultOpen: false,
+      badge: (filters.verified ? 1 : 0) + (filters.hasManagedSector ? 1 : 0),
+      content: (
+        <>
+          <BooleanFilter
+            label="Usuário Verificado"
+            description="Filtrar por usuários com email verificado"
+            value={!!filters.verified}
+            onChange={(value) => setFilters(prev => ({ ...prev, verified: value || undefined }))}
+          />
+          <BooleanFilter
+            label="Gerencia Setor"
+            description="Filtrar por usuários que gerenciam setores"
+            value={!!filters.hasManagedSector}
+            onChange={(value) => setFilters(prev => ({ ...prev, hasManagedSector: value || undefined }))}
+          />
+        </>
+      ),
+    },
+  ], [filters, statusOptions, positionOptions, sectorOptions]);
 
   if (isLoading && !isRefetching) {
     return <UserListSkeleton />;
@@ -179,30 +306,50 @@ export default function AdministrationUsersListScreen() {
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Search and Filter */}
       <View style={[styles.searchContainer]}>
-        <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar usuários..." style={styles.searchBar} debounceMs={300} />
+        <Input
+          value={displayText}
+          onChangeText={setDisplayText}
+          placeholder="Buscar usuários..."
+          style={styles.searchBar}
+        />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }, pressed && styles.actionButtonPressed]}
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={() => setShowColumnManager(true)}
+            badgeCount={visibleColumns.length}
+            badgeVariant="primary"
+          />
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
             onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
-            {activeFiltersCount > 0 && (
-              <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-              </Badge>
-            )}
-          </Pressable>
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
         </View>
       </View>
 
       {/* Individual filter tags */}
       <UserFilterTags
-        filters={filters}
+        filters={{ where: buildWhereClause() }}
         searchText={searchText}
-        onFilterChange={handleApplyFilters}
+        onFilterChange={(newFilters) => {
+          const where = newFilters.where as any;
+          if (where) {
+            const extracted: typeof filters = {};
+            if (where.status?.in) extracted.statuses = where.status.in;
+            if (where.positionId?.in) extracted.positionIds = where.positionId.in;
+            if (where.sectorId?.in) extracted.sectorIds = where.sectorId.in;
+            if (where.managedSectorId?.in) extracted.managedSectorIds = where.managedSectorId.in;
+            if (where.verified !== undefined) extracted.verified = where.verified;
+            if (where.hasManagedSector !== undefined) extracted.hasManagedSector = where.hasManagedSector;
+            setFilters(extracted);
+          } else {
+            setFilters({});
+          }
+        }}
         onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
+          setDisplayText(text);
         }}
         onClearAll={handleClearFilters}
       />
@@ -223,8 +370,9 @@ export default function AdministrationUsersListScreen() {
             showSelection={showSelection}
             selectedUsers={selectedUsers}
             onSelectionChange={handleSelectionChange}
-            sortConfigs={sortConfigs}
-            onSort={handleSort}
+            sortConfigs={sortConfigs as SortConfig[]}
+            onSort={(configs) => handleSort(configs[0]?.columnKey || "name")}
+            visibleColumnKeys={visibleColumns}
             enableSwipeActions={true}
           />
         </TableErrorBoundary>
@@ -241,12 +389,29 @@ export default function AdministrationUsersListScreen() {
       )}
 
       {/* Items count */}
-      {hasUsers && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />}
+      {hasUsers && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasUsers && <FAB icon="plus" onPress={handleCreateUser} />}
 
-      {/* Filter Modal */}
-      <UserFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
+      {/* New BaseFilterDrawer */}
+      <BaseFilterDrawer
+        open={showFilters}
+        onOpenChange={setShowFilters}
+        sections={filterSections}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+        title="Filtros de Usuários"
+        description="Configure os filtros para refinar sua busca"
+      />
+
+      {/* Column Visibility Drawer */}
+      <UserColumnVisibilityDrawer
+        open={showColumnManager}
+        onOpenChange={setShowColumnManager}
+        visibleColumns={new Set(visibleColumns)}
+        onVisibilityChange={handleColumnsChange}
+      />
     </ThemedView>
   );
 }
@@ -269,35 +434,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
 });

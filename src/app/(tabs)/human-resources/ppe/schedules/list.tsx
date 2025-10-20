@@ -3,12 +3,12 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter } from "@tabler/icons-react-native";
+import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePpeDeliveryScheduleMutations } from '../../../../../hooks';
 import { usePpeSchedulesInfiniteMobile } from "@/hooks";
 import type { PpeDeliveryScheduleGetManyFormData } from '../../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton, Badge } from "@/components/ui";
 import { PpeScheduleTable } from "@/components/human-resources/ppe/schedule/list/ppe-schedule-table";
 import type { SortConfig } from "@/components/human-resources/ppe/schedule/list/ppe-schedule-table";
 import { PpeScheduleFilterModal } from "@/components/human-resources/ppe/schedule/list/ppe-schedule-filter-modal";
@@ -30,6 +30,8 @@ export default function PpeScheduleListScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<PpeDeliveryScheduleGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "nextRun", direction: "asc" }]);
+  const [showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["nextRun", "frequency", "isActive"]);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -83,7 +85,7 @@ export default function PpeScheduleListScreen() {
     },
   };
 
-  const { schedules, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = usePpeSchedulesInfiniteMobile(queryParams);
+  const { schedules, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePpeSchedulesInfiniteMobile(queryParams);
   const { delete: deleteSchedule } = usePpeDeliveryScheduleMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -168,25 +170,21 @@ export default function PpeScheduleListScreen() {
           style={styles.searchBar}
           debounceMs={300}
         />
-        <Pressable
-          style={({ pressed }) => [
-            styles.actionButton,
-            {
-              backgroundColor: colors.card,
-              borderWidth: 1,
-              borderColor: colors.border,
-            },
-            pressed && styles.actionButtonPressed,
-          ]}
-          onPress={() => setShowFilters(true)}
-        >
-          <IconFilter size={24} color={colors.foreground} />
-          {activeFiltersCount > 0 && (
-            <Badge style={styles.actionBadge} variant="destructive" size="sm">
-              <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-            </Badge>
-          )}
-        </Pressable>
+        <View style={styles.buttonContainer}>
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={() => setShowColumnManager(true)}
+            badgeCount={visibleColumnKeys.length}
+            badgeVariant="primary"
+          />
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
+            onPress={() => setShowFilters(true)}
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
+        </View>
       </View>
 
       {/* Summary badges */}
@@ -244,7 +242,7 @@ export default function PpeScheduleListScreen() {
       )}
 
       {/* Items count */}
-      {hasSchedules && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />}
+      {hasSchedules && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasSchedules && <FAB icon="plus" onPress={handleCreateSchedule} />}
 
@@ -268,31 +266,9 @@ const styles = StyleSheet.create({
   searchBar: {
     flex: 1,
   },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 8,
   },
   summaryContainer: {
     flexDirection: "row",

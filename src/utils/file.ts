@@ -176,35 +176,64 @@ export const sanitizeFilename = (filename: string): string => {
 // File URLs
 // =====================
 
-const getApiBaseUrl = (): string => {
-  // Check for browser window object first (web environment)
-  if (typeof globalThis !== "undefined" && typeof globalThis.window !== "undefined" && typeof (globalThis.window as any).__ANKAA_API_URL__ !== "undefined") {
-    return (globalThis.window as any).__ANKAA_API_URL__;
+export const getApiBaseUrl = (): string => {
+  // Check for global __ANKAA_API_URL__ (set by the app)
+  if (typeof global !== "undefined" && (global as any).__ANKAA_API_URL__) {
+    return (global as any).__ANKAA_API_URL__;
   }
 
-  // Check for process.env in Node/React environments
-  if (typeof process !== "undefined" && process.env?.VITE_API_URL) {
-    return process.env.VITE_API_URL;
+  // Check for process.env in React Native/Expo environments
+  if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
   }
 
   // Default fallback
   return "http://localhost:3030";
 };
 
+/**
+ * Normalizes a thumbnail URL to ensure it's a complete URL
+ * If the URL is relative (starts with /files), it prepends the API base URL
+ * If it's already a complete URL (starts with http), it returns it as-is
+ */
+export const normalizeThumbnailUrl = (thumbnailUrl: string | undefined | null): string | undefined => {
+  if (!thumbnailUrl) return undefined;
+
+  // If already a complete URL, return as-is
+  if (thumbnailUrl.startsWith('http://') || thumbnailUrl.startsWith('https://')) {
+    return thumbnailUrl;
+  }
+
+  const apiBaseUrl = getApiBaseUrl();
+
+  // Remove leading /api if present (old format)
+  const cleanPath = thumbnailUrl.startsWith('/api/')
+    ? thumbnailUrl.substring(4) // Remove '/api'
+    : thumbnailUrl;
+
+  // Ensure path starts with /
+  const path = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+
+  return `${apiBaseUrl}${path}`;
+};
+
 export const getFileUrl = (file: File, baseUrl?: string): string => {
   const apiUrl = baseUrl || getApiBaseUrl();
-  return `${apiUrl}/api/files/serve/${file.id}`;
+  // NOTE: No /api prefix! Backend routes are /files/serve/{id}
+  return `${apiUrl}/files/serve/${file.id}`;
 };
 
 export const getFileDownloadUrl = (file: File, baseUrl?: string): string => {
   const apiUrl = baseUrl || getApiBaseUrl();
-  return `${apiUrl}/api/files/${file.id}/download`;
+  // NOTE: No /api prefix! Backend routes are /files/{id}/download
+  return `${apiUrl}/files/${file.id}/download`;
 };
 
 export const getFileThumbnailUrl = (file: File, size: "small" | "medium" | "large" = "medium", baseUrl?: string): string => {
   if (!isImageFile(file)) return "";
   const apiUrl = baseUrl || getApiBaseUrl();
-  return `${apiUrl}/api/files/${file.id}/thumbnail/${size}`;
+  // NOTE: No /api prefix! Backend routes are /files/thumbnail/{id}
+  return `${apiUrl}/files/thumbnail/${file.id}?size=${size}`;
 };
 
 // =====================
@@ -328,6 +357,8 @@ export const fileUtils = {
   sanitizeFilename,
 
   // URLs
+  getApiBaseUrl,
+  normalizeThumbnailUrl,
   getFileUrl,
   getFileDownloadUrl,
   getFileThumbnailUrl,

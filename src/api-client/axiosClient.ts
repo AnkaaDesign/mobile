@@ -280,16 +280,42 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
           console.log("[AxiosClient] Serializing params:", JSON.stringify(params, null, 2));
         }
 
-        const queryString = qs.stringify(params, {
+        // Handle complex nested objects by JSON-stringifying them
+        // This is needed for nested structures like 'include' that the backend expects as JSON
+        const processedParams: Record<string, any> = {};
+
+        for (const [key, value] of Object.entries(params)) {
+          if (value === null || value === undefined) {
+            continue; // Skip null/undefined values
+          }
+
+          // Check if this is a complex nested object (more than 1 level deep)
+          if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+            // Check if it has nested objects
+            const hasNestedObjects = Object.values(value).some(
+              v => v !== null && typeof v === 'object' && !Array.isArray(v) && !(v instanceof Date)
+            );
+
+            if (hasNestedObjects) {
+              // JSON-stringify complex nested objects
+              processedParams[key] = JSON.stringify(value);
+            } else {
+              // Keep simple objects for qs.stringify
+              processedParams[key] = value;
+            }
+          } else {
+            processedParams[key] = value;
+          }
+        }
+
+        const queryString = qs.stringify(processedParams, {
           arrayFormat: "brackets",
           encode: false,
           serializeDate: (date: Date) => date.toISOString(),
           skipNulls: true,
           addQueryPrefix: false,
-          // Use bracket notation for nested objects (e.g., orderBy[name]=asc)
           allowDots: false,
           strictNullHandling: true,
-          // Add index format for arrays
           indices: false,
         });
 
@@ -693,8 +719,10 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
         const isBatchOperation = config?.url?.includes("/batch");
         // Skip notifications for file uploads - they should be handled by upload components
         const isFileUpload = config?.url?.includes("/files/upload");
+        // Skip notifications for auth endpoints - they have custom error handling
+        const isAuthEndpoint = config?.url?.includes("/auth/");
 
-        if (!isBatchOperation && !isFileUpload) {
+        if (!isBatchOperation && !isFileUpload && !isAuthEndpoint) {
           // For rate limit errors, show specialized message
           if (errorInfo.category === ErrorCategory.RATE_LIMIT) {
             notify.error("Limite de Requisições", errorInfo.message, {

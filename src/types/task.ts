@@ -35,7 +35,6 @@ export interface Task extends BaseEntity {
   budgetId: string | null;
   nfeId: string | null;
   receiptId: string | null;
-  price: number | null;
   createdById: string | null;
   priority?: string | null;
 
@@ -168,7 +167,6 @@ export interface TaskOrderBy {
   budgetId?: ORDER_BY_DIRECTION;
   nfeId?: ORDER_BY_DIRECTION;
   receiptId?: ORDER_BY_DIRECTION;
-  price?: ORDER_BY_DIRECTION;
   createdAt?: ORDER_BY_DIRECTION;
   updatedAt?: ORDER_BY_DIRECTION;
   sector?: SectorOrderBy;

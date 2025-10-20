@@ -120,7 +120,7 @@ export default function ProductionScreen() {
                 title="Aerografia"
                 icon="droplet"
                 count={data?.airbrushingMetrics?.totalAirbrushJobs?.value || 0}
-                route={routeToMobilePath(routes.production.airbrush.list)}
+                route={routeToMobilePath(routes.production.airbrushings.list)}
                 color="#8b5cf6"
               />
               <QuickAccessCard

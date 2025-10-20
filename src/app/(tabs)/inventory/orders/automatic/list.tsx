@@ -5,7 +5,7 @@ import { IconPlus, IconFilter, IconClock, IconCalendar } from "@tabler/icons-rea
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrderScheduleMutations, useOrderSchedules } from '../../../../../hooks';
 import type { OrderScheduleGetManyFormData } from '../../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { OrderScheduleTable } from "@/components/inventory/order/schedule/order-schedule-table";
 import type { SortConfig } from "@/components/inventory/order/schedule/order-schedule-table";
 import { OrderScheduleFilterModal } from "@/components/inventory/order/schedule/order-schedule-filter-modal";
@@ -249,25 +249,13 @@ export default function AutomaticOrderListScreen() {
           debounceMs={300}
         />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              {
-                backgroundColor: colors.card,
-                borderWidth: 1,
-                borderColor: colors.border,
-              },
-              pressed && styles.actionButtonPressed,
-            ]}
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
             onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
-            {activeFiltersCount > 0 && (
-              <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-              </Badge>
-            )}
-          </Pressable>
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
         </View>
       </View>
 
@@ -358,32 +346,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     gap: 8,
-  },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
   emptyContainer: {
     flex: 1,

@@ -1,12 +1,8 @@
-import React from "react";
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { Redirect } from "expo-router";
+import { routeToMobilePath } from "@/lib/route-mapper";
+import { routes } from '../../../constants';
 
-export default function SectorListScreen() {
-  return (
-    <UnderConstruction
-      title="Lista de Setores"
-      description="Aqui você poderá visualizar todos os setores cadastrados no sistema, com opções de busca, filtros e detalhes completos."
-      icon="office-building"
-    />
-  );
+// Redirect to sectors list page
+export default function SectorsIndexPage() {
+  return <Redirect href={routeToMobilePath(routes.administration.sectors.list) as any} />;
 }

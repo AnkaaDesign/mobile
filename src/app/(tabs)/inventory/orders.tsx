@@ -1,5 +1,11 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 export default function OrdersScreen() {
-  return <UnderConstruction title="Pedidos de Compra" />;
+  useEffect(() => {
+    // Redirect to orders list page
+    router.replace("/(tabs)/inventory/orders/list");
+  }, []);
+
+  return null;
 }

@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from "react";
 import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter } from "@tabler/icons-react-native";
+import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePpeInfiniteMobile } from "@/hooks";
 import type { ItemGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
+import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { PpeTable } from "@/components/human-resources/ppe/list/ppe-table";
 import type { SortConfig } from "@/components/human-resources/ppe/list/ppe-table";
 import { PpeFilterModal } from "@/components/human-resources/ppe/list/ppe-filter-modal";
@@ -31,6 +31,8 @@ export default function PpeListScreen() {
     },
   });
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "name", direction: "asc" }]);
+  const [showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["name", "ppeType", "ppeCA", "quantity"]);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -98,7 +100,7 @@ export default function PpeListScreen() {
     },
   };
 
-  const { items, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, refresh } = usePpeInfiniteMobile(queryParams);
+  const { items, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePpeInfiniteMobile(queryParams);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -191,25 +193,19 @@ export default function PpeListScreen() {
       <View style={styles.searchContainer}>
         <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar EPIs..." style={styles.searchBar} debounceMs={300} />
         <View style={styles.buttonContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionButton,
-              {
-                backgroundColor: colors.card,
-                borderWidth: 1,
-                borderColor: colors.border,
-              },
-              pressed && styles.actionButtonPressed,
-            ]}
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={() => setShowColumnManager(true)}
+            badgeCount={visibleColumnKeys.length}
+            badgeVariant="primary"
+          />
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
             onPress={() => setShowFilters(true)}
-          >
-            <IconFilter size={24} color={colors.foreground} />
-            {activeFiltersCount > 0 && (
-              <Badge style={styles.actionBadge} variant="destructive" size="sm">
-                <ThemedText style={StyleSheet.flatten([styles.actionBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-              </Badge>
-            )}
-          </Pressable>
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
         </View>
       </View>
 
@@ -255,7 +251,7 @@ export default function PpeListScreen() {
       )}
 
       {/* Items count */}
-      {hasPpes && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={undefined} isLoading={isFetchingNextPage} />}
+      {hasPpes && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasPpes && <FAB icon="plus" onPress={handleCreatePpe} />}
 
@@ -283,35 +279,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  actionButton: {
-    height: 48,
-    width: 48,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  actionBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  actionBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  actionButtonPressed: {
-    opacity: 0.8,
   },
 });

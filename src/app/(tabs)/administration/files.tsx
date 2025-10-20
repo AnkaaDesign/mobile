@@ -1,12 +1,11 @@
-import React from "react";
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 export default function ListFilesScreen() {
-  return (
-    <UnderConstruction
-      title="Listar Arquivos"
-      description="Gerenciamento centralizado de todos os arquivos do sistema com opções de busca, categorização e download."
-      icon="file-document-multiple"
-    />
-  );
+  useEffect(() => {
+    // Redirect to files list page
+    router.replace("/(tabs)/administration/files/list");
+  }, []);
+
+  return null;
 }

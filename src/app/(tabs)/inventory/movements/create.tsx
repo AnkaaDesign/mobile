@@ -30,7 +30,7 @@ export default function InventoryMovementsCreateScreen() {
           message: `${activities.length} movimentação(ões) criada(s) com sucesso!`,
           type: "success",
         });
-        router.replace(routeToMobilePath(routes.inventory.movements.root) as any);
+        router.replace("/(tabs)/inventory/movements/list");
       }
     } catch (error) {
       // Error handled by mutation hook
@@ -39,7 +39,7 @@ export default function InventoryMovementsCreateScreen() {
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.inventory.movements.root) as any);
+    router.replace("/(tabs)/inventory/movements/list");
   };
 
   return (

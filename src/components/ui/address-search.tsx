@@ -1,7 +1,7 @@
 // AddressSearchInput.jsx - Fixed component with proper dropdown positioning
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { ActivityIndicator, Dimensions, FlatList, Keyboard, TextInput, TouchableOpacity, View , StyleSheet} from "react-native";
-import { Text } from "@/components/ui";
+import { Text } from "./text";
 // Remove lodash dependency - use native implementation
 import { IconSearch, IconX } from "@tabler/icons-react-native";
 export function AddressSearchInput({

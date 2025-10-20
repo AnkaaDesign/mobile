@@ -544,27 +544,36 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   // Memoized filtered menu with contextual items
   const filteredMenu = useMemo(() => {
+    // Always return at least the home item as fallback
+    const homeFallback = [
+      {
+        id: "home",
+        title: "Início",
+        path: routes.home,
+        icon: "home",
+      },
+    ];
+
     if (!user) {
-      if (DEBUG_STYLES) {
-        console.log("No user found for menu filtering");
-      }
-      return [];
+      console.log("[MENU] No user found for menu filtering, showing home only");
+      return homeFallback;
     }
 
-    const baseMenu = getFilteredMenuForUser(MENU_ITEMS, user as any, "mobile");
-    const menuWithContextual = addContextualMenuItems(baseMenu);
-    const menuWithoutDynamicAndCadastrar = filterOutDynamicAndCadastrarItems(menuWithContextual);
+    console.log("[MENU] Filtering menu for user:", user?.name, "with privilege:", user?.sector?.privileges || user?.position?.sector?.privileges);
 
-    // If no menu items after filtering, add at least home
+    const baseMenu = getFilteredMenuForUser(MENU_ITEMS, user as any, "mobile");
+    console.log("[MENU] Base menu after privilege filtering:", baseMenu.length, "items", baseMenu.map(m => m.id));
+
+    const menuWithContextual = addContextualMenuItems(baseMenu);
+    console.log("[MENU] Menu with contextual items:", menuWithContextual.length, "items");
+
+    const menuWithoutDynamicAndCadastrar = filterOutDynamicAndCadastrarItems(menuWithContextual);
+    console.log("[MENU] Final menu after filtering dynamic/cadastrar:", menuWithoutDynamicAndCadastrar.length, "items");
+
+    // If no menu items after filtering, return home fallback
     if (menuWithoutDynamicAndCadastrar.length === 0) {
-      return [
-        {
-          id: "home",
-          title: "Início",
-          path: "/home",
-          icon: "home",
-        },
-      ];
+      console.log("[MENU] No items after filtering, returning home fallback");
+      return homeFallback;
     }
 
     return menuWithoutDynamicAndCadastrar;
@@ -1169,15 +1178,22 @@ const getScreensToRegister = () => {
 
     // Production Module
     { name: "production", title: "Produção" },
+    { name: "production/airbrushing", title: "Aerografia" },
+    { name: "production/airbrushing/create", title: "Cadastrar Aerografia" },
+    { name: "production/airbrushing/details/[id]", title: "Detalhes da Aerografia" },
+    { name: "production/airbrushing/edit/[id]", title: "Editar Aerografia" },
+    { name: "production/airbrushing/list", title: "Listar Aerografias" },
     { name: "production/schedule", title: "Cronograma" },
     { name: "production/schedule/create", title: "Cronograma - Cadastrar" },
     { name: "production/schedule/details/[id]", title: "Detalhes do Cronograma" },
     { name: "production/schedule/edit/[id]", title: "Editar Cronograma" },
+    { name: "production/schedule/list", title: "Listar Cronogramas" },
     { name: "production/schedule/on-hold", title: "Cronograma - Em Espera" },
     { name: "production/history", title: "Histórico" },
     { name: "production/history/cancelled", title: "Histórico - Canceladas" },
     { name: "production/history/completed", title: "Histórico - Finalizadas" },
     { name: "production/cutting", title: "Recorte" },
+    { name: "production/cutting/list", title: "Listar Recortes" },
     { name: "production/cutting/cutting-plan/create", title: "Criar Plano de Recorte" },
     { name: "production/cutting/cutting-plan/details/[id]", title: "Detalhes do Plano de Recorte" },
     { name: "production/cutting/cutting-plan/edit/[id]", title: "Editar Plano de Recorte" },
@@ -1202,6 +1218,16 @@ const getScreensToRegister = () => {
     { name: "production/service-orders/details/[id]", title: "Detalhes da Ordem de Serviço" },
     { name: "production/service-orders/edit/[id]", title: "Editar Ordem de Serviço" },
     { name: "production/service-orders/list", title: "Listar Ordens de Serviço" },
+    { name: "production/services", title: "Serviços" },
+    { name: "production/services/create", title: "Cadastrar Serviço" },
+    { name: "production/services/details/[id]", title: "Detalhes do Serviço" },
+    { name: "production/services/edit/[id]", title: "Editar Serviço" },
+    { name: "production/services/list", title: "Listar Serviços" },
+    { name: "production/trucks", title: "Caminhões" },
+    { name: "production/trucks/create", title: "Cadastrar Caminhão" },
+    { name: "production/trucks/details/[id]", title: "Detalhes do Caminhão" },
+    { name: "production/trucks/edit/[id]", title: "Editar Caminhão" },
+    { name: "production/trucks/list", title: "Listar Caminhões" },
 
     // Inventory Module
     { name: "inventory", title: "Estoque" },
@@ -1230,8 +1256,10 @@ const getScreensToRegister = () => {
     { name: "inventory/orders/details/[id]", title: "Detalhes do Pedido" },
     { name: "inventory/orders/edit/[id]", title: "Editar Pedido" },
     { name: "inventory/orders/list", title: "Listar Pedidos" },
+    { name: "inventory/orders/[orderId]/items/list", title: "Itens do Pedido" },
     { name: "inventory/orders/automatic", title: "Pedidos Automáticos" },
     { name: "inventory/orders/automatic/configure", title: "Configurar Pedidos Automáticos" },
+    { name: "inventory/orders/automatic/list", title: "Listar Pedidos Automáticos" },
     { name: "inventory/orders/schedules/create", title: "Cadastrar Agendamento" },
     { name: "inventory/orders/schedules/details/[id]", title: "Detalhes do Agendamento" },
     { name: "inventory/orders/schedules/edit/[id]", title: "Editar Agendamento" },
@@ -1256,55 +1284,90 @@ const getScreensToRegister = () => {
     { name: "inventory/ppe/deliveries/details/[id]", title: "Detalhes da Entrega de PPE" },
     { name: "inventory/ppe/deliveries/edit/[id]", title: "Editar Entrega de PPE" },
     { name: "inventory/ppe/deliveries/list", title: "Listar Entregas de PPE" },
-    { name: "inventory/loans/create", title: "Cadastrar Empréstimo" },
-    { name: "inventory/loans/details/[id]", title: "Detalhes do Empréstimo" },
-    { name: "inventory/loans/edit/[id]", title: "Editar Empréstimo" },
-    { name: "inventory/loans/list", title: "Listar Empréstimos" },
-    { name: "inventory/loans/loans-temp/create", title: "Cadastrar Empréstimo Temporário" },
-    { name: "inventory/loans/loans-temp/details/[id]", title: "Detalhes do Empréstimo Temporário" },
-    { name: "inventory/loans/loans-temp/edit/[id]", title: "Editar Empréstimo Temporário" },
-    { name: "inventory/loans/loans-temp/list", title: "Listar Empréstimos Temporários" },
+    { name: "inventory/borrows/create", title: "Cadastrar Empréstimo" },
+    { name: "inventory/borrows/details/[id]", title: "Detalhes do Empréstimo" },
+    { name: "inventory/borrows/edit/[id]", title: "Editar Empréstimo" },
+    { name: "inventory/borrows/list", title: "Listar Empréstimos" },
 
-    // Paint Module
+    // Painting Module
     { name: "painting", title: "Pintura" },
     { name: "painting/catalog/create", title: "Cadastrar Catálogo" },
     { name: "painting/catalog/details/[id]", title: "Detalhes do Catálogo" },
     { name: "painting/catalog/edit/[id]", title: "Editar Catálogo" },
     { name: "painting/catalog/list", title: "Listar Catálogos" },
-    { name: "painting/productions", title: "Produções" },
-    { name: "painting/productions/details/[id]", title: "Detalhes da Produção" },
+    { name: "painting/formulas", title: "Fórmulas" },
+    { name: "painting/formulas/create", title: "Criar Fórmula" },
+    { name: "painting/formulas/details/[id]", title: "Detalhes da Fórmula" },
+    { name: "painting/formulas/edit/[id]", title: "Editar Fórmula" },
+    { name: "painting/formulas/list", title: "Listar Fórmulas" },
+    { name: "painting/formulas/[formulaId]/components/list", title: "Componentes da Fórmula" },
+    { name: "painting/paint-brands", title: "Marcas de Tinta" },
+    { name: "painting/paint-brands/create", title: "Cadastrar Marca de Tinta" },
+    { name: "painting/paint-brands/details/[id]", title: "Detalhes da Marca de Tinta" },
+    { name: "painting/paint-brands/edit/[id]", title: "Editar Marca de Tinta" },
+    { name: "painting/paint-brands/list", title: "Listar Marcas de Tinta" },
+    { name: "painting/paint-types", title: "Tipos de Tinta" },
     { name: "painting/paint-types/create", title: "Cadastrar Tipo de Tinta" },
     { name: "painting/paint-types/details/[id]", title: "Detalhes do Tipo de Tinta" },
     { name: "painting/paint-types/edit/[id]", title: "Editar Tipo de Tinta" },
     { name: "painting/paint-types/list", title: "Listar Tipos de Tinta" },
+    { name: "painting/productions", title: "Produções" },
+    { name: "painting/productions/create", title: "Criar Produção" },
+    { name: "painting/productions/details/[id]", title: "Detalhes da Produção" },
+    { name: "painting/productions/edit/[id]", title: "Editar Produção" },
+    { name: "painting/productions/list", title: "Listar Produções" },
 
     // Administration Module
     { name: "administration", title: "Administração" },
-    { name: "administration/change-logs", title: "Registros de Alterações" },
-    { name: "administration/change-logs/details/[id]", title: "Detalhes do Registro" },
-    { name: "administration/change-logs/entity/[entityType]/[entityId]", title: "Registros por Entidade" },
-    { name: "administration/change-logs/list", title: "Listar Registros de Alterações" },
-    { name: "administration/commissions", title: "Comissões" },
-    { name: "administration/commissions/details/[id]", title: "Detalhes da Comissão" },
-    { name: "administration/commissions/edit/[id]", title: "Editar Comissão" },
-    { name: "administration/commissions/list", title: "Listar Comissões" },
+    { name: "administration/collaborators", title: "Colaboradores" },
+    { name: "administration/collaborators/create", title: "Cadastrar Colaborador" },
+    { name: "administration/collaborators/details/[id]", title: "Detalhes do Colaborador" },
+    { name: "administration/collaborators/edit/[id]", title: "Editar Colaborador" },
+    { name: "administration/collaborators/list", title: "Listar Colaboradores" },
     { name: "administration/customers", title: "Clientes" },
     { name: "administration/customers/create", title: "Cadastrar Cliente" },
     { name: "administration/customers/details/[id]", title: "Detalhes do Cliente" },
     { name: "administration/customers/list", title: "Listar Clientes" },
-    { name: "administration/employees", title: "Funcionários" },
-    { name: "administration/employees/list", title: "Listar Funcionários" },
     { name: "administration/files", title: "Arquivos" },
     { name: "administration/files/details/[id]", title: "Detalhes do Arquivo" },
+    { name: "administration/files/list", title: "Listar Arquivos" },
     { name: "administration/files/orphans", title: "Arquivos Órfãos" },
     { name: "administration/files/upload", title: "Fazer Upload de Arquivo" },
     { name: "administration/notifications", title: "Notificações" },
     { name: "administration/notifications/create", title: "Cadastrar Notificação" },
     { name: "administration/notifications/create/send", title: "Enviar Notificação" },
+    { name: "administration/notifications/list", title: "Listar Notificações" },
     { name: "administration/sectors", title: "Setores" },
     { name: "administration/sectors/create", title: "Cadastrar Setor" },
     { name: "administration/sectors/details/[id]", title: "Detalhes do Setor" },
     { name: "administration/sectors/edit/[id]", title: "Editar Setor" },
+    { name: "administration/sectors/list", title: "Listar Setores" },
+    { name: "administration/users", title: "Usuários" },
+    { name: "administration/users/details/[id]", title: "Detalhes do Usuário" },
+    { name: "administration/users/list", title: "Listar Usuários" },
+
+    // Server Module
+    { name: "server", title: "Servidor" },
+    { name: "server/backups", title: "Backups" },
+    { name: "server/backups/create", title: "Criar Backup" },
+    { name: "server/backups/details/[id]", title: "Detalhes do Backup" },
+    { name: "server/backups/list", title: "Listar Backups" },
+    { name: "server/change-logs", title: "Registros de Alterações" },
+    { name: "server/change-logs/details/[id]", title: "Detalhes do Registro" },
+    { name: "server/change-logs/entity/[entityType]/[entityId]", title: "Registros por Entidade" },
+    { name: "server/change-logs/list", title: "Listar Registros de Alterações" },
+    { name: "server/database-sync", title: "Sincronização de Banco de Dados" },
+    { name: "server/deployments", title: "Implantações" },
+    { name: "server/deployments/details/[id]", title: "Detalhes da Implantação" },
+    { name: "server/deployments/list", title: "Listar Implantações" },
+    { name: "server/logs", title: "Logs do Servidor" },
+    { name: "server/maintenance", title: "Manutenção do Servidor" },
+    { name: "server/rate-limiting", title: "Limitação de Taxa" },
+    { name: "server/resources", title: "Recursos do Servidor" },
+    { name: "server/services", title: "Serviços" },
+    { name: "server/shared-folders", title: "Pastas Compartilhadas" },
+    { name: "server/status", title: "Status do Servidor" },
+    { name: "server/system-users", title: "Usuários do Sistema" },
 
     // Human Resources Module
     { name: "human-resources", title: "Recursos Humanos" },
@@ -1329,9 +1392,32 @@ const getScreensToRegister = () => {
     { name: "human-resources/ppe/sizes/edit/[id]", title: "Editar Tamanho de EPI" },
     { name: "human-resources/ppe/sizes/list", title: "Listar Tamanhos de EPI" },
     { name: "human-resources/holidays", title: "Feriados" },
+    { name: "human-resources/holidays/create", title: "Cadastrar Feriado" },
+    { name: "human-resources/holidays/details/[id]", title: "Detalhes do Feriado" },
+    { name: "human-resources/holidays/edit/[id]", title: "Editar Feriado" },
+    { name: "human-resources/holidays/list", title: "Listar Feriados" },
     { name: "human-resources/holidays/calendar", title: "Calendário de Feriados" },
+    { name: "human-resources/payroll", title: "Folha de Pagamento" },
+    { name: "human-resources/payroll/create", title: "Criar Folha de Pagamento" },
+    { name: "human-resources/payroll/details/[id]", title: "Detalhes da Folha de Pagamento" },
+    { name: "human-resources/payroll/edit/[id]", title: "Editar Folha de Pagamento" },
+    { name: "human-resources/payroll/list", title: "Listar Folhas de Pagamento" },
+    { name: "human-resources/performance-levels", title: "Níveis de Desempenho" },
+    { name: "human-resources/performance-levels/create", title: "Cadastrar Nível de Desempenho" },
+    { name: "human-resources/performance-levels/details/[id]", title: "Detalhes do Nível de Desempenho" },
+    { name: "human-resources/performance-levels/edit/[id]", title: "Editar Nível de Desempenho" },
+    { name: "human-resources/performance-levels/list", title: "Listar Níveis de Desempenho" },
     { name: "human-resources/positions", title: "Cargos" },
+    { name: "human-resources/positions/create", title: "Cadastrar Cargo" },
+    { name: "human-resources/positions/details/[id]", title: "Detalhes do Cargo" },
+    { name: "human-resources/positions/edit/[id]", title: "Editar Cargo" },
+    { name: "human-resources/positions/list", title: "Listar Cargos" },
     { name: "human-resources/positions/[positionId]/remunerations", title: "Remunerações do Cargo" },
+    { name: "human-resources/sectors", title: "Setores" },
+    { name: "human-resources/sectors/create", title: "Cadastrar Setor" },
+    { name: "human-resources/sectors/details/[id]", title: "Detalhes do Setor" },
+    { name: "human-resources/sectors/edit/[id]", title: "Editar Setor" },
+    { name: "human-resources/sectors/list", title: "Listar Setores" },
     { name: "human-resources/vacations/create", title: "Cadastrar Férias" },
     { name: "human-resources/vacations/details/[id]", title: "Detalhes das Férias" },
     { name: "human-resources/vacations/list", title: "Listar Férias" },
@@ -1343,38 +1429,34 @@ const getScreensToRegister = () => {
 
     // Personal Module
     { name: "personal", title: "Pessoal" },
-    { name: "personal/my-commissions", title: "Minhas Comissões" },
-    { name: "personal/my-commissions/details/[id]", title: "Detalhes da Comissão" },
-    { name: "personal/my-profile", title: "Meus Dados" },
+    { name: "personal/my-profile", title: "Meu Perfil" },
     { name: "personal/my-holidays", title: "Meus Feriados" },
-    { name: "personal/my-holidays/details/[id]", title: "Detalhes do Feriado" },
-    { name: "personal/my-loans", title: "Meus Empréstimos" },
-    { name: "personal/my-loans/details/[id]", title: "Detalhes do Empréstimo" },
+    { name: "personal/my-borrows", title: "Meus Empréstimos" },
+    { name: "personal/my-borrows/details/[id]", title: "Detalhes do Empréstimo" },
     { name: "personal/my-notifications", title: "Minhas Notificações" },
     { name: "personal/my-notifications/details/[id]", title: "Detalhes da Notificação" },
-    { name: "personal/my-notifications/settings", title: "Configurações de Notificação" },
-    { name: "personal/my-ppes", title: "Meus PPEs" },
-    { name: "personal/my-ppes/request", title: "Solicitar PPE" },
+    { name: "personal/my-ppes", title: "Meus EPIs" },
+    { name: "personal/my-ppes/request", title: "Solicitar EPI" },
     { name: "personal/my-vacations", title: "Minhas Férias" },
     { name: "personal/my-vacations/details/[id]", title: "Detalhes das Férias" },
-    { name: "personal/my-warnings", title: "Minhas Advertências" },
-    { name: "personal/my-warnings/details/[id]", title: "Detalhes da Advertência" },
+    { name: "personal/my-warnings", title: "Meus Avisos" },
+    { name: "personal/my-warnings/details/[id]", title: "Detalhes do Aviso" },
     { name: "personal/preferences", title: "Preferências" },
-    { name: "personal/preferences/notifications", title: "Preferências de Notificação" },
-    { name: "personal/preferences/privacy", title: "Privacidade" },
-    { name: "personal/preferences/theme", title: "Tema" },
 
-    // My Team Module
+    // Integrations Module
+    { name: "integrations", title: "Integrações" },
+    { name: "integrations/secullum", title: "Secullum" },
+    { name: "integrations/secullum/calculations", title: "Cálculos" },
+    { name: "integrations/secullum/calculations/list", title: "Listar Cálculos" },
+    { name: "integrations/secullum/time-entries", title: "Registros de Ponto" },
+    { name: "integrations/secullum/time-entries/list", title: "Listar Registros de Ponto" },
+    { name: "integrations/secullum/time-entries/details/[id]", title: "Detalhes do Registro de Ponto" },
+
+    // My Team Module (Meu Pessoal)
     { name: "my-team", title: "Meu Pessoal" },
-    { name: "my-team/warnings", title: "Advertências da Equipe" },
-    { name: "my-team/loans", title: "Empréstimos da Equipe" },
-    { name: "my-team/commissions", title: "Comissões da Equipe" },
-    { name: "my-team/vacations", title: "Férias da Equipe" },
-    { name: "my-team/activities", title: "Atividades da Equipe" },
-    { name: "my-team/ppe-deliveries", title: "Entregas de EPI da Equipe" },
-    { name: "my-team/users", title: "Usuários da Equipe" },
-    { name: "my-team/cuts", title: "Recortes da Equipe" },
-    { name: "my-team/time-calculations", title: "Cálculos de Ponto da Equipe" },
+    { name: "my-team/borrows", title: "Empréstimos" },
+    { name: "my-team/vacations", title: "Férias" },
+    { name: "my-team/warnings", title: "Avisos" },
   ];
 
   return existingScreens;

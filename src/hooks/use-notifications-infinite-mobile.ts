@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNotificationsInfinite } from './';
+import { useNotificationsInfinite } from './useNotification';
 import { NotificationGetManyFormData } from '../schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 

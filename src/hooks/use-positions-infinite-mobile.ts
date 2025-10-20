@@ -1,4 +1,4 @@
-import { usePositionsInfinite } from './';
+import { usePositionsInfinite } from './usePosition';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 import type { PositionGetManyFormData } from '../schemas';
 
