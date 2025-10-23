@@ -4,8 +4,6 @@ import { Stack, router } from "expo-router";
 import { SearchBar } from "@/components/ui/search-bar";
 import { IconButton } from "@/components/ui/icon-button";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { usePaintProductionsInfinite } from '../../../../hooks';
@@ -98,76 +96,45 @@ export default function ProductionsListScreen() {
     return `${quantity.toFixed(2)} L`;
   };
 
-  // Render production card
-  const renderProductionCard = ({ item: production }: { item: PaintProduction }) => (
-    <TouchableOpacity onPress={() => router.push(`/painting/productions/details/${production.id}`)}>
-      <Card style={styles.productionCard}>
-        <View style={styles.cardContent}>
-          {/* Header */}
-          <View style={styles.productionHeader}>
-            <View style={styles.iconContainer}>
-              <IconFlask size={24} color={colors.primary} />
-            </View>
-            <View style={styles.productionInfo}>
-              <ThemedText style={styles.productionTitle} numberOfLines={1}>
-                {production.paint?.name || "Tinta"}
-              </ThemedText>
-              {production.paint?.code && (
-                <ThemedText style={styles.productionCode}>
-                  {production.paint.code}
-                </ThemedText>
-              )}
-            </View>
-          </View>
+  // Render production item (table row style)
+  const renderProductionItem = ({ item: production }: { item: PaintProduction }) => (
+    <TouchableOpacity
+      onPress={() => router.push(`/painting/productions/details/${production.id}`)}
+      style={[styles.listItem, { backgroundColor: colors.card }]}
+    >
+      <View style={styles.listItemContent}>
+        {/* Production info */}
+        <View style={styles.itemInfo}>
+          <ThemedText style={styles.itemTitle} numberOfLines={1}>
+            {production.paint?.name || "Tinta"}
+            {production.paint?.code && ` (${production.paint.code})`}
+          </ThemedText>
 
-          {/* Details */}
-          <View style={styles.detailsContainer}>
+          <View style={styles.itemMetaRow}>
             {production.producedAt && (
-              <View style={styles.detailRow}>
-                <IconCalendar size={16} color={colors.muted} />
-                <ThemedText style={styles.detailText}>
-                  {formatDate(production.producedAt)}
-                </ThemedText>
-              </View>
+              <ThemedText style={styles.itemMeta}>
+                {formatDate(production.producedAt)}
+              </ThemedText>
             )}
             {production.quantity && (
-              <View style={styles.detailRow}>
-                <IconScale size={16} color={colors.muted} />
-                <ThemedText style={styles.detailText}>
-                  {formatQuantity(Number(production.quantity))}
-                </ThemedText>
-              </View>
+              <ThemedText style={styles.itemMeta}>
+                {formatQuantity(Number(production.quantity))}
+              </ThemedText>
             )}
             {production.producer && (
-              <View style={styles.detailRow}>
-                <IconUser size={16} color={colors.muted} />
-                <ThemedText style={styles.detailText} numberOfLines={1}>
-                  {production.producer.name}
-                </ThemedText>
-              </View>
+              <ThemedText style={styles.itemMeta} numberOfLines={1}>
+                {production.producer.name}
+              </ThemedText>
             )}
           </View>
 
-          {/* Badges */}
-          <View style={styles.badges}>
-            {production.paint?.paintBrand && (
-              <Badge variant="outline" style={styles.brandBadge}>
-                {production.paint.paintBrand.name}
-              </Badge>
-            )}
-            {production.paint?.paintType && (
-              <Badge variant="outline" style={styles.typeBadge}>
-                {production.paint.paintType.name}
-              </Badge>
-            )}
-            {production.formula && (
-              <Badge variant="secondary" style={styles.formulaBadge}>
-                Fórmula: {production.formula.description || "Sem descrição"}
-              </Badge>
-            )}
-          </View>
+          <ThemedText style={styles.itemSubtitle}>
+            {production.paint?.paintBrand && production.paint.paintBrand.name}
+            {production.paint?.paintType && ` • ${production.paint.paintType.name}`}
+            {production.formula && ` • Fórmula: ${production.formula.description || "Sem descrição"}`}
+          </ThemedText>
         </View>
-      </Card>
+      </View>
     </TouchableOpacity>
   );
 
@@ -282,7 +249,7 @@ export default function ProductionsListScreen() {
         ) : (
           <FlatList
             data={productions}
-            renderItem={renderProductionCard}
+            renderItem={renderProductionItem}
             keyExtractor={(production) => production.id}
             contentContainerStyle={styles.listContent}
             refreshControl={
@@ -300,7 +267,6 @@ export default function ProductionsListScreen() {
             onEndReachedThreshold={0.1}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <IconFlask size={48} color={colors.muted} />
                 <ThemedText style={styles.emptyText}>Nenhuma produção encontrada</ThemedText>
                 <ThemedText style={styles.emptySubtext}>
                   Produções de tinta registram a fabricação de tintas
@@ -344,61 +310,39 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   listContent: {
-    padding: spacing.md,
     paddingBottom: 100,
   },
-  productionCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
+  listItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.1)",
   },
-  cardContent: {
-    gap: spacing.sm,
-  },
-  productionHeader: {
+  listItemContent: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
-  iconContainer: {
-    marginRight: spacing.sm,
-  },
-  productionInfo: {
+  itemInfo: {
     flex: 1,
   },
-  productionTitle: {
+  itemTitle: {
     fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
+    fontWeight: fontWeight.medium,
     marginBottom: 4,
   },
-  productionCode: {
+  itemMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.lg,
+    marginBottom: 2,
+  },
+  itemSubtitle: {
     fontSize: fontSize.sm,
     opacity: 0.6,
   },
-  detailsContainer: {
-    gap: spacing.xs,
-  },
-  detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  detailText: {
+  itemMeta: {
     fontSize: fontSize.sm,
     opacity: 0.7,
-    flex: 1,
-  },
-  badges: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  brandBadge: {
-    alignSelf: "flex-start",
-  },
-  typeBadge: {
-    alignSelf: "flex-start",
-  },
-  formulaBadge: {
-    alignSelf: "flex-start",
   },
   centerContainer: {
     flex: 1,

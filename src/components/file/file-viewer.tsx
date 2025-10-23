@@ -38,9 +38,17 @@ const isEpsFile = (file: AnkaaFile): boolean => {
   return epsMimeTypes.includes(file.mimetype.toLowerCase());
 };
 
+// PDF file detection
+const isPdfFile = (file: AnkaaFile): boolean => {
+  const extension = file.filename.split('.').pop()?.toLowerCase();
+  return file.mimetype.toLowerCase() === "application/pdf" || extension === "pdf";
+};
+
 // Check if file can be previewed
 const isPreviewableFile = (file: AnkaaFile): boolean => {
-  return isImageFile(file) || (isEpsFile(file) && !!file.thumbnailUrl);
+  return isImageFile(file) ||
+         (isEpsFile(file) && !!file.thumbnailUrl) ||
+         (isPdfFile(file) && !!file.thumbnailUrl);
 };
 
 export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({ children, baseUrl = "" }) => {

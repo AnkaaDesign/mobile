@@ -1,5 +1,11 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 export default function PaintsCreateScreen() {
-  return <UnderConstruction title="Cadastrar Tinta" />;
+  useEffect(() => {
+    // Redirect to the consolidated paint catalog create
+    router.replace("/(tabs)/painting/catalog/create");
+  }, []);
+
+  return null;
 }

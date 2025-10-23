@@ -5,8 +5,6 @@ import { FAB } from "@/components/ui/fab";
 import { SearchBar } from "@/components/ui/search-bar";
 import { IconButton } from "@/components/ui/icon-button";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { usePaintBrandsInfinite, usePaintBrandMutations } from '../../../../hooks';
@@ -120,49 +118,59 @@ export default function PaintBrandListScreen() {
     );
   };
 
-  // Render paint brand card
-  const renderPaintBrandCard = ({ item: paintBrand }: { item: PaintBrand }) => (
-    <TouchableOpacity onPress={() => router.push(`/painting/paint-brands/details/${paintBrand.id}`)}>
-      <Card style={styles.paintBrandCard}>
-        <View style={styles.cardContent}>
-          <View style={styles.iconContainer}>
-            <IconTag size={24} color={colors.primary} />
-          </View>
-
-          <View style={styles.brandInfo}>
-            <ThemedText style={styles.brandName} numberOfLines={1}>
-              {paintBrand.name}
+  // Render paint brand item (table row style)
+  const renderPaintBrandItem = ({ item: paintBrand }: { item: PaintBrand }) => (
+    <TouchableOpacity
+      onPress={() => router.push(`/painting/paint-brands/details/${paintBrand.id}`)}
+      style={[styles.listItem, { backgroundColor: colors.card }]}
+    >
+      <View style={styles.listItemContent}>
+        {/* Brand info */}
+        <View style={styles.itemInfo}>
+          <ThemedText style={styles.itemTitle} numberOfLines={1}>
+            {paintBrand.name}
+          </ThemedText>
+          {paintBrand._count?.paints !== undefined && (
+            <ThemedText style={styles.itemSubtitle}>
+              {paintBrand._count.paints} {paintBrand._count.paints === 1 ? "tinta" : "tintas"}
             </ThemedText>
-            {paintBrand._count?.paints !== undefined && (
-              <ThemedText style={styles.paintCount}>
-                {paintBrand._count.paints} {paintBrand._count.paints === 1 ? "tinta" : "tintas"}
-              </ThemedText>
-            )}
-          </View>
-
-          {/* Actions */}
-          {(canEdit || canDelete) && (
-            <View style={styles.cardActions}>
-              {canEdit && (
-                <IconButton
-                  name="edit"
-                  size="sm"
-                  variant="ghost"
-                  onPress={() => handleEdit(paintBrand.id)}
-                />
-              )}
-              {canDelete && (
-                <IconButton
-                  name="trash"
-                  size="sm"
-                  variant="ghost"
-                  onPress={() => handleDelete(paintBrand.id, paintBrand.name)}
-                />
-              )}
-            </View>
           )}
         </View>
-      </Card>
+
+        {/* Actions */}
+        <View style={styles.itemActions}>
+          {canEdit && (
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation();
+                handleEdit(paintBrand.id);
+              }}
+              style={styles.actionButton}
+            >
+              <IconButton
+                name="edit"
+                size="sm"
+                variant="ghost"
+              />
+            </TouchableOpacity>
+          )}
+          {canDelete && (
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation();
+                handleDelete(paintBrand.id, paintBrand.name);
+              }}
+              style={styles.actionButton}
+            >
+              <IconButton
+                name="trash"
+                size="sm"
+                variant="ghost"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     </TouchableOpacity>
   );
 
@@ -262,7 +270,7 @@ export default function PaintBrandListScreen() {
         ) : (
           <FlatList
             data={paintBrands}
-            renderItem={renderPaintBrandCard}
+            renderItem={renderPaintBrandItem}
             keyExtractor={(paintBrand) => paintBrand.id}
             contentContainerStyle={styles.listContent}
             refreshControl={
@@ -280,7 +288,6 @@ export default function PaintBrandListScreen() {
             onEndReachedThreshold={0.1}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <IconTag size={48} color={colors.muted} />
                 <ThemedText style={styles.emptyText}>Nenhuma marca de tinta encontrada</ThemedText>
                 <ThemedText style={styles.emptySubtext}>
                   Marcas de tinta são utilizadas para categorizar tintas
@@ -333,35 +340,37 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   listContent: {
-    padding: spacing.md,
     paddingBottom: 100,
   },
-  paintBrandCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
+  listItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.1)",
   },
-  cardContent: {
+  listItemContent: {
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
-  iconContainer: {
-    marginRight: spacing.md,
-  },
-  brandInfo: {
+  itemInfo: {
     flex: 1,
   },
-  brandName: {
+  itemTitle: {
     fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    marginBottom: 4,
+    fontWeight: fontWeight.medium,
+    marginBottom: 2,
   },
-  paintCount: {
+  itemSubtitle: {
     fontSize: fontSize.sm,
     opacity: 0.6,
   },
-  cardActions: {
+  itemActions: {
     flexDirection: "row",
+    alignItems: "center",
     gap: spacing.xs,
+  },
+  actionButton: {
+    padding: 0,
   },
   centerContainer: {
     flex: 1,

@@ -278,14 +278,7 @@ export default function ComponentListScreen() {
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Componentes da Fórmula",
-          headerBackTitle: "Voltar",
-        }}
-      />
-      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
+    <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
         {/* Header */}
         <View style={StyleSheet.flatten([styles.header, { backgroundColor: colors.card }])}>
           <SearchBar
@@ -357,7 +350,6 @@ export default function ComponentListScreen() {
         {/* Filter modal */}
         {renderFilterModal()}
       </View>
-    </>
   );
 }
 

@@ -16,6 +16,7 @@ import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { MENU_ITEMS, routes } from '../../constants';
 import { getFilteredMenuForUser, getTablerIcon } from '../../utils/navigation';
 import { getEnglishPath, routeToMobilePath } from "@/lib/route-mapper";
+import { isRouteRegistered, validateRoute, getFallbackRoute } from '@/utils/route-validator';
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { maskPhone } from '../../utils';
 
@@ -398,17 +399,18 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   // Get current path info for contextual menu items
   const getCurrentPathInfo = useMemo(() => {
-    const currentPath = pathname;
+    // Remove (tabs) prefix from pathname for matching
+    const currentPath = pathname.replace(/^\/\(tabs\)/, "");
 
-    // Check if we're on an edit or details page
-    const editMatch = currentPath.match(/\/editar\/([^/]+)/);
-    const detailsMatch = currentPath.match(/\/detalhes\/([^/]+)/);
+    // Check if we're on an edit or details page (using English route segments)
+    const editMatch = currentPath.match(/\/edit\/([^/]+)/);
+    const detailsMatch = currentPath.match(/\/details\/([^/]+)/);
 
     if (editMatch) {
       return {
         action: "editar" as const,
         entityId: editMatch[1],
-        basePath: currentPath.replace(/\/editar\/[^/]+.*$/, ""),
+        basePath: currentPath.replace(/\/edit\/[^/]+.*$/, ""),
       };
     }
 
@@ -416,7 +418,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       return {
         action: "detalhes" as const,
         entityId: detailsMatch[1],
-        basePath: currentPath.replace(/\/detalhes\/[^/]+.*$/, ""),
+        basePath: currentPath.replace(/\/details\/[^/]+.*$/, ""),
       };
     }
 
@@ -431,15 +433,20 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       const { action, entityId, basePath } = getCurrentPathInfo;
 
       return menuItems.map((item) => {
-        // Check if this menu item or its children match the current base path
+        // Check if this menu item's path exactly matches the current base path
+        // We need exact match to avoid adding contextual items to all parent menus
         const matchesBasePath = (menuItem: any): boolean => {
-          if (menuItem.path && basePath.startsWith(menuItem.path)) return true;
-          if (menuItem.children) {
-            return menuItem.children.some((child: any) => matchesBasePath(child));
+          // Convert the menu item's Portuguese path to English for comparison
+          if (menuItem.path) {
+            const englishPath = getEnglishPath(menuItem.path);
+            // Check if basePath starts with this menu item's path
+            // This ensures we match the correct level in the hierarchy
+            return basePath === englishPath || basePath.startsWith(englishPath + "/");
           }
           return false;
         };
 
+        // Only add contextual items to the direct parent menu that matches the base path
         if (matchesBasePath(item) && item.children) {
           const enhancedChildren = [...item.children];
 
@@ -449,7 +456,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
               id: `${item.id}-detalhes-contextual`,
               title: "Detalhes",
               icon: "eye",
-              path: `${basePath}/detalhes/${entityId}`,
+              path: `${basePath}/details/${entityId}`, // Use English path
               isContextual: true,
             };
 
@@ -463,7 +470,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
               id: `${item.id}-editar-contextual`,
               title: "Editar",
               icon: "edit",
-              path: `${basePath}/editar/${entityId}`,
+              path: `${basePath}/edit/${entityId}`, // Use English path
               isContextual: true,
             };
 
@@ -492,19 +499,43 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     return chevronAnimations.current.get(itemId)!;
   }, []);
 
-  // Filter out dynamic menu items, cadastrar pages, and batch edit pages
+  /**
+   * Filter menu items to show only relevant entries based on current route
+   * - Hides dynamic items (with :id parameters) from static menu
+   * - Shows contextual items (editar/detalhes) only when on their specific page
+   * - Hides cadastrar pages unless currently on a cadastrar route
+   * - Hides batch edit pages (web-only feature)
+   */
   const filterOutDynamicAndCadastrarItems = useCallback(
     (items: any[]): any[] => {
       return items
         .map((item) => {
-          // Skip dynamic items entirely
+          // Skip dynamic items entirely (items with :id or [id] in their path)
           if (item.isDynamic) {
             return null;
           }
 
+          // FIXED: Skip contextual "editar" and "detalhes" items unless we're on the relevant page
+          // These are dynamically added items that should only show when on the specific edit/details page
+          if (item.isContextual) {
+            // Get English path for comparison
+            const englishPath = getEnglishPath(item.path);
+            const currentPath = pathname.replace(/^\/\(tabs\)/, "");
+
+            // Only show contextual item if we're exactly on its page OR on a child page of it
+            // For example, show "Editar" when on /customers/edit/123 or /customers/edit/123/some-tab
+            if (!currentPath.startsWith(englishPath)) {
+              return null;
+            }
+          }
+
           // Skip cadastrar pages (except when we're currently on one)
-          if (item.id && item.id.includes("cadastrar") && !pathname.includes("cadastrar")) {
-            return null;
+          // Check both ID (Portuguese) and pathname (English)
+          if (item.id && item.id.includes("cadastrar")) {
+            // Only show cadastrar items when we're on a create route
+            if (!pathname.includes("/create") && !pathname.includes("/cadastrar")) {
+              return null;
+            }
           }
 
           // Skip batch edit pages (editar-em-lote) as they're only available on web
@@ -641,48 +672,90 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     }
   };
 
-  // Memoized submenu toggle with animation
+  // Memoized submenu toggle with accordion behavior (matching web version)
   const toggleSubmenu = useCallback(
     (itemId: string, event?: any) => {
       if (event) {
         event.stopPropagation();
       }
 
-      const isCurrentlyExpanded = expandedMenus[itemId as keyof typeof expandedMenus];
-      const animation = getChevronAnimation(itemId);
+      setExpandedMenus((prev) => {
+        const isCurrentlyExpanded = prev[itemId];
+        const newExpanded = { ...prev };
 
-      // Animate chevron rotation
-      Animated.timing(animation, {
-        toValue: isCurrentlyExpanded ? 0 : 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
+        if (!isCurrentlyExpanded) {
+          // If expanding this menu, find and close all sibling menus at the same level
+          const findAndCloseSiblings = (items: any[]) => {
+            items.forEach((item) => {
+              if (item.id === itemId) {
+                // Found our target item, close its siblings at the root level
+                items.forEach((sibling) => {
+                  if (sibling.id !== itemId && sibling.children && sibling.children.length > 0) {
+                    if (newExpanded[sibling.id]) {
+                      newExpanded[sibling.id] = false;
+                      // Animate the chevron for closed siblings
+                      const siblingAnimation = getChevronAnimation(sibling.id);
+                      Animated.timing(siblingAnimation, {
+                        toValue: 0,
+                        duration: 200,
+                        useNativeDriver: true,
+                      }).start();
+                    }
+                  }
+                });
+                return;
+              }
 
-      // If opening a new menu, close all others
-      if (!isCurrentlyExpanded) {
-        // Animate all other chevrons back to closed position
-        Object.entries(expandedMenus).forEach(([id, isExpanded]) => {
-          if (isExpanded && id !== itemId) {
-            const otherAnimation = getChevronAnimation(id);
-            Animated.timing(otherAnimation, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }).start();
-          }
-        });
+              // Recursively search in children and close siblings at each level
+              if (item.children && item.children.length > 0) {
+                const foundInChildren = item.children.some((child: any) => {
+                  if (child.id === itemId) {
+                    // Close siblings at this level
+                    item.children.forEach((sibling: any) => {
+                      if (sibling.id !== itemId && sibling.children && sibling.children.length > 0) {
+                        if (newExpanded[sibling.id]) {
+                          newExpanded[sibling.id] = false;
+                          // Animate the chevron for closed siblings
+                          const siblingAnimation = getChevronAnimation(sibling.id);
+                          Animated.timing(siblingAnimation, {
+                            toValue: 0,
+                            duration: 200,
+                            useNativeDriver: true,
+                          }).start();
+                        }
+                      }
+                    });
+                    return true;
+                  }
+                  return false;
+                });
 
-        // Set the current menu as expanded while preserving others
-        setExpandedMenus((prev) => ({ ...prev, [itemId]: true }));
-      } else {
-        // Just close the current menu
-        setExpandedMenus((prev) => ({
-          ...prev,
-          [itemId]: false,
-        }));
-      }
+                if (!foundInChildren) {
+                  findAndCloseSiblings(item.children);
+                }
+              }
+            });
+          };
+
+          // Use filteredMenu to find and close siblings
+          findAndCloseSiblings(filteredMenu);
+        }
+
+        // Toggle the clicked item
+        newExpanded[itemId] = !isCurrentlyExpanded;
+
+        // Animate the chevron for the clicked item
+        const animation = getChevronAnimation(itemId);
+        Animated.timing(animation, {
+          toValue: newExpanded[itemId] ? 1 : 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+
+        return newExpanded;
+      });
     },
-    [expandedMenus, getChevronAnimation],
+    [getChevronAnimation, filteredMenu],
   );
 
   // Get first submenu path for direct navigation
@@ -699,11 +772,11 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     return null;
   };
 
-  // Path navigation with error handling
+  // Path navigation with error handling and route validation
   const navigateToPath = useCallback(
     (path: string) => {
       if (!path || typeof path !== "string" || path.trim() === "") {
-        console.warn("No path provided for navigation");
+        console.warn("[Navigation] No path provided for navigation");
         return;
       }
 
@@ -713,6 +786,18 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       // Remove leading slash and convert to expo router format
       let routePath = englishPath.startsWith("/") ? englishPath.slice(1) : englishPath;
 
+      // Handle index routes properly - if route doesn't exist but route/index does, use that
+      if (!isRouteRegistered(routePath) && isRouteRegistered(`${routePath}/index`)) {
+        routePath = `${routePath}/index`;
+      }
+
+      // Validate route before attempting navigation
+      if (!isRouteRegistered(routePath)) {
+        // Don't warn or navigate for routes that don't exist to avoid console spam
+        props.navigation?.closeDrawer?.();
+        return;
+      }
+
       // Add the (tabs) prefix for tab routes
       const tabRoute = `/(tabs)/${routePath}`;
 
@@ -721,13 +806,13 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         // Close the drawer after navigation
         props.navigation?.closeDrawer?.();
       } catch (error) {
-        console.warn("Navigation failed for route:", tabRoute, error);
+        console.warn("[Navigation] Navigation failed for route:", tabRoute, error);
         // Try fallback to home instead of undefined route
         try {
-          router.push(routeToMobilePath(routes.home) as any);
+          router.push(getFallbackRoute() as any);
           props.navigation?.closeDrawer?.();
         } catch (fallbackError) {
-          console.error("Fallback navigation also failed:", fallbackError);
+          console.error("[Navigation] Fallback navigation also failed:", fallbackError);
         }
       }
     },
@@ -858,7 +943,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   const handleUserMenuNavigation = useCallback(
     (routeConstant: string) => {
       if (!routeConstant || typeof routeConstant !== "string") {
-        console.warn("Invalid route constant provided to handleUserMenuNavigation");
+        console.warn("[Navigation] Invalid route constant provided to handleUserMenuNavigation");
         setShowUserMenu(false);
         return;
       }
@@ -873,19 +958,28 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         // Add the (tabs) prefix for tab routes
         const tabRoute = `/(tabs)/${routePath}`;
 
+        // Validate route before attempting navigation
+        if (!isRouteRegistered(routePath)) {
+          console.warn(`[Navigation] User menu route "${routePath}" is not registered. Redirecting to home.`);
+          router.push(getFallbackRoute() as any);
+          setShowUserMenu(false);
+          props.navigation?.closeDrawer?.();
+          return;
+        }
+
         router.push(tabRoute as any);
         setShowUserMenu(false);
         // Close the drawer after navigation
         props.navigation?.closeDrawer?.();
       } catch (error) {
-        console.error("User menu navigation failed:", error);
+        console.error("[Navigation] User menu navigation failed:", error);
         setShowUserMenu(false);
         // Try fallback to home
         try {
-          router.push(routeToMobilePath(routes.home) as any);
+          router.push(getFallbackRoute() as any);
           props.navigation?.closeDrawer?.();
         } catch (fallbackError) {
-          console.error("Fallback navigation also failed:", fallbackError);
+          console.error("[Navigation] Fallback navigation also failed:", fallbackError);
         }
       }
     },
@@ -1291,6 +1385,7 @@ const getScreensToRegister = () => {
 
     // Painting Module
     { name: "painting", title: "Pintura" },
+    { name: "painting/catalog", title: "Catálogo de Tintas" },
     { name: "painting/catalog/create", title: "Cadastrar Catálogo" },
     { name: "painting/catalog/details/[id]", title: "Detalhes do Catálogo" },
     { name: "painting/catalog/edit/[id]", title: "Editar Catálogo" },
@@ -1359,7 +1454,6 @@ const getScreensToRegister = () => {
     { name: "server/database-sync", title: "Sincronização de Banco de Dados" },
     { name: "server/deployments", title: "Implantações" },
     { name: "server/deployments/details/[id]", title: "Detalhes da Implantação" },
-    { name: "server/deployments/list", title: "Listar Implantações" },
     { name: "server/logs", title: "Logs do Servidor" },
     { name: "server/maintenance", title: "Manutenção do Servidor" },
     { name: "server/rate-limiting", title: "Limitação de Taxa" },
@@ -1401,12 +1495,12 @@ const getScreensToRegister = () => {
     { name: "human-resources/payroll/create", title: "Criar Folha de Pagamento" },
     { name: "human-resources/payroll/details/[id]", title: "Detalhes da Folha de Pagamento" },
     { name: "human-resources/payroll/edit/[id]", title: "Editar Folha de Pagamento" },
+    { name: "human-resources/payroll/[userId]", title: "Folha de Pagamento do Usuário" },
     { name: "human-resources/payroll/list", title: "Listar Folhas de Pagamento" },
-    { name: "human-resources/performance-levels", title: "Níveis de Desempenho" },
     { name: "human-resources/performance-levels/create", title: "Cadastrar Nível de Desempenho" },
     { name: "human-resources/performance-levels/details/[id]", title: "Detalhes do Nível de Desempenho" },
     { name: "human-resources/performance-levels/edit/[id]", title: "Editar Nível de Desempenho" },
-    { name: "human-resources/performance-levels/list", title: "Listar Níveis de Desempenho" },
+    { name: "human-resources/performance-levels/list", title: "Níveis de Desempenho" },
     { name: "human-resources/positions", title: "Cargos" },
     { name: "human-resources/positions/create", title: "Cadastrar Cargo" },
     { name: "human-resources/positions/details/[id]", title: "Detalhes do Cargo" },
@@ -1444,16 +1538,17 @@ const getScreensToRegister = () => {
     { name: "personal/preferences", title: "Preferências" },
 
     // Integrations Module
-    { name: "integrations", title: "Integrações" },
-    { name: "integrations/secullum", title: "Secullum" },
-    { name: "integrations/secullum/calculations", title: "Cálculos" },
+    { name: "integrations/index", title: "Integrações" },
+    { name: "integrations/secullum/index", title: "Secullum" },
+    { name: "integrations/secullum/sync-status", title: "Status de Sincronização" },
+    { name: "integrations/secullum/calculations/index", title: "Cálculos" },
     { name: "integrations/secullum/calculations/list", title: "Listar Cálculos" },
-    { name: "integrations/secullum/time-entries", title: "Registros de Ponto" },
+    { name: "integrations/secullum/time-entries/index", title: "Registros de Ponto" },
     { name: "integrations/secullum/time-entries/list", title: "Listar Registros de Ponto" },
     { name: "integrations/secullum/time-entries/details/[id]", title: "Detalhes do Registro de Ponto" },
 
     // My Team Module (Meu Pessoal)
-    { name: "my-team", title: "Meu Pessoal" },
+    { name: "my-team/index", title: "Meu Pessoal" },
     { name: "my-team/borrows", title: "Empréstimos" },
     { name: "my-team/vacations", title: "Férias" },
     { name: "my-team/warnings", title: "Avisos" },
@@ -1465,12 +1560,34 @@ const getScreensToRegister = () => {
 // Function to determine if back button should be shown based on navigation history
 const shouldShowBackButton = (pathname: string, canGoBack: boolean): boolean => {
   // Don't show back button for home screen
-  if (pathname === "/home") return false;
+  if (pathname === "/(tabs)/home" || pathname === "/home") return false;
 
   // Don't show back button for auth screens (they have their own navigation)
   if (pathname.startsWith("/(auth)")) return false;
 
-  // Show back button if we can go back in navigation history
+  // Normalize pathname to handle index routes
+  const normalizedPath = pathname.replace(/\/index$/, '');
+
+  // Don't show back button for root module screens (they're like section home pages)
+  const rootModulePaths = [
+    "/(tabs)/production",
+    "/(tabs)/inventory",
+    "/(tabs)/painting",
+    "/(tabs)/administration",
+    "/(tabs)/human-resources",
+    "/(tabs)/personal",
+    "/(tabs)/integrations",
+    "/(tabs)/server",
+    "/(tabs)/my-team",
+  ];
+
+  if (rootModulePaths.includes(normalizedPath)) {
+    // For root module paths, only show back button if we actually have navigation history
+    // This prevents showing back button when user navigates to a module from the menu
+    return canGoBack;
+  }
+
+  // For all other screens, show back button if we can go back
   return canGoBack;
 };
 

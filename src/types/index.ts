@@ -2,6 +2,7 @@
 
 // Export common types
 export * from "./common";
+export * from "./route-params";
 
 // Export entity interfaces
 export * from "./activity";

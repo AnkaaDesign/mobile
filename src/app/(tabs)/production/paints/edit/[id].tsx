@@ -1,5 +1,13 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { useEffect } from "react";
+import { router, useLocalSearchParams } from "expo-router";
 
 export default function PaintEditScreen() {
-  return <UnderConstruction title="Editar Tinta" />;
+  const { id } = useLocalSearchParams();
+
+  useEffect(() => {
+    // Redirect to the consolidated paint catalog edit
+    router.replace(`/(tabs)/painting/catalog/edit/${id}`);
+  }, [id]);
+
+  return null;
 }

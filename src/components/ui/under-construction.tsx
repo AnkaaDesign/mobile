@@ -1,7 +1,9 @@
 import React from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, Pressable } from "react-native";
 import { IconCircleCheck } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
+import { useRouter, usePathname } from "expo-router";
+import { Icon } from "./icon";
 
 interface UnderConstructionProps {
   title: string;
@@ -17,10 +19,22 @@ export function UnderConstruction({
   showBackButton = false,
 }: UnderConstructionProps) {
   const { colors, isDark } = useTheme();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Format the route for display
+  const routeDisplay = pathname
+    .replace(/^\/(tabs)\//, "")
+    .split("/")
+    .filter(Boolean)
+    .join(" > ");
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ padding: 16, gap: 24 }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={{ flexGrow: 1 }}
+    >
+      <View style={{ padding: 16, gap: 24, minHeight: "100%" }}>
         <View>
           <Text
             style={{
@@ -40,6 +54,18 @@ export function UnderConstruction({
           >
             Esta página está em desenvolvimento.
           </Text>
+          {routeDisplay && (
+            <Text
+              style={{
+                color: colors.mutedForeground,
+                fontSize: 12,
+                marginTop: 8,
+                fontFamily: "monospace",
+              }}
+            >
+              Rota: {routeDisplay}
+            </Text>
+          )}
         </View>
 
         <View
@@ -143,6 +169,34 @@ export function UnderConstruction({
                 </View>
               </View>
             </View>
+
+            {/* Back button - only show if explicitly requested or if we can go back */}
+            {showBackButton && (
+              <Pressable
+                onPress={() => router.back()}
+                style={{
+                  marginTop: 24,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  paddingVertical: 12,
+                  paddingHorizontal: 20,
+                  backgroundColor: colors.primary,
+                  borderRadius: 8,
+                }}
+              >
+                <Icon name="arrow-left" size={20} color={colors.card} />
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: colors.card,
+                  }}
+                >
+                  Voltar
+                </Text>
+              </Pressable>
+            )}
           </View>
         </View>
       </View>

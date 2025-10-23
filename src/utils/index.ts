@@ -66,6 +66,7 @@ export * from "./position";
 export * from "./privilege";
 export * from "./warning";
 export * from "./routes";
+export * from "./route-validator";
 export * from "./schedule";
 export * from "./sector";
 export * from "./serviceOrder";

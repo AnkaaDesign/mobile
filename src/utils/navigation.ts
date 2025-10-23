@@ -280,7 +280,7 @@ function convertPortuguesePathToEnglish(portuguesePath: string): string[] {
   const pathMap: Record<string, string> = {
     'administracao': 'administration',
     'clientes': 'customers',
-    'colaboradores': 'employees',
+    'colaboradores': 'collaborators',
     'setores': 'sectors',
     'notificacoes': 'notifications',
     'registros-de-alteracoes': 'change-logs',

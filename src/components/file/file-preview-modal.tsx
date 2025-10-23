@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,9 +14,25 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { PanGestureHandler, PinchGestureHandler, State } from "react-native-gesture-handler";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS, interpolate, Extrapolate } from "react-native-reanimated";
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView
+} from "react-native-gesture-handler";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  withDecay,
+  runOnJS,
+  interpolate,
+  Extrapolate,
+  cancelAnimation,
+  clamp
+} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import NetInfo from "@react-native-community/netinfo";
 import {
   IconX,
   IconDownload,
@@ -35,7 +51,59 @@ import * as FileSystem from "expo-file-system/legacy";
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 5;
+const DOUBLE_TAP_ZOOM = 2.5;
 const SWIPE_THRESHOLD = 50;
+const MIN_FLING_VELOCITY = 500;
+const OVERSCROLL_AMOUNT = 50;
+
+// Spring configurations for native-like feel
+const SPRING_CONFIG_ZOOM = {
+  damping: 20,
+  stiffness: 300,
+  mass: 0.5,
+  overshootClamping: false,
+  restDisplacementThreshold: 0.01,
+  restSpeedThreshold: 0.01,
+};
+
+const SPRING_CONFIG_SNAP = {
+  damping: 18,
+  stiffness: 200,
+  mass: 0.8,
+  overshootClamping: false,
+  restDisplacementThreshold: 0.01,
+  restSpeedThreshold: 0.01,
+};
+
+const SPRING_CONFIG_RESET = {
+  damping: 25,
+  stiffness: 350,
+  mass: 0.5,
+  overshootClamping: true,
+  restDisplacementThreshold: 0.01,
+  restSpeedThreshold: 0.01,
+};
+
+const SPRING_CONFIG_DISMISS = {
+  damping: 15,
+  stiffness: 150,
+  mass: 1,
+  overshootClamping: false,
+  restDisplacementThreshold: 0.01,
+  restSpeedThreshold: 0.01,
+};
+
+// Platform-specific decay configuration
+const DECAY_CONFIG = Platform.select({
+  ios: {
+    deceleration: 0.998,
+    velocityFactor: 1,
+  },
+  android: {
+    deceleration: 0.997,
+    velocityFactor: 0.95,
+  },
+}) || { deceleration: 0.998, velocityFactor: 1 };
 
 // EPS file detection
 const isEpsFile = (file: AnkaaFile): boolean => {
@@ -43,9 +111,17 @@ const isEpsFile = (file: AnkaaFile): boolean => {
   return epsMimeTypes.includes(file.mimetype.toLowerCase());
 };
 
+// PDF file detection
+const isPdfFile = (file: AnkaaFile): boolean => {
+  return file.mimetype.toLowerCase() === "application/pdf" ||
+         getFileExtension(file.filename).toLowerCase() === "pdf";
+};
+
 // Check if file can be previewed
 const isPreviewableFile = (file: AnkaaFile): boolean => {
-  return isImageFile(file) || (isEpsFile(file) && !!file.thumbnailUrl);
+  return isImageFile(file) ||
+         (isEpsFile(file) && !!file.thumbnailUrl) ||
+         (isPdfFile(file) && !!file.thumbnailUrl);
 };
 
 export interface FilePreviewModalProps {
@@ -76,88 +152,140 @@ export function FilePreviewModal({
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
-  // Constants for padding calculations
-  const HEADER_BASE_PADDING = 16;
-  const FOOTER_BASE_PADDING = 16;
-  const STATUSBAR_HEIGHT = Platform.OS === 'ios' ? 44 : 24;
-
-  // State-based padding that recalculates when modal opens
-  const [safeTopPadding, setSafeTopPadding] = useState(STATUSBAR_HEIGHT + HEADER_BASE_PADDING);
-  const [safeBottomPadding, setSafeBottomPadding] = useState(FOOTER_BASE_PADDING);
-
-  // Recalculate safe padding when modal becomes visible or insets change
-  useEffect(() => {
-    if (visible) {
-      // Small delay to ensure SafeArea context is fully initialized
-      const timer = setTimeout(() => {
-        const topPadding = Math.max(insets.top || STATUSBAR_HEIGHT, STATUSBAR_HEIGHT) + HEADER_BASE_PADDING;
-        const bottomPadding = Math.max(insets.bottom || 0, 0) + FOOTER_BASE_PADDING;
-
-        setSafeTopPadding(topPadding);
-        setSafeBottomPadding(bottomPadding);
-
-        console.log('📐 [FilePreviewModal] SafeArea Recalculated:', {
-          insetsTop: insets.top,
-          insetsBottom: insets.bottom,
-          calculatedTopPadding: topPadding,
-          calculatedBottomPadding: bottomPadding,
-          platform: Platform.OS,
-          timestamp: new Date().toISOString()
-        });
-      }, 100); // 100ms delay to ensure context is ready
-
-      return () => clearTimeout(timer);
-    }
-  }, [visible, insets.top, insets.bottom]);
-
   // State management
   const [currentIndex, setCurrentIndex] = useState(initialFileIndex);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [isControlsVisible, setIsControlsVisible] = useState(true);
+  const [isConnected, setIsConnected] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Animated values
   const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
   const focalX = useSharedValue(0);
   const focalY = useSharedValue(0);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
-  const baseTranslateX = useSharedValue(0);
-  const baseTranslateY = useSharedValue(0);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
   const swipeTranslateX = useSharedValue(0);
   const opacity = useSharedValue(1);
+  const velocityX = useSharedValue(0);
+  const velocityY = useSharedValue(0);
+
+  // Track image dimensions for proper boundary calculation
+  const imageDimensions = useSharedValue({ width: 0, height: 0 });
 
   // Refs
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const imageCache = useRef<Map<string, boolean>>(new Map());
+  const preloadQueue = useRef<Set<string>>(new Set());
 
   // Filter previewable files
-  const previewableFiles = React.useMemo(() => files.map((file, index) => ({ file, originalIndex: index })).filter(({ file }) => isPreviewableFile(file)), [files]);
+  const previewableFiles = useMemo(
+    () => files.map((file, index) => ({ file, originalIndex: index }))
+      .filter(({ file }) => isPreviewableFile(file)),
+    [files]
+  );
 
   const currentFile = files[currentIndex];
   const isCurrentFilePreviewable = currentFile && isPreviewableFile(currentFile);
 
   // Find current image index within previewable files
-  const currentImageIndex = React.useMemo(() => {
+  const currentImageIndex = useMemo(() => {
     if (!isCurrentFilePreviewable) return -1;
     return previewableFiles.findIndex(({ originalIndex }) => originalIndex === currentIndex);
   }, [currentIndex, previewableFiles, isCurrentFilePreviewable]);
 
   const totalImages = previewableFiles.length;
 
+  // Monitor network connectivity
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(state.isConnected ?? true);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Preload adjacent images for smooth navigation
+  useEffect(() => {
+    if (!isCurrentFilePreviewable || totalImages <= 1) return;
+
+    const preloadImage = (index: number) => {
+      if (index >= 0 && index < totalImages) {
+        const fileToPreload = previewableFiles[index].file;
+        const url = getFileUrl(fileToPreload, baseUrl);
+
+        if (!preloadQueue.current.has(url)) {
+          preloadQueue.current.add(url);
+          Image.prefetch(url).catch(() => {
+            preloadQueue.current.delete(url);
+          });
+        }
+      }
+    };
+
+    // Preload previous and next images
+    preloadImage(currentImageIndex - 1);
+    preloadImage(currentImageIndex + 1);
+  }, [currentImageIndex, totalImages, previewableFiles, isCurrentFilePreviewable, baseUrl]);
+
+  // Calculate image bounds based on actual dimensions
+  const calculateImageBounds = useCallback((currentScale: number) => {
+    'worklet';
+
+    const imageWidth = imageDimensions.value.width || SCREEN_WIDTH;
+    const imageHeight = imageDimensions.value.height || SCREEN_HEIGHT;
+
+    const imageAspect = imageWidth / imageHeight;
+    const containerAspect = SCREEN_WIDTH / (SCREEN_HEIGHT - 200);
+
+    let displayWidth, displayHeight;
+
+    if (imageAspect > containerAspect) {
+      displayWidth = SCREEN_WIDTH;
+      displayHeight = SCREEN_WIDTH / imageAspect;
+    } else {
+      displayHeight = SCREEN_HEIGHT - 200;
+      displayWidth = (SCREEN_HEIGHT - 200) * imageAspect;
+    }
+
+    const scaledWidth = displayWidth * currentScale;
+    const scaledHeight = displayHeight * currentScale;
+
+    const maxTranslateX = Math.max(0, (scaledWidth - SCREEN_WIDTH) / 2);
+    const maxTranslateY = Math.max(0, (scaledHeight - (SCREEN_HEIGHT - 200)) / 2);
+
+    return {
+      minX: -maxTranslateX,
+      maxX: maxTranslateX,
+      minY: -maxTranslateY,
+      maxY: maxTranslateY,
+    };
+  }, []);
+
   // Reset states when file changes
   useEffect(() => {
+    cancelAnimation(scale);
+    cancelAnimation(translateX);
+    cancelAnimation(translateY);
+
     scale.value = 1;
+    savedScale.value = 1;
     translateX.value = 0;
     translateY.value = 0;
-    baseTranslateX.value = 0;
-    baseTranslateY.value = 0;
+    savedTranslateX.value = 0;
+    savedTranslateY.value = 0;
     focalX.value = 0;
     focalY.value = 0;
     swipeTranslateX.value = 0;
+    opacity.value = 1;
     setRotation(0);
     setImageLoading(true);
     setImageError(false);
+    setRetryCount(0);
   }, [currentIndex]);
 
   // Initialize current index
@@ -191,72 +319,248 @@ export function FilePreviewModal({
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
       }
+      // Cleanup cache on unmount
+      imageCache.current.clear();
+      preloadQueue.current.clear();
     };
   }, [visible, resetControlsTimeout]);
+
+  // Play haptic feedback
+  const playHapticFeedback = useCallback((type: 'light' | 'medium' | 'heavy' | 'edge') => {
+    switch (type) {
+      case 'light':
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        break;
+      case 'medium':
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        break;
+      case 'heavy':
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        break;
+      case 'edge':
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        break;
+    }
+  }, []);
 
   // Navigation functions
   const handlePrevious = useCallback(() => {
     if (!isCurrentFilePreviewable || totalImages <= 1) return;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    playHapticFeedback('light');
     const prevImageIndex = currentImageIndex > 0 ? currentImageIndex - 1 : totalImages - 1;
     setCurrentIndex(previewableFiles[prevImageIndex].originalIndex);
     showControls();
-  }, [isCurrentFilePreviewable, currentImageIndex, totalImages, previewableFiles, showControls]);
+  }, [isCurrentFilePreviewable, currentImageIndex, totalImages, previewableFiles, showControls, playHapticFeedback]);
 
   const handleNext = useCallback(() => {
     if (!isCurrentFilePreviewable || totalImages <= 1) return;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    playHapticFeedback('light');
     const nextImageIndex = currentImageIndex < totalImages - 1 ? currentImageIndex + 1 : 0;
     setCurrentIndex(previewableFiles[nextImageIndex].originalIndex);
     showControls();
-  }, [isCurrentFilePreviewable, currentImageIndex, totalImages, previewableFiles, showControls]);
+  }, [isCurrentFilePreviewable, currentImageIndex, totalImages, previewableFiles, showControls, playHapticFeedback]);
 
-  // Zoom functions
-  const handleZoomIn = useCallback(() => {
-    const newScale = Math.min(scale.value * 1.5, MAX_ZOOM);
-    scale.value = withSpring(newScale);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    showControls();
-  }, [showControls]);
+  // Create gesture handlers using modern API
+  const pinchGesture = useMemo(() =>
+    Gesture.Pinch()
+      .enabled(enablePinchZoom)
+      .onStart(() => {
+        'worklet';
+        savedScale.value = scale.value;
+        savedTranslateX.value = translateX.value;
+        savedTranslateY.value = translateY.value;
+      })
+      .onChange((event) => {
+        'worklet';
+        const newScale = clamp(
+          savedScale.value * event.scale,
+          MIN_ZOOM,
+          MAX_ZOOM
+        );
 
-  const handleZoomOut = useCallback(() => {
-    const newScale = Math.max(scale.value / 1.5, MIN_ZOOM);
-    scale.value = withSpring(newScale);
+        // Calculate focal point zoom
+        const focalPointX = event.focalX - SCREEN_WIDTH / 2;
+        const focalPointY = event.focalY - SCREEN_HEIGHT / 2;
 
-    // Reset position if zoomed out enough
-    if (newScale <= 1) {
-      translateX.value = withSpring(0);
-      translateY.value = withSpring(0);
-    }
+        const scaleDelta = newScale / savedScale.value;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    showControls();
-  }, [showControls]);
+        // Keep focal point stationary during zoom
+        translateX.value = savedTranslateX.value + (focalPointX - savedTranslateX.value) * (scaleDelta - 1);
+        translateY.value = savedTranslateY.value + (focalPointY - savedTranslateY.value) * (scaleDelta - 1);
 
-  const handleResetZoom = useCallback(() => {
-    scale.value = withSpring(1);
-    translateX.value = withSpring(0);
-    translateY.value = withSpring(0);
-    focalX.value = 0;
-    focalY.value = 0;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    showControls();
-  }, [showControls]);
+        scale.value = newScale;
+      })
+      .onEnd(() => {
+        'worklet';
+        const bounds = calculateImageBounds(scale.value);
 
-  // Rotation functions
-  const handleRotateRight = useCallback(() => {
-    setRotation((prev) => (prev + 90) % 360);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    showControls();
-  }, [showControls]);
+        if (scale.value < 1) {
+          scale.value = withSpring(1, SPRING_CONFIG_RESET);
+          translateX.value = withSpring(0, SPRING_CONFIG_RESET);
+          translateY.value = withSpring(0, SPRING_CONFIG_RESET);
+          runOnJS(playHapticFeedback)('light');
+        } else if (scale.value > MAX_ZOOM) {
+          scale.value = withSpring(MAX_ZOOM, SPRING_CONFIG_SNAP);
+        } else {
+          // Snap to boundaries
+          translateX.value = withSpring(
+            clamp(translateX.value, bounds.minX, bounds.maxX),
+            SPRING_CONFIG_SNAP
+          );
+          translateY.value = withSpring(
+            clamp(translateY.value, bounds.minY, bounds.maxY),
+            SPRING_CONFIG_SNAP
+          );
+        }
 
-  const handleRotateLeft = useCallback(() => {
-    setRotation((prev) => (prev - 90 + 360) % 360);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    showControls();
-  }, [showControls]);
+        runOnJS(showControls)();
+      }),
+    [enablePinchZoom, calculateImageBounds, showControls, playHapticFeedback]
+  );
+
+  const panGesture = useMemo(() =>
+    Gesture.Pan()
+      .onStart(() => {
+        'worklet';
+        cancelAnimation(translateX);
+        cancelAnimation(translateY);
+        savedTranslateX.value = translateX.value;
+        savedTranslateY.value = translateY.value;
+        runOnJS(showControls)();
+      })
+      .onChange((event) => {
+        'worklet';
+
+        if (scale.value > 1) {
+          // Pan when zoomed
+          const bounds = calculateImageBounds(scale.value);
+
+          translateX.value = clamp(
+            savedTranslateX.value + event.translationX,
+            bounds.minX - OVERSCROLL_AMOUNT,
+            bounds.maxX + OVERSCROLL_AMOUNT
+          );
+          translateY.value = clamp(
+            savedTranslateY.value + event.translationY,
+            bounds.minY - OVERSCROLL_AMOUNT,
+            bounds.maxY + OVERSCROLL_AMOUNT
+          );
+
+          velocityX.value = event.velocityX;
+          velocityY.value = event.velocityY;
+        } else if (enableSwipeNavigation) {
+          // Swipe for navigation
+          swipeTranslateX.value = event.translationX;
+          opacity.value = interpolate(
+            Math.abs(event.translationX),
+            [0, SCREEN_WIDTH / 3],
+            [1, 0.7],
+            Extrapolate.CLAMP
+          );
+        }
+      })
+      .onFinalize((event) => {
+        'worklet';
+
+        if (scale.value > 1) {
+          const bounds = calculateImageBounds(scale.value);
+          const speed = Math.sqrt(event.velocityX ** 2 + event.velocityY ** 2);
+
+          if (speed > MIN_FLING_VELOCITY) {
+            // Apply momentum with decay
+            translateX.value = withDecay({
+              velocity: event.velocityX * DECAY_CONFIG.velocityFactor,
+              clamp: [bounds.minX, bounds.maxX],
+              deceleration: DECAY_CONFIG.deceleration,
+              rubberBandEffect: true,
+              rubberBandFactor: 0.6,
+            });
+
+            translateY.value = withDecay({
+              velocity: event.velocityY * DECAY_CONFIG.velocityFactor,
+              clamp: [bounds.minY, bounds.maxY],
+              deceleration: DECAY_CONFIG.deceleration,
+              rubberBandEffect: true,
+              rubberBandFactor: 0.6,
+            });
+          } else {
+            // Snap to boundaries
+            translateX.value = withSpring(
+              clamp(translateX.value, bounds.minX, bounds.maxX),
+              SPRING_CONFIG_SNAP
+            );
+            translateY.value = withSpring(
+              clamp(translateY.value, bounds.minY, bounds.maxY),
+              SPRING_CONFIG_SNAP
+            );
+          }
+
+          // Check for edge collision
+          if (translateX.value <= bounds.minX || translateX.value >= bounds.maxX) {
+            runOnJS(playHapticFeedback)('edge');
+          }
+        } else if (enableSwipeNavigation) {
+          const shouldNavigate = Math.abs(event.translationX) > SWIPE_THRESHOLD;
+
+          if (shouldNavigate) {
+            const direction = event.translationX > 0 ? 1 : -1;
+            runOnJS(direction > 0 ? handlePrevious : handleNext)();
+          }
+
+          swipeTranslateX.value = withSpring(0, SPRING_CONFIG_DISMISS);
+          opacity.value = withSpring(1, SPRING_CONFIG_DISMISS);
+        }
+      }),
+    [enableSwipeNavigation, calculateImageBounds, showControls, playHapticFeedback, handlePrevious, handleNext]
+  );
+
+  const doubleTapGesture = useMemo(() =>
+    Gesture.Tap()
+      .numberOfTaps(2)
+      .onEnd((event) => {
+        'worklet';
+        const isZoomed = scale.value > 1;
+
+        if (isZoomed) {
+          // Zoom out
+          scale.value = withSpring(1, SPRING_CONFIG_ZOOM);
+          translateX.value = withSpring(0, SPRING_CONFIG_ZOOM);
+          translateY.value = withSpring(0, SPRING_CONFIG_ZOOM);
+        } else {
+          // Zoom in to tap location
+          const focalPointX = event.x - SCREEN_WIDTH / 2;
+          const focalPointY = event.y - (SCREEN_HEIGHT - 200) / 2;
+
+          translateX.value = withSpring(-focalPointX * (DOUBLE_TAP_ZOOM - 1), SPRING_CONFIG_ZOOM);
+          translateY.value = withSpring(-focalPointY * (DOUBLE_TAP_ZOOM - 1), SPRING_CONFIG_ZOOM);
+          scale.value = withSpring(DOUBLE_TAP_ZOOM, SPRING_CONFIG_ZOOM);
+        }
+
+        runOnJS(playHapticFeedback)('medium');
+      }),
+    [playHapticFeedback]
+  );
+
+  const singleTapGesture = useMemo(() =>
+    Gesture.Tap()
+      .numberOfTaps(1)
+      .onEnd(() => {
+        'worklet';
+        runOnJS(showControls)();
+      }),
+    [showControls]
+  );
+
+  // Compose gestures
+  const composedGestures = useMemo(() =>
+    Gesture.Simultaneous(
+      Gesture.Exclusive(doubleTapGesture, singleTapGesture),
+      Gesture.Race(pinchGesture, panGesture)
+    ),
+    [doubleTapGesture, singleTapGesture, pinchGesture, panGesture]
+  );
 
   // Download/Share/Open functions
   const handleDownload = useCallback(async () => {
@@ -264,28 +568,29 @@ export function FilePreviewModal({
 
     try {
       showControls();
+      playHapticFeedback('light');
 
       const fileUrl = getFileUrl(currentFile, baseUrl);
       const fileUri = FileSystem.documentDirectory + currentFile.filename;
 
       Alert.alert("Baixando arquivo...", "Aguarde enquanto o arquivo é baixado.");
 
-      // Download file
       const { uri } = await FileSystem.downloadAsync(fileUrl, fileUri);
 
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      playHapticFeedback('heavy');
       Alert.alert("Sucesso", "Arquivo salvo com sucesso!");
     } catch (error) {
       console.error("Error downloading file:", error);
       Alert.alert("Erro", "Não foi possível baixar o arquivo.");
     }
-  }, [currentFile, baseUrl, showControls]);
+  }, [currentFile, baseUrl, showControls, playHapticFeedback]);
 
   const handleShare = useCallback(async () => {
     if (!currentFile) return;
 
     try {
       showControls();
+      playHapticFeedback('light');
 
       const Sharing = await import("expo-sharing");
       const isAvailable = await Sharing.isAvailableAsync();
@@ -298,118 +603,26 @@ export function FilePreviewModal({
       const fileUrl = getFileUrl(currentFile, baseUrl);
       const fileUri = FileSystem.cacheDirectory + currentFile.filename;
 
-      // Download to cache
       const { uri } = await FileSystem.downloadAsync(fileUrl, fileUri);
 
-      // Share file - on iOS this opens share sheet, on Android opens with appropriate app
       await Sharing.shareAsync(uri, {
         mimeType: currentFile.mimetype,
         dialogTitle: "Abrir com...",
         UTI: currentFile.mimetype,
       });
 
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      playHapticFeedback('light');
     } catch (error) {
       console.error("Error sharing/opening file:", error);
       Alert.alert("Erro", "Não foi possível abrir o arquivo.");
     }
-  }, [currentFile, baseUrl, showControls]);
+  }, [currentFile, baseUrl, showControls, playHapticFeedback]);
 
-  // Open file with appropriate viewer (uses share sheet which allows opening)
   const handleOpenFile = useCallback(async () => {
-    await handleShare(); // Share sheet allows opening with appropriate apps
+    await handleShare();
   }, [handleShare]);
 
-  // Pinch gesture handler - improved for smoother scaling
-  const pinchGestureHandler = (event: any) => {
-    'worklet';
-    if (event.nativeEvent.state === State.BEGAN) {
-      focalX.value = event.nativeEvent.focalX;
-      focalY.value = event.nativeEvent.focalY;
-    } else if (event.nativeEvent.state === State.ACTIVE) {
-      if (!enablePinchZoom) return;
-
-      // Clamp scale value for smooth zooming
-      const newScale = Math.max(MIN_ZOOM, Math.min(event.nativeEvent.scale, MAX_ZOOM));
-      scale.value = newScale; // Direct assignment for responsive feel
-
-      // Handle focal point for zoom center
-      if (event.nativeEvent.scale > 1) {
-        const focal = {
-          x: event.nativeEvent.focalX - SCREEN_WIDTH / 2,
-          y: event.nativeEvent.focalY - SCREEN_HEIGHT / 2,
-        };
-
-        translateX.value = focal.x * (1 - 1 / event.nativeEvent.scale);
-        translateY.value = focal.y * (1 - 1 / event.nativeEvent.scale);
-      }
-    } else if (event.nativeEvent.state === State.END) {
-      // Snap to boundaries with smooth spring animation
-      if (scale.value < 1) {
-        scale.value = withSpring(1, { damping: 15, stiffness: 150 });
-        translateX.value = withSpring(0, { damping: 15, stiffness: 150 });
-        translateY.value = withSpring(0, { damping: 15, stiffness: 150 });
-      } else if (scale.value > MAX_ZOOM) {
-        scale.value = withSpring(MAX_ZOOM, { damping: 15, stiffness: 150 });
-      }
-
-      runOnJS(showControls)();
-    }
-  };
-
-  // Pan gesture handler for zoomed images - improved for smoothness
-  const panGestureHandler = (event: any) => {
-    'worklet';
-    if (event.nativeEvent.state === State.BEGAN) {
-      // Store current position as base for this gesture
-      baseTranslateX.value = translateX.value;
-      baseTranslateY.value = translateY.value;
-      runOnJS(showControls)();
-    } else if (event.nativeEvent.state === State.ACTIVE) {
-      if (scale.value > 1) {
-        // Pan when zoomed - add delta to base for smooth continuous panning
-        translateX.value = baseTranslateX.value + event.nativeEvent.translationX;
-        translateY.value = baseTranslateY.value + event.nativeEvent.translationY;
-      } else if (enableSwipeNavigation) {
-        // Swipe for navigation
-        swipeTranslateX.value = event.nativeEvent.translationX;
-        opacity.value = interpolate(Math.abs(event.nativeEvent.translationX), [0, SCREEN_WIDTH / 3], [1, 0.7], Extrapolate.CLAMP);
-      }
-    } else if (event.nativeEvent.state === State.END) {
-      if (scale.value > 1) {
-        // Boundary check for panning with smooth spring animation
-        const maxTranslateX = (SCREEN_WIDTH * scale.value - SCREEN_WIDTH) / 2;
-        const maxTranslateY = (SCREEN_HEIGHT * scale.value - SCREEN_HEIGHT) / 2;
-
-        const clampedX = Math.max(-maxTranslateX, Math.min(maxTranslateX, translateX.value));
-        const clampedY = Math.max(-maxTranslateY, Math.min(maxTranslateY, translateY.value));
-
-        translateX.value = withSpring(clampedX, { damping: 15, stiffness: 150 });
-        translateY.value = withSpring(clampedY, { damping: 15, stiffness: 150 });
-
-        // Update base values for next gesture
-        baseTranslateX.value = clampedX;
-        baseTranslateY.value = clampedY;
-      } else if (enableSwipeNavigation) {
-        // Handle swipe navigation
-        const shouldNavigate = Math.abs(event.nativeEvent.translationX) > SWIPE_THRESHOLD;
-
-        if (shouldNavigate) {
-          if (event.nativeEvent.translationX > 0) {
-            runOnJS(handlePrevious)();
-          } else {
-            runOnJS(handleNext)();
-          }
-        }
-
-        // Reset swipe state with smooth animation
-        swipeTranslateX.value = withSpring(0, { damping: 15, stiffness: 150 });
-        opacity.value = withSpring(1, { damping: 15, stiffness: 150 });
-      }
-    }
-  };
-
-  // Animated styles (pinch/pan zoom only, no rotation)
+  // Animated styles
   const animatedImageStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -418,360 +631,349 @@ export function FilePreviewModal({
         { scale: scale.value },
       ],
       opacity: opacity.value,
-    } as any;
+    };
   });
 
   const animatedControlsStyle = useAnimatedStyle(() => {
     return {
       opacity: withTiming(isControlsVisible ? 1 : 0, { duration: 300 }),
-    };
+      pointerEvents: isControlsVisible ? 'auto' : 'none',
+    } as any;
   });
 
   // Image load handlers
-  const handleImageLoad = useCallback(() => {
+  const handleImageLoad = useCallback((event: any) => {
+    const { width, height } = event.nativeEvent.source;
+    imageDimensions.value = { width, height };
     setImageLoading(false);
     setImageError(false);
-  }, []);
+
+    // Mark as cached
+    if (currentFile) {
+      imageCache.current.set(currentFile.id, true);
+    }
+  }, [currentFile]);
 
   const handleImageError = useCallback(() => {
     setImageLoading(false);
     setImageError(true);
-  }, []);
+
+    // Retry logic with exponential backoff
+    if (retryCount < 3 && isConnected) {
+      setTimeout(() => {
+        setRetryCount(prev => prev + 1);
+        setImageLoading(true);
+        setImageError(false);
+      }, Math.pow(2, retryCount) * 1000);
+    }
+  }, [retryCount, isConnected]);
 
   if (!currentFile) return null;
 
-  const isPDF = getFileExtension(currentFile.filename).toLowerCase() === "pdf";
+  const isPDF = isPdfFile(currentFile);
   const isEPS = isEpsFile(currentFile);
 
   // Helper function to get proper file URL
-  const getFileUrl = (file: AnkaaFile): string => {
+  const getFileUrl = (file: AnkaaFile, baseUrl?: string): string => {
     const apiUrl = baseUrl || (global as any).__ANKAA_API_URL__ || "http://localhost:3030";
 
-    // Check if file has a URL property that might contain localhost
     if (file.url && file.url.startsWith('http')) {
       const urlObj = new URL(file.url);
-      const correctedUrl = `${apiUrl}${urlObj.pathname}${urlObj.search}`;
-      console.log('🔍 [FilePreviewModal] Corrected file URL:', {
-        original: file.url,
-        corrected: correctedUrl
-      });
-      return correctedUrl;
+      return `${apiUrl}${urlObj.pathname}${urlObj.search}`;
     }
 
-    const url = `${apiUrl}/files/serve/${file.id}`;
-    console.log('🔍 [FilePreviewModal] getFileUrl:', {
-      filename: file.filename,
-      fileId: file.id,
-      baseUrl,
-      globalUrl: (global as any).__ANKAA_API_URL__,
-      finalUrl: url
-    });
-    return url;
+    return `${apiUrl}/files/serve/${file.id}`;
   };
 
   // Helper function to get thumbnail URL
   const getFileThumbnailUrl = (file: AnkaaFile, size: "small" | "medium" | "large" = "medium"): string => {
     const apiUrl = baseUrl || (global as any).__ANKAA_API_URL__ || "http://localhost:3030";
 
-    console.log('🔍 [getFileThumbnailUrl] Called with:', {
-      filename: file.filename,
-      baseUrl,
-      apiUrl,
-      fileThumbnailUrl: file.thumbnailUrl,
-      requestedSize: size
-    });
-
-    // If file has thumbnailUrl, use it
     if (file.thumbnailUrl) {
-      // If already absolute URL, replace localhost with correct API URL and ensure size parameter
       if (file.thumbnailUrl.startsWith('http')) {
-        // Extract the path from the URL
         const urlObj = new URL(file.thumbnailUrl);
-        // Always add or update the size parameter
-        const correctedUrl = `${apiUrl}${urlObj.pathname}?size=${size}`;
-        console.log('🔍 [FilePreviewModal] Corrected thumbnailUrl with size:', {
-          original: file.thumbnailUrl,
-          corrected: correctedUrl,
-          size: size
-        });
-        return correctedUrl;
+        return `${apiUrl}${urlObj.pathname}?size=${size}`;
       }
-      // Otherwise construct URL
-      const url = `${apiUrl}/files/thumbnail/${file.id}?size=${size}`;
-      console.log('🔍 [FilePreviewModal] Constructed thumbnail URL:', url);
-      return url;
+      return `${apiUrl}/files/thumbnail/${file.id}?size=${size}`;
     }
 
-    // For images, use the serve endpoint
     if (isImageFile(file)) {
-      const url = `${apiUrl}/files/serve/${file.id}`;
-      console.log('🔍 [FilePreviewModal] Using serve URL for image:', url);
-      return url;
+      return `${apiUrl}/files/serve/${file.id}`;
     }
 
-    console.log('⚠️ [FilePreviewModal] No URL generated for file:', file.filename);
     return "";
   };
 
+  // Memoized thumbnail component for better performance
+  const ThumbnailItem = React.memo(({
+    file,
+    isActive,
+    onPress
+  }: {
+    file: AnkaaFile;
+    isActive: boolean;
+    onPress: () => void;
+  }) => (
+    <TouchableOpacity
+      style={[styles.thumbnailButton, isActive && styles.thumbnailButtonActive]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.thumbnailImageContainer}>
+        <Image
+          source={{
+            uri: getFileThumbnailUrl(file, "small"),
+            cache: imageCache.current.has(file.id) ? 'force-cache' : 'default',
+          }}
+          style={styles.thumbnailImage}
+          resizeMode="cover"
+        />
+      </View>
+      {isActive && <View style={styles.thumbnailActiveOverlay} />}
+    </TouchableOpacity>
+  ));
+
   return (
     <Modal visible={visible} animationType="fade" statusBarTranslucent>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+          <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      <View style={styles.container}>
-        {/* Background */}
-        <View style={StyleSheet.flatten([StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.95)' }])} />
-
-        {/* Main Content */}
-        <View style={styles.content}>
-          {/* Header */}
-          <Animated.View style={StyleSheet.flatten([
-            styles.header,
-            animatedControlsStyle,
-            { paddingTop: safeTopPadding }
-          ])}>
-            <View style={styles.headerLeft}>
-              <View style={styles.fileInfo}>
-                <Text style={styles.fileName} numberOfLines={1}>
-                  {currentFile.filename}
-                </Text>
-                <Text style={styles.fileSize}>{formatFileSize(currentFile.size)}</Text>
-                {isCurrentFilePreviewable && totalImages > 1 && showImageCounter && (
-                  <Badge style={styles.imageCounter} textStyle={styles.imageCounterText}>
-                    {`${currentImageIndex + 1} de ${totalImages}`}
-                  </Badge>
-                )}
-              </View>
-            </View>
-
-            <View style={styles.headerRight}>
-              <TouchableOpacity style={styles.headerButton} onPress={onClose} activeOpacity={0.7}>
-                <IconX size={24} color={colors.foreground} />
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-
-          {/* Image Container */}
-          <View style={styles.imageContainer}>
-            {isCurrentFilePreviewable ? (
-              <>
-                <PinchGestureHandler onHandlerStateChange={pinchGestureHandler}>
-                  <Animated.View style={styles.imageWrapper}>
-                    <PanGestureHandler onHandlerStateChange={panGestureHandler}>
-                      <Animated.View style={styles.imageWrapper}>
-                        <TouchableOpacity activeOpacity={1} onPress={showControls} style={styles.imageWrapper}>
-                          <Animated.View style={animatedImageStyle}>
-                            <Image
-                              key={`main-image-${currentFile.id}-${currentIndex}`}
-                              source={{
-                                uri: (() => {
-                                  const url = isEPS && currentFile.thumbnailUrl
-                                    ? getFileThumbnailUrl(currentFile, "large")
-                                    : getFileUrl(currentFile);
-                                  console.log('🖼️ [MainImage] About to load:', {
-                                    filename: currentFile.filename,
-                                    isEPS,
-                                    hasThumbnailUrl: !!currentFile.thumbnailUrl,
-                                    finalUrl: url,
-                                    imageLoading,
-                                    imageError
-                                  });
-                                  return url;
-                                })(),
-                                cache: 'reload'
-                              }}
-                              style={styles.image}
-                              resizeMode="contain"
-                              onLoadStart={() => {
-                                console.log('⏳ [MainImage] Load started:', currentFile.filename);
-                              }}
-                              onLoad={() => {
-                                console.log('✅ [MainImage] Loaded successfully:', currentFile.filename);
-                                handleImageLoad();
-                              }}
-                              onError={(error) => {
-                                console.error('❌ [MainImage] Failed to load:', {
-                                  filename: currentFile.filename,
-                                  url: isEPS && currentFile.thumbnailUrl
-                                    ? getFileThumbnailUrl(currentFile, "large")
-                                    : getFileUrl(currentFile),
-                                  error: error.nativeEvent
-                                });
-                                handleImageError();
-                              }}
-                              onLoadEnd={() => {
-                                console.log('🏁 [MainImage] Load ended (success or error):', currentFile.filename);
-                              }}
-                            />
-                          </Animated.View>
-
-                          {/* Loading Overlay */}
-                          {imageLoading && (
-                            <View style={styles.imageOverlay}>
-                              <ActivityIndicator size="large" color={colors.primary} />
-                              <Text style={styles.loadingText}>Carregando...</Text>
-                            </View>
-                          )}
-
-                          {/* Error Overlay */}
-                          {imageError && (
-                            <View style={styles.imageOverlay}>
-                              <Text style={styles.errorIcon}>⚠️</Text>
-                              <Text style={styles.errorTitle}>Erro ao carregar</Text>
-                              <Text style={styles.errorText}>Não foi possível carregar a imagem</Text>
-                              <View style={styles.errorButtonRow}>
-                                <TouchableOpacity style={styles.errorButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                                  <IconExternalLink size={16} color={colors.background} />
-                                  <Text style={styles.errorButtonText}>Abrir</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.errorButton} onPress={handleDownload} activeOpacity={0.7}>
-                                  <IconDownload size={16} color={colors.background} />
-                                  <Text style={styles.errorButtonText}>Salvar</Text>
-                                </TouchableOpacity>
-                              </View>
-                            </View>
-                          )}
-                        </TouchableOpacity>
-                      </Animated.View>
-                    </PanGestureHandler>
-                  </Animated.View>
-                </PinchGestureHandler>
-              </>
-            ) : (
-              // Non-previewable files
-              <View style={styles.filePreviewContainer}>
-                <TouchableOpacity style={styles.filePreviewWrapper} onPress={showControls} activeOpacity={1}>
-                  {isPDF ? (
-                    <>
-                      <Text style={styles.filePreviewIcon}>📄</Text>
-                      <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
-                      <Text style={styles.filePreviewSubtitle}>Documento PDF • {formatFileSize(currentFile.size)}</Text>
-                      <View style={styles.filePreviewActions}>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                          <IconExternalLink size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Abrir</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
-                          <IconDownload size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Salvar</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </>
-                  ) : isEPS && !currentFile.thumbnailUrl ? (
-                    <>
-                      <IconVectorBezier size={64} color={colors.primary} />
-                      <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
-                      <Text style={styles.filePreviewSubtitle}>Arquivo EPS • {formatFileSize(currentFile.size)}</Text>
-                      <Text style={styles.filePreviewNote}>Visualização não disponível</Text>
-                      <View style={styles.filePreviewActions}>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                          <IconExternalLink size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Abrir</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
-                          <IconDownload size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Salvar</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </>
-                  ) : (
-                    <>
-                      <Text style={styles.filePreviewIcon}>📎</Text>
-                      <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
-                      <Text style={styles.filePreviewSubtitle}>{formatFileSize(currentFile.size)}</Text>
-                      <View style={styles.filePreviewActions}>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                          <IconExternalLink size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Abrir</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
-                          <IconDownload size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Salvar</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </>
+          <View style={[styles.container, { backgroundColor: 'rgba(0,0,0,0.95)' }]}>
+            {/* Header */}
+            <Animated.View style={[styles.header, animatedControlsStyle]}>
+              <View style={styles.headerLeft}>
+                <View style={styles.fileInfo}>
+                  <Text style={styles.fileName} numberOfLines={1}>
+                    {currentFile.filename}
+                  </Text>
+                  <Text style={styles.fileSize}>{formatFileSize(currentFile.size)}</Text>
+                  {isCurrentFilePreviewable && totalImages > 1 && showImageCounter && (
+                    <Badge style={styles.imageCounter} textStyle={styles.imageCounterText}>
+                      {`${currentImageIndex + 1} de ${totalImages}`}
+                    </Badge>
                   )}
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-
-          {/* Bottom Controls */}
-          {isCurrentFilePreviewable && (
-            <Animated.View style={StyleSheet.flatten([styles.bottomControls, animatedControlsStyle])}>
-              <View style={styles.controlsRow}>
-                {/* Action Controls */}
-                <View style={styles.actionControls}>
-                  <TouchableOpacity style={styles.controlButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                    <IconExternalLink size={20} color={colors.foreground} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.controlButton} onPress={handleDownload} activeOpacity={0.7}>
-                    <IconDownload size={20} color={colors.foreground} />
-                  </TouchableOpacity>
                 </View>
               </View>
+
+              <View style={styles.headerRight}>
+                <TouchableOpacity
+                  style={styles.headerButton}
+                  onPress={onClose}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <IconX size={24} color={colors.foreground} />
+                </TouchableOpacity>
+              </View>
             </Animated.View>
-          )}
 
-          {/* Thumbnail Strip */}
-          {isCurrentFilePreviewable && totalImages > 1 && showThumbnailStrip && (
-            <Animated.View style={StyleSheet.flatten([
-              styles.thumbnailStrip,
-              animatedControlsStyle,
-              { paddingBottom: safeBottomPadding }
-            ])}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbnailScrollContent}>
-                {previewableFiles.map(({ file, originalIndex }, index) => {
-                  const isActive = originalIndex === currentIndex;
+            {/* Image Container */}
+            <View style={styles.imageContainer}>
+              {isCurrentFilePreviewable ? (
+                <GestureDetector gesture={composedGestures}>
+                  <Animated.View style={styles.imageWrapper}>
+                    <TouchableOpacity activeOpacity={1} onPress={showControls} style={styles.imageWrapper}>
+                      <Animated.View style={animatedImageStyle}>
+                        <Image
+                          key={`image-${currentFile.id}-${currentIndex}`}
+                          source={{
+                            uri: (isEPS || isPDF) && currentFile.thumbnailUrl
+                              ? getFileThumbnailUrl(currentFile, "large")
+                              : getFileUrl(currentFile, baseUrl),
+                            cache: imageCache.current.has(currentFile.id) ? 'force-cache' : 'default',
+                          }}
+                          style={[
+                            styles.image,
+                            { transform: [{ rotate: `${rotation}deg` }] }
+                          ]}
+                          resizeMode="contain"
+                          progressiveRenderingEnabled={true}
+                          fadeDuration={200}
+                          onLoad={handleImageLoad}
+                          onError={handleImageError}
+                        />
+                      </Animated.View>
 
-                  return (
+                      {/* Loading Overlay */}
+                      {imageLoading && (
+                        <View style={styles.imageOverlay}>
+                          <ActivityIndicator size="large" color={colors.primary} />
+                          <Text style={styles.loadingText}>Carregando...</Text>
+                          {retryCount > 0 && (
+                            <Text style={styles.retryText}>Tentativa {retryCount}/3</Text>
+                          )}
+                        </View>
+                      )}
+
+                      {/* Error Overlay */}
+                      {imageError && retryCount >= 3 && (
+                        <View style={styles.imageOverlay}>
+                          <Text style={styles.errorIcon}>⚠️</Text>
+                          <Text style={styles.errorTitle}>Erro ao carregar</Text>
+                          <Text style={styles.errorText}>
+                            {!isConnected ? "Sem conexão com internet" : "Não foi possível carregar a imagem"}
+                          </Text>
+                          <View style={styles.errorButtonRow}>
+                            <TouchableOpacity
+                              style={styles.errorButton}
+                              onPress={handleOpenFile}
+                              activeOpacity={0.7}
+                            >
+                              <IconExternalLink size={16} color={colors.background} />
+                              <Text style={styles.errorButtonText}>Abrir</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={styles.errorButton}
+                              onPress={handleDownload}
+                              activeOpacity={0.7}
+                            >
+                              <IconDownload size={16} color={colors.background} />
+                              <Text style={styles.errorButtonText}>Salvar</Text>
+                            </TouchableOpacity>
+                            {isConnected && (
+                              <TouchableOpacity
+                                style={styles.errorButton}
+                                onPress={() => {
+                                  setRetryCount(0);
+                                  setImageLoading(true);
+                                  setImageError(false);
+                                }}
+                                activeOpacity={0.7}
+                              >
+                                <Text style={styles.errorButtonText}>Tentar Novamente</Text>
+                              </TouchableOpacity>
+                            )}
+                          </View>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </Animated.View>
+                </GestureDetector>
+              ) : (
+                // Non-previewable files
+                <View style={styles.filePreviewContainer}>
+                  <TouchableOpacity style={styles.filePreviewWrapper} onPress={showControls} activeOpacity={1}>
+                    {isPDF && !currentFile.thumbnailUrl ? (
+                      <>
+                        <Text style={styles.filePreviewIcon}>📄</Text>
+                        <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
+                        <Text style={styles.filePreviewSubtitle}>Documento PDF • {formatFileSize(currentFile.size)}</Text>
+                        <View style={styles.filePreviewActions}>
+                          <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
+                            <IconExternalLink size={18} color={colors.background} />
+                            <Text style={styles.fileActionButtonText}>Abrir</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
+                            <IconDownload size={18} color={colors.background} />
+                            <Text style={styles.fileActionButtonText}>Salvar</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    ) : isEPS && !currentFile.thumbnailUrl ? (
+                      <>
+                        <IconVectorBezier size={64} color={colors.primary} />
+                        <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
+                        <Text style={styles.filePreviewSubtitle}>Arquivo EPS • {formatFileSize(currentFile.size)}</Text>
+                        <Text style={styles.filePreviewNote}>Visualização não disponível</Text>
+                        <View style={styles.filePreviewActions}>
+                          <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
+                            <IconExternalLink size={18} color={colors.background} />
+                            <Text style={styles.fileActionButtonText}>Abrir</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
+                            <IconDownload size={18} color={colors.background} />
+                            <Text style={styles.fileActionButtonText}>Salvar</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    ) : (
+                      <>
+                        <Text style={styles.filePreviewIcon}>📎</Text>
+                        <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
+                        <Text style={styles.filePreviewSubtitle}>{formatFileSize(currentFile.size)}</Text>
+                        <View style={styles.filePreviewActions}>
+                          <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
+                            <IconExternalLink size={18} color={colors.background} />
+                            <Text style={styles.fileActionButtonText}>Abrir</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
+                            <IconDownload size={18} color={colors.background} />
+                            <Text style={styles.fileActionButtonText}>Salvar</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
+            {/* Bottom Controls */}
+            {isCurrentFilePreviewable && (
+              <Animated.View style={[styles.bottomControls, animatedControlsStyle]}>
+                <View style={styles.controlsRow}>
+                  <View style={styles.actionControls}>
                     <TouchableOpacity
-                      key={file.id}
-                      style={StyleSheet.flatten([styles.thumbnailButton, isActive && styles.thumbnailButtonActive])}
+                      style={styles.controlButton}
+                      onPress={handleOpenFile}
+                      activeOpacity={0.7}
+                    >
+                      <IconExternalLink size={20} color={colors.foreground} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.controlButton}
+                      onPress={handleDownload}
+                      activeOpacity={0.7}
+                    >
+                      <IconDownload size={20} color={colors.foreground} />
+                    </TouchableOpacity>
+
+                  </View>
+                </View>
+              </Animated.View>
+            )}
+
+            {/* Thumbnail Strip */}
+            {isCurrentFilePreviewable && totalImages > 1 && showThumbnailStrip && (
+              <Animated.View style={[styles.thumbnailStrip, animatedControlsStyle]}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.thumbnailScrollContent}
+                  removeClippedSubviews={true}
+                  maxToRenderPerBatch={5}
+                  windowSize={5}
+                >
+                  {previewableFiles.map(({ file, originalIndex }, index) => (
+                    <ThumbnailItem
+                      key={`thumbnail-${index}-${originalIndex}`}
+                      file={file}
+                      isActive={originalIndex === currentIndex}
                       onPress={() => {
                         setCurrentIndex(originalIndex);
                         showControls();
+                        playHapticFeedback('light');
                       }}
-                      activeOpacity={0.7}
-                    >
-                      <Image
-                        source={{
-                          uri: getFileThumbnailUrl(file, "small"),
-                        }}
-                        style={styles.thumbnailImage}
-                        resizeMode="cover"
-                        onError={(error) => {
-                          console.error('❌ [Thumbnail] Failed to load:', {
-                            filename: file.filename,
-                            url: getFileThumbnailUrl(file, "small"),
-                            error: error.nativeEvent
-                          });
-                        }}
-                        onLoad={() => {
-                          console.log('✅ [Thumbnail] Loaded successfully:', file.filename);
-                        }}
-                      />
-                      {isActive && <View style={styles.thumbnailActiveOverlay} />}
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </Animated.View>
-          )}
-        </View>
-      </View>
+                    />
+                  ))}
+                </ScrollView>
+              </Animated.View>
+            )}
+          </View>
+        </SafeAreaView>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   safeArea: {
     flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
   },
-  content: {
+  container: {
     flex: 1,
   },
   header: {
@@ -781,6 +983,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: "rgba(0, 0, 0, 0.8)",
+    zIndex: 10,
   },
   headerLeft: {
     flex: 1,
@@ -830,10 +1033,12 @@ const styles = StyleSheet.create({
   },
   imageWrapper: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   image: {
     width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT - 200, // Account for header and controls
+    height: SCREEN_HEIGHT - 200,
   },
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -842,22 +1047,13 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     gap: 16,
   },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-  },
   loadingText: {
     color: "white",
     fontSize: 16,
   },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-    paddingHorizontal: 32,
+  retryText: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: 12,
   },
   errorIcon: {
     fontSize: 64,
@@ -893,34 +1089,8 @@ const styles = StyleSheet.create({
   errorButtonRow: {
     flexDirection: "row",
     gap: 8,
-  },
-  navigationContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    pointerEvents: "box-none",
-  },
-  navButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-  },
-  navButtonLeft: {
-    // Position specific styles if needed
-  },
-  navButtonRight: {
-    // Position specific styles if needed
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   filePreviewContainer: {
     flex: 1,
@@ -984,24 +1154,12 @@ const styles = StyleSheet.create({
   controlsRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-  },
-  zoomControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 24,
-    padding: 4,
-  },
-  rotationControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    justifyContent: "center",
   },
   actionControls: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
   },
   controlButton: {
     width: 44,
@@ -1011,24 +1169,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  controlButtonDisabled: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-  },
-  resetButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginHorizontal: 8,
-  },
-  zoomText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "600",
-    minWidth: 40,
-    textAlign: "center",
-  },
   thumbnailStrip: {
     backgroundColor: "rgba(0, 0, 0, 0.8)",
     paddingVertical: 12,
+    paddingBottom: 24,
   },
   thumbnailScrollContent: {
     paddingHorizontal: 16,
@@ -1039,13 +1183,20 @@ const styles = StyleSheet.create({
   thumbnailButton: {
     width: 56,
     height: 56,
-    borderRadius: 8,
-    overflow: "hidden",
+    borderRadius: 12, // Small rounded corners
     borderWidth: 2,
     borderColor: "transparent",
+    marginHorizontal: 4,
   },
   thumbnailButtonActive: {
-    borderColor: "white",
+    borderColor: "#15803d", // Primary green color
+    borderWidth: 2,
+  },
+  thumbnailImageContainer: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 10, // Slightly smaller radius than button
+    overflow: "hidden",
   },
   thumbnailImage: {
     width: "100%",
@@ -1053,10 +1204,11 @@ const styles = StyleSheet.create({
   },
   thumbnailActiveOverlay: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    top: 2,
+    left: 2,
+    right: 2,
+    bottom: 2,
+    backgroundColor: "rgba(21, 128, 61, 0.1)", // Slight green tint
+    borderRadius: 10,
   },
 });

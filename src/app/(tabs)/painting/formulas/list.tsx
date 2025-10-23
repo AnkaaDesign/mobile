@@ -4,8 +4,6 @@ import { Stack, router } from "expo-router";
 import { SearchBar } from "@/components/ui/search-bar";
 import { IconButton } from "@/components/ui/icon-button";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { usePaintFormulasInfinite } from '../../../../hooks';
@@ -99,74 +97,50 @@ export default function FormulasListScreen() {
     return value.toFixed(decimals);
   };
 
-  // Render formula card
-  const renderFormulaCard = ({ item: formula }: { item: PaintFormula }) => {
+  // Render formula item (table row style)
+  const renderFormulaItem = ({ item: formula }: { item: PaintFormula }) => {
     const componentCount = formula._count?.components || 0;
     const hasValidDensity = formula.density && Number(formula.density) > 0;
     const hasValidPrice = formula.pricePerLiter && Number(formula.pricePerLiter) > 0;
 
     return (
       <TouchableOpacity
-        onPress={() => {
-          if (formula.paintId) {
-            router.push(`/painting/catalog/details/${formula.paintId}`);
-          }
-        }}
+        onPress={() => router.push(`/painting/formulas/details/${formula.id}`)}
+        style={[styles.listItem, { backgroundColor: colors.card }]}
       >
-        <Card style={styles.formulaCard}>
-          <View style={styles.cardContent}>
-            <View style={styles.formulaHeader}>
-              <IconFlask size={24} color={colors.primary} />
-              <View style={styles.formulaInfo}>
-                <ThemedText style={styles.formulaTitle} numberOfLines={1}>
-                  {formula.paint?.name || "Tinta"}
-                  {formula.description && ` - ${formula.description}`}
+        <View style={styles.listItemContent}>
+          {/* Formula info */}
+          <View style={styles.itemInfo}>
+            <ThemedText style={styles.itemTitle} numberOfLines={1}>
+              {formula.paint?.name || "Tinta"}
+              {formula.description && ` - ${formula.description}`}
+            </ThemedText>
+
+            <View style={styles.itemMetaRow}>
+              {formula.paint?.code && (
+                <ThemedText style={styles.itemSubtitle}>
+                  {formula.paint.code}
                 </ThemedText>
-
-                {formula.paint?.code && (
-                  <ThemedText style={styles.formulaCode}>
-                    {formula.paint.code}
-                  </ThemedText>
-                )}
-
-                <View style={styles.metaInfo}>
-                  {hasValidPrice && (
-                    <View style={styles.metaItem}>
-                      <IconCurrencyReal size={14} color={colors.muted} />
-                      <ThemedText style={styles.metaText}>
-                        {formatCurrency(Number(formula.pricePerLiter))}/L
-                      </ThemedText>
-                    </View>
-                  )}
-                  {hasValidDensity && (
-                    <View style={styles.metaItem}>
-                      <IconDroplet size={14} color={colors.muted} />
-                      <ThemedText style={styles.metaText}>
-                        {formatNumber(Number(formula.density), 2)} g/ml
-                      </ThemedText>
-                    </View>
-                  )}
-                </View>
-
-                <View style={styles.badges}>
-                  <Badge variant="secondary" style={styles.componentBadge}>
-                    {componentCount} {componentCount === 1 ? "componente" : "componentes"}
-                  </Badge>
-                  {formula.paint?.paintBrand && (
-                    <Badge variant="outline" style={styles.brandBadge}>
-                      {formula.paint.paintBrand.name}
-                    </Badge>
-                  )}
-                  {formula.paint?.paintType && (
-                    <Badge variant="outline" style={styles.typeBadge}>
-                      {formula.paint.paintType.name}
-                    </Badge>
-                  )}
-                </View>
-              </View>
+              )}
+              {hasValidPrice && (
+                <ThemedText style={styles.itemMeta}>
+                  {formatCurrency(Number(formula.pricePerLiter))}/L
+                </ThemedText>
+              )}
+              {hasValidDensity && (
+                <ThemedText style={styles.itemMeta}>
+                  {formatNumber(Number(formula.density), 2)} g/ml
+                </ThemedText>
+              )}
             </View>
+
+            <ThemedText style={styles.itemSubtitle}>
+              {componentCount} {componentCount === 1 ? "componente" : "componentes"}
+              {formula.paint?.paintBrand && ` • ${formula.paint.paintBrand.name}`}
+              {formula.paint?.paintType && ` • ${formula.paint.paintType.name}`}
+            </ThemedText>
           </View>
-        </Card>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -250,14 +224,7 @@ export default function FormulasListScreen() {
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Fórmulas de Tinta",
-          headerBackTitle: "Voltar",
-        }}
-      />
-      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
+    <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
         {/* Header */}
         <View style={StyleSheet.flatten([styles.header, { backgroundColor: colors.card }])}>
           <SearchBar
@@ -282,7 +249,7 @@ export default function FormulasListScreen() {
         ) : (
           <FlatList
             data={formulas}
-            renderItem={renderFormulaCard}
+            renderItem={renderFormulaItem}
             keyExtractor={(formula) => formula.id}
             contentContainerStyle={styles.listContent}
             refreshControl={
@@ -300,7 +267,6 @@ export default function FormulasListScreen() {
             onEndReachedThreshold={0.1}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <IconFlask size={48} color={colors.muted} />
                 <ThemedText style={styles.emptyText}>Nenhuma fórmula encontrada</ThemedText>
                 <ThemedText style={styles.emptySubtext}>
                   Fórmulas são composições de tintas com componentes específicos
@@ -320,7 +286,6 @@ export default function FormulasListScreen() {
         {/* Filter modal */}
         {renderFilterModal()}
       </View>
-    </>
   );
 }
 
@@ -344,62 +309,39 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   listContent: {
-    padding: spacing.md,
     paddingBottom: 100,
   },
-  formulaCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
+  listItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.1)",
   },
-  cardContent: {
-    gap: spacing.sm,
-  },
-  formulaHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  formulaInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  formulaTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    marginBottom: 4,
-  },
-  formulaCode: {
-    fontSize: fontSize.sm,
-    opacity: 0.6,
-    marginBottom: 8,
-  },
-  metaInfo: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.md,
-    marginBottom: 8,
-  },
-  metaItem: {
+  listItemContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
-  metaText: {
+  itemInfo: {
+    flex: 1,
+  },
+  itemTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.medium,
+    marginBottom: 4,
+  },
+  itemMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginBottom: 2,
+  },
+  itemSubtitle: {
+    fontSize: fontSize.sm,
+    opacity: 0.6,
+  },
+  itemMeta: {
     fontSize: fontSize.sm,
     opacity: 0.7,
-  },
-  badges: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  componentBadge: {
-    alignSelf: "flex-start",
-  },
-  brandBadge: {
-    alignSelf: "flex-start",
-  },
-  typeBadge: {
-    alignSelf: "flex-start",
   },
   centerContainer: {
     flex: 1,

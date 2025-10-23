@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, ScrollView, RefreshControl, Alert , StyleSheet} from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconButton, IconButtonWithLabel } from "@/components/ui/icon-button";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -17,7 +18,6 @@ import { TaskInfoCard } from "@/components/production/task/detail/task-info-card
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
 import { TaskServicesCard } from "@/components/production/task/detail/task-services-card";
 import { TaskCustomerCard } from "@/components/production/task/detail/task-customer-card";
-import { TaskAttachmentsCard } from "@/components/production/task/detail/task-attachments-card";
 import { TaskPaintCard } from "@/components/production/task/detail/task-paint-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge, getBadgeVariantFromStatus } from "@/components/ui/badge";
@@ -32,7 +32,6 @@ import {
   IconCalendarEvent,
   IconLicense,
   IconClipboardList,
-  IconRefresh,
   IconEdit,
   IconTrash,
   IconCut,
@@ -51,11 +50,71 @@ export default function ScheduleDetailsScreen() {
   const { user } = useAuth();
   const { update, delete: deleteAsync } = useTaskMutations();
   const [refreshing, setRefreshing] = useState(false);
-  const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("list");
-  const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("list");
+  const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("grid");
+  const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("grid");
+  const [cutsViewMode, setCutsViewMode] = useState<FileViewMode>("grid");
+
+  // Storage keys for view preferences
+  const STORAGE_KEYS = {
+    ARTWORKS_VIEW: "@task_detail_artworks_view",
+    DOCUMENTS_VIEW: "@task_detail_documents_view",
+    CUTS_VIEW: "@task_detail_cuts_view",
+  };
 
   // Get file viewer context
   const fileViewer = useFileViewer();
+
+  // Load saved view preferences on mount
+  useEffect(() => {
+    const loadViewPreferences = async () => {
+      try {
+        const [artworksView, documentsView, cutsView] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEYS.ARTWORKS_VIEW),
+          AsyncStorage.getItem(STORAGE_KEYS.DOCUMENTS_VIEW),
+          AsyncStorage.getItem(STORAGE_KEYS.CUTS_VIEW),
+        ]);
+
+        if (artworksView) setArtworksViewMode(artworksView as FileViewMode);
+        if (documentsView) setDocumentsViewMode(documentsView as FileViewMode);
+        if (cutsView) setCutsViewMode(cutsView as FileViewMode);
+      } catch (error) {
+        console.error("Error loading view preferences:", error);
+      }
+    };
+
+    loadViewPreferences();
+  }, []);
+
+  // Save view preference helper functions
+  const saveArtworksViewMode = async (mode: FileViewMode) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.ARTWORKS_VIEW, mode);
+      setArtworksViewMode(mode);
+    } catch (error) {
+      console.error("Error saving artworks view preference:", error);
+      setArtworksViewMode(mode); // Still update the UI even if save fails
+    }
+  };
+
+  const saveDocumentsViewMode = async (mode: FileViewMode) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.DOCUMENTS_VIEW, mode);
+      setDocumentsViewMode(mode);
+    } catch (error) {
+      console.error("Error saving documents view preference:", error);
+      setDocumentsViewMode(mode);
+    }
+  };
+
+  const saveCutsViewMode = async (mode: FileViewMode) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.CUTS_VIEW, mode);
+      setCutsViewMode(mode);
+    } catch (error) {
+      console.error("Error saving cuts view preference:", error);
+      setCutsViewMode(mode);
+    }
+  };
 
   // Check permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
@@ -102,7 +161,7 @@ export default function ScheduleDetailsScreen() {
   const task = response?.data;
 
   // Fetch cuts related to this task
-  const { data: cutsResponse } = useCutsByTask(
+  const { data: cutsResponse, refetch: refetchCuts } = useCutsByTask(
     {
       taskId: id as string,
       filters: {
@@ -122,7 +181,7 @@ export default function ScheduleDetailsScreen() {
   const cuts = cutsResponse?.data || [];
 
   // Fetch layouts for truck dimensions
-  const { data: layouts } = useLayoutsByTruck((task as any)?.truck?.id || '', {
+  const { data: layouts, refetch: refetchLayouts } = useLayoutsByTruck((task as any)?.truck?.id || '', {
     enabled: !!(task as any)?.truck?.id,
   });
 
@@ -143,9 +202,20 @@ export default function ScheduleDetailsScreen() {
   // Handle refresh
   const handleRefresh = async () => {
     setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
-    showToast({ message: "Detalhes atualizados", type: "success" });
+    try {
+      // Refetch all data in parallel
+      await Promise.all([
+        refetch(),
+        refetchCuts(),
+        refetchLayouts ? refetchLayouts() : Promise.resolve()
+      ]);
+      showToast({ message: "Detalhes atualizados", type: "success" });
+    } catch (error) {
+      showToast({ message: "Erro ao atualizar dados", type: "error" });
+      console.error("Error refreshing data:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   // Handle edit
@@ -212,6 +282,7 @@ export default function ScheduleDetailsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
+
           {/* Task Name Header Card */}
           <Card>
             <CardContent style={styles.headerContent}>
@@ -221,14 +292,6 @@ export default function ScheduleDetailsScreen() {
                 </ThemedText>
               </View>
               <View style={styles.headerActions}>
-                <TouchableOpacity
-                  onPress={handleRefresh}
-                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-                  activeOpacity={0.7}
-                  disabled={refreshing}
-                >
-                  <IconRefresh size={18} color={colors.foreground} />
-                </TouchableOpacity>
                 {canEdit && (
                   <TouchableOpacity
                     onPress={handleEdit}
@@ -271,8 +334,8 @@ export default function ScheduleDetailsScreen() {
               generalPainting={(task as any)?.generalPainting}
               logoPaints={(task as any)?.logoPaints}
               onPaintPress={(paintId) => {
-                // Navigate to paint details if needed
-                // router.push(`/painting/catalog/details/${paintId}`);
+                // Navigate to paint details
+                router.push(`/(tabs)/painting/catalog/details/${paintId}`);
               }}
             />
           )}
@@ -315,7 +378,7 @@ export default function ScheduleDetailsScreen() {
                       styles.viewModeButton,
                       { backgroundColor: artworksViewMode === "list" ? colors.primary : colors.muted }
                     ]}
-                    onPress={() => setArtworksViewMode("list")}
+                    onPress={() => saveArtworksViewMode("list")}
                     activeOpacity={0.7}
                   >
                     <IconList size={16} color={artworksViewMode === "list" ? colors.primaryForeground : colors.foreground} />
@@ -325,7 +388,7 @@ export default function ScheduleDetailsScreen() {
                       styles.viewModeButton,
                       { backgroundColor: artworksViewMode === "grid" ? colors.primary : colors.muted }
                     ]}
-                    onPress={() => setArtworksViewMode("grid")}
+                    onPress={() => saveArtworksViewMode("grid")}
                     activeOpacity={0.7}
                   >
                     <IconLayoutGrid size={16} color={artworksViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
@@ -335,13 +398,16 @@ export default function ScheduleDetailsScreen() {
               <View style={artworksViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
                 {(task as any).artworks.map((file: any, index: number) => (
                   <FileItem
-                    key={file.id}
+                    key={`artwork-${index}-${file.id}`}
                     file={file}
                     viewMode={artworksViewMode}
                     baseUrl={process.env.EXPO_PUBLIC_API_URL}
                     onPress={() => {
                       fileViewer.actions.viewFiles((task as any).artworks, index);
                     }}
+                    showFilename={true}
+                    showFileSize={true}
+                    showRelativeTime={false}
                   />
                 ))}
               </View>
@@ -365,7 +431,7 @@ export default function ScheduleDetailsScreen() {
                       styles.viewModeButton,
                       { backgroundColor: documentsViewMode === "list" ? colors.primary : colors.muted }
                     ]}
-                    onPress={() => setDocumentsViewMode("list")}
+                    onPress={() => saveDocumentsViewMode("list")}
                     activeOpacity={0.7}
                   >
                     <IconList size={16} color={documentsViewMode === "list" ? colors.primaryForeground : colors.foreground} />
@@ -375,7 +441,7 @@ export default function ScheduleDetailsScreen() {
                       styles.viewModeButton,
                       { backgroundColor: documentsViewMode === "grid" ? colors.primary : colors.muted }
                     ]}
-                    onPress={() => setDocumentsViewMode("grid")}
+                    onPress={() => saveDocumentsViewMode("grid")}
                     activeOpacity={0.7}
                   >
                     <IconLayoutGrid size={16} color={documentsViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
@@ -391,13 +457,19 @@ export default function ScheduleDetailsScreen() {
                     <ThemedText style={styles.documentSectionTitle}>Orçamentos</ThemedText>
                   </View>
                   <View style={documentsViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                    {(task as any).budgets.map((file: any) => (
+                    {(task as any).budgets.map((file: any, index: number) => (
                       <FileItem
-                        key={file.id}
+                        key={`budget-${index}-${file.id}`}
                         file={file}
                         viewMode={documentsViewMode}
                         baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                        onPress={() => fileViewer.actions.viewFile(file)}
+                        onPress={() => {
+                          const budgetFiles = (task as any).budgets;
+                          fileViewer.actions.viewFiles(budgetFiles, index);
+                        }}
+                        showFilename={true}
+                        showFileSize={true}
+                        showRelativeTime={false}
                       />
                     ))}
                   </View>
@@ -412,13 +484,19 @@ export default function ScheduleDetailsScreen() {
                     <ThemedText style={styles.documentSectionTitle}>Notas Fiscais</ThemedText>
                   </View>
                   <View style={documentsViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                    {(task as any).invoices.map((file: any) => (
+                    {(task as any).invoices.map((file: any, index: number) => (
                       <FileItem
-                        key={file.id}
+                        key={`invoice-${index}-${file.id}`}
                         file={file}
                         viewMode={documentsViewMode}
                         baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                        onPress={() => fileViewer.actions.viewFile(file)}
+                        onPress={() => {
+                          const invoiceFiles = (task as any).invoices;
+                          fileViewer.actions.viewFiles(invoiceFiles, index);
+                        }}
+                        showFilename={true}
+                        showFileSize={true}
+                        showRelativeTime={false}
                       />
                     ))}
                   </View>
@@ -433,13 +511,19 @@ export default function ScheduleDetailsScreen() {
                     <ThemedText style={styles.documentSectionTitle}>Recibos</ThemedText>
                   </View>
                   <View style={documentsViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                    {(task as any).receipts.map((file: any) => (
+                    {(task as any).receipts.map((file: any, index: number) => (
                       <FileItem
-                        key={file.id}
+                        key={`receipt-${index}-${file.id}`}
                         file={file}
                         viewMode={documentsViewMode}
                         baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                        onPress={() => fileViewer.actions.viewFile(file)}
+                        onPress={() => {
+                          const receiptFiles = (task as any).receipts;
+                          fileViewer.actions.viewFiles(receiptFiles, index);
+                        }}
+                        showFilename={true}
+                        showFileSize={true}
+                        showRelativeTime={false}
                       />
                     ))}
                   </View>
@@ -484,10 +568,6 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Attachments */}
-          {(task as any)?.artworks && (task as any).artworks.length > 0 && (
-            <TaskAttachmentsCard files={(task as any)?.artworks} />
-          )}
 
           {/* Financial summary - Hidden for Warehouse sector users */}
           {!isWarehouseSector && task.price && (
@@ -511,50 +591,72 @@ export default function ScheduleDetailsScreen() {
                   {cuts.length}
                 </Badge>
               </View>
-              {cuts.length > 1 && (
-                <TouchableOpacity
-                  style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
-                  onPress={async () => {
-                    for (const cut of cuts) {
-                      if (cut.file) {
-                        try {
-                          await fileViewer.actions.downloadFile(cut.file);
-                        } catch (error) {
-                          console.error("Error downloading file:", error);
+              <View style={styles.viewModeControls}>
+                {cuts.length > 1 && (
+                  <TouchableOpacity
+                    style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
+                    onPress={async () => {
+                      for (const cut of cuts) {
+                        if (cut.file) {
+                          try {
+                            await fileViewer.actions.downloadFile(cut.file);
+                          } catch (error) {
+                            console.error("Error downloading file:", error);
+                          }
                         }
                       }
-                    }
-                    showToast({ message: `${cuts.length} arquivos baixados`, type: "success" });
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <IconDownload size={16} color={colors.primaryForeground} />
-                  <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
-                    Baixar Todos
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cutsScroll}>
-                <View style={styles.cutsContainer}>
-                  {cuts.map((cut: any, index: number) =>
-                    cut.file ? (
-                      <FileItem
-                        key={cut.id}
-                        file={cut.file}
-                        viewMode="grid"
-                        baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                        onPress={() => {
-                          const cutFiles = cuts.map(c => c.file).filter(Boolean);
-                          fileViewer.actions.viewFiles(cutFiles, index);
-                        }}
-                        showFilename={true}
-                        showFileSize={true}
-                        showRelativeTime={false}
-                      />
-                    ) : null
-                  )}
+                      showToast({ message: `${cuts.length} arquivos baixados`, type: "success" });
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <IconDownload size={16} color={colors.primaryForeground} />
+                    <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
+                      Baixar Todos
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
+                <View style={styles.viewModeButtons}>
+                  <TouchableOpacity
+                    style={[
+                      styles.viewModeButton,
+                      { backgroundColor: cutsViewMode === "list" ? colors.primary : colors.muted }
+                    ]}
+                    onPress={() => saveCutsViewMode("list")}
+                    activeOpacity={0.7}
+                  >
+                    <IconList size={16} color={cutsViewMode === "list" ? colors.primaryForeground : colors.foreground} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.viewModeButton,
+                      { backgroundColor: cutsViewMode === "grid" ? colors.primary : colors.muted }
+                    ]}
+                    onPress={() => saveCutsViewMode("grid")}
+                    activeOpacity={0.7}
+                  >
+                    <IconLayoutGrid size={16} color={cutsViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
+                  </TouchableOpacity>
                 </View>
-              </ScrollView>
+              </View>
+              <View style={cutsViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+                {cuts.map((cut: any, index: number) =>
+                  cut.file ? (
+                    <FileItem
+                      key={`cut-${cut.id}-${index}`}
+                      file={cut.file}
+                      viewMode={cutsViewMode}
+                      baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                      onPress={() => {
+                        const cutFiles = cuts.map(c => c.file).filter(Boolean);
+                        fileViewer.actions.viewFiles(cutFiles, index);
+                      }}
+                      showFilename={true}
+                      showFileSize={true}
+                      showRelativeTime={false}
+                    />
+                  ) : null
+                )}
+              </View>
             </Card>
           )}
 
@@ -679,33 +781,6 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: fontSize["3xl"],
     fontWeight: fontWeight.bold,
-  },
-  cutsScroll: {
-    marginTop: spacing.sm,
-  },
-  cutsContainer: {
-    flexDirection: "row",
-    gap: spacing.md,
-    paddingRight: spacing.md,
-  },
-  cutItem: {
-    width: 120,
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  cutFileIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cutFileName: {
-    fontSize: fontSize.xs,
-    textAlign: "center",
   },
   downloadAllButton: {
     flexDirection: "row",
