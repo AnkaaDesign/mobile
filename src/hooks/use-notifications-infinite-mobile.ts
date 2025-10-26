@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useNotificationsInfinite } from './useNotification';
-import { NotificationGetManyFormData } from '../schemas';
+import { NotificationGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for notifications

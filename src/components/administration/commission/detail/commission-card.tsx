@@ -34,7 +34,7 @@ export function CommissionCard({ commission }: CommissionCardProps) {
           {/* Status */}
           <View style={StyleSheet.flatten([styles.infoItem, { backgroundColor: colors.muted + "30" }])}>
             <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Status</ThemedText>
-            <Badge variant={getBadgeVariant.COMMISSION_STATUS?.[commission.status] || "secondary"}>
+            <Badge variant={getBadgeVariant(commission.status, "COMMISSION_STATUS")}>
               <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.primaryForeground }])}>
                 {COMMISSION_STATUS_LABELS[commission.status]}
               </ThemedText>

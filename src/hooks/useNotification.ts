@@ -27,7 +27,7 @@ import {
   batchDeleteSeenNotifications,
   getSeenNotificationsByUser,
   getSeenNotificationsByNotification,
-} from '../api-client';
+} from '@/api-client';
 import type {
   // Notification types
   NotificationGetManyFormData,
@@ -45,7 +45,7 @@ import type {
   SeenNotificationBatchUpdateFormData,
   SeenNotificationBatchDeleteFormData,
   SeenNotificationInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   // Entity types
   Notification,
@@ -68,7 +68,7 @@ import type {
   SeenNotificationBatchCreateResponse,
   SeenNotificationBatchUpdateResponse,
   SeenNotificationBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { notificationKeys, seenNotificationKeys, userKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

@@ -4,7 +4,7 @@ import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreate
 import type { Task, TaskIncludes, TaskOrderBy } from "./task";
 import type { Garage, GarageIncludes, GarageOrderBy } from "./garage";
 import type { Layout, LayoutIncludes } from "./layout";
-import type { ORDER_BY_DIRECTION, TRUCK_MANUFACTURER } from '../constants';
+import type { ORDER_BY_DIRECTION, TRUCK_MANUFACTURER } from '@/constants';
 
 // =====================
 // Main Entity Interface
@@ -100,6 +100,6 @@ export interface TruckDeleteResponse extends BaseDeleteResponse {}
 // Batch Operation Responses
 // =====================
 
-export interface TruckBatchCreateResponse<T> extends BaseBatchResponse<Truck, T> {}
-export interface TruckBatchUpdateResponse<T> extends BaseBatchResponse<Truck, T & { id: string }> {}
+export interface TruckBatchCreateResponse<T = any> extends BaseBatchResponse<Truck, T> {}
+export interface TruckBatchUpdateResponse<T = any> extends BaseBatchResponse<Truck, T & { id: string }> {}
 export interface TruckBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}

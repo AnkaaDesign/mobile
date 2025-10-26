@@ -1,30 +1,26 @@
 import { AUDIT_ACTION, ENTITY_TYPE, CHANGE_ACTION, CHANGE_LOG_ACTION, CHANGE_LOG_ENTITY_TYPE, CHANGE_TRIGGERED_BY } from '../constants';
 
 import { AUDIT_ACTION_LABELS, ENTITY_TYPE_LABELS, CHANGE_ACTION_LABELS } from '../constants';
-import type { ChangeLogAction, ChangeLogEntityType, ChangeLogTriggeredByType } from "@prisma/client";
 
 /**
- * Map CHANGE_LOG_ACTION enum to Prisma ChangeLogAction enum
- * This is needed because TypeScript doesn't recognize that the string values are compatible
+ * Map CHANGE_LOG_ACTION enum to string
  */
-export function mapChangeLogActionToPrisma(action: CHANGE_LOG_ACTION | string): ChangeLogAction {
-  return action as ChangeLogAction;
+export function mapChangeLogActionToPrisma(action: CHANGE_LOG_ACTION | string): string {
+  return action as string;
 }
 
 /**
- * Map CHANGE_LOG_ENTITY_TYPE enum to Prisma ChangeLogEntityType enum
- * This is needed because TypeScript doesn't recognize that the string values are compatible
+ * Map CHANGE_LOG_ENTITY_TYPE enum to string
  */
-export function mapChangeLogEntityTypeToPrisma(entityType: CHANGE_LOG_ENTITY_TYPE | string): ChangeLogEntityType {
-  return entityType as ChangeLogEntityType;
+export function mapChangeLogEntityTypeToPrisma(entityType: CHANGE_LOG_ENTITY_TYPE | string): string {
+  return entityType as string;
 }
 
 /**
- * Map CHANGE_TRIGGERED_BY enum to Prisma ChangeTriggeredBy enum
- * This is needed because TypeScript doesn't recognize that the string values are compatible
+ * Map CHANGE_TRIGGERED_BY enum to string
  */
-export function mapChangeLogTriggeredByTypeToPrisma(triggeredBy: CHANGE_TRIGGERED_BY | string): ChangeLogTriggeredByType {
-  return triggeredBy as ChangeLogTriggeredByType;
+export function mapChangeLogTriggeredByTypeToPrisma(triggeredBy: CHANGE_TRIGGERED_BY | string): string {
+  return triggeredBy as string;
 }
 
 export function getAuditActionLabel(action: AUDIT_ACTION): string {

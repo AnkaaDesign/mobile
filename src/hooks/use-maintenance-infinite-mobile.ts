@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { maintenanceService } from '../api-client';
+import { maintenanceService } from '@/api-client';
 import { maintenanceKeys } from './queryKeys';
-import type { MaintenanceGetManyFormData } from '../schemas';
+import type { MaintenanceGetManyFormData } from '@/schemas';
 
 export const useMaintenanceInfiniteMobile = (filters?: Partial<MaintenanceGetManyFormData>) => {
   const pageSize = 40;

@@ -1,7 +1,7 @@
 // packages/interfaces/src/task.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION, TASK_STATUS, COMMISSION_STATUS } from '../constants';
+import type { ORDER_BY_DIRECTION, TASK_STATUS, COMMISSION_STATUS } from '@/constants';
 import type { Sector, SectorIncludes, SectorOrderBy } from "./sector";
 import type { Customer, CustomerIncludes, CustomerOrderBy } from "./customer";
 import type { File, FileIncludes } from "./file";
@@ -12,6 +12,9 @@ import type { ServiceOrder, ServiceOrderIncludes } from "./serviceOrder";
 import type { Airbrushing, AirbrushingIncludes } from "./airbrushing";
 import type { Cut, CutIncludes } from "./cut";
 import type { Truck, TruckIncludes } from "./truck";
+import type { Bonus, BonusIncludes } from "./bonus";
+import type { BonusDiscount, BonusDiscountIncludes } from "./bonusDiscount";
+import type { Budget, BudgetIncludes } from "./budget";
 
 // =====================
 // Task Interface
@@ -23,8 +26,10 @@ export interface Task extends BaseEntity {
   statusOrder: number;
   commission: COMMISSION_STATUS;
   serialNumber: string | null;
+  chassisNumber?: string | null;
   plate?: string | null;
   details: string | null;
+  description?: string | null; // Alias for details
   entryDate: Date | null;
   term: Date | null;
   startedAt: Date | null;
@@ -32,18 +37,25 @@ export interface Task extends BaseEntity {
   paintId: string | null;
   customerId: string | null;
   sectorId: string | null;
-  budgetId: string | null;
-  nfeId: string | null;
-  receiptId: string | null;
   createdById: string | null;
+  bonusDiscountId?: string | null;
   priority?: string | null;
+  price?: number | null; // Task price (calculated from budget items)
 
   // Relations
   sector?: Sector;
   customer?: Customer;
-  budget?: File;
-  nfe?: File;
-  receipt?: File;
+
+  // Budget items (price information stored here)
+  budget?: Budget[];
+
+  // Multiple file support (array relations matching database schema)
+  budgets?: File[];
+  invoices?: File[];
+  receipts?: File[];
+  reimbursements?: File[];
+  invoiceReimbursements?: File[];
+
   observation?: Observation;
   generalPainting?: Paint;
   createdBy?: User;
@@ -55,6 +67,10 @@ export interface Task extends BaseEntity {
   truck?: Truck;
   relatedTasks?: Task[];
   relatedTo?: Task[];
+
+  // Bonus relations
+  bonuses?: Bonus[];
+  bonusDiscount?: BonusDiscount;
 }
 
 // =====================
@@ -72,21 +88,20 @@ export interface TaskIncludes {
     | {
         include?: CustomerIncludes;
       };
+  // Budget items (for price calculation)
   budget?:
     | boolean
     | {
-        include?: FileIncludes;
+        include?: BudgetIncludes;
       };
-  nfe?:
-    | boolean
-    | {
-        include?: FileIncludes;
-      };
-  receipt?:
-    | boolean
-    | {
-        include?: FileIncludes;
-      };
+
+  // Multiple file includes (array relations)
+  budgets?: boolean;
+  invoices?: boolean;
+  receipts?: boolean;
+  reimbursements?: boolean;
+  invoiceReimbursements?: boolean;
+
   observation?:
     | boolean
     | {
@@ -142,6 +157,16 @@ export interface TaskIncludes {
     | {
         include?: TaskIncludes;
       };
+  bonuses?:
+    | boolean
+    | {
+        include?: BonusIncludes;
+      };
+  bonusDiscount?:
+    | boolean
+    | {
+        include?: BonusDiscountIncludes;
+      };
 }
 
 // =====================
@@ -155,6 +180,7 @@ export interface TaskOrderBy {
   statusOrder?: ORDER_BY_DIRECTION;
   commission?: ORDER_BY_DIRECTION;
   serialNumber?: ORDER_BY_DIRECTION;
+  chassisNumber?: ORDER_BY_DIRECTION;
   plate?: ORDER_BY_DIRECTION;
   details?: ORDER_BY_DIRECTION;
   entryDate?: ORDER_BY_DIRECTION;

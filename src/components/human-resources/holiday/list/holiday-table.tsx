@@ -10,11 +10,8 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import { HOLIDAY_TYPE, HOLIDAY_TYPE_LABELS } from '../../../../constants';
 import { format, isSameYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import type { SortConfig } from "@/lib/sort-utils";
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface HolidayTableProps {
   holidays: Holiday[];

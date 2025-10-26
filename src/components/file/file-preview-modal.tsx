@@ -14,7 +14,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { PanGestureHandler, PinchGestureHandler, State } from "react-native-gesture-handler";
+import { PanGestureHandler, PinchGestureHandler, State, PanGestureHandlerGestureEvent, PinchGestureHandlerGestureEvent } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS, interpolate, Extrapolate } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import {
@@ -265,7 +265,7 @@ export function FilePreviewModal({
     try {
       showControls();
 
-      const fileUrl = getFileUrl(currentFile, baseUrl);
+      const fileUrl = getFileUrl(currentFile);
       const fileUri = FileSystem.documentDirectory + currentFile.filename;
 
       Alert.alert("Baixando arquivo...", "Aguarde enquanto o arquivo é baixado.");
@@ -295,7 +295,7 @@ export function FilePreviewModal({
         return;
       }
 
-      const fileUrl = getFileUrl(currentFile, baseUrl);
+      const fileUrl = getFileUrl(currentFile);
       const fileUri = FileSystem.cacheDirectory + currentFile.filename;
 
       // Download to cache
@@ -321,7 +321,7 @@ export function FilePreviewModal({
   }, [handleShare]);
 
   // Pinch gesture handler - improved for smoother scaling
-  const pinchGestureHandler = (event: any) => {
+  const pinchGestureHandler = (event: PinchGestureHandlerGestureEvent) => {
     'worklet';
     if (event.nativeEvent.state === State.BEGAN) {
       focalX.value = event.nativeEvent.focalX;
@@ -358,7 +358,7 @@ export function FilePreviewModal({
   };
 
   // Pan gesture handler for zoomed images - improved for smoothness
-  const panGestureHandler = (event: any) => {
+  const panGestureHandler = (event: PanGestureHandlerGestureEvent) => {
     'worklet';
     if (event.nativeEvent.state === State.BEGAN) {
       // Store current position as base for this gesture
@@ -448,7 +448,7 @@ export function FilePreviewModal({
     const apiUrl = baseUrl || (global as any).__ANKAA_API_URL__ || "http://localhost:3030";
 
     // Check if file has a URL property that might contain localhost
-    if (file.url && file.url.startsWith('http')) {
+    if (file.url && typeof file.url === 'string' && file.url.startsWith('http')) {
       const urlObj = new URL(file.url);
       const correctedUrl = `${apiUrl}${urlObj.pathname}${urlObj.search}`;
       console.log('🔍 [FilePreviewModal] Corrected file URL:', {

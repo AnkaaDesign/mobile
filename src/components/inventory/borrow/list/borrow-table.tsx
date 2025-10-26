@@ -14,6 +14,7 @@ import { getDefaultVisibleColumns } from "./borrow-column-visibility-manager";
 import { BORROW_STATUS, BORROW_STATUS_LABELS } from '../../../../constants';
 import { formatDate, formatRelativeTime } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -24,10 +25,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface BorrowTableProps {
   borrows: Borrow[];

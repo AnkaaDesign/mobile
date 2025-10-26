@@ -18,6 +18,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
+      "@types": ["./src/types"],
+      "@constants": ["./src/constants"],
       "@ankaa/utils/*": ["../../packages/utils/src/*"],
       "@ankaa/types/*": ["../../packages/types/src/*"],
       "@ankaa/schemas/*": ["../../packages/schemas/src/*"],
@@ -26,8 +28,7 @@
       "@ankaa/api-client": ["../../packages/api-client/src"],
       "@ankaa/hooks/*": ["../../packages/hooks/src/*"]
     },
-    "typeRoots": ["./src/types", "../../node_modules/@types"],
-    "types": ["react", "lodash", "qs"]
+    "typeRoots": ["./types", "./node_modules/@types"]
   },
   "include": [
     "src/**/*",

@@ -64,16 +64,20 @@ export class SupplierService {
   // Mutation Operations
   // =====================
 
-  async createSupplier(data: SupplierCreateFormData, query?: SupplierQueryFormData): Promise<SupplierCreateResponse> {
+  async createSupplier(data: SupplierCreateFormData | FormData, query?: SupplierQueryFormData): Promise<SupplierCreateResponse> {
+    const headers = data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {};
     const response = await apiClient.post<SupplierCreateResponse>(this.basePath, data, {
       params: query,
+      headers,
     });
     return response.data;
   }
 
-  async updateSupplier(id: string, data: SupplierUpdateFormData, query?: SupplierQueryFormData): Promise<SupplierUpdateResponse> {
+  async updateSupplier(id: string, data: SupplierUpdateFormData | FormData, query?: SupplierQueryFormData): Promise<SupplierUpdateResponse> {
+    const headers = data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {};
     const response = await apiClient.put<SupplierUpdateResponse>(`${this.basePath}/${id}`, data, {
       params: query,
+      headers,
     });
     return response.data;
   }
@@ -126,8 +130,8 @@ export const getAllSuppliers = (params?: Omit<SupplierGetManyFormData, "page" | 
 export const getSupplierById = (id: string, params?: Omit<SupplierGetByIdFormData, "id">) => supplierService.getSupplierById(id, params);
 
 // Mutation Operations
-export const createSupplier = (data: SupplierCreateFormData, query?: SupplierQueryFormData) => supplierService.createSupplier(data, query);
-export const updateSupplier = (id: string, data: SupplierUpdateFormData, query?: SupplierQueryFormData) => supplierService.updateSupplier(id, data, query);
+export const createSupplier = (data: SupplierCreateFormData | FormData, query?: SupplierQueryFormData) => supplierService.createSupplier(data, query);
+export const updateSupplier = (id: string, data: SupplierUpdateFormData | FormData, query?: SupplierQueryFormData) => supplierService.updateSupplier(id, data, query);
 export const deleteSupplier = (id: string) => supplierService.deleteSupplier(id);
 
 // Batch Operations

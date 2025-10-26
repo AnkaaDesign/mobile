@@ -1,7 +1,7 @@
 // packages/hooks/src/payrollDetails.ts
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { bonusService, payrollService } from '../api-client';
+import { bonusService, payrollService } from '@/api-client';
 import { bonusKeys } from "./queryKeys";
 
 // =====================================================

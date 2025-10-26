@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { SwipeableRow } from "@/components/ui/swipeable-row";
+import { ReanimatedSwipeableRow, type SwipeAction } from "@/components/ui/reanimated-swipeable-row";
 
 interface OrderScheduleTableRowSwipeProps {
   scheduleId: string;
@@ -25,52 +25,56 @@ export function OrderScheduleTableRowSwipe({
 }: OrderScheduleTableRowSwipeProps) {
   const { colors } = useTheme();
 
-  const renderRightActions = () => (
-    <View style={styles.actionsContainer}>
-      {onEdit && (
-        <Pressable
-          style={[styles.action, { backgroundColor: colors.primary }]}
-          onPress={onEdit}
-        >
-          <IconEdit size={20} color="white" />
-        </Pressable>
-      )}
-      {onDelete && (
-        <Pressable
-          style={[styles.action, { backgroundColor: colors.destructive }]}
-          onPress={onDelete}
-        >
-          <IconTrash size={20} color="white" />
-        </Pressable>
-      )}
-    </View>
-  );
+  const rightActions: SwipeAction[] = [];
+
+  if (onEdit) {
+    rightActions.push({
+      key: "edit",
+      label: "Editar",
+      icon: <IconEdit size={20} color="white" />,
+      backgroundColor: colors.primary,
+      onPress: onEdit,
+      closeOnPress: true,
+    });
+  }
+
+  if (onDelete) {
+    rightActions.push({
+      key: "delete",
+      label: "Excluir",
+      icon: <IconTrash size={20} color="white" />,
+      backgroundColor: colors.destructive,
+      onPress: onDelete,
+      closeOnPress: true,
+    });
+  }
+
+  if (rightActions.length === 0) {
+    return (
+      <Pressable onPress={onPress} style={styles.content}>
+        {children}
+      </Pressable>
+    );
+  }
 
   return (
-    <SwipeableRow
-      rightActions={renderRightActions()}
-      isOpen={isOpen}
-      onOpenChange={onOpenChange}
+    <ReanimatedSwipeableRow
+      rightActions={rightActions}
+      enabled={true}
+      containerStyle={styles.container}
     >
       <Pressable onPress={onPress} style={styles.content}>
         {children}
       </Pressable>
-    </SwipeableRow>
+    </ReanimatedSwipeableRow>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    overflow: "hidden",
+  },
   content: {
     flex: 1,
-  },
-  actionsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  action: {
-    width: 80,
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

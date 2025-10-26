@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTrucksInfinite } from './useTruck';
-import { TruckGetManyFormData } from '../schemas';
+import { TruckGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for trucks

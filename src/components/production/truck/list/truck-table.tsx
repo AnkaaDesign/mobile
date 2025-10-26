@@ -13,6 +13,7 @@ import { TruckTableRowSwipe } from "./truck-table-row-swipe";
 import { formatDateTime } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { TRUCK_MANUFACTURER_LABELS } from '../../../../constants';
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -23,10 +24,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface TruckTableProps {
   trucks: Truck[];

@@ -18,7 +18,7 @@ interface TimelineCardProps {
 interface TimelineEvent {
   status: VACATION_STATUS;
   label: string;
-  icon: any;
+  icon: React.ComponentType<{ size: number; color: string }>;
   color: string;
   date?: Date;
   isActive: boolean;
@@ -46,29 +46,29 @@ export function TimelineCard({ vacation }: TimelineCardProps) {
     // Build timeline
     statusFlow.forEach((status, index) => {
       let date: Date | undefined = undefined;
-      let icon = IconClock;
-      let color = extendedColors.gray[500];
+      let icon: React.ComponentType<{ size: number; color: string }> = IconClock;
+      let color: string = extendedColors.gray[500];
 
       switch (status) {
         case VACATION_STATUS.PENDING:
           date = vacation.createdAt;
           icon = IconClock;
-          color = extendedColors.yellow[500];
+          color = extendedColors.yellow[500] as string;
           break;
         case VACATION_STATUS.APPROVED:
           // Date would come from approval metadata if available
           icon = IconCircleCheck;
-          color = extendedColors.green[500];
+          color = extendedColors.green[500] as string;
           break;
         case VACATION_STATUS.IN_PROGRESS:
           date = vacation.startAt;
           icon = IconPlayerPause;
-          color = extendedColors.blue[500];
+          color = extendedColors.blue[500] as string;
           break;
         case VACATION_STATUS.COMPLETED:
           date = vacation.endAt;
           icon = IconCircleCheck;
-          color = extendedColors.green[600];
+          color = extendedColors.green[600] as string;
           break;
       }
 
@@ -89,7 +89,7 @@ export function TimelineCard({ vacation }: TimelineCardProps) {
         status: VACATION_STATUS.REJECTED,
         label: VACATION_STATUS_LABELS[VACATION_STATUS.REJECTED],
         icon: IconX,
-        color: extendedColors.red[500],
+        color: extendedColors.red[500] as string,
         date: vacation.updatedAt,
         isActive: true,
         isPast: false,
@@ -101,7 +101,7 @@ export function TimelineCard({ vacation }: TimelineCardProps) {
         status: VACATION_STATUS.CANCELLED,
         label: VACATION_STATUS_LABELS[VACATION_STATUS.CANCELLED],
         icon: IconX,
-        color: extendedColors.red[500],
+        color: extendedColors.red[500] as string,
         date: vacation.updatedAt,
         isActive: true,
         isPast: false,

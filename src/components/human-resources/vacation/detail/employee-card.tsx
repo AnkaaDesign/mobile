@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { IconUser, IconBriefcase, IconBuilding, IconMail, IconPhone } from "@tabler/icons-react-native";
 import type { Vacation } from '../../../../types';
 import { useTheme } from "@/lib/theme";
@@ -26,7 +26,7 @@ export function EmployeeCard({ vacation }: EmployeeCardProps) {
 
   const handleNavigateToUser = () => {
     if (user?.id) {
-      router.push(routeToMobilePath(routes.humanResources.users.details(user.id)) as any);
+      router.push(routeToMobilePath(routes.humanResources.employees.details(user.id)) as any);
     }
   };
 
@@ -47,11 +47,12 @@ export function EmployeeCard({ vacation }: EmployeeCardProps) {
           <View style={styles.employeeContent}>
             {/* Avatar and Name */}
             <View style={styles.employeeHeader}>
-              <Avatar
-                size={64}
-                name={user.name}
-                imageUrl={user.photo || undefined}
-              />
+              <Avatar size="lg">
+                {user.profilePictureUrl ? (
+                  <AvatarImage source={{ uri: user.profilePictureUrl }} />
+                ) : null}
+                <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
               <View style={styles.employeeInfo}>
                 <ThemedText style={StyleSheet.flatten([styles.employeeName, { color: colors.foreground }])}>
                   {user.name}

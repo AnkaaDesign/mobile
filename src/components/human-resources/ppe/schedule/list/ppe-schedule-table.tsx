@@ -16,11 +16,8 @@ import { routes } from '../../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import type { PpeDeliverySchedule } from '../../../../../types';
 import { differenceInDays } from "date-fns";
+import type { SortConfig } from "@/lib/sort-utils";
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface PpeScheduleTableProps {
   schedules: PpeDeliverySchedule[];
@@ -103,13 +100,13 @@ export const PpeScheduleTable = React.memo<PpeScheduleTableProps>(({
       const statusInfo = getStatusInfo(item);
 
       // Extract user or category for display
-      const assignmentDisplay = item.user?.name || item.category?.name || ASSIGNMENT_TYPE_LABELS[item.assignmentType];
+      const assignmentDisplay = item.user?.name || item.category?.name || ASSIGNMENT_TYPE_LABELS[item.assignmentType as keyof typeof ASSIGNMENT_TYPE_LABELS];
 
       // Get PPE items summary
       const ppeItemsCount = item.ppeItems?.length || 0;
       const ppeItemsSummary = item.ppeItems
         ?.slice(0, 2)
-        .map(ppeItem => PPE_TYPE_LABELS[ppeItem.ppeType])
+        .map(ppeItem => PPE_TYPE_LABELS[ppeItem.ppeType as keyof typeof PPE_TYPE_LABELS])
         .join(", ") || "N/A";
 
       return (
@@ -162,7 +159,7 @@ export const PpeScheduleTable = React.memo<PpeScheduleTableProps>(({
           <View style={styles.infoRow}>
             <Icon name="calendar-repeat" size="sm" color={colors.mutedForeground} />
             <ThemedText style={styles.infoText}>
-              {SCHEDULE_FREQUENCY_LABELS[item.frequency]}
+              {SCHEDULE_FREQUENCY_LABELS[item.frequency as keyof typeof SCHEDULE_FREQUENCY_LABELS]}
               {item.frequencyCount > 1 && ` (${item.frequencyCount}x)`}
             </ThemedText>
           </View>

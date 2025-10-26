@@ -159,7 +159,7 @@ export function EmployeeFilterModal({ visible, onClose, onApply, currentFilters 
                   value: status,
                 }))}
                 selectedValues={filters.statuses || []}
-                onChange={(values) => handleArrayChange("statuses", values)}
+                onValueChange={(values) => handleArrayChange("statuses", values)}
                 placeholder="Selecione status..."
                 emptyText="Nenhum status disponível"
               />
@@ -178,7 +178,7 @@ export function EmployeeFilterModal({ visible, onClose, onApply, currentFilters 
                   value: position.id,
                 }))}
                 selectedValues={filters.positionIds || []}
-                onChange={(values) => handleArrayChange("positionIds", values)}
+                onValueChange={(values) => handleArrayChange("positionIds", values)}
                 placeholder="Selecione cargos..."
                 emptyText="Nenhum cargo disponível"
               />
@@ -192,7 +192,7 @@ export function EmployeeFilterModal({ visible, onClose, onApply, currentFilters 
                   value: sector.id,
                 }))}
                 selectedValues={filters.sectorIds || []}
-                onChange={(values) => handleArrayChange("sectorIds", values)}
+                onValueChange={(values) => handleArrayChange("sectorIds", values)}
                 placeholder="Selecione setores..."
                 emptyText="Nenhum setor disponível"
               />

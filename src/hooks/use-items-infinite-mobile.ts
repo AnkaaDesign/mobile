@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useItemsInfinite } from './useItem';
-import { ItemGetManyFormData } from '../schemas';
+import { ItemGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for items

@@ -1,7 +1,7 @@
 // packages/hooks/src/paint/usePaint.ts
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createPaint, deletePaint, getPaintById, getPaints, updatePaint, batchCreatePaints, batchUpdatePaints, batchDeletePaints, mergePaints } from '../api-client';
+import { createPaint, deletePaint, getPaintById, getPaints, updatePaint, batchCreatePaints, batchUpdatePaints, batchDeletePaints, mergePaints } from '@/api-client';
 import type {
   PaintCreateFormData,
   PaintUpdateFormData,
@@ -10,7 +10,7 @@ import type {
   PaintBatchUpdateFormData,
   PaintBatchDeleteFormData,
   PaintMergeFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   PaintGetManyResponse,
   PaintGetUniqueResponse,
@@ -20,7 +20,7 @@ import type {
   PaintBatchCreateResponse,
   PaintBatchUpdateResponse,
   PaintBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { paintKeys, paintFormulaKeys, paintProductionKeys, taskKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

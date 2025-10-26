@@ -1,6 +1,6 @@
 // packages/hooks/src/useHoliday.ts
 
-import { getHolidays, getHolidayById, createHoliday, updateHoliday, deleteHoliday, batchCreateHolidays, batchUpdateHolidays, batchDeleteHolidays } from '../api-client';
+import { getHolidays, getHolidayById, createHoliday, updateHoliday, deleteHoliday, batchCreateHolidays, batchUpdateHolidays, batchDeleteHolidays } from '@/api-client';
 import type {
   HolidayGetManyFormData,
   HolidayCreateFormData,
@@ -8,7 +8,7 @@ import type {
   HolidayBatchCreateFormData,
   HolidayBatchUpdateFormData,
   HolidayBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   HolidayGetManyResponse,
   HolidayGetUniqueResponse,
@@ -18,7 +18,7 @@ import type {
   HolidayBatchCreateResponse,
   HolidayBatchUpdateResponse,
   HolidayBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { holidayKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

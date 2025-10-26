@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { itemService } from '../api-client';
+import { itemService } from '@/api-client';
 import { itemKeys } from './queryKeys';
-import type { ItemGetManyFormData } from '../schemas';
+import type { ItemGetManyFormData } from '@/schemas';
 
 export const usePpeInfiniteMobile = (filters?: Partial<ItemGetManyFormData>) => {
   const pageSize = 40;
@@ -48,6 +48,7 @@ export const usePpeInfiniteMobile = (filters?: Partial<ItemGetManyFormData>) => 
 
   const allItems = query.data?.pages.flatMap((page) => page.data || []) ?? [];
   const totalItemsLoaded = allItems.length;
+  const totalCount = query.data?.pages[0]?.meta?.totalRecords;
 
   return {
     items: allItems,
@@ -59,6 +60,7 @@ export const usePpeInfiniteMobile = (filters?: Partial<ItemGetManyFormData>) => 
     canLoadMore: query.hasNextPage,
     isFetchingNextPage: query.isFetchingNextPage,
     totalItemsLoaded,
+    totalCount,
     refresh: async () => {
       await query.refetch();
     },

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useOrdersInfinite } from './useOrder';
-import { OrderGetManyFormData } from '../schemas';
+import { OrderGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for orders

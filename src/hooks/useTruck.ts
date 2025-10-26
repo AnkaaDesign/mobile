@@ -1,7 +1,7 @@
 // packages/hooks/src/useTruck.ts
 
-import { getTrucks, getTruckById, createTruck, updateTruck, deleteTruck, batchCreateTrucks, batchUpdateTrucks, batchDeleteTrucks } from '../api-client';
-import type { TruckGetManyFormData, TruckCreateFormData, TruckUpdateFormData, TruckBatchCreateFormData, TruckBatchUpdateFormData, TruckBatchDeleteFormData } from '../schemas';
+import { getTrucks, getTruckById, createTruck, updateTruck, deleteTruck, batchCreateTrucks, batchUpdateTrucks, batchDeleteTrucks } from '@/api-client';
+import type { TruckGetManyFormData, TruckCreateFormData, TruckUpdateFormData, TruckBatchCreateFormData, TruckBatchUpdateFormData, TruckBatchDeleteFormData } from '@/schemas';
 import type {
   TruckGetManyResponse,
   TruckGetUniqueResponse,
@@ -11,7 +11,7 @@ import type {
   TruckBatchCreateResponse,
   TruckBatchUpdateResponse,
   TruckBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { truckKeys, taskKeys, maintenanceKeys, garageKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

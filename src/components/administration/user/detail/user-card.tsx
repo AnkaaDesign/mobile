@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { User } from '../../../../types';
+import type { User } from '../../../../types';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
@@ -25,10 +25,10 @@ export function UserCard({ user }: UserCardProps) {
       <CardContent style={styles.content}>
         <View style={styles.headerSection}>
           <Avatar
-            size="large"
+            size="lg"
             label={user.name}
-            uri={user.avatarUrl}
-            style={[styles.avatar, { backgroundColor: colors.primary }]}
+            uri={user.avatar || undefined}
+            style={styles.avatar}
           />
           <View style={styles.headerInfo}>
             <ThemedText style={[styles.userName, { color: colors.foreground }]}>

@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import type { CutGetManyFormData } from "../../../../schemas";
 import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from "../../../../constants";
 import { CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from "../../../../constants";
-import { BaseFilterDrawer, FilterSection, SelectFilter, DateRangeFilter } from "@/components/common/filters";
+import { BaseFilterDrawer, FilterSection, SelectFilter, DateRangeFilter, type DateRange } from "@/components/common/filters";
 import { useTheme } from "@/lib/theme";
 
 interface CuttingPlanFilterDrawerProps {
@@ -109,13 +109,13 @@ export function CuttingPlanFilterDrawer({
   );
 
   const handleStartedDateChange = useCallback(
-    (start: Date | undefined, end: Date | undefined) => {
+    (range: DateRange | undefined) => {
       const newFilters = { ...filters };
       if (!newFilters.where) newFilters.where = {};
-      if (start || end) {
+      if (range?.from || range?.to) {
         newFilters.where.startedAt = {
-          ...(start && { gte: start }),
-          ...(end && { lte: end }),
+          ...(range.from && { gte: range.from }),
+          ...(range.to && { lte: range.to }),
         };
       } else {
         delete newFilters.where.startedAt;
@@ -126,13 +126,13 @@ export function CuttingPlanFilterDrawer({
   );
 
   const handleCompletedDateChange = useCallback(
-    (start: Date | undefined, end: Date | undefined) => {
+    (range: DateRange | undefined) => {
       const newFilters = { ...filters };
       if (!newFilters.where) newFilters.where = {};
-      if (start || end) {
+      if (range?.from || range?.to) {
         newFilters.where.completedAt = {
-          ...(start && { gte: start }),
-          ...(end && { lte: end }),
+          ...(range.from && { gte: range.from }),
+          ...(range.to && { lte: range.to }),
         };
       } else {
         delete newFilters.where.completedAt;
@@ -184,14 +184,12 @@ export function CuttingPlanFilterDrawer({
           <>
             <DateRangeFilter
               label="Data de Início"
-              startDate={startedAfter}
-              endDate={startedBefore}
+              value={{ from: startedAfter, to: startedBefore }}
               onChange={handleStartedDateChange}
             />
             <DateRangeFilter
               label="Data de Conclusão"
-              startDate={completedAfter}
-              endDate={completedBefore}
+              value={{ from: completedAfter, to: completedBefore }}
               onChange={handleCompletedDateChange}
             />
           </>

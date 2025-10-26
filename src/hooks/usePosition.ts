@@ -1,6 +1,6 @@
 // packages/hooks/src/usePosition.ts
 
-import { getPositions, getPositionById, createPosition, updatePosition, deletePosition, batchCreatePositions, batchUpdatePositions, batchDeletePositions } from '../api-client';
+import { getPositions, getPositionById, createPosition, updatePosition, deletePosition, batchCreatePositions, batchUpdatePositions, batchDeletePositions } from '@/api-client';
 import type {
   PositionGetManyFormData,
   PositionCreateFormData,
@@ -9,7 +9,7 @@ import type {
   PositionBatchUpdateFormData,
   PositionBatchDeleteFormData,
   PositionInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   PositionGetManyResponse,
   PositionGetUniqueResponse,
@@ -19,7 +19,7 @@ import type {
   PositionBatchCreateResponse,
   PositionBatchUpdateResponse,
   PositionBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { positionKeys, userKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

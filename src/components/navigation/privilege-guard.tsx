@@ -11,6 +11,7 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { IconShield } from "@tabler/icons-react-native";
+import type { User } from '@/types/user';
 
 interface PrivilegeGuardProps {
   children: ReactNode;
@@ -75,7 +76,7 @@ export function PrivilegeGuard({
  * Check if user has required privilege(s)
  * Supports both single privileges and arrays of privileges
  */
-function checkUserPrivileges(user: any, requiredPrivilege: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[], requireAll: boolean = false): boolean {
+function checkUserPrivileges(user: User | null, requiredPrivilege: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[], requireAll: boolean = false): boolean {
   if (!user || !requiredPrivilege) return false;
 
   // Handle array of privileges
@@ -109,7 +110,7 @@ function getRequiredPrivilegeLabels(requiredPrivilege: SECTOR_PRIVILEGES | SECTO
  * Helper function to get user privilege labels
  * Handles user's sector privileges properly using existing utilities
  */
-function getUserPrivilegeLabels(user: any): string {
+function getUserPrivilegeLabels(user: User | null): string {
   if (!user?.sector?.privileges) {
     return "Nenhuma";
   }
@@ -232,15 +233,15 @@ export function usePrivilegeCheck() {
   const { user } = useAuth();
 
   const hasPrivilegeAccess = (privilege: SECTOR_PRIVILEGES) => {
-    return hasPrivilege(user as any, privilege);
+    return hasPrivilege(user, privilege);
   };
 
   const hasAnyPrivilegeAccess = (privileges: SECTOR_PRIVILEGES[]) => {
-    return hasAnyPrivilege(user as any, privileges);
+    return hasAnyPrivilege(user, privileges);
   };
 
   const hasAllPrivilegeAccess = (privileges: SECTOR_PRIVILEGES[]) => {
-    return hasAllPrivileges(user as any, privileges);
+    return hasAllPrivileges(user, privileges);
   };
 
   const canAccess = (privilege: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[], requireAll: boolean = false) => {
@@ -253,7 +254,7 @@ export function usePrivilegeCheck() {
     hasAnyPrivilegeAccess,
     hasAllPrivilegeAccess,
     canAccess,
-    isAdmin: user ? hasPrivilege(user as any, SECTOR_PRIVILEGES.ADMIN) : false,
-    isLeader: user ? hasPrivilege(user as any, SECTOR_PRIVILEGES.LEADER) : false,
+    isAdmin: user ? hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) : false,
+    isLeader: user ? hasPrivilege(user, SECTOR_PRIVILEGES.LEADER) : false,
   };
 }

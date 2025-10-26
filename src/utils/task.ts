@@ -3,7 +3,7 @@ import { TASK_OBSERVATION_TYPE_LABELS, TASK_STATUS_LABELS } from '../constants';
 import type { Task } from '../types';
 import { dateUtils } from "./date";
 import { numberUtils } from "./number";
-import type { TaskStatus } from "@prisma/client";
+
 
 // Tailwind color equivalents for React Native
 const TASK_ROW_COLORS = {
@@ -25,8 +25,8 @@ const TASK_ROW_COLORS = {
  * Map TASK_STATUS enum to Prisma TaskStatus enum
  * This is needed because TypeScript doesn't recognize that the string values are compatible
  */
-export function mapTaskStatusToPrisma(status: TASK_STATUS | string): TaskStatus {
-  return status as TaskStatus;
+export function mapTaskStatusToPrisma(status: TASK_STATUS | string): string {
+  return status as string;
 }
 
 /**
@@ -37,7 +37,9 @@ export function isValidTaskStatusTransition(fromStatus: TASK_STATUS, toStatus: T
     [TASK_STATUS.PENDING]: [TASK_STATUS.IN_PRODUCTION, TASK_STATUS.ON_HOLD, TASK_STATUS.CANCELLED],
     [TASK_STATUS.IN_PRODUCTION]: [TASK_STATUS.COMPLETED, TASK_STATUS.ON_HOLD, TASK_STATUS.CANCELLED],
     [TASK_STATUS.ON_HOLD]: [TASK_STATUS.IN_PRODUCTION, TASK_STATUS.PENDING, TASK_STATUS.CANCELLED],
-    [TASK_STATUS.COMPLETED]: [], // Final state
+    [TASK_STATUS.COMPLETED]: [TASK_STATUS.INVOICED], // Can transition to invoiced
+    [TASK_STATUS.INVOICED]: [TASK_STATUS.SETTLED], // Can transition to settled
+    [TASK_STATUS.SETTLED]: [], // Final state
     [TASK_STATUS.CANCELLED]: [], // Final state
   };
 
@@ -61,6 +63,8 @@ export function getTaskStatusColor(status: TASK_STATUS): string {
     [TASK_STATUS.COMPLETED]: "completed",
     [TASK_STATUS.CANCELLED]: "cancelled",
     [TASK_STATUS.ON_HOLD]: "onHold",
+    [TASK_STATUS.INVOICED]: "invoiced",
+    [TASK_STATUS.SETTLED]: "settled",
   };
   return colors[status] || "default";
 }
@@ -75,6 +79,8 @@ export function getTaskStatusVariant(status: TASK_STATUS): "default" | "secondar
     [TASK_STATUS.COMPLETED]: "secondary",
     [TASK_STATUS.CANCELLED]: "destructive",
     [TASK_STATUS.ON_HOLD]: "outline",
+    [TASK_STATUS.INVOICED]: "secondary",
+    [TASK_STATUS.SETTLED]: "secondary",
   };
   return variants[status] || "default";
 }
@@ -88,7 +94,9 @@ export function getTaskPriority(status: TASK_STATUS): number {
     [TASK_STATUS.PENDING]: 2,
     [TASK_STATUS.ON_HOLD]: 3,
     [TASK_STATUS.COMPLETED]: 4,
-    [TASK_STATUS.CANCELLED]: 5,
+    [TASK_STATUS.INVOICED]: 5,
+    [TASK_STATUS.SETTLED]: 6,
+    [TASK_STATUS.CANCELLED]: 7,
   };
   return priorities[status] || 999;
 }
@@ -102,6 +110,8 @@ export function getTaskProgress(status: TASK_STATUS): number {
     [TASK_STATUS.ON_HOLD]: 10,
     [TASK_STATUS.IN_PRODUCTION]: 50,
     [TASK_STATUS.COMPLETED]: 100,
+    [TASK_STATUS.INVOICED]: 100,
+    [TASK_STATUS.SETTLED]: 100,
     [TASK_STATUS.CANCELLED]: 0,
   };
   return statusProgress[status] || 0;
@@ -192,11 +202,12 @@ export function formatTaskSummary(task: Task): string {
 }
 
 /**
- * Format task price
+ * Format task price (from budget items)
  */
 export function formatTaskPrice(task: Task): string {
-  if (!task.price) return "Sem valor";
-  return numberUtils.formatCurrency(task.price);
+  if (!task.budget || task.budget.length === 0) return "Sem valor";
+  const totalValue = task.budget.reduce((sum, item) => sum + item.valor, 0);
+  return numberUtils.formatCurrency(totalValue);
 }
 
 
@@ -319,7 +330,10 @@ export function calculateTaskStats(tasks: Task[]) {
 
   const completionRate = total > 0 ? (completed / total) * 100 : 0;
 
-  const totalValue = tasks.reduce((sum, task) => sum + (task.price || 0), 0);
+  const totalValue = tasks.reduce((sum, task) => {
+    const taskValue = task.budget?.reduce((taskSum, item) => taskSum + item.valor, 0) || 0;
+    return sum + taskValue;
+  }, 0);
   const averagePrice = total > 0 ? totalValue / total : 0;
 
   return {

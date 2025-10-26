@@ -64,7 +64,7 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
       (task) => task.status !== TASK_STATUS.CANCELLED && task.status !== TASK_STATUS.COMPLETED
     ).length;
     const completedTasks = tasks.filter((task) => task.status === TASK_STATUS.COMPLETED).length;
-    const totalValue = tasks.reduce((sum, task) => sum + (task.price || 0), 0);
+    const totalValue = 0; // Price field not available on Task type
 
     return {
       totalTasks: tasks.length,

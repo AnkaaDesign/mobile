@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState, useEffect } from "react";
-import { TextInput, TextInputProps, View, ViewStyle, TextStyle, Animated, StyleSheet} from "react-native";
+import { TextInput, TextInputProps, View, ViewStyle, TextStyle, Animated, StyleSheet, NativeSyntheticEvent, TextInputFocusEventData} from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, fontSize, transitions } from "@/constants/design-system";
 import { cn } from "@/lib/cn";
@@ -7,7 +7,8 @@ import { cn } from "@/lib/cn";
 interface NumberInputProps extends Omit<TextInputProps, "onChange" | "value" | "onChangeText" | "keyboardType"> {
   value?: number;
   onChange?: (value: number | undefined) => void;
-  onBlur?: (e: any) => void;
+  onChangeValue?: (value: number) => void;
+  onBlur?: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
   error?: boolean;
   containerStyle?: ViewStyle;
   inputStyle?: TextStyle;
@@ -17,6 +18,7 @@ interface NumberInputProps extends Omit<TextInputProps, "onChange" | "value" | "
   decimalPlaces?: number;
   allowNegative?: boolean;
   className?: string;
+  placeholder?: string;
 }
 
 export function NumberInput({
@@ -130,7 +132,7 @@ export function NumberInput({
 
   // Handle blur
   const handleBlur = useCallback(
-    (e: any) => {
+    (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
       setIsFocused(false);
 
       // Format the value on blur

@@ -8,7 +8,12 @@ import { PPE_DELIVERY_STATUS_LABELS } from '@/constants';
 import { formatDate } from '@/utils';
 
 interface PersonalPpeDeliveryFilterTagsProps {
-  filters: any;
+  filters: {
+    status?: string[];
+    itemIds?: string[];
+    scheduledDateRange?: { gte?: Date; lte?: Date };
+    actualDeliveryDateRange?: { gte?: Date; lte?: Date };
+  };
   onRemoveFilter: (key: string) => void;
   onClearAll: () => void;
 }
@@ -33,7 +38,7 @@ export function PersonalPpeDeliveryFilterTags({
       >
         {filters.status?.map((status: string) => (
           <Badge key={status} variant="secondary" className="flex-row items-center gap-1">
-            <Text className="text-xs">{PPE_DELIVERY_STATUS_LABELS[status]}</Text>
+            <Text className="text-xs">{PPE_DELIVERY_STATUS_LABELS[status as keyof typeof PPE_DELIVERY_STATUS_LABELS]}</Text>
             <Button
               variant="ghost"
               size="icon"

@@ -231,8 +231,8 @@ export function CompleteIntegrationExample() {
       size: 1024 * 1024 * 2, // 2MB
       originalName: 'report.pdf',
       path: '/uploads/report.pdf',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
     {
       id: '2',
@@ -241,8 +241,8 @@ export function CompleteIntegrationExample() {
       size: 1024 * 1024 * 50, // 50MB
       originalName: 'presentation.mp4',
       path: '/uploads/presentation.mp4',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
     {
       id: '3',
@@ -251,8 +251,8 @@ export function CompleteIntegrationExample() {
       size: 1024 * 500, // 500KB
       originalName: 'photo.jpg',
       path: '/uploads/photo.jpg',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
   ];
 

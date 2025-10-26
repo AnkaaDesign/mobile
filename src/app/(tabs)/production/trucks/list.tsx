@@ -6,12 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTruckMutations } from '../../../../hooks';
 import { useTrucksInfiniteMobile } from "@/hooks";
 import type { TruckGetManyFormData } from '../../../../schemas';
-
-// Define SortConfig type
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
+import type { SortConfig } from "@/lib/sort-utils";
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { TruckTable, createColumnDefinitions, getDefaultVisibleColumns } from "@/components/production/truck/list/truck-table";
 import { TruckFilterModal } from "@/components/production/truck/list/truck-filter-modal";

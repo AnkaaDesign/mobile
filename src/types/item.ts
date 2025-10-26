@@ -1,7 +1,7 @@
 // packages/interfaces/src/item.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse, BaseMergeResponse } from "./common";
-import type { MEASURE_UNIT, ORDER_BY_DIRECTION, ABC_CATEGORY, XYZ_CATEGORY, PPE_TYPE, PPE_SIZE, PPE_DELIVERY_MODE, ITEM_CATEGORY_TYPE } from '../constants';
+import type { MEASURE_UNIT, ORDER_BY_DIRECTION, ABC_CATEGORY, XYZ_CATEGORY, PPE_TYPE, PPE_SIZE, PPE_DELIVERY_MODE, ITEM_CATEGORY_TYPE } from '@/constants';
 import type { Supplier, SupplierIncludes, SupplierOrderBy } from "./supplier";
 import type { Activity, ActivityIncludes } from "./activity";
 import type { Borrow, BorrowIncludes } from "./borrow";

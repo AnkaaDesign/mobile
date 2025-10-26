@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { serviceOrderService } from '../api-client';
+import { serviceOrderService } from '@/api-client';
 import { serviceOrderKeys } from './queryKeys';
-import type { ServiceOrderGetManyFormData } from '../schemas';
+import type { ServiceOrderGetManyFormData } from '@/schemas';
 
 export const useServiceOrdersInfiniteMobile = (filters?: Partial<ServiceOrderGetManyFormData>) => {
   const pageSize = 40;

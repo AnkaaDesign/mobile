@@ -42,7 +42,7 @@ export function TasksCard({ customer, maxHeight = 400 }: TasksCardProps) {
   };
 
   const handleTaskPress = (taskId: string) => {
-    router.push(routeToMobilePath(routes.production.tasks.details(taskId)) as any);
+    router.push(routeToMobilePath(routes.production.schedule.details(taskId)) as any);
   };
 
   if (totalTasks === 0) {
@@ -141,22 +141,11 @@ export function TasksCard({ customer, maxHeight = 400 }: TasksCardProps) {
 
                   {/* Task Metadata */}
                   <View style={styles.taskMetadata}>
-                    {task.deadline && (
+                    {task.finishedAt && (
                       <View style={styles.metadataItem}>
                         <IconCalendar size={14} color={colors.mutedForeground} />
                         <ThemedText style={StyleSheet.flatten([styles.metadataText, { color: colors.mutedForeground }])}>
-                          {formatDate(task.deadline)}
-                        </ThemedText>
-                      </View>
-                    )}
-                    {task.user && (
-                      <View style={styles.metadataItem}>
-                        <IconUser size={14} color={colors.mutedForeground} />
-                        <ThemedText
-                          style={StyleSheet.flatten([styles.metadataText, { color: colors.mutedForeground }])}
-                          numberOfLines={1}
-                        >
-                          {task.user.name}
+                          {formatDate(task.finishedAt)}
                         </ThemedText>
                       </View>
                     )}

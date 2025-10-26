@@ -1,13 +1,9 @@
 import type { ReactNode } from "react";
-import type { PasswordResetRequestFormData } from '../../schemas';
+import type { PasswordResetRequestFormData } from '@/schemas';
+import type { User } from '../user';
 
-// Auth Context Types
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  [key: string]: any; // Allow additional properties
-}
+// Re-export User type for convenience
+export type { User };
 
 export interface AuthContextType {
   user: User | null;

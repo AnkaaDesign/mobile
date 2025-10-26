@@ -81,7 +81,7 @@ export default function CalculationsListScreen() {
   // Set first user as default when users are loaded
   React.useEffect(() => {
     if (!selectedUserId && usersData?.data && usersData.data.length > 0) {
-      const firstUser = usersData.data[0 as keyof typeof data];
+      const firstUser = usersData.data[0];
       if (firstUser?.id) {
         setSelectedUserId(firstUser.id);
       }

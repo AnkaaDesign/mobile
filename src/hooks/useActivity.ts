@@ -9,7 +9,7 @@ import {
   batchCreateActivities,
   batchUpdateActivities,
   batchDeleteActivities,
-} from '../api-client';
+} from '@/api-client';
 import type {
   ActivityCreateFormData,
   ActivityUpdateFormData,
@@ -18,7 +18,7 @@ import type {
   ActivityBatchUpdateFormData,
   ActivityBatchDeleteFormData,
   ActivityInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   Activity,
   ActivityGetManyResponse,
@@ -29,7 +29,7 @@ import type {
   ActivityBatchCreateResponse,
   ActivityBatchUpdateResponse,
   ActivityBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { activityKeys, itemKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

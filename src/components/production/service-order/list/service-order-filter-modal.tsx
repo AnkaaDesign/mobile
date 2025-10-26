@@ -34,19 +34,33 @@ export const ServiceOrderFilterModal: React.FC<ServiceOrderFilterModalProps> = (
     }));
   }, []);
 
-  const handleFilterChange = useCallback((key: string, value: any) => {
+  const handleFilterChange = useCallback((key: string, value: Date | string[] | null | undefined) => {
     setLocalFilters(prev => {
       // Handle nested updates for date ranges
       if (key.includes('.')) {
         const [parentKey, childKey] = key.split('.');
+        const newFilters = { ...prev };
+
+        // Type-safe handling for nested date range updates
+        if (parentKey === 'createdAt' || parentKey === 'startedAt' || parentKey === 'finishedAt') {
+          const currentValue = newFilters[parentKey as 'createdAt' | 'startedAt' | 'finishedAt'] || {};
+          newFilters[parentKey as 'createdAt' | 'startedAt' | 'finishedAt'] = {
+            ...currentValue,
+            [childKey as 'gte' | 'lte']: value as Date | null | undefined,
+          };
+        }
+
+        return newFilters;
+      }
+
+      // Handle statusIn array
+      if (key === 'statusIn') {
         return {
           ...prev,
-          [parentKey]: {
-            ...(prev[parentKey as keyof ServiceOrderGetManyFormData] as any),
-            [childKey]: value,
-          },
+          statusIn: value as string[] | undefined,
         };
       }
+
       return {
         ...prev,
         [key]: value,

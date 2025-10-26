@@ -16,6 +16,7 @@ import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { USER_STATUS_LABELS } from '../../../../constants';
 import { USER_STATUS } from '../../../../constants';
 import { getUserStatusBadgeText } from '../../../../utils/user';
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -26,10 +27,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface EmployeeTableProps {
   employees: User[];
@@ -81,7 +78,11 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (employee: User) => (
       <View style={styles.avatarContainer}>
-        <Avatar alt={employee.name} uri={employee.avatarUrl} size="sm" />
+        <Avatar size="sm">
+          <ThemedText style={{ fontSize: 12, fontWeight: '600' }}>
+            {employee.name.charAt(0).toUpperCase()}
+          </ThemedText>
+        </Avatar>
       </View>
     ),
   },
@@ -244,14 +245,14 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "dismissal",
+    key: "dismissedAt",
     header: "Data de Demissão",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (employee: User) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {employee.dismissal ? formatDate(new Date(employee.dismissal)) : "-"}
+        {employee.dismissedAt ? formatDate(new Date(employee.dismissedAt)) : "-"}
       </ThemedText>
     ),
   },
@@ -497,7 +498,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
         vacationsCount: 1.0,
         admissional: 1.4,
         birth: 1.4,
-        dismissal: 1.4,
+        dismissedAt: 1.4,
         status: 1.5,
         performanceLevel: 1.5,
         verified: 1.1,

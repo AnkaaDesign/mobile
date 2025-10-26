@@ -199,10 +199,10 @@ export function AlertFilterModal({ visible, onClose, onApply, currentFilters }: 
               <MultiCombobox
                 options={severityOptions}
                 selectedValues={filters.severities || []}
-                onSelectionChange={(values) => handleArrayChange("severities", values as string[])}
+                onValueChange={(values) => handleArrayChange("severities", values)}
                 placeholder="Selecionar severidades..."
-                renderBadge={(value) => {
-                  const severity = value as NOTIFICATION_IMPORTANCE;
+                renderBadge={(option, onRemove) => {
+                  const severity = option.value as NOTIFICATION_IMPORTANCE;
                   return (
                     <Badge style={{ backgroundColor: getSeverityColor(severity) }}>
                       <ThemedText style={styles.badgeText}>
@@ -223,9 +223,8 @@ export function AlertFilterModal({ visible, onClose, onApply, currentFilters }: 
               <MultiCombobox
                 options={alertTypeOptions}
                 selectedValues={filters.types || []}
-                onSelectionChange={(values) => handleArrayChange("types", values as string[])}
+                onValueChange={(values) => handleArrayChange("types", values)}
                 placeholder="Selecionar tipos..."
-                maxVisibleBadges={3}
               />
             </View>
           )}
@@ -269,7 +268,7 @@ export function AlertFilterModal({ visible, onClose, onApply, currentFilters }: 
               <MultiCombobox
                 options={sourceOptions}
                 selectedValues={filters.sources || []}
-                onSelectionChange={(values) => handleArrayChange("sources", values as string[])}
+                onValueChange={(values) => handleArrayChange("sources", values)}
                 placeholder="Selecionar origens..."
               />
             </View>
@@ -285,7 +284,7 @@ export function AlertFilterModal({ visible, onClose, onApply, currentFilters }: 
                   <Label>Data Inicial</Label>
                   <DatePicker
                     value={filters.dateRange?.start}
-                    onValueChange={(date) => handleDateRangeChange("start", date)}
+                    onChange={(date) => handleDateRangeChange("start", date)}
                     placeholder="Selecionar data"
                   />
                 </View>
@@ -293,7 +292,7 @@ export function AlertFilterModal({ visible, onClose, onApply, currentFilters }: 
                   <Label>Data Final</Label>
                   <DatePicker
                     value={filters.dateRange?.end}
-                    onValueChange={(date) => handleDateRangeChange("end", date)}
+                    onChange={(date) => handleDateRangeChange("end", date)}
                     placeholder="Selecionar data"
                   />
                 </View>

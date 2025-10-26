@@ -133,9 +133,6 @@ export function StringFilter({
       transform: [{ translateY: -12 }],
       padding: 4,
     },
-    clearIcon: {
-      color: colors.mutedForeground,
-    },
     modeSelector: {
       width: 140,
     },
@@ -152,7 +149,7 @@ export function StringFilter({
             onChangeText={handleTextChange}
             placeholder={placeholder}
             editable={!disabled}
-            style={styles.input}
+            inputStyle={styles.input}
           />
           {showClearButton && hasValue && !disabled && (
             <Button
@@ -161,7 +158,7 @@ export function StringFilter({
               onPress={handleClear}
               style={styles.clearButton}
             >
-              <IconX size={16} style={styles.clearIcon} />
+              <IconX size={16} color={colors.mutedForeground} />
             </Button>
           )}
         </View>

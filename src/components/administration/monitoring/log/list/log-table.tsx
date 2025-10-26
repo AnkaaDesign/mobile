@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, Pressable, StyleSheet, Alert } from "react-native";
+import { View, ScrollView, RefreshControl, Pressable, StyleSheet, Alert, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import { IconChevronDown, IconChevronRight, IconCopy, IconAlertCircle, IconInfoCircle, IconAlertTriangle, IconBug } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText, ThemedView, Badge, Card } from "@/components/ui";
@@ -99,16 +99,18 @@ export function LogTable({ logs, onRefresh, onEndReached, refreshing = false, lo
     (log: LogEntry) => {
       const actions = [
         {
+          key: expandedLogs.has(log.id) ? "collapse" : "expand",
           label: expandedLogs.has(log.id) ? "Recolher" : "Ver Detalhes",
           onPress: () => handleViewDetails(log),
           backgroundColor: colors.primary,
-          icon: expandedLogs.has(log.id) ? "chevron-up" : "chevron-down",
+          icon: <IconChevronDown size={20} color="white" />,
         },
         {
+          key: "copy",
           label: "Copiar",
           onPress: () => handleCopyLog(log),
           backgroundColor: colors.muted,
-          icon: "copy",
+          icon: <IconCopy size={20} color="white" />,
         },
       ];
       return actions;
@@ -183,17 +185,19 @@ export function LogTable({ logs, onRefresh, onEndReached, refreshing = false, lo
     return (
       <View key={log.id} style={styles.logRowContainer}>
         <ReanimatedSwipeableRow
-          actions={renderSwipeActions(log)}
+          rightActions={renderSwipeActions(log)}
           friction={2}
-          overshootFriction={8}
-          renderContent={() => content}
-        />
+          overshootLeft={false}
+          overshootRight={false}
+        >
+          {content}
+        </ReanimatedSwipeableRow>
       </View>
     );
   };
 
   const handleScroll = useCallback(
-    ({ nativeEvent }: any) => {
+    ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
       const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
       const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 100;
 

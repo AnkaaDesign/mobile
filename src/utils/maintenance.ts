@@ -1,23 +1,20 @@
 import { MAINTENANCE_STATUS_LABELS, SCHEDULE_FREQUENCY_LABELS } from '../constants';
 import { MAINTENANCE_STATUS, SCHEDULE_FREQUENCY } from '../constants';
-import type { MaintenanceStatus, ScheduleFrequency } from "@prisma/client";
 
 // Re-export removed - function not needed
 
 /**
- * Map MAINTENANCE_STATUS enum to Prisma MaintenanceStatus enum
- * This is needed because TypeScript doesn't recognize that the string values are compatible
+ * Map MAINTENANCE_STATUS enum to string
  */
-export function mapMaintenanceStatusToPrisma(status: MAINTENANCE_STATUS | string): MaintenanceStatus {
-  return status as MaintenanceStatus;
+export function mapMaintenanceStatusToPrisma(status: MAINTENANCE_STATUS | string): string {
+  return status as string;
 }
 
 /**
- * Map SCHEDULE_FREQUENCY enum to Prisma ScheduleFrequency enum
- * This is needed because TypeScript doesn't recognize that the string values are compatible
+ * Map SCHEDULE_FREQUENCY enum to string
  */
-export function mapScheduleFrequencyToPrisma(frequency: SCHEDULE_FREQUENCY | string): ScheduleFrequency {
-  return frequency as ScheduleFrequency;
+export function mapScheduleFrequencyToPrisma(frequency: SCHEDULE_FREQUENCY | string): string {
+  return frequency as string;
 }
 
 export function getMaintenanceStatusLabel(status: MAINTENANCE_STATUS): string {

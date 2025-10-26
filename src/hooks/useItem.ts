@@ -1,8 +1,8 @@
 // packages/hooks/src/useItem.ts
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createItem, deleteItem, getItemById, getItems, updateItem, batchCreateItems, batchUpdateItems, batchDeleteItems, mergeItems } from '../api-client';
-import { ITEM_CATEGORY_TYPE } from '../constants';
+import { createItem, deleteItem, getItemById, getItems, updateItem, batchCreateItems, batchUpdateItems, batchDeleteItems, mergeItems } from '@/api-client';
+import { ITEM_CATEGORY_TYPE } from '@/constants';
 import type {
   ItemCreateFormData,
   ItemUpdateFormData,
@@ -12,7 +12,7 @@ import type {
   ItemBatchDeleteFormData,
   ItemMergeFormData,
   ItemInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   ItemGetManyResponse,
   ItemGetUniqueResponse,
@@ -22,7 +22,7 @@ import type {
   ItemBatchCreateResponse,
   ItemBatchUpdateResponse,
   ItemBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import {
   itemKeys,
   activityKeys,

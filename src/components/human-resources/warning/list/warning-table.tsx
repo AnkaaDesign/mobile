@@ -14,6 +14,7 @@ import { getDefaultVisibleColumns } from "./column-visibility-drawer-v2";
 import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from '../../../../constants';
 import { formatDate } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -24,10 +25,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface WarningTableProps {
   warnings: Warning[];

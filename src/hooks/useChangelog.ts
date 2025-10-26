@@ -9,7 +9,7 @@ import {
   batchCreateChangeLogs,
   batchUpdateChangeLogs,
   batchDeleteChangeLogs,
-} from '../api-client';
+} from '@/api-client';
 import type {
   ChangeLogGetManyFormData,
   ChangeLogCreateFormData,
@@ -17,7 +17,7 @@ import type {
   ChangeLogBatchCreateFormData,
   ChangeLogBatchUpdateFormData,
   ChangeLogBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   ChangeLogGetManyResponse,
   ChangeLogGetUniqueResponse,
@@ -27,7 +27,7 @@ import type {
   ChangeLogBatchCreateResponse,
   ChangeLogBatchUpdateResponse,
   ChangeLogBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { changeLogKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

@@ -1,7 +1,7 @@
 // packages/types/src/monitoring.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse } from "./common";
-import type { ORDER_BY_DIRECTION } from '../constants';
+import type { ORDER_BY_DIRECTION } from '@/constants';
 
 // =====================
 // SSD Health Data Types

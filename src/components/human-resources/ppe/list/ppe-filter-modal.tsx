@@ -62,7 +62,7 @@ export function PpeFilterModal({ visible, onClose, onApply, currentFilters }: Pp
     () =>
       Object.values(PPE_TYPE).map((type) => ({
         value: type,
-        label: PPE_TYPE_LABELS[type],
+        label: PPE_TYPE_LABELS[type as keyof typeof PPE_TYPE_LABELS],
       })),
     [],
   );

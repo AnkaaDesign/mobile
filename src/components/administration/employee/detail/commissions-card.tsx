@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { User } from '../../../../types';
+import type { User } from '../../../../types';
 import { formatCurrency } from '../../../../utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -25,7 +25,12 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
   // Calculate total earnings from bonuses
   const totalEarnings = useMemo(() => {
     if (!employee.bonuses || employee.bonuses.length === 0) return 0;
-    return employee.bonuses.reduce((sum, bonus) => sum + (bonus.baseBonus || 0), 0);
+    return employee.bonuses.reduce((sum, bonus) => {
+      const value = typeof bonus.baseBonus === 'number'
+        ? bonus.baseBonus
+        : bonus.baseBonus?.toNumber() || 0;
+      return sum + value;
+    }, 0);
   }, [employee.bonuses]);
 
   // Calculate average bonus
@@ -64,7 +69,7 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
       <CardContent style={styles.content}>
         {bonuses.length === 0 ? (
           <EmptyState
-            icon={IconCurrencyDollar}
+            icon="currency-dollar"
             title="Nenhuma comissão registrada"
             description="Este colaborador ainda não possui comissões ou bonificações registradas."
           />
@@ -110,6 +115,12 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
               {bonuses.map((bonus, index) => {
                 const monthYear = `${bonus.month.toString().padStart(2, "0")}/${bonus.year}`;
                 const performanceColor = getPerformanceColor(bonus.performanceLevel);
+                const bonusAmount = typeof bonus.baseBonus === 'number'
+                  ? bonus.baseBonus
+                  : bonus.baseBonus.toNumber();
+                const ponderedCount = typeof bonus.ponderedTaskCount === 'number'
+                  ? bonus.ponderedTaskCount
+                  : bonus.ponderedTaskCount?.toNumber() || 0;
 
                 return (
                   <View
@@ -131,7 +142,7 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
                         </ThemedText>
                       </View>
                       <ThemedText style={[styles.bonusAmount, { color: extendedColors.green[700] }]}>
-                        {formatCurrency(bonus.baseBonus)}
+                        {formatCurrency(bonusAmount)}
                       </ThemedText>
                     </View>
 
@@ -152,13 +163,13 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
                         </Badge>
                       </View>
 
-                      {bonus.ponderedTaskCount !== undefined && bonus.ponderedTaskCount > 0 && (
+                      {ponderedCount > 0 && (
                         <View style={styles.bonusDetail}>
                           <ThemedText style={[styles.bonusDetailLabel, { color: colors.mutedForeground }]}>
                             Ordens Ponderadas:
                           </ThemedText>
                           <ThemedText style={[styles.bonusDetailValue, { color: colors.foreground }]}>
-                            {bonus.ponderedTaskCount.toFixed(2)}
+                            {ponderedCount.toFixed(2)}
                           </ThemedText>
                         </View>
                       )}

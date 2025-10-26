@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useGaragesInfinite } from './useGarage';
-import { GarageGetManyFormData } from '../schemas';
+import { GarageGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for garages

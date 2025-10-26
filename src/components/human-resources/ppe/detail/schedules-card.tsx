@@ -90,7 +90,7 @@ export function SchedulesCard({ item, schedules = [] }: SchedulesCardProps) {
                       {schedule.assignmentType && (
                         <Badge variant="secondary" style={styles.assignmentBadge}>
                           <ThemedText style={{ color: colors.secondaryForeground, fontSize: fontSize.xs }}>
-                            {ASSIGNMENT_TYPE_LABELS[schedule.assignmentType]}
+                            {ASSIGNMENT_TYPE_LABELS[schedule.assignmentType as keyof typeof ASSIGNMENT_TYPE_LABELS]}
                           </ThemedText>
                         </Badge>
                       )}
@@ -110,7 +110,7 @@ export function SchedulesCard({ item, schedules = [] }: SchedulesCardProps) {
                       <View style={styles.detailRow}>
                         <IconClock size={14} color={colors.mutedForeground} />
                         <ThemedText style={StyleSheet.flatten([styles.detailText, { color: colors.mutedForeground }])}>
-                          Frequência: {SCHEDULE_FREQUENCY_LABELS[schedule.frequency]}
+                          Frequência: {SCHEDULE_FREQUENCY_LABELS[schedule.frequency as keyof typeof SCHEDULE_FREQUENCY_LABELS]}
                         </ThemedText>
                       </View>
                     )}

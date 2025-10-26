@@ -384,6 +384,23 @@ export const customerWhereSchema: z.ZodType<any> = z
         none: z.lazy(() => z.any()).optional(),
       })
       .optional(),
+
+    // Task count filter
+    taskCount: z
+      .union([
+        z.number(),
+        z.object({
+          equals: z.number().optional(),
+          not: z.number().optional(),
+          lt: z.number().optional(),
+          lte: z.number().optional(),
+          gt: z.number().optional(),
+          gte: z.number().optional(),
+          in: z.array(z.number()).optional(),
+          notIn: z.array(z.number()).optional(),
+        }),
+      ])
+      .optional(),
   })
   .partial();
 
@@ -398,6 +415,7 @@ const customerFilters = {
   cities: z.array(z.string()).optional(),
   states: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
+  taskCount: z.number().optional(),
 };
 
 // =====================
@@ -417,7 +435,7 @@ const customerTransform = (data: any) => {
   delete data.take;
 
   // Extract convenience filters
-  const { searchingFor, hasTasks, hasLogo, cities, states, tags } = data;
+  const { searchingFor, hasTasks, hasLogo, cities, states, tags, taskCount } = data;
 
   // Build where conditions
   const andConditions: any[] = [];
@@ -471,6 +489,10 @@ const customerTransform = (data: any) => {
   if (tags?.length) {
     andConditions.push({ tags: { hasSome: tags } });
   }
+
+  // Task count filter
+  // Note: This uses a convenience filter that will be handled by the backend
+  // The backend should count tasks for each customer and filter accordingly
 
   // Date range filter
   if (data.createdAt) {
@@ -682,6 +704,28 @@ export type CustomerBatchDeleteFormData = z.infer<typeof customerBatchDeleteSche
 export type CustomerInclude = z.infer<typeof customerIncludeSchema>;
 export type CustomerOrderBy = z.infer<typeof customerOrderBySchema>;
 export type CustomerWhere = z.infer<typeof customerWhereSchema>;
+
+// =====================
+// Merge Schema
+// =====================
+
+export const customerMergeConflictsSchema = z
+  .object({
+    // Conflict resolution fields
+  })
+  .optional();
+
+export const customerMergeSchema = z.object({
+  targetCustomerId: z.string().uuid({ message: "ID do cliente principal inválido" }),
+  sourceCustomerIds: z
+    .array(z.string().uuid({ message: "ID de cliente inválido" }))
+    .min(1, { message: "É necessário selecionar pelo menos 1 cliente para mesclar" })
+    .max(10, { message: "Máximo de 10 clientes podem ser mesclados por vez" }),
+  conflictResolutions: z.record(z.any()).optional(),
+});
+
+export type CustomerMergeConflicts = z.infer<typeof customerMergeConflictsSchema>;
+export type CustomerMergeFormData = z.infer<typeof customerMergeSchema>;
 
 // =====================
 // Helper Functions

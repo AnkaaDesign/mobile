@@ -1,7 +1,7 @@
 // packages/types/src/payrollDetails.ts
 
 import type { BaseGetUniqueResponse } from "./common";
-import type { BONUS_STATUS } from '../constants';
+import type { BONUS_STATUS } from '@/constants';
 import type { Bonus, BonusIncludes } from "./bonus";
 import type { Task } from "./task";
 import type { User } from "./user";

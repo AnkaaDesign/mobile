@@ -153,7 +153,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     hireDate: "Data de Contratação",
     birthDate: "Data de Nascimento",
     admissional: "Data de Admissão",
-    dismissal: "Data de Demissão",
+    dismissedAt: "Data de Demissão",
     verificationCode: "Código de Verificação",
     verificationExpiresAt: "Expiração da Verificação",
     verificationType: "Tipo de Verificação",
@@ -409,11 +409,6 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     positions: "Cargos",
     tasks: "Tarefas",
   },
-  [CHANGE_LOG_ENTITY_TYPE.GARAGE]: {
-    name: "Nome",
-    width: "Largura",
-    length: "Comprimento",
-  },
   [CHANGE_LOG_ENTITY_TYPE.GARAGE_LANE]: {
     width: "Largura",
     length: "Comprimento",
@@ -421,14 +416,6 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     yPosition: "Posição Y",
     garageId: "Garagem",
     "garage.name": "Nome da Garagem",
-  },
-  [CHANGE_LOG_ENTITY_TYPE.PARKING_SPOT]: {
-    name: "Número",
-    length: "Comprimento",
-    garageLaneId: "Faixa da Garagem",
-    "garageLane.id": "ID da Faixa",
-    "garageLane.xPosition": "Posição X da Faixa",
-    "garageLane.yPosition": "Posição Y da Faixa",
   },
   [CHANGE_LOG_ENTITY_TYPE.MAINTENANCE]: {
     type: "Tipo",

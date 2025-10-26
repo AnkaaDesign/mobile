@@ -1,7 +1,7 @@
 // packages/types/src/verification.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { SMS_VERIFICATION_TYPE, SMS_VERIFICATION_STATUS, VERIFICATION_TYPE } from '../constants';
+import type { SMS_VERIFICATION_TYPE, SMS_VERIFICATION_STATUS, VERIFICATION_TYPE } from '@/constants';
 import type { User, UserIncludes } from "./user";
 
 // =====================

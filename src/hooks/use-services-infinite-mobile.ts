@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { serviceService } from '../api-client';
+import { serviceService } from '@/api-client';
 import { serviceKeys } from './queryKeys';
-import type { ServiceGetManyFormData } from '../schemas';
+import type { ServiceGetManyFormData } from '@/schemas';
 
 export const useServicesInfiniteMobile = (filters?: Partial<ServiceGetManyFormData>) => {
   const pageSize = 40;

@@ -55,7 +55,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   }, []);
 
   // Handle PDF load error
-  const handleError = useCallback((error: any) => {
+  const handleError = useCallback((error: Error) => {
     console.error('[PDF Viewer] Load error:', error);
     setLoading(false);
     setError('Erro ao carregar PDF. Tente novamente ou baixe o arquivo.');

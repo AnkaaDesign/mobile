@@ -114,3 +114,10 @@ export * from "./action-sheet";
 export * from "./detail-header";
 export * from "./detail-page-header";
 export * from "./details-header";
+
+// Form input components with formatting
+export * from "./cpf-input";
+export * from "./cnpj-input";
+export * from "./phone-input";
+export * from "./zipcode-input";
+export * from "./address-form";

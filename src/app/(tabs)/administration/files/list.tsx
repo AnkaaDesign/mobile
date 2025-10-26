@@ -6,9 +6,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileMutations } from '../../../../hooks';
 import { useFilesInfiniteMobile } from "@/hooks";
 import type { FileGetManyFormData } from '../../../../schemas';
+import type { File } from '../../../../types/file';
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, ListActionButton } from "@/components/ui";
 import { FileTable } from "@/components/administration/file/list/file-table";
-import type { SortConfig } from "@/components/administration/file/list/file-table";
+import type { SortConfig } from "@/lib/sort-utils";
 import { FileFilterTags } from "@/components/administration/file/list/file-filter-tags";
 import { FilePreviewModal } from "@/components/file/file-preview-modal";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
@@ -63,7 +64,7 @@ export default function FileListScreen() {
   const { displayText, searchText, setDisplayText } = useDebouncedSearch("", 300);
 
   const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
-    [{ column: "createdAt", direction: "desc", order: 0 }],
+    [{ columnKey: "createdAt", direction: "asc", order: 0 }],
     3,
     false
   );
@@ -141,7 +142,7 @@ export default function FileListScreen() {
   };
 
   const handleFilePress = (fileId: string) => {
-    const fileIndex = files.findIndex((f) => f.id === fileId);
+    const fileIndex = files.findIndex((f: File) => f.id === fileId);
     if (fileIndex !== -1) {
       setPreviewFileIndex(fileIndex);
       setShowPreview(true);
@@ -167,7 +168,7 @@ export default function FileListScreen() {
   const handleFileShare = useCallback(
     async (fileId: string) => {
       try {
-        const file = files.find((f) => f.id === fileId);
+        const file = files.find((f: File) => f.id === fileId);
         if (!file) return;
 
         const fileUrl = getFileUrl(file, "");
@@ -263,19 +264,22 @@ export default function FileListScreen() {
           </ThemedText>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {COMMON_MIME_TYPES.map((type) => (
-              <Badge
+              <Pressable
                 key={type.value}
-                variant={filters.mimeTypes?.includes(type.value) ? "default" : "outline"}
-                style={{ paddingHorizontal: 12, paddingVertical: 6 }}
                 onPress={() => toggleMimeType(type.value)}
               >
-                <ThemedText style={[
-                  { fontSize: 14 },
-                  filters.mimeTypes?.includes(type.value) && { color: colors.primaryForeground }
-                ]}>
-                  {type.label}
-                </ThemedText>
-              </Badge>
+                <Badge
+                  variant={filters.mimeTypes?.includes(type.value) ? "default" : "outline"}
+                  style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+                >
+                  <ThemedText style={[
+                    { fontSize: 14 },
+                    filters.mimeTypes?.includes(type.value) && { color: colors.primaryForeground }
+                  ]}>
+                    {type.label}
+                  </ThemedText>
+                </Badge>
+              </Pressable>
             ))}
           </View>
         </View>
@@ -411,7 +415,7 @@ export default function FileListScreen() {
             showSelection={showSelection}
             selectedFiles={selectedFiles}
             onSelectionChange={handleSelectionChange}
-            sortConfigs={sortConfigs as SortConfig[]}
+            sortConfigs={sortConfigs}
             onSort={(configs) => handleSort(configs[0]?.columnKey || "createdAt")}
             enableSwipeActions={true}
           />

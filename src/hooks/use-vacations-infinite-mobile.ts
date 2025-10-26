@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useVacationsInfinite } from './useVacation';
-import { VacationGetManyFormData } from '../schemas';
+import { VacationGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for vacations

@@ -27,7 +27,15 @@ const Separator = React.forwardRef<View, SeparatorProps>(({ orientation = "horiz
     ...style,
   };
 
-  return <View ref={ref} style={separatorStyles} className={className} accessible={!decorative} accessibilityRole={decorative ? undefined : "separator"} {...props} />;
+  return (
+    <View
+      ref={ref}
+      style={separatorStyles}
+      className={className}
+      accessible={!decorative}
+      {...props}
+    />
+  );
 });
 
 Separator.displayName = "Separator";

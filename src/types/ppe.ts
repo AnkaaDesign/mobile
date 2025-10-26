@@ -18,7 +18,7 @@ import type {
   RAIN_BOOTS_SIZE,
   RESCHEDULE_REASON,
   ASSIGNMENT_TYPE,
-} from '../constants';
+} from '@/constants';
 import type { User, UserIncludes, UserOrderBy } from "./user";
 import type { Item, ItemIncludes, ItemOrderBy } from "./item";
 import type { Order, OrderIncludes } from "./order";
@@ -587,19 +587,19 @@ export interface YearlyScheduleConfigGetByIdParams {
 // =====================
 
 // PpeSize Batch Operations
-export interface PpeSizeBatchCreateResponse<T> extends BaseBatchResponse<PpeSize, T> {}
-export interface PpeSizeBatchUpdateResponse<T> extends BaseBatchResponse<PpeSize, T & { id: string }> {}
+export interface PpeSizeBatchCreateResponse<T = any> extends BaseBatchResponse<PpeSize, T> {}
+export interface PpeSizeBatchUpdateResponse<T = any> extends BaseBatchResponse<PpeSize, T & { id: string }> {}
 export interface PpeSizeBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
 
 // PpeDelivery Batch Operations
-export interface PpeDeliveryBatchCreateResponse<T> extends BaseBatchResponse<PpeDelivery, T> {}
-export interface PpeDeliveryBatchUpdateResponse<T> extends BaseBatchResponse<PpeDelivery, T & { id: string }> {}
+export interface PpeDeliveryBatchCreateResponse<T = any> extends BaseBatchResponse<PpeDelivery, T> {}
+export interface PpeDeliveryBatchUpdateResponse<T = any> extends BaseBatchResponse<PpeDelivery, T & { id: string }> {}
 export interface PpeDeliveryBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
 
 // PpeConfig Batch Operations - PPE configuration is now stored directly on the Item model
 // All PPE configuration batch operations are done through the Item entity
 
 // PpeDeliverySchedule Batch Operations
-export interface PpeDeliveryScheduleBatchCreateResponse<T> extends BaseBatchResponse<PpeDeliverySchedule, T> {}
-export interface PpeDeliveryScheduleBatchUpdateResponse<T> extends BaseBatchResponse<PpeDeliverySchedule, T & { id: string }> {}
+export interface PpeDeliveryScheduleBatchCreateResponse<T = any> extends BaseBatchResponse<PpeDeliverySchedule, T> {}
+export interface PpeDeliveryScheduleBatchUpdateResponse<T = any> extends BaseBatchResponse<PpeDeliverySchedule, T & { id: string }> {}
 export interface PpeDeliveryScheduleBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}

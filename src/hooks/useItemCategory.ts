@@ -14,8 +14,8 @@ import {
   batchCreateItemCategories,
   batchUpdateItemCategories,
   batchDeleteItemCategories,
-} from '../api-client';
-import { ITEM_CATEGORY_TYPE } from '../constants';
+} from '@/api-client';
+import { ITEM_CATEGORY_TYPE } from '@/constants';
 import type {
   ItemCategoryCreateFormData,
   ItemCategoryUpdateFormData,
@@ -24,7 +24,7 @@ import type {
   ItemCategoryBatchUpdateFormData,
   ItemCategoryBatchDeleteFormData,
   ItemCategoryInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   ItemCategoryGetManyResponse,
   ItemCategoryGetUniqueResponse,
@@ -34,7 +34,7 @@ import type {
   ItemCategoryBatchCreateResponse,
   ItemCategoryBatchUpdateResponse,
   ItemCategoryBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { itemCategoryKeys, itemKeys, orderScheduleKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

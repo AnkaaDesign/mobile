@@ -29,7 +29,7 @@ import {
   batchCreatePaintGrounds,
   batchUpdatePaintGrounds,
   batchDeletePaintGrounds,
-} from '../api-client';
+} from '@/api-client';
 import type {
   PaintGroundCreateFormData,
   PaintGroundUpdateFormData,
@@ -38,7 +38,7 @@ import type {
   PaintGroundBatchUpdateFormData,
   PaintGroundBatchDeleteFormData,
   PaintGroundInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   PaintGroundGetManyResponse,
   PaintGroundGetUniqueResponse,
@@ -48,7 +48,7 @@ import type {
   PaintGroundBatchCreateResponse,
   PaintGroundBatchUpdateResponse,
   PaintGroundBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { paintGroundKeys, paintKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

@@ -1,6 +1,6 @@
 // packages/interfaces/src/garage.ts
 
-import type { ORDER_BY_DIRECTION } from '../constants';
+import type { ORDER_BY_DIRECTION } from '@/constants';
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
 import type { Truck, TruckIncludes } from "./truck";
 
@@ -140,16 +140,16 @@ export interface ParkingSpotDeleteResponse extends BaseDeleteResponse {}
 // =====================
 
 // Garage batch operations
-export interface GarageBatchCreateResponse<T> extends BaseBatchResponse<Garage, T> {}
-export interface GarageBatchUpdateResponse<T> extends BaseBatchResponse<Garage, T & { id: string }> {}
+export interface GarageBatchCreateResponse<T = any> extends BaseBatchResponse<Garage, T> {}
+export interface GarageBatchUpdateResponse<T = any> extends BaseBatchResponse<Garage, T & { id: string }> {}
 export interface GarageBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
 
 // GarageLane batch operations
-export interface GarageLaneBatchCreateResponse<T> extends BaseBatchResponse<GarageLane, T> {}
-export interface GarageLaneBatchUpdateResponse<T> extends BaseBatchResponse<GarageLane, T & { id: string }> {}
+export interface GarageLaneBatchCreateResponse<T = any> extends BaseBatchResponse<GarageLane, T> {}
+export interface GarageLaneBatchUpdateResponse<T = any> extends BaseBatchResponse<GarageLane, T & { id: string }> {}
 export interface GarageLaneBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
 
 // ParkingSpot batch operations
-export interface ParkingSpotBatchCreateResponse<T> extends BaseBatchResponse<ParkingSpot, T> {}
-export interface ParkingSpotBatchUpdateResponse<T> extends BaseBatchResponse<ParkingSpot, T & { id: string }> {}
+export interface ParkingSpotBatchCreateResponse<T = any> extends BaseBatchResponse<ParkingSpot, T> {}
+export interface ParkingSpotBatchUpdateResponse<T = any> extends BaseBatchResponse<ParkingSpot, T & { id: string }> {}
 export interface ParkingSpotBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}

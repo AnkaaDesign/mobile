@@ -12,6 +12,7 @@ import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row
 import { FileTypeIcon } from "@/components/ui/file-type-icon";
 import { formatFileSize, formatDateTime } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -22,10 +23,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface FileTableProps {
   files: File[];
@@ -393,7 +390,17 @@ export const FileTable = React.memo<FileTableProps>(
           }
 
           return (
-            <ReanimatedSwipeableRow key={file.id} id={file.id} actions={actions} disabled={showSelection}>
+            <ReanimatedSwipeableRow
+              key={file.id}
+              rightActions={actions.map(action => ({
+                key: action.label,
+                label: action.label,
+                icon: <Icon name={action.icon} size="sm" color="#ffffff" />,
+                backgroundColor: action.backgroundColor,
+                onPress: action.onPress
+              }))}
+              enabled={!showSelection}
+            >
               {rowContent}
             </ReanimatedSwipeableRow>
           );

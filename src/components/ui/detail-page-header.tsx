@@ -224,5 +224,3 @@ const styles = StyleSheet.create({
 });
 
 DetailPageHeader.displayName = "DetailPageHeader";
-
-export { DetailPageHeader };

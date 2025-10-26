@@ -1,7 +1,7 @@
 // packages/interfaces/src/user.ts
 
-import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION, USER_STATUS } from '../constants';
+import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseMergeResponse, BaseBatchResponse } from "./common";
+import type { ORDER_BY_DIRECTION, USER_STATUS } from '@/constants';
 import type { PpeSize, PpeDelivery, PpeDeliverySchedule, PpeSizeIncludes, PpeDeliveryIncludes, PpeDeliveryScheduleIncludes } from "./ppe";
 import type { SeenNotification, Notification, SeenNotificationIncludes, NotificationIncludes } from "./notification";
 import type { Position, PositionIncludes, PositionOrderBy } from "./position";
@@ -26,7 +26,9 @@ export interface User extends BaseEntity {
   avatarId: string | null;
   status: USER_STATUS;
   statusOrder: number; // 1=Ativo, 2=Inativo, 3=Suspenso
+  isActive: boolean;
   phone: string | null;
+  phoneNumber: string | null; // Alias for phone
   password?: string | null;
   positionId: string | null;
   preferenceId: string | null;
@@ -34,6 +36,7 @@ export interface User extends BaseEntity {
   cpf: string | null;
   verified: boolean;
   birth: Date; // Date of birth
+  admissional: Date | null;
   performanceLevel: number;
   sectorId: string | null;
   managedSectorId: string | null;
@@ -53,7 +56,7 @@ export interface User extends BaseEntity {
   sessionToken: string | null;
   secullumId: string | null;
   payrollNumber: number | null;
-  dismissal: Date | null; // Dismissal date (optional)
+  profilePictureUrl: string | null; // Profile picture URL
 
   // Status timestamp tracking
   contractedAt: Date | null;
@@ -92,6 +95,7 @@ export interface User extends BaseEntity {
     vacations?: number;
     bonuses?: number;
     tasks?: number;
+    createdTasks?: number; // Tasks created by this user
     workOrders?: number;
     orders?: number;
     suppliers?: number;
@@ -102,6 +106,8 @@ export interface User extends BaseEntity {
     files?: number;
     changeLogs?: number;
     seenNotification?: number;
+    warnings?: number; // Warnings count
+    ppeRequests?: number; // PPE requests count
   };
 }
 
@@ -225,6 +231,7 @@ export interface UserOrderBy {
   token?: ORDER_BY_DIRECTION;
   status?: ORDER_BY_DIRECTION;
   statusOrder?: ORDER_BY_DIRECTION;
+  isActive?: ORDER_BY_DIRECTION;
   phone?: ORDER_BY_DIRECTION;
   password?: ORDER_BY_DIRECTION;
   pis?: ORDER_BY_DIRECTION;
@@ -232,7 +239,7 @@ export interface UserOrderBy {
   verified?: ORDER_BY_DIRECTION;
   payrollNumber?: ORDER_BY_DIRECTION;
   birth?: ORDER_BY_DIRECTION;
-  dismissal?: ORDER_BY_DIRECTION;
+  admissional?: ORDER_BY_DIRECTION;
   contractedAt?: ORDER_BY_DIRECTION;
   exp1StartAt?: ORDER_BY_DIRECTION;
   exp1EndAt?: ORDER_BY_DIRECTION;
@@ -264,6 +271,7 @@ export interface UserGetManyResponse extends BaseGetManyResponse<User> {}
 export interface UserCreateResponse extends BaseCreateResponse<User> {}
 export interface UserUpdateResponse extends BaseUpdateResponse<User> {}
 export interface UserDeleteResponse extends BaseDeleteResponse {}
+export interface UserMergeResponse extends BaseMergeResponse<User> {}
 
 // =====================
 // Batch Operation Responses

@@ -32,7 +32,7 @@ export function EmployeeCard({ warning }: EmployeeCardProps) {
   }
 
   // Count previous warnings if available
-  const previousWarningsCount = warning.collaborator.warnings?.filter((w) => w.id !== warning.id).length || 0;
+  const previousWarningsCount = warning.collaborator.warningsCollaborator?.filter((w) => w.id !== warning.id).length || 0;
 
   return (
     <Card>

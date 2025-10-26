@@ -144,7 +144,7 @@ export function DeliveriesCard({ item, deliveries = [] }: DeliveriesCardProps) {
                           },
                         ]}
                       >
-                        {PPE_DELIVERY_STATUS_LABELS[delivery.status]}
+                        {PPE_DELIVERY_STATUS_LABELS[delivery.status as keyof typeof PPE_DELIVERY_STATUS_LABELS]}
                       </ThemedText>
                     </Badge>
                   </View>

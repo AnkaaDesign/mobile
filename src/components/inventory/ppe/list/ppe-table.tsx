@@ -13,6 +13,7 @@ import { PpeTableRowSwipe } from "./ppe-table-row-swipe";
 import { formatCurrency } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { STOCK_LEVEL, STOCK_LEVEL_LABELS } from '../../../../constants';
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -23,10 +24,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface PpeTableProps {
   ppes: Item[];

@@ -1,7 +1,7 @@
 // packages/interfaces/src/borrow.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION, BORROW_STATUS } from '../constants';
+import type { ORDER_BY_DIRECTION, BORROW_STATUS } from '@/constants';
 import type { Item, ItemIncludes, ItemOrderBy } from "./item";
 import type { User, UserIncludes, UserOrderBy } from "./user";
 
@@ -13,9 +13,14 @@ export interface Borrow extends BaseEntity {
   itemId: string;
   userId: string;
   quantity: number;
+  quantityReturned: number;
   status: BORROW_STATUS;
   statusOrder: number;
+  expectedReturnDate: Date | null;
   returnedAt: Date | null;
+  notes: string | null;
+  reason: string | null;
+  conditionNotes: string | null;
 
   // Relations (optional, populated based on query)
   item?: Item;
@@ -46,8 +51,10 @@ export interface BorrowIncludes {
 export interface BorrowOrderBy {
   id?: ORDER_BY_DIRECTION;
   quantity?: ORDER_BY_DIRECTION;
+  quantityReturned?: ORDER_BY_DIRECTION;
   status?: ORDER_BY_DIRECTION;
   statusOrder?: ORDER_BY_DIRECTION;
+  expectedReturnDate?: ORDER_BY_DIRECTION;
   returnedAt?: ORDER_BY_DIRECTION;
   createdAt?: ORDER_BY_DIRECTION;
   updatedAt?: ORDER_BY_DIRECTION;
@@ -69,6 +76,6 @@ export interface BorrowDeleteResponse extends BaseDeleteResponse {}
 // Batch Operation Responses
 // =====================
 
-export interface BorrowBatchCreateResponse<T> extends BaseBatchResponse<Borrow, T> {}
-export interface BorrowBatchUpdateResponse<T> extends BaseBatchResponse<Borrow, T & { id: string }> {}
+export interface BorrowBatchCreateResponse<T = any> extends BaseBatchResponse<Borrow, T> {}
+export interface BorrowBatchUpdateResponse<T = any> extends BaseBatchResponse<Borrow, T & { id: string }> {}
 export interface BorrowBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}

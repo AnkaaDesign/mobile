@@ -10,7 +10,7 @@ import {
   batchCreatePaintFormulas,
   batchUpdatePaintFormulas,
   batchDeletePaintFormulas,
-} from '../api-client';
+} from '@/api-client';
 import type {
   PaintFormulaCreateFormData,
   PaintFormulaUpdateFormData,
@@ -19,7 +19,7 @@ import type {
   PaintFormulaBatchUpdateFormData,
   PaintFormulaBatchDeleteFormData,
   PaintFormulaInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   PaintFormulaGetManyResponse,
   PaintFormulaGetUniqueResponse,
@@ -29,7 +29,7 @@ import type {
   PaintFormulaBatchCreateResponse,
   PaintFormulaBatchUpdateResponse,
   PaintFormulaBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { paintFormulaKeys, paintKeys, paintFormulaComponentKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";

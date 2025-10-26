@@ -80,7 +80,6 @@ export default function PPEDeliveryDetailsScreen() {
           sector: true,
         },
       },
-      approvedByUser: true,
       reviewedByUser: true,
       ppeSchedule: {
         include: {
@@ -516,25 +515,17 @@ export default function PPEDeliveryDetailsScreen() {
         )}
 
         {/* Review Information */}
-        {(delivery.approvedByUser || delivery.reviewedByUser) && (
+        {delivery.reviewedByUser && (
           <Card style={styles.card}>
             <View style={styles.sectionHeader}>
               <IconCircleCheck size={20} color={colors.primary} />
               <ThemedText style={styles.sectionTitle}>Revisão</ThemedText>
             </View>
             <View style={styles.itemDetails}>
-              {delivery.approvedByUser && (
-                <View style={styles.detailRow}>
-                  <ThemedText style={styles.detailLabel}>Aprovado por</ThemedText>
-                  <ThemedText style={styles.detailValue}>{delivery.approvedByUser.name}</ThemedText>
-                </View>
-              )}
-              {delivery.reviewedByUser && (
-                <View style={styles.detailRow}>
-                  <ThemedText style={styles.detailLabel}>Revisado por</ThemedText>
-                  <ThemedText style={styles.detailValue}>{delivery.reviewedByUser.name}</ThemedText>
-                </View>
-              )}
+              <View style={styles.detailRow}>
+                <ThemedText style={styles.detailLabel}>Revisado por</ThemedText>
+                <ThemedText style={styles.detailValue}>{delivery.reviewedByUser.name}</ThemedText>
+              </View>
             </View>
           </Card>
         )}
@@ -587,7 +578,7 @@ export default function PPEDeliveryDetailsScreen() {
                   <ThemedText style={styles.detailLabel}>Tipos de EPI</ThemedText>
                   <View style={styles.badgeContainer}>
                     {delivery.ppeSchedule.ppeItems.map((ppeItem: any, index: number) => (
-                      <Badge key={index} variant="secondary" style={styles.ppeBadge}>
+                      <Badge key={index} variant="secondary" textStyle={styles.ppeBadgeText}>
                         {PPE_TYPE_LABELS[ppeItem.ppeType as keyof typeof PPE_TYPE_LABELS] || ppeItem.ppeType} ({ppeItem.quantity}x)
                       </Badge>
                     ))}
@@ -797,7 +788,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     marginTop: spacing.xs,
   },
-  ppeBadge: {
+  ppeBadgeText: {
     fontSize: fontSize.xs,
   },
 });

@@ -8,7 +8,7 @@ import { useCustomersInfiniteMobile } from "@/hooks";
 import type { CustomerGetManyFormData } from '../../../../schemas';
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
 import { CustomerTable, createColumnDefinitions } from "@/components/administration/customer/list/customer-table";
-import type { SortConfig } from "@/components/administration/customer/list/customer-table";
+import type { SortConfig } from "@/lib/sort-utils";
 import { CustomerFilterTags } from "@/components/administration/customer/list/customer-filter-tags";
 import { CustomerColumnVisibilityDrawer } from "@/components/administration/customer/list/customer-column-visibility-drawer";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
@@ -48,7 +48,7 @@ export default function CustomerListScreen() {
   }>({});
 
   const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
-    [{ column: "fantasyName", direction: "asc", order: 0 }],
+    [{ columnKey: "fantasyName", direction: "asc", order: 0 }],
     3,
     false
   );
@@ -366,7 +366,7 @@ export default function CustomerListScreen() {
             showSelection={showSelection}
             selectedCustomers={selectedCustomers}
             onSelectionChange={handleSelectionChange}
-            sortConfigs={sortConfigs as SortConfig[]}
+            sortConfigs={sortConfigs}
             onSort={(configs) => handleSort(configs[0]?.columnKey || "fantasyName")}
             visibleColumnKeys={visibleColumns}
             enableSwipeActions={true}

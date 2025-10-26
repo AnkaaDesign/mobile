@@ -1,6 +1,6 @@
 // packages/hooks/src/useSector.ts
 
-import { createSector, deleteSector, getSectorById, getSectors, updateSector, batchCreateSectors, batchUpdateSectors, batchDeleteSectors } from '../api-client';
+import { createSector, deleteSector, getSectorById, getSectors, updateSector, batchCreateSectors, batchUpdateSectors, batchDeleteSectors } from '@/api-client';
 import type {
   SectorCreateFormData,
   SectorUpdateFormData,
@@ -8,7 +8,7 @@ import type {
   SectorBatchCreateFormData,
   SectorBatchUpdateFormData,
   SectorBatchDeleteFormData,
-} from '../types';
+} from '@/types';
 import type {
   SectorGetManyResponse,
   SectorGetUniqueResponse,
@@ -18,7 +18,7 @@ import type {
   SectorBatchCreateResponse,
   SectorBatchUpdateResponse,
   SectorBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { sectorKeys, userKeys, taskKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

@@ -63,7 +63,7 @@ export default function EmployeeDetailsScreen() {
 
   const handleEdit = () => {
     if (employee) {
-      router.push(routeToMobilePath(routes.administration.employees.edit(employee.id)) as any);
+      router.push(routeToMobilePath(routes.humanResources.employees.edit(employee.id)) as any);
     }
   };
 

@@ -11,7 +11,7 @@ import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from '../../../constants';
 import { formatDate } from '../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
-interface TeamCutTableProps {
+interface TeamCuttingTableProps {
   cuts: Cut[];
   onCutPress?: (cutId: string) => void;
   onRefresh?: () => Promise<void>;
@@ -24,12 +24,10 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case CUT_STATUS.PENDING:
       return { background: badgeColors.warning.background, text: badgeColors.warning.text };
-    case CUT_STATUS.IN_PROGRESS:
+    case CUT_STATUS.CUTTING:
       return { background: badgeColors.info.background, text: badgeColors.info.text };
     case CUT_STATUS.COMPLETED:
       return { background: badgeColors.success.background, text: badgeColors.success.text };
-    case CUT_STATUS.CANCELLED:
-      return { background: badgeColors.muted.background, text: badgeColors.muted.text };
     default:
       return { background: badgeColors.muted.background, text: badgeColors.muted.text };
   }
@@ -40,12 +38,10 @@ const getStatusLabel = (status: string) => {
   switch (status) {
     case CUT_STATUS.PENDING:
       return "Pendente";
-    case CUT_STATUS.IN_PROGRESS:
-      return "Em Progresso";
+    case CUT_STATUS.CUTTING:
+      return "Cortando";
     case CUT_STATUS.COMPLETED:
       return "Concluído";
-    case CUT_STATUS.CANCELLED:
-      return "Cancelado";
     default:
       return status;
   }
@@ -54,12 +50,10 @@ const getStatusLabel = (status: string) => {
 // Helper function to get type label
 const getTypeLabel = (type: string) => {
   switch (type) {
-    case CUT_TYPE.NORMAL:
-      return "Normal";
-    case CUT_TYPE.RECUT:
-      return "Recorte";
-    case CUT_TYPE.REWORK:
-      return "Retrabalho";
+    case CUT_TYPE.VINYL:
+      return "Adesivo";
+    case CUT_TYPE.STENCIL:
+      return "Espovo";
     default:
       return type;
   }
@@ -68,18 +62,16 @@ const getTypeLabel = (type: string) => {
 // Helper function to get origin label
 const getOriginLabel = (origin: string) => {
   switch (origin) {
-    case CUT_ORIGIN.AUTOMATIC:
-      return "Automático";
-    case CUT_ORIGIN.MANUAL:
-      return "Manual";
-    case CUT_ORIGIN.REQUESTED:
-      return "Solicitado";
+    case CUT_ORIGIN.PLAN:
+      return "Plano";
+    case CUT_ORIGIN.REQUEST:
+      return "Solicitação";
     default:
       return origin;
   }
 };
 
-export const TeamCutTable = React.memo<TeamCutTableProps>(
+export const TeamCuttingTable = React.memo<TeamCuttingTableProps>(
   ({ cuts, onCutPress, onRefresh, refreshing = false, loading = false }) => {
     const { colors, isDark } = useTheme();
 
@@ -102,7 +94,7 @@ export const TeamCutTable = React.memo<TeamCutTableProps>(
                   </View>
                   <View style={styles.fileInfo}>
                     <ThemedText style={styles.fileName} numberOfLines={1}>
-                      {item.file?.name || "Arquivo"}
+                      {item.file?.filename || "Arquivo"}
                     </ThemedText>
                     <ThemedText style={styles.typeLabel} numberOfLines={1}>
                       {typeLabel}
@@ -139,7 +131,7 @@ export const TeamCutTable = React.memo<TeamCutTableProps>(
                   <View style={styles.detailRow}>
                     <ThemedText style={styles.detailLabel}>Tarefa:</ThemedText>
                     <ThemedText style={styles.detailValue} numberOfLines={1}>
-                      {item.task.title}
+                      {item.task.name}
                     </ThemedText>
                   </View>
                 )}
@@ -319,4 +311,4 @@ const styles = StyleSheet.create({
   },
 });
 
-TeamCutTable.displayName = "TeamCutTable";
+TeamCuttingTable.displayName = "TeamCuttingTable";

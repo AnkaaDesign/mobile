@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { UseQueryOptions } from "@tanstack/react-query";
-import { dashboardService } from '../api-client';
+import { dashboardService } from '@/api-client';
 import type {
   InventoryDashboardResponse,
   HRDashboardResponse,
@@ -8,7 +8,7 @@ import type {
   PaintDashboardResponse,
   ProductionDashboardResponse,
   UnifiedDashboardResponse,
-} from '../types';
+} from '@/types';
 import type {
   InventoryDashboardQueryFormData,
   HRDashboardQueryFormData,
@@ -16,7 +16,7 @@ import type {
   PaintDashboardQueryFormData,
   ProductionDashboardQueryFormData,
   UnifiedDashboardQueryFormData,
-} from '../schemas';
+} from '@/schemas';
 
 // Query keys
 export const dashboardQueryKeys = {

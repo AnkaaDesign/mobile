@@ -9,12 +9,14 @@ interface ModalProps {
   visible: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  title?: string;
   animationType?: "fade" | "slide" | "none";
   presentationStyle?: "fullScreen" | "pageSheet" | "formSheet" | "overFullScreen";
   backdropOpacity?: number;
   closeOnBackdropPress?: boolean;
   statusBarTranslucent?: boolean;
   style?: ViewStyle;
+  size?: "sm" | "md" | "lg" | "xl" | "full" | string;
 }
 
 interface ModalContentProps {
@@ -114,9 +116,8 @@ const Modal: React.FC<ModalProps> = ({
         <Pressable
           style={containerStyle}
           onPress={closeOnBackdropPress ? onClose : undefined}
-          activeOpacity={1}
         >
-          <Pressable onPress={(e) => e.stopPropagation()} activeOpacity={1}>
+          <Pressable onPress={(e) => e.stopPropagation()}>
             <Animated.View {...animation}>
               {children}
             </Animated.View>

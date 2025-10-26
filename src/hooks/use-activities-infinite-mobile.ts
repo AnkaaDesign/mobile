@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useActivitiesInfinite } from './useActivity';
 import { useInfiniteMobile } from "./use-infinite-mobile";
-import type { ActivityGetManyFormData } from '../schemas';
+import type { ActivityGetManyFormData } from '@/schemas';
 
 const DEFAULT_MOBILE_PAGE_SIZE = 40;
 

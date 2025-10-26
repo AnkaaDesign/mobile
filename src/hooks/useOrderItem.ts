@@ -12,7 +12,7 @@ import {
   batchDeleteOrderItems,
   batchMarkOrderItemsFulfilled,
   batchMarkOrderItemsReceived,
-} from '../api-client';
+} from '@/api-client';
 import type {
   OrderItemGetManyFormData,
   OrderItemCreateFormData,
@@ -20,7 +20,7 @@ import type {
   OrderItemBatchCreateFormData,
   OrderItemBatchUpdateFormData,
   OrderItemBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   OrderItemGetManyResponse,
   OrderItemGetUniqueResponse,
@@ -30,7 +30,7 @@ import type {
   OrderItemBatchCreateResponse,
   OrderItemBatchUpdateResponse,
   OrderItemBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { orderItemKeys, orderKeys, itemKeys, activityKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

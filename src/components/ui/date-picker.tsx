@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useTheme } from "@/lib/theme";
-import { borderRadius, spacing, colors as designColors } from "@/constants/design-system";
+import { borderRadius, spacing } from "@/constants/design-system";
 import type { DatePickerProps } from "@/types/components/form-props";
 
 /**

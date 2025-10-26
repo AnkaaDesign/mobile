@@ -5,8 +5,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconUserCircle, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
-import { useCustomer, useCustomerMutations } from '../../../../../hooks';
-import { customerUpdateSchema, type CustomerUpdateFormData } from '../../../../../schemas';
+import { useCustomer, useCustomerMutations } from "@/hooks";
+import { customerUpdateSchema, type CustomerUpdateFormData } from "@/schemas";
 import {
   ThemedView,
   ThemedText,
@@ -20,11 +20,12 @@ import {
   SimpleFormField,
 } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
-import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from '../../../../../constants';
+import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ } from '../../../../../utils';
+import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
 import { PhoneManager } from "@/components/administration/customer/form/phone-manager";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
+import { LogoUpload } from "@/components/administration/customer/form/logo-upload";
 
 export default function CustomerEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,6 +34,7 @@ export default function CustomerEditScreen() {
   const insets = useSafeAreaInsets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cnpj");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const { data: customer, isLoading, error, refetch } = useCustomer(id!, {
     include: {
@@ -121,7 +123,33 @@ export default function CustomerEditScreen() {
 
     setIsSubmitting(true);
     try {
-      const result = await updateAsync({ id: id!, data });
+      let submitData: CustomerUpdateFormData | any = data;
+
+      // If we have a new logo file, create FormData
+      if (logoFile) {
+        const formData = new FormData();
+
+        // Add all form fields
+        Object.entries(data).forEach(([key, value]) => {
+          if (value !== null && value !== undefined) {
+            if (Array.isArray(value)) {
+              // Handle arrays (phones, tags)
+              value.forEach((item, index) => {
+                formData.append(`${key}[${index}]`, item);
+              });
+            } else {
+              formData.append(key, String(value));
+            }
+          }
+        });
+
+        // Add the logo file
+        formData.append("logo", logoFile as any);
+
+        submitData = formData;
+      }
+
+      const result = await updateAsync({ id: id!, data: submitData as CustomerUpdateFormData });
 
       if (result?.data) {
         Alert.alert("Sucesso", "Cliente atualizado com sucesso!", [
@@ -143,7 +171,7 @@ export default function CustomerEditScreen() {
   };
 
   const handleCancel = () => {
-    if (isDirty) {
+    if (isDirty || logoFile) {
       Alert.alert("Descartar Alterações", "Você tem alterações não salvas. Deseja descartá-las?", [
         { text: "Continuar Editando", style: "cancel" },
         { text: "Descartar", style: "destructive", onPress: () => router.back() },
@@ -331,6 +359,12 @@ export default function CustomerEditScreen() {
           )}
         </Card>
 
+        {/* Logo */}
+        <Card style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Logo</ThemedText>
+          <LogoUpload value={logoFile} onChange={setLogoFile} disabled={isSubmitting} existingLogoUrl={(customer.data.logo?.url as string) || undefined} />
+        </Card>
+
         {/* Address */}
         <Card style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Endereço</ThemedText>
@@ -341,8 +375,8 @@ export default function CustomerEditScreen() {
               name="zipCode"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  value={value || ""}
-                  onChangeText={onChange}
+                  value={value ? formatCEP(value) : ""}
+                  onChangeText={(text) => onChange(cleanCEP(text))}
                   onBlur={onBlur}
                   placeholder="00000-000"
                   keyboardType="numeric"
@@ -456,7 +490,7 @@ export default function CustomerEditScreen() {
           <ThemedText>Cancelar</ThemedText>
         </Button>
 
-        <Button variant="default" onPress={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting || !isDirty} style={styles.actionButton}>
+        <Button variant="default" onPress={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting || (!isDirty && !logoFile)} style={styles.actionButton}>
           <IconDeviceFloppy size={20} />
           <ThemedText style={{ color: "white" }}>{isSubmitting ? "Salvando..." : "Salvar Alterações"}</ThemedText>
         </Button>

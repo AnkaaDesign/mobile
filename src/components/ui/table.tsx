@@ -4,6 +4,7 @@ import { ActivityIndicator, NativeScrollEvent, NativeSyntheticEvent,
   TouchableOpacity, View } from "react-native";
 import { Text } from "./text";
 import { IconChevronDown, IconChevronsUp, IconChevronUp } from "@tabler/icons-react-native";
+import type { SortConfig } from "@/lib/sort-utils";
 
 interface TableCellProps {
   children?: ReactNode;
@@ -94,11 +95,6 @@ interface TableHeaderProps {
 
 export function TableHeader({ children, className }: TableHeaderProps) {
   return <View className={`bg-muted border-b border-border ${className ?? ""}`}>{children}</View>;
-}
-
-interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
 }
 
 interface TableContextValue {

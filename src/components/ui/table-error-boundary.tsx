@@ -37,7 +37,7 @@ export class TableErrorBoundary extends Component<TableErrorBoundaryProps, Table
     if (this.state.hasError) {
       return (
         <View style={styles.errorContainer}>
-          <IconAlertCircle size={48} color={extendedColors.red[600 as keyof typeof red]} />
+          <IconAlertCircle size={48} color={extendedColors.red[600]} />
           <ThemedText style={styles.errorTitle}>Erro ao carregar a tabela</ThemedText>
           <ThemedText style={styles.errorMessage}>{this.state.error?.message || "Ocorreu um erro inesperado"}</ThemedText>
           <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>

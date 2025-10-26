@@ -5,6 +5,7 @@ import { Text } from "./text";
 import { Icon } from "./icon";
 import { Badge } from "./badge";
 import { cn } from "@/lib/cn";
+import { useTheme } from "@/lib/theme";
 
 interface DetailHeaderProps {
   title: string;
@@ -33,6 +34,7 @@ export function DetailHeader({
   showBackButton = true,
 }: DetailHeaderProps) {
   const router = useRouter();
+  const { colors } = useTheme();
 
   const handleBack = () => {
     if (onBack) {
@@ -52,7 +54,7 @@ export function DetailHeader({
               className="mr-3 p-1"
               activeOpacity={0.7}
             >
-              <Icon name="arrow-left" size="md" variant="default" />
+              <Icon name="arrowLeft" size={20} color={colors.foreground} />
             </TouchableOpacity>
           )}
 
@@ -95,7 +97,7 @@ export function DetailHeader({
                 <Icon
                   name={action.icon}
                   size={20}
-                  color={action.disabled ? "#9CA3AF" : "#6B7280"}
+                  color={action.disabled ? colors.mutedForeground : colors.foreground}
                 />
               </TouchableOpacity>
             ))}
@@ -122,6 +124,7 @@ export function DetailHeaderLarge({
   children?: React.ReactNode;
 }) {
   const router = useRouter();
+  const { colors } = useTheme();
 
   const handleBack = () => {
     if (onBack) {
@@ -141,7 +144,7 @@ export function DetailHeaderLarge({
             className="p-1"
             activeOpacity={0.7}
           >
-            <Icon name="IconArrowLeft" size={24} color="#6B7280" />
+            <Icon name="arrowLeft" size={24} color={colors.foreground} />
           </TouchableOpacity>
         )}
 
@@ -163,7 +166,7 @@ export function DetailHeaderLarge({
                 <Icon
                   name={action.icon}
                   size={20}
-                  color={action.disabled ? "#9CA3AF" : "#6B7280"}
+                  color={action.disabled ? colors.mutedForeground : colors.foreground}
                 />
               </TouchableOpacity>
             ))}

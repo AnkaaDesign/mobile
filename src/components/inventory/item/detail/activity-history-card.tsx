@@ -139,10 +139,10 @@ export function ActivityHistoryCard({ item, maxHeight }: ActivityHistoryCardProp
     if (colorName === "mutedForeground") return colors.mutedForeground;
     if (colorName === "foreground") return colors.foreground;
     if (colorName === "primary") return colors.primary;
-    if (colorName === "green") return extendedColors.green[600 as keyof typeof green];
-    if (colorName === "yellow") return extendedColors.yellow[600 as keyof typeof yellow];
-    if (colorName === "blue") return extendedColors.blue[600 as keyof typeof blue];
-    if (colorName === "red") return extendedColors.red[600 as keyof typeof red];
+    if (colorName === "green") return extendedColors.green[600];
+    if (colorName === "yellow") return extendedColors.yellow[600];
+    if (colorName === "blue") return extendedColors.blue[600];
+    if (colorName === "red") return extendedColors.red[600];
 
     return colors.mutedForeground;
   };
@@ -191,7 +191,7 @@ export function ActivityHistoryCard({ item, maxHeight }: ActivityHistoryCardProp
                   },
                 ])}
               >
-                <IconTrendingUp size={16} color={extendedColors.green[600 as keyof typeof green]} />
+                <IconTrendingUp size={16} color={extendedColors.green[600]} />
               </View>
               <ThemedText
                 style={StyleSheet.flatten([
@@ -231,7 +231,7 @@ export function ActivityHistoryCard({ item, maxHeight }: ActivityHistoryCardProp
                   },
                 ])}
               >
-                <IconTrendingDown size={16} color={extendedColors.red[600 as keyof typeof red]} />
+                <IconTrendingDown size={16} color={extendedColors.red[600]} />
               </View>
               <ThemedText
                 style={StyleSheet.flatten([
@@ -328,7 +328,7 @@ export function ActivityHistoryCard({ item, maxHeight }: ActivityHistoryCardProp
                                 {ACTIVITY_REASON_LABELS[activity.reason]}
                               </ThemedText>
                             </Badge>
-                            <View style={StyleSheet.flatten([styles.operationBadge, { backgroundColor: isInbound ? extendedColors.green[700] : extendedColors.red[700 as keyof typeof red] }])}>
+                            <View style={StyleSheet.flatten([styles.operationBadge, { backgroundColor: isInbound ? extendedColors.green[700] : extendedColors.red[700] }])}>
                               <ThemedText style={StyleSheet.flatten([styles.operationBadgeText, { color: "#FFFFFF" }])}>
                                 {isInbound ? "↑" : "↓"} {Math.abs(activity.quantity)}
                               </ThemedText>

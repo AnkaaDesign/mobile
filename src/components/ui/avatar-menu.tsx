@@ -38,7 +38,7 @@ export function AvatarMenu({ onClose }: AvatarMenuProps) {
 
     try {
       // Convert route constant to mobile path and navigate
-      const mobilePath = routeToMobilePath(routePath);
+      const mobilePath = routeToMobilePath(routePath as any);
       router.push(mobilePath as any);
     } catch (error) {
       console.error("Avatar menu navigation failed:", error);
@@ -65,9 +65,9 @@ export function AvatarMenu({ onClose }: AvatarMenuProps) {
           setUserCardLayout({ width, height, x, y });
         }}
         className="flex-row items-center p-3 rounded-xl"
-        style={({ pressed }) => ({
-          backgroundColor: pressed ? hoverBackgroundColor : "transparent",
-        })}
+        style={{
+          backgroundColor: "transparent",
+        }}
         activeOpacity={0.8}
       >
         <View
@@ -119,11 +119,11 @@ export function AvatarMenu({ onClose }: AvatarMenuProps) {
             {/* Menu Items - No user info header since it's already in sidebar */}
             <View className="py-2">
               <TouchableOpacity
-                onPress={() => handleNavigation(routes.pessoal.meuPerfil)}
+                onPress={() => handleNavigation(routes.myProfile.root)}
                 className="flex-row items-center px-4 py-3.5 mx-2 rounded-lg"
-                style={({ pressed }) => ({
-                  backgroundColor: pressed ? hoverBackgroundColor : "transparent",
-                })}
+                style={{
+                  backgroundColor: "transparent",
+                }}
                 activeOpacity={0.8}
               >
                 <View className="w-6 h-6 items-center justify-center flex-shrink-0">
@@ -135,11 +135,11 @@ export function AvatarMenu({ onClose }: AvatarMenuProps) {
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => handleNavigation(routes.pessoal.preferencias.root)}
+                onPress={() => handleNavigation(routes.preferences.root)}
                 className="flex-row items-center px-4 py-3.5 mx-2 rounded-lg"
-                style={({ pressed }) => ({
-                  backgroundColor: pressed ? hoverBackgroundColor : "transparent",
-                })}
+                style={{
+                  backgroundColor: "transparent",
+                }}
                 activeOpacity={0.8}
               >
                 <View className="w-6 h-6 items-center justify-center flex-shrink-0">

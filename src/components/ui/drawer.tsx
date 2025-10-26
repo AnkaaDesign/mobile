@@ -15,10 +15,14 @@ import { borderRadius, shadow, spacing, transitions } from "@/constants/design-s
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface DrawerProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open?: boolean;
+  visible?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onClose?: () => void;
   children: React.ReactNode;
+  title?: string;
   side?: "left" | "right";
+  position?: "left" | "right" | "top" | "bottom" | string;
   width?: number | string;
   backdropOpacity?: number;
   closeOnBackdropPress?: boolean;
@@ -43,17 +47,28 @@ interface DrawerFooterProps {
 
 const Drawer: React.FC<DrawerProps> = ({
   open,
+  visible,
   onOpenChange,
+  onClose,
   children,
+  title,
   side = "left",
+  position,
   width = "80%",
   backdropOpacity = 0.5,
   closeOnBackdropPress = true,
   closeOnSwipe = true,
   style,
 }) => {
+  // Handle both prop patterns
+  const isOpen = open ?? visible ?? false;
+  const handleClose = () => {
+    onOpenChange?.(false);
+    onClose?.();
+  };
+  const actualSide = position === "left" || position === "right" ? position : side;
   const { colors } = useTheme();
-  const translateX = useSharedValue(side === "left" ? -SCREEN_WIDTH : SCREEN_WIDTH);
+  const translateX = useSharedValue(actualSide === "left" ? -SCREEN_WIDTH : SCREEN_WIDTH);
   const opacity = useSharedValue(0);
 
   // Calculate drawer width

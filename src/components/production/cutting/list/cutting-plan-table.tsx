@@ -2,21 +2,18 @@ import React, { useCallback, useMemo } from "react";
 import { View, Text, FlatList, RefreshControl, Pressable, StyleSheet } from "react-native";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { IconChevronRight, IconScissors } from "@tabler/icons-react-native";
+import { IconChevronRight, IconScissors, IconEdit, IconTrash } from "@tabler/icons-react-native";
 import type { Cut } from "../../../../types";
 import { useTheme } from "@/lib/theme";
 import { TableCard, TableCardRow, TableCardCell, TableCardActions, TableCardHeader } from "@/components/ui/table-card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ActivityIndicator } from "@/components/ui/activity-indicator";
-import { SwipeableRow } from "@/components/ui/swipeable-row";
+import { ReanimatedSwipeableRow, type SwipeAction } from "@/components/ui/reanimated-swipeable-row";
 import { CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from "../../../../constants";
 import { getBadgeVariant } from "../../../../constants/badge-colors";
+import type { SortConfig } from "@/lib/sort-utils";
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 export interface ColumnDefinition {
   key: string;
@@ -97,25 +94,29 @@ export function CuttingPlanTable({
     ({ item: cut }: { item: Cut }) => {
       const isSelected = selectedCuts.has(cut.id);
 
-      const swipeActions = enableSwipeActions
+      const rightActions: SwipeAction[] = enableSwipeActions
         ? [
             ...(onCutEdit
               ? [
                   {
+                    key: "edit",
                     label: "Editar",
+                    icon: <IconEdit size={20} color="white" />,
                     onPress: () => onCutEdit(cut.id),
                     backgroundColor: colors.primary,
-                    color: colors.primaryForeground,
+                    closeOnPress: true,
                   },
                 ]
               : []),
             ...(onCutDelete
               ? [
                   {
+                    key: "delete",
                     label: "Excluir",
+                    icon: <IconTrash size={20} color="white" />,
                     onPress: () => onCutDelete(cut.id),
                     backgroundColor: colors.destructive,
-                    color: colors.destructiveForeground,
+                    closeOnPress: true,
                   },
                 ]
               : []),
@@ -143,7 +144,7 @@ export function CuttingPlanTable({
           {visibleColumnKeys.includes("status") && (
             <TableCardRow>
               <TableCardCell label="Status">
-                <Badge variant={getBadgeVariant("CUT_STATUS", cut.status)}>
+                <Badge variant={getBadgeVariant(cut.status, "CUT")}>
                   {CUT_STATUS_LABELS[cut.status]}
                 </Badge>
               </TableCardCell>
@@ -208,8 +209,8 @@ export function CuttingPlanTable({
         </TableCard>
       );
 
-      if (enableSwipeActions && swipeActions.length > 0) {
-        return <SwipeableRow actions={swipeActions}>{cardContent}</SwipeableRow>;
+      if (enableSwipeActions && rightActions.length > 0) {
+        return <ReanimatedSwipeableRow rightActions={rightActions}>{cardContent}</ReanimatedSwipeableRow>;
       }
 
       return cardContent;

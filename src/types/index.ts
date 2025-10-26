@@ -49,3 +49,9 @@ export * from "./verification";
 export * from "./monitoring";
 // export * from "./statistics"; // Disabled - file doesn't exist
 export * from "./deployment";
+export * from "./budget";
+export * from "./commission";
+export * from "./economic-activity";
+export * from "./media";
+export * from "./time-clock";
+export * from "./supplier-extended";

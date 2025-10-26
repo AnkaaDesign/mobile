@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { ItemGetManyFormData } from '../schemas';
+import type { ItemGetManyFormData } from '@/schemas';
 
 // Storage key for persisting filters
 const ITEM_FILTERS_STORAGE_KEY = "@ankaa/item-filters";
@@ -35,6 +35,8 @@ const DEFAULT_FILTERS: ItemFilters = {
   quantityRange: undefined,
   taxRange: undefined,
   monthlyConsumptionRange: undefined,
+  hasMeasures: undefined,
+  hasMultipleMeasures: undefined,
 };
 
 // Type for the filter state - matches ItemGetManyFormData schema
@@ -85,6 +87,10 @@ export interface ItemFilters {
     min?: number;
     max?: number;
   };
+
+  // Measure filters
+  hasMeasures?: boolean;
+  hasMultipleMeasures?: boolean;
 }
 
 export function useItemFilters() {
@@ -185,7 +191,7 @@ export function useItemFilters() {
       if (filterKey.includes("Range") && (!value || (typeof value === "object" && !value.min && !value.max))) return;
 
       // Add to query params
-      queryParams[filterKey] = value as any;
+      queryParams[filterKey] = value as ItemGetManyFormData[keyof ItemGetManyFormData];
     });
 
     return queryParams;

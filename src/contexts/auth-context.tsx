@@ -46,6 +46,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [cachedToken, setCachedToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
   const [isValidatingSession, setIsValidatingSession] = useState<boolean>(false);
@@ -63,25 +64,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isFetchingUser,
   });
 
-  // Set up the token provider for the API client
+  // Set up the token provider for the API client to use cached token
   useEffect(() => {
     console.log("[AUTH DEBUG] Setting up token provider");
-    // Create an async token provider that properly handles the async nature of AsyncStorage
-    const tokenProvider = async () => {
-      try {
-        console.log("[AUTH DEBUG] Token provider called - fetching token from storage");
-        const token = await getStoredToken();
-        console.log("[AUTH DEBUG] Token provider result:", token ? `Token exists (length: ${token.length})` : "No token");
-        return token;
-      } catch (error) {
-        console.error("[AUTH DEBUG] Error getting token from storage:", error);
-        return null;
-      }
+    // Create a synchronous token provider that returns cached token
+    const tokenProvider = () => {
+      console.log("[AUTH DEBUG] Token provider called - returning cached token:", cachedToken ? `Token exists (length: ${cachedToken.length})` : "No token");
+      return cachedToken;
     };
 
     setTokenProvider(tokenProvider);
     console.log("[AUTH DEBUG] Token provider setup complete");
-  }, []);
+  }, [cachedToken]);
+
+  // Sync cached token with AsyncStorage whenever user changes
+  useEffect(() => {
+    const syncToken = async () => {
+      console.log("[AUTH DEBUG] Syncing token from AsyncStorage to cache");
+      const token = await getStoredToken();
+      console.log("[AUTH DEBUG] Token sync result:", token ? `Token exists (length: ${token.length})` : "No token");
+      setCachedToken(token);
+    };
+    syncToken();
+  }, [user]);
 
   // Set up global authentication error handler
   useEffect(() => {
@@ -98,6 +103,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // Clear auth state immediately
           setUser(null);
           setAccessToken(null);
+          setCachedToken(null);
           await removeStoredToken();
           await removeUserData();
           setAuthToken(null);
@@ -244,6 +250,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           await removeStoredToken();
           await removeUserData();
           setAccessToken(null);
+          setCachedToken(null);
           setUser(null);
           setAuthToken(null);
         } catch (cleanupError) {
@@ -300,6 +307,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (token) {
         console.log("[AUTH DEBUG] Token found, setting access token and auth token");
         setAccessToken(token);
+        setCachedToken(token);
         setAuthToken(token);
 
         console.log("[AUTH DEBUG] Calling fetchAndUpdateUserData");
@@ -311,6 +319,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           await removeStoredToken();
           await removeUserData();
           setAccessToken(null);
+          setCachedToken(null);
           setUser(null);
           setAuthToken(null);
           return;
@@ -320,6 +329,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log("[AUTH DEBUG] No token found, clearing auth state");
         setUser(null);
         setAccessToken(null);
+        setCachedToken(null);
         setAuthToken(null);
       }
     } catch (error) {
@@ -328,6 +338,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Clear invalid token state
       await removeStoredToken();
       setAccessToken(null);
+      setCachedToken(null);
       setUser(null);
       setAuthToken(null);
 
@@ -413,12 +424,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (accessToken) {
       console.log("[AUTH DEBUG] Setting auth token in API client");
       setAuthToken(accessToken);
-      // Also update the stored token for the token provider
+      // Also update the cached token immediately for sync access
+      setCachedToken(accessToken);
+      // Also update the stored token for persistence
       console.log("[AUTH DEBUG] Storing token in storage");
       storeToken(accessToken).catch((err) => console.error("[AUTH DEBUG] Failed to store token:", err));
     } else {
       console.log("[AUTH DEBUG] Clearing auth token from API client");
       setAuthToken(null);
+      // Clear the cached token
+      setCachedToken(null);
       // Clear the stored token
       console.log("[AUTH DEBUG] Removing token from storage");
       removeStoredToken().catch((err) => console.error("[AUTH DEBUG] Failed to remove token:", err));
@@ -454,6 +469,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Only store token and complete login if user is allowed
       await storeToken(access_token);
       setAccessToken(access_token);
+      setCachedToken(access_token);
 
       // Fetch complete user data with relationships (sector, position, etc)
       try {
@@ -480,6 +496,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Clean up any partial login state
       await removeStoredToken();
       setAccessToken(null);
+      setCachedToken(null);
       setUser(null);
       throw error;
     } finally {
@@ -529,6 +546,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         await storeUserData(user);
         setAuthToken(token);
         setAccessToken(token);
+        setCachedToken(token);
         setUser(user as User);
 
         // Navigation will be handled by index.tsx based on user privileges
@@ -554,6 +572,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setUser(null);
       setAccessToken(null);
+      setCachedToken(null);
       await removeStoredToken();
       await removeUserData();
       // Safely clear user from React Query cache

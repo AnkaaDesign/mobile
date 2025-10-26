@@ -9,6 +9,14 @@ import { formatCurrency, formatNumber } from '../../../utils';
 import { DASHBOARD_TIME_PERIOD, SECTOR_PRIVILEGES } from '../../../constants';
 import { router } from 'expo-router';
 
+// Helper function to convert Decimal to number
+const toNumber = (value: number | { toNumber: () => number } | null | undefined): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'object' && 'toNumber' in value) return value.toNumber();
+  return 0;
+};
+
 // Simple chart component using bars
 const BarChart: React.FC<{
   data: Array<{ label: string; value: number; color?: string }>;
@@ -164,9 +172,8 @@ export default function FinancialAnalyticsScreen() {
   const { data: tasks, isLoading: tasksLoading, error: tasksError, refetch: refetchTasks } = useTasks({
     where: {
       ...(dateFilters.task && { createdAt: dateFilters.task }),
-      price: { not: null },
     },
-    include: { createdBy: true, customer: true },
+    include: { createdBy: true, customer: true, budget: true },
   });
 
   const isLoading = payrollsLoading || bonusesLoading || tasksLoading;
@@ -229,11 +236,19 @@ export default function FinancialAnalyticsScreen() {
   const bonusData = bonuses?.data || [];
   const taskData = tasks?.data || [];
 
+  // Helper to get task price from budget
+  const getTaskPrice = (task: typeof taskData[0]): number => {
+    if (task.budget && Array.isArray(task.budget) && task.budget.length > 0) {
+      return task.budget.reduce((sum, b) => sum + toNumber(b.valor), 0);
+    }
+    return 0;
+  };
+
   // Total values
-  const totalPayroll = payrollData.reduce((sum, payroll) => sum + (payroll.baseRemuneration || 0), 0);
-  const totalBonuses = bonusData.reduce((sum, bonus) => sum + (bonus.baseBonus || 0), 0);
-  const totalRevenue = taskData.reduce((sum, task) => sum + (task.price || 0), 0);
-  const totalCommissions = bonusData.reduce((sum, bonus) => sum + (bonus.baseBonus || 0), 0);
+  const totalPayroll = payrollData.reduce((sum, payroll) => sum + toNumber(payroll.baseRemuneration), 0);
+  const totalBonuses = bonusData.reduce((sum, bonus) => sum + toNumber(bonus.baseBonus), 0);
+  const totalRevenue = taskData.reduce((sum, task) => sum + getTaskPrice(task), 0);
+  const totalCommissions = bonusData.reduce((sum, bonus) => sum + toNumber(bonus.baseBonus), 0);
 
   // Average values
   const averagePayroll = payrollData.length > 0 ? totalPayroll / payrollData.length : 0;
@@ -242,21 +257,21 @@ export default function FinancialAnalyticsScreen() {
 
   // Top earners by payroll
   const topPayrollEarners = payrollData
-    .sort((a, b) => (b.baseRemuneration || 0) - (a.baseRemuneration || 0))
+    .sort((a, b) => toNumber(b.baseRemuneration) - toNumber(a.baseRemuneration))
     .slice(0, 5)
     .map(payroll => ({
       label: payroll.user?.name || "Funcionário",
-      value: payroll.baseRemuneration || 0,
+      value: toNumber(payroll.baseRemuneration),
       color: "#10b981",
     }));
 
   // Top bonus earners
   const topBonusEarners = bonusData
-    .sort((a, b) => (b.baseBonus || 0) - (a.baseBonus || 0))
+    .sort((a, b) => toNumber(b.baseBonus) - toNumber(a.baseBonus))
     .slice(0, 5)
     .map(bonus => ({
       label: bonus.user?.name || "Funcionário",
-      value: bonus.baseBonus || 0,
+      value: toNumber(bonus.baseBonus),
       color: "#3b82f6",
     }));
 
@@ -267,7 +282,7 @@ export default function FinancialAnalyticsScreen() {
       if (!acc[customerName]) {
         acc[customerName] = 0;
       }
-      acc[customerName] += task.price || 0;
+      acc[customerName] += getTaskPrice(task);
       return acc;
     }, {} as Record<string, number>);
 
@@ -481,7 +496,7 @@ export default function FinancialAnalyticsScreen() {
                       </Text>
                     </View>
                     <Text style={styles.transactionValue}>
-                      {formatCurrency(payroll.baseRemuneration || 0)}
+                      {formatCurrency(toNumber(payroll.baseRemuneration))}
                     </Text>
                   </View>
                 ))}
@@ -514,7 +529,7 @@ export default function FinancialAnalyticsScreen() {
                       </Text>
                     </View>
                     <Text style={styles.transactionValue}>
-                      {formatCurrency(bonus.baseBonus || 0)}
+                      {formatCurrency(toNumber(bonus.baseBonus))}
                     </Text>
                   </View>
                 ))}
@@ -543,7 +558,7 @@ export default function FinancialAnalyticsScreen() {
                       </Text>
                     </View>
                     <Text style={styles.transactionValue}>
-                      {formatCurrency(task.price || 0)}
+                      {formatCurrency(getTaskPrice(task))}
                     </Text>
                   </View>
                 ))}

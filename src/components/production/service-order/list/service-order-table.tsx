@@ -13,6 +13,7 @@ import { ServiceOrderTableRowSwipe } from "./service-order-table-row-swipe";
 import { formatDate, formatDateTime } from '../../../../utils';
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from '../../../../constants';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -23,10 +24,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface ServiceOrderTableProps {
   serviceOrders: ServiceOrder[];

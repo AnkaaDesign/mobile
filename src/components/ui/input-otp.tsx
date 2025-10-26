@@ -131,12 +131,12 @@ export function InputOTP({ value = "", onChange, maxLength = 6, disabled = false
               >
                 <TextInput
                   ref={(ref) => (inputRefs.current[index] = ref)}
-                  style={StyleSheet.flatten([
+                  style={[
                     styles.input,
                     {
                       color: colors.foreground,
                     },
-                  ])}
+                  ]}
                   value={valueArray[index] || ""}
                   onChangeText={(text) => handleChangeText(text, index)}
                   onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}

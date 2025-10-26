@@ -75,7 +75,11 @@ export default function PayrollDetailScreen() {
 
   // Extract statistics
   const statistics = useMemo(() => {
-    if (!payrollData?.bonus) {
+    // Handle both direct Payroll and wrapped response formats
+    const data = 'payroll' in payrollData ? payrollData.payroll : payrollData;
+    const bonus = data?.bonus;
+
+    if (!bonus || typeof bonus === 'number') {
       return {
         totalParticipants: 0,
         totalTasks: 0,
@@ -84,10 +88,12 @@ export default function PayrollDetailScreen() {
       };
     }
 
-    const bonus = payrollData.bonus;
-    const totalTasks = bonus.totalTasks || 0;
-    const totalParticipants = bonus.totalUsers || 0;
-    const averagePerUser = bonus.weightedTaskCount || 0;
+    // Bonus is a proper Bonus object
+    const totalTasks = (bonus as any).totalTasks || 0;
+    const totalParticipants = (bonus as any).totalUsers || 0;
+    const averagePerUser = typeof bonus.ponderedTaskCount === 'object' && 'toNumber' in bonus.ponderedTaskCount
+      ? bonus.ponderedTaskCount.toNumber()
+      : Number(bonus.ponderedTaskCount) || 0;
     const totalWeightedTasks = averagePerUser * totalParticipants;
 
     return {
@@ -110,10 +116,32 @@ export default function PayrollDetailScreen() {
       };
     }
 
-    const baseRemuneration = Number(payrollData.baseRemuneration) || 0;
-    const bonusAmount = payrollData.bonus?.baseBonus ? Number(payrollData.bonus.baseBonus) : 0;
-    const totalDiscounts = payrollData.discounts?.reduce((sum: number, d: any) =>
-      sum + (Number(d.value) || Number(d.fixedValue) || 0), 0
+    // Handle both direct Payroll and wrapped response formats
+    const data = 'payroll' in payrollData ? payrollData.payroll : payrollData;
+    const bonus = data?.bonus;
+
+    let baseRemuneration = 0;
+    const baseRemunerationRaw = data.baseRemuneration;
+    if (baseRemunerationRaw != null) {
+      if (typeof baseRemunerationRaw === 'object' && baseRemunerationRaw && 'toNumber' in baseRemunerationRaw) {
+        baseRemuneration = (baseRemunerationRaw as any).toNumber();
+      } else if (baseRemunerationRaw) {
+        baseRemuneration = Number(baseRemunerationRaw);
+      }
+    }
+
+    let bonusAmount = 0;
+    if (typeof bonus === 'number') {
+      bonusAmount = bonus;
+    } else if (bonus && typeof bonus === 'object' && 'baseBonus' in bonus) {
+      const baseBonus = bonus.baseBonus;
+      bonusAmount = typeof baseBonus === 'object' && 'toNumber' in baseBonus
+        ? baseBonus.toNumber()
+        : Number(baseBonus) || 0;
+    }
+
+    const totalDiscounts = data.discounts?.reduce((sum: number, d: any) =>
+      sum + (Number(d.value) || Number(d.percentage) || 0), 0
     ) || 0;
 
     const totalGross = baseRemuneration + bonusAmount;
@@ -162,14 +190,16 @@ export default function PayrollDetailScreen() {
     );
   }
 
-  const user = payrollData.user;
+  // Handle both direct Payroll and wrapped response formats
+  const data = 'payroll' in payrollData ? payrollData.payroll : payrollData;
+  const user = data.user;
   const userName = user?.name || 'Funcionário';
   const monthName = getMonthName(month);
   const title = `${userName}`;
   const subtitle = `${monthName} ${year}`;
 
   return (
-    <PrivilegeGuard requiredPrivileges={[SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL]}>
+    <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL]}>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
         <DetailHeader
           title={title}
@@ -302,17 +332,17 @@ export default function PayrollDetailScreen() {
           )}
 
           {/* Discounts Card */}
-          {payrollData.discounts && payrollData.discounts.length > 0 && (
+          {data.discounts && data.discounts.length > 0 && (
             <Card style={styles.card}>
               <CardHeader>
                 <CardTitle>Descontos Aplicados</CardTitle>
               </CardHeader>
               <CardContent>
-                {payrollData.discounts.map((discount: any) => (
+                {data.discounts.map((discount: any) => (
                   <View key={discount.id} style={styles.discountRow}>
                     <ThemedText style={styles.discountLabel}>{discount.reference}</ThemedText>
                     <ThemedText style={[styles.discountValue, { color: colors.destructive }]}>
-                      -{formatCurrency(Number(discount.value) || Number(discount.fixedValue) || 0)}
+                      -{formatCurrency(Number(discount.value) || Number(discount.percentage) || 0)}
                     </ThemedText>
                   </View>
                 ))}
@@ -321,35 +351,39 @@ export default function PayrollDetailScreen() {
           )}
 
           {/* Tasks Summary - Only if bonifiable */}
-          {user?.position?.bonifiable && payrollData.bonus?.tasks && payrollData.bonus.tasks.length > 0 && (
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Tarefas Realizadas ({payrollData.bonus.tasks.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {payrollData.bonus.tasks.slice(0, 10).map((task: any) => (
-                  <View key={task.id} style={styles.taskRow}>
-                    <View style={styles.taskInfo}>
-                      <ThemedText style={styles.taskCustomer}>{task.customer?.fantasyName || 'Cliente'}</ThemedText>
-                      <ThemedText style={styles.taskDate}>
-                        {new Date(task.createdAt).toLocaleDateString('pt-BR')}
-                      </ThemedText>
+          {(() => {
+            const bonus = data?.bonus;
+            const tasks = bonus && typeof bonus === 'object' && 'tasks' in bonus ? bonus.tasks : undefined;
+            return user?.position?.bonifiable && tasks && Array.isArray(tasks) && tasks.length > 0 && (
+              <Card style={styles.card}>
+                <CardHeader>
+                  <CardTitle>Tarefas Realizadas ({tasks.length})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {tasks.slice(0, 10).map((task: any) => (
+                    <View key={task.id} style={styles.taskRow}>
+                      <View style={styles.taskInfo}>
+                        <ThemedText style={styles.taskCustomer}>{task.customer?.fantasyName || 'Cliente'}</ThemedText>
+                        <ThemedText style={styles.taskDate}>
+                          {new Date(task.createdAt).toLocaleDateString('pt-BR')}
+                        </ThemedText>
+                      </View>
+                      <Badge variant={task.commission === 'FULL_COMMISSION' ? 'default' : 'secondary'}>
+                        <ThemedText style={{ color: "white", fontSize: 11 }}>
+                          {task.commission === 'FULL_COMMISSION' ? '100%' : '50%'}
+                        </ThemedText>
+                      </Badge>
                     </View>
-                    <Badge variant={task.commission === 'FULL_COMMISSION' ? 'default' : 'secondary'}>
-                      <ThemedText style={{ color: "white", fontSize: 11 }}>
-                        {task.commission === 'FULL_COMMISSION' ? '100%' : '50%'}
-                      </ThemedText>
-                    </Badge>
-                  </View>
-                ))}
-                {payrollData.bonus.tasks.length > 10 && (
-                  <ThemedText style={styles.moreTasksText}>
-                    e mais {payrollData.bonus.tasks.length - 10} tarefas...
-                  </ThemedText>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                  ))}
+                  {tasks.length > 10 && (
+                    <ThemedText style={styles.moreTasksText}>
+                      e mais {tasks.length - 10} tarefas...
+                    </ThemedText>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
         </ScrollView>
       </ThemedView>
     </PrivilegeGuard>

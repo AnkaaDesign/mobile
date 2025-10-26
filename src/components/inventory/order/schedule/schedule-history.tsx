@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, FlatList , StyleSheet} from "react-native";
 import { Card } from "@/components/ui/card";
-import { Order } from '../../../../types';
+import type { Order } from '../../../../types';
 import { ORDER_STATUS_LABELS } from '../../../../constants';
 import { formatDateTime } from '../../../../utils';
 import { useTheme } from "@/lib/theme";

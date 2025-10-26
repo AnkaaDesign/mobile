@@ -145,6 +145,8 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.administration.sectors.root]: "/administration/sectors",
   [routes.administration.sectors.create]: "/administration/sectors/create",
   [routes.administration.sectors.list]: "/administration/sectors/list",
+  [routes.administration.changeLogs.root]: "/administration/change-logs",
+  [routes.administration.changeLogs.list]: "/administration/change-logs/list",
 
   // ========== SERVER ROUTES ==========
   [routes.server.root]: "/server",
@@ -242,6 +244,7 @@ export const routeEnglishMap: Record<string, string> = {
   "/estoque/epi/agendamentos/detalhes": "/inventory/ppe/schedules/details",
   "/estoque/epi/agendamentos/editar": "/inventory/ppe/schedules/edit",
   "/estoque/emprestimos/detalhes": "/inventory/borrows/details",
+  "/estoque/emprestimos/editar": "/inventory/borrows/edit",
   "/estoque/produtos/categorias/detalhes": "/inventory/products/categories/details",
   "/estoque/produtos/categorias/editar": "/inventory/products/categories/edit",
   "/estoque/produtos/marcas/detalhes": "/inventory/products/brands/details",

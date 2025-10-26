@@ -3,21 +3,20 @@ import { dateUtils } from "./date";
 import { numberUtils } from "./number";
 import { MEASURE_UNIT_LABELS, STOCK_LEVEL_LABELS, ITEM_ISSUE_TYPE_LABELS } from '../constants';
 import { MEASURE_UNIT, STOCK_LEVEL, ITEM_ISSUE_TYPE, PPE_TYPE, PPE_SIZE, PPE_DELIVERY_MODE } from '../constants';
-import type { PpeType, PpeSize, PpeDeliveryMode } from "@prisma/client";
 
 /**
- * Map PPE enum values to Prisma enums
+ * Map PPE enum values to strings
  */
-export function mapPpeTypeToPrisma(type: PPE_TYPE | string | null | undefined): PpeType | null | undefined {
-  return type as PpeType | null | undefined;
+export function mapPpeTypeToPrisma(type: PPE_TYPE | string | null | undefined): string | null | undefined {
+  return type as string | null | undefined;
 }
 
-export function mapPpeSizeToPrisma(size: PPE_SIZE | string | null | undefined): PpeSize | null | undefined {
-  return size as unknown as PpeSize | null | undefined;
+export function mapPpeSizeToPrisma(size: PPE_SIZE | string | null | undefined): string | null | undefined {
+  return size as string | null | undefined;
 }
 
-export function mapPpeDeliveryModeToPrisma(mode: PPE_DELIVERY_MODE | string | null | undefined): PpeDeliveryMode | null | undefined {
-  return mode as PpeDeliveryMode | null | undefined;
+export function mapPpeDeliveryModeToPrisma(mode: PPE_DELIVERY_MODE | string | null | undefined): string | null | undefined {
+  return mode as string | null | undefined;
 }
 
 /**

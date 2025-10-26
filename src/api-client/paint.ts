@@ -9,6 +9,7 @@ import type {
   PaintUpdateFormData,
   PaintBatchCreateFormData,
   PaintBatchUpdateFormData,
+  PaintBatchUpdateColorOrderFormData,
   PaintBatchDeleteFormData,
   PaintFormulaGetManyFormData,
   PaintFormulaGetByIdFormData,
@@ -154,7 +155,37 @@ export class PaintService {
   // =====================
 
   async getPaints(params: PaintGetManyFormData = {}): Promise<PaintGetManyResponse> {
-    const response = await apiClient.get<PaintGetManyResponse>(this.basePath, { params });
+    // Clean up params to remove empty strings, undefined, and null values
+    const cleanedParams = Object.entries(params).reduce((acc, [key, value]) => {
+      // Skip empty strings, null, undefined
+      if (value === "" || value === null || value === undefined) {
+        return acc;
+      }
+
+      // CRITICAL: Skip color similarity if it's the default black color or invalid
+      if (key === "similarColor" && (value === "#000000" || value === "")) {
+        return acc;
+      }
+
+      // CRITICAL: Skip threshold if there's no color
+      if (key === "similarColorThreshold" && (!params.similarColor || params.similarColor === "#000000" || params.similarColor === "")) {
+        return acc;
+      }
+
+      // Only include valid values
+      acc[key as keyof PaintGetManyFormData] = value;
+      return acc;
+    }, {} as Partial<PaintGetManyFormData>);
+
+    // Debug logging (remove after fixing)
+    if (cleanedParams.similarColor || params.similarColor) {
+      console.log("[API Client] Color similarity params:", {
+        original: { similarColor: params.similarColor, threshold: params.similarColorThreshold },
+        cleaned: { similarColor: cleanedParams.similarColor, threshold: cleanedParams.similarColorThreshold }
+      });
+    }
+
+    const response = await apiClient.get<PaintGetManyResponse>(this.basePath, { params: cleanedParams });
     return response.data;
   }
 
@@ -243,6 +274,25 @@ export class PaintService {
     const response = await apiClient.post<PaintMergeResponse>(`${this.basePath}/merge`, data, { params: query });
     return response.data;
   }
+
+  // Paint Batch Update Color Order
+  async batchUpdateColorOrder(data: PaintBatchUpdateColorOrderFormData) {
+    const response = await apiClient.put(`${this.basePath}/batch/color-order`, data);
+    return response.data;
+  }
+
+  // =====================
+  // Component Intersection Operations
+  // =====================
+
+  /**
+   * Get available components based on intersection of paint brand and paint type
+   * Returns only components that exist in BOTH paint brand AND paint type
+   */
+  async getAvailableComponents(paintBrandId: string, paintTypeId: string): Promise<ItemGetManyResponse> {
+    const response = await apiClient.get<ItemGetManyResponse>(`${this.basePath}/components/available/${paintBrandId}/${paintTypeId}`);
+    return response.data;
+  }
 }
 
 // =====================
@@ -290,7 +340,7 @@ export class PaintFormulaService {
       return { success: true, data: [], message: "No formulas found for this brand" };
     }
 
-    const paintIds = paintsResponse.data.data.map((paint) => paint.id);
+    const paintIds = paintsResponse.data.data.map((paint: Paint) => paint.id);
     const requestParams: PaintFormulaGetManyFormData = {
       ...params,
       paintIds,
@@ -407,6 +457,26 @@ export class PaintFormulaComponentService {
 
   async batchDeletePaintFormulaComponents(data: PaintFormulaComponentBatchDeleteFormData): Promise<PaintFormulaComponentBatchDeleteResponse> {
     const response = await apiClient.delete<PaintFormulaComponentBatchDeleteResponse>(`${this.basePath}/batch`, { data });
+    return response.data;
+  }
+
+  // =====================
+  // Formulation Test Operations
+  // =====================
+
+  async deductForFormulationTest(data: {
+    itemId: string;
+    weight: number;
+    formulaPaintId?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      unitsDeducted: number;
+      remainingQuantity: number;
+    };
+  }> {
+    const response = await apiClient.post(`${this.basePath}/deduct-for-test`, data);
     return response.data;
   }
 }
@@ -722,6 +792,10 @@ export const batchCreatePaints = (data: PaintBatchCreateFormData, query?: PaintQ
 export const batchUpdatePaints = (data: PaintBatchUpdateFormData, query?: PaintQueryFormData) => paintService.batchUpdatePaints(data, query);
 export const batchDeletePaints = (data: PaintBatchDeleteFormData) => paintService.batchDeletePaints(data);
 export const mergePaints = (data: PaintMergeFormData, query?: PaintQueryFormData) => paintService.mergePaints(data, query);
+export const batchUpdatePaintColorOrder = (data: PaintBatchUpdateColorOrderFormData) => paintService.batchUpdateColorOrder(data);
+
+// Component Intersection exports
+export const getAvailableComponents = (paintBrandId: string, paintTypeId: string) => paintService.getAvailableComponents(paintBrandId, paintTypeId);
 
 // Paint Brand Integration exports
 export const getPaintsByBrandId = (brandId: string, params?: Omit<PaintGetManyFormData, "paintBrandIds">) => paintService.getPaintsByBrandId(brandId, params);

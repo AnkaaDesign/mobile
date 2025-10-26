@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconX } from "@tabler/icons-react-native";
@@ -86,87 +86,73 @@ export const ChangeLogFilterTags = ({
       >
         {/* Search Tag */}
         {searchText && (
-          <Badge
-            variant="secondary"
-            style={styles.tag}
-            onPress={clearSearch}
-          >
-            <ThemedText style={styles.tagText} numberOfLines={1}>
-              Busca: {searchText}
-            </ThemedText>
-            <IconX size={14} color={colors.secondaryForeground} />
-          </Badge>
+          <TouchableOpacity onPress={clearSearch}>
+            <Badge variant="secondary" style={styles.tag}>
+              <ThemedText style={styles.tagText} numberOfLines={1}>
+                Busca: {searchText}
+              </ThemedText>
+              <IconX size={14} color={colors.secondaryForeground} />
+            </Badge>
+          </TouchableOpacity>
         )}
 
         {/* Action Tags */}
         {filters.actions?.map((action) => (
-          <Badge
-            key={action}
-            variant="secondary"
-            style={styles.tag}
-            onPress={() => removeAction(action)}
-          >
-            <ThemedText style={styles.tagText} numberOfLines={1}>
-              Ação: {CHANGE_LOG_ACTION_LABELS[action] || action}
-            </ThemedText>
-            <IconX size={14} color={colors.secondaryForeground} />
-          </Badge>
+          <TouchableOpacity key={action} onPress={() => removeAction(action)}>
+            <Badge variant="secondary" style={styles.tag}>
+              <ThemedText style={styles.tagText} numberOfLines={1}>
+                Ação: {CHANGE_LOG_ACTION_LABELS[action] || action}
+              </ThemedText>
+              <IconX size={14} color={colors.secondaryForeground} />
+            </Badge>
+          </TouchableOpacity>
         ))}
 
         {/* Entity Type Tags */}
         {filters.entityTypes?.map((entityType) => (
-          <Badge
-            key={entityType}
-            variant="secondary"
-            style={styles.tag}
-            onPress={() => removeEntityType(entityType)}
-          >
-            <ThemedText style={styles.tagText} numberOfLines={1}>
-              {CHANGE_LOG_ENTITY_TYPE_LABELS[entityType] || entityType}
-            </ThemedText>
-            <IconX size={14} color={colors.secondaryForeground} />
-          </Badge>
+          <TouchableOpacity key={entityType} onPress={() => removeEntityType(entityType)}>
+            <Badge variant="secondary" style={styles.tag}>
+              <ThemedText style={styles.tagText} numberOfLines={1}>
+                {CHANGE_LOG_ENTITY_TYPE_LABELS[entityType] || entityType}
+              </ThemedText>
+              <IconX size={14} color={colors.secondaryForeground} />
+            </Badge>
+          </TouchableOpacity>
         ))}
 
         {/* User Tag */}
         {filters.userIds && filters.userIds.length > 0 && (
-          <Badge
-            variant="secondary"
-            style={styles.tag}
-            onPress={removeUser}
-          >
-            <ThemedText style={styles.tagText} numberOfLines={1}>
-              Usuário selecionado
-            </ThemedText>
-            <IconX size={14} color={colors.secondaryForeground} />
-          </Badge>
+          <TouchableOpacity onPress={removeUser}>
+            <Badge variant="secondary" style={styles.tag}>
+              <ThemedText style={styles.tagText} numberOfLines={1}>
+                Usuário selecionado
+              </ThemedText>
+              <IconX size={14} color={colors.secondaryForeground} />
+            </Badge>
+          </TouchableOpacity>
         )}
 
         {/* Date Range Tag */}
         {(filters.createdAt?.gte || filters.createdAt?.lte) && (
-          <Badge
-            variant="secondary"
-            style={styles.tag}
-            onPress={removeDateRange}
-          >
-            <ThemedText style={styles.tagText} numberOfLines={1}>
-              Período: {filters.createdAt?.gte ? formatDate(filters.createdAt.gte) : "..."} - {filters.createdAt?.lte ? formatDate(filters.createdAt.lte) : "..."}
-            </ThemedText>
-            <IconX size={14} color={colors.secondaryForeground} />
-          </Badge>
+          <TouchableOpacity onPress={removeDateRange}>
+            <Badge variant="secondary" style={styles.tag}>
+              <ThemedText style={styles.tagText} numberOfLines={1}>
+                Período: {filters.createdAt?.gte ? formatDate(filters.createdAt.gte) : "..."} - {filters.createdAt?.lte ? formatDate(filters.createdAt.lte) : "..."}
+              </ThemedText>
+              <IconX size={14} color={colors.secondaryForeground} />
+            </Badge>
+          </TouchableOpacity>
         )}
 
         {/* Clear All Tag */}
-        <Badge
-          variant="destructive"
-          style={styles.clearAllTag}
-          onPress={onClearAll}
-        >
-          <ThemedText style={{ ...styles.tagText, color: colors.destructiveForeground }}>
-            Limpar Tudo
-          </ThemedText>
-          <IconX size={14} color={colors.destructiveForeground} />
-        </Badge>
+        <TouchableOpacity onPress={onClearAll}>
+          <Badge variant="destructive" style={styles.clearAllTag}>
+            <ThemedText style={{ ...styles.tagText, color: colors.destructiveForeground }}>
+              Limpar Tudo
+            </ThemedText>
+            <IconX size={14} color={colors.destructiveForeground} />
+          </Badge>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );

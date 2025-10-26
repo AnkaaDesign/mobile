@@ -1,7 +1,7 @@
 // packages/types/src/bonus.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION } from '../constants';
+import type { ORDER_BY_DIRECTION } from '@/constants';
 import type { User, UserIncludes } from "./user";
 import type { Task, TaskIncludes } from "./task";
 import type { BonusDiscount, BonusDiscountIncludes } from "./bonusDiscount";

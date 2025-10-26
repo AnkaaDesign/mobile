@@ -23,11 +23,11 @@ import { selectionHaptic, longPressHaptic, scrollBoundaryHaptic, successHaptic, 
  * ```
  */
 export function useHapticList() {
-  const handleItemPress = useCallback(async (item: any) => {
+  const handleItemPress = useCallback(async <T = unknown>(item?: T) => {
     await selectionHaptic();
   }, []);
 
-  const handleItemLongPress = useCallback(async (item: any) => {
+  const handleItemLongPress = useCallback(async <T = unknown>(item?: T) => {
     await longPressHaptic();
   }, []);
 
@@ -53,7 +53,7 @@ export function useHapticList() {
     }
   }, []);
 
-  const handleScroll = useCallback(async (event: any) => {
+  const handleScroll = useCallback(async (event: { nativeEvent: { contentOffset: { y: number }; contentSize: { height: number }; layoutMeasurement: { height: number } } }) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
 
     // Check if at top

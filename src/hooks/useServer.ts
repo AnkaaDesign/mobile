@@ -18,8 +18,8 @@ import {
   getSsdHealth,
   getRaidStatus,
   refreshRaidStatus,
-} from '../api-client';
-import type { ServiceAction, ServiceLogsQuery, CreateUserFormData, SetUserPasswordFormData } from '../schemas';
+} from '@/api-client';
+import type { ServiceAction, ServiceLogsQuery, CreateUserFormData, SetUserPasswordFormData } from '@/schemas';
 import { serverKeys } from "./queryKeys";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 

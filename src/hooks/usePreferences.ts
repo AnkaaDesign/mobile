@@ -9,7 +9,7 @@ import {
   batchCreatePreferences,
   batchUpdatePreferences,
   batchDeletePreferences,
-} from '../api-client';
+} from '@/api-client';
 import type {
   PreferencesQueryFormData,
   PreferencesCreateFormData,
@@ -18,8 +18,8 @@ import type {
   PreferencesBatchUpdateFormData,
   PreferencesBatchDeleteFormData,
   PreferencesInclude,
-} from '../schemas';
-import type { Preferences, SuccessResponse, PaginatedResponse, DeleteResponse, BatchCreateResponse, BatchUpdateResponse, BatchDeleteResponse } from '../types';
+} from '@/schemas';
+import type { Preferences, SuccessResponse, PaginatedResponse, DeleteResponse, BatchCreateResponse, BatchUpdateResponse, BatchDeleteResponse } from '@/types';
 import { preferencesKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

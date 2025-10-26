@@ -11,6 +11,7 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { CategoryTableRowSwipe } from "./category-table-row-swipe";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -21,10 +22,6 @@ export interface TableColumn {
   render?: (category: ItemCategory) => React.ReactNode;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface CategoryTableProps {
   categories: ItemCategory[];
@@ -212,16 +209,16 @@ export function CategoryTable({
                 {sortConfig ? (
                   <>
                     {sortConfig.direction === "asc" ? (
-                      <IconChevronUp size={14} color={theme.isDark ? extendedColors.neutral[100] : extendedColors.neutral[900 as keyof typeof neutral]} />
+                      <IconChevronUp size={14} color={theme.isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
                     ) : (
-                      <IconChevronDown size={14} color={theme.isDark ? extendedColors.neutral[100] : extendedColors.neutral[900 as keyof typeof neutral]} />
+                      <IconChevronDown size={14} color={theme.isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
                     )}
                     {sortConfigs.length > 1 && (
-                      <ThemedText style={StyleSheet.flatten([styles.sortIndex, { color: theme.isDark ? extendedColors.neutral[300] : extendedColors.neutral[700 as keyof typeof neutral] }])}>{sortIndex + 1}</ThemedText>
+                      <ThemedText style={StyleSheet.flatten([styles.sortIndex, { color: theme.isDark ? extendedColors.neutral[300] : extendedColors.neutral[700] }])}>{sortIndex + 1}</ThemedText>
                     )}
                   </>
                 ) : (
-                  <IconArrowsVertical size={14} color={theme.isDark ? extendedColors.neutral[400] : extendedColors.neutral[600 as keyof typeof neutral]} />
+                  <IconArrowsVertical size={14} color={theme.isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
                 )}
               </View>
             )}

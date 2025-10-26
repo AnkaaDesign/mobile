@@ -7,6 +7,7 @@ export * from "./timeClockEntry";
 export * from "./airbrushing";
 export * from "./borrow";
 export * from "./changelog";
+export * from "./commission";
 export * from "./customer";
 export * from "./cut";
 export * from "./epi";
@@ -167,4 +168,5 @@ export {
 } from "./discount";
 // export * from "./statistics"; // Disabled - file doesn't exist
 export * from "./deployment";
+export * from "./economic-activity";
 // export * from "./driver"; // Disabled - not currently used

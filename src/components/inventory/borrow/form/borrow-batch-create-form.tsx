@@ -10,6 +10,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
@@ -19,10 +20,23 @@ import { IconLoader } from "@tabler/icons-react-native";
 // Form schema for batch borrow creation
 const borrowBatchFormSchema = z.object({
   userId: z.string().uuid("Usuário é obrigatório"),
+  expectedReturnDate: z.date().optional(),
+  reason: z.string().max(200, "Motivo deve ter no máximo 200 caracteres").optional(),
+  notes: z.string().max(500, "Notas devem ter no máximo 500 caracteres").optional(),
   items: z.array(z.object({
     itemId: z.string().uuid(),
     quantity: z.number().positive("Quantidade deve ser positiva"),
   })).min(1, "Selecione pelo menos um item").max(50, "Máximo de 50 itens por empréstimo"),
+}).refine((data) => {
+  if (data.expectedReturnDate) {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return data.expectedReturnDate >= now;
+  }
+  return true;
+}, {
+  message: "Data de devolução esperada deve ser futura",
+  path: ["expectedReturnDate"],
 });
 
 type BorrowBatchFormData = z.infer<typeof borrowBatchFormSchema>;
@@ -37,12 +51,15 @@ export function BorrowBatchCreateForm({ onSubmit, onCancel, isSubmitting }: Borr
   const { colors } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
-  const [selectedItems, setSelectedItems] = useState<Array<{ itemId: string; name: string; quantity: number }>>([]);
+  const [selectedItems, setSelectedItems] = useState<Array<{ itemId: string; name: string; quantity: number; availableStock?: number }>>([]);
 
   const form = useForm<BorrowBatchFormData>({
     resolver: zodResolver(borrowBatchFormSchema),
     defaultValues: {
       userId: "",
+      expectedReturnDate: undefined,
+      reason: "",
+      notes: "",
       items: [],
     },
   });
@@ -90,12 +107,19 @@ export function BorrowBatchCreateForm({ onSubmit, onCancel, isSubmitting }: Borr
       return;
     }
 
+    // Check stock availability
+    if (item.quantity <= 0) {
+      Alert.alert("Estoque Insuficiente", `O item "${item.name}" não possui estoque disponível.`);
+      return;
+    }
+
     setSelectedItems((prev) => [
       ...prev,
       {
         itemId: item.id,
         name: item.name,
         quantity: 1,
+        availableStock: item.quantity,
       },
     ]);
   }, [items?.data, selectedItems]);
@@ -111,13 +135,39 @@ export function BorrowBatchCreateForm({ onSubmit, onCancel, isSubmitting }: Borr
     if (isNaN(numQuantity) || numQuantity <= 0) return;
 
     setSelectedItems((prev) =>
-      prev.map((i) => (i.itemId === itemId ? { ...i, quantity: numQuantity } : i))
+      prev.map((i) => {
+        if (i.itemId === itemId) {
+          // Validate against available stock
+          if (i.availableStock && numQuantity > i.availableStock) {
+            Alert.alert(
+              "Quantidade Inválida",
+              `Quantidade solicitada (${numQuantity}) excede o estoque disponível (${i.availableStock}).`
+            );
+            return i; // Don't update if exceeds stock
+          }
+          return { ...i, quantity: numQuantity };
+        }
+        return i;
+      })
     );
   }, []);
 
   // Handle form submission
   const handleFormSubmit = async (data: BorrowBatchFormData) => {
     try {
+      // Validate stock for all items
+      const invalidItems = selectedItems.filter(
+        (item) => item.availableStock !== undefined && item.quantity > item.availableStock
+      );
+
+      if (invalidItems.length > 0) {
+        Alert.alert(
+          "Estoque Insuficiente",
+          `Os seguintes itens excedem o estoque disponível:\n${invalidItems.map((i) => `- ${i.name}`).join("\n")}`
+        );
+        return;
+      }
+
       // Map selected items to form data
       const formData = {
         ...data,
@@ -168,6 +218,80 @@ export function BorrowBatchCreateForm({ onSubmit, onCancel, isSubmitting }: Borr
                   </View>
                 )}
               />
+
+              {/* Expected Return Date */}
+              <Controller
+                control={form.control}
+                name="expectedReturnDate"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <View style={styles.fieldGroup}>
+                    <Label>Data de Devolução Esperada</Label>
+                    <Input
+                      value={value ? new Date(value).toLocaleDateString("pt-BR") : ""}
+                      onChangeText={(text) => {
+                        // Simple date parsing - in production use a proper date picker
+                        const parts = text.split('/');
+                        if (parts.length === 3) {
+                          const date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                          if (!isNaN(date.getTime())) {
+                            onChange(date);
+                          }
+                        }
+                      }}
+                      placeholder="DD/MM/AAAA"
+                      editable={!isSubmitting}
+                    />
+                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
+                    <ThemedText style={styles.helpText}>
+                      Data esperada para devolução dos itens (opcional)
+                    </ThemedText>
+                  </View>
+                )}
+              />
+
+              {/* Reason */}
+              <Controller
+                control={form.control}
+                name="reason"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <View style={styles.fieldGroup}>
+                    <Label>Motivo do Empréstimo</Label>
+                    <Input
+                      value={value || ""}
+                      onChangeText={onChange}
+                      placeholder="Ex: Manutenção, Projeto X, etc."
+                      editable={!isSubmitting}
+                      maxLength={200}
+                    />
+                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
+                    <ThemedText style={styles.helpText}>
+                      Motivo ou justificativa do empréstimo (opcional)
+                    </ThemedText>
+                  </View>
+                )}
+              />
+
+              {/* Notes */}
+              <Controller
+                control={form.control}
+                name="notes"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <View style={styles.fieldGroup}>
+                    <Label>Observações</Label>
+                    <Textarea
+                      value={value || ""}
+                      onChangeText={onChange}
+                      placeholder="Adicione observações adicionais..."
+                      editable={!isSubmitting}
+                      maxLength={500}
+                    />
+                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
+                    <ThemedText style={styles.helpText}>
+                      Informações adicionais sobre o empréstimo (opcional)
+                    </ThemedText>
+                  </View>
+                )}
+              />
             </CardContent>
           </Card>
 
@@ -211,15 +335,25 @@ export function BorrowBatchCreateForm({ onSubmit, onCancel, isSubmitting }: Borr
                         <ThemedText style={styles.itemName} numberOfLines={1}>
                           {item.name}
                         </ThemedText>
+                        {item.availableStock !== undefined && (
+                          <ThemedText style={[styles.stockText, { color: item.availableStock > 10 ? colors.mutedForeground : colors.destructive }]}>
+                            Estoque disponível: {item.availableStock}
+                          </ThemedText>
+                        )}
                         <View style={styles.quantityRow}>
                           <Label style={styles.quantityLabel}>Qtd:</Label>
                           <Input
                             value={item.quantity.toString()}
                             onChangeText={(value) => handleQuantityChange(item.itemId, value)}
                             keyboardType="numeric"
-                            disabled={isSubmitting}
-                            style={styles.quantityInput}
+                            editable={!isSubmitting}
+                            containerStyle={styles.quantityInput}
                           />
+                          {item.availableStock !== undefined && item.quantity > item.availableStock && (
+                            <ThemedText style={[styles.errorText, { marginLeft: spacing.sm }]}>
+                              Excede estoque!
+                            </ThemedText>
+                          )}
                         </View>
                       </View>
                       <Button
@@ -306,6 +440,10 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: fontSize.base,
     fontWeight: "500",
+    marginBottom: spacing.xs,
+  },
+  stockText: {
+    fontSize: fontSize.xs,
     marginBottom: spacing.xs,
   },
   quantityRow: {

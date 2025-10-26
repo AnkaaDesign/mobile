@@ -1,8 +1,8 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ppeSizeKeys } from './queryKeys';
-import { getPpeSizes } from '../api-client';
-import type { PpeSizeGetManyFormData } from '../schemas';
-import type { PpeSize } from '../types';
+import { getPpeSizes } from '@/api-client';
+import type { PpeSizeGetManyFormData } from '@/schemas';
+import type { PpeSize } from '@/types';
 
 const DEFAULT_LIMIT = 40;
 
@@ -41,6 +41,9 @@ export function usePpeSizesInfiniteMobile(params?: PpeSizeGetManyFormData) {
   // Calculate total items loaded
   const totalItemsLoaded = ppeSizes.length;
 
+  // Extract total count from meta
+  const totalCount = data?.pages[0]?.meta?.totalRecords;
+
   // Loading states
   const isLoading = status === "pending";
 
@@ -66,6 +69,7 @@ export function usePpeSizesInfiniteMobile(params?: PpeSizeGetManyFormData) {
     canLoadMore: hasNextPage,
     isFetchingNextPage,
     totalItemsLoaded,
+    totalCount,
     refresh,
   };
 }

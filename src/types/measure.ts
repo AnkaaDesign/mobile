@@ -1,7 +1,7 @@
 // packages/types/src/measure.ts
 
 import type { BaseEntity, BaseGetManyResponse, BatchOperationResult, BaseGetUniqueResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse } from "./common";
-import { MEASURE_UNIT, MEASURE_TYPE } from '../constants';
+import { MEASURE_UNIT, MEASURE_TYPE } from '@/constants';
 import type { Item } from "./item";
 
 // =====================

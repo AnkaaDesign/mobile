@@ -1,4 +1,4 @@
-import { ThemeColors } from "@/types/theme";
+import type { ThemeColors } from "@/types/theme";
 
 /**
  * Standardized icon colors that work with both light and dark themes

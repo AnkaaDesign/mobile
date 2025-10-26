@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { getPaintTypes } from '../api-client';
+import { getPaintTypes } from '@/api-client';
 import { paintTypeKeys } from './queryKeys';
-import type { PaintTypeGetManyFormData } from '../schemas';
+import type { PaintTypeGetManyFormData } from '@/schemas';
 
 export const usePaintTypesInfiniteMobile = (filters?: Partial<PaintTypeGetManyFormData>) => {
   const pageSize = 40;

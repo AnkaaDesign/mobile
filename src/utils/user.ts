@@ -2,46 +2,46 @@ import type { User } from '../types';
 import { USER_STATUS, SECTOR_PRIVILEGES, VERIFICATION_TYPE, USER_STATUS_LABELS } from '../constants';
 import { getSectorPrivilegeLevel } from "./privilege";
 import { dateUtils } from "./date";
-import type { UserStatus, VerificationType, ShirtSize, BootSize, PantsSize, SleevesSize, MaskSize } from "@prisma/client";
+
 
 /**
- * Map USER_STATUS enum to Prisma UserStatus enum
+ * Map USER_STATUS enum to string for API compatibility
  * This is needed because TypeScript doesn't recognize that the string values are compatible
  */
-export function mapUserStatusToPrisma(status: USER_STATUS | string): UserStatus {
-  return status as UserStatus;
+export function mapUserStatusToPrisma(status: USER_STATUS | string): string {
+  return status as string;
 }
 
 /**
- * Map VERIFICATION_TYPE enum to Prisma VerificationType enum
+ * Map VERIFICATION_TYPE enum to string for API compatibility
  * This is needed because TypeScript doesn't recognize that the string values are compatible
  */
-export function mapVerificationTypeToPrisma(verificationType: VERIFICATION_TYPE | string | null | undefined): VerificationType | null | undefined {
-  return verificationType as VerificationType | null | undefined;
+export function mapVerificationTypeToPrisma(verificationType: VERIFICATION_TYPE | string | null | undefined): string | null | undefined {
+  return verificationType as string | null | undefined;
 }
 
 /**
- * Map PPE size enums to Prisma enums
+ * Map PPE size enums to strings for API compatibility
  * Note: These functions are kept for backward compatibility with PpeSize entity
  */
-export function mapShirtSizeToPrisma(size: string | null | undefined): ShirtSize | null | undefined {
-  return size as ShirtSize | null | undefined;
+export function mapShirtSizeToPrisma(size: string | null | undefined): string | null | undefined {
+  return size as string | null | undefined;
 }
 
-export function mapBootSizeToPrisma(size: string | null | undefined): BootSize | null | undefined {
-  return size as BootSize | null | undefined;
+export function mapBootSizeToPrisma(size: string | null | undefined): string | null | undefined {
+  return size as string | null | undefined;
 }
 
-export function mapPantsSizeToPrisma(size: string | null | undefined): PantsSize | null | undefined {
-  return size as PantsSize | null | undefined;
+export function mapPantsSizeToPrisma(size: string | null | undefined): string | null | undefined {
+  return size as string | null | undefined;
 }
 
-export function mapSleevesSizeToPrisma(size: string | null | undefined): SleevesSize | null | undefined {
-  return size as SleevesSize | null | undefined;
+export function mapSleevesSizeToPrisma(size: string | null | undefined): string | null | undefined {
+  return size as string | null | undefined;
 }
 
-export function mapMaskSizeToPrisma(size: string | null | undefined): MaskSize | null | undefined {
-  return size as MaskSize | null | undefined;
+export function mapMaskSizeToPrisma(size: string | null | undefined): string | null | undefined {
+  return size as string | null | undefined;
 }
 
 /**

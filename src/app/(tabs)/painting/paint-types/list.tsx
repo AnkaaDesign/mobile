@@ -39,7 +39,7 @@ export default function PaintTypeListScreen() {
   }>({});
 
   const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
-    [{ column: "name", direction: "asc", order: 0 }],
+    [{ columnKey: "name", direction: "asc", order: 0 }],
     3,
     false
   );
@@ -259,7 +259,7 @@ export default function PaintTypeListScreen() {
             showSelection={showSelection}
             selectedPaintTypes={selectedPaintTypes}
             onSelectionChange={handleSelectionChange}
-            sortConfigs={sortConfigs as SortConfig[]}
+            sortConfigs={sortConfigs}
             onSort={(configs) => handleSort(configs[0]?.columnKey || "name")}
             visibleColumnKeys={visibleColumns}
             enableSwipeActions={true}

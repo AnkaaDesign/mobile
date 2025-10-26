@@ -10,6 +10,7 @@ export interface MenuItem {
   isControlPanel?: boolean; // Indicates if this is a control panel/dashboard
   isDynamic?: boolean; // Indicates if this is a dynamic route
   excludeFromMobile?: boolean; // Exclude this item from mobile navigation
+  isContextual?: boolean; // Indicates if this is a contextual menu item added dynamically
 }
 
 // Comprehensive Tabler icon mapping for Brazilian manufacturing system

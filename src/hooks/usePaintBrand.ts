@@ -11,7 +11,7 @@ import type {
   PaintBrandBatchCreateResponse,
   PaintBrandBatchUpdateResponse,
   PaintBrandBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import type {
   PaintBrandGetManyFormData,
   PaintBrandCreateFormData,
@@ -20,7 +20,7 @@ import type {
   PaintBrandBatchUpdateFormData,
   PaintBrandBatchDeleteFormData,
   PaintBrandInclude,
-} from '../schemas';
+} from '@/schemas';
 import { createEntityHooks } from "./createEntityHooks";
 import { paintBrandKeys, paintKeys, paintTypeKeys, paintFormulaKeys } from "./queryKeys";
 import {
@@ -32,7 +32,7 @@ import {
   batchCreatePaintBrands,
   batchUpdatePaintBrands,
   batchDeletePaintBrands,
-} from '../api-client';
+} from '@/api-client';
 
 // =====================================================
 // PaintBrand Service Adapter
@@ -372,6 +372,6 @@ export { usePaintBrandBatchMutations as usePaintBrandBatchOperations };
 // Type Re-exports for convenience
 // =====================================================
 
-export type { PaintBrand, PaintBrandGetManyResponse, PaintBrandCreateResponse, PaintBrandUpdateResponse } from '../types';
+export type { PaintBrand, PaintBrandGetManyResponse, PaintBrandCreateResponse, PaintBrandUpdateResponse } from '@/types';
 
-export type { PaintBrandGetManyFormData, PaintBrandGetByIdFormData, PaintBrandCreateFormData, PaintBrandUpdateFormData } from '../schemas';
+export type { PaintBrandGetManyFormData, PaintBrandGetByIdFormData, PaintBrandCreateFormData, PaintBrandUpdateFormData } from '@/schemas';

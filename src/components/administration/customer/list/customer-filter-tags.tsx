@@ -203,6 +203,32 @@ export function CustomerFilterTags({
       }
     }
 
+    // Convenience filters - hasTasks
+    if (filters.hasTasks !== undefined) {
+      tags.push({
+        key: "has-tasks",
+        label: filters.hasTasks ? "Com Tarefas" : "Sem Tarefas",
+        onRemove: () => {
+          const newFilters = { ...filters };
+          delete newFilters.hasTasks;
+          onFilterChange(newFilters);
+        },
+      });
+    }
+
+    // Convenience filters - taskCount
+    if (filters.taskCount !== undefined) {
+      tags.push({
+        key: "task-count",
+        label: `Tarefas: ${filters.taskCount}`,
+        onRemove: () => {
+          const newFilters = { ...filters };
+          delete newFilters.taskCount;
+          onFilterChange(newFilters);
+        },
+      });
+    }
+
     return tags;
   }, [filters, searchText, onFilterChange, onSearchChange]);
 
@@ -240,13 +266,13 @@ export function CustomerFilterTags({
           <Badge
             key={tag.key}
             variant="secondary"
-            style={[
+            style={StyleSheet.flatten([
               styles.filterTag,
               {
                 backgroundColor: colors.secondary,
                 borderColor: colors.border,
               }
-            ]}
+            ])}
           >
             <ThemedText style={[styles.filterTagText, { color: colors.secondaryForeground }]}>
               {tag.label}

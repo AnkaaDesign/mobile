@@ -1,5 +1,5 @@
 import { useCurrentUser } from "./useAuth";
-import { SECTOR_PRIVILEGES } from '../constants';
+import { SECTOR_PRIVILEGES } from '@/constants';
 import { canAccessAnyPrivilege, canAccessAllPrivileges, canAccessSector, getSectorPrivilegeLevel, hasPrivilege, hasAnyPrivilege, hasAllPrivileges } from '../utils';
 
 /**

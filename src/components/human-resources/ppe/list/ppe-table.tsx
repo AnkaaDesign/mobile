@@ -8,6 +8,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { PPE_TYPE_LABELS } from '../../../../constants';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -18,10 +19,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface PpeTableProps {
   items: Item[];
@@ -78,7 +75,7 @@ const createColumnDefinitions = (): TableColumn[] => [
             fontWeight: fontWeight.medium,
           }}
         >
-          {item.ppeType ? PPE_TYPE_LABELS[item.ppeType] : "-"}
+          {item.ppeType ? PPE_TYPE_LABELS[item.ppeType as keyof typeof PPE_TYPE_LABELS] : "-"}
         </ThemedText>
       </Badge>
     ),

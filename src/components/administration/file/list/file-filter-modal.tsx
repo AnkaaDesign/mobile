@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Modal, View, ScrollView, StyleSheet } from "react-native";
+import { Modal, View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -137,24 +137,18 @@ export function FileFilterModal({ visible, onClose, onApply, currentFilters }: F
       };
     }
 
-    // Add date filters
+    // Add date filters - dates are stored at top level in FileGetManyFormData
     if (filters.createdDateRange?.start || filters.createdDateRange?.end) {
-      appliedFilters.where = {
-        ...appliedFilters.where,
-        createdAt: {
-          ...(filters.createdDateRange.start ? { gte: filters.createdDateRange.start } : {}),
-          ...(filters.createdDateRange.end ? { lte: filters.createdDateRange.end } : {}),
-        },
+      appliedFilters.createdAt = {
+        ...(filters.createdDateRange.start ? { gte: filters.createdDateRange.start } : {}),
+        ...(filters.createdDateRange.end ? { lte: filters.createdDateRange.end } : {}),
       };
     }
 
     if (filters.updatedDateRange?.start || filters.updatedDateRange?.end) {
-      appliedFilters.where = {
-        ...appliedFilters.where,
-        updatedAt: {
-          ...(filters.updatedDateRange.start ? { gte: filters.updatedDateRange.start } : {}),
-          ...(filters.updatedDateRange.end ? { lte: filters.updatedDateRange.end } : {}),
-        },
+      appliedFilters.updatedAt = {
+        ...(filters.updatedDateRange.start ? { gte: filters.updatedDateRange.start } : {}),
+        ...(filters.updatedDateRange.end ? { lte: filters.updatedDateRange.end } : {}),
       };
     }
 
@@ -195,14 +189,18 @@ export function FileFilterModal({ visible, onClose, onApply, currentFilters }: F
             <Label style={styles.sectionTitle}>Tipo de Arquivo</Label>
             <View style={styles.chipContainer}>
               {COMMON_MIME_TYPES.map((type) => (
-                <Badge
+                <TouchableOpacity
                   key={type.value}
-                  variant={selectedMimeTypes.includes(type.value) ? "default" : "outline"}
-                  style={styles.chip}
                   onPress={() => toggleMimeType(type.value)}
+                  activeOpacity={0.7}
                 >
-                  <ThemedText style={[styles.chipText, selectedMimeTypes.includes(type.value) && { color: colors.primaryForeground }]}>{type.label}</ThemedText>
-                </Badge>
+                  <Badge
+                    variant={selectedMimeTypes.includes(type.value) ? "default" : "outline"}
+                    style={styles.chip}
+                  >
+                    <ThemedText style={[styles.chipText, selectedMimeTypes.includes(type.value) && { color: colors.primaryForeground }]}>{type.label}</ThemedText>
+                  </Badge>
+                </TouchableOpacity>
               ))}
             </View>
           </View>

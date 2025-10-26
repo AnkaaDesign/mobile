@@ -23,9 +23,10 @@ interface TeamUserFilterModalProps {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  [USER_STATUS.ACTIVE]: "Ativo",
-  [USER_STATUS.INACTIVE]: "Inativo",
-  [USER_STATUS.SUSPENDED]: "Suspenso",
+  [USER_STATUS.EXPERIENCE_PERIOD_1]: "Experiência 1/2",
+  [USER_STATUS.EXPERIENCE_PERIOD_2]: "Experiência 2/2",
+  [USER_STATUS.CONTRACTED]: "Contratado",
+  [USER_STATUS.DISMISSED]: "Desligado",
 };
 
 export const TeamUserFilterModal = ({ visible, onClose, onApply, currentFilters, positions }: TeamUserFilterModalProps) => {

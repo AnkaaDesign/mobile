@@ -633,6 +633,9 @@ export const borrowCreateSchema = z
       })
       .positive("Quantidade deve ser positiva")
       .default(1),
+    expectedReturnDate: nullableDate.optional(),
+    notes: z.string().max(500, "Notas devem ter no máximo 500 caracteres").optional(),
+    reason: z.string().max(200, "Motivo deve ter no máximo 200 caracteres").optional(),
     returnedAt: nullableDate.optional(),
   })
   .transform(toFormData);
@@ -657,13 +660,23 @@ export const borrowUpdateSchema = z
       })
       .positive("Quantidade deve ser positiva")
       .optional(),
+    quantityReturned: z
+      .number({
+        invalid_type_error: "Quantidade devolvida inválida",
+      })
+      .min(0, "Quantidade devolvida deve ser maior ou igual a zero")
+      .optional(),
     status: z
       .enum(Object.values(BORROW_STATUS) as [string, ...string[]], {
         invalid_type_error: "Status inválido",
       })
       .optional(),
     statusOrder: z.number().int().positive().optional(),
+    expectedReturnDate: nullableDate.optional(),
     returnedAt: nullableDate.optional(),
+    notes: z.string().max(500, "Notas devem ter no máximo 500 caracteres").optional(),
+    reason: z.string().max(200, "Motivo deve ter no máximo 200 caracteres").optional(),
+    conditionNotes: z.string().max(500, "Observações de condição devem ter no máximo 500 caracteres").optional(),
   })
   .transform(toFormData);
 

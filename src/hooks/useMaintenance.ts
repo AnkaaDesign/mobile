@@ -32,7 +32,7 @@ import {
   batchCreateMaintenanceSchedules,
   batchUpdateMaintenanceSchedules,
   batchDeleteMaintenanceSchedules,
-} from '../api-client';
+} from '@/api-client';
 import type {
   // Maintenance types
   MaintenanceGetManyFormData,
@@ -58,7 +58,7 @@ import type {
   MaintenanceScheduleBatchUpdateFormData,
   MaintenanceScheduleBatchDeleteFormData,
   MaintenanceScheduleInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   // Entity types
   Maintenance,
@@ -91,7 +91,7 @@ import type {
   MaintenanceScheduleBatchCreateResponse,
   MaintenanceScheduleBatchUpdateResponse,
   MaintenanceScheduleBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { maintenanceKeys, maintenanceItemKeys, maintenanceScheduleKeys, truckKeys, itemKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

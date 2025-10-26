@@ -366,18 +366,9 @@ export default function EmployeesListScreen() {
         </View>
       )}
 
-      {/* Items count */}
-      {hasEmployees && (
-        <ItemsCountDisplay
-          loadedCount={totalItemsLoaded}
-          totalCount={totalCount}
-          isLoading={isFetchingNextPage}
-        />
-      )}
-
       {hasEmployees && (
         <FAB
-          icon={<IconUserPlus size={24} color="white" />}
+          icon="user-plus"
           onPress={handleCreateEmployee}
         />
       )}

@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { PAINT_FINISH_LABELS } from '@/constants/enum-labels';
+import { PAINT_FINISH } from '@/constants/enums';
 import { IconPaint, IconSparkles, IconBrush, IconAlertCircle } from "@tabler/icons-react-native";
 import { PaintPreview } from "@/components/paint/paint-preview";
-import type { PAINT_FINISH } from "@/constants/enums";
 
 interface Paint {
   id: string;

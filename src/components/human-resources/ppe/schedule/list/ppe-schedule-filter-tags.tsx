@@ -58,7 +58,7 @@ export function PpeScheduleFilterTags({ filters, searchText, onFilterChange, onS
 
         {filters.frequencies && filters.frequencies.length > 0 && (
           <Chip variant="secondary" onRemove={() => removeFilter("frequencies")}>
-            {filters.frequencies.length === 1 ? SCHEDULE_FREQUENCY_LABELS[filters.frequencies[0]] : `${filters.frequencies.length} Frequências`}
+            {filters.frequencies.length === 1 ? SCHEDULE_FREQUENCY_LABELS[filters.frequencies[0] as keyof typeof SCHEDULE_FREQUENCY_LABELS] : `${filters.frequencies.length} Frequências`}
           </Chip>
         )}
 

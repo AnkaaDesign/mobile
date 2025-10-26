@@ -4,23 +4,29 @@ import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 
 interface ChipProps {
-  label: string;
+  label?: string;
+  children?: React.ReactNode;
   onRemove?: () => void;
-  variant?: "default" | "primary" | "secondary" | "success" | "warning" | "error";
+  onPress?: () => void;
+  variant?: "default" | "primary" | "secondary" | "success" | "warning" | "error" | "outline" | "destructive";
   size?: "sm" | "md" | "lg";
   style?: ViewStyle;
   labelStyle?: TextStyle;
   removable?: boolean;
+  icon?: string;
 }
 
 export function Chip({
   label,
+  children,
   onRemove,
+  onPress,
   variant = "default",
   size = "md",
   style,
   labelStyle,
   removable = true,
+  icon,
 }: ChipProps) {
   const { colors, isDark } = useTheme();
 
@@ -51,10 +57,17 @@ export function Chip({
           textColor: colors.warning,
         };
       case "error":
+      case "destructive":
         return {
           backgroundColor: colors.destructive + "20",
           borderColor: colors.destructive,
           textColor: colors.destructive,
+        };
+      case "outline":
+        return {
+          backgroundColor: "transparent",
+          borderColor: colors.border,
+          textColor: colors.foreground,
         };
       default:
         return {
@@ -120,14 +133,22 @@ export function Chip({
     },
   });
 
+  const content = children || label;
+  const Wrapper = onPress ? TouchableOpacity : View;
+  const wrapperProps = onPress ? { onPress, activeOpacity: 0.7 } : {};
+
   return (
-    <View style={StyleSheet.flatten([styles.container, style])}>
-      <Text style={StyleSheet.flatten([styles.label, labelStyle])}>{label}</Text>
+    <Wrapper style={StyleSheet.flatten([styles.container, style])} {...wrapperProps}>
+      {typeof content === 'string' ? (
+        <Text style={StyleSheet.flatten([styles.label, labelStyle])}>{content}</Text>
+      ) : (
+        content
+      )}
       {removable && onRemove && (
         <TouchableOpacity onPress={onRemove} style={styles.removeButton}>
           <IconX size={sizeStyles.iconSize} />
         </TouchableOpacity>
       )}
-    </View>
+    </Wrapper>
   );
 }

@@ -1,7 +1,7 @@
 // packages/interfaces/src/airbrushing.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { AIRBRUSHING_STATUS, ORDER_BY_DIRECTION } from '../constants';
+import type { AIRBRUSHING_STATUS, ORDER_BY_DIRECTION } from '@/constants';
 import type { Task, TaskIncludes, TaskOrderBy } from "./task";
 import type { File, FileIncludes } from "./file";
 
@@ -81,6 +81,6 @@ export interface AirbrushingDeleteResponse extends BaseDeleteResponse {}
 // Batch Operation Responses
 // =====================
 
-export interface AirbrushingBatchCreateResponse<T> extends BaseBatchResponse<Airbrushing, T> {}
-export interface AirbrushingBatchUpdateResponse<T> extends BaseBatchResponse<Airbrushing, T & { id: string }> {}
+export interface AirbrushingBatchCreateResponse<T = any> extends BaseBatchResponse<Airbrushing, T> {}
+export interface AirbrushingBatchUpdateResponse<T = any> extends BaseBatchResponse<Airbrushing, T & { id: string }> {}
 export interface AirbrushingBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}

@@ -27,6 +27,7 @@ export const fontSize = {
   md: 16, // alias for base
   lg: 18,
   xl: 20,
+  xxl: 22, // Added for commission card
   "2xl": 24,
   "3xl": 30,
 } as const;

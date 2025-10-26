@@ -1,8 +1,8 @@
 // packages/hooks/src/useLayoutSection.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { layoutSectionService } from '../api-client';
-import type { LayoutSectionCreateInput, LayoutSectionUpdateInput } from '../types';
+import { layoutSectionService } from '@/api-client';
+import type { LayoutSectionCreateInput, LayoutSectionUpdateInput } from '@/types';
 
 // Query keys
 export const layoutSectionQueryKeys = {

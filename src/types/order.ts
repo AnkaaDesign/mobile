@@ -1,7 +1,7 @@
 // packages/interfaces/src/order.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_STATUS, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, ORDER_TRIGGER_TYPE, ORDER_BY_DIRECTION, RESCHEDULE_REASON } from '../constants';
+import type { ORDER_STATUS, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, ORDER_TRIGGER_TYPE, ORDER_BY_DIRECTION, RESCHEDULE_REASON } from '@/constants';
 import type { Supplier, SupplierIncludes, SupplierOrderBy } from "./supplier";
 import type { Item, ItemIncludes, ItemOrderBy, ItemWhere } from "./item";
 import type { File, FileIncludes } from "./file";
@@ -89,13 +89,13 @@ export interface OrderRule extends BaseEntity {
 
 export interface OrderItem extends BaseEntity {
   orderId: string;
-  itemId: string;
+  itemId: string | null;
+  temporaryItemDescription: string | null;
   orderedQuantity: number;
   receivedQuantity: number;
   price: number;
   unitPrice?: number;
   tax: number;
-  isCritical: boolean;
   receivedAt: Date | null;
   fulfilledAt: Date | null;
 
@@ -114,9 +114,11 @@ export interface Order extends BaseEntity {
   forecast: Date | null;
   status: ORDER_STATUS;
   statusOrder: number; // Status numeric order for sorting: 1=Created, 2=PartiallyFulfilled, 3=Fulfilled, 4=Overdue, 5=PartiallyReceived, 6=Received, 7=Cancelled
-  budgetId: string | null;
-  nfeId: string | null;
-  receiptId: string | null;
+  budgetIds?: string[];
+  invoiceIds?: string[];
+  receiptIds?: string[];
+  reimbursementIds?: string[];
+  reimbursementInvoiceIds?: string[];
   supplierId: string | null;
   orderScheduleId: string | null;
   orderRuleId: string | null;
@@ -124,9 +126,11 @@ export interface Order extends BaseEntity {
   notes: string | null;
 
   // Relations (optional, populated based on query)
-  budget?: File;
-  nfe?: File;
-  receipt?: File;
+  budgets?: File[];
+  invoices?: File[];
+  receipts?: File[];
+  reimbursements?: File[];
+  invoiceReimbursements?: File[];
   supplier?: Supplier;
   orderSchedule?: OrderSchedule;
   ppeSchedule?: PpeDeliverySchedule;
@@ -145,17 +149,27 @@ export interface Order extends BaseEntity {
 // =====================
 
 export interface OrderIncludes {
-  budget?:
+  budgets?:
     | boolean
     | {
         include?: FileIncludes;
       };
-  nfe?:
+  invoices?:
     | boolean
     | {
         include?: FileIncludes;
       };
-  receipt?:
+  receipts?:
+    | boolean
+    | {
+        include?: FileIncludes;
+      };
+  reimbursements?:
+    | boolean
+    | {
+        include?: FileIncludes;
+      };
+  invoiceReimbursements?:
     | boolean
     | {
         include?: FileIncludes;
@@ -286,7 +300,6 @@ export interface OrderItemWhere {
   receivedQuantity?: number | { equals?: number; not?: number; lt?: number; lte?: number; gt?: number; gte?: number };
   price?: number | { equals?: number; not?: number; lt?: number; lte?: number; gt?: number; gte?: number };
   tax?: number | { equals?: number; not?: number; lt?: number; lte?: number; gt?: number; gte?: number };
-  isCritical?: boolean | { equals?: boolean; not?: boolean };
   receivedAt?: Date | null | { equals?: Date | null; not?: Date | null; lt?: Date; lte?: Date; gt?: Date; gte?: Date };
   fulfilledAt?: Date | null | { equals?: Date | null; not?: Date | null; lt?: Date; lte?: Date; gt?: Date; gte?: Date };
   createdAt?: Date | { equals?: Date; not?: Date; lt?: Date; lte?: Date; gt?: Date; gte?: Date };
@@ -345,7 +358,6 @@ export interface OrderItemOrderBy {
   receivedQuantity?: ORDER_BY_DIRECTION;
   price?: ORDER_BY_DIRECTION;
   tax?: ORDER_BY_DIRECTION;
-  isCritical?: ORDER_BY_DIRECTION;
   receivedAt?: ORDER_BY_DIRECTION;
   fulfilledAt?: ORDER_BY_DIRECTION;
   createdAt?: ORDER_BY_DIRECTION;

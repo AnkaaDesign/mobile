@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatRelativeTime, formatFileSize } from '../../../../../utils';
+import type { SortConfig } from "@/lib/sort-utils";
 import {
   IconCpu,
   IconActivity,
@@ -38,10 +39,6 @@ export interface MetricData {
 
 export type MetricCategory = "cpu" | "memory" | "disk" | "network" | "system" | "temperature";
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface MetricTableProps {
   metrics: MetricData[];

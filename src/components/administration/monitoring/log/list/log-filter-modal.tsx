@@ -218,12 +218,12 @@ export function LogFilterModal({ visible, onClose, onApply, currentFilters, avai
               <View style={styles.dateRangeContainer}>
                 <View style={styles.datePickerRow}>
                   <Label style={styles.dateLabel}>Data Inicial:</Label>
-                  <DatePicker value={filters.dateRange?.start} onChange={(date) => handleDateRangeChange("start", date)} placeholder="Selecione" maximumDate={filters.dateRange?.end || new Date()} />
+                  <DatePicker value={filters.dateRange?.start} onChange={(date) => handleDateRangeChange("start", date)} placeholder="Selecione" />
                 </View>
 
                 <View style={styles.datePickerRow}>
                   <Label style={styles.dateLabel}>Data Final:</Label>
-                  <DatePicker value={filters.dateRange?.end} onChange={(date) => handleDateRangeChange("end", date)} placeholder="Selecione" minimumDate={filters.dateRange?.start} maximumDate={new Date()} />
+                  <DatePicker value={filters.dateRange?.end} onChange={(date) => handleDateRangeChange("end", date)} placeholder="Selecione" />
                 </View>
               </View>,
             )}

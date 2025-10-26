@@ -3,9 +3,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { fileKeys, taskKeys, customerKeys, supplierKeys, userKeys, activityKeys, itemKeys } from "./queryKeys";
-import { getFiles, getFileById, createFile, updateFile, deleteFile, batchCreateFiles, batchUpdateFiles, batchDeleteFiles, uploadSingleFile, fileService } from '../api-client';
-import type { FileUploadOptions as ApiFileUploadOptions, FileUploadProgress as ApiFileUploadProgress } from '../api-client';
-import type { FileGetManyFormData, FileCreateFormData, FileUpdateFormData, FileBatchCreateFormData, FileBatchUpdateFormData, FileBatchDeleteFormData } from '../schemas';
+import { getFiles, getFileById, createFile, updateFile, deleteFile, batchCreateFiles, batchUpdateFiles, batchDeleteFiles, uploadSingleFile, fileService } from '@/api-client';
+import type { FileUploadOptions as ApiFileUploadOptions, FileUploadProgress as ApiFileUploadProgress } from '@/api-client';
+import type { FileGetManyFormData, FileCreateFormData, FileUpdateFormData, FileBatchCreateFormData, FileBatchUpdateFormData, FileBatchDeleteFormData } from '@/schemas';
 import type {
   File,
   FileGetManyResponse,
@@ -16,7 +16,7 @@ import type {
   FileBatchCreateResponse,
   FileBatchUpdateResponse,
   FileBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { createEntityHooks } from "./createEntityHooks";
 
 // =====================================================
@@ -620,19 +620,25 @@ export const useSmartFileLoader = (_files: File[]) => {
       try {
         const previewUrl = generatePreviewUrl(file);
 
-        // Preload the image
-        return new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => {
-            setLoadedPreviews((prev) => new Set(prev).add(file.id));
-            resolve(previewUrl);
-          };
-          img.onerror = () => {
-            setFailedPreviews((prev) => new Set(prev).add(file.id));
-            reject(new Error(`Failed to load preview for ${file.filename}`));
-          };
-          img.src = previewUrl;
-        });
+        // Preload the image (only available in web environment)
+        if (typeof window !== 'undefined' && 'Image' in window) {
+          return new Promise((resolve, reject) => {
+            const img = new (window as any).Image();
+            img.onload = () => {
+              setLoadedPreviews((prev) => new Set(prev).add(file.id));
+              resolve(previewUrl);
+            };
+            img.onerror = () => {
+              setFailedPreviews((prev) => new Set(prev).add(file.id));
+              reject(new Error(`Failed to load preview for ${file.filename}`));
+            };
+            img.src = previewUrl;
+          });
+        } else {
+          // In React Native, skip preloading and just return the URL
+          setLoadedPreviews((prev) => new Set(prev).add(file.id));
+          return Promise.resolve(previewUrl);
+        }
       } catch (error) {
         setFailedPreviews((prev) => new Set(prev).add(file.id));
         return `/api/files/serve/${file.id}`;

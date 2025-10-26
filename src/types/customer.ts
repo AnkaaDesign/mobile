@@ -1,6 +1,6 @@
 // packages/interfaces/src/customer.ts
 
-import type { ORDER_BY_DIRECTION } from '../constants';
+import type { ORDER_BY_DIRECTION } from '@/constants';
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse, BaseMergeResponse } from "./common";
 import type { File, FileIncludes } from "./file";
 import type { Task, TaskIncludes } from "./task";
@@ -12,6 +12,7 @@ import type { EconomicActivity, EconomicActivityIncludes } from "./economic-acti
 
 export interface Customer extends BaseEntity {
   fantasyName: string;
+  name: string; // Alias for fantasyName
   cnpj: string | null;
   cpf: string | null;
   corporateName: string | null;

@@ -1,4 +1,4 @@
-import type { SECTOR_PRIVILEGES } from '../../constants';
+import type { SECTOR_PRIVILEGES } from '@/constants';
 
 // Privilege Guard Props
 export interface PrivilegeGuardProps {

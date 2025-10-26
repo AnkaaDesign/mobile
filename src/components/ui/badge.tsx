@@ -34,6 +34,7 @@ export interface BadgeProps {
   size?: "default" | "sm" | "md" | "lg";
   style?: ViewStyle;
   textStyle?: TextStyle;
+  className?: string;
 }
 
 const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeProps["size"] = "default", colors: any, isDark: boolean): ViewStyle => {
@@ -274,7 +275,7 @@ export function getBadgeVariantFromStatus(status: string, entity?: string): Badg
   return getCentralizedBadgeVariant(status, entity as any) as BadgeProps["variant"];
 }
 
-function Badge({ children, variant = "default", size = "default", style, textStyle, ...props }: BadgeProps) {
+function Badge({ children, variant = "default", size = "default", style, textStyle, className, ...props }: BadgeProps) {
   const { colors, isDark } = useTheme();
   const badgeStyles = getBadgeStyles(variant, size, colors, isDark);
   const badgeTextStyles = getBadgeTextStyles(variant, size, colors, isDark);
@@ -287,10 +288,11 @@ function Badge({ children, variant = "default", size = "default", style, textSty
     // For non-text children, wrap Text components with styles
     return React.Children.map(children, (child) => {
       if (React.isValidElement(child) && child.type === Text) {
-        return React.cloneElement(child as React.ReactElement<any>, {
-          style: [badgeTextStyles, child.props.style, textStyle],
+        const element = child as React.ReactElement<{ style?: TextStyle; numberOfLines?: number; ellipsizeMode?: "head" | "middle" | "tail" | "clip" }>;
+        return React.cloneElement(element, {
+          style: StyleSheet.flatten([badgeTextStyles, element.props.style, textStyle]),
           numberOfLines: 1,
-          ellipsizeMode: "tail",
+          ellipsizeMode: "tail" as const,
         });
       }
       return child;

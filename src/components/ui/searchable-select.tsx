@@ -35,7 +35,7 @@ export function SearchableSelect({
   const { colors, spacing } = useTheme();
 
   return (
-    <View style={StyleSheet.flatten([{ padding: spacing.sm }, style])}>
+    <View style={[{ padding: spacing.sm }, style as ViewStyle]}>
       {children}
     </View>
   );

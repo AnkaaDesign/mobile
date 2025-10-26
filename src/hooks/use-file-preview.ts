@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { File as AnkaaFile } from '../types';
+import type { File as AnkaaFile } from '@/types';
 
 export interface UseFilePreviewOptions {
   baseUrl?: string;
@@ -11,7 +11,8 @@ export interface UseFilePreviewOptions {
 }
 
 export interface UseFilePreviewReturn {
-  isVisible: boolean;
+  isOpen: boolean;
+  isVisible: boolean; // Alias for React Native compatibility
   currentFileIndex: number;
   files: AnkaaFile[];
   openPreview: (files: AnkaaFile[], initialIndex?: number) => void;
@@ -109,7 +110,8 @@ export function useFilePreview(options: UseFilePreviewOptions = {}): UseFilePrev
   );
 
   return {
-    isVisible,
+    isOpen: isVisible,
+    isVisible, // Keep for backward compatibility
     currentFileIndex,
     files,
     openPreview,

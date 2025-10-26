@@ -25,8 +25,7 @@ export default function WarehouseDashboardScreen() {
   const { data: itemsData, isLoading: itemsLoading, refetch: refetchItems } = useItems({
     where: {
       OR: [
-        { quantity: { lte: { _ref: 'minimumQuantity' } } },
-        { quantity: { equals: 0 } }
+        { quantity: { lte: 0 } }
       ]
     },
     include: { category: true },
@@ -210,7 +209,7 @@ export default function WarehouseDashboardScreen() {
                     <View style={styles.activityContent}>
                       <Text style={styles.activityTitle}>{item.name}</Text>
                       <Text style={styles.activityDescription}>
-                        Estoque: {item.quantity || 0} / Mínimo: {item.minimumQuantity || 0}
+                        Estoque: {item.quantity || 0} / Ponto de Reposição: {item.reorderPoint || 0}
                         {item.category ? ` • ${item.category.name}` : ""}
                       </Text>
                     </View>

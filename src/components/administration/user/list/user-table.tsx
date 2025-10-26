@@ -15,6 +15,7 @@ import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { USER_STATUS } from '../../../../constants';
 import { getUserStatusBadgeText } from '../../../../utils/user';
 import { getBadgeVariant } from '../../../../constants/badge-colors';
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -23,11 +24,6 @@ export interface TableColumn {
   width: number;
   align?: "left" | "center" | "right";
   sortable?: boolean;
-}
-
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
 }
 
 interface UserTableProps {
@@ -84,7 +80,7 @@ const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (user: User) => (
       <View style={styles.avatarContainer}>
-        <Avatar alt={user.name} uri={user.avatarUrl} size="sm" />
+        <Avatar label={user.name} uri={user.avatar || undefined} size="sm" />
       </View>
     ),
   },
@@ -359,7 +355,7 @@ export const UserTable = React.memo<UserTableProps>(
           onSort(newConfigs);
         } else {
           // Add new sort as primary (at the beginning)
-          const newConfigs = [{ columnKey, direction: "asc" as const }, ...(sortConfigs || [])];
+          const newConfigs = [{ columnKey: columnKey, direction: "asc" as const, order: 0 }, ...(sortConfigs || [])];
           // Limit to 3 sorts max
           if (newConfigs.length > 3) {
             newConfigs.pop();

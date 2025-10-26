@@ -13,6 +13,7 @@ import { NotificationTableRowSwipe } from "./notification-table-row-swipe";
 import { NOTIFICATION_IMPORTANCE, NOTIFICATION_TYPE, NOTIFICATION_IMPORTANCE_LABELS, NOTIFICATION_TYPE_LABELS } from '../../../../constants';
 import { formatRelativeTime } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -23,10 +24,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface NotificationTableProps {
   notifications: Notification[];

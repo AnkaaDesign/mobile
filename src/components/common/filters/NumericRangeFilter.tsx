@@ -168,9 +168,6 @@ export function NumericRangeFilter({
     clearButton: {
       padding: 4,
     },
-    clearIcon: {
-      color: colors.mutedForeground,
-    },
     inputsRow: {
       flexDirection: 'row',
       gap: spacing.sm,
@@ -222,7 +219,7 @@ export function NumericRangeFilter({
             placeholder={placeholder}
             keyboardType={decimalPlaces > 0 ? 'decimal-pad' : 'number-pad'}
             editable={!disabled}
-            style={styles.input}
+            inputStyle={styles.input}
           />
           {suffix && <Text style={styles.affix}>{suffix}</Text>}
         </View>
@@ -251,7 +248,7 @@ export function NumericRangeFilter({
             onPress={handleClear}
             style={styles.clearButton}
           >
-            <IconX size={16} style={styles.clearIcon} />
+            <IconX size={16} color={colors.mutedForeground} />
           </Button>
         )}
       </View>

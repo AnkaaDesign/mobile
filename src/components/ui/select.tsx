@@ -14,6 +14,8 @@ type Option = {
 interface SelectRootProps extends Omit<React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root>, "value" | "onValueChange"> {
   value?: string | Option;
   onValueChange?: (value: string) => void;
+  options?: Option[];
+  placeholder?: string;
 }
 
 const SelectRoot = React.forwardRef<React.ElementRef<typeof SelectPrimitive.Root>, SelectRootProps>(({ value, onValueChange, ...props }, ref) => {
@@ -133,7 +135,10 @@ const SelectContent = React.forwardRef<
   );
 });
 SelectContent.displayName = SelectPrimitive.Content.displayName;
-const SelectLabel = React.forwardRef(({ className, ...props }, ref) => (
+const SelectLabel = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Label>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
+>(({ className, ...props }, ref) => (
   <SelectPrimitive.Label ref={ref} className={cn("py-1.5 native:pb-2 pl-8 native:pl-10 pr-2 text-foreground text-sm native:text-base font-semibold", className)} {...props} />
 ));
 SelectLabel.displayName = SelectPrimitive.Label.displayName;
@@ -169,7 +174,10 @@ const SelectItem = React.forwardRef<React.ElementRef<typeof SelectPrimitive.Item
   );
 });
 SelectItem.displayName = SelectPrimitive.Item.displayName;
-const SelectSeparator = React.forwardRef(({ className, ...props }, ref) => (
+const SelectSeparator = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
+>(({ className, ...props }, ref) => (
   <SelectPrimitive.Separator ref={ref} className={cn("-mx-1 my-1 h-px bg-border", className)} {...props} />
 ));
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName;

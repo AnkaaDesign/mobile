@@ -1,6 +1,6 @@
 import { useSectorsInfinite } from './useSector';
 
-import type { SectorGetManyFormData } from '../types';
+import type { SectorGetManyFormData } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 /**

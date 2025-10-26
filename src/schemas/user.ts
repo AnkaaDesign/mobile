@@ -200,7 +200,7 @@ export const userOrderBySchema = z.union([
       verified: orderByDirectionSchema.optional(),
       admissional: orderByDirectionSchema.optional(),
       birth: orderByDirectionSchema.optional(),
-      dismissal: orderByDirectionSchema.optional(),
+      dismissedAt: orderByDirectionSchema.optional(),
       performanceLevel: orderByDirectionSchema.optional(),
       sectorId: orderByDirectionSchema.optional(),
       managedSectorId: orderByDirectionSchema.optional(),
@@ -253,7 +253,7 @@ export const userOrderBySchema = z.union([
         verified: orderByDirectionSchema.optional(),
         admissional: orderByDirectionSchema.optional(),
         birth: orderByDirectionSchema.optional(),
-        dismissal: orderByDirectionSchema.optional(),
+        dismissedAt: orderByDirectionSchema.optional(),
         performanceLevel: orderByDirectionSchema.optional(),
         sectorId: orderByDirectionSchema.optional(),
         managedSectorId: orderByDirectionSchema.optional(),
@@ -423,7 +423,7 @@ export const userWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
-      dismissal: z
+      dismissedAt: z
         .union([
           z.date(),
           z.null(),
@@ -919,7 +919,7 @@ export const userCreateSchema = z
         },
         { message: "O colaborador deve ter pelo menos 18 anos" }
       ),
-    dismissal: nullableDate.optional(),
+    dismissedAt: nullableDate.optional(),
 
     // Payroll info
     payrollNumber: z.number().int().positive("Número da folha deve ser positivo").nullable().optional(),
@@ -978,7 +978,7 @@ export const userUpdateSchema = z
         { message: "O colaborador deve ter pelo menos 18 anos" }
       )
       .optional(),
-    dismissal: nullableDate.optional(),
+    dismissedAt: nullableDate.optional(),
 
     // Payroll info
     payrollNumber: z.number().int().positive("Número da folha deve ser positivo").nullable().optional(),
@@ -1002,8 +1002,8 @@ export const userUpdateSchema = z
   })
   .refine(
     (data) => {
-      // If dismissal date is provided, status must be DISMISSED
-      if (data.dismissal && data.status && data.status !== USER_STATUS.DISMISSED) {
+      // If dismissedAt date is provided, status must be DISMISSED
+      if (data.dismissedAt && data.status && data.status !== USER_STATUS.DISMISSED) {
         return false;
       }
       return true;
@@ -1015,15 +1015,15 @@ export const userUpdateSchema = z
   )
   .refine(
     (data) => {
-      // If status is DISMISSED, dismissal date is required
-      if (data.status === USER_STATUS.DISMISSED && !data.dismissal) {
+      // If status is DISMISSED, dismissedAt date is required
+      if (data.status === USER_STATUS.DISMISSED && !data.dismissedAt) {
         return false;
       }
       return true;
     },
     {
       message: "Data de demissão é obrigatória quando o status é DISMISSED",
-      path: ["dismissal"],
+      path: ["dismissedAt"],
     }
   )
   .refine(
@@ -1045,17 +1045,17 @@ export const userUpdateSchema = z
   )
   .refine(
     (data) => {
-      // Validate dismissal date is not before admissional date
-      if (data.dismissal && data.admissional) {
-        const dismissalDate = data.dismissal instanceof Date ? data.dismissal : new Date(data.dismissal);
+      // Validate dismissedAt date is not before admissional date
+      if (data.dismissedAt && data.admissional) {
+        const dismissedAtDate = data.dismissedAt instanceof Date ? data.dismissedAt : new Date(data.dismissedAt);
         const admissionalDate = data.admissional instanceof Date ? data.admissional : new Date(data.admissional);
-        return dismissalDate >= admissionalDate;
+        return dismissedAtDate >= admissionalDate;
       }
       return true;
     },
     {
       message: "Data de demissão não pode ser anterior à data de admissão",
-      path: ["dismissal"],
+      path: ["dismissedAt"],
     }
   )
   .refine(
@@ -1227,9 +1227,9 @@ export const mapUserToFormData = createMapToFormDataHelper<User, UserUpdateFormD
   zipCode: user.zipCode || undefined,
   // site: user.site || undefined,
 
-  // Additional dates - use birth instead of birthDate, admissional and dismissal
+  // Additional dates - use birth instead of birthDate, admissional and dismissedAt
   birth: user.birth,
-  dismissal: user.dismissal || undefined,
+  dismissedAt: user.dismissedAt || undefined,
 
   // Payroll info
   payrollNumber: user.payrollNumber || undefined,

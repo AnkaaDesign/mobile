@@ -9,6 +9,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatDate } from '../../../../utils';
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -19,10 +20,6 @@ export interface TableColumn {
   render?: (service: Service) => React.ReactNode;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface ServiceTableProps {
   services: Service[];

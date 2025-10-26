@@ -1,7 +1,7 @@
 import type { ViewStyle } from "react-native";
 import type { Item } from '..';
 import type { UseFormReturn } from "react-hook-form";
-import type { ItemCreateFormData, ItemUpdateFormData } from '../../schemas';
+import type { ItemCreateFormData, ItemUpdateFormData } from '@/schemas';
 
 // List Components Props
 export interface ItemListProps {

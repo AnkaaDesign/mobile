@@ -118,15 +118,15 @@ export default function BorrowListScreen() {
   }, [refresh]);
 
   const handleCreateBorrow = () => {
-    router.push(routeToMobilePath(routes.inventory.borrows.create) as any);
+    router.push(routeToMobilePath(routes.inventory.borrows.create));
   };
 
   const handleBorrowPress = (borrowId: string) => {
-    router.push(routeToMobilePath(routes.inventory.borrows.details(borrowId)) as any);
+    router.push(routeToMobilePath(routes.inventory.borrows.details(borrowId)));
   };
 
   const handleEditBorrow = (borrowId: string) => {
-    router.push(routeToMobilePath(routes.inventory.borrows.edit(borrowId)) as any);
+    router.push(routeToMobilePath(routes.inventory.borrows.edit(borrowId)));
   };
 
   const handleDeleteBorrow = useCallback(
@@ -296,7 +296,7 @@ export default function BorrowListScreen() {
         onClearAll={handleClearFilters}
         onRemoveFilter={(key) => {
           const newFilters = { ...filters };
-          delete (newFilters as any)[key as string];
+          delete newFilters[key as keyof BorrowGetManyFormData];
           setFilters(newFilters);
         }}
         onClearSearch={() => {

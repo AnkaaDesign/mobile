@@ -128,7 +128,7 @@ export function PpeScheduleFilterModal({ visible, onClose, onApply, currentFilte
     }
 
     if (filters.frequencies?.length) {
-      queryFilters.frequencies = filters.frequencies as any;
+      queryFilters.frequencies = filters.frequencies as Array<keyof typeof SCHEDULE_FREQUENCY>;
     }
 
     if (filters.isActive !== undefined) {

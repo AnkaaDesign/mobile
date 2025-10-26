@@ -28,7 +28,7 @@ const getStatusColor = (status: string) => {
       return { background: badgeColors.info.background, text: badgeColors.info.text };
     case PPE_DELIVERY_STATUS.DELIVERED:
       return { background: badgeColors.success.background, text: badgeColors.success.text };
-    case PPE_DELIVERY_STATUS.REJECTED:
+    case PPE_DELIVERY_STATUS.REPROVED:
       return { background: badgeColors.error.background, text: badgeColors.error.text };
     case PPE_DELIVERY_STATUS.CANCELLED:
       return { background: badgeColors.muted.background, text: badgeColors.muted.text };
@@ -46,8 +46,8 @@ const getStatusLabel = (status: string) => {
       return "Aprovado";
     case PPE_DELIVERY_STATUS.DELIVERED:
       return "Entregue";
-    case PPE_DELIVERY_STATUS.REJECTED:
-      return "Rejeitado";
+    case PPE_DELIVERY_STATUS.REPROVED:
+      return "Reprovado";
     case PPE_DELIVERY_STATUS.CANCELLED:
       return "Cancelado";
     default:

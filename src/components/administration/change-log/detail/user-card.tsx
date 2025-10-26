@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
@@ -52,7 +52,7 @@ export function UserCard({ changeLog }: UserCardProps) {
 
   const userName = changeLog.user?.name || "Usuário não identificado";
   const userEmail = changeLog.user?.email;
-  const avatarUrl = changeLog.user?.avatarUrl;
+  const avatarUrl = changeLog.user?.avatar?.url || changeLog.user?.profilePictureUrl;
 
   return (
     <Card>
@@ -76,11 +76,10 @@ export function UserCard({ changeLog }: UserCardProps) {
           disabled={!changeLog.userId}
         >
           <View style={styles.userInfo}>
-            <Avatar
-              src={avatarUrl}
-              fallback={userName.charAt(0).toUpperCase()}
-              size="md"
-            />
+            <Avatar size="md">
+              {avatarUrl && <AvatarImage source={{ uri: avatarUrl }} />}
+              <AvatarFallback>{userName.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
             <View style={styles.userDetails}>
               <ThemedText style={StyleSheet.flatten([styles.userName, { color: colors.foreground }])}>
                 {userName}

@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { User } from '../../../../types';
+import type { User } from '../../../../types';
 import { TASK_STATUS } from '../../../../constants';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";

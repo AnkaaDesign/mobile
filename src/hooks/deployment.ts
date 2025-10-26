@@ -1,6 +1,6 @@
 // packages/hooks/src/deployment.ts
 
-import { deploymentService } from '../api-client';
+import { deploymentService } from '@/api-client';
 import { deploymentKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 
@@ -11,7 +11,7 @@ import type {
   DeploymentGetManyParams,
   DeploymentGetManyResponse,
   DeploymentGetByIdParams,
-} from '../types';
+} from '@/types';
 
 import type {
   DeploymentCreateFormData,
@@ -19,7 +19,7 @@ import type {
   DeploymentBatchCreateFormData,
   DeploymentBatchUpdateFormData,
   DeploymentBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 
 // =====================================================
 // Re-export types for convenience
@@ -103,8 +103,8 @@ export const useDeploymentBatchMutations = baseHooks.useBatchMutations;
 // =====================================================
 
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
-import { DEPLOYMENT_ENVIRONMENT } from '../constants';
-import type { GitCommitInfo, DeploymentGetUniqueResponse } from '../types';
+import { DEPLOYMENT_ENVIRONMENT } from '@/constants';
+import type { GitCommitInfo, DeploymentGetUniqueResponse } from '@/types';
 
 /**
  * Hook to get available commits for deployment

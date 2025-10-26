@@ -36,6 +36,10 @@ interface FilterState {
   // Document filters
   hasCNPJ?: boolean;
   hasCPF?: boolean;
+
+  // Task filters
+  hasTasks?: boolean;
+  taskCount?: number;
 }
 
 export function CustomerFilterModal({ visible, onClose, onApply, currentFilters }: CustomerFilterModalProps) {
@@ -60,6 +64,8 @@ export function CustomerFilterModal({ visible, onClose, onApply, currentFilters 
     if (filters.updatedDateRange?.start || filters.updatedDateRange?.end) count++;
     if (filters.hasCNPJ) count++;
     if (filters.hasCPF) count++;
+    if (filters.hasTasks !== undefined) count++;
+    if (filters.taskCount !== undefined) count++;
 
     return count;
   }, [filters]);
@@ -99,6 +105,21 @@ export function CustomerFilterModal({ visible, onClose, onApply, currentFilters 
         ...(prev[key] || {}),
         [field]: date,
       },
+    }));
+  };
+
+  const handleToggle = (key: keyof FilterState, value: boolean) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value || undefined,
+    }));
+  };
+
+  const handleNumberChange = (key: keyof FilterState, value: string) => {
+    const numValue = value ? parseInt(value, 10) : undefined;
+    setFilters((prev) => ({
+      ...prev,
+      [key]: numValue,
     }));
   };
 
@@ -152,6 +173,15 @@ export function CustomerFilterModal({ visible, onClose, onApply, currentFilters 
 
     if (Object.keys(where).length > 0) {
       apiFilters.where = where;
+    }
+
+    // Add convenience filters
+    if (filters.hasTasks !== undefined) {
+      apiFilters.hasTasks = filters.hasTasks;
+    }
+
+    if (filters.taskCount !== undefined) {
+      apiFilters.taskCount = filters.taskCount;
     }
 
     onApply(apiFilters);
@@ -254,6 +284,46 @@ export function CustomerFilterModal({ visible, onClose, onApply, currentFilters 
                     value={filters.tags?.join(", ") || ""}
                     onChangeText={(value) => handleArrayChange("tags", value ? value.split(",").map(t => t.trim()) : [])}
                     placeholder="Digite tags separadas por vírgula..."
+                  />
+                </View>
+              </View>
+            )}
+
+            <Separator />
+
+            {/* Tasks Section */}
+            {renderSectionHeader("Tarefas", "tasks")}
+            {expandedSections.has("tasks") && (
+              <View style={styles.sectionContent}>
+                <View style={styles.filterGroup}>
+                  <Label>Possui Tarefas</Label>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <ThemedText style={{ marginRight: 10 }}>
+                      {filters.hasTasks ? "Sim" : "Não"}
+                    </ThemedText>
+                    <TouchableOpacity
+                      onPress={() => handleToggle("hasTasks", !filters.hasTasks)}
+                      style={{
+                        backgroundColor: colors.primary,
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 6,
+                      }}
+                    >
+                      <ThemedText style={{ color: colors.primaryForeground }}>
+                        Alternar
+                      </ThemedText>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.filterGroup}>
+                  <Label>Número de Tarefas</Label>
+                  <Input
+                    value={filters.taskCount?.toString() || ""}
+                    onChangeText={(value) => handleNumberChange("taskCount", value)}
+                    placeholder="Digite o número de tarefas..."
+                    keyboardType="numeric"
                   />
                 </View>
               </View>

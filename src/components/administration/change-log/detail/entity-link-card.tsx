@@ -47,8 +47,9 @@ export function EntityLinkCard({ changeLog, entityName }: EntityLinkCardProps) {
         return routes.inventory.orders.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.ORDER_SCHEDULE:
         return routes.inventory.orders.automatic.details(entityId);
-      case CHANGE_LOG_ENTITY_TYPE.ACTIVITY:
-        return routes.inventory.activities.details(entityId);
+      // ACTIVITY entity type exists but has no dedicated route in mobile app
+      // case CHANGE_LOG_ENTITY_TYPE.ACTIVITY:
+      //   return routes.inventory.movements.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.BORROW:
         return routes.inventory.borrows.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.SUPPLIER:

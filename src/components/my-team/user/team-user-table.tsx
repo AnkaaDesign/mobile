@@ -22,11 +22,13 @@ interface TeamUserTableProps {
 // Helper function to get status colors
 const getStatusColor = (status: string) => {
   switch (status) {
-    case USER_STATUS.ACTIVE:
+    case USER_STATUS.EXPERIENCE_PERIOD_1:
+      return { background: badgeColors.warning.background, text: badgeColors.warning.text };
+    case USER_STATUS.EXPERIENCE_PERIOD_2:
+      return { background: badgeColors.warning.background, text: badgeColors.warning.text };
+    case USER_STATUS.CONTRACTED:
       return { background: badgeColors.success.background, text: badgeColors.success.text };
-    case USER_STATUS.INACTIVE:
-      return { background: badgeColors.muted.background, text: badgeColors.muted.text };
-    case USER_STATUS.SUSPENDED:
+    case USER_STATUS.DISMISSED:
       return { background: badgeColors.error.background, text: badgeColors.error.text };
     default:
       return { background: badgeColors.muted.background, text: badgeColors.muted.text };
@@ -36,12 +38,14 @@ const getStatusColor = (status: string) => {
 // Helper function to get status label
 const getStatusLabel = (status: string) => {
   switch (status) {
-    case USER_STATUS.ACTIVE:
-      return "Ativo";
-    case USER_STATUS.INACTIVE:
-      return "Inativo";
-    case USER_STATUS.SUSPENDED:
-      return "Suspenso";
+    case USER_STATUS.EXPERIENCE_PERIOD_1:
+      return "Experiência 1/2";
+    case USER_STATUS.EXPERIENCE_PERIOD_2:
+      return "Experiência 2/2";
+    case USER_STATUS.CONTRACTED:
+      return "Contratado";
+    case USER_STATUS.DISMISSED:
+      return "Desligado";
     default:
       return status;
   }

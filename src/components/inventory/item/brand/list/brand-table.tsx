@@ -10,6 +10,7 @@ import { BrandTableRowSwipe } from "./brand-table-row-swipe";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconChevronUp } from "@tabler/icons-react-native";
 import { IconChevronDown } from "@tabler/icons-react-native";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -20,10 +21,6 @@ export interface TableColumn {
   render?: (brand: ItemBrand) => React.ReactNode;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface BrandTableProps {
   brands: ItemBrand[];
@@ -203,13 +200,13 @@ export function BrandTable({
               <View style={styles.sortIndicator}>
                 {sortConfig ? (
                   <>
-                    <IconChevronUp size={14} color={theme.isDark ? extendedColors.neutral[100] : extendedColors.neutral[900 as keyof typeof neutral]} />
+                    <IconChevronUp size={14} color={theme.isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
                     {sortConfigs.length > 1 && (
-                      <ThemedText style={StyleSheet.flatten([styles.sortIndex, { color: theme.isDark ? extendedColors.neutral[300] : extendedColors.neutral[700 as keyof typeof neutral] }])}>{sortIndex + 1}</ThemedText>
+                      <ThemedText style={StyleSheet.flatten([styles.sortIndex, { color: theme.isDark ? extendedColors.neutral[300] : extendedColors.neutral[700] }])}>{sortIndex + 1}</ThemedText>
                     )}
                   </>
                 ) : (
-                  <IconChevronDown size={14} color={theme.isDark ? extendedColors.neutral[400] : extendedColors.neutral[600 as keyof typeof neutral]} />
+                  <IconChevronDown size={14} color={theme.isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
                 )}
               </View>
             )}

@@ -2,7 +2,7 @@
 // Simplified auth hook with unified 6-digit verification
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { authService } from '../api-client';
+import { authService } from '@/api-client';
 import type {
   SignInFormData,
   SignUpFormData,
@@ -14,8 +14,8 @@ import type {
   AdminToggleUserStatusFormData,
   AdminResetUserPasswordFormData,
   AdminLogoutUserFormData,
-} from '../schemas';
-import type { User, AuthTokenResponse, AuthMessageResponse } from '../types';
+} from '@/schemas';
+import type { User, AuthTokenResponse, AuthMessageResponse } from '@/types';
 import type { UseMutationResult } from "@tanstack/react-query";
 
 // =====================

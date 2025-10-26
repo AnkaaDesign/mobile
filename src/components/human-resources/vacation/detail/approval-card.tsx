@@ -113,19 +113,19 @@ export function ApprovalCard({ vacation }: ApprovalCardProps) {
           {/* Next Steps */}
           {isApproved && vacation.status === VACATION_STATUS.APPROVED && (
             <View style={StyleSheet.flatten([styles.nextStepsCard, { backgroundColor: extendedColors.blue[50], borderColor: extendedColors.blue[200] }])}>
-              <ThemedText style={StyleSheet.flatten([styles.nextStepsTitle, { color: extendedColors.blue[800 as keyof typeof blue] }])}>
+              <ThemedText style={StyleSheet.flatten([styles.nextStepsTitle, { color: extendedColors.blue[800] }])}>
                 Próximos Passos
               </ThemedText>
               <View style={styles.stepsList}>
                 <View style={styles.stepItem}>
-                  <View style={StyleSheet.flatten([styles.stepBullet, { backgroundColor: extendedColors.blue[500 as keyof typeof blue] }])} />
-                  <ThemedText style={StyleSheet.flatten([styles.stepText, { color: extendedColors.blue[700 as keyof typeof blue] }])}>
+                  <View style={StyleSheet.flatten([styles.stepBullet, { backgroundColor: extendedColors.blue[500] }])} />
+                  <ThemedText style={StyleSheet.flatten([styles.stepText, { color: extendedColors.blue[700] }])}>
                     Aguardar o início das férias em {formatDateTime(vacation.startAt, "short")}
                   </ThemedText>
                 </View>
                 <View style={styles.stepItem}>
-                  <View style={StyleSheet.flatten([styles.stepBullet, { backgroundColor: extendedColors.blue[500 as keyof typeof blue] }])} />
-                  <ThemedText style={StyleSheet.flatten([styles.stepText, { color: extendedColors.blue[700 as keyof typeof blue] }])}>
+                  <View style={StyleSheet.flatten([styles.stepBullet, { backgroundColor: extendedColors.blue[500] }])} />
+                  <ThemedText style={StyleSheet.flatten([styles.stepText, { color: extendedColors.blue[700] }])}>
                     O funcionário deve confirmar o recebimento da notificação
                   </ThemedText>
                 </View>

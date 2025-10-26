@@ -6,7 +6,12 @@ import { cn } from "../../lib/utils";
 import { TextClassContext } from "./text";
 const HoverCard = HoverCardPrimitive.Root;
 const HoverCardTrigger = HoverCardPrimitive.Trigger;
-const HoverCardContent = React.forwardRef(({ className, align = "center", sideOffset = 4, ...props }, ref) => {
+const HoverCardContent = React.forwardRef<
+  React.ElementRef<typeof HoverCardPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof HoverCardPrimitive.Content> & {
+    className?: string;
+  }
+>(({ className, align = "center", sideOffset = 4, ...props }, ref) => {
   const { open } = HoverCardPrimitive.useRootContext();
   return (
     <HoverCardPrimitive.Portal>

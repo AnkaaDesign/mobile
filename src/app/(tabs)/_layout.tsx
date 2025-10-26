@@ -1,7 +1,7 @@
 // app/(tabs)/_layout.tsx
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Drawer } from "expo-router/drawer";
-import { View, Text as RNText, Pressable, Platform, ScrollView, TouchableWithoutFeedback, Animated, StyleSheet, Dimensions } from "react-native";
+import { View, Text as RNText, Pressable, Platform, ScrollView, TouchableWithoutFeedback, Animated, StyleSheet, Dimensions, GestureResponderEvent } from "react-native";
 // Use React Native's Text directly to avoid theme overrides
 const Text = RNText;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,30 +14,33 @@ import { Icon } from "@/components/ui/icon";
 import { IconChevronRight, IconLogout, IconUser, IconSettings, IconArrowLeft, IconMenu2, IconStar, IconStarFilled, IconChevronDown } from "@tabler/icons-react-native";
 import { useRouter, useSegments, usePathname } from "expo-router";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { MENU_ITEMS, routes } from '../../constants';
+import { MENU_ITEMS, routes, MenuItem } from '../../constants';
 import { getFilteredMenuForUser, getTablerIcon } from '../../utils/navigation';
 import { getEnglishPath, routeToMobilePath } from "@/lib/route-mapper";
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { maskPhone } from '../../utils';
 
 // Enhanced icon rendering with standardized sizing and theming
-const getIconComponentLocal = (iconKey: string, variant: string = "navigation") => {
+const getIconComponentLocal = (
+  iconKey: string,
+  variant: "default" | "primary" | "secondary" | "muted" | "success" | "warning" | "error" | "info" | "navigation" | "navigationActive" | "onPrimary" = "navigation"
+) => {
   try {
     // If iconKey already has "Icon" prefix, use it directly
     // Otherwise, get the mapped icon name
     const tablerIconName = iconKey.startsWith("Icon") ? iconKey : getTablerIcon(iconKey);
-    return <Icon name={tablerIconName} size="tab" variant={variant as any} />;
+    return <Icon name={tablerIconName} size="tab" variant={variant} />;
   } catch (error) {
-    return <Icon name="menu" size="tab" variant={variant as any} />;
+    return <Icon name="menu" size="tab" variant={variant} />;
   }
 };
 
 interface PopoverState {
   activePopover: string | null;
-  popoverPosition: { top: number; left: number; item: any } | null;
+  popoverPosition: { top: number; left: number; item: MenuItem } | null;
   isPopoverAnimating: boolean;
   nestedPopover: string | null;
-  nestedPopoverPosition: { top: number; left: number; item: any } | null;
+  nestedPopoverPosition: { top: number; left: number; item: MenuItem } | null;
   isNestedPopoverAnimating: boolean;
 }
 
@@ -87,11 +90,11 @@ const getPressedBackgroundColor = (isDarkMode: boolean): string => {
 // Development-only style debugging tools
 const DEBUG_STYLES = __DEV__;
 
-const debugStyleIssues = (componentName: string, styles: any) => {
+const debugStyleIssues = (componentName: string, styles: Record<string, unknown>) => {
   if (!DEBUG_STYLES) return;
 
   // Check for common style issues
-  if (styles.backgroundColor === "transparent" && styles.borderWidth > 0) {
+  if (styles.backgroundColor === "transparent" && styles.borderWidth && Number(styles.borderWidth) > 0) {
     console.warn(`[${componentName}] Border without background might be invisible`);
   }
 
@@ -425,17 +428,17 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   // Add contextual menu items based on current route
   const addContextualMenuItems = useCallback(
-    (menuItems: any[]): any[] => {
+    (menuItems: MenuItem[]): MenuItem[] => {
       if (!getCurrentPathInfo) return menuItems;
 
       const { action, entityId, basePath } = getCurrentPathInfo;
 
       return menuItems.map((item) => {
         // Check if this menu item or its children match the current base path
-        const matchesBasePath = (menuItem: any): boolean => {
+        const matchesBasePath = (menuItem: MenuItem): boolean => {
           if (menuItem.path && basePath.startsWith(menuItem.path)) return true;
           if (menuItem.children) {
-            return menuItem.children.some((child: any) => matchesBasePath(child));
+            return menuItem.children.some((child) => matchesBasePath(child));
           }
           return false;
         };
@@ -494,7 +497,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   // Filter out dynamic menu items, cadastrar pages, and batch edit pages
   const filterOutDynamicAndCadastrarItems = useCallback(
-    (items: any[]): any[] => {
+    (items: MenuItem[]): MenuItem[] => {
       return items
         .map((item) => {
           // Skip dynamic items entirely
@@ -643,7 +646,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   // Memoized submenu toggle with animation - IMPROVED accordion behavior
   const toggleSubmenu = useCallback(
-    (itemId: string, event?: any) => {
+    (itemId: string, event?: GestureResponderEvent) => {
       if (event) {
         event.stopPropagation();
       }
@@ -662,7 +665,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
         if (!isCurrentlyExpanded) {
           // If expanding this menu, find and close all sibling menus at the same level
-          const findAndCloseSiblings = (items: any[], targetId: string, parentPath: string[] = []): boolean => {
+          const findAndCloseSiblings = (items: MenuItem[], targetId: string, parentPath: string[] = []): boolean => {
             for (let i = 0; i < items.length; i++) {
               const item = items[i];
 
@@ -708,13 +711,13 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   );
 
   // Get first submenu path for direct navigation
-  const getFirstSubmenuPath = (item: any): string | null => {
+  const getFirstSubmenuPath = (item: MenuItem): string | null => {
     // If item has a path, use it directly (for entities, this is the list view)
     if (item.path) return item.path;
 
     // If no path but has children, find first child with path
     if (item.children?.length) {
-      const firstChild = item.children.find((child: any) => child.path);
+      const firstChild = item.children.find((child) => child.path);
       return firstChild?.path || null;
     }
 
@@ -758,7 +761,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   // FIXED: Check if menu item is active with proper path matching
   const isItemActive = useCallback(
-    (item: any): boolean => {
+    (item: MenuItem): boolean => {
       if (!item.path) return false;
 
       // Current pathname is like /(tabs)/home or /(tabs)/personal/my-profile
@@ -766,7 +769,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       const currentPath = pathname.replace(/^\/\(tabs\)/, "");
 
       // Handle contextual menu items
-      if (item.isContextual) {
+      if ('isContextual' in item && item.isContextual) {
         // For contextual items, get the English path from the item.path
         const englishPath = getEnglishPath(item.path);
         return currentPath === englishPath;
@@ -789,7 +792,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       // For items with children, check if we're on a child route
       if (item.children && item.children.length > 0) {
         // Check if any child matches the current path
-        const hasMatchingChild = item.children.some((child: any) => {
+        const hasMatchingChild = item.children.some((child) => {
           if (!child.path) return false;
           const childEnglishPath = getEnglishPath(child.path);
           return currentPath === childEnglishPath || currentPath.startsWith(childEnglishPath + "/");
@@ -814,10 +817,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   // Main item click handler with immediate visual feedback
   const handleMainItemClick = useCallback(
-    (item: any, event: any) => {
-      event.preventDefault();
-      event.stopPropagation();
-
+    (item: MenuItem) => {
       // Set loading state immediately for instant visual feedback
       setNavigatingItemId(item.id);
 
@@ -838,13 +838,13 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   // Check if item has active child
   const hasActiveChild = useCallback(
-    (item: any): boolean => {
+    (item: MenuItem): boolean => {
       if (!item.children) return false;
 
       // Remove (tabs) prefix from pathname for comparison
       const currentPath = pathname.replace(/^\/\(tabs\)/, "");
 
-      return item.children.some((child: any) => {
+      return item.children.some((child) => {
         // Check if child is active
         if (isItemActive(child)) return true;
 
@@ -868,7 +868,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   // Check if item is in active path (for parent items that aren't directly active)
   const isInActivePath = useCallback(
-    (item: any): boolean => {
+    (item: MenuItem): boolean => {
       if (isItemActive(item)) return false;
       return hasActiveChild(item);
     },
@@ -922,7 +922,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   // Render menu item with proper styling and animations
   const renderMenuItem = useCallback(
-    (item: any, level = 0) => {
+    (item: MenuItem, level = 0) => {
       const hasChildren = item.children && item.children.length > 0;
       const isExpanded = expandedMenus[item.id];
       const isActive = isItemActive(item);
@@ -976,10 +976,10 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
             onPress={() => {
               // For items with children and a path, navigate directly
               if (hasChildren && item.path) {
-                handleMainItemClick(item, { preventDefault: () => {}, stopPropagation: () => {} });
+                handleMainItemClick(item);
               } else if (!hasChildren) {
                 // For leaf items, navigate
-                handleMainItemClick(item, { preventDefault: () => {}, stopPropagation: () => {} });
+                handleMainItemClick(item);
               } else {
                 // For parent items without a path, just expand/collapse
                 toggleSubmenu(item.id);
@@ -1047,9 +1047,9 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                 {/* Favorite toggle button - only for items with paths */}
                 {item.path && !item.isContextual && (
                   <Pressable
-                    onPress={(e) => {
+                    onPress={async (e) => {
                       e.stopPropagation();
-                      toggleFavorite({
+                      await toggleFavorite({
                         path: item.path,
                         title: item.title,
                         icon: item.icon,
@@ -1075,8 +1075,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                 {hasChildren && (
                   <Pressable
                     onPress={(e) => {
-                      e.stopPropagation();
-                      toggleSubmenu(item.id);
+                      toggleSubmenu(item.id, e);
                     }}
                     style={styles.chevronContainer}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -1092,12 +1091,15 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                     </View>
                   </Pressable>
                 )}
-              </View>
-            </Pressable>
-          </View>
+            </View>
+          </Pressable>
 
           {/* Submenu with smooth animation */}
-          {hasChildren && isExpanded && <View style={styles.submenu}>{item.children.map((child: any) => renderMenuItem(child, level + 1))}</View>}
+          {hasChildren && isExpanded && (
+            <View style={styles.submenu}>
+              {item.children!.map((child) => renderMenuItem(child, level + 1))}
+            </View>
+          )}
         </View>
       );
     },

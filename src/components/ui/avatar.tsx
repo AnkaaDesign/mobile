@@ -5,6 +5,11 @@ export interface AvatarProps {
   size?: "sm" | "md" | "lg";
   style?: ViewStyle;
   children?: React.ReactNode;
+  // Convenience props for direct usage
+  name?: string;
+  label?: string;
+  imageUrl?: string;
+  uri?: string;
 }
 
 export interface AvatarImageProps {
@@ -28,7 +33,7 @@ const getAvatarSize = (size: AvatarProps["size"] = "md") => {
   return sizes[size as keyof typeof sizes];
 };
 
-const Avatar = React.forwardRef<View, AvatarProps>(({ size = "md", style, children, ...props }, ref) => {
+const Avatar = React.forwardRef<View, AvatarProps>(({ size = "md", style, children, name, label, imageUrl, uri, ...props }, ref) => {
   const avatarSize = getAvatarSize(size);
 
   const avatarStyles: ViewStyle = {
@@ -40,6 +45,19 @@ const Avatar = React.forwardRef<View, AvatarProps>(({ size = "md", style, childr
     backgroundColor: "#e5e5e5",
     ...style,
   };
+
+  // If convenience props are used, render automatically
+  const displayName = name || label;
+  const imageSource = imageUrl || uri;
+
+  if (imageSource || displayName) {
+    return (
+      <View ref={ref} style={avatarStyles} {...props}>
+        {imageSource && <AvatarImage source={{ uri: imageSource }} />}
+        {displayName && !imageSource && <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>}
+      </View>
+    );
+  }
 
   return (
     <View ref={ref} style={avatarStyles} {...props}>

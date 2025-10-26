@@ -8,6 +8,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { PERFORMANCE_LEVEL_LABELS, PERFORMANCE_LEVEL } from '../../../../constants';
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -18,10 +19,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface PerformanceLevelTableProps {
   users: User[];

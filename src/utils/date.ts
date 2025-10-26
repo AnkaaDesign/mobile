@@ -1,6 +1,6 @@
 // packages/utils/src/dateUtils.ts
 
-import { WEEK_DAY, MONTH } from '../constants';
+import { WEEK_DAY, MONTH } from '@/constants';
 
 // =====================
 // Date Formatting
@@ -722,6 +722,36 @@ export const getCurrentPayrollPeriod = (referenceDate?: Date): { year: number; m
 
   return { year, month };
 };
+
+// =====================
+// Calendar Utilities
+// =====================
+
+/**
+ * Get the number of days in a specific month
+ * @param month - Month (0-11)
+ * @param year - Year
+ * @returns Number of days in the month
+ */
+export const getDaysInMonth = (month: number, year: number): number => {
+  return new Date(year, month + 1, 0).getDate();
+};
+
+/**
+ * Get the localized name of a month
+ * @param month - Month (0-11)
+ * @param locale - Locale string (default: "pt-BR")
+ * @returns Localized month name
+ */
+export const getMonthName = (month: number, locale: string = "pt-BR"): string => {
+  const date = new Date(2000, month, 1);
+  return new Intl.DateTimeFormat(locale, { month: "long" }).format(date);
+};
+
+/**
+ * Alias for getDaysBetween for consistency with web app
+ */
+export const getDifferenceInDays = getDaysBetween;
 
 export const dateUtils = {
   // Formatting

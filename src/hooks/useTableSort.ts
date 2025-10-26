@@ -114,14 +114,14 @@ export function useTableSort(
   const buildOrderBy = useCallback((
     fieldMapping: Record<string, string> = {},
     defaultOrderBy?: Record<string, SortDirection> | Record<string, SortDirection>[]
-  ): any => {
+  ): Record<string, SortDirection> | Record<string, SortDirection>[] => {
     if (sortConfigs.length === 0) {
       return defaultOrderBy || {};
     }
 
     // Map column keys to field names
     const mappedConfigs = sortConfigs.map(config => {
-      const fieldName = fieldMapping[config.column] || config.column;
+      const fieldName = fieldMapping[config.columnKey] || config.columnKey;
       return { [fieldName]: config.direction };
     });
 
@@ -229,7 +229,7 @@ export function useSimpleTableSort(config: {
     }
 
     const mappedConfigs = sortConfigs.map(config => {
-      const fieldName = columnToFieldMap[config.column] || config.column;
+      const fieldName = columnToFieldMap[config.columnKey] || config.columnKey;
       return { [fieldName]: config.direction };
     });
 

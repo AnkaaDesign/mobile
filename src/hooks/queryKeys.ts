@@ -47,8 +47,8 @@ import type {
   SeenNotificationGetManyFormData,
   AirbrushingGetManyFormData,
   CutGetManyFormData,
-} from '../schemas';
-import type { SectorGetManyFormData } from '../types';
+} from '@/schemas';
+import type { SectorGetManyFormData } from '@/types';
 
 // =====================================================
 // Query Key Factory Pattern

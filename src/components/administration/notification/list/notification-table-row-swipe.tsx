@@ -9,7 +9,7 @@ interface NotificationTableRowSwipeProps {
   notificationTitle: string;
   onDelete?: (notificationId: string) => void;
   disabled?: boolean;
-  children: (isActive: boolean) => React.ReactNode;
+  children: React.ReactNode;
 }
 
 export function NotificationTableRowSwipe({ notificationId, notificationTitle, onDelete, disabled = false, children }: NotificationTableRowSwipeProps) {
@@ -43,9 +43,8 @@ export function NotificationTableRowSwipe({ notificationId, notificationTitle, o
 
   return (
     <ReanimatedSwipeableRow
-      id={notificationId}
       rightActions={rightActions}
-      disabled={disabled}
+      enabled={!disabled}
       overshootRight={false}
       overshootLeft={false}
       friction={2}

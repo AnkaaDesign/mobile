@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ppeDeliveryService } from '../api-client';
+import { ppeDeliveryService } from '@/api-client';
 import { ppeDeliveryKeys } from './queryKeys';
-import type { PpeDeliveryGetManyFormData } from '../schemas';
+import type { PpeDeliveryGetManyFormData } from '@/schemas';
 
 export const usePpeDeliveriesInfiniteMobile = (filters?: Partial<PpeDeliveryGetManyFormData>) => {
   const pageSize = 40;
@@ -44,6 +44,7 @@ export const usePpeDeliveriesInfiniteMobile = (filters?: Partial<PpeDeliveryGetM
 
   const allDeliveries = query.data?.pages.flatMap((page) => page.data || []) ?? [];
   const totalItemsLoaded = allDeliveries.length;
+  const totalCount = query.data?.pages[0]?.meta?.totalRecords;
 
   return {
     deliveries: allDeliveries,
@@ -55,6 +56,7 @@ export const usePpeDeliveriesInfiniteMobile = (filters?: Partial<PpeDeliveryGetM
     canLoadMore: query.hasNextPage,
     isFetchingNextPage: query.isFetchingNextPage,
     totalItemsLoaded,
+    totalCount,
     refresh: async () => {
       await query.refetch();
     },

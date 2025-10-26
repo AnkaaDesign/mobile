@@ -13,7 +13,7 @@ import {
   getCurrentPositionRemunerationByPositionId,
   deletePositionRemunerationsByPositionId,
   findPositionRemunerationsByValueRange,
-} from '../api-client';
+} from '@/api-client';
 import type {
   PositionRemunerationGetManyFormData,
   PositionRemunerationCreateFormData,
@@ -22,7 +22,7 @@ import type {
   PositionRemunerationBatchUpdateFormData,
   PositionRemunerationBatchDeleteFormData,
   PositionRemunerationInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   PositionRemunerationGetUniqueResponse,
   PositionRemunerationGetManyResponse,
@@ -33,7 +33,7 @@ import type {
   PositionRemunerationBatchUpdateResponse,
   PositionRemunerationBatchDeleteResponse,
   PositionRemuneration,
-} from '../types';
+} from '@/types';
 import { positionRemunerationKeys, positionKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

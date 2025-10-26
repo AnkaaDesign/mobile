@@ -248,9 +248,13 @@ export function extractActiveFilters<TFilters>(options: ExtractFilterOptions<TFi
     if (value === null || value === undefined) return;
     if (Array.isArray(value) && value.length === 0) return;
     if (typeof value === "string" && value.trim() === "") return;
-    if (typeof value === "object" && !Array.isArray(value) && !value.gte && !value.lte && !value.min && value.max === undefined) {
-      // Skip empty objects (but keep date/number ranges)
-      if (Object.keys(value).length === 0) return;
+    if (typeof value === "object" && !Array.isArray(value)) {
+      // Type guard for objects with date/number range properties
+      const rangeObj = value as { gte?: unknown; lte?: unknown; min?: unknown; max?: unknown };
+      if (!rangeObj.gte && !rangeObj.lte && !rangeObj.min && rangeObj.max === undefined) {
+        // Skip empty objects (but keep date/number ranges)
+        if (Object.keys(value).length === 0) return;
+      }
     }
 
     // Handle arrays with individual indicators
@@ -650,10 +654,10 @@ export function validateFilterCondition(condition: FilterCondition, fieldDefinit
 
       // Min/Max validation for numbers and dates
       if (typeof condition.value === "number") {
-        if (validation.min !== undefined && condition.value < validation.min) {
+        if (typeof validation.min === "number" && condition.value < validation.min) {
           errors.push(`Valor deve ser maior ou igual a ${validation.min}`);
         }
-        if (validation.max !== undefined && condition.value > validation.max) {
+        if (typeof validation.max === "number" && condition.value > validation.max) {
           errors.push(`Valor deve ser menor ou igual a ${validation.max}`);
         }
       }

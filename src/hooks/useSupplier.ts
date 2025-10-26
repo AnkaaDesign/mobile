@@ -1,7 +1,7 @@
 // packages/hooks/src/useSupplier.ts
 
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getSuppliers, getSupplierById, createSupplier, updateSupplier, deleteSupplier, batchCreateSuppliers, batchUpdateSuppliers, batchDeleteSuppliers } from '../api-client';
+import { getSuppliers, getSupplierById, createSupplier, updateSupplier, deleteSupplier, batchCreateSuppliers, batchUpdateSuppliers, batchDeleteSuppliers } from '@/api-client';
 import type {
   SupplierGetManyFormData,
   SupplierGetByIdFormData,
@@ -11,7 +11,7 @@ import type {
   SupplierBatchCreateFormData,
   SupplierBatchUpdateFormData,
   SupplierBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import { supplierKeys, itemKeys, orderKeys, orderScheduleKeys, fileKeys, changeLogKeys } from "./queryKeys";
 
 // ===============================================

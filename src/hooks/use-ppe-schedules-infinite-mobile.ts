@@ -1,8 +1,8 @@
 // apps/mobile/src/hooks/use-ppe-schedules-infinite-mobile.ts
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ppeDeliveryScheduleService } from '../api-client';
-import type { PpeDeliveryScheduleGetManyFormData } from '../schemas';
+import { ppeDeliveryScheduleService } from '@/api-client';
+import type { PpeDeliveryScheduleGetManyFormData } from '@/schemas';
 import { ppeDeliveryScheduleKeys } from './queryKeys';
 
 const ITEMS_PER_PAGE = 40;
@@ -36,6 +36,9 @@ export function usePpeSchedulesInfiniteMobile(params: PpeDeliveryScheduleGetMany
   // Total items loaded across all pages
   const totalItemsLoaded = schedules.length;
 
+  // Extract total count from meta
+  const totalCount = data?.pages[0]?.meta?.totalRecords;
+
   // Simplified load more function
   const loadMore = () => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -58,6 +61,7 @@ export function usePpeSchedulesInfiniteMobile(params: PpeDeliveryScheduleGetMany
     canLoadMore: hasNextPage,
     isFetchingNextPage,
     totalItemsLoaded,
+    totalCount,
     refresh,
   };
 }

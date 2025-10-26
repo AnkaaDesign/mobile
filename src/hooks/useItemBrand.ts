@@ -10,7 +10,7 @@ import {
   batchCreateItemBrands,
   batchUpdateItemBrands,
   batchDeleteItemBrands,
-} from '../api-client';
+} from '@/api-client';
 import type {
   ItemBrandCreateFormData,
   ItemBrandUpdateFormData,
@@ -19,7 +19,7 @@ import type {
   ItemBrandBatchUpdateFormData,
   ItemBrandBatchDeleteFormData,
   ItemBrandInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   ItemBrandGetManyResponse,
   ItemBrandGetUniqueResponse,
@@ -29,7 +29,7 @@ import type {
   ItemBrandBatchCreateResponse,
   ItemBrandBatchUpdateResponse,
   ItemBrandBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { itemBrandKeys, itemKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

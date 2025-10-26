@@ -15,28 +15,35 @@ interface EmptyStateProps {
   iconSize?: number;
   actionLabel?: string;
   onAction?: () => void;
+  action?: {
+    label: string;
+    onPress: () => void;
+  };
   actionVariant?: "default" | "secondary" | "outline";
   style?: ViewStyle;
   iconColor?: string;
 }
 
-export function EmptyState({ title, description, icon = "package", iconSize = 64, actionLabel, onAction, actionVariant = "default", style, iconColor }: EmptyStateProps) {
+export function EmptyState({ title, description, icon = "package", iconSize = 64, actionLabel, onAction, action, actionVariant = "default", style, iconColor }: EmptyStateProps) {
+  // Support both action object and individual props
+  const finalActionLabel = action?.label || actionLabel;
+  const finalOnAction = action?.onPress || onAction;
   const { colors, isDark } = useTheme();
 
   const getIconBackground = () => {
-    if (icon === "package") return extendedColors.blue[100 as keyof typeof blue];
-    if (icon === "alert-circle") return extendedColors.red[100 as keyof typeof red];
-    if (icon === "users") return extendedColors.green[100 as keyof typeof green];
-    if (icon === "search") return extendedColors.purple[100 as keyof typeof purple];
-    return isDark ? extendedColors.neutral[800] : extendedColors.neutral[100 as keyof typeof neutral];
+    if (icon === "package") return extendedColors.blue[100];
+    if (icon === "alert-circle") return extendedColors.red[100];
+    if (icon === "users") return extendedColors.green[100];
+    if (icon === "search") return extendedColors.purple[100];
+    return isDark ? extendedColors.neutral[800] : extendedColors.neutral[100];
   };
 
   const getIconTint = () => {
     if (iconColor) return iconColor;
-    if (icon === "package") return extendedColors.blue[600 as keyof typeof blue];
-    if (icon === "alert-circle") return extendedColors.red[600 as keyof typeof red];
-    if (icon === "users") return extendedColors.green[600 as keyof typeof green];
-    if (icon === "search") return extendedColors.purple[600 as keyof typeof purple];
+    if (icon === "package") return extendedColors.blue[600];
+    if (icon === "alert-circle") return extendedColors.red[600];
+    if (icon === "users") return extendedColors.green[600];
+    if (icon === "search") return extendedColors.purple[600];
     return colors.mutedForeground;
   };
 

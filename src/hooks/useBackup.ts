@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { backupApi } from '../api-client';
+import { backupApi } from '@/api-client';
 import type {
   CreateBackupRequest,
   ScheduleBackupRequest,
   BackupQueryParams,
-} from '../api-client';
+} from '@/api-client';
 
 // Query keys
 export const backupQueryKeys = {

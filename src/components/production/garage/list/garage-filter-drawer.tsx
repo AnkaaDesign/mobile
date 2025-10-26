@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { View, StyleSheet } from "react-native";
 import type { GarageGetManyFormData } from "../../../../schemas";
-import { BaseFilterDrawer, FilterSection, StringFilter, BooleanFilter } from "@/components/common/filters";
+import { BaseFilterDrawer, type FilterSectionConfig, StringFilter, BooleanFilter } from "@/components/common/filters";
 import { Text } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
@@ -81,7 +81,7 @@ export function GarageFilterDrawer({ visible, onClose, onApply, currentFilters }
     (value) => value !== undefined && value !== null && value !== ""
   ).length;
 
-  const filterSections: FilterSection[] = [
+  const filterSections: FilterSectionConfig[] = [
     {
       id: "dimensions",
       title: "Dimensões",

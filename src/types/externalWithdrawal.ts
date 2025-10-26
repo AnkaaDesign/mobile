@@ -1,7 +1,7 @@
 // packages/interfaces/src/externalWithdrawal.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION, EXTERNAL_WITHDRAWAL_STATUS } from '../constants';
+import type { ORDER_BY_DIRECTION, EXTERNAL_WITHDRAWAL_STATUS } from '@/constants';
 import type { File, FileIncludes } from "./file";
 import type { Item, ItemIncludes, ItemOrderBy } from "./item";
 
@@ -125,11 +125,11 @@ export interface ExternalWithdrawalItemDeleteResponse extends BaseDeleteResponse
 // =====================
 
 // ExternalWithdrawal Batch Operations
-export interface ExternalWithdrawalBatchCreateResponse<T> extends BaseBatchResponse<ExternalWithdrawal, T> {}
-export interface ExternalWithdrawalBatchUpdateResponse<T> extends BaseBatchResponse<ExternalWithdrawal, T & { id: string }> {}
+export interface ExternalWithdrawalBatchCreateResponse<T = any> extends BaseBatchResponse<ExternalWithdrawal, T> {}
+export interface ExternalWithdrawalBatchUpdateResponse<T = any> extends BaseBatchResponse<ExternalWithdrawal, T & { id: string }> {}
 export interface ExternalWithdrawalBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
 
 // ExternalWithdrawalItem Batch Operations
-export interface ExternalWithdrawalItemBatchCreateResponse<T> extends BaseBatchResponse<ExternalWithdrawalItem, T> {}
-export interface ExternalWithdrawalItemBatchUpdateResponse<T> extends BaseBatchResponse<ExternalWithdrawalItem, T & { id: string }> {}
+export interface ExternalWithdrawalItemBatchCreateResponse<T = any> extends BaseBatchResponse<ExternalWithdrawalItem, T> {}
+export interface ExternalWithdrawalItemBatchUpdateResponse<T = any> extends BaseBatchResponse<ExternalWithdrawalItem, T & { id: string }> {}
 export interface ExternalWithdrawalItemBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}

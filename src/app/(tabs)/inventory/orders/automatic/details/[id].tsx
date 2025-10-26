@@ -302,7 +302,7 @@ export default function AutomaticOrderDetailScreen() {
               <InfoRow label="Email" value={schedule.supplier.email} />
             )}
             {schedule.supplier.phones && schedule.supplier.phones.length > 0 && (
-              <InfoRow label="Telefone" value={schedule.supplier.phones[0 as keyof typeof phones]} />
+              <InfoRow label="Telefone" value={schedule.supplier.phones[0]} />
             )}
             {schedule.supplier.corporateName && (
               <InfoRow label="Razão Social" value={schedule.supplier.corporateName} />

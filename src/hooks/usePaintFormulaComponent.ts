@@ -9,7 +9,7 @@ import {
   batchCreatePaintFormulaComponents,
   batchUpdatePaintFormulaComponents,
   batchDeletePaintFormulaComponents,
-} from '../api-client';
+} from '@/api-client';
 import type {
   PaintFormulaComponentCreateFormData,
   PaintFormulaComponentUpdateFormData,
@@ -18,7 +18,7 @@ import type {
   PaintFormulaComponentBatchUpdateFormData,
   PaintFormulaComponentBatchDeleteFormData,
   PaintFormulaComponentInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   PaintFormulaComponentGetManyResponse,
   PaintFormulaComponentGetUniqueResponse,
@@ -28,7 +28,7 @@ import type {
   PaintFormulaComponentBatchCreateResponse,
   PaintFormulaComponentBatchUpdateResponse,
   PaintFormulaComponentBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { paintFormulaComponentKeys, paintFormulaKeys, itemKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

@@ -41,7 +41,7 @@ import {
   batchCreatePpeDeliverySchedules,
   batchUpdatePpeDeliverySchedules,
   batchDeletePpeDeliverySchedules,
-} from '../api-client';
+} from '@/api-client';
 import type {
   // PpeSize types
   PpeSizeCreateFormData,
@@ -71,7 +71,7 @@ import type {
   PpeDeliveryScheduleBatchCreateFormData,
   PpeDeliveryScheduleBatchUpdateFormData,
   PpeDeliveryScheduleBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   // PpeSize response types
   PpeSizeGetManyResponse,
@@ -109,7 +109,7 @@ import type {
   PpeDeliveryScheduleBatchCreateResponse,
   PpeDeliveryScheduleBatchUpdateResponse,
   PpeDeliveryScheduleBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { ppeSizeKeys, ppeDeliveryKeys, /* ppeConfigKeys, */ ppeDeliveryScheduleKeys, userKeys, itemKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

@@ -1,16 +1,13 @@
 import React, { useMemo } from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable, FlatList, ActivityIndicator, RefreshControl } from "react-native";
 import { IconBuilding, IconChevronDown, IconChevronUp, IconEdit, IconTrash, IconEye } from "@tabler/icons-react-native";
-import { Garage } from "../../../../types";
+import type { Garage } from "../../../../types";
 import { Text } from "@/components/ui/text";
 import { useTheme } from "@/lib/theme";
-import { SwipeableList, SwipeableListItem, SwipeAction } from "@/components/ui/swipeable-list";
+import { ReanimatedSwipeableRow, type SwipeAction } from "@/components/ui/reanimated-swipeable-row";
 import { formatDateTime } from "@/utils";
+import type { SortConfig } from "@/lib/sort-utils";
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 export interface GarageTableProps {
   garages: Garage[];
@@ -34,7 +31,7 @@ export interface GarageTableProps {
 interface ColumnDefinition {
   key: string;
   label: string;
-  width?: number | string;
+  flex?: number; // Use flex instead of width for dynamic sizing
   sortable?: boolean;
   render: (garage: Garage) => React.ReactNode;
 }
@@ -45,7 +42,7 @@ export function createColumnDefinitions(): ColumnDefinition[] {
       key: "name",
       label: "Nome",
       sortable: true,
-      width: "40%",
+      flex: 2, // 40% equivalent (2 out of 5 total flex)
       render: (garage: Garage) => (
         <View style={styles.nameCell}>
           <View style={styles.iconContainer}>
@@ -66,7 +63,7 @@ export function createColumnDefinitions(): ColumnDefinition[] {
       key: "dimensions",
       label: "Dimensões",
       sortable: false,
-      width: "30%",
+      flex: 1.5, // 30% equivalent (1.5 out of 5 total flex)
       render: (garage: Garage) => (
         <View>
           <Text style={styles.cellText} numberOfLines={1}>
@@ -82,7 +79,7 @@ export function createColumnDefinitions(): ColumnDefinition[] {
       key: "createdAt",
       label: "Criado em",
       sortable: true,
-      width: "30%",
+      flex: 1.5, // 30% equivalent (1.5 out of 5 total flex)
       render: (garage: Garage) => (
         <Text style={styles.cellText} numberOfLines={1}>
           {formatDateTime(garage.createdAt)}
@@ -113,28 +110,34 @@ export function GarageTable({
     return allColumns.filter((col) => visibleColumnKeys.includes(col.key));
   }, [allColumns, visibleColumnKeys]);
 
-  const renderGarageItem = (garage: Garage) => {
+  const renderGarageItem = ({ item: garage }: { item: Garage }) => {
     const leftActions: SwipeAction[] = [
       {
+        key: "view",
         icon: <IconEye size={20} color="#fff" />,
         backgroundColor: colors.primary,
         onPress: () => onGaragePress(garage.id),
         label: "Ver",
+        closeOnPress: true,
       },
     ];
 
     const rightActions: SwipeAction[] = [
       {
+        key: "edit",
         icon: <IconEdit size={20} color="#fff" />,
         backgroundColor: "#3b82f6",
         onPress: () => onGarageEdit(garage.id),
         label: "Editar",
+        closeOnPress: true,
       },
       {
+        key: "delete",
         icon: <IconTrash size={20} color="#fff" />,
         backgroundColor: "#ef4444",
         onPress: () => onGarageDelete(garage.id),
         label: "Excluir",
+        closeOnPress: true,
       },
     ];
 
@@ -145,7 +148,7 @@ export function GarageTable({
       >
         <View style={styles.rowContent}>
           {visibleColumns.map((column) => (
-            <View key={column.key} style={[styles.cell, { width: column.width }]}>
+            <View key={column.key} style={[styles.cell, column.flex ? { flex: column.flex } : undefined]}>
               {column.render(garage)}
             </View>
           ))}
@@ -155,13 +158,46 @@ export function GarageTable({
 
     if (enableSwipeActions) {
       return (
-        <SwipeableListItem key={garage.id} leftActions={leftActions} rightActions={rightActions}>
+        <ReanimatedSwipeableRow
+          key={garage.id}
+          leftActions={leftActions}
+          rightActions={rightActions}
+          containerStyle={styles.swipeContainer}
+        >
           {content}
-        </SwipeableListItem>
+        </ReanimatedSwipeableRow>
       );
     }
 
     return <View key={garage.id}>{content}</View>;
+  };
+
+  const renderFooter = () => {
+    if (loadingMore) {
+      return (
+        <View style={styles.footerLoader}>
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+      );
+    }
+    return null;
+  };
+
+  const renderEmpty = () => {
+    if (loading) {
+      return (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      );
+    }
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+          Nenhuma garagem encontrada
+        </Text>
+      </View>
+    );
   };
 
   return (
@@ -169,22 +205,31 @@ export function GarageTable({
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.muted, borderBottomColor: colors.border }]}>
         {visibleColumns.map((column) => (
-          <View key={column.key} style={[styles.headerCell, { width: column.width }]}>
+          <View key={column.key} style={[styles.headerCell, column.flex ? { flex: column.flex } : undefined]}>
             <Text style={styles.headerText}>{column.label}</Text>
           </View>
         ))}
       </View>
 
       {/* List */}
-      <SwipeableList
+      <FlatList
         data={garages}
-        renderItem={({ item }) => renderGarageItem(item)}
-        onRefresh={onRefresh}
-        refreshing={refreshing}
+        renderItem={renderGarageItem}
+        keyExtractor={(item) => item.id}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+            />
+          ) : undefined
+        }
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
-        loading={loading}
-        loadingMore={loadingMore}
+        ListFooterComponent={renderFooter}
+        ListEmptyComponent={renderEmpty}
+        style={styles.list}
       />
     </View>
   );
@@ -208,6 +253,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textTransform: "uppercase",
     opacity: 0.7,
+  },
+  list: {
+    flex: 1,
+  },
+  swipeContainer: {
+    overflow: "hidden",
   },
   row: {
     borderBottomWidth: 1,
@@ -250,5 +301,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.6,
     marginTop: 2,
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: "center",
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 14,
   },
 });

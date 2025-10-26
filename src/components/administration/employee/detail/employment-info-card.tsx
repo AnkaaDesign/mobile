@@ -1,10 +1,9 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { User } from '../../../../types';
+import type { User } from '../../../../types';
 import { formatDate, formatCurrency, getAge } from '../../../../utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { DetailRow } from "@/components/ui/detail-row";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
@@ -17,18 +16,18 @@ interface EmploymentInfoCardProps {
 export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
   const { colors } = useTheme();
 
-  const formattedHireDate = employee.hireDate ? formatDate(employee.hireDate) : "Não informado";
+  const formattedContractDate = employee.contractedAt ? formatDate(employee.contractedAt) : "Não informado";
   const formattedAdmissional = employee.admissional ? formatDate(employee.admissional) : "Não informado";
-  const formattedDismissal = employee.dismissal ? formatDate(employee.dismissal) : "-";
+  const formattedDismissal = employee.dismissedAt ? formatDate(employee.dismissedAt) : "-";
 
   // Calculate time at company
   const getTimeAtCompany = () => {
-    if (!employee.hireDate) return "Não informado";
+    if (!employee.contractedAt) return "Não informado";
 
-    const now = employee.dismissal ? new Date(employee.dismissal) : new Date();
-    const hireDate = new Date(employee.hireDate);
-    const years = Math.floor((now.getTime() - hireDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
-    const months = Math.floor((now.getTime() - hireDate.getTime()) / (1000 * 60 * 60 * 24 * 30)) % 12;
+    const now = employee.dismissedAt ? new Date(employee.dismissedAt) : new Date();
+    const contractDate = new Date(employee.contractedAt);
+    const years = Math.floor((now.getTime() - contractDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
+    const months = Math.floor((now.getTime() - contractDate.getTime()) / (1000 * 60 * 60 * 24 * 30)) % 12;
 
     if (years > 0) {
       return `${years} ano${years > 1 ? "s" : ""} e ${months} ${months === 1 ? "mês" : "meses"}`;
@@ -37,11 +36,6 @@ export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
   };
 
   const timeAtCompany = getTimeAtCompany();
-
-  // Get position salary if available
-  const salary = employee.position?.baseSalary
-    ? formatCurrency(employee.position.baseSalary)
-    : "Não informado";
 
   return (
     <Card>
@@ -59,77 +53,141 @@ export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
       </CardHeader>
       <CardContent style={styles.content}>
         {employee.position && (
-          <DetailRow
-            icon={IconBriefcase}
-            label="Cargo"
-            value={employee.position.name}
-          />
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <IconBriefcase size={20} color={colors.mutedForeground} />
+            </View>
+            <View style={styles.detailContent}>
+              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                Cargo
+              </ThemedText>
+              <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+                {employee.position.name}
+              </ThemedText>
+            </View>
+          </View>
         )}
 
         {employee.sector && (
-          <DetailRow
-            icon={IconBuilding}
-            label="Setor"
-            value={employee.sector.name}
-          />
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <IconBuilding size={20} color={colors.mutedForeground} />
+            </View>
+            <View style={styles.detailContent}>
+              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                Setor
+              </ThemedText>
+              <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+                {employee.sector.name}
+              </ThemedText>
+            </View>
+          </View>
         )}
 
         {employee.managedSector && (
-          <DetailRow
-            icon={IconUserCheck}
-            label="Setor Gerenciado"
-            value={employee.managedSector.name}
-          />
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <IconUserCheck size={20} color={colors.mutedForeground} />
+            </View>
+            <View style={styles.detailContent}>
+              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                Setor Gerenciado
+              </ThemedText>
+              <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+                {employee.managedSector.name}
+              </ThemedText>
+            </View>
+          </View>
         )}
 
-        <DetailRow
-          icon={IconCalendar}
-          label="Data de Contratação"
-          value={formattedHireDate}
-        />
+        <View style={styles.detailRow}>
+          <View style={styles.detailIcon}>
+            <IconCalendar size={20} color={colors.mutedForeground} />
+          </View>
+          <View style={styles.detailContent}>
+            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+              Data de Contratação
+            </ThemedText>
+            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+              {formattedContractDate}
+            </ThemedText>
+          </View>
+        </View>
 
-        <DetailRow
-          icon={IconCalendar}
-          label="Data de Admissão"
-          value={formattedAdmissional}
-        />
+        <View style={styles.detailRow}>
+          <View style={styles.detailIcon}>
+            <IconCalendar size={20} color={colors.mutedForeground} />
+          </View>
+          <View style={styles.detailContent}>
+            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+              Data de Admissão
+            </ThemedText>
+            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+              {formattedAdmissional}
+            </ThemedText>
+          </View>
+        </View>
 
-        {employee.dismissal && (
-          <DetailRow
-            icon={IconCalendar}
-            label="Data de Desligamento"
-            value={formattedDismissal}
-          />
+        {employee.dismissedAt && (
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <IconCalendar size={20} color={colors.mutedForeground} />
+            </View>
+            <View style={styles.detailContent}>
+              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                Data de Desligamento
+              </ThemedText>
+              <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+                {formattedDismissal}
+              </ThemedText>
+            </View>
+          </View>
         )}
 
-        <DetailRow
-          icon={IconCalendar}
-          label="Tempo na Empresa"
-          value={timeAtCompany}
-        />
-
-        {employee.position?.baseSalary && (
-          <DetailRow
-            icon={IconCurrencyDollar}
-            label="Salário Base"
-            value={salary}
-          />
-        )}
+        <View style={styles.detailRow}>
+          <View style={styles.detailIcon}>
+            <IconCalendar size={20} color={colors.mutedForeground} />
+          </View>
+          <View style={styles.detailContent}>
+            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+              Tempo na Empresa
+            </ThemedText>
+            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+              {timeAtCompany}
+            </ThemedText>
+          </View>
+        </View>
 
         {employee.payrollNumber && (
-          <DetailRow
-            icon={IconUserCheck}
-            label="Número de Folha"
-            value={employee.payrollNumber.toString()}
-          />
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <IconUserCheck size={20} color={colors.mutedForeground} />
+            </View>
+            <View style={styles.detailContent}>
+              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                Número de Folha
+              </ThemedText>
+              <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+                {employee.payrollNumber.toString()}
+              </ThemedText>
+            </View>
+          </View>
         )}
 
         {employee.secullumId && (
-          <DetailRow
-            icon={IconUserCheck}
-            label="ID Secullum"
-            value={employee.secullumId}
-          />
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <IconUserCheck size={20} color={colors.mutedForeground} />
+            </View>
+            <View style={styles.detailContent}>
+              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                ID Secullum
+              </ThemedText>
+              <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+                {employee.secullumId}
+              </ThemedText>
+            </View>
+          </View>
         )}
 
         {/* Performance Level */}
@@ -181,6 +239,25 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.md,
+  },
+  detailRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  detailIcon: {
+    paddingTop: 2,
+  },
+  detailContent: {
+    flex: 1,
+    gap: spacing.xs / 2,
+  },
+  detailLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+  },
+  detailValue: {
+    fontSize: fontSize.sm,
   },
   performanceRow: {
     flexDirection: "row",

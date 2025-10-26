@@ -38,7 +38,7 @@ export function PpeCard({ item }: PpeCardProps) {
           <View style={styles.field}>
             <ThemedText style={StyleSheet.flatten([styles.label, { color: colors.mutedForeground }])}>Tipo de EPI</ThemedText>
             <Badge variant="default" style={styles.badge}>
-              <ThemedText style={{ color: colors.primaryForeground }}>{PPE_TYPE_LABELS[item.ppeType]}</ThemedText>
+              <ThemedText style={{ color: colors.primaryForeground }}>{PPE_TYPE_LABELS[item.ppeType as keyof typeof PPE_TYPE_LABELS]}</ThemedText>
             </Badge>
           </View>
 
@@ -46,7 +46,7 @@ export function PpeCard({ item }: PpeCardProps) {
             <View style={styles.field}>
               <ThemedText style={StyleSheet.flatten([styles.label, { color: colors.mutedForeground }])}>Modo de Entrega</ThemedText>
               <Badge variant="secondary" style={styles.badge}>
-                <ThemedText style={{ color: colors.secondaryForeground }}>{PPE_DELIVERY_MODE_LABELS[item.ppeDeliveryMode]}</ThemedText>
+                <ThemedText style={{ color: colors.secondaryForeground }}>{PPE_DELIVERY_MODE_LABELS[item.ppeDeliveryMode as keyof typeof PPE_DELIVERY_MODE_LABELS]}</ThemedText>
               </Badge>
             </View>
           )}

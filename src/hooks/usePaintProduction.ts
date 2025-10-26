@@ -9,7 +9,7 @@ import {
   batchCreatePaintProductions,
   batchUpdatePaintProductions,
   batchDeletePaintProductions,
-} from '../api-client';
+} from '@/api-client';
 import type {
   PaintProductionCreateFormData,
   PaintProductionUpdateFormData,
@@ -18,7 +18,7 @@ import type {
   PaintProductionBatchUpdateFormData,
   PaintProductionBatchDeleteFormData,
   PaintProductionInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   PaintProductionGetManyResponse,
   PaintProductionGetUniqueResponse,
@@ -28,7 +28,7 @@ import type {
   PaintProductionBatchCreateResponse,
   PaintProductionBatchUpdateResponse,
   PaintProductionBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { paintProductionKeys, paintKeys, itemKeys, activityKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

@@ -6,7 +6,7 @@ import {
   raidStatusService,
   backupService,
   webDavService,
-} from '../api-client';
+} from '@/api-client';
 import type {
   SystemHealthGetUniqueResponse,
   SystemHealthGetManyResponse,
@@ -17,7 +17,7 @@ import type {
   RaidStatusGetManyResponse,
   BackupMetadataGetManyResponse,
   WebDavInfoGetManyResponse,
-} from '../types';
+} from '@/types';
 
 // Query keys for monitoring
 export const monitoringKeys = {

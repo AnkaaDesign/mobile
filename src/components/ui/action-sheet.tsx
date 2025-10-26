@@ -93,7 +93,7 @@ const ActionSheet: React.FC<ActionSheetProps> = ({
 
   const titleStyle: TextStyle = {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold as any,
+    fontWeight: fontWeight.semibold as TextStyle["fontWeight"],
     color: colors.foreground,
     textAlign: "center",
     marginBottom: message ? spacing.xs : 0,
@@ -122,7 +122,7 @@ const ActionSheet: React.FC<ActionSheetProps> = ({
 
   const itemLabelStyle: TextStyle = {
     fontSize: fontSize.base,
-    fontWeight: fontWeight.medium as any,
+    fontWeight: fontWeight.medium as TextStyle["fontWeight"],
     color: colors.foreground,
     flex: 1,
   };
@@ -152,7 +152,7 @@ const ActionSheet: React.FC<ActionSheetProps> = ({
 
   const cancelLabelStyle: TextStyle = {
     fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold as any,
+    fontWeight: fontWeight.semibold as TextStyle["fontWeight"],
     color: colors.foreground,
   };
 
@@ -175,9 +175,8 @@ const ActionSheet: React.FC<ActionSheetProps> = ({
       <Pressable
         style={containerStyle}
         onPress={closeOnBackdropPress ? onClose : undefined}
-        activeOpacity={1}
       >
-        <Pressable onPress={(e) => e.stopPropagation()} activeOpacity={1}>
+        <Pressable onPress={(e) => e.stopPropagation()}>
           <Animated.View
             entering={SlideInDown.duration(transitions.normal)}
             exiting={SlideOutDown.duration(transitions.normal)}

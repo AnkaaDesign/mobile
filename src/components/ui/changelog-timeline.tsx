@@ -40,11 +40,14 @@ interface ChangelogTimelineProps {
 }
 
 // Map actions to icons
-const actionConfig: Record<CHANGE_ACTION, { icon: any; color: string }> = {
+type IconComponent = React.ComponentType<{ size?: number; color?: string }>;
+
+const actionConfig: Record<CHANGE_ACTION, { icon: IconComponent; color: string }> = {
   [CHANGE_ACTION.CREATE]: { icon: IconPlus, color: "#22c55e" },
   [CHANGE_ACTION.UPDATE]: { icon: IconEdit, color: "#737373" },
   [CHANGE_ACTION.DELETE]: { icon: IconTrash, color: "#ef4444" },
   [CHANGE_ACTION.RESTORE]: { icon: IconRefresh, color: "#a855f7" },
+  [CHANGE_ACTION.ROLLBACK]: { icon: IconRefresh, color: "#a855f7" },
   [CHANGE_ACTION.ARCHIVE]: { icon: IconArchive, color: "#6b7280" },
   [CHANGE_ACTION.UNARCHIVE]: { icon: IconArchiveOff, color: "#6b7280" },
   [CHANGE_ACTION.ACTIVATE]: { icon: IconToggleRight, color: "#22c55e" },
@@ -117,22 +120,22 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
 
     // Add creation entry if provided
     if (entityCreatedAt && !isLoading) {
-      const creationEntry: ChangeLog = {
+      const creationEntry: Partial<ChangeLog> = {
         id: `${entityId}-creation`,
         entityId,
         entityType,
-        action: CHANGE_ACTION.CREATE,
+        action: CHANGE_ACTION.CREATE as any,
         field: null,
         oldValue: null,
         newValue: null,
-        triggeredBy: CHANGE_TRIGGERED_BY.USER,
+        triggeredBy: CHANGE_TRIGGERED_BY.USER as any,
         userId: null,
         user: null,
         createdAt: new Date(entityCreatedAt),
         updatedAt: new Date(entityCreatedAt),
       };
 
-      return [...logs, creationEntry];
+      return [...logs, creationEntry as ChangeLog];
     }
 
     return logs;
@@ -453,12 +456,12 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
 
                   {dayChangelogGroups.map((changelogGroup, index) => {
                     const isLastChange = isLastGroup && index === dayChangelogGroups.length - 1;
-                    const firstChange = changelogGroup[0 as keyof typeof changelogGroup];
-                    const config = actionConfig[firstChange.action];
+                    const firstChange = changelogGroup[0];
+                    const config = actionConfig[firstChange.action as unknown as CHANGE_ACTION];
                     const Icon = config.icon;
 
                     // Determine the action label
-                    const actionLabel = getActionLabel(firstChange.action, firstChange.triggeredBy);
+                    const actionLabel = getActionLabel(firstChange.action as any, firstChange.triggeredBy as any);
 
                     return (
                       <View key={firstChange.id} style={styles.timelineItem}>
@@ -491,11 +494,11 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                           {/* Header */}
                           <View style={StyleSheet.flatten([styles.cardHeader, { borderBottomColor: colors.border }])}>
                             <ThemedText style={StyleSheet.flatten([styles.actionText, { color: colors.foreground }])}>{actionLabel}</ThemedText>
-                            <ThemedText style={StyleSheet.flatten([styles.timeText, { color: colors.mutedForeground }])}>{formatRelativeTime(firstChange.createdAt)}</ThemedText>
+                            <ThemedText style={StyleSheet.flatten([styles.timeText, { color: colors.mutedForeground }])}>{formatRelativeTime(firstChange.createdAt as Date)}</ThemedText>
                           </View>
 
                           {/* Changes */}
-                          {firstChange.action !== CHANGE_ACTION.CREATE && changelogGroup.length > 0 && (
+                          {firstChange.action !== (CHANGE_ACTION.CREATE as any) && changelogGroup.length > 0 && (
                             <View style={styles.changesContainer}>
                               {changelogGroup.map((changelog, changeIndex) => {
                                 if (!changelog.field) return null;
@@ -582,7 +585,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                             <View style={styles.userInfo}>
                               <IconUser size={14} color={colors.mutedForeground} />
                               <ThemedText style={StyleSheet.flatten([styles.userName, { color: colors.mutedForeground }])}>Por:</ThemedText>
-                              <ThemedText style={StyleSheet.flatten([styles.userNameValue, { color: colors.foreground }])}>{firstChange.user?.name || "Sistema"}</ThemedText>
+                              <ThemedText style={StyleSheet.flatten([styles.userNameValue, { color: colors.foreground }])}>{(firstChange.user as any)?.name || "Sistema"}</ThemedText>
                             </View>
                           </View>
                         </View>

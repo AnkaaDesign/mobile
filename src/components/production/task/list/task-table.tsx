@@ -17,6 +17,7 @@ import { formatDate, formatCurrency } from '../../../../utils';
 import { getDaysUntilDeadline, getTaskRowColor } from '../../../../utils/task';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { TASK_STATUS } from '../../../../constants';
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -27,10 +28,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface TaskTableProps {
   tasks: Task[];
@@ -162,11 +159,14 @@ export const createColumnDefinitions = (): TableColumn[] => [
     align: "right",
     sortable: true,
     width: 0,
-    accessor: (task: Task) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
-        {task.price ? formatCurrency(task.price) : "-"}
-      </ThemedText>
-    ),
+    accessor: (task: Task) => {
+      const totalValue = task.budget?.reduce((sum, item) => sum + item.valor, 0) || 0;
+      return (
+        <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
+          {totalValue > 0 ? formatCurrency(totalValue) : "-"}
+        </ThemedText>
+      );
+    },
   },
   {
     key: "servicesCount",

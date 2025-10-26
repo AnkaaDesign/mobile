@@ -31,8 +31,9 @@ interface PaintFormProps {
 const FINISH_OPTIONS = [
   { value: PAINT_FINISH.METALLIC, label: "Metálico" },
   { value: PAINT_FINISH.SOLID, label: "Sólido" },
-  { value: PAINT_FINISH.PEARLESCENT, label: "Perolizado" },
+  { value: PAINT_FINISH.PEARL, label: "Perolizado" },
   { value: PAINT_FINISH.MATTE, label: "Fosco" },
+  { value: PAINT_FINISH.SATIN, label: "Acetinado" },
 ];
 
 const PALETTE_OPTIONS = [
@@ -47,9 +48,9 @@ const PALETTE_OPTIONS = [
   { value: COLOR_PALETTE.ORANGE, label: "Laranja" },
   { value: COLOR_PALETTE.BROWN, label: "Marrom" },
   { value: COLOR_PALETTE.BEIGE, label: "Bege" },
-  { value: COLOR_PALETTE.GOLD, label: "Dourado" },
-  { value: COLOR_PALETTE.BRONZE, label: "Bronze" },
-  { value: COLOR_PALETTE.OTHER, label: "Outro" },
+  { value: COLOR_PALETTE.GOLDEN, label: "Dourado" },
+  { value: COLOR_PALETTE.PINK, label: "Rosa" },
+  { value: COLOR_PALETTE.PURPLE, label: "Roxo" },
 ];
 
 const MANUFACTURER_OPTIONS = [
@@ -59,11 +60,6 @@ const MANUFACTURER_OPTIONS = [
   { value: TRUCK_MANUFACTURER.VOLVO, label: "Volvo" },
   { value: TRUCK_MANUFACTURER.IVECO, label: "Iveco" },
   { value: TRUCK_MANUFACTURER.DAF, label: "DAF" },
-  { value: TRUCK_MANUFACTURER.MAN, label: "MAN" },
-  { value: TRUCK_MANUFACTURER.FORD, label: "Ford" },
-  { value: TRUCK_MANUFACTURER.AGRALE, label: "Agrale" },
-  { value: TRUCK_MANUFACTURER.INTERNATIONAL, label: "International" },
-  { value: TRUCK_MANUFACTURER.OTHER, label: "Outro" },
 ];
 
 export function PaintForm({ mode, initialData, onSubmit, onCancel, isSubmitting }: PaintFormProps) {

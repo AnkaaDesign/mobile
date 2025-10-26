@@ -1,14 +1,14 @@
 // packages/hooks/src/payroll.ts
 
 import { createEntityHooks } from "./createEntityHooks";
-import { payrollService } from '../api-client';
+import { payrollService } from '@/api-client';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   PayrollGetManyParams,
   PayrollGetManyResponse,
   PayrollGetByIdParams,
   Payroll,
-} from '../types';
+} from '@/types';
 import type {
   PayrollCreateFormData,
   PayrollUpdateFormData,
@@ -17,7 +17,7 @@ import type {
   PayrollBatchDeleteFormData,
   DiscountCreateFormData,
   DiscountUpdateFormData,
-} from '../schemas';
+} from '@/schemas';
 
 // =====================================================
 // Query Keys
@@ -65,7 +65,7 @@ const payrollServiceAdapter = {
 // =====================================================
 
 const baseHooks = createEntityHooks<
-  PayrollGetManyParams,
+  PayrollGetManyParams & Record<string, unknown>,
   PayrollGetManyResponse,
   Payroll,
   PayrollCreateFormData,

@@ -52,7 +52,7 @@ export function UserCard({ commission }: UserCardProps) {
                 <View style={styles.userBasicInfo}>
                   <ThemedText style={StyleSheet.flatten([styles.userName, { color: colors.foreground }])}>{user.name}</ThemedText>
                   {user.position && <ThemedText style={StyleSheet.flatten([styles.userPosition, { color: colors.mutedForeground }])}>{user.position.name}</ThemedText>}
-                  <Badge variant={getBadgeVariant.USER_STATUS?.[user.status] || "secondary"} style={styles.statusBadge}>
+                  <Badge variant={getBadgeVariant(user.status, "USER")} style={styles.statusBadge}>
                     <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.primaryForeground }])}>{USER_STATUS_LABELS[user.status]}</ThemedText>
                   </Badge>
                 </View>

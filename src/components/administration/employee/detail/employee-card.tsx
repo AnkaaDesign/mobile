@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { User } from '../../../../types';
+import type { User } from '../../../../types';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
@@ -25,10 +25,13 @@ export function EmployeeCard({ employee }: EmployeeCardProps) {
       <CardContent style={styles.content}>
         <View style={styles.headerSection}>
           <Avatar
-            size="large"
-            label={employee.name}
-            style={[styles.avatar, { backgroundColor: colors.primary }]}
-          />
+            size="lg"
+            style={{ backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}
+          >
+            <ThemedText style={{ color: colors.primaryForeground, fontSize: 24, fontWeight: '600' }}>
+              {employee.name.charAt(0).toUpperCase()}
+            </ThemedText>
+          </Avatar>
           <View style={styles.headerInfo}>
             <ThemedText style={[styles.employeeName, { color: colors.foreground }]}>
               {employee.name}
@@ -93,9 +96,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerInfo: {
     flex: 1,

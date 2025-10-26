@@ -45,7 +45,7 @@ export default function InventoryOrderSchedulesListScreen() {
   }>({});
 
   const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
-    [{ column: "createdAt", direction: "desc", order: 0 }],
+    [{ columnKey: "createdAt", direction: "desc", order: 0 }],
     3,
     false
   );
@@ -305,7 +305,7 @@ export default function InventoryOrderSchedulesListScreen() {
             showSelection={showSelection}
             selectedSchedules={selectedSchedules}
             onSelectionChange={handleSelectionChange}
-            sortConfigs={sortConfigs as SortConfig[]}
+            sortConfigs={sortConfigs}
             onSort={(configs) => handleSort(configs[0]?.columnKey || "createdAt")}
             visibleColumnKeys={visibleColumns}
             enableSwipeActions={true}

@@ -25,7 +25,7 @@ import {
   batchCreateExternalWithdrawalItems,
   batchUpdateExternalWithdrawalItems,
   batchDeleteExternalWithdrawalItems,
-} from '../api-client';
+} from '@/api-client';
 import type {
   // ExternalWithdrawal types
   ExternalWithdrawalGetManyFormData,
@@ -43,7 +43,7 @@ import type {
   ExternalWithdrawalItemBatchUpdateFormData,
   ExternalWithdrawalItemBatchDeleteFormData,
   ExternalWithdrawalItemInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   // ExternalWithdrawal Interface types
   ExternalWithdrawalGetUniqueResponse,
@@ -63,7 +63,7 @@ import type {
   ExternalWithdrawalItemBatchCreateResponse,
   ExternalWithdrawalItemBatchUpdateResponse,
   ExternalWithdrawalItemBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { externalWithdrawalKeys, externalWithdrawalItemKeys, itemKeys, activityKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

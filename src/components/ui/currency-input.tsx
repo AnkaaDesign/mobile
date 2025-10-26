@@ -1,12 +1,12 @@
 import React, { useCallback, useRef, useState, useEffect } from "react";
-import { TextInput, TextInputProps, View, ViewStyle, TextStyle, Animated, StyleSheet} from "react-native";
+import { TextInput, TextInputProps, View, ViewStyle, TextStyle, Animated, StyleSheet, NativeSyntheticEvent, TextInputFocusEventData} from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, fontSize, lineHeight, transitions } from "@/constants/design-system";
 
 interface CurrencyInputProps extends Omit<TextInputProps, "onChange" | "value" | "onChangeText" | "keyboardType"> {
   value?: number;
   onChange?: (value: number | undefined) => void;
-  onBlur?: (e: any) => void;
+  onBlur?: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
   error?: boolean;
   containerStyle?: ViewStyle;
   inputStyle?: TextStyle;
@@ -117,7 +117,7 @@ export function CurrencyInput({ value, onChange, onBlur, placeholder = "R$ 0,00"
 
   // Handle blur
   const handleBlur = useCallback(
-    (e: any) => {
+    (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
       setIsFocused(false);
       onBlur?.(e);
     },
@@ -148,7 +148,6 @@ export function CurrencyInput({ value, onChange, onBlur, placeholder = "R$ 0,00"
 
   const baseContainerStyles: ViewStyle = {
     width: "100%",
-    ...containerStyle,
   };
 
   const baseInputContainerStyles: ViewStyle = {
@@ -177,8 +176,8 @@ export function CurrencyInput({ value, onChange, onBlur, placeholder = "R$ 0,00"
       backgroundColor: colors.input,
     }),
 
-    // Custom styles (only ViewStyle properties)
-    ...inputStyle,
+    // Custom styles - only spread ViewStyle compatible properties from containerStyle
+    ...(containerStyle || {}),
   };
 
   const baseInputTextStyles: TextStyle = {
@@ -189,6 +188,8 @@ export function CurrencyInput({ value, onChange, onBlur, placeholder = "R$ 0,00"
     textAlignVertical: "center",
     includeFontPadding: false,
     padding: 0,
+    // Merge text-specific styles from inputStyle prop if provided
+    ...(inputStyle || {}),
   };
 
   const animatedStyles = {

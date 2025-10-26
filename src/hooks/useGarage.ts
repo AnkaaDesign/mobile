@@ -28,7 +28,7 @@ import {
   batchCreateParkingSpots,
   batchUpdateParkingSpots,
   batchDeleteParkingSpots,
-} from '../api-client';
+} from '@/api-client';
 import type {
   // Garage types
   GarageCreateFormData,
@@ -54,7 +54,7 @@ import type {
   ParkingSpotBatchUpdateFormData,
   ParkingSpotBatchDeleteFormData,
   ParkingSpotInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   // Entity types
   Garage,
@@ -87,7 +87,7 @@ import type {
   ParkingSpotBatchCreateResponse,
   ParkingSpotBatchUpdateResponse,
   ParkingSpotBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { garageKeys, garageLaneKeys, parkingSpotKeys, truckKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

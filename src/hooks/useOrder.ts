@@ -11,7 +11,7 @@ import {
   batchCreateOrders,
   batchUpdateOrders,
   batchDeleteOrders,
-} from '../api-client';
+} from '@/api-client';
 import type {
   // Order types
   OrderGetManyFormData,
@@ -21,7 +21,7 @@ import type {
   OrderBatchUpdateFormData,
   OrderBatchDeleteFormData,
   OrderInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   OrderGetManyResponse,
   OrderGetUniqueResponse,
@@ -31,9 +31,9 @@ import type {
   OrderBatchCreateResponse,
   OrderBatchUpdateResponse,
   OrderBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { orderKeys, orderItemKeys, orderScheduleKeys, activityKeys, itemKeys, supplierKeys, changeLogKeys } from "./queryKeys";
-import { ORDER_STATUS } from '../constants';
+import { ORDER_STATUS } from '@/constants';
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 
 // =====================================================

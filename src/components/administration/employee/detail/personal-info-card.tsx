@@ -1,10 +1,9 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { User } from '../../../../types';
+import type { User } from '../../../../types';
 import { formatCPF, formatPIS, formatBrazilianPhone, formatDate, formatZipCode } from '../../../../utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { DetailRow } from "@/components/ui/detail-row";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconUser, IconId, IconPhone, IconMapPin, IconCalendar } from "@tabler/icons-react-native";
@@ -27,7 +26,7 @@ export function PersonalInfoCard({ employee }: PersonalInfoCardProps) {
     : "Não informado";
 
   const formattedPhone = employee.phone ? formatBrazilianPhone(employee.phone) : "Não informado";
-  const formattedBirthDate = employee.birthDate ? formatDate(employee.birthDate) : "Não informado";
+  const formattedBirthDate = employee.birth ? formatDate(employee.birth) : "Não informado";
 
   // Build full address
   const buildAddress = () => {
@@ -68,32 +67,75 @@ export function PersonalInfoCard({ employee }: PersonalInfoCardProps) {
         </CardTitle>
       </CardHeader>
       <CardContent style={styles.content}>
-        <DetailRow
-          icon={IconId}
-          label="CPF"
-          value={maskedCPF}
-        />
-        <DetailRow
-          icon={IconId}
-          label="PIS"
-          value={maskedPIS}
-        />
-        <DetailRow
-          icon={IconCalendar}
-          label="Data de Nascimento"
-          value={formattedBirthDate}
-        />
-        <DetailRow
-          icon={IconPhone}
-          label="Telefone"
-          value={formattedPhone}
-        />
-        <DetailRow
-          icon={IconMapPin}
-          label="Endereço"
-          value={fullAddress}
-          multiline
-        />
+        <View style={styles.detailRow}>
+          <View style={styles.detailIcon}>
+            <IconId size={20} color={colors.mutedForeground} />
+          </View>
+          <View style={styles.detailContent}>
+            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+              CPF
+            </ThemedText>
+            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+              {maskedCPF}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.detailRow}>
+          <View style={styles.detailIcon}>
+            <IconId size={20} color={colors.mutedForeground} />
+          </View>
+          <View style={styles.detailContent}>
+            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+              PIS
+            </ThemedText>
+            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+              {maskedPIS}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.detailRow}>
+          <View style={styles.detailIcon}>
+            <IconCalendar size={20} color={colors.mutedForeground} />
+          </View>
+          <View style={styles.detailContent}>
+            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+              Data de Nascimento
+            </ThemedText>
+            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+              {formattedBirthDate}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.detailRow}>
+          <View style={styles.detailIcon}>
+            <IconPhone size={20} color={colors.mutedForeground} />
+          </View>
+          <View style={styles.detailContent}>
+            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+              Telefone
+            </ThemedText>
+            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+              {formattedPhone}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.detailRow}>
+          <View style={styles.detailIcon}>
+            <IconMapPin size={20} color={colors.mutedForeground} />
+          </View>
+          <View style={styles.detailContent}>
+            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+              Endereço
+            </ThemedText>
+            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+              {fullAddress}
+            </ThemedText>
+          </View>
+        </View>
       </CardContent>
     </Card>
   );
@@ -122,5 +164,24 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.md,
+  },
+  detailRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  detailIcon: {
+    paddingTop: 2,
+  },
+  detailContent: {
+    flex: 1,
+    gap: spacing.xs / 2,
+  },
+  detailLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+  },
+  detailValue: {
+    fontSize: fontSize.sm,
   },
 });

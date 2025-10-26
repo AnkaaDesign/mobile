@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useAirbrushingsInfinite } from './useAirbrushing';
-import { AirbrushingGetManyFormData } from '../schemas';
+import { AirbrushingGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for airbrushings

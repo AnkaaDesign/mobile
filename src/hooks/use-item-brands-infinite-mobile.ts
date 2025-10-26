@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useItemBrandsInfinite } from './useItemBrand';
-import { ItemBrandGetManyFormData } from '../schemas';
+import { ItemBrandGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for brands

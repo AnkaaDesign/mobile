@@ -62,7 +62,7 @@ export function TaskCard({ commission }: TaskCardProps) {
               {/* Status */}
               <View style={styles.detailRow}>
                 <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Status</ThemedText>
-                <Badge variant={getBadgeVariant.TASK_STATUS?.[task.status] || "secondary"}>
+                <Badge variant={getBadgeVariant(task.status, "TASK")}>
                   <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.primaryForeground }])}>{TASK_STATUS_LABELS[task.status]}</ThemedText>
                 </Badge>
               </View>

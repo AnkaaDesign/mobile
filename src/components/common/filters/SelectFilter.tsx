@@ -84,9 +84,6 @@ export function SelectFilter<T extends string = string>({
     clearButton: {
       padding: 4,
     },
-    clearIcon: {
-      color: colors.mutedForeground,
-    },
   });
 
   return (
@@ -100,7 +97,7 @@ export function SelectFilter<T extends string = string>({
             onPress={handleClear}
             style={styles.clearButton}
           >
-            <IconX size={16} style={styles.clearIcon} />
+            <IconX size={16} color={colors.mutedForeground} />
           </Button>
         )}
       </View>
@@ -223,9 +220,6 @@ export function MultiSelectFilter<T extends string = string>({
     clearButton: {
       padding: 4,
     },
-    clearIcon: {
-      color: colors.mutedForeground,
-    },
   });
 
   return (
@@ -239,7 +233,7 @@ export function MultiSelectFilter<T extends string = string>({
             onPress={handleClear}
             style={styles.clearButton}
           >
-            <IconX size={16} style={styles.clearIcon} />
+            <IconX size={16} color={colors.mutedForeground} />
           </Button>
         )}
       </View>

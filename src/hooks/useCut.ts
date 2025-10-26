@@ -1,7 +1,7 @@
 // packages/hooks/src/useCut.ts
 
-import { getCuts, getCutById, createCut, updateCut, deleteCut, batchCreateCuts, batchUpdateCuts, batchDeleteCuts } from '../api-client';
-import type { CutGetManyFormData, CutCreateFormData, CutUpdateFormData, CutBatchCreateFormData, CutBatchUpdateFormData, CutBatchDeleteFormData, CutInclude } from '../schemas';
+import { getCuts, getCutById, createCut, updateCut, deleteCut, batchCreateCuts, batchUpdateCuts, batchDeleteCuts } from '@/api-client';
+import type { CutGetManyFormData, CutCreateFormData, CutUpdateFormData, CutBatchCreateFormData, CutBatchUpdateFormData, CutBatchDeleteFormData, CutInclude } from '@/schemas';
 import type {
   Cut,
   CutGetManyResponse,
@@ -12,7 +12,7 @@ import type {
   CutBatchCreateResponse,
   CutBatchUpdateResponse,
   CutBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { cutKeys, taskKeys, fileKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

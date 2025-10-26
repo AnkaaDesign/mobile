@@ -112,10 +112,10 @@ export function MetricsCard({ item }: MetricsCardProps) {
                   },
                 ])}
               >
-                <IconCurrencyDollar size={20} color={extendedColors.green[600 as keyof typeof green]} />
-                <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: extendedColors.green[700 as keyof typeof green] }])}>Preço Atual</ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: extendedColors.green[800 as keyof typeof green] }])}>{formatCurrency(metrics.currentPrice)}</ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.metricSubtext, { color: extendedColors.green[600 as keyof typeof green] }])}>por unidade</ThemedText>
+                <IconCurrencyDollar size={20} color={extendedColors.green[600]} />
+                <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: extendedColors.green[700] }])}>Preço Atual</ThemedText>
+                <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: extendedColors.green[800] }])}>{formatCurrency(metrics.currentPrice)}</ThemedText>
+                <ThemedText style={StyleSheet.flatten([styles.metricSubtext, { color: extendedColors.green[600] }])}>por unidade</ThemedText>
               </View>
 
               {/* Stock Value */}
@@ -128,10 +128,10 @@ export function MetricsCard({ item }: MetricsCardProps) {
                   },
                 ])}
               >
-                <IconCurrencyDollar size={20} color={extendedColors.blue[600 as keyof typeof blue]} />
-                <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: extendedColors.blue[700 as keyof typeof blue] }])}>Valor em Estoque</ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: extendedColors.blue[800 as keyof typeof blue] }])}>{formatCurrency(item.totalPrice || metrics.stockValue)}</ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.metricSubtext, { color: extendedColors.blue[600 as keyof typeof blue] }])}>
+                <IconCurrencyDollar size={20} color={extendedColors.blue[600]} />
+                <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: extendedColors.blue[700] }])}>Valor em Estoque</ThemedText>
+                <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: extendedColors.blue[800] }])}>{formatCurrency(item.totalPrice || metrics.stockValue)}</ThemedText>
+                <ThemedText style={StyleSheet.flatten([styles.metricSubtext, { color: extendedColors.blue[600] }])}>
                   {itemUtils.formatItemQuantity(item)} × {formatCurrency(metrics.currentPrice)}
                 </ThemedText>
               </View>
@@ -157,17 +157,17 @@ export function MetricsCard({ item }: MetricsCardProps) {
               </View>
               <View style={StyleSheet.flatten([styles.stockLevelItem, { backgroundColor: extendedColors.green[50], borderColor: extendedColors.green[200], borderWidth: 1 }])}>
                 <View style={styles.stockLevelHeader}>
-                  <IconSquareArrowUpFilled size={16} color={extendedColors.green[700 as keyof typeof green]} />
-                  <ThemedText style={StyleSheet.flatten([styles.stockLevelLabel, { color: extendedColors.green[700 as keyof typeof green] }])}>Entradas</ThemedText>
+                  <IconSquareArrowUpFilled size={16} color={extendedColors.green[700]} />
+                  <ThemedText style={StyleSheet.flatten([styles.stockLevelLabel, { color: extendedColors.green[700] }])}>Entradas</ThemedText>
                 </View>
-                <ThemedText style={StyleSheet.flatten([styles.stockLevelValue, { color: extendedColors.green[800 as keyof typeof green] }])}>{metrics.totalEntries}</ThemedText>
+                <ThemedText style={StyleSheet.flatten([styles.stockLevelValue, { color: extendedColors.green[800] }])}>{metrics.totalEntries}</ThemedText>
               </View>
               <View style={StyleSheet.flatten([styles.stockLevelItem, { backgroundColor: extendedColors.red[50], borderColor: extendedColors.red[200], borderWidth: 1 }])}>
                 <View style={styles.stockLevelHeader}>
-                  <IconSquareArrowDownFilled size={16} color={extendedColors.red[700 as keyof typeof red]} />
-                  <ThemedText style={StyleSheet.flatten([styles.stockLevelLabel, { color: extendedColors.red[700 as keyof typeof red] }])}>Saídas</ThemedText>
+                  <IconSquareArrowDownFilled size={16} color={extendedColors.red[700]} />
+                  <ThemedText style={StyleSheet.flatten([styles.stockLevelLabel, { color: extendedColors.red[700] }])}>Saídas</ThemedText>
                 </View>
-                <ThemedText style={StyleSheet.flatten([styles.stockLevelValue, { color: extendedColors.red[800 as keyof typeof red] }])}>{metrics.totalExits}</ThemedText>
+                <ThemedText style={StyleSheet.flatten([styles.stockLevelValue, { color: extendedColors.red[800] }])}>{metrics.totalExits}</ThemedText>
               </View>
             </View>
           </View>
@@ -185,13 +185,13 @@ export function MetricsCard({ item }: MetricsCardProps) {
           >
             <ThemedText style={StyleSheet.flatten([styles.metricsSectionTitle, { color: colors.foreground }])}>Status do Estoque</ThemedText>
 
-            <View style={StyleSheet.flatten([styles.stockStatusCard, { backgroundColor: stockStatusColor[50 as keyof typeof stockStatusColor] }])}>
+            <View style={StyleSheet.flatten([styles.stockStatusCard, { backgroundColor: stockStatusColor[50] }])}>
               <View style={styles.stockStatusHeader}>
-                <View style={StyleSheet.flatten([styles.stockStatusIndicator, { backgroundColor: stockStatusColor[500 as keyof typeof stockStatusColor] }])} />
-                <ThemedText style={StyleSheet.flatten([styles.stockStatusText, { color: stockStatusColor[700 as keyof typeof stockStatusColor] }])}>{getStockStatusLabel()}</ThemedText>
+                <View style={StyleSheet.flatten([styles.stockStatusIndicator, { backgroundColor: stockStatusColor[500] }])} />
+                <ThemedText style={StyleSheet.flatten([styles.stockStatusText, { color: stockStatusColor[700] }])}>{getStockStatusLabel()}</ThemedText>
               </View>
 
-              <ThemedText style={StyleSheet.flatten([styles.stockStatusDetail, { color: stockStatusColor[600 as keyof typeof stockStatusColor] }])}>
+              <ThemedText style={StyleSheet.flatten([styles.stockStatusDetail, { color: stockStatusColor[600] }])}>
                 {getStockLevelMessage(metrics.stockLevel, item.quantity || 0, item.reorderPoint || null)}
               </ThemedText>
             </View>
@@ -228,10 +228,10 @@ export function MetricsCard({ item }: MetricsCardProps) {
                     ])}
                   >
                     <View style={styles.categorizationHeader}>
-                      <View style={StyleSheet.flatten([styles.categorizationIndicator, { backgroundColor: extendedColors.blue[500 as keyof typeof blue] }])} />
-                      <ThemedText style={StyleSheet.flatten([styles.categorizationType, { color: extendedColors.blue[700 as keyof typeof blue] }])}>Análise ABC</ThemedText>
+                      <View style={StyleSheet.flatten([styles.categorizationIndicator, { backgroundColor: extendedColors.blue[500] }])} />
+                      <ThemedText style={StyleSheet.flatten([styles.categorizationType, { color: extendedColors.blue[700] }])}>Análise ABC</ThemedText>
                     </View>
-                    <ThemedText style={StyleSheet.flatten([styles.categorizationLabel, { color: extendedColors.blue[800 as keyof typeof blue] }])}>{ABC_CATEGORY_LABELS[item.abcCategory]}</ThemedText>
+                    <ThemedText style={StyleSheet.flatten([styles.categorizationLabel, { color: extendedColors.blue[800] }])}>{ABC_CATEGORY_LABELS[item.abcCategory]}</ThemedText>
                   </View>
                 )}
                 {item.xyzCategory && (
@@ -245,10 +245,10 @@ export function MetricsCard({ item }: MetricsCardProps) {
                     ])}
                   >
                     <View style={styles.categorizationHeader}>
-                      <View style={StyleSheet.flatten([styles.categorizationIndicator, { backgroundColor: extendedColors.purple[500 as keyof typeof purple] }])} />
-                      <ThemedText style={StyleSheet.flatten([styles.categorizationType, { color: extendedColors.purple[700 as keyof typeof purple] }])}>Análise XYZ</ThemedText>
+                      <View style={StyleSheet.flatten([styles.categorizationIndicator, { backgroundColor: extendedColors.purple[500] }])} />
+                      <ThemedText style={StyleSheet.flatten([styles.categorizationType, { color: extendedColors.purple[700] }])}>Análise XYZ</ThemedText>
                     </View>
-                    <ThemedText style={StyleSheet.flatten([styles.categorizationLabel, { color: extendedColors.purple[800 as keyof typeof purple] }])}>{XYZ_CATEGORY_LABELS[item.xyzCategory]}</ThemedText>
+                    <ThemedText style={StyleSheet.flatten([styles.categorizationLabel, { color: extendedColors.purple[800] }])}>{XYZ_CATEGORY_LABELS[item.xyzCategory]}</ThemedText>
                   </View>
                 )}
               </View>

@@ -1,7 +1,7 @@
 // packages/hooks/src/useService.ts
 
 import { createEntityHooks } from "./createEntityHooks";
-import { serviceService } from '../api-client';
+import { serviceService } from '@/api-client';
 import type {
   ServiceGetManyFormData,
   ServiceCreateFormData,
@@ -9,7 +9,7 @@ import type {
   ServiceBatchCreateFormData,
   ServiceBatchUpdateFormData,
   ServiceBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   ServiceGetManyResponse,
   ServiceGetUniqueResponse,
@@ -19,7 +19,7 @@ import type {
   ServiceBatchCreateResponse,
   ServiceBatchUpdateResponse,
   ServiceBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { serviceKeys, serviceOrderKeys, taskKeys, changeLogKeys } from "./queryKeys";
 
 // =====================================================

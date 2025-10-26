@@ -1,8 +1,9 @@
 // packages/interfaces/src/position.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION } from '../constants';
+import type { ORDER_BY_DIRECTION } from '@/constants';
 import type { User, UserIncludes, UserOrderBy } from "./user";
+import type { Sector, SectorIncludes, SectorOrderBy } from "./sector";
 
 // =====================
 // Main Entity Interfaces
@@ -23,11 +24,14 @@ export interface Position extends BaseEntity {
   name: string;
   hierarchy: number | null;
   bonifiable: boolean;
+  commissionRate: number;
+  sectorId: string | null;
 
   // Relations (optional, populated based on query)
   users?: User[];
   monetaryValues?: MonetaryValue[];
   remunerations?: PositionRemuneration[]; // DEPRECATED: use monetaryValues
+  sector?: Sector;
 
   // Virtual field (computed from latest/current monetary value)
   remuneration?: number;
@@ -73,6 +77,11 @@ export interface PositionIncludes {
     | boolean
     | {
         include?: PositionRemunerationIncludes;
+      };
+  sector?:
+    | boolean
+    | {
+        include?: SectorIncludes;
       };
 }
 
@@ -129,11 +138,11 @@ export interface PositionRemunerationDeleteResponse extends BaseDeleteResponse {
 // =====================
 
 // Position batch operations
-export interface PositionBatchCreateResponse<T = any> extends BaseBatchResponse<Position, T> {}
-export interface PositionBatchUpdateResponse<T = any> extends BaseBatchResponse<Position, T> {}
+export interface PositionBatchCreateResponse<T> extends BaseBatchResponse<Position, T> {}
+export interface PositionBatchUpdateResponse<T> extends BaseBatchResponse<Position, T> {}
 export interface PositionBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
 
 // PositionRemuneration batch operations
-export interface PositionRemunerationBatchCreateResponse<T = any> extends BaseBatchResponse<PositionRemuneration, T> {}
-export interface PositionRemunerationBatchUpdateResponse<T = any> extends BaseBatchResponse<PositionRemuneration, T> {}
+export interface PositionRemunerationBatchCreateResponse<T> extends BaseBatchResponse<PositionRemuneration, T> {}
+export interface PositionRemunerationBatchUpdateResponse<T> extends BaseBatchResponse<PositionRemuneration, T> {}
 export interface PositionRemunerationBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}

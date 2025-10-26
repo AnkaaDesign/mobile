@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getTasks, getTaskById, createTask, updateTask, deleteTask, batchCreateTasks, batchUpdateTasks, batchDeleteTasks, duplicateTask } from '../api-client';
+import { getTasks, getTaskById, createTask, updateTask, deleteTask, batchCreateTasks, batchUpdateTasks, batchDeleteTasks, duplicateTask } from '@/api-client';
 import type {
   TaskGetManyFormData,
   TaskCreateFormData,
@@ -11,7 +11,7 @@ import type {
   TaskBatchUpdateFormData,
   TaskBatchDeleteFormData,
   TaskDuplicateFormData,
-} from '../schemas';
+} from '@/schemas';
 import {
   taskKeys,
   serviceOrderKeys,

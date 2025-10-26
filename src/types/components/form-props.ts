@@ -94,6 +94,8 @@ export interface DatePickerProps {
   style?: ViewStyle;
   placeholder?: string;
   disabled?: boolean;
+  minimumDate?: Date;
+  maximumDate?: Date;
 }
 
 export interface TimePickerProps {

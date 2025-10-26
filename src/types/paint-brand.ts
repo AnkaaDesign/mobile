@@ -1,7 +1,7 @@
 // packages/types/src/paint-brand.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION } from '../constants';
+import type { ORDER_BY_DIRECTION } from '@/constants';
 import type { Paint, PaintIncludes } from "./paint";
 import type { Item } from "./item";
 
@@ -103,6 +103,6 @@ export interface PaintBrandDeleteResponse extends BaseDeleteResponse {}
 // =====================
 
 // PaintBrand batch operations
-export interface PaintBrandBatchCreateResponse<T> extends BaseBatchResponse<PaintBrand, T> {}
-export interface PaintBrandBatchUpdateResponse<T> extends BaseBatchResponse<PaintBrand, T & { id: string }> {}
+export interface PaintBrandBatchCreateResponse<T = any> extends BaseBatchResponse<PaintBrand, T> {}
+export interface PaintBrandBatchUpdateResponse<T = any> extends BaseBatchResponse<PaintBrand, T & { id: string }> {}
 export interface PaintBrandBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}

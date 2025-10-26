@@ -22,10 +22,7 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
+import type { SortConfig } from '@/lib/sort-utils';
 
 interface CustomerTableProps {
   customers: Customer[];
@@ -387,15 +384,19 @@ export const CustomerTable = React.memo<CustomerTableProps>(
             // Remove from sorts
             newConfigs.splice(existingIndex, 1);
           }
-          onSort(newConfigs);
+          // Update order values
+          const reorderedConfigs = newConfigs.map((config, index) => ({ ...config, order: index }));
+          onSort(reorderedConfigs);
         } else {
           // Add new sort as primary (at the beginning)
-          const newConfigs = [{ columnKey, direction: "asc" as const }, ...(sortConfigs || [])];
+          const newConfigs = [{ columnKey: columnKey, direction: "asc" as const, order: 0 }, ...(sortConfigs || [])];
+          // Update order values for existing sorts
+          const reorderedConfigs = newConfigs.map((config, index) => ({ ...config, order: index }));
           // Limit to 3 sorts max
-          if (newConfigs.length > 3) {
-            newConfigs.pop();
+          if (reorderedConfigs.length > 3) {
+            reorderedConfigs.pop();
           }
-          onSort(newConfigs);
+          onSort(reorderedConfigs);
         }
       },
       [sortConfigs, onSort],
@@ -446,7 +447,9 @@ export const CustomerTable = React.memo<CustomerTableProps>(
                       if (column.sortable && sortConfig) {
                         // Remove this specific sort
                         const newSorts = sortConfigs.filter((config) => config.columnKey !== column.key);
-                        onSort?.(newSorts);
+                        // Update order values
+                        const reorderedSorts = newSorts.map((config, index) => ({ ...config, order: index }));
+                        onSort?.(reorderedSorts);
                       }
                     }}
                     disabled={!column.sortable}

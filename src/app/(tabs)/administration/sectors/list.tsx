@@ -41,7 +41,7 @@ export default function SectorListScreen() {
   }>({});
 
   const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
-    [{ column: "name", direction: "asc", order: 0 }],
+    [{ columnKey: "name", direction: "asc", order: 0 }],
     3,
     false
   );
@@ -68,8 +68,8 @@ export default function SectorListScreen() {
   }, [filters]);
 
   // Build query parameters
-  const queryParams = useMemo<SectorGetManyFormData>(() => ({
-    orderBy: buildOrderBy(
+  const queryParams = useMemo<SectorGetManyFormData>(() => {
+    const orderByResult = buildOrderBy(
       {
         name: "name",
         privileges: "privileges",
@@ -77,31 +77,35 @@ export default function SectorListScreen() {
         updatedAt: "updatedAt",
       },
       { name: "asc" }
-    ),
-    ...(searchText ? { searchingFor: searchText } : {}),
-    ...(buildWhereClause() ? { where: buildWhereClause() } : {}),
-    ...(filters.hasUsers !== undefined ? { hasUsers: filters.hasUsers } : {}),
-    ...(filters.createdDateRange?.from || filters.createdDateRange?.to ? {
-      createdAt: {
-        ...(filters.createdDateRange.from && { gte: filters.createdDateRange.from }),
-        ...(filters.createdDateRange.to && { lte: filters.createdDateRange.to }),
-      },
-    } : {}),
-    ...(filters.updatedDateRange?.from || filters.updatedDateRange?.to ? {
-      updatedAt: {
-        ...(filters.updatedDateRange.from && { gte: filters.updatedDateRange.from }),
-        ...(filters.updatedDateRange.to && { lte: filters.updatedDateRange.to }),
-      },
-    } : {}),
-    include: {
-      _count: {
-        select: {
-          users: true,
-          tasks: true,
+    );
+
+    return {
+      orderBy: orderByResult,
+      ...(searchText ? { searchingFor: searchText } : {}),
+      ...(buildWhereClause() ? { where: buildWhereClause() } : {}),
+      ...(filters.hasUsers !== undefined ? { hasUsers: filters.hasUsers } : {}),
+      ...(filters.createdDateRange?.from || filters.createdDateRange?.to ? {
+        createdAt: {
+          ...(filters.createdDateRange.from && { gte: filters.createdDateRange.from }),
+          ...(filters.createdDateRange.to && { lte: filters.createdDateRange.to }),
+        },
+      } : {}),
+      ...(filters.updatedDateRange?.from || filters.updatedDateRange?.to ? {
+        updatedAt: {
+          ...(filters.updatedDateRange.from && { gte: filters.updatedDateRange.from }),
+          ...(filters.updatedDateRange.to && { lte: filters.updatedDateRange.to }),
+        },
+      } : {}),
+      include: {
+        _count: {
+          select: {
+            users: true,
+            tasks: true,
+          },
         },
       },
-    },
-  }), [searchText, buildWhereClause, buildOrderBy, filters]);
+    };
+  }, [searchText, buildWhereClause, buildOrderBy, filters]);
 
   const { items: sectors, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useSectorsInfiniteMobile(queryParams);
   const { delete: deleteSector } = useSectorMutations();
@@ -360,7 +364,13 @@ export default function SectorListScreen() {
 
       {/* Column Visibility Drawer */}
       <ColumnVisibilityDrawerV2
-        columns={allColumns}
+        columns={allColumns.map(col => ({
+          key: col.key,
+          header: col.header,
+          accessor: col.accessor as (item: any) => React.ReactNode,
+          sortable: col.sortable,
+          align: col.align,
+        }))}
         visibleColumns={new Set(visibleColumns)}
         onVisibilityChange={handleColumnsChange}
         open={showColumnManager}

@@ -27,7 +27,14 @@ export function PpeRequestModal({
   onSuccess,
 }: PpeRequestModalProps) {
   const { user } = useAuth();
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<{
+    id: string;
+    name: string;
+    ppeType: string | null;
+    ppeCA?: string;
+    brand?: { name: string };
+    currentStock?: number;
+  } | null>(null);
   const [stockAvailable, setStockAvailable] = useState<number | null>(null);
 
   // Get user's PPE size

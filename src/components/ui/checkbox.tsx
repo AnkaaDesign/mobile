@@ -9,6 +9,7 @@ export interface CheckboxProps {
   disabled?: boolean;
   style?: ViewStyle;
   className?: string;
+  label?: string;
 }
 
 const Checkbox = React.forwardRef<View, CheckboxProps>(({ checked = false, onCheckedChange, disabled = false, style, className, ...props }, ref) => {

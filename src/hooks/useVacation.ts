@@ -1,6 +1,6 @@
 // packages/hooks/src/useVacation.ts
 
-import { getVacations, getVacationById, createVacation, updateVacation, deleteVacation, batchCreateVacations, batchUpdateVacations, batchDeleteVacations } from '../api-client';
+import { getVacations, getVacationById, createVacation, updateVacation, deleteVacation, batchCreateVacations, batchUpdateVacations, batchDeleteVacations } from '@/api-client';
 import type {
   VacationGetManyFormData,
   VacationCreateFormData,
@@ -8,7 +8,7 @@ import type {
   VacationBatchCreateFormData,
   VacationBatchUpdateFormData,
   VacationBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   VacationGetManyResponse,
   VacationGetUniqueResponse,
@@ -18,7 +18,7 @@ import type {
   VacationBatchCreateResponse,
   VacationBatchUpdateResponse,
   VacationBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { vacationKeys, userKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

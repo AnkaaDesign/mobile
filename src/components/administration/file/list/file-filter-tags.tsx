@@ -23,10 +23,10 @@ export function FileFilterTags({ filters, searchText, onFilterChange, onSearchCh
   const mimeTypes = filters.where?.mimetype?.in || [];
   const sizeMin = filters.where?.size?.gte;
   const sizeMax = filters.where?.size?.lte;
-  const createdStart = filters.where?.createdAt?.gte;
-  const createdEnd = filters.where?.createdAt?.lte;
-  const updatedStart = filters.where?.updatedAt?.gte;
-  const updatedEnd = filters.where?.updatedAt?.lte;
+  const createdStart = filters.createdAt?.gte;
+  const createdEnd = filters.createdAt?.lte;
+  const updatedStart = filters.updatedAt?.gte;
+  const updatedEnd = filters.updatedAt?.lte;
 
   // Calculate total active filters
   const hasFilters =
@@ -65,12 +65,9 @@ export function FileFilterTags({ filters, searchText, onFilterChange, onSearchCh
 
   // Helper to remove date filter
   const removeDateFilter = (field: "createdAt" | "updatedAt") => {
-    const newWhere = { ...filters.where };
-    delete newWhere[field];
-    onFilterChange({
-      ...filters,
-      where: newWhere,
-    });
+    const updatedFilters = { ...filters };
+    delete updatedFilters[field];
+    onFilterChange(updatedFilters);
   };
 
   // Get MIME type labels
@@ -90,65 +87,47 @@ export function FileFilterTags({ filters, searchText, onFilterChange, onSearchCh
         {/* Search Tag */}
         {searchText && (
           <Badge variant="secondary" style={styles.tag}>
-            <View style={styles.tagContent}>
-              <ThemedText style={styles.tagText}>Busca: {searchText}</ThemedText>
-              <IconX size={14} color={colors.foreground} onPress={() => onSearchChange("")} />
-            </View>
+            <ThemedText style={styles.tagText}>Busca: {searchText}</ThemedText>
           </Badge>
         )}
 
         {/* MIME Type Tags */}
         {mimeTypes.map((mimeType: string) => (
           <Badge key={mimeType} variant="secondary" style={styles.tag}>
-            <View style={styles.tagContent}>
-              <ThemedText style={styles.tagText}>{getMimeTypeLabel(mimeType)}</ThemedText>
-              <IconX size={14} color={colors.foreground} onPress={() => removeMimeType(mimeType)} />
-            </View>
+            <ThemedText style={styles.tagText}>{getMimeTypeLabel(mimeType)}</ThemedText>
           </Badge>
         ))}
 
         {/* Size Range Tag */}
         {(sizeMin !== undefined || sizeMax !== undefined) && (
           <Badge variant="secondary" style={styles.tag}>
-            <View style={styles.tagContent}>
-              <ThemedText style={styles.tagText}>
-                Tamanho: {sizeMin !== undefined ? formatFileSize(sizeMin) : "0"} - {sizeMax !== undefined ? formatFileSize(sizeMax) : "∞"}
-              </ThemedText>
-              <IconX size={14} color={colors.foreground} onPress={removeSizeFilter} />
-            </View>
+            <ThemedText style={styles.tagText}>
+              Tamanho: {sizeMin !== undefined ? formatFileSize(sizeMin) : "0"} - {sizeMax !== undefined ? formatFileSize(sizeMax) : "∞"}
+            </ThemedText>
           </Badge>
         )}
 
         {/* Created Date Tag */}
         {(createdStart !== undefined || createdEnd !== undefined) && (
           <Badge variant="secondary" style={styles.tag}>
-            <View style={styles.tagContent}>
-              <ThemedText style={styles.tagText}>
-                Criado: {createdStart ? new Date(createdStart).toLocaleDateString() : "∞"} - {createdEnd ? new Date(createdEnd).toLocaleDateString() : "∞"}
-              </ThemedText>
-              <IconX size={14} color={colors.foreground} onPress={() => removeDateFilter("createdAt")} />
-            </View>
+            <ThemedText style={styles.tagText}>
+              Criado: {createdStart ? (createdStart instanceof Date ? createdStart.toLocaleDateString() : new Date(createdStart).toLocaleDateString()) : "∞"} - {createdEnd ? (createdEnd instanceof Date ? createdEnd.toLocaleDateString() : new Date(createdEnd).toLocaleDateString()) : "∞"}
+            </ThemedText>
           </Badge>
         )}
 
         {/* Updated Date Tag */}
         {(updatedStart !== undefined || updatedEnd !== undefined) && (
           <Badge variant="secondary" style={styles.tag}>
-            <View style={styles.tagContent}>
-              <ThemedText style={styles.tagText}>
-                Atualizado: {updatedStart ? new Date(updatedStart).toLocaleDateString() : "∞"} - {updatedEnd ? new Date(updatedEnd).toLocaleDateString() : "∞"}
-              </ThemedText>
-              <IconX size={14} color={colors.foreground} onPress={() => removeDateFilter("updatedAt")} />
-            </View>
+            <ThemedText style={styles.tagText}>
+              Atualizado: {updatedStart ? (updatedStart instanceof Date ? updatedStart.toLocaleDateString() : new Date(updatedStart).toLocaleDateString()) : "∞"} - {updatedEnd ? (updatedEnd instanceof Date ? updatedEnd.toLocaleDateString() : new Date(updatedEnd).toLocaleDateString()) : "∞"}
+            </ThemedText>
           </Badge>
         )}
 
         {/* Clear All */}
-        <Badge variant="destructive" style={styles.tag} onPress={onClearAll}>
-          <View style={styles.tagContent}>
-            <ThemedText style={[styles.tagText, { color: colors.destructiveForeground }]}>Limpar tudo</ThemedText>
-            <IconX size={14} color={colors.destructiveForeground} />
-          </View>
+        <Badge variant="destructive" style={styles.tag}>
+          <ThemedText style={[styles.tagText, { color: colors.destructiveForeground }]}>Limpar tudo</ThemedText>
         </Badge>
       </ScrollView>
     </View>

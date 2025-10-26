@@ -1,6 +1,6 @@
 // packages/hooks/src/useCustomer.ts
 
-import { createCustomer, deleteCustomer, getCustomerById, getCustomers, updateCustomer, batchCreateCustomers, batchUpdateCustomers, batchDeleteCustomers } from '../api-client';
+import { createCustomer, deleteCustomer, getCustomerById, getCustomers, updateCustomer, batchCreateCustomers, batchUpdateCustomers, batchDeleteCustomers } from '@/api-client';
 import type {
   CustomerCreateFormData,
   CustomerUpdateFormData,
@@ -8,7 +8,7 @@ import type {
   CustomerBatchCreateFormData,
   CustomerBatchUpdateFormData,
   CustomerBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   CustomerGetManyResponse,
   CustomerGetUniqueResponse,
@@ -18,7 +18,7 @@ import type {
   CustomerBatchCreateResponse,
   CustomerBatchUpdateResponse,
   CustomerBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { customerKeys, taskKeys, fileKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

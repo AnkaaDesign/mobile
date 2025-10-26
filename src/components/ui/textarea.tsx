@@ -9,11 +9,15 @@ export interface TextareaProps extends Omit<TextInputProps, "style" | "multiline
   containerStyle?: ViewStyle;
   inputStyle?: TextStyle;
   error?: boolean;
+  errorMessage?: string;
   numberOfLines?: number;
   className?: string;
+  disabled?: boolean;
 }
 
-const Textarea = React.forwardRef<TextInput, TextareaProps>(({ style, containerStyle, inputStyle, error, editable = true, numberOfLines = 4, className, ...props }, ref) => {
+const Textarea = React.forwardRef<TextInput, TextareaProps>(({ style, containerStyle, inputStyle, error, errorMessage, editable = true, disabled, numberOfLines = 4, className, ...props }, ref) => {
+  // Handle disabled prop
+  const isEditable = disabled !== undefined ? !disabled : editable;
   const { colors, isDark } = useTheme();
   const [isFocused, setIsFocused] = React.useState(false);
   const borderColorAnim = React.useRef(new Animated.Value(0)).current;
@@ -52,7 +56,7 @@ const Textarea = React.forwardRef<TextInput, TextareaProps>(({ style, containerS
     ...(error && {
       borderColor: colors.destructive,
     }),
-    ...(editable === false && {
+    ...(isEditable === false && {
       opacity: 0.5,
       backgroundColor: isDark ? colors.muted : colors.background,
     }),
@@ -97,7 +101,7 @@ const Textarea = React.forwardRef<TextInput, TextareaProps>(({ style, containerS
             ref={ref}
             style={baseInputStyles}
             placeholderTextColor={colors.mutedForeground}
-            editable={editable}
+            editable={isEditable}
             multiline={true}
             numberOfLines={numberOfLines}
             onFocus={(e) => {

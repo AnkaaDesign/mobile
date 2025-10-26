@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { secullumService } from '../api-client';
-import type { SecullumAuthCredentials } from '../api-client';
+import { secullumService } from '@/api-client';
+import type { SecullumAuthCredentials } from '@/api-client';
 
 // Query keys
 export const secullumKeys = {

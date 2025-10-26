@@ -69,7 +69,7 @@ export const PpeDeliveryFilterModal = ({ visible, onClose, onApply, currentFilte
     setFilters((prev) => {
       const statuses = prev.statuses || [];
       if (checked) {
-        return { ...prev, statuses: [...statuses, status as any] };
+        return { ...prev, statuses: [...statuses, status as keyof typeof PPE_DELIVERY_STATUS] };
       } else {
         return { ...prev, statuses: statuses.filter((s) => s !== status) };
       }
@@ -174,8 +174,8 @@ export const PpeDeliveryFilterModal = ({ visible, onClose, onApply, currentFilte
             {expandedSections.has("status") && (
               <View style={styles.sectionContent}>
                 {Object.entries(PPE_DELIVERY_STATUS_LABELS).map(([key, label]) => (
-                  <TouchableOpacity key={key} style={styles.checkboxRow} onPress={() => handleStatusChange(key, !filters.statuses?.includes(key as any))}>
-                    <Checkbox checked={filters.statuses?.includes(key as any) || false} onCheckedChange={(checked) => handleStatusChange(key, checked as boolean)} />
+                  <TouchableOpacity key={key} style={styles.checkboxRow} onPress={() => handleStatusChange(key, !filters.statuses?.includes(key as keyof typeof PPE_DELIVERY_STATUS))}>
+                    <Checkbox checked={filters.statuses?.includes(key as keyof typeof PPE_DELIVERY_STATUS) || false} onCheckedChange={(checked) => handleStatusChange(key, checked as boolean)} />
                     <ThemedText style={styles.checkboxLabel}>{label}</ThemedText>
                   </TouchableOpacity>
                 ))}

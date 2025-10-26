@@ -1,7 +1,7 @@
 // packages/interfaces/src/economic-activity.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION } from '../constants';
+import type { ORDER_BY_DIRECTION } from '@/constants';
 import type { Customer, CustomerIncludes } from "./customer";
 
 // =====================
@@ -66,8 +66,8 @@ export interface EconomicActivityDeleteResponse extends BaseDeleteResponse {}
 // Batch Operation Responses
 // =====================
 
-export interface EconomicActivityBatchCreateResponse<T> extends BaseBatchResponse<EconomicActivity, T> {}
-export interface EconomicActivityBatchUpdateResponse<T> extends BaseBatchResponse<EconomicActivity, T & { id: string }> {}
+export interface EconomicActivityBatchCreateResponse<T = any> extends BaseBatchResponse<EconomicActivity, T> {}
+export interface EconomicActivityBatchUpdateResponse<T = any> extends BaseBatchResponse<EconomicActivity, T & { id: string }> {}
 export interface EconomicActivityBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
 
 // =====================

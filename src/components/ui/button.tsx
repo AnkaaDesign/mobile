@@ -3,6 +3,7 @@ import { Pressable, Text, View, ViewStyle, TextStyle, Animated, StyleSheet} from
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, fontSize, fontWeight, transitions, componentSizes } from "@/constants/design-system";
+import type { ThemeColors } from "@/types/theme";
 
 export interface ButtonProps {
   onPress?: () => void;
@@ -10,11 +11,12 @@ export interface ButtonProps {
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "sm" | "lg" | "icon";
   children?: React.ReactNode;
+  icon?: React.ReactNode;
   style?: ViewStyle;
   className?: string;
 }
 
-const getButtonStyles = (variant: ButtonProps["variant"] = "default", size: ButtonProps["size"] = "default", colors: any, isDark?: boolean): ViewStyle => {
+const getButtonStyles = (variant: ButtonProps["variant"] = "default", size: ButtonProps["size"] = "default", colors: ThemeColors, isDark?: boolean): ViewStyle => {
   const baseStyles: ViewStyle = {
     flexDirection: "row",
     alignItems: "center",
@@ -86,7 +88,7 @@ const getButtonStyles = (variant: ButtonProps["variant"] = "default", size: Butt
   };
 };
 
-const getTextStyles = (variant: ButtonProps["variant"] = "default", size: ButtonProps["size"] = "default", colors: any): TextStyle => {
+const getTextStyles = (variant: ButtonProps["variant"] = "default", size: ButtonProps["size"] = "default", colors: ThemeColors): TextStyle => {
   const baseStyles: TextStyle = {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium as any,
@@ -126,7 +128,6 @@ const getTextStyles = (variant: ButtonProps["variant"] = "default", size: Button
       color: colors.primary,
       textDecorationLine: "underline",
       textDecorationStyle: "solid",
-      textUnderlineOffset: 4,
     },
   };
 
@@ -137,7 +138,7 @@ const getTextStyles = (variant: ButtonProps["variant"] = "default", size: Button
   };
 };
 
-const getPressedStyles = (variant: ButtonProps["variant"] = "default", colors: any): ViewStyle => {
+const getPressedStyles = (variant: ButtonProps["variant"] = "default", colors: ThemeColors): ViewStyle => {
   const pressedStyles: Record<string, ViewStyle> = {
     default: {
       opacity: 0.9,
@@ -162,7 +163,7 @@ const getPressedStyles = (variant: ButtonProps["variant"] = "default", colors: a
   return pressedStyles[variant as keyof typeof pressedStyles];
 };
 
-const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size = "default", disabled, children, style, className, onPress, ...props }, ref) => {
+const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size = "default", disabled, children, icon, style, className, onPress, ...props }, ref) => {
   const { colors, isDark } = useTheme();
   const scaleValue = React.useRef(new Animated.Value(1)).current;
   const opacityValue = React.useRef(new Animated.Value(1)).current;
@@ -216,14 +217,15 @@ const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size 
     return React.Children.map(children, (child) => {
       if (React.isValidElement(child)) {
         // Check if it's a Text component or any component with text-like name
-        const childType = child.type as any;
+        const childType = child.type as React.ComponentType<{ displayName?: string; name?: string }> | typeof Text;
         if (
           childType === Text ||
-          (typeof childType === "function" && childType.displayName && childType.displayName.includes("Text")) ||
-          (typeof childType === "function" && childType.name && childType.name.includes("Text"))
+          (typeof childType === "function" && 'displayName' in childType && childType.displayName && childType.displayName.includes("Text")) ||
+          (typeof childType === "function" && 'name' in childType && childType.name && childType.name.includes("Text"))
         ) {
-          return React.cloneElement(child as React.ReactElement<any>, {
-            style: StyleSheet.flatten([textStyles, child.props.style]),
+          const element = child as React.ReactElement<{ style?: TextStyle }>;
+          return React.cloneElement(element, {
+            style: StyleSheet.flatten([textStyles, element.props.style]),
           });
         }
       }
@@ -248,6 +250,7 @@ const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size 
             },
           ])}
         >
+          {icon}
           {renderChildren()}
         </Animated.View>
       )}

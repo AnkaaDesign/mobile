@@ -98,34 +98,25 @@ export default function AdministrationDashboardScreen() {
           <View style={styles.metricsGrid}>
             <DashboardCard
               title="Total de Clientes"
-              value={data?.customerSummary?.totalCustomers?.value || 0}
+              value={data?.customerAnalysis?.totalCustomers?.value || 0}
               icon="users"
               color="#6366f1"
-              trend={data?.customerSummary?.totalCustomers?.trend}
-              change={data?.customerSummary?.totalCustomers?.changePercent}
+              trend={data?.customerAnalysis?.totalCustomers?.trend}
+              change={data?.customerAnalysis?.totalCustomers?.changePercent}
             />
             <DashboardCard
-              title="Clientes Ativos"
-              value={data?.customerSummary?.activeCustomers?.value || 0}
-              icon="user-check"
+              title="Clientes com Tags"
+              value={data?.customerAnalysis?.customersWithTags?.value || 0}
+              icon="tag"
               color="#10b981"
-              trend={data?.customerSummary?.activeCustomers?.trend}
-              change={data?.customerSummary?.activeCustomers?.changePercent}
+              trend={data?.customerAnalysis?.customersWithTags?.trend}
+              change={data?.customerAnalysis?.customersWithTags?.changePercent}
             />
             <DashboardCard
-              title="Novos Clientes"
-              value={data?.customerSummary?.newCustomers?.value || 0}
-              icon="user-plus"
+              title="Top Clientes"
+              value={data?.customerAnalysis?.topCustomersByTasks?.length || 0}
+              icon="star"
               color="#3b82f6"
-              trend={data?.customerSummary?.newCustomers?.trend}
-              change={data?.customerSummary?.newCustomers?.changePercent}
-            />
-            <DashboardCard
-              title="Taxa de Retenção"
-              value={`${(data?.customerSummary?.retentionRate || 0).toFixed(1)}%`}
-              icon="heart"
-              color="#ec4899"
-              unit=""
             />
           </View>
         </View>
@@ -136,97 +127,92 @@ export default function AdministrationDashboardScreen() {
           <View style={styles.metricsGrid}>
             <DashboardCard
               title="Total de Pedidos"
-              value={data?.orderSummary?.totalOrders?.value || 0}
+              value={data?.orderOverview?.totalOrders?.value || 0}
               icon="shopping-cart"
               color="#8b5cf6"
-              trend={data?.orderSummary?.totalOrders?.trend}
-              change={data?.orderSummary?.totalOrders?.changePercent}
+              trend={data?.orderOverview?.totalOrders?.trend}
+              change={data?.orderOverview?.totalOrders?.changePercent}
             />
             <DashboardCard
               title="Pedidos Pendentes"
-              value={data?.orderSummary?.pendingOrders?.value || 0}
+              value={data?.orderOverview?.pendingOrders?.value || 0}
               icon="clock"
               color="#f59e0b"
-              trend={data?.orderSummary?.pendingOrders?.trend}
-              change={data?.orderSummary?.pendingOrders?.changePercent}
+              trend={data?.orderOverview?.pendingOrders?.trend}
+              change={data?.orderOverview?.pendingOrders?.changePercent}
             />
             <DashboardCard
-              title="Pedidos Concluídos"
-              value={data?.orderSummary?.completedOrders?.value || 0}
-              icon="check-circle"
-              color="#10b981"
-              trend={data?.orderSummary?.completedOrders?.trend}
-              change={data?.orderSummary?.completedOrders?.changePercent}
+              title="Pedidos Atrasados"
+              value={data?.orderOverview?.overdueOrders?.value || 0}
+              icon="alert-circle"
+              color="#ef4444"
+              trend={data?.orderOverview?.overdueOrders?.trend}
+              change={data?.orderOverview?.overdueOrders?.changePercent}
             />
             <DashboardCard
-              title="Taxa de Conclusão"
-              value={`${(data?.orderSummary?.completionRate || 0).toFixed(1)}%`}
-              icon="trending-up"
+              title="Com Agendamento"
+              value={data?.orderOverview?.ordersWithSchedule?.value || 0}
+              icon="calendar-check"
               color="#06b6d4"
-              unit=""
+              trend={data?.orderOverview?.ordersWithSchedule?.trend}
+              change={data?.orderOverview?.ordersWithSchedule?.changePercent}
             />
           </View>
         </View>
 
-        {/* Revenue Analysis */}
+        {/* Task Overview */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Receita</Text>
+          <Text style={styles.sectionTitle}>Tarefas</Text>
           <View style={styles.metricsGrid}>
             <DashboardCard
-              title="Receita Total"
-              value={formatCurrency(data?.revenue || 0)}
-              icon="currency-dollar"
-              color="#10b981"
-              unit=""
-            />
-            <DashboardCard
-              title="Receita Média/Pedido"
-              value={formatCurrency(data?.averageOrderValue || 0)}
-              icon="receipt"
-              color="#3b82f6"
-              unit=""
+              title="Total de Tarefas"
+              value={data?.taskOverview?.totalTasks?.value || 0}
+              icon="clipboard"
+              color="#8b5cf6"
+              trend={data?.taskOverview?.totalTasks?.trend}
+              change={data?.taskOverview?.totalTasks?.changePercent}
             />
           </View>
         </View>
 
-        {/* User Activity */}
+        {/* User Metrics */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Atividade de Usuários</Text>
+          <Text style={styles.sectionTitle}>Usuários</Text>
           <View style={styles.metricsGrid}>
             <DashboardCard
               title="Total de Usuários"
-              value={data?.userActivity?.totalUsers?.value || 0}
+              value={data?.userMetrics?.totalUsers?.value || 0}
               icon="users"
-              color="#8b5cf6"
-              trend={data?.userActivity?.totalUsers?.trend}
-              change={data?.userActivity?.totalUsers?.changePercent}
+              color="#6366f1"
+              trend={data?.userMetrics?.totalUsers?.trend}
+              change={data?.userMetrics?.totalUsers?.changePercent}
             />
             <DashboardCard
               title="Usuários Ativos"
-              value={data?.userActivity?.activeUsers?.value || 0}
+              value={data?.userMetrics?.activeUsers?.value || 0}
               icon="user-check"
               color="#10b981"
-              trend={data?.userActivity?.activeUsers?.trend}
-              change={data?.userActivity?.activeUsers?.changePercent}
+              trend={data?.userMetrics?.activeUsers?.trend}
+              change={data?.userMetrics?.activeUsers?.changePercent}
             />
             <DashboardCard
               title="Novos Usuários"
-              value={data?.userActivity?.newUsers?.value || 0}
+              value={data?.userMetrics?.newUsersThisWeek?.value || 0}
               icon="user-plus"
               color="#3b82f6"
-              trend={data?.userActivity?.newUsers?.trend}
-              change={data?.userActivity?.newUsers?.changePercent}
+              trend={data?.userMetrics?.newUsersThisWeek?.trend}
+              change={data?.userMetrics?.newUsersThisWeek?.changePercent}
             />
           </View>
         </View>
 
         {/* Top Customers */}
-        {data?.topCustomers && data.topCustomers.length > 0 && (
+        {data?.customerAnalysis?.topCustomersByTasks && data.customerAnalysis.topCustomersByTasks.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Top Clientes</Text>
             <Card>
               <CardContent>
-                {data.topCustomers.slice(0, 5).map((customer, index) => (
+                {data.customerAnalysis.topCustomersByTasks.slice(0, 5).map((customer, index: number) => (
                   <View key={index} style={styles.customerItem}>
                     <View style={styles.customerRank}>
                       <Text style={styles.customerRankText}>{index + 1}</Text>
@@ -234,7 +220,7 @@ export default function AdministrationDashboardScreen() {
                     <View style={styles.customerContent}>
                       <Text style={styles.customerName}>{customer.name}</Text>
                       <Text style={styles.customerMetric}>
-                        {customer.value} pedidos • {formatCurrency(customer.revenue || 0)}
+                        {customer.value} tarefas • {customer.percentage?.toFixed(1)}%
                       </Text>
                     </View>
                     <Icon name="chevron-right" size={20} color="#9ca3af" />
@@ -246,14 +232,14 @@ export default function AdministrationDashboardScreen() {
         )}
 
         {/* Customer Type Distribution */}
-        {data?.customerTypeDistribution && (
+        {data?.customerAnalysis?.customersByType && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Distribuição de Clientes</Text>
             <Card>
               <CardContent>
-                {data.customerTypeDistribution.labels?.map((label, index) => {
-                  const value = data.customerTypeDistribution.datasets[0]?.data[index] || 0;
-                  const total = data.customerTypeDistribution.datasets[0]?.data.reduce((a, b) => a + b, 0) || 1;
+                {data.customerAnalysis.customersByType.labels?.map((label: string, index: number) => {
+                  const value = data.customerAnalysis.customersByType.datasets[0]?.data[index] || 0;
+                  const total = data.customerAnalysis.customersByType.datasets[0]?.data.reduce((a: number, b: number) => a + b, 0) || 1;
                   const percentage = (value / total) * 100;
 
                   return (
@@ -282,29 +268,29 @@ export default function AdministrationDashboardScreen() {
           </View>
         )}
 
-        {/* Recent Activity */}
-        {data?.recentActivity && data.recentActivity.length > 0 && (
+        {/* Recent Activities */}
+        {data?.recentActivities && data.recentActivities.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Atividades Recentes</Text>
             <Card>
               <CardContent>
-                {data.recentActivity.slice(0, 8).map((activity, index) => (
+                {data.recentActivities.slice(0, 8).map((activity, index: number) => (
                   <View key={index} style={styles.activityItem}>
                     <View style={styles.activityIcon}>
                       <Icon
-                        name={activity.type === "ORDER" ? "shopping-cart" : "user"}
+                        name={activity.type === "ORDER" ? "shopping-cart" : "file-text"}
                         size={16}
                         color="#6b7280"
                       />
                     </View>
                     <View style={styles.activityContent}>
-                      <Text style={styles.activityTitle}>{activity.description}</Text>
+                      <Text style={styles.activityTitle}>{activity.title}</Text>
                       <Text style={styles.activityDescription}>
-                        {activity.userName || "Sistema"} • {new Date(activity.createdAt).toLocaleDateString("pt-BR")}
+                        {activity.description}
                       </Text>
                     </View>
                     <Text style={styles.activityTime}>
-                      {new Date(activity.createdAt).toLocaleTimeString("pt-BR", {
+                      {new Date(activity.timestamp).toLocaleTimeString("pt-BR", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
@@ -330,13 +316,13 @@ export default function AdministrationDashboardScreen() {
               <View style={styles.summaryItem}>
                 <Icon name="trending-up" size={20} color="#10b981" />
                 <Text style={styles.summaryText}>
-                  Crescimento de clientes: {data?.customerSummary?.newCustomers?.changePercent || 0}%
+                  Total de Clientes: {data?.customerAnalysis?.totalCustomers?.value || 0}
                 </Text>
               </View>
               <View style={styles.summaryItem}>
-                <Icon name="check-circle" size={20} color="#10b981" />
+                <Icon name="shopping-cart" size={20} color="#8b5cf6" />
                 <Text style={styles.summaryText}>
-                  Taxa de conclusão de pedidos: {(data?.orderSummary?.completionRate || 0).toFixed(1)}%
+                  Total de Pedidos: {data?.orderOverview?.totalOrders?.value || 0}
                 </Text>
               </View>
             </CardContent>

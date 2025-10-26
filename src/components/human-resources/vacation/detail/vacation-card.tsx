@@ -54,7 +54,7 @@ export function VacationCard({ vacation }: VacationCardProps) {
         <View style={styles.vacationContent}>
           {/* Status and Type Badges */}
           <View style={styles.badgesRow}>
-            <Badge variant={getBadgeVariant("VACATION_STATUS", vacation.status)}>
+            <Badge variant={getBadgeVariant(vacation.status, "VACATION")}>
               <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.primaryForeground }])}>
                 {VACATION_STATUS_LABELS[vacation.status]}
               </ThemedText>

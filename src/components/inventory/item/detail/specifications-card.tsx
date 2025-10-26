@@ -19,7 +19,7 @@ import {
   IconDroplet,
   IconHash,
 } from "@tabler/icons-react-native";
-import type { Item } from '../../../../types';
+import type { Item, Measure } from '../../../../types';
 import { MEASURE_UNIT_LABELS, MEASURE_TYPE_LABELS, MEASURE_TYPE } from '../../../../constants';
 import { getMeasureUnitCategory, convertValue, canConvertUnits, getUnitsInCategory, MEASURE_CATEGORIES } from '../../../../types/measure';
 import { useTheme } from "@/lib/theme";
@@ -35,7 +35,7 @@ export function SpecificationsCard({ item }: SpecificationsCardProps) {
 
   // Check if we have any specifications to show
   const hasProductInfo = item.brand || item.category || item.supplier;
-  const hasIdentification = item.uniCode || (item as any).ppeConfig?.ca || (item.barcodes && item.barcodes.length > 0);
+  const hasIdentification = item.uniCode || item.ppeCA || (item.barcodes && item.barcodes.length > 0);
   const hasMeasures = item.measures && item.measures.length > 0;
   const hasPackaging = item.boxQuantity !== null;
   const hasLogistics = item.estimatedLeadTime !== null;
@@ -58,7 +58,7 @@ export function SpecificationsCard({ item }: SpecificationsCardProps) {
     }
   };
 
-  const getConversionOptions = (measure: any) => {
+  const getConversionOptions = (measure: Measure) => {
     const compatibleUnits = getUnitsInCategory(getMeasureUnitCategory(measure.unit))
       .filter((unit) => unit !== measure.unit && canConvertUnits(measure.unit, unit))
       .slice(0, 2); // Show only first 2 conversions
@@ -155,14 +155,14 @@ export function SpecificationsCard({ item }: SpecificationsCardProps) {
                   </View>
                 )}
 
-                {(item as any).ppeConfig?.ca && (
+                {item.ppeCA && (
                   <View>
                     <View style={styles.specIdHeader}>
                       <IconBadge size={16} color={colors.mutedForeground} />
                       <ThemedText style={StyleSheet.flatten([styles.specIdLabel, { color: colors.mutedForeground }])}>Certificado de Aprovação (CA)</ThemedText>
                     </View>
                     <View style={StyleSheet.flatten([styles.specIdValue, { backgroundColor: colors.muted + "30" }])}>
-                      <ThemedText style={{ fontSize: fontSize.base, color: colors.foreground }}>{(item as any).ppeConfig.ca}</ThemedText>
+                      <ThemedText style={{ fontSize: fontSize.base, color: colors.foreground }}>{item.ppeCA}</ThemedText>
                     </View>
                   </View>
                 )}

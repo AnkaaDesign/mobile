@@ -1,8 +1,8 @@
 // packages/hooks/src/useLayout.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { layoutService } from '../api-client';
-import type { LayoutCreateFormData, LayoutUpdateFormData } from '../schemas';
+import { layoutService } from '@/api-client';
+import type { LayoutCreateFormData, LayoutUpdateFormData } from '@/schemas';
 
 // Query keys
 export const layoutQueryKeys = {

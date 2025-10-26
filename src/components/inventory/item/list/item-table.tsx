@@ -14,6 +14,7 @@ import { StockStatusIndicator } from "./stock-status-indicator";
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
 import { formatCurrency } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -24,10 +25,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface ItemTableProps {
   items: Item[];

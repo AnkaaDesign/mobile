@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useSuppliersInfinite } from './useSupplier';
-import { SupplierGetManyFormData } from '../schemas';
+import { SupplierGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for suppliers

@@ -1,13 +1,11 @@
 import { AIRBRUSHING_STATUS_LABELS } from '../constants';
 import { AIRBRUSHING_STATUS } from '../constants';
-import type { AirbrushingStatus } from "@prisma/client";
 
 /**
- * Map AIRBRUSHING_STATUS enum to Prisma AirbrushingStatus enum
- * This is needed because TypeScript doesn't recognize that the string values are compatible
+ * Map AIRBRUSHING_STATUS enum to string
  */
-export function mapAirbrushingStatusToPrisma(status: AIRBRUSHING_STATUS | string): AirbrushingStatus {
-  return status as AirbrushingStatus;
+export function mapAirbrushingStatusToPrisma(status: AIRBRUSHING_STATUS | string): string {
+  return status as string;
 }
 
 export function getAirbrushingStatusLabel(status: AIRBRUSHING_STATUS): string {

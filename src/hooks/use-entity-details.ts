@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getItemCategoryById, getItemBrandById, getSupplierById, getUserById } from '../api-client';
+import { getItemCategoryById, getItemBrandById, getSupplierById, getUserById } from '@/api-client';
 
 interface EntityDetails {
   categories: Map<string, string>;

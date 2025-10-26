@@ -40,8 +40,8 @@ function Skeleton({ style, width, height, borderRadius = 6, ...props }: Skeleton
   const skeletonStyles: ViewStyle = {
     backgroundColor: isDark ? colors.muted : colors.muted,
     borderRadius,
-    width,
-    height,
+    width: width as ViewStyle['width'],
+    height: height as ViewStyle['height'],
     ...style,
   };
 

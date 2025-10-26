@@ -16,6 +16,7 @@ import { extendedColors } from "@/lib/theme/extended-colors";
 
 // Import default visible columns function
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -26,10 +27,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface OrderTableProps {
   orders: Order[];

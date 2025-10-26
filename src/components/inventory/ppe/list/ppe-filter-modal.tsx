@@ -48,13 +48,27 @@ export const PpeFilterModal: React.FC<PpeFilterModalProps> = ({
   };
 
 
-  const handleDateChange = (field: 'createdFrom' | 'createdTo', date: Date | undefined) => {
+  const handleDateChange = (field: 'gte' | 'lte', date: Date | undefined) => {
     if (!date) {
       const newFilters = { ...filters };
-      delete newFilters[field as keyof typeof newFilters];
+      if (newFilters.createdAtRange) {
+        const updatedRange = { ...newFilters.createdAtRange };
+        delete updatedRange[field];
+        if (Object.keys(updatedRange).length === 0) {
+          delete newFilters.createdAtRange;
+        } else {
+          newFilters.createdAtRange = updatedRange;
+        }
+      }
       setFilters(newFilters);
     } else {
-      setFilters({ ...filters, [field]: date });
+      setFilters({
+        ...filters,
+        createdAtRange: {
+          ...filters.createdAtRange,
+          [field]: date,
+        },
+      });
     }
   };
 
@@ -79,16 +93,16 @@ export const PpeFilterModal: React.FC<PpeFilterModalProps> = ({
             <View style={styles.dateField}>
               <ThemedText style={styles.dateLabel}>De:</ThemedText>
               <DatePicker
-                value={filters.createdFrom}
-                onChange={(date) => handleDateChange('createdFrom', date)}
+                value={filters.createdAtRange?.gte}
+                onChange={(date) => handleDateChange('gte', date)}
                 placeholder="Selecionar"
               />
             </View>
             <View style={styles.dateField}>
               <ThemedText style={styles.dateLabel}>Até:</ThemedText>
               <DatePicker
-                value={filters.createdTo}
-                onChange={(date) => handleDateChange('createdTo', date)}
+                value={filters.createdAtRange?.lte}
+                onChange={(date) => handleDateChange('lte', date)}
                 placeholder="Selecionar"
               />
             </View>

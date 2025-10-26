@@ -1,7 +1,7 @@
 // packages/interfaces/src/maintenance.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { MAINTENANCE_STATUS, SCHEDULE_FREQUENCY, ORDER_BY_DIRECTION, WEEK_DAY, MONTH, RESCHEDULE_REASON } from '../constants';
+import type { MAINTENANCE_STATUS, SCHEDULE_FREQUENCY, ORDER_BY_DIRECTION, WEEK_DAY, MONTH, RESCHEDULE_REASON } from '@/constants';
 import type { Item, ItemIncludes, ItemOrderBy } from "./item";
 import type {
   WeeklyScheduleConfig,
@@ -434,16 +434,16 @@ export interface MaintenanceItemDeleteResponse extends BaseDeleteResponse {}
 // =====================
 
 // Maintenance batch operations
-export interface MaintenanceBatchCreateResponse<T> extends BaseBatchResponse<Maintenance, T> {}
-export interface MaintenanceBatchUpdateResponse<T> extends BaseBatchResponse<Maintenance, T & { id: string }> {}
+export interface MaintenanceBatchCreateResponse<T = any> extends BaseBatchResponse<Maintenance, T> {}
+export interface MaintenanceBatchUpdateResponse<T = any> extends BaseBatchResponse<Maintenance, T & { id: string }> {}
 export interface MaintenanceBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
 
 // MaintenanceSchedule batch operations
-export interface MaintenanceScheduleBatchCreateResponse<T> extends BaseBatchResponse<MaintenanceSchedule, T> {}
-export interface MaintenanceScheduleBatchUpdateResponse<T> extends BaseBatchResponse<MaintenanceSchedule, T & { id: string }> {}
+export interface MaintenanceScheduleBatchCreateResponse<T = any> extends BaseBatchResponse<MaintenanceSchedule, T> {}
+export interface MaintenanceScheduleBatchUpdateResponse<T = any> extends BaseBatchResponse<MaintenanceSchedule, T & { id: string }> {}
 export interface MaintenanceScheduleBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
 
 // MaintenanceItem batch operations
-export interface MaintenanceItemBatchCreateResponse<T> extends BaseBatchResponse<MaintenanceItem, T> {}
-export interface MaintenanceItemBatchUpdateResponse<T> extends BaseBatchResponse<MaintenanceItem, T & { id: string }> {}
+export interface MaintenanceItemBatchCreateResponse<T = any> extends BaseBatchResponse<MaintenanceItem, T> {}
+export interface MaintenanceItemBatchUpdateResponse<T = any> extends BaseBatchResponse<MaintenanceItem, T & { id: string }> {}
 export interface MaintenanceItemBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}

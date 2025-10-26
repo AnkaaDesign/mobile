@@ -12,9 +12,10 @@ export type SortDirection = "asc" | "desc";
 
 /**
  * Sort configuration for a single column
+ * Compatible with web's use-cumulative-sort.ts implementation
  */
 export interface SortConfig {
-  column: string;
+  columnKey: string;
   direction: SortDirection;
   order?: number;
 }
@@ -187,7 +188,7 @@ export class TableSortUtils {
 
     return [...items].sort((a, b) => {
       for (const sortConfig of sortConfigs) {
-        const columnConfig = columnConfigs.get(sortConfig.column);
+        const columnConfig = columnConfigs.get(sortConfig.columnKey);
 
         if (!columnConfig) continue;
 
@@ -220,26 +221,26 @@ export class TableSortUtils {
   /**
    * Toggle sort for a column with advanced options
    */
-  static toggleColumnSort(currentSortConfigs: SortConfig[], column: string, options: ToggleSortOptions = {}): SortConfig[] {
+  static toggleColumnSort(currentSortConfigs: SortConfig[], columnKey: string, options: ToggleSortOptions = {}): SortConfig[] {
     const { multiSort = false, replaceExisting = false, ctrlKey = false, shiftKey = false } = options;
 
     // Multi-sort enabled by Ctrl/Cmd key or explicit option
     const enableMultiSort = multiSort || ctrlKey;
 
     let newSortConfigs = [...currentSortConfigs];
-    const existingIndex = newSortConfigs.findIndex((config) => config.column === column);
+    const existingIndex = newSortConfigs.findIndex((config) => config.columnKey === columnKey);
 
     if (replaceExisting || (!enableMultiSort && existingIndex === -1)) {
       // Replace all sorts with this column
       if (existingIndex !== -1) {
         const existing = newSortConfigs[existingIndex];
         if (existing.direction === "asc") {
-          newSortConfigs = [{ column, direction: "desc", order: 0 }];
+          newSortConfigs = [{ columnKey, direction: "desc", order: 0 }];
         } else {
           newSortConfigs = [];
         }
       } else {
-        newSortConfigs = [{ column, direction: "asc", order: 0 }];
+        newSortConfigs = [{ columnKey, direction: "asc", order: 0 }];
       }
     } else if (existingIndex !== -1) {
       // Column already in sort - toggle direction or remove
@@ -253,7 +254,7 @@ export class TableSortUtils {
     } else {
       // Add new sort config for multi-sort
       const newOrder = newSortConfigs.length;
-      newSortConfigs.push({ column, direction: "asc", order: newOrder });
+      newSortConfigs.push({ columnKey, direction: "asc", order: newOrder });
     }
 
     // Update order values to be sequential
@@ -266,43 +267,43 @@ export class TableSortUtils {
   /**
    * Clear sort for a specific column or all columns
    */
-  static clearSort(currentSortConfigs: SortConfig[], column?: string): SortConfig[] {
-    if (!column) {
+  static clearSort(currentSortConfigs: SortConfig[], columnKey?: string): SortConfig[] {
+    if (!columnKey) {
       return [];
     }
 
-    return currentSortConfigs.filter((config) => config.column !== column).map((config, index) => ({ ...config, order: index }));
+    return currentSortConfigs.filter((config) => config.columnKey !== columnKey).map((config, index) => ({ ...config, order: index }));
   }
 
   /**
    * Get sort direction for a column
    */
-  static getSortDirection(sortConfigs: SortConfig[], column: string): SortDirection | null {
-    const config = sortConfigs.find((config) => config.column === column);
+  static getSortDirection(sortConfigs: SortConfig[], columnKey: string): SortDirection | null {
+    const config = sortConfigs.find((config) => config.columnKey === columnKey);
     return config?.direction || null;
   }
 
   /**
    * Get sort order for a column (0-based index)
    */
-  static getSortOrder(sortConfigs: SortConfig[], column: string): number | null {
-    const config = sortConfigs.find((config) => config.column === column);
+  static getSortOrder(sortConfigs: SortConfig[], columnKey: string): number | null {
+    const config = sortConfigs.find((config) => config.columnKey === columnKey);
     return config?.order ?? null;
   }
 
   /**
    * Get sort configuration for a column
    */
-  static getSortConfig(sortConfigs: SortConfig[], column: string): SortConfig | null {
-    return sortConfigs.find((config) => config.column === column) || null;
+  static getSortConfig(sortConfigs: SortConfig[], columnKey: string): SortConfig | null {
+    return sortConfigs.find((config) => config.columnKey === columnKey) || null;
   }
 
   /**
    * Check if any sorts are active
    */
-  static hasActiveSort(sortConfigs: SortConfig[], column?: string): boolean {
-    if (column) {
-      return sortConfigs.some((config) => config.column === column);
+  static hasActiveSort(sortConfigs: SortConfig[], columnKey?: string): boolean {
+    if (columnKey) {
+      return sortConfigs.some((config) => config.columnKey === columnKey);
     }
     return sortConfigs.length > 0;
   }
@@ -311,14 +312,14 @@ export class TableSortUtils {
    * Get list of actively sorted columns
    */
   static getActiveSortColumns(sortConfigs: SortConfig[]): string[] {
-    return sortConfigs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map((config) => config.column);
+    return sortConfigs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map((config) => config.columnKey);
   }
 
   /**
    * Validate sort configuration
    */
   static validateSortConfig(sortConfig: SortConfig): boolean {
-    return !!(sortConfig.column && (sortConfig.direction === "asc" || sortConfig.direction === "desc") && (sortConfig.order === undefined || sortConfig.order >= 0));
+    return !!(sortConfig.columnKey && (sortConfig.direction === "asc" || sortConfig.direction === "desc") && (sortConfig.order === undefined || sortConfig.order >= 0));
   }
 
   /**
@@ -333,10 +334,10 @@ export class TableSortUtils {
         return parsed.filter(this.validateSortConfig).map((config, index) => ({ ...config, order: index }));
       }
     } catch {
-      // Fallback for simple "column:direction" format
-      const [column, direction] = sortParam.split(":");
-      if (column && (direction === "asc" || direction === "desc")) {
-        return [{ column, direction, order: 0 }];
+      // Fallback for simple "columnKey:direction" format
+      const [columnKey, direction] = sortParam.split(":");
+      if (columnKey && (direction === "asc" || direction === "desc")) {
+        return [{ columnKey, direction, order: 0 }];
       }
     }
 
@@ -352,7 +353,7 @@ export class TableSortUtils {
     // For single sort, use simple format
     if (sortConfigs.length === 1) {
       const config = sortConfigs[0];
-      return `${config.column}:${config.direction}`;
+      return `${config.columnKey}:${config.direction}`;
     }
 
     // For multiple sorts, use JSON format
@@ -529,13 +530,13 @@ export function createSortState(initialSortConfigs: SortConfig[] = [], onSortCha
     onSortChange?.(configs);
   };
 
-  const toggleSort = (column: string, options?: ToggleSortOptions) => {
-    const newConfigs = TableSortUtils.toggleColumnSort(sortConfigs, column, options);
+  const toggleSort = (columnKey: string, options?: ToggleSortOptions) => {
+    const newConfigs = TableSortUtils.toggleColumnSort(sortConfigs, columnKey, options);
     setSortConfigs(newConfigs);
   };
 
-  const clearSort = (column?: string) => {
-    const newConfigs = TableSortUtils.clearSort(sortConfigs, column);
+  const clearSort = (columnKey?: string) => {
+    const newConfigs = TableSortUtils.clearSort(sortConfigs, columnKey);
     setSortConfigs(newConfigs);
   };
 
@@ -544,10 +545,10 @@ export function createSortState(initialSortConfigs: SortConfig[] = [], onSortCha
     setSortConfigs,
     toggleSort,
     clearSort,
-    getSortDirection: (column: string) => TableSortUtils.getSortDirection(sortConfigs, column),
-    getSortOrder: (column: string) => TableSortUtils.getSortOrder(sortConfigs, column),
-    getSortConfig: (column: string) => TableSortUtils.getSortConfig(sortConfigs, column),
-    hasSort: (column?: string) => TableSortUtils.hasActiveSort(sortConfigs, column),
+    getSortDirection: (columnKey: string) => TableSortUtils.getSortDirection(sortConfigs, columnKey),
+    getSortOrder: (columnKey: string) => TableSortUtils.getSortOrder(sortConfigs, columnKey),
+    getSortConfig: (columnKey: string) => TableSortUtils.getSortConfig(sortConfigs, columnKey),
+    hasSort: (columnKey?: string) => TableSortUtils.hasActiveSort(sortConfigs, columnKey),
     getActiveSortColumns: () => TableSortUtils.getActiveSortColumns(sortConfigs),
   };
 }

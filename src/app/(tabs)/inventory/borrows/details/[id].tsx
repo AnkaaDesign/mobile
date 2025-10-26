@@ -9,9 +9,10 @@ import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useBorrow, useBorrowMutations } from '../../../../../hooks';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { BORROW_STATUS, SECTOR_PRIVILEGES } from '../../../../../constants';
+import { BORROW_STATUS, SECTOR_PRIVILEGES, routes } from '../../../../../constants';
 import { hasPrivilege } from '../../../../../utils';
 import { showToast } from "@/components/ui/toast";
+import { routeToMobilePath } from "@/lib/route-mapper";
 import { BorrowStatusCard } from "@/components/inventory/borrow/detail/borrow-status-card";
 import { BorrowItemInfoCard } from "@/components/inventory/borrow/detail/borrow-item-info-card";
 import { BorrowUserInfoCard } from "@/components/inventory/borrow/detail/borrow-user-info-card";
@@ -71,7 +72,7 @@ export default function BorrowDetailsScreen() {
       showToast({ message: "Você não tem permissão para editar", type: "error" });
       return;
     }
-    router.push(`/inventory/borrows/edit/${id}`);
+    router.push(routeToMobilePath(routes.inventory.borrows.edit(id as string)));
   };
 
   // Handle return

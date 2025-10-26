@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useItems as useItemsOriginal } from './';
-import type { ItemGetManyParams } from '../types';
+import type { ItemGetManyParams } from '@/types';
 
 /**
  * Safe wrapper for useItems that ensures React Query context is available

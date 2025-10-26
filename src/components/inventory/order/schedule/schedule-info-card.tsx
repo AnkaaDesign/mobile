@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { InfoRow } from "@/components/ui/info-row";
 import { FrequencyBadge } from "./frequency-badge";
-import { OrderSchedule } from '../../../../types';
+import type { OrderSchedule } from '../../../../types';
 import { SCHEDULE_FREQUENCY } from '../../../../constants';
 import { formatDate } from '../../../../utils';
 import { useTheme } from "@/lib/theme";

@@ -171,23 +171,25 @@ export function BorrowReturnForm({ borrow, onReturn, onMarkAsLost, onCancel, isS
             </CardHeader>
             <CardContent>
               <View style={styles.actionButtons}>
-                <Button
-                  onPress={handleReturn}
-                  disabled={isSubmitting}
-                  style={[styles.actionButton, { backgroundColor: "#10b981" }]}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <IconLoader size={20} color="#ffffff" />
-                      <ThemedText style={styles.actionButtonText}>Processando...</ThemedText>
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="checkCircle" size={20} color="#ffffff" />
-                      <ThemedText style={styles.actionButtonText}>Marcar como Devolvido</ThemedText>
-                    </>
-                  )}
-                </Button>
+                <View style={[styles.actionButton, { backgroundColor: "#10b981" }]}>
+                  <Button
+                    onPress={handleReturn}
+                    disabled={isSubmitting}
+                    style={{ flex: 1 }}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <IconLoader size={20} color="#ffffff" />
+                        <ThemedText style={styles.actionButtonText}>Processando...</ThemedText>
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="checkCircle" size={20} color="#ffffff" />
+                        <ThemedText style={styles.actionButtonText}>Marcar como Devolvido</ThemedText>
+                      </>
+                    )}
+                  </Button>
+                </View>
 
                 <Button
                   variant="destructive"

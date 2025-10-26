@@ -12,6 +12,7 @@ import type {
   CustomerBatchDeleteFormData,
   CustomerGetByIdFormData,
   CustomerQueryFormData,
+  CustomerMergeFormData,
 } from '../schemas';
 import type {
   // Interface types (for responses)
@@ -23,6 +24,7 @@ import type {
   CustomerBatchCreateResponse,
   CustomerBatchUpdateResponse,
   CustomerBatchDeleteResponse,
+  CustomerMergeResponse,
 } from '../types';
 
 // =====================
@@ -54,9 +56,11 @@ export class CustomerService {
   // Mutation Operations
   // =====================
 
-  async createCustomer(data: CustomerCreateFormData, query?: CustomerQueryFormData): Promise<CustomerCreateResponse> {
+  async createCustomer(data: CustomerCreateFormData | FormData, query?: CustomerQueryFormData): Promise<CustomerCreateResponse> {
+    const headers = data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {};
     const response = await apiClient.post<CustomerCreateResponse>(this.basePath, data, {
       params: query,
+      headers,
     });
     return response.data;
   }
@@ -68,15 +72,27 @@ export class CustomerService {
     return response.data;
   }
 
-  async updateCustomer(id: string, data: CustomerUpdateFormData, query?: CustomerQueryFormData): Promise<CustomerUpdateResponse> {
+  async updateCustomer(id: string, data: CustomerUpdateFormData | FormData, query?: CustomerQueryFormData): Promise<CustomerUpdateResponse> {
+    const headers = data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {};
     const response = await apiClient.put<CustomerUpdateResponse>(`${this.basePath}/${id}`, data, {
       params: query,
+      headers,
     });
     return response.data;
   }
 
   async deleteCustomer(id: string): Promise<CustomerDeleteResponse> {
     const response = await apiClient.delete<CustomerDeleteResponse>(`${this.basePath}/${id}`);
+    return response.data;
+  }
+
+  async mergeCustomers(
+    data: CustomerMergeFormData,
+    query?: CustomerQueryFormData
+  ): Promise<CustomerMergeResponse> {
+    const response = await apiClient.post<CustomerMergeResponse>(`${this.basePath}/merge`, data, {
+      params: query,
+    });
     return response.data;
   }
 
@@ -122,12 +138,15 @@ export const getCustomers = (params?: CustomerGetManyFormData) => customerServic
 export const getCustomerById = (id: string, params?: Omit<CustomerGetByIdFormData, "id">) => customerService.getCustomerById(id, params);
 
 // Mutation Operations
-export const createCustomer = (data: CustomerCreateFormData, query?: CustomerQueryFormData) => customerService.createCustomer(data, query);
+export const createCustomer = (data: CustomerCreateFormData | FormData, query?: CustomerQueryFormData) => customerService.createCustomer(data, query);
 export const quickCreateCustomer = (data: CustomerQuickCreateFormData, query?: CustomerQueryFormData) => customerService.quickCreateCustomer(data, query);
-export const updateCustomer = (id: string, data: CustomerUpdateFormData, query?: CustomerQueryFormData) => customerService.updateCustomer(id, data, query);
+export const updateCustomer = (id: string, data: CustomerUpdateFormData | FormData, query?: CustomerQueryFormData) => customerService.updateCustomer(id, data, query);
 export const deleteCustomer = (id: string) => customerService.deleteCustomer(id);
 
 // Batch Operations
 export const batchCreateCustomers = (data: CustomerBatchCreateFormData, query?: CustomerQueryFormData) => customerService.batchCreateCustomers(data, query);
 export const batchUpdateCustomers = (data: CustomerBatchUpdateFormData, query?: CustomerQueryFormData) => customerService.batchUpdateCustomers(data, query);
 export const batchDeleteCustomers = (data: CustomerBatchDeleteFormData, query?: CustomerQueryFormData) => customerService.batchDeleteCustomers(data, query);
+
+// Merge Operations
+export const mergeCustomers = (data: CustomerMergeFormData, query?: CustomerQueryFormData) => customerService.mergeCustomers(data, query);

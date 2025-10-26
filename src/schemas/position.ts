@@ -66,6 +66,20 @@ export const positionIncludeSchema = z
         }),
       ])
       .optional(),
+    sector: z
+      .union([
+        z.boolean(),
+        z.object({
+          include: z
+            .object({
+              users: z.boolean().optional(),
+              tasks: z.boolean().optional(),
+              positions: z.boolean().optional(),
+            })
+            .optional(),
+        }),
+      ])
+      .optional(),
     _count: z.union([z.boolean(), z.object({ select: z.record(z.boolean()).optional() })]).optional(),
   })
   .partial();

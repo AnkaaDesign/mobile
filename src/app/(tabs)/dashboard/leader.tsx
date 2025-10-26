@@ -286,7 +286,7 @@ export default function LeaderDashboardScreen() {
                     </View>
                     <View style={styles.activityContent}>
                       <Text style={styles.activityTitle}>
-                        {warning.user?.name || "Funcionário"}
+                        {warning.collaborator?.name || "Funcionário"}
                       </Text>
                       <Text style={styles.activityDescription}>
                         {warning.severity === WARNING_SEVERITY.VERBAL && "Verbal"}

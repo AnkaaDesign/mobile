@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { requestPpeDelivery } from '../api-client';
+import { requestPpeDelivery } from '@/api-client';
 import { ppeDeliveryKeys } from './queryKeys';
-import type { PpeDeliveryQueryFormData } from '../schemas';
+import type { PpeDeliveryQueryFormData } from '@/schemas';
 
 export interface RequestPpeDeliveryData {
   itemId: string;

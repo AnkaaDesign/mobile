@@ -22,21 +22,17 @@ interface CustomerFilterDrawerProps {
   currentFilters: Partial<CustomerGetManyFormData>;
 }
 
-interface FilterRange {
-  min?: number;
-  max?: number;
-}
-
 interface FilterState {
   states?: string[];
   city?: string;
   tags?: string[];
   hasCNPJ?: boolean;
   hasCPF?: boolean;
-  taskCountRange?: FilterRange;
+  hasTasks?: boolean;
+  taskCount?: number;
 }
 
-type SectionKey = "location" | "document" | "tags" | "ranges";
+type SectionKey = "location" | "document" | "tags" | "tasks";
 
 interface FilterSection {
   key: SectionKey;
@@ -84,6 +80,14 @@ export function CustomerFilterDrawer({ visible, onClose, onApply, currentFilters
         if (where.cpf?.not === null) extracted.hasCPF = true;
       }
 
+      // Extract from convenience filters
+      if (currentFilters.hasTasks !== undefined) {
+        extracted.hasTasks = currentFilters.hasTasks;
+      }
+      if (currentFilters.taskCount !== undefined) {
+        extracted.taskCount = currentFilters.taskCount;
+      }
+
       setFilters(extracted);
     }
   }, [currentFilters, visible]);
@@ -96,7 +100,8 @@ export function CustomerFilterDrawer({ visible, onClose, onApply, currentFilters
     if (filters.tags?.length) count++;
     if (filters.hasCNPJ) count++;
     if (filters.hasCPF) count++;
-    if (filters.taskCountRange?.min !== undefined || filters.taskCountRange?.max !== undefined) count++;
+    if (filters.hasTasks !== undefined) count++;
+    if (filters.taskCount !== undefined) count++;
     return count;
   }, [filters]);
 
@@ -121,14 +126,11 @@ export function CustomerFilterDrawer({ visible, onClose, onApply, currentFilters
     }));
   }, []);
 
-  const handleRangeChange = useCallback((key: keyof FilterState, field: "min" | "max", value: string) => {
-    const numValue = value ? parseFloat(value) : undefined;
+  const handleNumberChange = useCallback((key: keyof FilterState, value: string) => {
+    const numValue = value ? parseInt(value, 10) : undefined;
     setFilters((prev) => ({
       ...prev,
-      [key]: {
-        ...((prev[key] as FilterRange) || {}),
-        [field]: numValue,
-      },
+      [key]: numValue,
     }));
   }, []);
 
@@ -171,6 +173,15 @@ export function CustomerFilterDrawer({ visible, onClose, onApply, currentFilters
     const apiFilters: Partial<CustomerGetManyFormData> = {};
     if (Object.keys(where).length > 0) {
       apiFilters.where = where;
+    }
+
+    // Add convenience filters
+    if (filters.hasTasks !== undefined) {
+      apiFilters.hasTasks = filters.hasTasks;
+    }
+
+    if (filters.taskCount !== undefined) {
+      apiFilters.taskCount = filters.taskCount;
     }
 
     onApply(apiFilters);
@@ -261,7 +272,34 @@ export function CustomerFilterDrawer({ visible, onClose, onApply, currentFilters
         </View>
       ),
     },
-  ], [filters, stateOptions, colors, handleToggle, handleArrayChange, handleTextChange]);
+    {
+      key: "tasks" as const,
+      title: "Tarefas",
+      component: (
+        <View style={styles.sectionContent}>
+          <View style={styles.row}>
+            <Label style={styles.label}>Possui Tarefas</Label>
+            <RNSwitch
+              value={!!filters.hasTasks}
+              onValueChange={(value) => handleToggle("hasTasks", value)}
+              trackColor={{ false: colors.muted, true: colors.primary }}
+              thumbColor={!!filters.hasTasks ? colors.primaryForeground : "#f4f3f4"}
+              ios_backgroundColor={colors.muted}
+            />
+          </View>
+          <View style={styles.field}>
+            <Label style={styles.fieldLabel}>Número de Tarefas</Label>
+            <Input
+              value={filters.taskCount?.toString() || ""}
+              onChangeText={(value) => handleNumberChange("taskCount", value)}
+              placeholder="Ex: 5"
+              keyboardType="numeric"
+            />
+          </View>
+        </View>
+      ),
+    },
+  ], [filters, stateOptions, colors, handleToggle, handleArrayChange, handleTextChange, handleNumberChange]);
 
   const renderSection = useCallback(({ item }: { item: FilterSection }) => {
     const isExpanded = expandedSections.has(item.key);

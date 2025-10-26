@@ -1,7 +1,7 @@
 // packages/hooks/src/bonus.ts
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { bonusService, type BonusCalculationResult } from '../api-client';
+import { bonusService, type BonusCalculationResult } from '@/api-client';
 import { bonusKeys, userKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 
@@ -12,16 +12,16 @@ import type {
   BonusGetManyParams,
   BonusGetManyResponse,
   BonusGetByIdParams,
-} from '../types';
+} from '@/types';
 
 import type {
   BonusCreateFormData,
   BonusUpdateFormData,
   PayrollGetParams,
-} from '../schemas';
+} from '@/schemas';
 
 // Import payroll-specific types from api-client
-import type { BonusPayrollParams, PayrollData, BonusDiscountCreateFormData } from '../api-client';
+import type { BonusPayrollParams, PayrollData, BonusDiscountCreateFormData } from '@/api-client';
 
 // =====================================================
 // Re-export types for convenience
@@ -67,7 +67,7 @@ const bonusServiceAdapter = {
 // =====================================================
 
 const baseHooks = createEntityHooks<
-  BonusGetManyParams,
+  BonusGetManyParams & Record<string, unknown>,
   BonusGetManyResponse,
   Bonus,
   BonusCreateFormData,
@@ -201,7 +201,7 @@ export const useBonusByUser = (
   additionalParams?: Partial<BonusGetManyParams>,
   options?: { enabled?: boolean }
 ) => {
-  const params: BonusGetManyParams = {
+  const params = {
     ...additionalParams,
     where: {
       ...additionalParams?.where,
@@ -211,7 +211,7 @@ export const useBonusByUser = (
       user: true,
       ...additionalParams?.include,
     },
-  };
+  } as BonusGetManyParams & Record<string, unknown>;
 
   return useBonuses(params, {
     enabled: (options?.enabled ?? true) && !!userId,
@@ -227,7 +227,7 @@ export const useBonusByPeriod = (
   additionalParams?: Partial<BonusGetManyParams>,
   options?: { enabled?: boolean }
 ) => {
-  const params: BonusGetManyParams = {
+  const params = {
     ...additionalParams,
     where: {
       ...additionalParams?.where,
@@ -239,7 +239,7 @@ export const useBonusByPeriod = (
       ...additionalParams?.include,
     },
     orderBy: additionalParams?.orderBy || { createdAt: 'desc' },
-  };
+  } as BonusGetManyParams & Record<string, unknown>;
 
   return useBonuses(params, {
     enabled: (options?.enabled ?? true) && !!year,
@@ -274,19 +274,18 @@ export const useExportPayroll = () => {
   return useMutation({
     mutationFn: (params: BonusPayrollParams) => bonusService.exportPayroll(params),
     onSuccess: (response: any, variables: BonusPayrollParams) => {
-      // Handle file download
-      const blob = new Blob([response.data], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `folha-pagamento-${variables.year}-${variables.month}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
+      // Handle file download - only in web environment
+      if (typeof window !== 'undefined' && typeof Blob !== 'undefined') {
+        const blob = new Blob([response.data]);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `folha-pagamento-${variables.year}-${variables.month}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message ?? 'Erro ao exportar folha de pagamento';
@@ -388,4 +387,4 @@ export { useBonusDetail as useBonus };
 export { useBonusMutations as useBonusCrud };
 
 // Alias exports for backward compatibility
-export type { BonusPayrollParams as BonusPayrollGetParams } from '../api-client';
+export type { BonusPayrollParams as BonusPayrollGetParams } from '@/api-client';

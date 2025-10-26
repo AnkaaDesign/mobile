@@ -1,5 +1,5 @@
 import React, { useRef, useCallback } from "react";
-import { Platform, Text, View , StyleSheet} from "react-native";
+import { Platform, Text, View, ViewStyle, StyleSheet } from "react-native";
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { RectButton, type Swipeable } from "react-native-gesture-handler";
 import Animated, { SharedValue, useAnimatedStyle, interpolate } from "react-native-reanimated";
@@ -63,7 +63,7 @@ export const ReanimatedSwipeableRow = React.forwardRef<Swipeable, ReanimatedSwip
   ) => {
     const { colors } = useTheme();
     const internalRef = useRef<Swipeable>(null);
-    const swipeableRef = ref || internalRef;
+    const swipeableRef = (ref as React.RefObject<Swipeable>) || internalRef;
 
     const handleWillOpen = useCallback(
       (direction: "left" | "right") => {
@@ -76,10 +76,12 @@ export const ReanimatedSwipeableRow = React.forwardRef<Swipeable, ReanimatedSwip
     );
 
     const handleOpen = useCallback(
-      (direction: "left" | "right", swipeable: Swipeable) => {
-        onOpen?.(direction, swipeable);
+      (direction: "left" | "right") => {
+        if (onOpen && swipeableRef && 'current' in swipeableRef && swipeableRef.current) {
+          onOpen(direction, swipeableRef.current);
+        }
       },
-      [onOpen],
+      [onOpen, swipeableRef],
     );
 
     const renderLeftActions = useCallback(
@@ -150,16 +152,16 @@ export const ReanimatedSwipeableRow = React.forwardRef<Swipeable, ReanimatedSwip
 
     return (
       <ReanimatedSwipeable
-        ref={swipeableRef}
+        ref={'current' in swipeableRef ? swipeableRef : undefined}
         friction={friction}
         leftThreshold={leftThreshold}
         rightThreshold={rightThreshold}
         overshootLeft={overshootLeft}
         overshootRight={overshootRight}
-        onWillOpen={handleWillOpen}
-        onWillClose={onWillClose}
-        onOpen={handleOpen}
-        onClose={onClose}
+        onSwipeableWillOpen={handleWillOpen}
+        onSwipeableWillClose={onWillClose}
+        onSwipeableOpen={handleOpen}
+        onSwipeableClose={onClose}
         renderLeftActions={leftActions.length > 0 ? renderLeftActions : undefined}
         renderRightActions={rightActions.length > 0 ? renderRightActions : undefined}
         containerStyle={containerStyle}
@@ -183,7 +185,7 @@ interface ActionItemProps {
   textColor: string;
   width: number;
   index: number;
-  swipeableRef: React.RefObject<Swipeable>;
+  swipeableRef: React.RefObject<Swipeable> | React.Ref<Swipeable>;
 }
 
 const ActionItem: React.FC<ActionItemProps> = ({ action, progress, backgroundColor, textColor, width, index, swipeableRef }) => {
@@ -193,7 +195,9 @@ const ActionItem: React.FC<ActionItemProps> = ({ action, progress, backgroundCol
     }
 
     if (action.closeOnPress !== false) {
-      swipeableRef.current?.close();
+      if ('current' in swipeableRef && swipeableRef.current) {
+        swipeableRef.current.close();
+      }
     }
 
     action.onPress();
@@ -254,7 +258,7 @@ export const useReanimatedSwipeableRow = () => {
 };
 
 // Preset action creators for common use cases
-export const createEditAction = (onPress: () => void, colors: any): SwipeAction => ({
+export const createEditAction = (onPress: () => void, colors: { primary: string; destructive?: string; accent?: string; muted?: string; warning?: string; info?: string }): SwipeAction => ({
   key: "edit",
   label: "Editar",
   icon: <Text style={{ fontSize: 20 }}>✏️</Text>,
@@ -262,7 +266,7 @@ export const createEditAction = (onPress: () => void, colors: any): SwipeAction 
   onPress,
 });
 
-export const createDeleteAction = (onPress: () => void, colors: any): SwipeAction => ({
+export const createDeleteAction = (onPress: () => void, colors: { primary: string; destructive?: string; accent?: string; muted?: string; warning?: string; info?: string }): SwipeAction => ({
   key: "delete",
   label: "Excluir",
   icon: <Text style={{ fontSize: 20 }}>🗑️</Text>,
@@ -270,7 +274,7 @@ export const createDeleteAction = (onPress: () => void, colors: any): SwipeActio
   onPress,
 });
 
-export const createDuplicateAction = (onPress: () => void, colors: any): SwipeAction => ({
+export const createDuplicateAction = (onPress: () => void, colors: { primary: string; destructive?: string; accent?: string; muted?: string; warning?: string; info?: string }): SwipeAction => ({
   key: "duplicate",
   label: "Duplicar",
   icon: <Text style={{ fontSize: 20 }}>📋</Text>,
@@ -278,7 +282,7 @@ export const createDuplicateAction = (onPress: () => void, colors: any): SwipeAc
   onPress,
 });
 
-export const createArchiveAction = (onPress: () => void, colors: any): SwipeAction => ({
+export const createArchiveAction = (onPress: () => void, colors: { primary: string; destructive?: string; accent?: string; muted?: string; warning?: string; info?: string }): SwipeAction => ({
   key: "archive",
   label: "Arquivar",
   icon: <Text style={{ fontSize: 20 }}>📦</Text>,
@@ -286,7 +290,7 @@ export const createArchiveAction = (onPress: () => void, colors: any): SwipeActi
   onPress,
 });
 
-export const createFavoriteAction = (onPress: () => void, colors: any): SwipeAction => ({
+export const createFavoriteAction = (onPress: () => void, colors: { primary: string; destructive?: string; accent?: string; muted?: string; warning?: string; info?: string }): SwipeAction => ({
   key: "favorite",
   label: "Favoritar",
   icon: <Text style={{ fontSize: 20 }}>⭐</Text>,
@@ -294,7 +298,7 @@ export const createFavoriteAction = (onPress: () => void, colors: any): SwipeAct
   onPress,
 });
 
-export const createShareAction = (onPress: () => void, colors: any): SwipeAction => ({
+export const createShareAction = (onPress: () => void, colors: { primary: string; destructive?: string; accent?: string; muted?: string; warning?: string; info?: string }): SwipeAction => ({
   key: "share",
   label: "Compartilhar",
   icon: <Text style={{ fontSize: 20 }}>📤</Text>,

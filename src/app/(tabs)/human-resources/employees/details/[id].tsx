@@ -382,15 +382,15 @@ export default function EmployeeDetailScreen() {
                   CPF
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                  {employee.document || "Não informado"}
+                  {employee.cpf || "Não informado"}
                 </ThemedText>
               </View>
               <View style={styles.infoItem}>
                 <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
-                  RG
+                  PIS
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                  {employee.rg || "Não informado"}
+                  {employee.pis || "Não informado"}
                 </ThemedText>
               </View>
               <View style={styles.infoItem}>
@@ -398,8 +398,8 @@ export default function EmployeeDetailScreen() {
                   Data de Nascimento
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                  {employee.birthDate
-                    ? format(new Date(employee.birthDate), "dd/MM/yyyy", { locale: ptBR })
+                  {employee.birth
+                    ? format(new Date(employee.birth), "dd/MM/yyyy", { locale: ptBR })
                     : "Não informado"}
                 </ThemedText>
               </View>
@@ -471,13 +471,13 @@ export default function EmployeeDetailScreen() {
                   {employee.sector?.name || "Não informado"}
                 </ThemedText>
               </View>
-              {employee.admissionDate && (
+              {employee.admissional && (
                 <View style={styles.infoItem}>
                   <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
                     Data de Admissão
                   </ThemedText>
                   <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                    {format(new Date(employee.admissionDate), "dd/MM/yyyy", { locale: ptBR })}
+                    {format(new Date(employee.admissional), "dd/MM/yyyy", { locale: ptBR })}
                   </ThemedText>
                 </View>
               )}

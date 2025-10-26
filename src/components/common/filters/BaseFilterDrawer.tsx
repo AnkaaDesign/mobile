@@ -176,9 +176,6 @@ export function BaseFilterDrawer({
     closeButton: {
       padding: 4,
     },
-    closeIcon: {
-      color: colors.mutedForeground,
-    },
     contentContainer: {
       gap: spacing.md,
     },
@@ -233,7 +230,7 @@ export function BaseFilterDrawer({
               onPress={handleClose}
               style={styles.closeButton}
             >
-              <IconX size={20} style={styles.closeIcon} />
+              <IconX size={20} color={colors.mutedForeground} />
             </Button>
           </View>
           {description && (

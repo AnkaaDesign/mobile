@@ -13,6 +13,7 @@ import { SectorTableRowSwipe } from "./sector-table-row-swipe";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { SECTOR_PRIVILEGES_LABELS } from '../../../../constants';
 import { getBadgeVariant } from '../../../../constants/badge-colors';
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -21,11 +22,6 @@ export interface TableColumn {
   width: number;
   align?: "left" | "center" | "right";
   sortable?: boolean;
-}
-
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
 }
 
 interface SectorTableProps {
@@ -268,14 +264,14 @@ export const SectorTable = React.memo<SectorTableProps>(
           // Column already sorted, toggle direction or remove
           if (existingConfig.direction === "asc") {
             // Toggle to descending
-            onSort([{ columnKey, direction: "desc" as const }]);
+            onSort([{ columnKey: columnKey, direction: "desc" as const, order: 0 }]);
           } else {
             // Remove sort (back to no sort)
             onSort([]);
           }
         } else {
           // Set new sort (replacing any existing sort)
-          onSort([{ columnKey, direction: "asc" as const }]);
+          onSort([{ columnKey: columnKey, direction: "asc" as const, order: 0 }]);
         }
       },
       [sortConfigs, onSort],

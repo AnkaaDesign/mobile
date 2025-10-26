@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useMemo, useCall
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme as useSystemColorScheme } from "react-native";
 import { useColorScheme as useNativeWindColorScheme } from "nativewind";
-import { ThemeProviderProps, ThemeProviderState, ThemeMode } from "../../types/contexts";
+import type { ThemeProviderProps, ThemeProviderState, ThemeMode } from "../../types/contexts";
 import { themeColors } from "./colors";
 import { themeSpacing } from "./spacing";
 

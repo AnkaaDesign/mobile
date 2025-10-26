@@ -1,7 +1,7 @@
 // packages/interfaces/src/sector.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION, SECTOR_PRIVILEGES } from '../constants';
+import type { ORDER_BY_DIRECTION, SECTOR_PRIVILEGES } from '@/constants';
 import type { User, UserIncludes } from "./user";
 import type { Task, TaskIncludes } from "./task";
 
@@ -89,8 +89,8 @@ export interface SectorDeleteResponse extends BaseDeleteResponse {}
 // Batch Operation Responses
 // =====================
 
-export interface SectorBatchCreateResponse<T> extends BaseBatchResponse<Sector, T> {}
-export interface SectorBatchUpdateResponse<T> extends BaseBatchResponse<Sector, T & { id: string }> {}
+export interface SectorBatchCreateResponse<T = any> extends BaseBatchResponse<Sector, T> {}
+export interface SectorBatchUpdateResponse<T = any> extends BaseBatchResponse<Sector, T & { id: string }> {}
 export interface SectorBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
 
 // =====================
@@ -113,7 +113,7 @@ export interface SectorGetManyFormData {
   take?: number;
   skip?: number;
   where?: any;
-  orderBy?: SectorOrderBy;
+  orderBy?: SectorOrderBy | SectorOrderBy[];
   include?: SectorIncludes;
   searchingFor?: string;
   privilege?: SECTOR_PRIVILEGES;

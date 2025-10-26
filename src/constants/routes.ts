@@ -50,6 +50,27 @@ export const routes = {
       list: "/administracao/usuarios/listar",
       root: "/administracao/usuarios",
     },
+    changeLogs: {
+      details: (id: string) => `/administracao/registros-de-alteracoes/detalhes/${id}`,
+      list: "/administracao/registros-de-alteracoes/listar",
+      root: "/administracao/registros-de-alteracoes",
+    },
+    monitoring: {
+      dashboard: "/administracao/monitoramento/dashboard",
+      root: "/administracao/monitoramento",
+      metrics: {
+        list: "/administracao/monitoramento/metricas",
+        root: "/administracao/monitoramento/metricas",
+      },
+      alerts: {
+        list: "/administracao/monitoramento/alertas",
+        root: "/administracao/monitoramento/alertas",
+      },
+      logs: {
+        list: "/administracao/monitoramento/logs",
+        root: "/administracao/monitoramento/logs",
+      },
+    },
   },
 
   // Authentication - Rotas de autenticação
@@ -64,9 +85,9 @@ export const routes = {
 
   // Basic Catalog - Catálogo Básico - Basic catalog access for leaders
   catalog: {
-    details: (id: string) => `/catalogo/detalhes/${id}`,
+    details: (id: string) => `/pintura/catalogo/detalhes/${id}`,
     list: "/catalogo/listar",
-    root: "/catalogo",
+    root: "/pintura/catalogo-basico",
   },
 
   // Dashboard - Painéis de Controle
@@ -85,6 +106,7 @@ export const routes = {
     create: "/administracao/clientes/cadastrar",
     details: (id: string) => `/administracao/clientes/detalhes/${id}`,
     edit: (id: string) => `/administracao/clientes/editar/${id}`,
+    list: "/administracao/clientes/listar",
     root: "/administracao/clientes",
   },
 
@@ -126,6 +148,7 @@ export const routes = {
       create: "/recursos-humanos/cargos/cadastrar",
       details: (id: string) => `/recursos-humanos/cargos/detalhes/${id}`,
       edit: (id: string) => `/recursos-humanos/cargos/editar/${id}`,
+      hierarchy: "/recursos-humanos/cargos/hierarquia",
       list: "/recursos-humanos/cargos/listar",
       remunerations: (positionId: string) => `/recursos-humanos/cargos/${positionId}/remuneracoes`,
       root: "/recursos-humanos/cargos",
@@ -224,10 +247,11 @@ export const routes = {
       list: "/estoque/retiradas-externas",
       root: "/estoque/retiradas-externas",
     },
-    borrows: {
+    loans: {
       batchEdit: "/estoque/emprestimos/editar-lote",
       create: "/estoque/emprestimos/cadastrar",
       details: (id: string) => `/estoque/emprestimos/detalhes/${id}`,
+      edit: (id: string) => `/estoque/emprestimos/editar/${id}`,
       import: "/estoque/emprestimos/importar",
       list: "/estoque/emprestimos",
       root: "/estoque/emprestimos",
@@ -301,6 +325,7 @@ export const routes = {
     },
     products: {
       batchEdit: "/estoque/produtos/editar-em-lote",
+      stockBalance: "/estoque/produtos/balanco-estoque",
       brands: {
         batchEdit: "/estoque/produtos/marcas/editar-em-lote",
         create: "/estoque/produtos/marcas/cadastrar",
@@ -359,7 +384,7 @@ export const routes = {
 
   // My Team - Meu Pessoal - Team management for leaders (simplified routes)
   myTeam: {
-    borrows: "/meu-pessoal/emprestimos",
+    loans: "/meu-pessoal/emprestimos",
     root: "/meu-pessoal",
     vacations: "/meu-pessoal/ferias",
     warnings: "/meu-pessoal/avisos",
@@ -377,10 +402,11 @@ export const routes = {
       root: "/pintura/catalogo",
     },
     components: {
-      create: (formulaId: string) => `/pintura/formulas/${formulaId}/componentes/cadastrar`,
-      details: (formulaId: string, componentId: string) => `/pintura/formulas/${formulaId}/componentes/detalhes/${componentId}`,
-      edit: (formulaId: string, componentId: string) => `/pintura/formulas/${formulaId}/componentes/editar/${componentId}`,
-      list: (formulaId: string) => `/pintura/formulas/${formulaId}/componentes/listar`,
+      create: "/pintura/componentes/cadastrar",
+      details: (id: string) => `/pintura/componentes/detalhes/${id}`,
+      edit: (id: string) => `/pintura/componentes/editar/${id}`,
+      list: "/pintura/componentes/listar",
+      root: "/pintura/componentes",
     },
     formulas: {
       create: "/pintura/formulas/cadastrar",
@@ -395,13 +421,6 @@ export const routes = {
       edit: (id: string) => `/pintura/formulacoes/editar/${id}`,
       list: "/pintura/formulacoes/listar",
       root: "/pintura/formulacoes",
-    },
-    paintGrounds: {
-      create: "/pintura/fundos/cadastrar",
-      details: (id: string) => `/pintura/fundos/detalhes/${id}`,
-      edit: (id: string) => `/pintura/fundos/editar/${id}`,
-      list: "/pintura/fundos/listar",
-      root: "/pintura/fundos",
     },
     paintTypes: {
       create: "/pintura/tipos-de-tinta/cadastrar",
@@ -426,58 +445,46 @@ export const routes = {
     root: "/pintura",
   },
 
-  // Server - Servidor - Server Administration
+  // Server - Servidor - Server Management
   server: {
-    backups: {
-      create: "/servidor/backups/criar",
-      details: (id: string) => `/servidor/backups/detalhes/${id}`,
-      list: "/servidor/backups/listar",
-      root: "/servidor/backups",
-    },
+    backup: "/servidor/backup",
     changeLogs: {
       details: (id: string) => `/servidor/registros-de-alteracoes/detalhes/${id}`,
-      entity: (entityType: string, entityId: string) => `/servidor/registros-de-alteracoes/entidade/${entityType}/${entityId}`,
-      list: "/servidor/registros-de-alteracoes/listar",
       root: "/servidor/registros-de-alteracoes",
     },
     databaseSync: "/servidor/sincronizacao-bd",
     deployments: {
       create: "/servidor/implantacoes/cadastrar",
       details: (id: string) => `/servidor/implantacoes/detalhes/${id}`,
-      list: "/servidor/implantacoes/listar",
+      edit: (id: string) => `/servidor/implantacoes/editar/${id}`,
       root: "/servidor/implantacoes",
     },
+    throttler: {
+      root: "/servidor/rate-limiting",
+    },
     logs: "/servidor/logs",
-    maintenance: "/servidor/manutencao",
     metrics: "/servidor/metricas",
-    rateLimiting: "/servidor/rate-limiting",
-    resources: "/servidor/recursos",
     root: "/servidor",
     services: "/servidor/servicos",
     sharedFolders: "/servidor/pastas-compartilhadas",
-    status: "/servidor/status",
-    systemUsers: {
+    users: {
       create: "/servidor/usuarios/cadastrar",
-      details: (id: string) => `/servidor/usuarios/detalhes/${id}`,
-      list: "/servidor/usuarios/listar",
       root: "/servidor/usuarios",
     },
   },
 
   // Personal - Pessoal - Personal (User-specific data)
   personal: {
-    myBorrows: {
+    myHolidays: {
+      root: "/pessoal/meus-feriados",
+    },
+    myLoans: {
       details: (id: string) => `/pessoal/meus-emprestimos/detalhes/${id}`,
       root: "/pessoal/meus-emprestimos",
-    },
-    myHolidays: {
-      details: (id: string) => `/pessoal/meus-feriados/detalhes/${id}`,
-      root: "/pessoal/meus-feriados",
     },
     myNotifications: {
       details: (id: string) => `/pessoal/minhas-notificacoes/detalhes/${id}`,
       root: "/pessoal/minhas-notificacoes",
-      settings: "/pessoal/minhas-notificacoes/configuracoes",
     },
     myPpes: {
       request: "/pessoal/meus-epis/solicitar",
@@ -495,10 +502,7 @@ export const routes = {
       root: "/pessoal/meus-avisos",
     },
     preferences: {
-      notifications: "/pessoal/preferencias/notificacoes",
-      privacy: "/pessoal/preferencias/privacidade",
       root: "/pessoal/preferencias",
-      theme: "/pessoal/preferencias/tema",
     },
     root: "/pessoal",
   },
@@ -514,20 +518,6 @@ export const routes = {
     },
     cutting: {
       create: "/producao/recorte/cadastrar",
-      cuttingPlan: {
-        create: "/producao/recorte/plano-de-recorte/cadastrar",
-        details: (id: string) => `/producao/recorte/plano-de-recorte/detalhes/${id}`,
-        edit: (id: string) => `/producao/recorte/plano-de-recorte/editar/${id}`,
-        list: "/producao/recorte/plano-de-recorte/listar",
-        root: "/producao/recorte/plano-de-recorte",
-      },
-      cuttingRequest: {
-        create: "/producao/recorte/requisicao-de-recorte/cadastrar",
-        details: (id: string) => `/producao/recorte/requisicao-de-recorte/detalhes/${id}`,
-        edit: (id: string) => `/producao/recorte/requisicao-de-recorte/editar/${id}`,
-        list: "/producao/recorte/requisicao-de-recorte/listar",
-        root: "/producao/recorte/requisicao-de-recorte",
-      },
       details: (id: string) => `/producao/recorte/detalhes/${id}`,
       edit: (id: string) => `/producao/recorte/editar/${id}`,
       list: "/producao/recorte",
@@ -543,31 +533,13 @@ export const routes = {
         edit: (_garageId: string, laneId: string) => `/producao/garagens/${_garageId}/lanes/editar/${laneId}`,
       },
       list: "/producao/garagens",
-      parkingSpots: {
-        create: (_garageId: string) => `/producao/garagens/${_garageId}/parking-spots/cadastrar`,
-        details: (_garageId: string, spotId: string) => `/producao/garagens/parking-spots/detalhes/${spotId}`,
-        edit: (_garageId: string, spotId: string) => `/producao/garagens/${_garageId}/parking-spots/editar/${spotId}`,
-      },
       root: "/producao/garagens",
     },
     history: {
       cancelled: "/producao/historico/cancelados",
       completed: "/producao/historico/concluidos",
-      details: (id: string) => `/producao/historico/detalhes/${id}`,
       root: "/producao/historico",
-    },
-    layouts: {
-      create: "/producao/layouts/cadastrar",
-      details: (id: string) => `/producao/layouts/detalhes/${id}`,
-      edit: (id: string) => `/producao/layouts/editar/${id}`,
-      list: "/producao/layouts/listar",
-      root: "/producao/layouts",
-      sections: {
-        create: (layoutId: string) => `/producao/layouts/${layoutId}/secoes/cadastrar`,
-        details: (layoutId: string, sectionId: string) => `/producao/layouts/${layoutId}/secoes/detalhes/${sectionId}`,
-        edit: (layoutId: string, sectionId: string) => `/producao/layouts/${layoutId}/secoes/editar/${sectionId}`,
-        list: (layoutId: string) => `/producao/layouts/${layoutId}/secoes/listar`,
-      },
+      details: (id: string) => `/producao/historico/detalhes/${id}`,
     },
     observations: {
       create: "/producao/observacoes/cadastrar",
@@ -575,13 +547,6 @@ export const routes = {
       edit: (id: string) => `/producao/observacoes/editar/${id}`,
       list: "/producao/observacoes",
       root: "/producao/observacoes",
-    },
-    paints: {
-      create: "/producao/tintas/cadastrar",
-      details: (id: string) => `/producao/tintas/detalhes/${id}`,
-      edit: (id: string) => `/producao/tintas/editar/${id}`,
-      list: "/producao/tintas/listar",
-      root: "/producao/tintas",
     },
     root: "/producao",
     // Note: 'schedule' property name is kept for backward compatibility but routes point to 'cronograma'
@@ -601,23 +566,52 @@ export const routes = {
       create: "/producao/ordens-de-servico/cadastrar",
       details: (id: string) => `/producao/ordens-de-servico/detalhes/${id}`,
       edit: (id: string) => `/producao/ordens-de-servico/editar/${id}`,
-      list: "/producao/ordens-de-servico/listar",
       root: "/producao/ordens-de-servico",
     },
     services: {
       create: "/producao/servicos/cadastrar",
       details: (id: string) => `/producao/servicos/detalhes/${id}`,
       edit: (id: string) => `/producao/servicos/editar/${id}`,
-      list: "/producao/servicos/listar",
+      list: "/producao/servicos",
       root: "/producao/servicos",
     },
-    settings: "/producao/configuracoes",
     trucks: {
       create: "/producao/caminhoes/cadastrar",
       details: (id: string) => `/producao/caminhoes/detalhes/${id}`,
       edit: (id: string) => `/producao/caminhoes/editar/${id}`,
-      list: "/producao/caminhoes/listar",
+      list: "/producao/caminhoes",
       root: "/producao/caminhoes",
+    },
+  },
+
+  // Statistics - Estatísticas - Statistics/Analytics
+  statistics: {
+    root: "/estatisticas",
+    // Entity-specific statistics
+    administration: "/estatisticas/administracao",
+    humanResources: "/estatisticas/recursos-humanos",
+    inventory: "/estatisticas/estoque",
+    production: "/estatisticas/producao",
+    orders: "/estatisticas/pedidos",
+    financial: "/estatisticas/financeiro",
+    // Advanced Analytics
+    analytics: {
+      root: "/estatisticas/analytics",
+      predictive: "/estatisticas/analytics/preditiva",
+      comparative: "/estatisticas/analytics/comparativa",
+      correlation: "/estatisticas/analytics/correlacao",
+      cohort: "/estatisticas/analytics/cohort",
+    },
+    // Dashboards and Monitoring
+    dashboards: {
+      executive: "/estatisticas/dashboards/executivo",
+      goals: "/estatisticas/dashboards/metas",
+      realtime: "/estatisticas/dashboards/tempo-real",
+      explorer: "/estatisticas/dashboards/explorador",
+    },
+    // Reports
+    reports: {
+      builder: "/estatisticas/relatorios/construtor",
     },
   },
 
@@ -626,21 +620,22 @@ export const routes = {
     root: "/integracoes",
     secullum: {
       root: "/integracoes/secullum",
-      calculations: {
-        list: "/integracoes/secullum/calculos/listar",
-        root: "/integracoes/secullum/calculos",
-      },
-      holidays: {
-        list: "/integracoes/secullum/feriados/listar",
-        root: "/integracoes/secullum/feriados",
-      },
-      syncStatus: "/integracoes/secullum/status-sincronizacao",
       timeEntries: {
-        details: (id: string) => `/integracoes/secullum/registros-ponto/detalhes/${id}`,
-        list: "/integracoes/secullum/registros-ponto/listar",
         root: "/integracoes/secullum/registros-ponto",
+        details: (id: string) => `/integracoes/secullum/registros-ponto/detalhes/${id}`,
       },
+      calculations: "/integracoes/secullum/calculos",
+      syncStatus: "/integracoes/secullum/status-sincronizacao",
     },
+  },
+
+  // Users - Alias for administration users (collaborators) for backward compatibility
+  users: {
+    batchEdit: "/administracao/colaboradores/editar-em-lote",
+    create: "/administracao/colaboradores/cadastrar",
+    details: (id: string) => `/administracao/colaboradores/detalhes/${id}`,
+    edit: (id: string) => `/administracao/colaboradores/editar/${id}`,
+    root: "/administracao/colaboradores",
   },
 } as const;
 

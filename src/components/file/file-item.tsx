@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator, NativeSyntheticEvent, ImageErrorEventData } from "react-native";
 import type { File as AnkaaFile } from "../../types";
 import { formatFileSize, isImageFile, getFileExtension, getFileCategory } from "../../utils/file";
 import { formatRelativeTime } from "../../utils";
@@ -22,7 +22,7 @@ export interface FileItemProps {
 }
 
 const getThumbnailUrl = (file: AnkaaFile, size: "small" | "medium" | "large" = "medium", baseUrl?: string): string => {
-  const apiUrl = baseUrl || (global as any).__ANKAA_API_URL__ || "http://localhost:3030";
+  const apiUrl = baseUrl || (global as { __ANKAA_API_URL__?: string }).__ANKAA_API_URL__ || "http://localhost:3030";
 
   console.log('🔍 [getThumbnailUrl] Called with:', {
     filename: file.filename,
@@ -92,7 +92,7 @@ const FileItemGrid: React.FC<FileItemProps> = ({
     setThumbnailLoading(false);
   };
 
-  const handleThumbnailError = (error: any) => {
+  const handleThumbnailError = (error: NativeSyntheticEvent<ImageErrorEventData>) => {
     console.error('❌ [FileItemGrid] Thumbnail failed:', {
       filename: file.filename,
       url: thumbnailUrl,
@@ -143,7 +143,7 @@ const FileItemGrid: React.FC<FileItemProps> = ({
           </View>
         ) : (
           <View style={styles.iconContainer}>
-            <FileTypeIcon filename={file.filename} mimeType={file.mimetype} size={48} />
+            <FileTypeIcon filename={file.filename} mimeType={file.mimetype} size="lg" />
           </View>
         )}
       </View>
@@ -198,7 +198,7 @@ const FileItemList: React.FC<FileItemProps> = ({
     setThumbnailLoading(false);
   };
 
-  const handleThumbnailError = (error: any) => {
+  const handleThumbnailError = (error: NativeSyntheticEvent<ImageErrorEventData>) => {
     console.error('❌ [FileItemList] Thumbnail failed:', {
       filename: file.filename,
       url: thumbnailUrl,
@@ -248,7 +248,7 @@ const FileItemList: React.FC<FileItemProps> = ({
             )}
           </View>
         ) : (
-          <FileTypeIcon filename={file.filename} mimeType={file.mimetype} size={32} />
+          <FileTypeIcon filename={file.filename} mimeType={file.mimetype} size="md" />
         )}
       </View>
 
@@ -277,7 +277,7 @@ const FileItemList: React.FC<FileItemProps> = ({
             )}
             {showRelativeTime && file.createdAt && (
               <Text style={[styles.listMetadataText, { color: colors.mutedForeground }]}>
-                {formatRelativeTime(new Date(file.createdAt))}
+                {formatRelativeTime(file.createdAt)}
               </Text>
             )}
           </View>

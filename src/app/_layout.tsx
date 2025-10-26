@@ -111,8 +111,8 @@ if (process.env.NODE_ENV === "production") {
   AsyncStorage.removeItem("react-query-cache").catch(() => {});
 }
 export default function RootLayout() {
-  const [isConnected, setIsConnected] = useState(null);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
   // Initialize network state and listen for changes
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {

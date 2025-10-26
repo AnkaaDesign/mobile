@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useObservationsInfinite } from './useObservation';
-import { ObservationGetManyFormData } from '../schemas';
+import { ObservationGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for observations

@@ -10,6 +10,14 @@ import { formatCurrency, formatNumber } from '../../../utils';
 import { DASHBOARD_TIME_PERIOD, TASK_STATUS, CUT_STATUS, SECTOR_PRIVILEGES } from '../../../constants';
 import { router } from 'expo-router';
 
+// Helper function to convert Decimal to number
+const toNumber = (value: number | { toNumber: () => number } | null | undefined): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'object' && 'toNumber' in value) return value.toNumber();
+  return 0;
+};
+
 // Simple chart component using bars
 const BarChart: React.FC<{
   data: Array<{ label: string; value: number; color?: string }>;
@@ -246,7 +254,7 @@ export default function ProductionAnalyticsScreen() {
               title="Recortes"
               icon="scissors"
               color="#f59e0b"
-              onPress={() => router.push('/production/cuts/list' as any)}
+              onPress={() => router.push('/production/cutting/list' as any)}
               badge={cuts.length > 0 ? { text: cuts.length.toString(), variant: "destructive" as const } : undefined}
             />
             <QuickActionCard
@@ -318,7 +326,7 @@ export default function ProductionAnalyticsScreen() {
                   <TouchableOpacity
                     key={index}
                     style={styles.activityItem}
-                    onPress={() => router.push(`/production/cuts/details/${cut.id}` as any)}
+                    onPress={() => router.push(`/production/cutting/cutting-plan/details/${cut.id}` as any)}
                   >
                     <View style={styles.activityIcon}>
                       <Icon
@@ -329,10 +337,10 @@ export default function ProductionAnalyticsScreen() {
                     </View>
                     <View style={styles.activityContent}>
                       <Text style={styles.activityTitle}>
-                        {cut.plan?.name || "Plano de Corte"}
+                        Corte #{cut.id.slice(0, 8)}
                       </Text>
                       <Text style={styles.activityDescription}>
-                        {cut.status === CUT_STATUS.CUTTING ? "Em Corte" : "Pendente"} • {cut.quantity || 0} unidades
+                        {cut.status === CUT_STATUS.CUTTING ? "Em Corte" : "Pendente"} • {cut.type}
                       </Text>
                     </View>
                     <Icon name="chevron-right" size={20} color="#9ca3af" />
@@ -359,11 +367,11 @@ export default function ProductionAnalyticsScreen() {
                         {commission.user?.name || "Funcionário"}
                       </Text>
                       <Text style={styles.activityDescription}>
-                        Bônus: {formatCurrency(commission.baseBonus || 0)}
+                        Bônus: {formatCurrency(toNumber(commission.baseBonus))}
                       </Text>
                     </View>
                     <Text style={styles.commissionValue}>
-                      {formatCurrency(commission.baseBonus || 0)}
+                      {formatCurrency(toNumber(commission.baseBonus))}
                     </Text>
                   </View>
                 ))}
@@ -761,5 +769,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#10b981",
+  },
+  activityItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+  },
+  activityIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#f9fafb",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  activityContent: {
+    flex: 1,
+  },
+  activityTitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#374151",
+    marginBottom: 2,
+  },
+  activityDescription: {
+    fontSize: 12,
+    color: "#6b7280",
   },
 });

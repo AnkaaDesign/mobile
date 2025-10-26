@@ -1,51 +1,47 @@
 import { useRouter } from "expo-router";
-import { showToast } from "@/components/ui/toast";
+import { Alert } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
-import { BorrowBatchCreateForm } from "@/components/inventory/borrow/form/borrow-batch-create-form";
-import { useBorrowBatchMutations } from '../../../../hooks';
+import { BorrowSimpleForm } from "@/components/inventory/borrow/form/borrow-simple-form";
+import { useBorrowMutations } from "@/hooks";
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes } from '../../../../constants';
+import { routes } from "@/constants";
+import type { BorrowCreateFormData } from "@/schemas";
 
 export default function EstoqueEmprestimosCadastrarScreen() {
   const router = useRouter();
-  const { batchCreateAsync, batchCreateMutation } = useBorrowBatchMutations();
+  const { createAsync, isCreating } = useBorrowMutations();
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: BorrowCreateFormData) => {
     try {
-      // Transform data to match API schema
-      const borrows = data.items.map((item: any) => ({
-        itemId: item.itemId,
-        quantity: item.quantity,
-        userId: data.userId,
-      }));
+      const result = await createAsync(data);
 
-      const result = await batchCreateAsync({
-        borrows,
-      });
-
-      if (result.success) {
-        showToast({
-          message: `${borrows.length} empréstimo(s) criado(s) com sucesso!`,
-          type: "success",
-        });
-        router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
+      if (result?.data) {
+        Alert.alert("Sucesso", "Empréstimo registrado com sucesso!", [
+          {
+            text: "OK",
+            onPress: () => {
+              router.replace(routeToMobilePath(routes.inventory.borrows.root));
+            },
+          },
+        ]);
+      } else {
+        Alert.alert("Erro", "Erro ao registrar empréstimo");
       }
-    } catch (error) {
-      // Error handled by mutation hook
-      console.error("Error creating borrows:", error);
+    } catch (error: any) {
+      Alert.alert("Erro", error.message || "Erro ao registrar empréstimo. Tente novamente.");
     }
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
+    router.back();
   };
 
   return (
-    <ThemedView className="flex-1">
-      <BorrowBatchCreateForm
+    <ThemedView style={{ flex: 1 }}>
+      <BorrowSimpleForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}
-        isSubmitting={batchCreateMutation.isPending}
+        isSubmitting={isCreating}
       />
     </ThemedView>
   );

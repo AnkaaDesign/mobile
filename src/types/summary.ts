@@ -1,7 +1,7 @@
 // packages/interfaces/src/summary.ts
 
 import type { BaseSummaryResponse } from "./common";
-import type { TREND_DIRECTION, TREND_TYPE, WORKLOAD_LEVEL, STOCK_LEVEL, PERFORMANCE_LEVEL, HEALTH_STATUS } from '../constants';
+import type { TREND_DIRECTION, TREND_TYPE, WORKLOAD_LEVEL, STOCK_LEVEL, PERFORMANCE_LEVEL, HEALTH_STATUS } from '@/constants';
 
 // =====================
 // Stock Module Summaries

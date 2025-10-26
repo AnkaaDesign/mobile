@@ -1,7 +1,7 @@
 import type { ViewStyle } from "react-native";
 import type { PpeDelivery, User } from '..';
 import type { UseFormReturn } from "react-hook-form";
-import type { PpeDeliveryCreateFormData } from '../../schemas';
+import type { PpeDeliveryCreateFormData } from '@/schemas';
 
 // My PPE List Props
 export interface MyPpeListProps {

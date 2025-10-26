@@ -1,7 +1,7 @@
 // packages/hooks/src/useServiceOrder.ts
 
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
-import { serviceOrderService } from '../api-client';
+import { serviceOrderService } from '@/api-client';
 import type {
   ServiceOrderGetManyFormData,
   ServiceOrderCreateFormData,
@@ -9,7 +9,7 @@ import type {
   ServiceOrderBatchCreateFormData,
   ServiceOrderBatchUpdateFormData,
   ServiceOrderBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   ServiceOrderGetManyResponse,
   ServiceOrderGetUniqueResponse,
@@ -19,7 +19,7 @@ import type {
   ServiceOrderBatchCreateResponse,
   ServiceOrderBatchUpdateResponse,
   ServiceOrderBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { serviceOrderKeys, taskKeys, serviceKeys, changeLogKeys } from "./queryKeys";
 
 // =====================================================

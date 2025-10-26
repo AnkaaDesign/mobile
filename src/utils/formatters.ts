@@ -169,3 +169,6 @@ export const formatZipCode = (zipCode: string): string => {
   }
   return zipCode;
 };
+
+// Alias for formatBrazilianPhone
+export const formatPhoneNumber = formatBrazilianPhone;

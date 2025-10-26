@@ -4,7 +4,7 @@ import { Button } from "./button";
 import { useTheme } from "@/contexts/theme-context";
 
 interface ErrorScreenProps {
-  error?: any;
+  error?: Error | { message?: string };
   title?: string;
   message?: string;
   detail?: string;

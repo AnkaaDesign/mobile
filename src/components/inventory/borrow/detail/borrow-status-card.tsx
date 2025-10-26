@@ -62,8 +62,7 @@ export const BorrowStatusCard: React.FC<BorrowStatusCardProps> = ({ borrow }) =>
 
       <View style={styles.content}>
         <View style={styles.statusContainer}>
-          <Badge
-            variant="default"
+          <View
             style={[styles.statusBadge, { backgroundColor: getStatusColor(borrow.status) }]}
           >
             <View style={styles.badgeContent}>
@@ -72,7 +71,7 @@ export const BorrowStatusCard: React.FC<BorrowStatusCardProps> = ({ borrow }) =>
                 {BORROW_STATUS_LABELS[borrow.status]}
               </ThemedText>
             </View>
-          </Badge>
+          </View>
         </View>
 
         {borrow.status === BORROW_STATUS.ACTIVE && (

@@ -34,7 +34,7 @@ export const ChangeLogListSkeleton = ({ count = 8 }: ChangeLogListSkeletonProps)
             {/* Right Section - User Info */}
             <View style={styles.rightSection}>
               <View style={styles.userRow}>
-                <Skeleton width={32} height={32} variant="circular" style={styles.avatar} />
+                <Skeleton width={32} height={32} borderRadius={16} style={styles.avatar} />
                 <View style={styles.userDetails}>
                   <Skeleton width={60} height={12} style={styles.userName} />
                   <Skeleton width={80} height={10} style={styles.date} />

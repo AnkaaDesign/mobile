@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet} from "react-native";
+import { View, Text, StyleSheet, ViewStyle, TouchableOpacity } from "react-native";
 import { cn } from "@/lib/utils";
 import { getFileTypeInfo, getFileTypeCategory, FileCategory, getCategoryLabel, type FileCategory as FileCategoryType } from '../../utils/file-type-icons';
 
@@ -26,7 +26,7 @@ import {
   // Audio
   IconMusic,
   IconMicrophone,
-  IconWave,
+  IconWaveSquare,
 
   // Code
   IconBrandJavascript,
@@ -74,7 +74,7 @@ const ICON_COMPONENTS = {
   IconBrandYoutube,
   IconMusic,
   IconMicrophone,
-  IconWave,
+  IconWaveSquare,
   IconBrandJavascript,
   IconBrandTypescript,
   IconBrandHtml5,
@@ -108,7 +108,7 @@ export interface FileTypeIconProps {
   /** Icon size */
   size?: FileTypeIconSize;
   /** Custom style */
-  style?: any;
+  style?: ViewStyle;
   /** Show file type label */
   showLabel?: boolean;
   /** Processing state */
@@ -209,7 +209,7 @@ export interface FileTypeBadgeProps {
   filename: string;
   mimeType?: string;
   size?: "sm" | "md" | "lg";
-  style?: any;
+  style?: ViewStyle;
   isProcessing?: boolean;
   isError?: boolean;
 }
@@ -251,7 +251,7 @@ export const FileTypeBadge: React.FC<FileTypeBadgeProps> = ({ filename, mimeType
 export interface FileTypeAvatarProps {
   filename: string;
   mimeType?: string;
-  style?: any;
+  style?: ViewStyle;
   isProcessing?: boolean;
   isError?: boolean;
   onPress?: () => void;
@@ -279,11 +279,21 @@ export const FileTypeAvatar: React.FC<FileTypeAvatarProps> = ({ filename, mimeTy
     justifyContent: "center",
   };
 
-  return (
-    <View className={cn("items-center justify-center border-2", colors.bg, colors.border)} style={StyleSheet.flatten([containerStyle, style])} onTouchEnd={onPress}>
+  const content = (
+    <View className={cn("items-center justify-center border-2", colors.bg, colors.border)} style={StyleSheet.flatten([containerStyle, style])}>
       <IconComponent size={24} stroke={1.5} color={iconColor} />
     </View>
   );
+
+  if (onPress) {
+    return (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        {content}
+      </TouchableOpacity>
+    );
+  }
+
+  return content;
 };
 
 /**
@@ -295,7 +305,7 @@ export interface FileTypeInfoProps {
   filename: string;
   mimeType?: string;
   fileSize?: number;
-  style?: any;
+  style?: ViewStyle;
   isProcessing?: boolean;
   isError?: boolean;
   showFullPath?: boolean;
@@ -316,7 +326,7 @@ export const FileTypeInfo: React.FC<FileTypeInfoProps> = ({ filename, mimeType, 
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i as keyof typeof sizes];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const displayFilename = showFullPath ? filename : filename.length > 30 ? `${filename.substring(0, 27)}...` : filename;

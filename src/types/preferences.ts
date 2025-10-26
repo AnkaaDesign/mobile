@@ -1,7 +1,7 @@
 // packages/types/src/preferences.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { COLOR_SCHEMA, NOTIFICATION_CHANNEL, NOTIFICATION_IMPORTANCE, ORDER_BY_DIRECTION } from '../constants';
+import type { COLOR_SCHEMA, NOTIFICATION_CHANNEL, NOTIFICATION_IMPORTANCE, ORDER_BY_DIRECTION } from '@/constants';
 import type { User, UserIncludes, UserOrderBy } from "./user";
 
 // =====================
@@ -104,11 +104,11 @@ export interface PreferencesDeleteResponse extends BaseDeleteResponse {}
 // =====================
 
 // NotificationPreference batch operations
-export interface NotificationPreferenceBatchCreateResponse<T> extends BaseBatchResponse<NotificationPreference, T> {}
-export interface NotificationPreferenceBatchUpdateResponse<T> extends BaseBatchResponse<NotificationPreference, T & { id: string }> {}
+export interface NotificationPreferenceBatchCreateResponse<T = any> extends BaseBatchResponse<NotificationPreference, T> {}
+export interface NotificationPreferenceBatchUpdateResponse<T = any> extends BaseBatchResponse<NotificationPreference, T & { id: string }> {}
 export interface NotificationPreferenceBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
 
 // Preferences batch operations
-export interface PreferencesBatchCreateResponse<T> extends BaseBatchResponse<Preferences, T> {}
-export interface PreferencesBatchUpdateResponse<T> extends BaseBatchResponse<Preferences, T & { id: string }> {}
+export interface PreferencesBatchCreateResponse<T = any> extends BaseBatchResponse<Preferences, T> {}
+export interface PreferencesBatchUpdateResponse<T = any> extends BaseBatchResponse<Preferences, T & { id: string }> {}
 export interface PreferencesBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}

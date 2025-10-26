@@ -5,7 +5,7 @@ import { BaseFilterDrawer } from "@/components/common/filters";
 import { BooleanFilter, DateRangeFilter } from "@/components/common/filters";
 import { Text } from "@/components/ui/text";
 import { useTheme } from "@/lib/theme";
-import { Combobox } from "@/components/ui/combobox";
+import { MultiCombobox } from "@/components/ui/multi-combobox";
 import type { Task } from "@/types";
 
 interface ObservationFilterDrawerProps {
@@ -103,16 +103,13 @@ export function ObservationFilterDrawer({
           <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>
             Selecionar Tarefas
           </Text>
-          <Combobox
-            mode="multiple"
+          <MultiCombobox
             options={taskOptions}
-            value={filters.taskIds || []}
-            onValueChange={(value) => setFilters((prev) => ({ ...prev, taskIds: value as string[] }))}
+            selectedValues={filters.taskIds || []}
+            onValueChange={(values) => setFilters((prev) => ({ ...prev, taskIds: values }))}
             placeholder="Todas as tarefas"
             searchPlaceholder="Buscar tarefas..."
             emptyText="Nenhuma tarefa encontrada"
-            searchable={true}
-            clearable={true}
           />
         </View>
       ),
@@ -151,13 +148,16 @@ export function ObservationFilterDrawer({
       content: (
         <DateRangeFilter
           label="Período de Criação"
-          startDate={filters.createdAfter}
-          endDate={filters.createdBefore}
-          onStartDateChange={(date) =>
-            setFilters((prev) => ({ ...prev, createdAfter: date || undefined }))
-          }
-          onEndDateChange={(date) =>
-            setFilters((prev) => ({ ...prev, createdBefore: date || undefined }))
+          value={{
+            from: filters.createdAfter,
+            to: filters.createdBefore
+          }}
+          onChange={(range) =>
+            setFilters((prev) => ({
+              ...prev,
+              createdAfter: range?.from,
+              createdBefore: range?.to
+            }))
           }
         />
       ),

@@ -25,25 +25,25 @@ export interface EntityService<
 > {
   // Query methods
   getMany: (params?: TGetManyParams) => Promise<TGetManyResponse>;
-  getById: (id: string, include?: any) => Promise<TGetByIdResponse>;
+  getById: (id: string, include?: Record<string, unknown>) => Promise<TGetByIdResponse>;
 
   // CRUD methods
-  create: (data: TCreateData, include?: any) => Promise<TCreateResponse>;
-  update: (id: string, data: TUpdateData, include?: any) => Promise<TUpdateResponse>;
+  create: (data: TCreateData, include?: Record<string, unknown>) => Promise<TCreateResponse>;
+  update: (id: string, data: TUpdateData, include?: Record<string, unknown>) => Promise<TUpdateResponse>;
   delete: (id: string) => Promise<TDeleteResponse>;
 
   // Batch methods
-  batchCreate: (data: TBatchCreateData, include?: any) => Promise<TBatchCreateResponse>;
-  batchUpdate: (data: TBatchUpdateData, include?: any) => Promise<TBatchUpdateResponse>;
+  batchCreate: (data: TBatchCreateData, include?: Record<string, unknown>) => Promise<TBatchCreateResponse>;
+  batchUpdate: (data: TBatchUpdateData, include?: Record<string, unknown>) => Promise<TBatchUpdateResponse>;
   batchDelete: (data: TBatchDeleteData) => Promise<TBatchDeleteResponse>;
 }
 
 export interface QueryKeys {
   all: readonly string[];
   lists: () => readonly unknown[];
-  list: (filters?: any) => readonly unknown[];
+  list: (filters?: Record<string, unknown>) => readonly unknown[];
   details: () => readonly unknown[];
-  detail: (id: string, include?: any) => readonly unknown[];
+  detail: (id: string, include?: Record<string, unknown>) => readonly unknown[];
   byIds: (ids: string[]) => readonly unknown[];
 }
 
@@ -91,7 +91,7 @@ export interface EntityHooksConfig<
 // =====================================================
 
 export function createEntityHooks<
-  TGetManyParams extends Record<string, any>,
+  TGetManyParams extends Record<string, unknown>,
   TGetManyResponse extends { meta?: { page: number; hasNextPage: boolean } },
   TGetByIdResponse,
   TCreateData,
@@ -140,7 +140,7 @@ export function createEntityHooks<
         const queryParams = {
           ...params,
           page: pageParam,
-          limit: (params as any)?.limit || 40,
+          limit: (params && typeof params === 'object' && 'limit' in params ? params.limit : undefined) || 40,
         } as unknown as TGetManyParams;
         return service.getMany(queryParams);
       },
@@ -198,7 +198,7 @@ export function createEntityHooks<
     id: string,
     options?: {
       enabled?: boolean;
-      include?: any;
+      include?: Record<string, unknown>;
     } & Omit<UseQueryOptions<TGetByIdResponse>, "queryKey" | "queryFn">,
   ) {
     const queryClient = useQueryClient();
@@ -257,7 +257,7 @@ export function createEntityHooks<
 
     // CREATE
     const createMutation = useMutation({
-      mutationFn: ({ data, include }: { data: TCreateData; include?: any }) => {
+      mutationFn: ({ data, include }: { data: TCreateData; include?: Record<string, unknown> }) => {
         if (process.env.NODE_ENV === "development") {
           console.log("=== CREATE MUTATION DEBUG ===");
           console.log("Mutation data:", JSON.stringify(data, null, 2));
@@ -283,7 +283,7 @@ export function createEntityHooks<
 
     // UPDATE
     const updateMutation = useMutation({
-      mutationFn: ({ id, data, include }: { id: string; data: TUpdateData; include?: any }) => service.update(id, data, include),
+      mutationFn: ({ id, data, include }: { id: string; data: TUpdateData; include?: Record<string, unknown> }) => service.update(id, data, include),
       onSuccess: (data, variables) => {
         invalidateQueries();
         // Also invalidate the specific detail query
@@ -308,10 +308,10 @@ export function createEntityHooks<
     const error = createMutation.error || updateMutation.error || deleteMutation.error;
 
     return {
-      create: (data: TCreateData, include?: any) => createMutation.mutate({ data, include }),
-      createAsync: (data: TCreateData, include?: any) => createMutation.mutateAsync({ data, include }),
-      update: ({ id, data, include }: { id: string; data: TUpdateData; include?: any }) => updateMutation.mutate({ id, data, include }),
-      updateAsync: ({ id, data, include }: { id: string; data: TUpdateData; include?: any }) => updateMutation.mutateAsync({ id, data, include }),
+      create: (data: TCreateData, include?: Record<string, unknown>) => createMutation.mutate({ data, include }),
+      createAsync: (data: TCreateData, include?: Record<string, unknown>) => createMutation.mutateAsync({ data, include }),
+      update: ({ id, data, include }: { id: string; data: TUpdateData; include?: Record<string, unknown> }) => updateMutation.mutate({ id, data, include }),
+      updateAsync: ({ id, data, include }: { id: string; data: TUpdateData; include?: Record<string, unknown> }) => updateMutation.mutateAsync({ id, data, include }),
       delete: deleteMutation.mutate,
       deleteAsync: deleteMutation.mutateAsync,
       remove: deleteMutation.mutate, // Alias for delete
@@ -354,7 +354,7 @@ export function createEntityHooks<
 
     // BATCH CREATE
     const batchCreateMutation = useMutation({
-      mutationFn: ({ data, include }: { data: TBatchCreateData; include?: any }) => service.batchCreate(data, include),
+      mutationFn: ({ data, include }: { data: TBatchCreateData; include?: Record<string, unknown> }) => service.batchCreate(data, include),
       onSuccess: (data, variables) => {
         invalidateQueries();
         options?.onBatchCreateSuccess?.(data, variables.data);
@@ -363,7 +363,7 @@ export function createEntityHooks<
 
     // BATCH UPDATE
     const batchUpdateMutation = useMutation({
-      mutationFn: ({ data, include }: { data: TBatchUpdateData; include?: any }) => {
+      mutationFn: ({ data, include }: { data: TBatchUpdateData; include?: Record<string, unknown> }) => {
         if (process.env.NODE_ENV === "development") {
           console.log("=== HOOKS LAYER DEBUGGING ===");
           console.log("Step 8 - Hook mutationFn received data:", JSON.stringify(data, null, 2));
@@ -402,10 +402,10 @@ export function createEntityHooks<
     const error = batchCreateMutation.error || batchUpdateMutation.error || batchDeleteMutation.error;
 
     return {
-      batchCreate: (data: TBatchCreateData, include?: any) => batchCreateMutation.mutate({ data, include }),
-      batchCreateAsync: (data: TBatchCreateData, include?: any) => batchCreateMutation.mutateAsync({ data, include }),
-      batchUpdate: (data: TBatchUpdateData, include?: any) => batchUpdateMutation.mutate({ data, include }),
-      batchUpdateAsync: (data: TBatchUpdateData, include?: any) => batchUpdateMutation.mutateAsync({ data, include }),
+      batchCreate: (data: TBatchCreateData, include?: Record<string, unknown>) => batchCreateMutation.mutate({ data, include }),
+      batchCreateAsync: (data: TBatchCreateData, include?: Record<string, unknown>) => batchCreateMutation.mutateAsync({ data, include }),
+      batchUpdate: (data: TBatchUpdateData, include?: Record<string, unknown>) => batchUpdateMutation.mutate({ data, include }),
+      batchUpdateAsync: (data: TBatchUpdateData, include?: Record<string, unknown>) => batchUpdateMutation.mutateAsync({ data, include }),
       batchDelete: batchDeleteMutation.mutate,
       batchDeleteAsync: batchDeleteMutation.mutateAsync,
       isLoading,

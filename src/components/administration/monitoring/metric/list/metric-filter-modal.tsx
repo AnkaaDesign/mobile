@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { Drawer } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import type { MetricCategory } from "./metric-table";
+
+export type MetricCategory = "cpu" | "memory" | "disk" | "network" | "system" | "temperature";
 
 export interface MetricFilters {
   categories?: MetricCategory[];
@@ -119,32 +120,35 @@ export function MetricFilterModal({
             {CATEGORIES.map((category) => {
               const isSelected = categories.includes(category.value);
               return (
-                <Badge
+                <TouchableOpacity
                   key={category.value}
                   onPress={() => toggleCategory(category.value)}
-                  style={StyleSheet.flatten([
-                    styles.chip,
-                    {
-                      backgroundColor: isSelected
-                        ? colors.primary
-                        : colors.muted,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                    },
-                  ])}
                 >
-                  <ThemedText
+                  <Badge
                     style={StyleSheet.flatten([
-                      styles.chipText,
+                      styles.chip,
                       {
-                        color: isSelected
-                          ? colors.primaryForeground
-                          : colors.foreground,
+                        backgroundColor: isSelected
+                          ? colors.primary
+                          : colors.muted,
+                        borderColor: isSelected ? colors.primary : colors.border,
                       },
                     ])}
                   >
-                    {category.label}
-                  </ThemedText>
-                </Badge>
+                    <ThemedText
+                      style={StyleSheet.flatten([
+                        styles.chipText,
+                        {
+                          color: isSelected
+                            ? colors.primaryForeground
+                            : colors.foreground,
+                        },
+                      ])}
+                    >
+                      {category.label}
+                    </ThemedText>
+                  </Badge>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -157,32 +161,35 @@ export function MetricFilterModal({
             {TIME_RANGES.map((range) => {
               const isSelected = timeRange === range.value;
               return (
-                <Badge
+                <TouchableOpacity
                   key={range.value}
                   onPress={() => setTimeRange(range.value)}
-                  style={StyleSheet.flatten([
-                    styles.chip,
-                    {
-                      backgroundColor: isSelected
-                        ? colors.primary
-                        : colors.muted,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                    },
-                  ])}
                 >
-                  <ThemedText
+                  <Badge
                     style={StyleSheet.flatten([
-                      styles.chipText,
+                      styles.chip,
                       {
-                        color: isSelected
-                          ? colors.primaryForeground
-                          : colors.foreground,
+                        backgroundColor: isSelected
+                          ? colors.primary
+                          : colors.muted,
+                        borderColor: isSelected ? colors.primary : colors.border,
                       },
                     ])}
                   >
-                    {range.label}
-                  </ThemedText>
-                </Badge>
+                    <ThemedText
+                      style={StyleSheet.flatten([
+                        styles.chipText,
+                        {
+                          color: isSelected
+                            ? colors.primaryForeground
+                            : colors.foreground,
+                        },
+                      ])}
+                    >
+                      {range.label}
+                    </ThemedText>
+                  </Badge>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -196,32 +203,35 @@ export function MetricFilterModal({
               const isSelected =
                 minUsage === range.min && maxUsage === range.max;
               return (
-                <Badge
+                <TouchableOpacity
                   key={index}
                   onPress={() => setUsageRange(range.min, range.max)}
-                  style={StyleSheet.flatten([
-                    styles.chip,
-                    {
-                      backgroundColor: isSelected
-                        ? colors.primary
-                        : colors.muted,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                    },
-                  ])}
                 >
-                  <ThemedText
+                  <Badge
                     style={StyleSheet.flatten([
-                      styles.chipText,
+                      styles.chip,
                       {
-                        color: isSelected
-                          ? colors.primaryForeground
-                          : colors.foreground,
+                        backgroundColor: isSelected
+                          ? colors.primary
+                          : colors.muted,
+                        borderColor: isSelected ? colors.primary : colors.border,
                       },
                     ])}
                   >
-                    {range.label}
-                  </ThemedText>
-                </Badge>
+                    <ThemedText
+                      style={StyleSheet.flatten([
+                        styles.chipText,
+                        {
+                          color: isSelected
+                            ? colors.primaryForeground
+                            : colors.foreground,
+                        },
+                      ])}
+                    >
+                      {range.label}
+                    </ThemedText>
+                  </Badge>
+                </TouchableOpacity>
               );
             })}
           </View>

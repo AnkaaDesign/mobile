@@ -1,6 +1,6 @@
 // packages/interfaces/src/observation.ts
 
-import type { ORDER_BY_DIRECTION } from '../constants';
+import type { ORDER_BY_DIRECTION } from '@/constants';
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
 import type { File, FileIncludes } from "./file";
 import type { Task, TaskIncludes, TaskOrderBy } from "./task";
@@ -66,6 +66,6 @@ export interface ObservationDeleteResponse extends BaseDeleteResponse {}
 // Batch Operation Responses
 // =====================
 
-export interface ObservationBatchCreateResponse<T> extends BaseBatchResponse<Observation, T> {}
-export interface ObservationBatchUpdateResponse<T> extends BaseBatchResponse<Observation, T & { id: string }> {}
+export interface ObservationBatchCreateResponse<T = any> extends BaseBatchResponse<Observation, T> {}
+export interface ObservationBatchUpdateResponse<T = any> extends BaseBatchResponse<Observation, T & { id: string }> {}
 export interface ObservationBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}

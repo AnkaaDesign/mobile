@@ -5,4 +5,5 @@
 /// <reference path="../types/global.d.ts" />
 /// <reference types="react-hook-form" />
 
-export {};
+// Re-export all types from the types directory
+export * from "./types/index";

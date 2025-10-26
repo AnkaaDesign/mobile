@@ -1,4 +1,4 @@
-import type { VACATION_STATUS, ACTIVITY_REASON, ACTIVITY_OPERATION } from '../constants';
+import type { VACATION_STATUS, ACTIVITY_REASON, ACTIVITY_OPERATION } from '@/constants';
 
 // Date filter type for dashboard queries
 export interface DateFilter {
@@ -127,10 +127,13 @@ export interface InventoryDashboardData {
   overview: {
     totalItems: DashboardMetric;
     totalValue: DashboardMetric; // sum of quantity * latest price
-    criticalItems: DashboardMetric; // quantity < minQuantity * 0.2
-    lowStockItems: DashboardMetric; // quantity < minQuantity
+    negativeStockItems: DashboardMetric; // quantity < 0
+    outOfStockItems: DashboardMetric; // quantity = 0
+    criticalItems: DashboardMetric; // quantity <= 90% of reorderPoint
+    lowStockItems: DashboardMetric; // 90% < quantity <= 110% of reorderPoint
+    optimalItems: DashboardMetric; // 110% < quantity <= maxQuantity (or no max)
     overstockedItems: DashboardMetric; // quantity > maxQuantity
-    itemsNeedingReorder: DashboardMetric; // quantity <= reorderPoint
+    itemsNeedingReorder: DashboardMetric; // NEGATIVE_STOCK + OUT_OF_STOCK + CRITICAL + LOW
   };
   stockMovements: {
     totalInbound: DashboardMetric;
@@ -285,8 +288,6 @@ export interface AdministrationDashboardData {
   taskOverview: {
     totalTasks: DashboardMetric;
     tasksByStatus: DashboardChartData;
-    tasksWithPrice: DashboardMetric; // price is not null
-    totalRevenue: DashboardMetric; // sum of task.price
     tasksBySector: DashboardChartData;
   };
   notificationMetrics: {
@@ -498,10 +499,7 @@ export interface ProductionDashboardData {
   garageUtilization: {
     totalGarages: DashboardMetric;
     totalLanes: DashboardMetric;
-    totalParkingSpots: DashboardMetric;
-    occupiedSpots: DashboardMetric;
     utilizationRate: DashboardMetric; // percentage
-    spotsByGarage: DashboardChartData;
   };
   truckMetrics: {
     totalTrucks: DashboardMetric;
@@ -524,8 +522,6 @@ export interface ProductionDashboardData {
     averageAirbrushTime: DashboardMetric;
   };
   revenueAnalysis: {
-    totalRevenue: DashboardMetric; // sum of task prices
-    averageTaskValue: DashboardMetric;
     revenueByMonth: TimeSeriesDataPoint[];
     revenueBySector: DashboardChartData;
     revenueByCustomerType: DashboardChartData;
@@ -564,7 +560,6 @@ export interface UnifiedDashboardData {
   };
   administration: {
     orderSummary: Pick<AdministrationDashboardData["orderOverview"], "totalOrders" | "pendingOrders" | "overdueOrders">;
-    revenue: number; // sum of task prices
     missingNfe: number; // count of orders + tasks without nfe
   };
   paint: {

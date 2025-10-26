@@ -1,7 +1,7 @@
 // packages/interfaces/src/supplier.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION } from '../constants';
+import type { ORDER_BY_DIRECTION } from '@/constants';
 import type { File, FileIncludes } from "./file";
 import type { Item, ItemIncludes } from "./item";
 import type { Order, OrderIncludes, OrderRule, OrderRuleIncludes } from "./order";
@@ -110,6 +110,6 @@ export interface SupplierDeleteResponse extends BaseDeleteResponse {}
 // Batch Operation Responses
 // =====================
 
-export interface SupplierBatchCreateResponse<T> extends BaseBatchResponse<Supplier, T> {}
-export interface SupplierBatchUpdateResponse<T> extends BaseBatchResponse<Supplier, T & { id: string }> {}
+export interface SupplierBatchCreateResponse<T = any> extends BaseBatchResponse<Supplier, T> {}
+export interface SupplierBatchUpdateResponse<T = any> extends BaseBatchResponse<Supplier, T & { id: string }> {}
 export interface SupplierBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}

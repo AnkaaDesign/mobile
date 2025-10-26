@@ -3,8 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { createEntityHooks } from "./createEntityHooks";
 import { priceQueryKeys } from "./queryKeys";
-import { itemPriceService } from '../api-client';
-import type { PriceGetManyFormData, PriceCreateFormData, PriceUpdateFormData, PriceBatchCreateFormData, PriceBatchUpdateFormData, PriceBatchDeleteFormData } from '../schemas';
+import { itemPriceService } from '@/api-client';
+import type { PriceGetManyFormData, PriceCreateFormData, PriceUpdateFormData, PriceBatchCreateFormData, PriceBatchUpdateFormData, PriceBatchDeleteFormData } from '@/schemas';
 import type {
   Price,
   PriceGetManyResponse,
@@ -15,7 +15,7 @@ import type {
   PriceBatchCreateResponse,
   PriceBatchUpdateResponse,
   PriceBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 
 // =====================
 // Price Hooks

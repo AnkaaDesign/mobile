@@ -12,11 +12,8 @@ import { Progress } from "@/components/ui/progress";
 import { SwipeActions } from "@/components/ui/swipe-actions";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import type { SortConfig } from "@/lib/sort-utils";
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface BackupTableProps {
   backups: BackupMetadata[];
@@ -153,29 +150,7 @@ export function BackupTable({
     ({ item: backup }: { item: BackupMetadata }) => {
       const TypeIcon = getTypeIcon(backup.type);
 
-      const swipeActions =
-        enableSwipeActions && backup.status === "completed"
-          ? [
-              {
-                label: "Restaurar",
-                icon: IconDownload,
-                color: colors.primary,
-                onPress: () => handleRestore(backup),
-              },
-              {
-                label: "Verificar",
-                icon: IconShieldCheck,
-                color: colors.warning,
-                onPress: () => onBackupVerify?.(backup.id),
-              },
-              {
-                label: "Excluir",
-                icon: IconTrash,
-                color: colors.destructive,
-                onPress: () => handleDelete(backup),
-              },
-            ]
-          : [];
+      const canSwipe = enableSwipeActions && backup.status === "completed";
 
       const content = (
         <Card
@@ -276,9 +251,14 @@ export function BackupTable({
       );
 
       // Wrap in swipe actions if enabled
-      if (swipeActions.length > 0) {
+      if (canSwipe) {
         return (
-          <SwipeActions actions={swipeActions} key={backup.id}>
+          <SwipeActions
+            key={backup.id}
+            onDelete={() => handleDelete(backup)}
+            deleteLabel="Excluir"
+            enabled={true}
+          >
             {content}
           </SwipeActions>
         );

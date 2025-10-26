@@ -1,5 +1,5 @@
 // lib/constants.ts - Mobile app specific constants
-import { USER_STATUS } from '../constants';
+import { ACTIVE_USER_STATUSES } from '../constants';
 
 // Available columns for item tables
 export const AVAILABLE_ITEMS_COLUMNS = [
@@ -23,7 +23,7 @@ export const MOBILE_BREAKPOINTS = {
 
 export const ITEM_FILTER_DEFAULTS = {
   searchingFor: "",
-  status: USER_STATUS.ACTIVE,
+  status: ACTIVE_USER_STATUSES,
   sortBy: "name",
   sortOrder: "asc",
 };

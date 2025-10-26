@@ -9,7 +9,7 @@ import type {
   BaseDeleteResponse,
   BaseBatchResponse,
 } from "./common";
-import type { ORDER_BY_DIRECTION, DEPLOYMENT_STATUS, DEPLOYMENT_ENVIRONMENT } from '../constants';
+import type { ORDER_BY_DIRECTION, DEPLOYMENT_STATUS, DEPLOYMENT_ENVIRONMENT } from '@/constants';
 import type { User, UserIncludes, UserOrderBy } from "./user";
 
 // =====================

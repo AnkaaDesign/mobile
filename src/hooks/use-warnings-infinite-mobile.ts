@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useWarningsInfinite } from './useWarning';
-import { WarningGetManyFormData } from '../schemas';
+import { WarningGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for warnings

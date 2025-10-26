@@ -10,7 +10,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { spacing } from "@/constants/design-system";
 import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from '../../../constants';
 
-export interface TeamCutFilters {
+export interface TeamCuttingFilters {
   statuses?: string[];
   types?: string[];
   origins?: string[];
@@ -18,35 +18,32 @@ export interface TeamCutFilters {
   endDate?: Date;
 }
 
-interface TeamCutFilterModalProps {
+interface TeamCuttingFilterModalProps {
   visible: boolean;
   onClose: () => void;
-  onApply: (filters: TeamCutFilters) => void;
-  currentFilters: TeamCutFilters;
+  onApply: (filters: TeamCuttingFilters) => void;
+  currentFilters: TeamCuttingFilters;
 }
 
 const STATUS_LABELS: Record<string, string> = {
   [CUT_STATUS.PENDING]: "Pendente",
-  [CUT_STATUS.IN_PROGRESS]: "Em Progresso",
+  [CUT_STATUS.CUTTING]: "Cortando",
   [CUT_STATUS.COMPLETED]: "Concluído",
-  [CUT_STATUS.CANCELLED]: "Cancelado",
 };
 
 const TYPE_LABELS: Record<string, string> = {
-  [CUT_TYPE.NORMAL]: "Normal",
-  [CUT_TYPE.RECUT]: "Recorte",
-  [CUT_TYPE.REWORK]: "Retrabalho",
+  [CUT_TYPE.VINYL]: "Adesivo",
+  [CUT_TYPE.STENCIL]: "Espovo",
 };
 
 const ORIGIN_LABELS: Record<string, string> = {
-  [CUT_ORIGIN.AUTOMATIC]: "Automático",
-  [CUT_ORIGIN.MANUAL]: "Manual",
-  [CUT_ORIGIN.REQUESTED]: "Solicitado",
+  [CUT_ORIGIN.PLAN]: "Plano",
+  [CUT_ORIGIN.REQUEST]: "Solicitação",
 };
 
-export const TeamCutFilterModal = ({ visible, onClose, onApply, currentFilters }: TeamCutFilterModalProps) => {
+export const TeamCuttingFilterModal = ({ visible, onClose, onApply, currentFilters }: TeamCuttingFilterModalProps) => {
   const { colors } = useTheme();
-  const [filters, setFilters] = useState<TeamCutFilters>(currentFilters);
+  const [filters, setFilters] = useState<TeamCuttingFilters>(currentFilters);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["status"]));
 
   const toggleSection = useCallback((section: string) => {

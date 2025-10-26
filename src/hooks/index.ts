@@ -164,6 +164,14 @@ export * from "./use-order-schedules-infinite-mobile";
 export * from "./use-cuts-infinite-mobile";
 
 // =====================================================
+// UI State Management Hooks
+// =====================================================
+export * from "./useFilterState";
+export * from "./useColumnVisibility";
+export * from "./useTableSort";
+export * from "./useDebouncedSearch";
+
+// =====================================================
 // Monitoring & Utilities
 // =====================================================
 // NOTE: query-error-monitor is NOT exported here to prevent module initialization issues

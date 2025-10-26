@@ -1,6 +1,6 @@
 // packages/hooks/src/useUser.ts
 
-import { createUser, deleteUser, getUserById, getUsers, updateUser, batchCreateUsers, batchUpdateUsers, batchDeleteUsers } from '../api-client';
+import { createUser, deleteUser, getUserById, getUsers, updateUser, batchCreateUsers, batchUpdateUsers, batchDeleteUsers } from '@/api-client';
 import type {
   UserGetManyFormData,
   UserCreateFormData,
@@ -9,7 +9,7 @@ import type {
   UserBatchUpdateFormData,
   UserBatchDeleteFormData,
   UserInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   UserGetUniqueResponse,
   UserGetManyResponse,
@@ -19,8 +19,8 @@ import type {
   UserBatchCreateResponse,
   UserBatchUpdateResponse,
   UserBatchDeleteResponse,
-} from '../types';
-import type { User } from '../types';
+} from '@/types';
+import type { User } from '@/types';
 import { changeLogKeys, positionKeys, sectorKeys, userKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

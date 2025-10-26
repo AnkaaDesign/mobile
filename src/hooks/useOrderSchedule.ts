@@ -10,7 +10,7 @@ import {
   batchCreateOrderSchedules,
   batchUpdateOrderSchedules,
   batchDeleteOrderSchedules,
-} from '../api-client';
+} from '@/api-client';
 import type {
   OrderScheduleGetManyFormData,
   OrderScheduleCreateFormData,
@@ -18,7 +18,7 @@ import type {
   OrderScheduleBatchCreateFormData,
   OrderScheduleBatchUpdateFormData,
   OrderScheduleBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   OrderScheduleGetManyResponse,
   OrderScheduleGetUniqueResponse,
@@ -28,7 +28,7 @@ import type {
   OrderScheduleBatchCreateResponse,
   OrderScheduleBatchUpdateResponse,
   OrderScheduleBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { orderScheduleKeys, orderKeys, supplierKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

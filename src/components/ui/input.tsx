@@ -9,11 +9,15 @@ export interface InputProps extends Omit<TextInputProps, "style"> {
   containerStyle?: ViewStyle;
   inputStyle?: TextStyle;
   error?: boolean;
+  errorMessage?: string;
   withIcon?: boolean;
   className?: string;
+  disabled?: boolean;
 }
 
-const Input = React.forwardRef<TextInput, InputProps>(({ style, containerStyle, inputStyle, error, editable = true, withIcon, className, ...props }, ref) => {
+const Input = React.forwardRef<TextInput, InputProps>(({ style, containerStyle, inputStyle, error, errorMessage, editable = true, disabled, withIcon, className, ...props }, ref) => {
+  // Handle disabled prop
+  const isEditable = disabled !== undefined ? !disabled : editable;
   const { colors, isDark } = useTheme();
   const [isFocused, setIsFocused] = React.useState(false);
   const borderColorAnim = React.useRef(new Animated.Value(0)).current;
@@ -61,7 +65,7 @@ const Input = React.forwardRef<TextInput, InputProps>(({ style, containerStyle, 
     }),
 
     // Disabled state
-    ...(editable === false && {
+    ...(isEditable === false && {
       opacity: 0.5,
       backgroundColor: colors.input,
     }),
@@ -116,7 +120,7 @@ const Input = React.forwardRef<TextInput, InputProps>(({ style, containerStyle, 
             ref={ref}
             style={baseInputStyles}
             placeholderTextColor={colors.mutedForeground}
-            editable={editable}
+            editable={isEditable}
             onFocus={(e) => {
               setIsFocused(true);
               props.onFocus?.(e);

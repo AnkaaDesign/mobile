@@ -31,13 +31,9 @@ export default function ItemCreateScreen() {
     }
   };
 
-  const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.inventory.products.root) as any);
-  };
-
   return (
     <ThemedView className="flex-1">
-      <ItemForm mode="create" onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending} />
+      <ItemForm mode="create" onSubmit={handleSubmit} isSubmitting={createMutation.isPending} />
     </ThemedView>
   );
 }

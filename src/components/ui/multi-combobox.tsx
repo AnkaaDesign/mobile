@@ -13,7 +13,9 @@ interface MultiComboboxOption {
 interface MultiComboboxProps {
   options: MultiComboboxOption[];
   selectedValues?: string[];
-  onValueChange: (values: string[]) => void;
+  value?: string[];
+  onValueChange?: (values: string[]) => void;
+  onChange?: (values: string[]) => void;
   onCreate?: (newLabel: string) => void;
   onEndReached?: () => void;
   onEndReachedThreshold?: number;
@@ -217,7 +219,7 @@ export const MultiCombobox = React.memo(function MultiCombobox({
   }, [loading, colors.primary]);
 
   const renderItem = useCallback(
-    ({ item }: { item: MultiComboboxOption }) => {
+    ({ item }: { item: MultiComboboxOption }): React.ReactElement | null => {
       // Handle create option
       if (item.value === "__CREATE_OPTION__") {
         return (
@@ -238,7 +240,8 @@ export const MultiCombobox = React.memo(function MultiCombobox({
 
       // Use custom render if provided
       if (renderOption) {
-        return renderOption(item, isSelected, () => handleSelect(item));
+        const customRender = renderOption(item, isSelected, () => handleSelect(item));
+        return customRender as React.ReactElement;
       }
 
       return (
@@ -427,7 +430,7 @@ export const MultiCombobox = React.memo(function MultiCombobox({
                 maxHeight: inputLayout.width > 0 ? LIST_MAX_HEIGHT : undefined,
               }}
               // Virtualization optimizations
-              getItemLayout={(data, index) => ({
+              getItemLayout={(_data: MultiComboboxOption[] | null | undefined, index: number) => ({
                 length: 48, // Fixed item height
                 offset: 48 * index,
                 index,
@@ -437,7 +440,6 @@ export const MultiCombobox = React.memo(function MultiCombobox({
               windowSize={10}
               removeClippedSubviews={true}
               updateCellsBatchingPeriod={50}
-              disableVirtualization={false}
             />
           </Pressable>
         </Pressable>
@@ -452,7 +454,14 @@ MultiCombobox.displayName = "MultiCombobox";
 interface BadgeProps {
   label: string;
   onRemove: () => void;
-  colors: any;
+  colors: {
+    primary: string;
+    foreground: string;
+    background: string;
+    muted: string;
+    mutedForeground: string;
+    border: string;
+  };
 }
 
 const Badge = React.memo<BadgeProps>(({ label, onRemove, colors }) => {
@@ -472,7 +481,14 @@ const Badge = React.memo<BadgeProps>(({ label, onRemove, colors }) => {
 interface ChipProps {
   label: string;
   onRemove: () => void;
-  colors: any;
+  colors: {
+    primary: string;
+    foreground: string;
+    background: string;
+    muted: string;
+    mutedForeground: string;
+    border: string;
+  };
 }
 
 const Chip = React.memo<ChipProps>(({ label, onRemove, colors }) => {

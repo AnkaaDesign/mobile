@@ -10,7 +10,7 @@ import {
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { IconHistory, IconEye } from "@tabler/icons-react-native";
 import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row";
 import { ChangeLogListSkeleton } from "../skeleton/change-log-list-skeleton";
@@ -91,8 +91,9 @@ export const ChangeLogTable = memo(({
       key={changeLog.id}
       rightActions={[
         {
+          key: "view",
           label: "Ver Detalhes",
-          icon: IconEye,
+          icon: <IconEye size={24} color="#fff" />,
           backgroundColor: colors.primary,
           onPress: () => onChangeLogPress(changeLog.id),
         },
@@ -150,12 +151,12 @@ export const ChangeLogTable = memo(({
           <View style={styles.rightSection}>
             {changeLog.user ? (
               <View style={styles.userInfo}>
-                <Avatar
-                  size="sm"
-                  name={changeLog.user.name}
-                  imageUrl={changeLog.user.imageUrl}
-                  style={styles.avatar}
-                />
+                <Avatar size="sm" style={styles.avatar}>
+                  {(changeLog.user.avatar?.url || changeLog.user.profilePictureUrl) && (
+                    <AvatarImage source={{ uri: changeLog.user.avatar?.url || changeLog.user.profilePictureUrl }} />
+                  )}
+                  <AvatarFallback>{changeLog.user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
                 <View style={styles.userDetails}>
                   <ThemedText style={styles.userName} numberOfLines={1}>
                     {changeLog.user.name}

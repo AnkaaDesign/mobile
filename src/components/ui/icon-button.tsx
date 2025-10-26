@@ -13,7 +13,7 @@ interface IconButtonProps {
   /** Icon size (overrides size variant) */
   iconSize?: IconSize;
   /** Icon variant for color theming */
-  variant?: "default" | "primary" | "secondary" | "muted" | "success" | "warning" | "error";
+  variant?: "default" | "primary" | "secondary" | "muted" | "success" | "warning" | "error" | "ghost";
   /** Whether the button is disabled */
   disabled?: boolean;
   /** Custom background color */
@@ -95,8 +95,8 @@ export function IconButton({
     >
       <Icon
         name={name}
-        size={finalIconSize}
-        variant={disabled ? "muted" : variant}
+        size={finalIconSize as number}
+        variant={disabled ? "muted" : variant as any}
         testID={`${testID || name}-icon`}
         accessible={false} // Parent button handles accessibility
       />
@@ -156,7 +156,7 @@ export function FAB({ name, size = "md", variant = "primary", showShadow = true,
       accessibilityRole="button"
       {...props}
     >
-      <Icon name={name} size={config.iconSize} variant="primary" color={colors.primaryForeground} accessible={false} />
+      <Icon name={name} size={config.iconSize as number} variant="primary" color={colors.primaryForeground} accessible={false} />
     </Pressable>
   );
 }

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { View, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Separator } from "@/components/ui/separator";
 import { IconLoader } from "@tabler/icons-react-native";
@@ -13,6 +13,7 @@ import { useItemCategories } from '../../../../hooks';
 import { ITEM_CATEGORY_TYPE } from '../../../../constants';
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
+import type { Supplier, ItemBrand, ItemCategory } from '../../../../types';
 
 type ItemFormData = ItemCreateFormData | ItemUpdateFormData;
 
@@ -34,55 +35,133 @@ import { BarcodeManager } from "./barcode-manager";
 import { AssignToUserToggle } from "./assign-to-user-toggle";
 import { PpeConfigSection } from "./ppe-config-section";
 
-interface ItemFormProps<TMode extends "create" | "update"> {
-  onSubmit: (data: TMode extends "create" ? ItemCreateFormData : ItemUpdateFormData) => Promise<any>;
-  onCancel: () => void;
+interface BaseItemFormProps {
   isSubmitting?: boolean;
-  defaultValues?: Partial<TMode extends "create" ? ItemCreateFormData : ItemUpdateFormData>;
-  mode: TMode;
+  onDirtyChange?: (isDirty: boolean) => void;
+  onFormStateChange?: (formState: { isValid: boolean; isDirty: boolean }) => void;
+  initialSupplier?: Supplier;
+  initialBrand?: ItemBrand;
+  initialCategory?: ItemCategory;
 }
 
-export function ItemForm<TMode extends "create" | "update">({ onSubmit, onCancel, isSubmitting, defaultValues, mode }: ItemFormProps<TMode>) {
+interface CreateItemFormProps extends BaseItemFormProps {
+  mode: "create";
+  onSubmit: (data: ItemCreateFormData) => Promise<void>;
+  defaultValues?: Partial<ItemCreateFormData>;
+}
+
+interface UpdateItemFormProps extends BaseItemFormProps {
+  mode: "update";
+  onSubmit: (data: ItemUpdateFormData) => Promise<void>;
+  defaultValues?: Partial<ItemUpdateFormData>;
+}
+
+type ItemFormProps = CreateItemFormProps | UpdateItemFormProps;
+
+export function ItemForm(props: ItemFormProps) {
+  const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, initialSupplier, initialBrand, initialCategory } = props;
   const { colors, isDark } = useTheme();
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(defaultValues?.categoryId);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(defaultValues?.categoryId || undefined);
   const [isPPE, setIsPPE] = useState(false);
 
-  type FormData = TMode extends "create" ? ItemCreateFormData : ItemUpdateFormData;
+  // Default values for create mode
+  const createDefaults: ItemCreateFormData = {
+    name: "",
+    uniCode: null,
+    quantity: 0,
+    reorderPoint: null,
+    reorderQuantity: null,
+    maxQuantity: null,
+    boxQuantity: null,
+    tax: undefined,
+    measures: [], // Initialize with empty measures array
+    barcodes: [],
+    shouldAssignToUser: true,
+    abcCategory: null,
+    xyzCategory: null,
+    brandId: undefined,
+    categoryId: undefined,
+    supplierId: null,
+    estimatedLeadTime: 30,
+    isActive: true,
+    price: undefined,
+    // PPE fields
+    ppeType: null,
+    ppeCA: null,
+    ppeDeliveryMode: null,
+    ppeStandardQuantity: null,
+    ppeAutoOrderMonths: null,
+    ...defaultValues,
+  };
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(mode === "create" ? itemCreateSchema : itemUpdateSchema) as any,
-    defaultValues: {
-      name: "",
-      uniCode: null,
-      quantity: 0,
-      reorderPoint: null,
-      reorderQuantity: null,
-      maxQuantity: null,
-      boxQuantity: null,
-      tax: 0,
-      measures: [],
-      barcodes: [],
-      shouldAssignToUser: true,
-      abcCategory: null,
-      xyzCategory: null,
-      brandId: "",
-      categoryId: "",
-      supplierId: null,
-      estimatedLeadTime: 30,
-      isActive: true,
-      price: undefined,
-      // PPE fields
-      ppeType: null,
-      ppeSize: null,
-      ppeCA: null,
-      ppeDeliveryMode: null,
-      ppeStandardQuantity: null,
-      ppeAutoOrderMonths: null,
-      ...defaultValues,
-    } as any,
+  // Ensure defaultValues has barcodes and measures as arrays for update mode
+  const processedDefaultValues =
+    mode === "update" && defaultValues
+      ? {
+          ...defaultValues,
+          barcodes: Array.isArray(defaultValues.barcodes) ? defaultValues.barcodes : [],
+          measures: Array.isArray(defaultValues.measures) ? defaultValues.measures : [],
+        }
+      : defaultValues;
+
+  // Create a unified form that works for both modes
+  const form = useForm({
+    resolver: zodResolver(mode === "create" ? itemCreateSchema : itemUpdateSchema),
+    defaultValues: mode === "create" ? createDefaults : processedDefaultValues,
+    mode: "onTouched", // Validate only after field is touched to avoid premature validation
+    reValidateMode: "onChange", // After first validation, check on every change
+    shouldFocusError: true, // Focus on first error field when validation fails
+    criteriaMode: "all", // Show all errors for better UX
   });
 
-  // Form will be provided through context to child components
+  // useFieldArray for measures
+  const measuresFieldArray = useFieldArray({
+    control: form.control,
+    name: "measures",
+  });
+
+  // Ensure barcodes and measures are initialized as arrays
+  React.useEffect(() => {
+    const currentBarcodes = form.getValues("barcodes");
+    if (!Array.isArray(currentBarcodes)) {
+      form.setValue("barcodes", [], { shouldValidate: false });
+    }
+
+    const currentMeasures = form.getValues("measures");
+    if (!Array.isArray(currentMeasures)) {
+      form.setValue("measures", [], { shouldValidate: false });
+    }
+  }, [form]);
+
+  // Access formState properties during render for proper subscription
+  const { isValid, isDirty, errors } = form.formState;
+
+  // Debug validation errors in development
+  useEffect(() => {
+    if (__DEV__ && Object.keys(errors).length > 0) {
+      console.log("Item form validation errors:", {
+        errors,
+        currentValues: form.getValues(),
+      });
+    }
+  }, [errors, form]);
+
+  // Track dirty state without triggering validation
+  useEffect(() => {
+    if (onDirtyChange && mode === "update") {
+      onDirtyChange(isDirty);
+    }
+  }, [isDirty, onDirtyChange, mode]);
+
+  // Track form state changes for submit button
+  useEffect(() => {
+    if (onFormStateChange) {
+      onFormStateChange({
+        isValid,
+        isDirty,
+      });
+    }
+  }, [isValid, isDirty, onFormStateChange]);
 
   // Check if selected category is PPE
   const { data: categories } = useItemCategories({
@@ -95,17 +174,38 @@ export function ItemForm<TMode extends "create" | "update">({ onSubmit, onCancel
     }
   }, [categories]);
 
-  const handleSubmit = async (data: FormData) => {
+  const handleSubmit = async (data: any) => {
+    console.group("ItemForm handleSubmit");
+    console.groupEnd();
+
     try {
-      // Ensure barcodes is always an array before submitting
+      // Convert measures object to array if needed
+      let measuresArray = [];
+      if (data.measures) {
+        if (Array.isArray(data.measures)) {
+          measuresArray = data.measures;
+        } else if (typeof data.measures === "object") {
+          // Convert object with numeric keys to array
+          measuresArray = Object.values(data.measures);
+        }
+      }
+
+      // Ensure barcodes and measures are always arrays before submitting
       const processedData = {
         ...data,
         barcodes: Array.isArray(data.barcodes) ? data.barcodes : [],
+        measures: measuresArray,
       };
 
-      await onSubmit(processedData as any);
+      if (mode === "create") {
+        await (props as CreateItemFormProps).onSubmit(processedData);
+      } else {
+        await (props as UpdateItemFormProps).onSubmit(processedData);
+      }
     } catch (error) {
-      // Error handling done by parent component
+      console.error("Submit error:", error);
+      // Re-throw so parent can handle
+      throw error;
     }
   };
 
@@ -115,121 +215,108 @@ export function ItemForm<TMode extends "create" | "update">({ onSubmit, onCancel
     <FormProvider {...form}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
         <ThemedScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-        <View style={styles.content}>
-          {/* Basic Information */}
-          <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Informações Básicas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View style={styles.fieldGroup}>
-                <NameInput disabled={isSubmitting} required={isRequired} />
-                <UnicodeInput disabled={isSubmitting} />
-              </View>
-            </CardContent>
-          </Card>
-
-          {/* Categorization */}
-          <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Classificação</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View style={styles.fieldGroup}>
-                <BrandSelector disabled={isSubmitting} required={isRequired} />
-                <CategorySelector disabled={isSubmitting} required={isRequired} onCategoryChange={setSelectedCategoryId} />
-                <SupplierSelector disabled={isSubmitting} />
-              </View>
-            </CardContent>
-          </Card>
-
-          {/* Inventory */}
-          <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Controle de Estoque</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View style={styles.fieldGroup}>
-                <QuantityInput disabled={isSubmitting} required={isRequired} />
-                <MaxQuantityInput disabled={isSubmitting} />
-                <BoxQuantityInput disabled={isSubmitting} />
-                <LeadTimeInput disabled={isSubmitting} />
-              </View>
-            </CardContent>
-          </Card>
-
-          {/* Pricing */}
-          <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Preço e Impostos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View style={styles.fieldGroup}>
-                <View style={styles.fieldRow}>
-                  <View style={styles.halfField}>
-                    <PriceInput disabled={isSubmitting} />
-                  </View>
-                  <View style={styles.halfField}>
-                    <TaxInput disabled={isSubmitting} required={isRequired} />
-                  </View>
-                </View>
-              </View>
-            </CardContent>
-          </Card>
-
-          {/* Measures */}
-          <MeasuresManager disabled={isSubmitting} />
-
-          {/* Tracking */}
-          <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Rastreamento</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View style={styles.fieldGroup}>
-                <BarcodeManager disabled={isSubmitting} />
-
-                <Separator style={styles.separator} />
-
-                <AssignToUserToggle disabled={isSubmitting} />
-                <StatusToggle disabled={isSubmitting} />
-              </View>
-            </CardContent>
-          </Card>
-
-          {/* PPE Configuration */}
-          {isPPE && (
+          <View style={styles.content}>
+            {/* Basic Information & Classification */}
             <Card style={styles.card}>
               <CardHeader>
-                <CardTitle>Configuração de EPI</CardTitle>
+                <CardTitle>Informações Básicas</CardTitle>
+                <CardDescription>Identificação e classificação do item</CardDescription>
               </CardHeader>
               <CardContent>
-                <PpeConfigSection disabled={isSubmitting} required={false} />
+                <View style={styles.fieldGroup}>
+                  <UnicodeInput disabled={isSubmitting} />
+                  <NameInput disabled={isSubmitting} required={isRequired} />
+                </View>
+                <Separator style={styles.separator} />
+                <View style={styles.fieldGroup}>
+                  <CategorySelector
+                    disabled={isSubmitting}
+                    onCategoryChange={setSelectedCategoryId}
+                    initialCategory={initialCategory}
+                  />
+                  <BrandSelector
+                    disabled={isSubmitting}
+                    initialBrand={initialBrand}
+                  />
+                  <SupplierSelector
+                    disabled={isSubmitting}
+                    initialSupplier={initialSupplier}
+                  />
+                </View>
               </CardContent>
             </Card>
-          )}
 
-          {/* Actions */}
-          <View style={styles.actionsContainer}>
-            <View style={styles.actions}>
-              <Button variant="outline" onPress={onCancel} disabled={isSubmitting} style={styles.cancelButton}>
-                Cancelar
-              </Button>
-              <Button onPress={form.handleSubmit(handleSubmit as any)} disabled={isSubmitting} style={styles.submitButton}>
-                {isSubmitting ? (
-                  <>
-                    <IconLoader size={20} color={colors.primaryForeground} />
-                    <ThemedText style={{ color: colors.primaryForeground }}>Salvando...</ThemedText>
-                  </>
-                ) : (
-                  <ThemedText style={{ color: colors.primaryForeground }}>{mode === "create" ? "Criar Item" : "Atualizar Item"}</ThemedText>
-                )}
-              </Button>
-            </View>
+            {/* Inventory */}
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Controle de Estoque</CardTitle>
+                <CardDescription>Quantidades e níveis de estoque</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <View style={styles.fieldGroup}>
+                  <QuantityInput disabled={isSubmitting} required={isRequired} />
+                  <MaxQuantityInput disabled={isSubmitting} />
+                  <BoxQuantityInput disabled={isSubmitting} />
+                  <LeadTimeInput disabled={isSubmitting} />
+                </View>
+              </CardContent>
+            </Card>
+
+            {/* Pricing */}
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Preço e Taxas</CardTitle>
+                <CardDescription>Informações de preço e impostos</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <View style={styles.fieldGroup}>
+                  <View style={styles.fieldRow}>
+                    <View style={styles.halfField}>
+                      <PriceInput disabled={isSubmitting} />
+                    </View>
+                    <View style={styles.halfField}>
+                      <TaxInput disabled={isSubmitting} required={isRequired} />
+                    </View>
+                  </View>
+                </View>
+              </CardContent>
+            </Card>
+
+            {/* Multiple Measures - Only show for non-PPE categories */}
+            {!isPPE && <MeasuresManager disabled={isSubmitting} />}
+
+            {/* PPE Configuration - Only show for PPE categories */}
+            {isPPE && <PpeConfigSection disabled={isSubmitting} required={isRequired} />}
+
+            {/* Tracking */}
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Rastreamento</CardTitle>
+                <CardDescription>Códigos de barras para identificação do item</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <View style={styles.fieldGroup}>
+                  <BarcodeManager disabled={isSubmitting} />
+                </View>
+              </CardContent>
+            </Card>
+
+            {/* Extra Configurations */}
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Configurações Extras</CardTitle>
+                <CardDescription>Configurações adicionais do item</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <View style={styles.fieldGroup}>
+                  <AssignToUserToggle disabled={isSubmitting} />
+                  <StatusToggle disabled={isSubmitting} />
+                </View>
+              </CardContent>
+            </Card>
           </View>
-        </View>
-      </ThemedScrollView>
-    </KeyboardAvoidingView>
+        </ThemedScrollView>
+      </KeyboardAvoidingView>
     </FormProvider>
   );
 }
@@ -260,36 +347,5 @@ const styles = StyleSheet.create({
   },
   separator: {
     marginVertical: spacing.md,
-  },
-  ppeNotice: {
-    backgroundColor: "rgba(37, 99, 235, 0.1)",
-  },
-  noticeContent: {
-    paddingVertical: spacing.md,
-  },
-  noticeRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-  },
-  noticeText: {
-    flex: 1,
-    fontSize: fontSize.sm,
-    color: "#2563eb",
-    lineHeight: fontSize.sm * 1.5,
-  },
-  actionsContainer: {
-    marginTop: spacing.xs,
-  },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: spacing.md,
-  },
-  cancelButton: {
-    minWidth: 100,
-  },
-  submitButton: {
-    minWidth: 120,
   },
 });

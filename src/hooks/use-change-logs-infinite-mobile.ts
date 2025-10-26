@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useChangeLogsInfinite } from './useChangelog';
-import { ChangeLogGetManyFormData } from '../schemas';
+import { ChangeLogGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for change logs

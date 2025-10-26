@@ -1,6 +1,6 @@
 // packages/hooks/src/useWarning.ts
 
-import { createWarning, deleteWarning, getWarningById, getWarnings, updateWarning, batchCreateWarnings, batchUpdateWarnings, batchDeleteWarnings } from '../api-client';
+import { createWarning, deleteWarning, getWarningById, getWarnings, updateWarning, batchCreateWarnings, batchUpdateWarnings, batchDeleteWarnings } from '@/api-client';
 import type {
   WarningCreateFormData,
   WarningUpdateFormData,
@@ -8,7 +8,7 @@ import type {
   WarningBatchCreateFormData,
   WarningBatchUpdateFormData,
   WarningBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   WarningGetManyResponse,
   WarningGetUniqueResponse,
@@ -18,7 +18,7 @@ import type {
   WarningBatchCreateResponse,
   WarningBatchUpdateResponse,
   WarningBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { warningKeys, userKeys, changeLogKeys } from "./queryKeys";
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 

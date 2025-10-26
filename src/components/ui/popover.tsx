@@ -6,7 +6,12 @@ import { cn } from "../../lib/utils";
 import { TextClassContext } from "./text";
 const Popover = PopoverPrimitive.Root;
 const PopoverTrigger = PopoverPrimitive.Trigger;
-const PopoverContent = React.forwardRef(({ className, align = "center", sideOffset = 4, portalHost, ...props }, ref) => {
+const PopoverContent = React.forwardRef<
+  React.ElementRef<typeof PopoverPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content> & {
+    portalHost?: string;
+  }
+>(({ className, align = "center", sideOffset = 4, portalHost, ...props }, ref) => {
   return (
     <PopoverPrimitive.Portal hostName={portalHost}>
       <PopoverPrimitive.Overlay style={Platform.OS !== "web" ? StyleSheet.absoluteFill : undefined}>

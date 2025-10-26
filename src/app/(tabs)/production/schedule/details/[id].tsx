@@ -9,7 +9,7 @@ import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useTaskDetail, useTaskMutations, useLayoutsByTruck, useCutsByTask } from '../../../../../hooks';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { TASK_STATUS, SECTOR_PRIVILEGES, TASK_STATUS_LABELS, CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
+import { TASK_STATUS, SECTOR_PRIVILEGES, TASK_STATUS_LABELS, CHANGE_LOG_ENTITY_TYPE, AIRBRUSHING_STATUS_LABELS } from '../../../../../constants';
 import { hasPrivilege, formatCurrency, formatDate } from '../../../../../utils';
 import { useMemo } from "react";
 import { showToast } from "@/components/ui/toast";
@@ -42,7 +42,10 @@ import {
   IconList,
   IconDownload,
   IconCurrencyReal,
-  IconFile
+  IconFile,
+  IconSpray,
+  IconClock,
+  IconCheck
 } from "@tabler/icons-react-native";
 
 export default function ScheduleDetailsScreen() {
@@ -85,6 +88,15 @@ export default function ScheduleDetailsScreen() {
       },
       generalPainting: true,
       logoPaints: true,
+      airbrushings: {
+        include: {
+          receipts: true,
+          invoices: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
       relatedTasks: {
         include: {
           customer: true,
@@ -120,6 +132,9 @@ export default function ScheduleDetailsScreen() {
   );
 
   const cuts = cutsResponse?.data || [];
+
+  // Get airbrushings directly from task (they're included in the task query)
+  const airbrushings = (task as any)?.airbrushings || [];
 
   // Fetch layouts for truck dimensions
   const { data: layouts } = useLayoutsByTruck((task as any)?.truck?.id || '', {
@@ -550,6 +565,96 @@ export default function ScheduleDetailsScreen() {
                   )}
                 </View>
               </ScrollView>
+            </Card>
+          )}
+
+          {/* Airbrushings Card - Only show if task has airbrushings */}
+          {airbrushings.length > 0 && (
+            <Card style={styles.card}>
+              <View style={styles.sectionHeader}>
+                <IconSpray size={20} color={colors.primary} />
+                <ThemedText style={styles.sectionTitle}>Aerografias</ThemedText>
+                <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
+                  {airbrushings.length}
+                </Badge>
+              </View>
+              <View style={styles.itemDetails}>
+                {airbrushings.map((airbrushing: any, index: number) => (
+                  <View key={airbrushing.id} style={[styles.relatedTaskItem, { paddingVertical: spacing.md }]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.sm }}>
+                      <View style={{ flex: 1 }}>
+                        <ThemedText style={styles.relatedTaskName}>
+                          {airbrushing.price ? formatCurrency(airbrushing.price) : `Aerografia #${index + 1}`}
+                        </ThemedText>
+                      </View>
+                      <Badge
+                        variant={airbrushing.status === 'COMPLETED' ? 'success' : airbrushing.status === 'IN_PROGRESS' ? 'warning' : 'default'}
+                        style={{ marginLeft: spacing.sm }}
+                      >
+                        {AIRBRUSHING_STATUS_LABELS[airbrushing.status] || airbrushing.status}
+                      </Badge>
+                    </View>
+
+                    {(airbrushing.startDate || airbrushing.finishDate || airbrushing.createdAt) && (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.xs }}>
+                        {airbrushing.startDate && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                            <IconClock size={12} color={colors.mutedForeground} />
+                            <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
+                              Data de início: {formatDate(airbrushing.startDate)}
+                            </ThemedText>
+                          </View>
+                        )}
+                        {airbrushing.finishDate && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                            <IconCheck size={12} color="#10b981" />
+                            <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
+                              Data de finalização: {formatDate(airbrushing.finishDate)}
+                            </ThemedText>
+                          </View>
+                        )}
+                        {!airbrushing.startDate && !airbrushing.finishDate && airbrushing.createdAt && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                            <IconCalendarEvent size={12} color={colors.mutedForeground} />
+                            <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
+                              Criado: {formatDate(airbrushing.createdAt)}
+                            </ThemedText>
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {/* Files count */}
+                    {((airbrushing.receipts?.length ?? 0) > 0 || (airbrushing.invoices?.length ?? 0) > 0) && (
+                      <View style={{
+                        flexDirection: 'row',
+                        gap: spacing.md,
+                        marginTop: spacing.sm,
+                        paddingTop: spacing.sm,
+                        borderTopWidth: StyleSheet.hairlineWidth,
+                        borderTopColor: colors.border
+                      }}>
+                        {(airbrushing.receipts?.length ?? 0) > 0 && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                            <IconFile size={12} color={colors.mutedForeground} />
+                            <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
+                              {airbrushing.receipts?.length ?? 0} recibo(s)
+                            </ThemedText>
+                          </View>
+                        )}
+                        {(airbrushing.invoices?.length ?? 0) > 0 && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                            <IconFileText size={12} color={colors.mutedForeground} />
+                            <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
+                              {airbrushing.invoices?.length ?? 0} NFe(s)
+                            </ThemedText>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </View>
             </Card>
           )}
 

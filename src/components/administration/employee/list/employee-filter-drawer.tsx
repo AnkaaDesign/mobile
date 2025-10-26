@@ -72,17 +72,13 @@ export function EmployeeFilterDrawer({ visible, onClose, onApply, currentFilters
     new Set(["status", "entities"])
   );
 
-  const shouldLoadEntities = expandedSections.has("entities");
-
   const { data: positionsData } = usePositions({
     limit: 100,
     orderBy: { name: "asc" },
-    enabled: shouldLoadEntities
   });
   const { data: sectorsData } = useSectors({
     limit: 100,
     orderBy: { name: "asc" },
-    enabled: shouldLoadEntities
   });
 
   const positions = positionsData?.data || [];

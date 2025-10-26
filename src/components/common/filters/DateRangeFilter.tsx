@@ -151,9 +151,6 @@ export function DateRangeFilter({
     clearButton: {
       padding: 4,
     },
-    clearIcon: {
-      color: colors.mutedForeground,
-    },
     datePickersRow: {
       gap: spacing.sm,
     },
@@ -193,7 +190,7 @@ export function DateRangeFilter({
             onPress={handleClear}
             style={styles.clearButton}
           >
-            <IconX size={16} style={styles.clearIcon} />
+            <IconX size={16} color={colors.mutedForeground} />
           </Button>
         )}
       </View>

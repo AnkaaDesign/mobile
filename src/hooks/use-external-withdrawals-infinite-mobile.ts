@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useExternalWithdrawalsInfinite } from './useExternalWithdrawal';
-import { ExternalWithdrawalGetManyFormData } from '../schemas';
+import { ExternalWithdrawalGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for external withdrawals

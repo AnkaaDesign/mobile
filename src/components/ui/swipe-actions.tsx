@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Dimensions, Text, TextStyle, View, ViewStyle , StyleSheet} from "react-native";
+import { Dimensions, Text, TextStyle, View, ViewStyle, Animated as RNAnimated, StyleSheet } from "react-native";
 import { PanGestureHandler, State, RectButton, Swipeable, SwipeableProps } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolate, runOnJS, Extrapolate } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
@@ -28,7 +28,7 @@ interface ActionButtonProps {
   icon: React.ReactNode;
   label: string;
   x: number;
-  progress: Animated.SharedValue<number>;
+  progress: { value: number };
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({ onPress, backgroundColor, icon, label, x, progress }) => {
@@ -76,21 +76,21 @@ export const SwipeActions: React.FC<SwipeActionsProps> = ({ children, onDelete, 
     onEdit?.();
   };
 
-  const renderRightActions = (progress: any, dragAnimatedX: any) => {
+  const renderRightActions = (progress: RNAnimated.Value, dragAnimatedX: RNAnimated.Value) => {
     // Convert to shared values for reanimated 2
     React.useEffect(() => {
-      dragAnimatedX.addListener(({ value }) => {
-        dragX.value = value;
-      });
-      progress.addListener(({ value }) => {
+      const progressListener = progress.addListener(({ value }: { value: number }) => {
         actionProgress.value = value;
+      });
+      const dragListener = dragAnimatedX.addListener(({ value }: { value: number }) => {
+        dragX.value = value;
       });
 
       return () => {
-        dragAnimatedX.removeAllListeners();
-        progress.removeAllListeners();
+        progress.removeListener(progressListener);
+        dragAnimatedX.removeListener(dragListener);
       };
-    }, []);
+    }, [progress, dragAnimatedX]);
 
     return (
       <View style={styles.actionsContainer}>

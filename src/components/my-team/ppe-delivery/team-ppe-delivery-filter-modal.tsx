@@ -31,7 +31,7 @@ const STATUS_LABELS: Record<string, string> = {
   [PPE_DELIVERY_STATUS.PENDING]: "Pendente",
   [PPE_DELIVERY_STATUS.APPROVED]: "Aprovado",
   [PPE_DELIVERY_STATUS.DELIVERED]: "Entregue",
-  [PPE_DELIVERY_STATUS.REJECTED]: "Rejeitado",
+  [PPE_DELIVERY_STATUS.REPROVED]: "Reprovado",
   [PPE_DELIVERY_STATUS.CANCELLED]: "Cancelado",
 };
 

@@ -49,7 +49,7 @@ export default function ExternalWithdrawalListScreen() {
   };
 
   // Fetch external withdrawals with infinite scroll
-  const { items: withdrawals, isLoading, error, refetch, refresh, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded } = useExternalWithdrawalsInfiniteMobile(queryParams);
+  const { items: withdrawals, isLoading, error, refetch, refresh, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount } = useExternalWithdrawalsInfiniteMobile(queryParams);
 
   // Handlers
   const handleWithdrawalPress = useCallback(

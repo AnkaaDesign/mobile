@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import type { UseFormProps, UseFormReturn, FieldValues, Resolver, DefaultValues } from "react-hook-form";
 import _ from "lodash";
 
-interface UseEditFormProps<TFieldValues extends FieldValues = FieldValues, TContext = any, TApiData = any> {
+interface UseEditFormProps<TFieldValues extends FieldValues = FieldValues, TContext = unknown, TApiData = unknown> {
   resolver?: Resolver<TFieldValues, TContext>;
   defaultValues?: DefaultValues<TFieldValues>;
   originalData?: TApiData;
@@ -15,7 +15,7 @@ interface UseEditFormProps<TFieldValues extends FieldValues = FieldValues, TCont
 }
 
 interface UseEditFormReturn<TFieldValues extends FieldValues = FieldValues> extends Omit<UseFormReturn<TFieldValues>, "handleSubmit"> {
-  handleSubmitChanges: (onValid?: (data: Partial<TFieldValues>) => unknown, onInvalid?: (errors: any) => unknown) => (e?: React.BaseSyntheticEvent) => Promise<void>;
+  handleSubmitChanges: (onValid?: (data: Partial<TFieldValues>) => unknown, onInvalid?: (errors: Record<string, unknown>) => unknown) => (e?: React.BaseSyntheticEvent) => Promise<void>;
   reset: UseFormReturn<TFieldValues>["reset"];
   getChangedFields: () => Partial<TFieldValues>;
 }
@@ -23,9 +23,9 @@ interface UseEditFormReturn<TFieldValues extends FieldValues = FieldValues> exte
 /**
  * Deep comparison of values with special handling for dates, arrays, and null/undefined
  */
-function deepCompare(value1: any, value2: any): boolean {
+function deepCompare(value1: unknown, value2: unknown): boolean {
   // Handle null/undefined/empty string cases
-  const normalize = (val: any) => {
+  const normalize = (val: unknown): unknown => {
     if (val === null || val === undefined || val === "") return null;
     if (val === "null" || val === "undefined") return null;
     return val;
@@ -61,10 +61,8 @@ function deepCompare(value1: any, value2: any): boolean {
       return _.isEqual(value1, value2);
     }
 
-    // For arrays of primitives (like IDs), compare sorted
-    const sorted1 = [...value1].sort();
-    const sorted2 = [...value2].sort();
-    return _.isEqual(sorted1, sorted2);
+    // For arrays of primitives (like IDs), compare order-preserved
+    return JSON.stringify(value1) === JSON.stringify(value2);
   }
 
   // Handle objects
@@ -79,7 +77,7 @@ function deepCompare(value1: any, value2: any): boolean {
 /**
  * Custom hook to track and submit only fields that have changed in a form
  */
-export function useEditForm<TFieldValues extends FieldValues = FieldValues, TContext = any, TApiData = any>({
+export function useEditForm<TFieldValues extends FieldValues = FieldValues, TContext = unknown, TApiData = unknown>({
   resolver,
   defaultValues,
   originalData,
@@ -138,15 +136,15 @@ export function useEditForm<TFieldValues extends FieldValues = FieldValues, TCon
         if (key === "services") {
           // Explicitly check if it's an array before using filter
           if (Array.isArray(currentValue) && Array.isArray(originalValue)) {
-            const currentServices = currentValue as any[];
-            const originalServices = originalValue as any[];
+            const currentServices = currentValue as Array<{ description?: string }>;
+            const originalServices = originalValue as Array<{ description?: string }>;
 
             // Filter out empty services
-            const filteredCurrent = currentServices.filter((s: any) => s && s.description && s.description.trim() !== "");
-            const filteredOriginal = originalServices.filter((s: any) => s && s.description && s.description.trim() !== "");
+            const filteredCurrent = currentServices.filter((s) => s && s.description && s.description.trim() !== "");
+            const filteredOriginal = originalServices.filter((s) => s && s.description && s.description.trim() !== "");
 
             if (!_.isEqual(filteredCurrent, filteredOriginal)) {
-              changedFields[typedKey] = filteredCurrent as any;
+              changedFields[typedKey] = filteredCurrent as TFieldValues[keyof TFieldValues];
             }
           } else if (currentValue !== originalValue) {
             changedFields[typedKey] = currentValue;
@@ -162,7 +160,7 @@ export function useEditForm<TFieldValues extends FieldValues = FieldValues, TCon
   }, [form, fieldsToOmitIfUnchanged]);
 
   // Handle form submission
-  const handleSubmitChanges = (onValid?: (data: Partial<TFieldValues>) => unknown, onInvalid?: (errors: any) => unknown) => {
+  const handleSubmitChanges = (onValid?: (data: Partial<TFieldValues>) => unknown, onInvalid?: (errors: Record<string, unknown>) => unknown) => {
     return form.handleSubmit(() => {
       const changedFields = getChangedFields();
 

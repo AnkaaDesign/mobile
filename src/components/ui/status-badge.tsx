@@ -11,7 +11,7 @@ export function StatusBadge({ children, style }: StatusBadgeProps) {
   const { colors, spacing } = useTheme();
 
   return (
-    <View style={StyleSheet.flatten([{ padding: spacing.sm }, style])}>
+    <View style={[{ padding: spacing.sm }, style as ViewStyle]}>
       {children}
     </View>
   );

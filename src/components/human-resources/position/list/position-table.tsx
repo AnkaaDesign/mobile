@@ -10,6 +10,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row";
 import { formatCurrency } from '../../../../utils';
 import { extendedColors } from "@/lib/theme/extended-colors";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -20,10 +21,6 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface PositionTableProps {
   positions: Position[];

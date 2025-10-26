@@ -10,7 +10,7 @@ import {
   batchCreateBorrows,
   batchUpdateBorrows,
   batchDeleteBorrows,
-} from '../api-client';
+} from '@/api-client';
 import type {
   BorrowGetManyFormData,
   BorrowCreateFormData,
@@ -19,7 +19,7 @@ import type {
   BorrowBatchUpdateFormData,
   BorrowBatchDeleteFormData,
   BorrowInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   BorrowGetManyResponse,
   BorrowGetUniqueResponse,
@@ -29,9 +29,9 @@ import type {
   BorrowBatchCreateResponse,
   BorrowBatchUpdateResponse,
   BorrowBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { borrowKeys, activityKeys, itemKeys, userKeys, changeLogKeys } from "./queryKeys";
-import { BORROW_STATUS } from '../constants';
+import { BORROW_STATUS } from '@/constants';
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 

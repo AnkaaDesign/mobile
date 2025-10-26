@@ -1,7 +1,7 @@
 // packages/hooks/src/useObservation.ts
 
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
-import { observationService } from '../api-client';
+import { observationService } from '@/api-client';
 import type {
   ObservationGetManyFormData,
   ObservationCreateFormData,
@@ -9,7 +9,7 @@ import type {
   ObservationBatchCreateFormData,
   ObservationBatchUpdateFormData,
   ObservationBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   ObservationGetManyResponse,
   ObservationGetUniqueResponse,
@@ -19,7 +19,7 @@ import type {
   ObservationBatchCreateResponse,
   ObservationBatchUpdateResponse,
   ObservationBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { observationKeys, taskKeys, fileKeys } from "./queryKeys";
 
 // =====================================================

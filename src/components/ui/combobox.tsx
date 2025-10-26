@@ -7,13 +7,15 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 export interface ComboboxOption {
   label: string;
   value: string;
+  key?: string;
   [key: string]: any;
 }
 
 interface ComboboxProps {
   options: ComboboxOption[];
   value?: string;
-  onValueChange: (value: string | undefined) => void;
+  onValueChange?: (value: string | undefined) => void;
+  onChange?: (value: string | undefined) => void;
   onCreate?: (newLabel: string) => void;
   onEndReached?: () => void;
   onEndReachedThreshold?: number;
@@ -31,6 +33,7 @@ interface ComboboxProps {
   onClose?: () => void;
   emptyText?: string;
   createNewText?: (searchText: string) => string;
+  multiple?: boolean;
 }
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -169,7 +172,7 @@ export const Combobox = React.memo(function Combobox({
   }, [loading, colors.primary]);
 
   const renderItem = useCallback(
-    ({ item }: { item: ComboboxOption }) => {
+    ({ item }: { item: ComboboxOption & { key?: string } }) => {
       // Handle create option
       if (item.value === "__CREATE_OPTION__") {
         return (
@@ -315,7 +318,7 @@ export const Combobox = React.memo(function Combobox({
               ref={listRef}
               data={combinedOptions}
               renderItem={renderItem}
-              keyExtractor={(item) => item.key || item.value}
+              keyExtractor={(item) => (item.key || item.value) as string}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               onEndReached={handleEndReached}

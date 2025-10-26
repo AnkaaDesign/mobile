@@ -1,6 +1,9 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import { FilterTag } from "@/components/ui/filter-tag";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { IconX } from "@tabler/icons-react-native";
+import { ThemedText } from "@/components/ui/themed-text";
+import { useTheme } from "@/lib/theme";
+import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import type { ObservationGetManyFormData } from "@/schemas";
 import type { Task } from "@/types";
 import { formatDate } from "@/utils";
@@ -12,6 +15,45 @@ interface ObservationFilterTagsProps {
   onSearchChange: (text: string) => void;
   onClearAll: () => void;
   tasks?: Task[];
+}
+
+interface FilterTagProps {
+  label: string;
+  onRemove: () => void;
+  variant?: "default" | "clear";
+}
+
+function FilterTag({ label, onRemove, variant = "default" }: FilterTagProps) {
+  const { colors } = useTheme();
+
+  return (
+    <View
+      style={[
+        styles.tag,
+        {
+          backgroundColor: variant === "clear" ? colors.destructive : colors.muted,
+          borderColor: variant === "clear" ? colors.destructive : colors.border,
+        },
+      ]}
+    >
+      <ThemedText
+        style={[
+          styles.tagText,
+          {
+            color: variant === "clear" ? colors.background : colors.foreground,
+          },
+        ]}
+      >
+        {label}
+      </ThemedText>
+      <TouchableOpacity onPress={onRemove} style={styles.removeButton}>
+        <IconX
+          size={14}
+          color={variant === "clear" ? colors.background : colors.mutedForeground}
+        />
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 export function ObservationFilterTags({
@@ -133,5 +175,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+  },
+  tag: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    gap: spacing.xs,
+  },
+  tagText: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+  },
+  removeButton: {
+    padding: 2,
   },
 });

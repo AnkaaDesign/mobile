@@ -13,6 +13,7 @@ import { ActivityTableRowSwipe } from "./activity-table-row-swipe";
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
 import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '../../../../constants';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
   key: string;
@@ -23,14 +24,11 @@ export interface TableColumn {
   sortable?: boolean;
 }
 
-export interface SortConfig {
-  columnKey: string;
-  direction: "asc" | "desc";
-}
 
 interface ActivityTableProps {
   activities: Activity[];
   onActivityPress?: (activityId: string) => void;
+  onActivityEdit?: (activityId: string) => void;
   onActivityDelete?: (activityId: string) => void;
   onRefresh?: () => Promise<void>;
   onEndReached?: () => void;
@@ -229,6 +227,7 @@ export const ActivityTable = React.memo<ActivityTableProps>(
   ({
     activities,
     onActivityPress,
+    onActivityEdit,
     onActivityDelete,
     onRefresh,
     onEndReached,

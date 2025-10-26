@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import { View, StyleSheet, ScrollView, RefreshControl, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { IconFilter, IconDownload } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -161,7 +161,7 @@ export default function PayrollListScreen() {
   const hasPayrolls = processedPayrolls.length > 0;
 
   return (
-    <PrivilegeGuard requiredPrivileges={[SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL]}>
+    <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL]}>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
         <ScrollView
           style={styles.scrollView}
@@ -222,11 +222,11 @@ export default function PayrollListScreen() {
               <View style={styles.listContainer}>
                 <ThemedText style={styles.listTitle}>Colaboradores ({processedPayrolls.length})</ThemedText>
                 {processedPayrolls.map((payroll) => (
-                  <Card
+                  <Pressable
                     key={payroll.id}
-                    style={styles.payrollCard}
                     onPress={() => handlePayrollPress(payroll)}
                   >
+                    <Card style={styles.payrollCard}>
                     <CardContent>
                       <View style={styles.payrollHeader}>
                         <View style={styles.payrollHeaderLeft}>
@@ -276,6 +276,7 @@ export default function PayrollListScreen() {
                       </View>
                     </CardContent>
                   </Card>
+                  </Pressable>
                 ))}
               </View>
             </>

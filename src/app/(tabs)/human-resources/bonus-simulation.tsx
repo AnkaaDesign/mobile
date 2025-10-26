@@ -165,14 +165,15 @@ export default function BonusSimulationScreen() {
                 value={taskQuantity}
                 onChangeText={setTaskQuantity}
                 keyboardType="decimal-pad"
-                style={[styles.input, { color: colors.foreground, borderColor: colors.border }]}
+                style={{ borderColor: colors.border }}
+                inputStyle={{ ...styles.inputText, color: colors.foreground }}
                 placeholder="0.0"
               />
             </View>
 
             <View style={styles.inputContainer}>
               <ThemedText style={styles.inputLabel}>Colaboradores</ThemedText>
-              <Input value={String(eligibleUserCount)} editable={false} style={[styles.input, styles.disabledInput, { color: colors.mutedForeground, borderColor: colors.border }]} />
+              <Input value={String(eligibleUserCount)} editable={false} style={{ borderColor: colors.border, opacity: 0.7 }} inputStyle={{ ...styles.inputText, color: colors.mutedForeground }} />
             </View>
           </View>
 
@@ -182,7 +183,8 @@ export default function BonusSimulationScreen() {
               <Input
                 value={averageTasksPerUser.toFixed(1)}
                 editable={false}
-                style={[styles.input, styles.disabledInput, { color: colors.mutedForeground, borderColor: colors.border }]}
+                style={{ borderColor: colors.border, opacity: 0.7 }}
+                inputStyle={{ ...styles.inputText, color: colors.mutedForeground }}
               />
             </View>
 
@@ -191,7 +193,8 @@ export default function BonusSimulationScreen() {
               <Input
                 value={formatCurrency(totalBonusAmount)}
                 editable={false}
-                style={[styles.input, styles.disabledInput, { color: colors.success, borderColor: colors.border, fontWeight: "700" }]}
+                style={{ borderColor: colors.border, opacity: 0.7 }}
+                inputStyle={{ ...styles.inputText, color: colors.success, fontWeight: "700" }}
               />
             </View>
           </View>
@@ -288,17 +291,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
-  input: {
-    height: 44,
+  inputText: {
     textAlign: "center",
     fontWeight: "600",
     fontSize: 14,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-  },
-  disabledInput: {
-    opacity: 0.7,
   },
   usersContainer: {
     padding: 16,

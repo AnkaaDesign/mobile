@@ -1,7 +1,7 @@
 // packages/hooks/src/useAirbrushing.ts
 
 import { createEntityHooks, createSpecializedQueryHook } from "./createEntityHooks";
-import { airbrushingService } from '../api-client';
+import { airbrushingService } from '@/api-client';
 import type {
   AirbrushingGetManyFormData,
   AirbrushingCreateFormData,
@@ -9,7 +9,7 @@ import type {
   AirbrushingBatchCreateFormData,
   AirbrushingBatchUpdateFormData,
   AirbrushingBatchDeleteFormData,
-} from '../schemas';
+} from '@/schemas';
 import type {
   AirbrushingGetManyResponse,
   AirbrushingGetUniqueResponse,
@@ -19,7 +19,7 @@ import type {
   AirbrushingBatchCreateResponse,
   AirbrushingBatchUpdateResponse,
   AirbrushingBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 import { airbrushingKeys, taskKeys, fileKeys } from "./queryKeys";
 
 // =====================================================

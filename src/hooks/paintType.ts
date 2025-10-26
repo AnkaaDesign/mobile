@@ -9,7 +9,7 @@ import {
   batchCreatePaintTypes,
   batchUpdatePaintTypes,
   batchDeletePaintTypes,
-} from '../api-client';
+} from '@/api-client';
 import type {
   PaintTypeGetManyFormData,
   PaintTypeCreateFormData,
@@ -18,7 +18,7 @@ import type {
   PaintTypeBatchUpdateFormData,
   PaintTypeBatchDeleteFormData,
   PaintTypeInclude,
-} from '../schemas';
+} from '@/schemas';
 import type {
   PaintTypeGetManyResponse,
   PaintTypeGetUniqueResponse,
@@ -28,7 +28,7 @@ import type {
   PaintTypeBatchCreateResponse,
   PaintTypeBatchUpdateResponse,
   PaintTypeBatchDeleteResponse,
-} from '../types';
+} from '@/types';
 
 // Service adapter
 const paintTypeServiceAdapter = {
@@ -74,6 +74,6 @@ export const {
 } = paintTypeHooks;
 
 // Re-export types for convenience
-export type { PaintType, PaintTypeGetManyResponse, PaintTypeCreateResponse, PaintTypeUpdateResponse } from '../types';
+export type { PaintType, PaintTypeGetManyResponse, PaintTypeCreateResponse, PaintTypeUpdateResponse } from '@/types';
 
-export type { PaintTypeGetManyFormData, PaintTypeGetByIdFormData, PaintTypeCreateFormData, PaintTypeUpdateFormData } from '../schemas';
+export type { PaintTypeGetManyFormData, PaintTypeGetByIdFormData, PaintTypeCreateFormData, PaintTypeUpdateFormData } from '@/schemas';

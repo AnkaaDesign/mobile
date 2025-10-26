@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useCutsInfinite } from './useCut';
-import { CutGetManyFormData } from '../schemas';
+import { CutGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for cuts

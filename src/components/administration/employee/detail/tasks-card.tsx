@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
-import { User } from '../../../../types';
+import type { User } from '../../../../types';
 import { TASK_STATUS_LABELS, routes } from '../../../../constants';
 import { formatDate, formatCurrency } from '../../../../utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,7 +58,7 @@ export function TasksCard({ employee, maxItems = 5 }: TasksCardProps) {
         ) : (
           <View style={styles.taskList}>
             {tasks.map((task, index) => {
-              const statusVariant = getBadgeVariant("TASK_STATUS", task.status);
+              const statusVariant = getBadgeVariant(task.status, "TASK");
 
               return (
                 <TouchableOpacity
@@ -87,20 +87,20 @@ export function TasksCard({ employee, maxItems = 5 }: TasksCardProps) {
                         {TASK_STATUS_LABELS[task.status]}
                       </Badge>
 
-                      {task.scheduledDate && (
+                      {task.term && (
                         <View style={styles.metaItem}>
                           <IconCalendar size={14} color={colors.mutedForeground} />
                           <ThemedText style={[styles.metaText, { color: colors.mutedForeground }]}>
-                            {formatDate(task.scheduledDate)}
+                            Prazo: {formatDate(task.term)}
                           </ThemedText>
                         </View>
                       )}
 
-                      {task.price && (
+                      {task.createdAt && (
                         <View style={styles.metaItem}>
-                          <IconCurrencyDollar size={14} color={colors.mutedForeground} />
+                          <IconCalendar size={14} color={colors.mutedForeground} />
                           <ThemedText style={[styles.metaText, { color: colors.mutedForeground }]}>
-                            {formatCurrency(task.price)}
+                            {formatDate(task.createdAt)}
                           </ThemedText>
                         </View>
                       )}

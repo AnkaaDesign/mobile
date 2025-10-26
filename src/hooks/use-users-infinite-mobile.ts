@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { useUsersInfinite } from './useUser';
-import { UserGetManyFormData } from '../schemas';
+import { UserGetManyFormData } from '@/schemas';
 import { useInfiniteMobile } from "./use-infinite-mobile";
+import type { User } from '@/types';
 
 // Mobile-optimized page size for users
 const MOBILE_USERS_PAGE_SIZE = 25;
@@ -24,5 +25,11 @@ export function useUsersInfiniteMobile(params?: Partial<UserGetManyFormData> & {
   const infiniteQuery = useUsersInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  const mobileResult = useInfiniteMobile<User>(infiniteQuery);
+
+  // Return with users alias for consistency with web app API
+  return {
+    ...mobileResult,
+    users: mobileResult.items,
+  };
 }

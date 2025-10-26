@@ -9,13 +9,13 @@ import { useInfiniteErrorHandler } from "./use-infinite-error-handler";
 export function useInfiniteMobile<TData, TError = Error>(infiniteQuery: UseInfiniteQueryResult<{ data?: TData[]; meta?: { hasNextPage: boolean; totalRecords?: number } }, TError>) {
   // Flatten pages data for FlatList consumption
   const items = useMemo(() => {
-    const pages = (infiniteQuery.data as any)?.pages || [];
-    return pages.flatMap((page: any) => page?.data || []) || [];
+    const pages = infiniteQuery.data?.pages || [];
+    return pages.flatMap((page) => page?.data || []) || [];
   }, [infiniteQuery.data]);
 
   // Extract total count from meta if available (API returns totalRecords)
   const totalCount = useMemo(() => {
-    const pages = (infiniteQuery.data as any)?.pages || [];
+    const pages = infiniteQuery.data?.pages || [];
     const firstPageMeta = pages[0]?.meta;
     return firstPageMeta?.totalRecords;
   }, [infiniteQuery.data]);
@@ -51,7 +51,7 @@ export function useInfiniteMobile<TData, TError = Error>(infiniteQuery: UseInfin
 
   // Get current page number
   const currentPage = useMemo(() => {
-    const pages = (infiniteQuery.data as any)?.pages || [];
+    const pages = infiniteQuery.data?.pages || [];
     return pages.length || 0;
   }, [infiniteQuery.data]);
 
