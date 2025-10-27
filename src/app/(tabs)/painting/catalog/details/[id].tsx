@@ -1,9 +1,10 @@
 import React from "react";
 import { Stack, useLocalSearchParams } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, RefreshControl, StyleSheet } from "react-native";
 import { usePaintDetail } from '../../../../../hooks';
 import { PaintCatalogCard } from "@/components/painting";
 import { PaintFormulasCard } from "@/components/painting/catalog/detail/paint-formulas-card";
+import { PaintTasksCard } from "@/components/painting/catalog/detail/paint-tasks-card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Text } from "@/components/ui/text";
@@ -11,14 +12,19 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useTheme } from "@/components/theme-provider";
+import { spacing } from "@/lib/constants";
 
 export default function CatalogDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors } = useTheme();
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const {
     data: paintResponse,
     isLoading,
     error,
+    refetch,
   } = usePaintDetail(id as string, {
     include: {
       formulas: {
@@ -30,12 +36,42 @@ export default function CatalogDetailsScreen() {
           },
         },
       },
+      generalPaintings: {
+        include: {
+          customer: true,
+          createdBy: true,
+          sector: true,
+          services: {
+            include: {
+              service: true,
+            },
+          },
+        },
+      },
+      logoTasks: {
+        include: {
+          customer: true,
+          createdBy: true,
+          sector: true,
+          services: {
+            include: {
+              service: true,
+            },
+          },
+        },
+      },
       relatedPaints: true,
       relatedTo: true,
     },
   });
 
   const paint = paintResponse?.data;
+
+  const handleRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   if (isLoading) {
     return (
@@ -124,13 +160,26 @@ export default function CatalogDetailsScreen() {
           headerBackTitle: "Voltar",
         }}
       />
-      <ScrollView className="flex-1 bg-background">
-        <View className="p-4 gap-4">
+      <ScrollView
+        style={[styles.scrollView, { backgroundColor: colors.background }]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        <View style={styles.container}>
           {/* Paint Info Card */}
           <PaintCatalogCard paint={paint!} />
 
           {/* Formulas Card */}
           <PaintFormulasCard paint={paint!} />
+
+          {/* Tasks Table Card - NEW */}
+          <PaintTasksCard paint={paint!} maxHeight={500} />
 
           {/* Metrics Card */}
           {metrics && (
@@ -209,3 +258,16 @@ export default function CatalogDetailsScreen() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
+    gap: spacing.lg,
+  },
+});

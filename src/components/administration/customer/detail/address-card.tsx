@@ -134,7 +134,11 @@ export function AddressCard({ customer }: AddressCardProps) {
                       Logradouro
                     </ThemedText>
                   </View>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                  <ThemedText
+                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {customer.address}
                   </ThemedText>
                 </View>
@@ -145,7 +149,11 @@ export function AddressCard({ customer }: AddressCardProps) {
                   <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
                     Número
                   </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                  <ThemedText
+                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {customer.addressNumber}
                   </ThemedText>
                 </View>
@@ -156,7 +164,11 @@ export function AddressCard({ customer }: AddressCardProps) {
                   <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
                     Complemento
                   </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                  <ThemedText
+                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {customer.addressComplement}
                   </ThemedText>
                 </View>
@@ -167,7 +179,11 @@ export function AddressCard({ customer }: AddressCardProps) {
                   <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
                     Bairro
                   </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                  <ThemedText
+                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {customer.neighborhood}
                   </ThemedText>
                 </View>
@@ -178,7 +194,11 @@ export function AddressCard({ customer }: AddressCardProps) {
                   <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
                     Cidade
                   </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                  <ThemedText
+                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {customer.city}
                   </ThemedText>
                 </View>
@@ -189,7 +209,11 @@ export function AddressCard({ customer }: AddressCardProps) {
                   <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
                     Estado
                   </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                  <ThemedText
+                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {customer.state}
                   </ThemedText>
                 </View>
@@ -200,7 +224,11 @@ export function AddressCard({ customer }: AddressCardProps) {
                   <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
                     CEP
                   </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground, fontFamily: "monospace" }])}>
+                  <ThemedText
+                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground, fontFamily: "monospace" }])}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {formatCEP(customer.zipCode)}
                   </ThemedText>
                 </View>
@@ -295,10 +323,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.lg,
+    gap: spacing.md,
   },
   fieldLabel: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
+    minWidth: 80,
+    flexShrink: 0,
   },
   fieldLabelWithIcon: {
     flexDirection: "row",
@@ -308,6 +339,8 @@ const styles = StyleSheet.create({
   fieldValue: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
+    flex: 1,
+    textAlign: "right",
   },
   emptyState: {
     alignItems: "center",

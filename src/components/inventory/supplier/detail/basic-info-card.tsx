@@ -5,7 +5,7 @@ import { Text } from "@/components/ui/text";
 import type { Supplier } from "@/types";
 import { cn } from "@/lib/utils";
 import { maskCNPJ } from "@/utils";
-import { SupplierLogoDisplay } from "@/components/ui/avatar-display";
+import { CustomerLogoDisplay } from "@/components/ui/customer-logo-display";
 
 interface BasicInfoCardProps {
   supplier: Supplier;
@@ -27,9 +27,9 @@ export function BasicInfoCard({ supplier, className }: BasicInfoCardProps) {
         <View className="space-y-6">
           {/* Logo Section */}
           <View className="flex justify-center mb-6">
-            <SupplierLogoDisplay
+            <CustomerLogoDisplay
               logo={supplier.logo}
-              supplierName={supplier.fantasyName}
+              customerName={supplier.fantasyName}
               size="2xl"
               shape="rounded"
             />

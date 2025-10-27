@@ -505,6 +505,31 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "setores-editar", title: "Editar", icon: "edit", path: "/administration/sectors/edit/:id", isDynamic: true },
         ],
       },
+
+      {
+        id: "arquivos-admin",
+        title: "Arquivos",
+        icon: "folder",
+        path: "/administration/files",
+        children: [
+          { id: "arquivos-upload", title: "Upload", icon: "upload", path: "/administration/files/upload" },
+          { id: "arquivos-detalhes", title: "Detalhes", icon: "eye", path: "/administration/files/details/:id", isDynamic: true },
+          { id: "arquivos-listar", title: "Listar", icon: "list", path: "/administration/files/list" },
+          { id: "arquivos-orfaos", title: "Órfãos", icon: "warning", path: "/administration/files/orphans" },
+        ],
+      },
+
+      {
+        id: "registros-alteracoes-admin",
+        title: "Registros de Alterações",
+        icon: "auditLog",
+        path: "/administration/change-logs",
+        children: [
+          { id: "registros-detalhes", title: "Detalhes", icon: "eye", path: "/administration/change-logs/details/:id", isDynamic: true },
+          { id: "registros-entidade", title: "Por Entidade", icon: "search", path: "/administration/change-logs/entity/:entityType/:entityId", isDynamic: true },
+          { id: "registros-listar", title: "Listar", icon: "list", path: "/administration/change-logs/list" },
+        ],
+      },
     ],
   },
 

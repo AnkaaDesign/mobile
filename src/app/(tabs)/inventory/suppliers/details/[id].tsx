@@ -11,15 +11,14 @@ import { routes, SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { useSupplierDetail, useSupplierMutations } from "@/hooks";
 
 import { RoutePrivilegeGuard } from "@/components/navigation/route-privilege-guard";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/ui/page-header";
 import { BasicInfoCard, ContactDetailsCard, AddressInfoCard, RelatedItemsCard, RelatedOrdersCard, DocumentsCard } from "@/components/inventory/supplier/detail";
-import { ChangelogHistory } from "@/components/ui/changelog-history";
+import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { FileViewerProvider } from "@/components/file";
 import { toast } from "@/lib/toast";
-import { usePageTracker } from "@/hooks/use-page-tracker";
 
 export default function SupplierDetailsScreen() {
-  usePageTracker({ title: "supplier-detail" });
+  // TODO: Implement usePageTracker hook for analytics
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -140,7 +139,7 @@ export default function SupplierDetailsScreen() {
               {/* Address and Changelog Grid */}
               <View className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <AddressInfoCard supplier={supplier} />
-                <ChangelogHistory entityType={CHANGE_LOG_ENTITY_TYPE.SUPPLIER} entityId={id} maxHeight={500} />
+                <ChangelogTimeline entityType={CHANGE_LOG_ENTITY_TYPE.SUPPLIER} entityId={id} maxHeight={500} />
               </View>
 
               {/* Documents Grid */}

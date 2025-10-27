@@ -13,7 +13,7 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { UserTable } from "@/components/administration/user/list/user-table";
 import { UserColumnVisibilityDrawer } from "@/components/administration/user/list/user-column-visibility-drawer";
 import { Input } from "@/components/ui/input";
-import { useColumnVisibility } from "@/hooks/use-column-visibility";
+import { useColumnVisibility } from "@/hooks";
 
 interface RelatedUsersCardProps {
   position: Position;

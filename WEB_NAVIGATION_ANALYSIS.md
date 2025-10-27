@@ -1,86 +1,22 @@
-# Web Version Navigation System - Complete Analysis
+# WEB VERSION NAVIGATION STRUCTURE ANALYSIS
 
-## Executive Summary
-The web version implements a comprehensive navigation system with privilege-based access control, hierarchical menu structure, and route mapping. This document provides critical details for aligning the mobile app.
-
----
-
-## 1. PRIVILEGE SYSTEM ARCHITECTURE
-
-### 1.1 Privilege Hierarchy
-File: `/Users/kennedycampos/Documents/repositories/web/src/utils/privilege.ts` (Lines 10-23)
-
-**Privilege Levels (Hierarchical):**
-```
-1. BASIC - Entry level (no advanced access)
-2. MAINTENANCE - Maintenance operations
-3. WAREHOUSE - Warehouse & inventory operations
-4. PRODUCTION - Production operations
-5. LEADER - Team/sector leadership
-6. HUMAN_RESOURCES - HR management
-7. FINANCIAL - Financial operations
-8. ADMIN - Full administrative access (highest)
-9. EXTERNAL - External users
-```
-
-**Important Note:** The mobile app has DESIGNER (3) and LOGISTIC (3) at the same level as WAREHOUSE in privilege levels.
-
-### 1.2 Core Privilege Functions
-Location: `/Users/kennedycampos/Documents/repositories/web/src/utils/privilege.ts`
-
-**Key Functions:**
-- `getSectorPrivilegeLevel(privilege)` (L10) - Returns numeric level for comparison
-- `canAccessSector(userPrivilege, targetPrivilege)` (L25) - Hierarchical check (user level >= target level)
-- `canAccessAnyPrivilege(userPrivilege, privileges[])` (L35) - OR logic: user has ANY privilege
-- `canAccessAllPrivileges(userPrivilege, privileges[])` (L43) - AND logic: user has ALL privileges
-- `canAccessTeamFeatures(privilege, hasManagedSector)` (L56)
-- `canManageTeam(privilege, managedSectorId, targetSectorId)` (L64)
-
-### 1.3 User Privilege Checking Functions
-Location: `/Users/kennedycampos/Documents/repositories/web/src/utils/user.ts`
-
-**Public Utility Functions:**
-- `hasPrivilege(user, requiredPrivilege)` (L84) - Hierarchical check using privilege levels
-- `hasAnyPrivilege(user, requiredPrivileges[])` (L97) - OR logic
-- `hasAllPrivileges(user, requiredPrivileges[])` (L107) - AND logic
-- `canAccessWithPrivileges(user, allowedPrivileges[])` (L117) - Alias for hasAnyPrivilege
-- `isUserAdmin(user)` (L124)
-- `isUserLeader(user)` (L131)
-
-### 1.4 Hook-Based Privilege Checking
-Location: `/Users/kennedycampos/Documents/repositories/web/src/hooks/usePrivileges.ts`
-
-**Main Hook: `usePrivileges()`**
-Returns object with methods:
-- `hasPrivilegeAccess(privilege)` (L15) - Single privilege check
-- `hasAnyPrivilegeAccess(privileges[])` (L24) - OR logic
-- `hasAllPrivilegeAccess(privileges[])` (L32) - AND logic
-- `canAccess(privilege|privileges[], requireAll)` (L41) - Flexible function
-- `canAccessExact(privilege|privileges[], requireAll)` (L54) - Direct match (non-hierarchical)
-
-**Convenience Shortcuts:**
-```javascript
-isAdmin, isLeader, isHR, isWarehouse, isProduction, isMaintenance, isBasic
-canManageWarehouse, canManageMaintenance, canManageProduction, canManageHR, canManageEPI, canCreateTasks, canViewStatistics
-```
-
-**User Information:**
-```javascript
-user, isAuthenticated, currentPrivilege, sectorName, userName
-```
-
-**Debug Helpers:**
-- `debug.logPrivileges()` - Logs current privilege state
-- `debug.checkAccess(privilege)` - Logs access check result
+## Overview
+The web version uses **React Router with a pages directory structure** (NOT Next.js app directory).
+- **Framework**: React + React Router v6
+- **Page Structure**: `/src/pages` directory with file-based routing
+- **Configuration**: Centralized navigation config in `/src/constants/navigation.ts` and `/src/constants/routes.ts`
 
 ---
 
-## 2. NAVIGATION STRUCTURE
+## 1. NAVIGATION CONFIGURATION FILES
 
-### 2.1 Menu Items Definition
-Location: `/Users/kennedycampos/Documents/repositories/web/src/constants/navigation.ts`
+### Main Files:
+- `/src/constants/navigation.ts` - NAVIGATION_MENU array with full menu hierarchy
+- `/src/constants/routes.ts` - Centralized route constants object
+- `/src/utils/navigation.ts` - Navigation utility functions
+- `/src/App.tsx` - Route definitions and mapping
 
-**MenuItem Interface (L4-14):**
+### Key Structure from navigation.ts:
 ```typescript
 interface MenuItem {
   id: string;
@@ -95,462 +31,335 @@ interface MenuItem {
 }
 ```
 
-**Export:** `NAVIGATION_MENU: MenuItem[]` (Line 442)
-**Alias:** `MENU_ITEMS = NAVIGATION_MENU` (Line 1388)
+---
 
-### 2.2 Top-Level Menu Items (Line 442+)
+## 2. ROUTING STRUCTURE (Web Version)
 
-1. **Home** (L444-449)
-   - ID: `home`
-   - Path: `/`
-   - No privilege requirement
+The web version uses **React Router** with lazy-loaded pages:
 
-2. **Administração** (L451-508)
-   - ID: `administracao`
-   - Required Privilege: `[HUMAN_RESOURCES, ADMIN]`
-   - Children:
-     - Clientes (customers)
-     - Colaboradores (collaborators/users)
-     - Notificações (notifications)
-     - Setores (sectors)
+### Route Organization:
+- **Auth Routes** (Public) - Login, Register, Password Recovery
+- **Protected Routes** (Wrapped with AutoPrivilegeRoute + MainLayout)
+  - All feature routes require authentication
 
-3. **Catálogo** (L510-517)
-   - ID: `catalogo`
-   - Path: `/pintura/catalogo-basico`
-   - Required Privilege: `LEADER`
+### Main Domains/Modules:
 
-4. **Estatísticas** (L519-543)
-   - ID: `estatisticas`
-   - Required Privilege: `ADMIN`
-   - Nested structure with sub-categories
+#### 1. **ADMINISTRAÇÃO (Administration)**
+- Customers: `/administracao/clientes`, `/administracao/clientes/cadastrar`, `/administracao/clientes/detalhes/:id`, `/administracao/clientes/editar/:id`
+- Collaborators: `/administracao/colaboradores`, create, details, edit, batch-edit
+- Sectors: `/administracao/setores` with CRUD operations
+- Notifications: `/administracao/notificacoes`
+- Change Logs: `/administracao/registros-de-alteracoes/detalhes/:id`
 
-5. **Estoque** (L545-775) - WAREHOUSE
-   - ID: `estoque`
-   - Required Privilege: `[WAREHOUSE, ADMIN]`
-   - Major sub-items:
-     - Empréstimos (loans)
-     - EPI (safety equipment)
-     - Fornecedores (suppliers)
-     - Manutenção (maintenance)
-     - Movimentações (movements)
-     - Pedidos (orders)
-     - Produtos (products)
-     - Retiradas Externas (external withdrawals)
+#### 2. **ESTOQUE (Inventory)**
+- **Empréstimos (Loans)**: `/estoque/emprestimos`, create, details, batch-edit
+- **EPI (PPE)**:
+  - `/estoque/epi/` with CRUD
+  - `/estoque/epi/agendamentos/` - Schedules
+  - `/estoque/epi/entregas/` - Deliveries
+- **Fornecedores (Suppliers)**: `/estoque/fornecedores`
+- **Manutenção (Maintenance)**: `/estoque/manutencao`
+- **Movimentações (Movements)**: `/estoque/movimentacoes`
+- **Pedidos (Orders)**: `/estoque/pedidos`
+  - `/estoque/pedidos/agendamentos/` - Order Schedules
+  - `/estoque/pedidos/automaticos/` - Automatic Orders
+- **Produtos (Products)**: `/estoque/produtos`
+  - `/estoque/produtos/categorias/` - Categories
+  - `/estoque/produtos/marcas/` - Brands
+- **Retiradas Externas (External Withdrawals)**: `/estoque/retiradas-externas`
 
-6. **Integrações** (L777-821)
-   - ID: `integracoes`
-   - Required Privilege: `LEADER`
-   - Children: Secullum integration
+#### 3. **PINTURA (Painting)**
+- **Catálogo (Catalog)**: `/pintura/catalogo`, `/pintura/catalogo-basico`
+- **Marcas de Tinta (Paint Brands)**: `/pintura/marcas-de-tinta`
+- **Produções (Productions)**: `/pintura/producoes`
+- **Tipos de Tinta (Paint Types)**: `/pintura/tipos-de-tinta`
 
-7. **Manutenção** (L823-835)
-   - ID: `manutencao`
-   - Required Privilege: `[MAINTENANCE]`
+#### 4. **PRODUÇÃO (Production)**
+- **Cronograma (Schedule/Tasks)**: `/producao/cronograma`
+- **Em Espera (On Hold)**: `/producao/em-espera`
+- **Histórico (History)**: `/producao/historico`
+- **Recorte (Cutting)**: `/producao/recorte`
+- **Garagens (Garages)**: `/producao/garagens`
+- **Aerografia (Airbrushing)**: `/producao/aerografia`
+- **Observações (Observations)**: `/producao/observacoes`
+- **Ordens de Serviço (Service Orders)**: `/producao/ordens-de-servico`
+- **Caminhões (Trucks)**: `/producao/caminhoes`
+- **Serviços (Services)**: `/producao/servicos`
 
-8. **Meu Pessoal** (L837-867) - Team Management
-   - ID: `meu-pessoal`
-   - Required Privilege: `LEADER`
-   - Children:
-     - Advertências (warnings)
-     - Empréstimos (loans)
-     - Férias (vacations)
+#### 5. **RECURSOS HUMANOS (Human Resources)**
+- **Avisos (Warnings)**: `/recursos-humanos/avisos`
+- **Cálculos (Calculations)**: `/recursos-humanos/calculos`
+- **Cargos (Positions)**: `/recursos-humanos/cargos`
+- **Controle de Ponto (Time Clock)**: `/recursos-humanos/controle-ponto`
+- **EPI**: `/recursos-humanos/epi` with schedules, deliveries, sizes
+- **Feriados (Holidays)**: `/recursos-humanos/feriados`
+- **Férias (Vacations)**: `/recursos-humanos/ferias`
+- **Folha de Pagamento (Payroll)**: `/recursos-humanos/folha-de-pagamento`
+- **Níveis de Desempenho (Performance Levels)**: `/recursos-humanos/niveis-desempenho`
+- **Requisições (Requests)**: `/recursos-humanos/requisicoes`
+- **Simulação de Bônus (Bonus Simulation)**: `/recursos-humanos/simulacao-bonus`
+- **Bonificações (Bonuses)**: `/recursos-humanos/bonificacoes`
 
-9. **Pintura** (L870-920) - PAINTING
-   - ID: `pintura`
-   - Required Privilege: `[PRODUCTION, WAREHOUSE, ADMIN]`
-   - Children:
-     - Catálogo (catalog)
-     - Marcas de Tinta (paint brands)
-     - Produções (productions)
-     - Tipos de Tinta (paint types)
+#### 6. **PESSOAL (Personal - User-specific)**
+- **Meu Perfil (My Profile)**: `/pessoal/meu-perfil`
+- **Meus Empréstimos (My Loans)**: `/pessoal/meus-emprestimos`
+- **Meus EPIs (My PPE)**: `/pessoal/meus-epis`
+- **Meus Feriados (My Holidays)**: `/pessoal/meus-feriados`
+- **Minhas Férias (My Vacations)**: `/pessoal/minhas-ferias`
+- **Minhas Notificações (My Notifications)**: `/pessoal/minhas-notificacoes`
+- **Meus Avisos (My Warnings)**: `/pessoal/meus-avisos`
+- **Preferências (Preferences)**: `/pessoal/preferencias`
 
-10. **Produção** (L922-1069) - PRODUCTION
-    - ID: `producao`
-    - Required Privilege: `[PRODUCTION, LEADER, HUMAN_RESOURCES, WAREHOUSE, ADMIN]`
-    - Major children:
-      - Aerografia (airbrusing)
-      - Cronograma (schedule)
-      - Em Espera (on hold)
-      - Garagens (garages)
-      - Histórico (history)
-      - Observações (observations)
-      - Recorte (cutting)
+#### 7. **MEU PESSOAL (My Team - for Leaders)**
+- **Avisos**: `/meu-pessoal/avisos`
+- **Empréstimos**: `/meu-pessoal/emprestimos`
+- **Férias**: `/meu-pessoal/ferias`
 
-11. **Direct Menu Items for Specific Roles** (L1075-1145)
-    - Cronograma-direct: `[DESIGNER, FINANCIAL, LOGISTIC]`
-    - Em-espera-direct: `[DESIGNER, FINANCIAL, LOGISTIC]`
-    - Histórico-direct: `[DESIGNER, FINANCIAL, LOGISTIC]`
-    - Recorte-direct: `[DESIGNER]`
-    - Garagens-direct: `[LOGISTIC]`
-    - Aerografia-direct: `[FINANCIAL]`
-    - Catálogo-tintas-direct: `[DESIGNER]`
-    - Clientes-direct: `[FINANCIAL]`
+#### 8. **SERVIDOR (Server - Admin only)**
+- **Backup do Sistema**: `/servidor/backup`
+- **Sincronização BD**: `/servidor/sincronizacao-bd` (staging only)
+- **Implantações (Deployments)**: `/servidor/implantacoes`
+- **Logs do Sistema**: `/servidor/logs`
+- **Métricas do Sistema**: `/servidor/metricas`
+- **Pastas Compartilhadas (Shared Folders)**: `/servidor/pastas-compartilhadas`
+- **Serviços do Sistema**: `/servidor/servicos`
+- **Usuários do Sistema**: `/servidor/usuarios`
+- **Rate Limiting**: `/servidor/rate-limiting`
+- **Registros de Alterações (Change Logs)**: `/servidor/registros-de-alteracoes`
 
-12. **Recursos Humanos** (L1147-1304) - HUMAN RESOURCES
-    - ID: `recursos-humanos`
-    - Required Privilege: `[ADMIN, HUMAN_RESOURCES]`
-    - Children:
-      - Advertências (warnings)
-      - Cálculos (calculations)
-      - Cargos (positions)
-      - Controle de Ponto (time clock)
-      - EPI (safety equipment)
-      - Feriados (holidays)
-      - Férias (vacations)
-      - Folha de Pagamento (payroll)
-      - Níveis de Desempenho (performance levels)
-      - Requisições (requisitions)
-      - Simulação de Bônus (bonus simulation)
+#### 9. **INTEGRAÇÕES (Integrations - LEADER privilege)**
+- **Secullum**:
+  - `/integracoes/secullum/calculos` - Time calculations
+  - `/integracoes/secullum/registros-ponto` - Time entries
+  - `/integracoes/secullum/status-sincronizacao` - Sync status
 
-13. **Servidor** (L1306-1384) - SERVER
-    - ID: `servidor`
-    - Required Privilege: `ADMIN`
-    - Children:
-      - Backup do Sistema (system backup)
-      - Sincronização BD (database sync - staging only)
-      - Implantações (deployments)
-      - Logs do Sistema (system logs)
-      - Métricas do Sistema (system metrics)
-      - Pastas Compartilhadas (shared folders)
-      - Serviços do Sistema (system services)
-      - Usuários do Sistema (system users)
-      - Rate Limiting
-      - Registros de Alterações (change logs)
+#### 10. **ESTATÍSTICAS (Statistics - ADMIN only)**
+- `/estatisticas` - Root
+- `/estatisticas/administracao`
+- `/estatisticas/estoque` with sub-routes (consumo, movimentacao, tendencias, top-itens)
+- `/estatisticas/producao`
+- `/estatisticas/recursos-humanos`
 
-### 2.3 Icon System
-Location: `/Users/kennedycampos/Documents/repositories/web/src/constants/navigation.ts` (Lines 18-440)
+#### 11. **Special Direct Access Routes (for specific privileges)**
+- Cronograma direct: `/producao/cronograma` (DESIGNER, FINANCIAL, LOGISTIC)
+- Em Espera direct: `/producao/em-espera` (DESIGNER, FINANCIAL, LOGISTIC)
+- Histórico direct: `/producao/historico` (DESIGNER, FINANCIAL, LOGISTIC)
+- Recorte direct: `/producao/recorte` (DESIGNER only)
+- Garagens direct: `/producao/garagens` (LOGISTIC only)
+- Aerografia direct: `/producao/aerografia` (FINANCIAL only)
+- Catálogo de Tintas direct: `/pintura/catalogo` (DESIGNER only)
+- Clientes direct: `/financeiro/clientes` (FINANCIAL only)
 
-**TABLER_ICONS Object** - Maps generic icon keys to Tabler icon names
-- Example: `dashboard: "IconDashboard"`
-- Example: `factory: "IconBuilding"`
-- Example: `users: "IconUsers"`
-
-**Total Icons Defined:** 200+
+#### 12. **Other Routes**
+- Home: `/`
+- Profile: `/perfil`
+- Favorites: `/favoritos`
+- Maintenance (standalone): `/manutencao`
+- Catalog (basic): `/pintura/catalogo-basico` (LEADER only)
+- Finance: `/financeiro/clientes`
 
 ---
 
-## 3. ROUTE STRUCTURE
+## 3. PRIVILEGE/PERMISSION SYSTEM
 
-### 3.1 Routes Configuration
-Location: `/Users/kennedycampos/Documents/repositories/web/src/constants/routes.ts`
-
-**Export:** `const routes` object (Line 3)
-
-**Structure Example:**
-```typescript
-routes.administration.customers = {
-  batchEdit: "/administracao/clientes/editar-em-lote",
-  create: "/administracao/clientes/cadastrar",
-  details: (id) => `/administracao/clientes/detalhes/${id}`,
-  edit: (id) => `/administracao/clientes/editar/${id}`,
-  root: "/administracao/clientes"
-}
+### SECTOR_PRIVILEGES Enum (from enums.ts):
+```
+ADMIN
+HUMAN_RESOURCES
+PRODUCTION
+WAREHOUSE
+LEADER
+DESIGNER
+FINANCIAL
+LOGISTIC
+MAINTENANCE
 ```
 
-### 3.2 Major Route Groups
+### Privilege Handling:
+- **Single privilege**: `requiredPrivilege: SECTOR_PRIVILEGES.ADMIN`
+- **Multiple privileges (OR logic)**: `requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.LEADER]`
+- **No privilege**: Item shows to all authenticated users
 
-1. **Administration** (L5-63)
-   - customers, collaborators, files, notifications, sectors, users, monitoring
+### Navigation Filtering:
+- Function `filterMenuByPrivileges()` filters menu items based on user's privilege
+- Removes parent items if all children are filtered out
+- Used in `getFilteredMenuForUser()` with platform filtering
 
-2. **Authentication** (L65-73)
-   - login, recoverPassword, register, resetPassword, verifyCode, verifyPasswordReset
-
-3. **Catalog** (L75-79)
-   - Basic catalog for leaders
-
-4. **Human Resources** (L96-198)
-   - calculations, holidays, positions, performanceLevels, ppe, requisicoes, timeClock, vacations, warnings, payroll, bonus
-
-5. **Inventory** (L200-311)
-   - externalWithdrawals, loans, maintenance, movements, orders, ppe, products, suppliers
-
-6. **Maintenance** (L313-318)
-   - create, details, edit, list, root
-
-7. **Meu Pessoal** (L320-335)
-   - Sector employee management for leaders
-
-8. **My Team** (L337-343)
-   - loans, vacations, warnings
-
-9. **Painting** (L345-397)
-   - catalog, components, formulas, formulations, paintTypes, paintBrands, productions
-
-10. **Personal** (L399-431)
-    - myHolidays, myLoans, myNotifications, myPpes, myProfile, myVacations, myWarnings, preferences
-
-11. **Production** (L433-508)
-    - airbrushings, cutting, garages, history, observations, schedule, scheduleOnHold, serviceOrders, services, trucks
-
-12. **Server** (L510-536)
-    - backup, changeLogs, databaseSync, deployments, throttler, logs, metrics, services, sharedFolders, users
-
-13. **Statistics** (L538-567)
-    - administration, humanResources, inventory, production, orders, financial, analytics, dashboards, reports
-
-14. **Integrations** (L569-581)
-    - secullum integrations
+### Route Protection:
+- Uses `AutoPrivilegeRoute` component in App.tsx
+- Wraps protected routes with MainLayout
+- Auth routes use separate AuthLayout
 
 ---
 
-## 4. NAVIGATION FILTERING & DISPLAY
+## 4. EXACT PATH PATTERNS IN WEB
 
-### 4.1 Menu Filtering Functions
-Location: `/Users/kennedycampos/Documents/repositories/web/src/utils/navigation.ts`
+### Naming Convention:
+- **Portuguese names** for routes: `/administracao`, `/estoque`, `/producao`, etc.
+- **Action patterns**:
+  - List: `/module/entity` or `/module/entity/listar` (implicit list on root)
+  - Create: `/module/entity/cadastrar`
+  - Details: `/module/entity/detalhes/:id`
+  - Edit: `/module/entity/editar/:id`
+  - Batch Edit: `/module/entity/editar-em-lote`
+  - Batch Edit Alt: `/module/entity/editar-lote`
 
-**Main Filter Function:**
-- `getFilteredMenuForUser(menuItems, user, platform)` (L22)
-  - Filters by platform ("web" | "mobile")
-  - Filters by environment (staging vs production)
-  - Filters by privileges
+### Examples:
+- `/estoque/emprestimos` (list)
+- `/estoque/emprestimos/cadastrar` (create)
+- `/estoque/emprestimos/detalhes/123` (details)
+- `/estoque/emprestimos/editar/123` (edit)
+- `/estoque/emprestimos/editar-lote` (batch edit)
+- `/estoque/epi/agendamentos` (nested: schedules list)
+- `/recursos-humanos/cargos/detalhes/:id` (details)
+- `/pintura/catalogo` (paint catalog - note: NOT "catálogo")
 
-**Component Functions:**
-- `filterMenuByPrivileges(menuItems, userPrivilege)` (L79)
-  - Uses exact matching for single privileges (L72)
-  - Uses array inclusion for multiple privileges (L68)
-  - Recursively filters children
-
-- `filterMenuByPlatform(menuItems, platform)` (L103)
-  - Currently shows all items on all platforms (platforms field removed)
-
-- `filterMenuByEnvironment(menuItems)` (L124)
-  - Checks `item.onlyInStaging` flag
-  - Filters based on API URL environment
-
-**Helper Functions:**
-- `hasMenuItemAccess(item, userPrivilege)` (L58)
-- `hasAccessToMenuItem(item, userPrivilege)` (L267)
-- `getControlPanelItems(menuItems)` (L157)
-- `getAllRoutes(menuItems)` (L178)
-- `findMenuItemByPath(menuItems, path)` (L199)
-- `getBreadcrumbs(menuItems, path)` (L215)
-- `getMenuItemsByDomain(menuItems, domain)` (L259)
-
-**Icon Helper:**
-- `getTablerIcon(iconKey)` (L40) - Maps icon keys to Tabler icon names
+### Special Cases:
+- Catalog has TWO routes: `/pintura/catalogo-basico` (basic for LEADER) and `/pintura/catalogo` (full)
+- Finance section: `/financeiro/clientes` (NOTE: "financeiro" not "finanzas")
+- Secullum integration: `/integracoes/secullum/registros-ponto` (time entries)
 
 ---
 
-## 5. PRIVILEGE ROUTE GUARD
+## 5. PAGES DIRECTORY STRUCTURE
 
-### 5.1 PrivilegeRoute Component
-Location: `/Users/kennedycampos/Documents/repositories/web/src/components/navigation/privilege-route.tsx`
+Location: `/src/pages/`
 
-**Component Props (L10-14):**
-```typescript
-interface PrivilegeRouteProps {
-  children: ReactNode;
-  requiredPrivilege?: keyof typeof SECTOR_PRIVILEGES | (keyof typeof SECTOR_PRIVILEGES)[];
-  fallbackRoute?: string;
-}
+Main directories:
+- `administration/` - customers, collaborators, notifications, sectors, change-logs
+- `authentication/` - login, register, recover-password, reset-password, verify-code
+- `catalog/` - basic catalog
+- `human-resources/` - warnings, positions, ppe, holidays, vacations, time-clock, payroll, bonus
+- `inventory/` - loans, ppe, suppliers, maintenance, movements, orders, products, external-withdrawals
+- `maintenance/` - standalone maintenance module
+- `my-team/` - team management for leaders (vacations, warnings, loans)
+- `painting/` - catalog, paint-types, paint-brands, formulas, productions
+- `personal/` - my-profile, my-loans, my-ppes, my-holidays, my-vacations, my-notifications, my-warnings, preferences
+- `production/` - cronograma (schedule), aerografia, garages, cutting, history, observations, service-orders, services, trucks
+- `profile/` - user profile management
+- `server/` - backup, database-sync, deployments, logs, metrics, services, shared-folders, users, rate-limiting
+- `admin/` - backup (duplicate path)
+- `financeiro/` - financeiro specific routes
+- `favorites.tsx` - favorites page
+- `home.tsx` - home page
+- `under-construction.tsx` - placeholder
+
+---
+
+## 6. FEATURES IN WEB BUT POTENTIALLY MISSING IN MOBILE
+
+### Clearly Full-Featured Modules:
+1. **Finance Module** - `/financeiro/clientes` (might not be in mobile yet)
+2. **Integration Module** - Secullum integration with full sync management
+3. **Server Administration** - Deployment, database sync, system metrics
+4. **Statistics Module** - Advanced analytics dashboard
+5. **Payroll & Bonuses** - Complete HR financial management
+6. **Time Clock Control** - Detailed time tracking
+7. **Performance Levels** - HR performance metrics
+8. **Paint Production Tracking** - Formulas, components, productions
+9. **Truck Management** - Production trucks
+10. **Service Orders** - Production service orders
+11. **Advanced Maintenance Scheduling** - Preventive maintenance
+12. **File Management** - Document upload, orphan file management
+
+### Features Shared Between Web and Mobile (typically):
+- Basic CRUD for: Customers, Products, Suppliers, Tasks, PPE, EPI Schedules
+- Personal dashboards and notifications
+- My Team/Meu Pessoal management
+- Basic paint catalog
+
+---
+
+## 7. ROUTING AND LAZY LOADING PATTERN
+
+The web version uses:
+- **React Router v6**: BrowserRouter with Routes
+- **Code Splitting**: `lazy()` for all pages except auth pages
+- **Suspense**: PageLoader component for loading states
+- **Layout Wrapping**: All protected routes use MainLayout
+- **Context Providers**: Auth, Theme, Favorites, FileViewer
+
+### Auth Flow:
+1. Public routes (auth pages)
+2. AutoPrivilegeRoute wrapper (checks authentication)
+3. MainLayout (navigation, layout)
+4. Protected feature routes
+
+---
+
+## 8. KEY DIFFERENCES FROM MOBILE EXPECTED STRUCTURE
+
+### Web Advantages:
+- Desktop-optimized UI with full navigation sidebar
+- More granular privilege system with multiple privilege types
+- Advanced features like statistics dashboards
+- File management module
+- Integration modules
+- Server administration
+- More detailed CRUD operations (batch edit, schedule management)
+
+### Mobile Considerations:
+- Likely simplified navigation (bottom tabs or hamburger menu)
+- Fewer modules visible at once
+- Simpler privilege system or just ADMIN/USER
+- Limited file management
+- No server admin features
+- Simplified statistics/dashboards
+
+---
+
+## 9. PRIVILEGE-BASED DIRECT MENU ITEMS (Not in submenu)
+
+These special items appear at top level for specific users:
+
+```
+- Cronograma (direct) → /producao/cronograma (DESIGNER, FINANCIAL, LOGISTIC)
+- Em Espera (direct) → /producao/em-espera (DESIGNER, FINANCIAL, LOGISTIC)
+- Histórico (direct) → /producao/historico (DESIGNER, FINANCIAL, LOGISTIC)
+- Recorte (direct) → /producao/recorte (DESIGNER only)
+- Garagens (direct) → /producao/garagens (LOGISTIC only)
+- Aerografia (direct) → /producao/aerografia (FINANCIAL only)
+- Catálogo de Tintas (direct) → /pintura/catalogo (DESIGNER only)
+- Clientes (direct) → /financeiro/clientes (FINANCIAL only)
 ```
 
-**Behavior (L68-108):**
-1. Shows loading spinner while auth is loading (L73-78)
-2. Redirects unauthenticated users to login (L82-84)
-3. Redirects users with BASIC privilege to welcome page (L87-92)
-4. If no privilege required, renders children for basic routes (L95-97)
-5. Checks if user has required privileges (L100)
-6. Shows "Access Denied" screen if access denied (L102-104)
-7. Renders children if access granted (L107)
-
-**Privilege Check Function (L23-39):**
-- Supports single privileges and arrays
-- Supports AND logic (requireAll) and OR logic (default)
-- Uses `hasPrivilege` and `hasAnyPrivilege` utility functions
-
-**Unauthorized Access UI (L41-66):**
-- Displays shield icon
-- Shows "Acesso Negado" (Access Denied) message
-- Shows contact admin message
-- Provides "Voltar" (Back) button
+This creates a "flattened" menu for specialists rather than making them navigate through full modules.
 
 ---
 
-## 6. ENUM DEFINITIONS
+## 10. NAVIGATION UTILITY FUNCTIONS
 
-### 6.1 SECTOR_PRIVILEGES Enum
-Location: `/Users/kennedycampos/Documents/repositories/web/src/constants/enums.ts` (Lines 35-47)
-
-```typescript
-enum SECTOR_PRIVILEGES {
-  BASIC = "BASIC",
-  MAINTENANCE = "MAINTENANCE",
-  WAREHOUSE = "WAREHOUSE",
-  DESIGNER = "DESIGNER",
-  FINANCIAL = "FINANCIAL",
-  LOGISTIC = "LOGISTIC",
-  ADMIN = "ADMIN",
-  PRODUCTION = "PRODUCTION",
-  LEADER = "LEADER",
-  HUMAN_RESOURCES = "HUMAN_RESOURCES",
-  EXTERNAL = "EXTERNAL",
-}
-```
+Key functions available:
+- `getFilteredMenuForUser()` - Filter menu by privilege and platform
+- `filterMenuByPrivileges()` - Apply privilege filtering
+- `filterMenuByEnvironment()` - Staging vs production
+- `getTablerIcon()` - Map icon names to Tabler icons
+- `getAllRoutes()` - Get flattened list of all routes
+- `findMenuItemByPath()` - Find menu item by path
+- `getBreadcrumbs()` - Generate breadcrumb trail
+- `getMenuItemsByDomain()` - Get module by domain ID
 
 ---
 
-## 7. CRITICAL DIFFERENCES FROM MOBILE APP
+## 11. ENVIRONMENT-SPECIFIC ROUTES
 
-### 7.1 Privilege Level Inconsistencies
-
-**Web Version (privilege.ts L10-22):**
-```
-WAREHOUSE: 3
-```
-
-**Mobile Version (privilege.ts L14-16):**
-```
-WAREHOUSE: 3
-DESIGNER: 3
-LOGISTIC: 3
-```
-
-**Issue:** Mobile treats DESIGNER and LOGISTIC as same level as WAREHOUSE, but they should potentially have different hierarchies.
-
-### 7.2 Menu Structure Differences
-
-The web version has:
-1. **Direct menu items for specific roles** (Lines 1075-1145) - These appear at top level for DESIGNER, FINANCIAL, LOGISTIC instead of nested under Produção
-2. **More granular control** - Some items have privilege requirements at the child level (e.g., "Colaboradores - Cadastrar" requires ADMIN L477)
-3. **Environment flags** - Some items only show in staging (L1325)
-
-### 7.3 Icon System
-
-Web uses Tabler icons exclusively with a mapping system. Mobile might need similar mapping for consistency.
+- **onlyInStaging: true** applied to:
+  - `/servidor/sincronizacao-bd` (Database Sync - staging only)
 
 ---
 
-## 8. KEY CONFIGURATION FILES
+## SUMMARY FOR MOBILE ALIGNMENT
 
-### 8.1 Essential Files for Navigation
+To align the mobile app with the web version:
 
-1. **Privilege System**
-   - `/Users/kennedycampos/Documents/repositories/web/src/utils/privilege.ts` - Core privilege logic
-   - `/Users/kennedycampos/Documents/repositories/web/src/utils/user.ts` - User privilege checks
-   - `/Users/kennedycampos/Documents/repositories/web/src/hooks/usePrivileges.ts` - React hook interface
-
-2. **Navigation Definition**
-   - `/Users/kennedycampos/Documents/repositories/web/src/constants/navigation.ts` - Menu items (1389 lines)
-   - `/Users/kennedycampos/Documents/repositories/web/src/constants/routes.ts` - Route structure (596 lines)
-   - `/Users/kennedycampos/Documents/repositories/web/src/constants/enums.ts` - Privilege enums
-
-3. **Navigation Utilities**
-   - `/Users/kennedycampos/Documents/repositories/web/src/utils/navigation.ts` - Menu filtering
-   - `/Users/kennedycampos/Documents/repositories/web/src/components/navigation/sidebar.tsx` - Menu display
-
-4. **Route Protection**
-   - `/Users/kennedycampos/Documents/repositories/web/src/components/navigation/privilege-route.tsx` - Route guard component
-
-5. **Contexts**
-   - `/Users/kennedycampos/Documents/repositories/web/src/contexts/sidebar-context.tsx` - Sidebar state
-
----
-
-## 9. CRITICAL IMPLEMENTATION PATTERNS
-
-### 9.1 Privilege Checking Pattern
-
-**Web Pattern:**
-```typescript
-// In utility functions (non-React)
-const hasAccess = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-
-// In React components
-const privileges = usePrivileges();
-if (privileges.isAdmin) { ... }
-
-// In route guards
-<PrivilegeRoute requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
-  <AdminPage />
-</PrivilegeRoute>
-```
-
-### 9.2 Menu Filtering Pattern
-
-```typescript
-const filteredMenu = getFilteredMenuForUser(
-  MENU_ITEMS,
-  user,
-  "web"  // or "mobile"
-);
-```
-
-### 9.3 Privilege Array Pattern
-
-**Single privilege:** `requiredPrivilege: SECTOR_PRIVILEGES.ADMIN`
-
-**Multiple (OR logic):** `requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.LEADER]`
-
----
-
-## 10. ROUTING CONVENTIONS
-
-### 10.1 URL Patterns
-
-**List Pages:**
-- `/administracao/clientes` (customers list)
-- `/estoque/produtos` (products list)
-
-**Create Pages:**
-- `/administracao/clientes/cadastrar`
-- `/estoque/produtos/cadastrar`
-
-**Details Pages (Dynamic):**
-- `/administracao/clientes/detalhes/:id`
-- `/estoque/produtos/detalhes/:id`
-
-**Edit Pages (Dynamic):**
-- `/administracao/clientes/editar/:id`
-- `/estoque/produtos/editar/:id`
-
-**Batch Edit Pages:**
-- `/administracao/clientes/editar-em-lote`
-- `/estoque/produtos/editar-em-lote`
-
----
-
-## 11. TABLER ICONS MAPPING
-
-Over 200 icons mapped in TABLER_ICONS object:
-
-**Examples:**
-- `dashboard: "IconDashboard"`
-- `home: "IconHome"`
-- `factory: "IconBuilding"`
-- `users: "IconUsers"`
-- `warehouse: "IconBuildingWarehouse"`
-- `settings: "IconSettings"`
-- `shield: "IconShield"`
-- `edit: "IconEdit"`
-- `trash: "IconTrash"`
-
----
-
-## 12. RECOMMENDATIONS FOR MOBILE ALIGNMENT
-
-1. **Match privilege hierarchy exactly** - Align DESIGNER and LOGISTIC levels
-2. **Use same MenuItem interface** - Ensure compatibility
-3. **Implement same filtering logic** - Use getFilteredMenuForUser pattern
-4. **Use hierarchical privilege checks** - Use canAccessSector and hasPrivilege
-5. **Implement route mapping** - Use routes constants for type safety
-6. **Use same SECTOR_PRIVILEGES enum** - Shared constants package
-7. **Consider direct menu items for roles** - For better UX on mobile with specific roles
-8. **Implement exact matching for menu privileges** - Currently using exact match, not hierarchical
-
----
-
-## 13. FILE LOCATIONS SUMMARY
-
-| Component | Location | Lines |
-|-----------|----------|-------|
-| SECTOR_PRIVILEGES enum | src/constants/enums.ts | 35-47 |
-| TABLER_ICONS mapping | src/constants/navigation.ts | 18-440 |
-| NAVIGATION_MENU | src/constants/navigation.ts | 442-1389 |
-| routes object | src/constants/routes.ts | 3-591 |
-| Privilege utilities | src/utils/privilege.ts | Full file |
-| User utilities | src/utils/user.ts | Full file |
-| Navigation utilities | src/utils/navigation.ts | Full file |
-| usePrivileges hook | src/hooks/usePrivileges.ts | Full file |
-| PrivilegeRoute component | src/components/navigation/privilege-route.tsx | Full file |
-| Sidebar component | src/components/navigation/sidebar.tsx | Full file |
+1. **Use same Portuguese path patterns** (`/estoque/`, `/producao/`, etc.)
+2. **Implement the same privilege system** (SECTOR_PRIVILEGES enum)
+3. **Support nested routes** for subitems (especially inventory and HR)
+4. **Create mobile-specific navigation** using the same menu config
+5. **Flatten complex menus** for mobile usability
+6. **Focus on core mobile features** (not all server admin or advanced stats)
+7. **Use consistent action patterns** (cadastrar, detalhes, editar, editar-lote)
+8. **Implement privilege-based menu filtering** at runtime
+9. **Support batch operations** where applicable
+10. **Maintain consistency with icon mappings** from TABLER_ICONS
 

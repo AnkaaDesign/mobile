@@ -416,11 +416,6 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
           indices: false,
         });
 
-        // Log serialized query string for debugging
-        if (finalConfig.enableLogging && process.env.NODE_ENV === "development") {
-          console.log("[AxiosClient] Serialized query string:", queryString);
-        }
-
         return queryString;
       },
     },

@@ -1351,6 +1351,16 @@ const getScreensToRegister = () => {
     // Core screens
     { name: "home", title: "Início" },
     { name: "settings", title: "Configurações" },
+    { name: "profile", title: "Perfil" },
+
+    // Admin
+    { name: "admin/backup", title: "Backup" },
+
+    // Dashboard Module
+    { name: "dashboard", title: "Dashboard" },
+
+    // Maintenance Module
+    { name: "maintenance", title: "Manutenção" },
 
     // Production Module
     { name: "production", title: "Produção" },
@@ -1407,6 +1417,11 @@ const getScreensToRegister = () => {
 
     // Inventory Module
     { name: "inventory", title: "Estoque" },
+    { name: "inventory/activities", title: "Atividades" },
+    { name: "inventory/activities/create", title: "Cadastrar Atividade" },
+    { name: "inventory/activities/details/[id]", title: "Detalhes da Atividade" },
+    { name: "inventory/activities/edit/[id]", title: "Editar Atividade" },
+    { name: "inventory/activities/list", title: "Listar Atividades" },
     { name: "inventory/movements/create", title: "Cadastrar Movimentação" },
     { name: "inventory/movements/details/[id]", title: "Detalhes da Movimentação" },
     { name: "inventory/movements/edit/[id]", title: "Editar Movimentação" },
@@ -1464,6 +1479,8 @@ const getScreensToRegister = () => {
     { name: "inventory/borrows/details/[id]", title: "Detalhes do Empréstimo" },
     { name: "inventory/borrows/edit/[id]", title: "Editar Empréstimo" },
     { name: "inventory/borrows/list", title: "Listar Empréstimos" },
+    { name: "inventory/reports", title: "Relatórios" },
+    { name: "inventory/statistics", title: "Estatísticas" },
 
     // Painting Module
     { name: "painting", title: "Pintura" },
@@ -1504,6 +1521,7 @@ const getScreensToRegister = () => {
     { name: "administration/customers", title: "Clientes" },
     { name: "administration/customers/create", title: "Cadastrar Cliente" },
     { name: "administration/customers/details/[id]", title: "Detalhes do Cliente" },
+    { name: "administration/customers/edit/[id]", title: "Editar Cliente" },
     { name: "administration/customers/list", title: "Listar Clientes" },
     { name: "administration/files", title: "Arquivos" },
     { name: "administration/files/details/[id]", title: "Detalhes do Arquivo" },
@@ -1519,6 +1537,10 @@ const getScreensToRegister = () => {
     { name: "administration/sectors/details/[id]", title: "Detalhes do Setor" },
     { name: "administration/sectors/edit/[id]", title: "Editar Setor" },
     { name: "administration/sectors/list", title: "Listar Setores" },
+    { name: "administration/change-logs", title: "Registros de Alterações" },
+    { name: "administration/change-logs/details/[id]", title: "Detalhes do Registro" },
+    { name: "administration/change-logs/entity/[entityType]/[entityId]", title: "Registros por Entidade" },
+    { name: "administration/change-logs/list", title: "Listar Registros de Alterações" },
 
     // Server Module
     { name: "server", title: "Servidor" },
@@ -1620,6 +1642,7 @@ const getScreensToRegister = () => {
     // Integrations Module
     { name: "integrations/secullum/sync-status", title: "Status de Sincronização" },
     { name: "integrations/secullum/calculations/list", title: "Listar Cálculos" },
+    { name: "integrations/secullum/requests/list", title: "Listar Requisições" },
     { name: "integrations/secullum/time-entries/list", title: "Listar Registros de Ponto" },
     { name: "integrations/secullum/time-entries/details/[id]", title: "Detalhes do Registro de Ponto" },
 

@@ -22,25 +22,13 @@ interface TasksTableProps {
   maxHeight?: number;
 }
 
-// Local storage key for column preferences
-const STORAGE_KEY = "customer_tasks_visible_columns";
-
 export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
   const { colors } = useTheme();
   const totalTasks = customer._count?.tasks || 0;
 
-  // Load saved column preferences from localStorage on mount
+  // Use only name and serialNumber columns for customer detail view
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return Array.isArray(parsed) ? parsed : Array.from(getDefaultVisibleColumns());
-      }
-    } catch (error) {
-      console.warn("Failed to load column preferences:", error);
-    }
-    return Array.from(getDefaultVisibleColumns());
+    return ["name", "serialNumber"];
   });
 
   // Search state
@@ -50,12 +38,8 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
   // Column visibility drawer state
   const [showColumnManager, setShowColumnManager] = useState(false);
 
-  // Fetch tasks for this customer
-  const {
-    data: tasksResponse,
-    isLoading,
-    error,
-  } = useTasks({
+  // Fetch tasks for this specific customer
+  const queryParams = {
     where: {
       customerId: customer.id,
     },
@@ -77,33 +61,37 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
       },
     },
     orderBy: { createdAt: "desc" },
-    search: debouncedSearch || undefined,
+    searchingFor: debouncedSearch || undefined,
+    page: 1,
+    limit: 50, // Get up to 50 tasks for this customer
     enabled: true,
-  });
+  };
+
+  const {
+    data: tasksResponse,
+    isLoading,
+    error,
+  } = useTasks(queryParams);
 
   const tasks = tasksResponse?.data || [];
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
 
-  // Handle columns change and persist to localStorage
+  // Handle columns change
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {
     const newColumnsArray = Array.from(newColumns);
     setVisibleColumnKeys(newColumnsArray);
-
-    // Persist to localStorage
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newColumnsArray));
-    } catch (error) {
-      console.warn("Failed to save column preferences:", error);
-    }
+    // Note: In React Native, we would use AsyncStorage to persist preferences
   }, []);
 
   const handleTaskPress = (taskId: string) => {
     router.push(routeToMobilePath(routes.production.schedule.details(taskId)) as any);
   };
 
-  if (totalTasks === 0) {
+  // Don't rely on totalTasks from _count since it might not be accurate
+  // Instead, check if we're still loading or have actual data
+  if (!isLoading && tasks.length === 0 && !searchQuery) {
     return (
       <Card style={styles.card}>
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
@@ -153,37 +141,37 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
         </View>
 
         {/* Task Table */}
-        <View style={[styles.tableContainer, maxHeight ? { maxHeight } : undefined]}>
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <ThemedText style={styles.loadingText}>Carregando tarefas...</ThemedText>
-            </View>
-          ) : error ? (
-            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
-              <IconAlertCircle size={48} color={colors.mutedForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-                Erro ao carregar tarefas.
-              </ThemedText>
-            </View>
-          ) : tasks.length === 0 ? (
-            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
-              <IconAlertCircle size={48} color={colors.mutedForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-                {searchQuery
-                  ? `Nenhuma tarefa encontrada para "${searchQuery}".`
-                  : "Nenhuma tarefa associada a este cliente."}
-              </ThemedText>
-            </View>
-          ) : (
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <ThemedText style={styles.loadingText}>Carregando tarefas...</ThemedText>
+          </View>
+        ) : error ? (
+          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+            <IconAlertCircle size={48} color={colors.mutedForeground} />
+            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+              Erro ao carregar tarefas.
+            </ThemedText>
+          </View>
+        ) : tasks.length === 0 ? (
+          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+            <IconAlertCircle size={48} color={colors.mutedForeground} />
+            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+              {searchQuery
+                ? `Nenhuma tarefa encontrada para "${searchQuery}".`
+                : "Nenhuma tarefa associada a este cliente."}
+            </ThemedText>
+          </View>
+        ) : (
+          <View style={[styles.tableContainer, { height: maxHeight || 400 }]}>
             <TaskTable
               tasks={tasks}
               onTaskPress={handleTaskPress}
               enableSwipeActions={false}
               visibleColumnKeys={visibleColumnKeys}
             />
-          )}
-        </View>
+          </View>
+        )}
       </View>
 
       {/* Column Visibility Drawer */}
@@ -226,7 +214,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    paddingHorizontal: spacing.sm,
   },
   searchBar: {
     flex: 1,

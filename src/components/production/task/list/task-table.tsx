@@ -432,7 +432,7 @@ export const TaskTable = React.memo<TaskTableProps>(
                 borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
               },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
+            contentContainerStyle={{}}
             onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
@@ -514,7 +514,7 @@ export const TaskTable = React.memo<TaskTableProps>(
                       borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
                     },
                   ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                  contentContainerStyle={{}}
                 >
                   <Pressable
                     style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
@@ -549,7 +549,7 @@ export const TaskTable = React.memo<TaskTableProps>(
                 borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
               },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
+            contentContainerStyle={{}}
           >
             <Pressable
               style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
@@ -657,8 +657,6 @@ export const TaskTable = React.memo<TaskTableProps>(
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    paddingHorizontal: 8,
-    paddingBottom: 24,
     backgroundColor: "transparent",
   },
   container: {
