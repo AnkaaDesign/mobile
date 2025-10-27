@@ -20,14 +20,12 @@ interface MobilePaintFormulaCalculatorProps {
   formula: PaintFormula;
 }
 
-// Predefined volume options (matching web version)
+// Predefined volume options
 const PREDEFINED_VOLUMES = [
   { label: "100ml", value: 100 },
-  { label: "500ml", value: 500 },
   { label: "1L", value: 1000 },
   { label: "2L", value: 2000 },
   { label: "3.6L", value: 3600 },
-  { label: "5L", value: 5000 },
 ];
 
 interface ComponentCalculation {

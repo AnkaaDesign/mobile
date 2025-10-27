@@ -16,7 +16,7 @@ import { useRouter, useSegments, usePathname } from "expo-router";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { MENU_ITEMS, routes, MenuItem } from '../../constants';
 import { getFilteredMenuForUser, getTablerIcon } from '../../utils/navigation';
-import { getEnglishPath, routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath, getTitleFromMenuItems, normalizePath } from "@/lib/route-mapper";
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { maskPhone } from '../../utils';
 
@@ -732,14 +732,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         return;
       }
 
-      // Convert Portuguese path to English file path
-      const englishPath = getEnglishPath(path);
-
-      // Remove leading slash and convert to expo router format
-      let routePath = englishPath.startsWith("/") ? englishPath.slice(1) : englishPath;
-
-      // Add the (tabs) prefix for tab routes
-      const tabRoute = `/(tabs)/${routePath}`;
+      // Use routeToMobilePath to add (tabs) prefix
+      const tabRoute = routeToMobilePath(path);
 
       try {
         router.push(tabRoute as any);
@@ -747,9 +741,9 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         props.navigation?.closeDrawer?.();
       } catch (error) {
         console.warn("Navigation failed for route:", tabRoute, error);
-        // Try fallback to home instead of undefined route
+        // Try fallback to home
         try {
-          router.push(routeToMobilePath(routes.home) as any);
+          router.push('/(tabs)/home' as any);
           props.navigation?.closeDrawer?.();
         } catch (fallbackError) {
           console.error("Fallback navigation also failed:", fallbackError);
@@ -759,33 +753,26 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     [router, props.navigation],
   );
 
-  // FIXED: Check if menu item is active with proper path matching
+  // Check if menu item is active with path matching
   const isItemActive = useCallback(
     (item: MenuItem): boolean => {
       if (!item.path) return false;
 
-      // Current pathname is like /(tabs)/home or /(tabs)/personal/my-profile
+      // Current pathname is like /(tabs)/home or /(tabs)/administracao/clientes
       // Remove (tabs) prefix from pathname for comparison
       const currentPath = pathname.replace(/^\/\(tabs\)/, "");
 
-      // Handle contextual menu items
-      if ('isContextual' in item && item.isContextual) {
-        // For contextual items, get the English path from the item.path
-        const englishPath = getEnglishPath(item.path);
-        return currentPath === englishPath;
-      }
-
-      // Convert the Portuguese route constant (item.path) to English path
-      const itemEnglishPath = getEnglishPath(item.path);
+      // Normalize both paths for comparison
+      const normalizedCurrent = normalizePath(currentPath);
+      const normalizedItem = normalizePath(item.path);
 
       // Special case for home route
-      if (item.path === "/" || itemEnglishPath === "/") {
-        // For home, check exact match with "/home" or root "/"
-        return currentPath === "/home" || currentPath === "/" || currentPath === "";
+      if (item.path === "/" || normalizedItem === "") {
+        return normalizedCurrent === "home" || normalizedCurrent === "";
       }
 
       // Exact path match
-      if (currentPath === itemEnglishPath) {
+      if (normalizedCurrent === normalizedItem) {
         return true;
       }
 
@@ -794,8 +781,9 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         // Check if any child matches the current path
         const hasMatchingChild = item.children.some((child) => {
           if (!child.path) return false;
-          const childEnglishPath = getEnglishPath(child.path);
-          return currentPath === childEnglishPath || currentPath.startsWith(childEnglishPath + "/");
+          const childNormalized = normalizePath(child.path);
+          return normalizedCurrent === childNormalized ||
+                 normalizedCurrent.startsWith(childNormalized + "/");
         });
 
         // If we're on a child route, highlight the parent
@@ -804,9 +792,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         }
       }
 
-      // Special case: highlight parent menu items for specific routes
-      // Check if current path starts with the item's English path
-      if (currentPath.startsWith(itemEnglishPath + "/")) {
+      // Check if current path starts with the item's path (for parent highlighting)
+      if (normalizedCurrent.startsWith(normalizedItem + "/")) {
         return true;
       }
 
