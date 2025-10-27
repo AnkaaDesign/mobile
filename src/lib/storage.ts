@@ -3,19 +3,22 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const ACCESS_TOKEN_KEY = "@ankaa_token";
 
-// Store
+// Store token - ONLY use AsyncStorage, no localStorage polyfill
 export const storeToken = async (token: string): Promise<void> => {
+  console.log("[STORAGE] Storing token in AsyncStorage");
   await AsyncStorage.setItem(ACCESS_TOKEN_KEY, token);
 };
 
-// Retrieve
+// Retrieve token - ONLY use AsyncStorage, no localStorage polyfill
 export const getStoredToken = async (): Promise<string | null> => {
   const token = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+  console.log(`[STORAGE] Retrieved token from AsyncStorage: ${token ? "exists" : "null"}`);
   return token;
 };
 
-// Remove
+// Remove token - ONLY use AsyncStorage, no localStorage polyfill
 export const removeStoredToken = async (): Promise<void> => {
+  console.log("[STORAGE] Removing token from AsyncStorage");
   await AsyncStorage.removeItem(ACCESS_TOKEN_KEY);
 };
 

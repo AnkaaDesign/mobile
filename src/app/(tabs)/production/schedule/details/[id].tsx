@@ -28,7 +28,6 @@ import {
   IconTruck,
   IconPaint,
   IconFileText,
-  IconLink,
   IconCalendarEvent,
   IconLicense,
   IconClipboardList,
@@ -45,7 +44,8 @@ import {
   IconFile,
   IconSpray,
   IconClock,
-  IconCheck
+  IconCheck,
+  IconAlertCircle
 } from "@tabler/icons-react-native";
 
 export default function ScheduleDetailsScreen() {
@@ -70,44 +70,50 @@ export default function ScheduleDetailsScreen() {
   // Check if user is from Warehouse sector (should hide documents, budgets, and changelog)
   const isWarehouseSector = user?.sector?.privileges === SECTOR_PRIVILEGES.WAREHOUSE;
 
-  // Fetch task details
+  // Fetch task details - optimized query to match web pattern
   const { data: response, isLoading, error, refetch } = useTaskDetail(id as string, {
     include: {
-      customer: true,
       sector: true,
+      customer: true,
+      createdBy: true,
       services: true,
       artworks: true,
+      budget: true,
       budgets: true,
       invoices: true,
       receipts: true,
-      budget: true,
-      truck: {
+      observation: {
         include: {
-          garage: true,
+          files: true,
         },
       },
-      generalPainting: true,
-      logoPaints: true,
       airbrushings: {
         include: {
           receipts: true,
           invoices: true,
+          artworks: true,
         },
         orderBy: {
           createdAt: "desc",
         },
       },
-      relatedTasks: {
+      generalPainting: {
         include: {
-          customer: true,
+          paintType: true,
+          paintGrounds: {
+            include: {
+              groundPaint: true,
+            },
+          },
         },
       },
-      relatedTo: {
+      logoPaints: {
         include: {
-          customer: true,
+          paintType: true,
+          paintBrand: true,
         },
       },
-      createdBy: true,
+      truck: true,
     },
   });
 
@@ -463,41 +469,6 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Related Tasks */}
-          {((task as any)?.relatedTasks?.length > 0 || (task as any)?.relatedTo?.length > 0) && (
-            <Card style={styles.card}>
-              <View style={styles.sectionHeader}>
-                <IconLink size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Tarefas Relacionadas</ThemedText>
-              </View>
-              <View style={styles.itemDetails}>
-                {(task as any).relatedTasks?.map((relatedTask: any) => (
-                  <View key={relatedTask.id} style={styles.relatedTaskItem}>
-                    <ThemedText style={styles.relatedTaskName}>
-                      {relatedTask.name}
-                    </ThemedText>
-                    {relatedTask.customer && (
-                      <ThemedText style={styles.relatedTaskCustomer}>
-                        {relatedTask.customer.fantasyName}
-                      </ThemedText>
-                    )}
-                  </View>
-                ))}
-                {(task as any).relatedTo?.map((relatedTask: any) => (
-                  <View key={relatedTask.id} style={styles.relatedTaskItem}>
-                    <ThemedText style={styles.relatedTaskName}>
-                      {relatedTask.name}
-                    </ThemedText>
-                    {relatedTask.customer && (
-                      <ThemedText style={styles.relatedTaskCustomer}>
-                        {relatedTask.customer.fantasyName}
-                      </ThemedText>
-                    )}
-                  </View>
-                ))}
-              </View>
-            </Card>
-          )}
 
           {/* Financial summary - Hidden for Warehouse sector users */}
           {!isWarehouseSector && task.price && (
@@ -565,6 +536,53 @@ export default function ScheduleDetailsScreen() {
                   )}
                 </View>
               </ScrollView>
+            </Card>
+          )}
+
+          {/* Observation Card */}
+          {(task as any)?.observation && (
+            <Card style={styles.card}>
+              <View style={styles.sectionHeader}>
+                <IconAlertCircle size={20} color="#f59e0b" />
+                <ThemedText style={styles.sectionTitle}>Observação</ThemedText>
+                {(task as any).observation.files && (task as any).observation.files.length > 0 && (
+                  <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
+                    {(task as any).observation.files.length}
+                  </Badge>
+                )}
+              </View>
+              <View style={[styles.observationContent, { backgroundColor: colors.mutedForeground + '10', borderRadius: borderRadius.md, padding: spacing.md }]}>
+                <ThemedText style={{ fontSize: fontSize.sm, color: colors.foreground }}>
+                  {(task as any).observation.description}
+                </ThemedText>
+              </View>
+
+              {(task as any).observation.files && (task as any).observation.files.length > 0 && (
+                <View style={{ marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm }}>
+                    <IconFiles size={16} color={colors.mutedForeground} />
+                    <ThemedText style={{ fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>
+                      Arquivos Anexados
+                    </ThemedText>
+                  </View>
+                  <View style={styles.gridContainer}>
+                    {(task as any).observation.files.map((file: any, index: number) => (
+                      <FileItem
+                        key={file.id}
+                        file={file}
+                        viewMode="grid"
+                        baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                        onPress={() => {
+                          fileViewer.actions.viewFiles((task as any).observation.files, index);
+                        }}
+                        showFilename={false}
+                        showFileSize={false}
+                        showRelativeTime={false}
+                      />
+                    ))}
+                  </View>
+                </View>
+              )}
             </Card>
           )}
 
@@ -854,5 +872,8 @@ const styles = StyleSheet.create({
   documentSectionTitle: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
+  },
+  observationContent: {
+    marginTop: spacing.sm,
   },
 });

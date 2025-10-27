@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,28 +36,24 @@ export function SchedulesCard({ item, schedules = [] }: SchedulesCardProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <View style={styles.header}>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.titleRow}>
-              <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                <IconCalendarEvent size={18} color={colors.primary} />
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-                Cronogramas de Entrega
-              </ThemedText>
-            </View>
-          </CardTitle>
-          <Button size="sm" onPress={handleAddSchedule}>
-            <IconPlus size={16} color={colors.primaryForeground} />
-            <ThemedText style={{ color: colors.primaryForeground, fontSize: fontSize.sm, marginLeft: spacing.xs }}>
-              Novo
-            </ThemedText>
-          </Button>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+            <IconCalendarEvent size={18} color={colors.primary} />
+          </View>
+          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+            Cronogramas de Entrega
+          </ThemedText>
         </View>
-      </CardHeader>
-      <CardContent style={styles.content}>
+        <Button size="sm" onPress={handleAddSchedule}>
+          <IconPlus size={16} color={colors.primaryForeground} />
+          <ThemedText style={{ color: colors.primaryForeground, fontSize: fontSize.sm, marginLeft: spacing.xs }}>
+            Novo
+          </ThemedText>
+        </Button>
+      </View>
+      <View style={styles.content}>
         {activeSchedules.length === 0 ? (
           <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "30" }])}>
             <IconCalendarEvent size={40} color={colors.mutedForeground} />
@@ -152,20 +148,22 @@ export function SchedulesCard({ item, schedules = [] }: SchedulesCardProps) {
             )}
           </>
         )}
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  card: {
+    padding: spacing.md,
   },
-  sectionTitle: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   titleRow: {
     flexDirection: "row",

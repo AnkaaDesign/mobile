@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity , StyleSheet} from "react-native";
+import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, StyleSheet } from "react-native";
+import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from "expo-router";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { SearchBar } from "@/components/ui/search-bar";
@@ -12,7 +13,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { usePaintsInfiniteMobile } from "@/hooks/use-paints-infinite-mobile";
 import { usePaintMutations } from '../../../../hooks';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES, PAINT_TYPE_ENUM, PAINT_TYPE_ENUM_LABELS } from '../../../../constants';
+import { SECTOR_PRIVILEGES, PAINT_TYPE_ENUM, PAINT_TYPE_ENUM_LABELS, PAINT_FINISH_LABELS } from '../../../../constants';
 import { hasPrivilege, formatCurrency } from '../../../../utils';
 import type { Paint } from '../../../../types';
 import { FilterModal } from "@/components/ui/filter-modal";
@@ -26,6 +27,7 @@ import {
   IconTag,
   IconBuildingFactory,
   IconDroplet,
+  IconSparkles,
 } from "@tabler/icons-react-native";
 
 export default function CatalogListScreen() {
@@ -54,11 +56,13 @@ export default function CatalogListScreen() {
   const queryParams = useMemo(() => {
     const params: any = {
       include: {
-        brand: true,
+        paintType: true,
+        paintBrand: true,
+        formulas: true,
         _count: {
           select: {
-            formulas: true,
-            productions: true,
+            logoTasks: true,
+            generalPaintings: true,
           },
         },
       },
@@ -150,96 +154,108 @@ export default function CatalogListScreen() {
   };
 
   // Render paint card
-  const renderPaintCard = ({ item: paint }: { item: Paint }) => (
-    <TouchableOpacity onPress={() => router.push(`/painting/catalog/details/${paint.id}`)}>
-      <Card style={styles.paintCard}>
-      <View style={styles.cardHeader}>
-        <View style={styles.cardTitleContainer}>
-          <View
-            style={[
-              styles.colorIndicator,
-              { backgroundColor: paint.hex || colors.muted },
-            ]}
-          />
-          <View style={styles.titleInfo}>
-            <ThemedText style={styles.paintName} numberOfLines={1}>
-              {paint.name}
-            </ThemedText>
-            <View style={styles.codeContainer}>
-              <IconBarcode size={14} color={colors.foreground} />
-              <ThemedText style={styles.paintCode}>{paint.code || "Sem código"}</ThemedText>
+  const renderPaintCard = ({ item: paint }: { item: Paint }) => {
+    const formulaCount = paint.formulas?.length || 0;
+    const taskCount = (paint._count?.logoTasks || 0) + (paint._count?.generalPaintings || 0);
+
+    return (
+      <TouchableOpacity onPress={() => router.push(`/painting/catalog/details/${paint.id}`)}>
+        <Card style={styles.paintCard}>
+          {/* Color Preview */}
+          <View style={[styles.colorPreview, { backgroundColor: paint.hex || colors.muted }]}>
+            {/* Gradient overlay for finish effect */}
+            {paint.finish && (
+              <LinearGradient
+                colors={
+                  paint.finish === 'GLOSSY'
+                    ? ['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)', 'rgba(0,0,0,0.1)']
+                    : paint.finish === 'MATTE'
+                    ? ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']
+                    : ['rgba(255,255,255,0.2)', 'rgba(255,255,255,0)', 'rgba(0,0,0,0.05)']
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.finishGradient}
+              />
+            )}
+            <View style={styles.hexOverlay}>
+              <ThemedText style={styles.hexText}>{paint.hex}</ThemedText>
             </View>
           </View>
-        </View>
-        <Badge variant="default" style={styles.typeBadge}>
-          {paint.paintType?.name || "Tipo não informado"}
-        </Badge>
-      </View>
 
-      {paint.paintType?.name && (
-        <ThemedText style={styles.description} numberOfLines={2}>
-          Tipo: {paint.paintType.name}
-        </ThemedText>
-      )}
+          {/* Card Content */}
+          <View style={styles.cardContent}>
+            {/* Paint Name */}
+            <ThemedText style={styles.paintName} numberOfLines={2}>
+              {paint.name}
+            </ThemedText>
 
-      <View style={styles.cardInfo}>
-        {paint.paintBrand && (
-          <View style={styles.infoItem}>
-            <IconBuildingFactory size={14} color={colors.foreground} />
-            <ThemedText style={styles.infoText}>{paint.paintBrand.name}</ThemedText>
+            {/* Badges */}
+            <View style={styles.badgeContainer}>
+              {paint.paintType?.name && (
+                <Badge variant="secondary" style={styles.badge}>
+                  <View style={styles.badgeContent}>
+                    <IconDroplet size={12} color={colors.foreground} />
+                    <ThemedText style={styles.badgeText}>{paint.paintType.name}</ThemedText>
+                  </View>
+                </Badge>
+              )}
+
+              {paint.finish && (
+                <Badge variant="secondary" style={styles.badge}>
+                  <View style={styles.badgeContent}>
+                    <IconSparkles size={12} color={colors.foreground} />
+                    <ThemedText style={styles.badgeText}>{PAINT_FINISH_LABELS[paint.finish] || paint.finish}</ThemedText>
+                  </View>
+                </Badge>
+              )}
+
+              {paint.paintBrand?.name && (
+                <Badge variant="outline" style={styles.badge}>
+                  <ThemedText style={styles.badgeText}>{paint.paintBrand.name}</ThemedText>
+                </Badge>
+              )}
+            </View>
+
+            {/* Tags */}
+            {paint.tags && paint.tags.length > 0 && (
+              <View style={styles.badgeContainer}>
+                {paint.tags.slice(0, 3).map((tag, index) => (
+                  <Badge key={index} variant="secondary" style={styles.badge}>
+                    <View style={styles.badgeContent}>
+                      <IconTag size={12} color={colors.foreground} />
+                      <ThemedText style={styles.badgeText}>{tag}</ThemedText>
+                    </View>
+                  </Badge>
+                ))}
+                {paint.tags.length > 3 && (
+                  <Badge variant="secondary" style={styles.badge}>
+                    <ThemedText style={styles.badgeText}>+{paint.tags.length - 3}</ThemedText>
+                  </Badge>
+                )}
+              </View>
+            )}
+
+            {/* Formula Count */}
+            <View style={styles.infoRow}>
+              <IconBarcode size={16} color={formulaCount > 0 ? "#16a34a" : "#dc2626"} />
+              <ThemedText style={[styles.infoText, formulaCount > 0 ? styles.infoTextActive : styles.infoTextMuted]}>
+                {formulaCount} fórmula{formulaCount !== 1 ? "s" : ""}
+              </ThemedText>
+            </View>
+
+            {/* Task Count */}
+            <View style={styles.infoRow}>
+              <IconBuildingFactory size={16} color={taskCount > 0 ? "#2563eb" : colors.mutedForeground} />
+              <ThemedText style={[styles.infoText, taskCount > 0 ? styles.infoTextActive : styles.infoTextMuted]}>
+                {taskCount} tarefa{taskCount !== 1 ? "s" : ""}
+              </ThemedText>
+            </View>
           </View>
-        )}
-
-        {paint.code && (
-          <View style={styles.infoItem}>
-            <IconDroplet size={14} color={colors.foreground} />
-            <ThemedText style={styles.infoText}>{paint.code}</ThemedText>
-          </View>
-        )}
-
-        {paint.hex && (
-          <View style={styles.infoItem}>
-            <IconTag size={14} color={colors.foreground} />
-            <ThemedText style={styles.infoText}>{paint.hex}</ThemedText>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.cardStats}>
-        <View style={styles.statItem}>
-          <ThemedText style={styles.statValue}>{paint.formulas?.length || 0}</ThemedText>
-          <ThemedText style={styles.statLabel}>Fórmulas</ThemedText>
-        </View>
-        <View style={StyleSheet.flatten([styles.statDivider, { backgroundColor: colors.border }])} />
-        <View style={styles.statItem}>
-          <ThemedText style={styles.statValue}>0</ThemedText>
-          <ThemedText style={styles.statLabel}>Produções</ThemedText>
-        </View>
-      </View>
-
-      {(canEdit || canDelete) && (
-        <View style={StyleSheet.flatten([styles.cardActions, { borderTopColor: colors.border }])}>
-          {canEdit && (
-            <IconButton
-              name="edit"
-              size="sm"
-              variant="default"
-              onPress={() => handleEdit(paint.id)}
-            />
-          )}
-          {canDelete && (
-            <IconButton
-              name="trash"
-              size="sm"
-              variant="default"
-              onPress={() => handleDelete(paint.id, paint.name)}
-            />
-          )}
-        </View>
-      )}
-      </Card>
-    </TouchableOpacity>
-  );
+        </Card>
+      </TouchableOpacity>
+    );
+  };
 
   // Filter modal content
   const renderFilterModal = () => (
@@ -444,107 +460,72 @@ const styles = StyleSheet.create({
   },
   paintCard: {
     marginBottom: spacing.md,
+    padding: 0,
+    overflow: "hidden",
+  },
+  colorPreview: {
+    height: 100,
+    position: "relative",
+  },
+  finishGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  hexOverlay: {
+    position: "absolute",
+    bottom: 8,
+    right: 8,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  hexText: {
+    fontSize: fontSize.xs,
+    fontFamily: "monospace",
+    color: "#FFFFFF",
+  },
+  cardContent: {
     padding: spacing.md,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.sm,
-  },
-  cardTitleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  colorIndicator: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    marginRight: spacing.sm,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  titleInfo: {
-    flex: 1,
+    gap: spacing.sm,
   },
   paintName: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.base,
     fontWeight: fontWeight.semibold,
   },
-  codeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 2,
-  },
-  codeIcon: {
-    opacity: 0.6,
-    marginRight: 4,
-  },
-  paintCode: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
-  },
-  typeBadge: {
-    marginLeft: spacing.sm,
-  },
-  description: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
-    marginBottom: spacing.sm,
-    lineHeight: 18,
-  },
-  cardInfo: {
+  badgeContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.md,
-    marginBottom: spacing.sm,
+    gap: 4,
   },
-  infoItem: {
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  badgeContent: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 4,
   },
-  infoIcon: {
-    opacity: 0.6,
-    marginRight: 4,
+  badgeText: {
+    fontSize: fontSize.xs,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
   },
   infoText: {
     fontSize: fontSize.sm,
   },
-  cardStats: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingVertical: spacing.sm,
-    marginTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
+  infoTextActive: {
+    opacity: 1,
   },
-  statItem: {
-    alignItems: "center",
-  },
-  statValue: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-  },
-  statLabel: {
-    fontSize: fontSize.xs,
+  infoTextMuted: {
     opacity: 0.6,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 30,
-  },
-  cardActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingTop: spacing.sm,
-    marginTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    gap: spacing.xs,
   },
   centerContainer: {
     flex: 1,

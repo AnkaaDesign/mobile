@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/ui/loading";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Database, Download, Clock, RefreshCw, Trash2, AlertTriangle, Check, X } from "@tamagui/lucide-icons";
+import { IconDatabase, IconDownload, IconClock, IconRefresh, IconTrash, IconAlertTriangle, IconCheck, IconX } from "@tabler/icons-react-native";
 import { useToast } from "@/hooks/use-toast";
-import { useBackups, useBackupMutations } from "@/hooks/use-backup";
+import { useBackups, useBackupMutations } from "@/hooks/useBackup";
 import { formatDate } from "@/utils/date";
 
 export default function BackupScreen() {
@@ -18,7 +18,7 @@ export default function BackupScreen() {
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
 
   const { data: backups, isLoading, refetch } = useBackups();
-  const { createBackup, deleteBackup, downloadBackup } = useBackupMutations();
+  const { create: createBackup, delete: deleteBackup } = useBackupMutations();
 
   const handleCreateBackup = async () => {
     Alert.alert(
@@ -95,14 +95,8 @@ export default function BackupScreen() {
     try {
       show({
         title: "Download",
-        description: "Preparando download do backup...",
+        description: "Funcionalidade de download não implementada no mobile",
         type: "info",
-      });
-      await downloadBackup.mutateAsync(id);
-      show({
-        title: "Sucesso",
-        description: "Download iniciado!",
-        type: "success",
       });
     } catch (error: any) {
       show({
@@ -115,10 +109,10 @@ export default function BackupScreen() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      completed: { label: "Concluído", variant: "success" as const, icon: Check },
-      failed: { label: "Falhou", variant: "destructive" as const, icon: X },
-      running: { label: "Em Andamento", variant: "default" as const, icon: Clock },
-      pending: { label: "Pendente", variant: "secondary" as const, icon: Clock },
+      completed: { label: "Concluído", variant: "success" as const, icon: IconCheck },
+      failed: { label: "Falhou", variant: "destructive" as const, icon: IconX },
+      running: { label: "Em Andamento", variant: "default" as const, icon: IconClock },
+      pending: { label: "Pendente", variant: "secondary" as const, icon: IconClock },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
@@ -164,11 +158,11 @@ export default function BackupScreen() {
         showBack
         actions={[
           {
-            icon: RefreshCw,
+            icon: IconRefresh,
             onPress: () => refetch(),
           },
           {
-            icon: Database,
+            icon: IconDatabase,
             onPress: handleCreateBackup,
             disabled: isCreatingBackup,
           },
@@ -182,18 +176,18 @@ export default function BackupScreen() {
           <View style={styles.healthRow}>
             <View style={styles.healthItem}>
               <Text style={styles.healthLabel}>Total de Backups</Text>
-              <Text style={styles.healthValue}>{backups?.data?.length || 0}</Text>
+              <Text style={styles.healthValue}>{backups?.length || 0}</Text>
             </View>
             <View style={styles.healthItem}>
               <Text style={styles.healthLabel}>Concluídos</Text>
               <Text style={[styles.healthValue, styles.successText]}>
-                {backups?.data?.filter((b: any) => b.status === "completed").length || 0}
+                {backups?.filter((b: any) => b.status === "completed").length || 0}
               </Text>
             </View>
             <View style={styles.healthItem}>
               <Text style={styles.healthLabel}>Falhas</Text>
               <Text style={[styles.healthValue, styles.errorText]}>
-                {backups?.data?.filter((b: any) => b.status === "failed").length || 0}
+                {backups?.filter((b: any) => b.status === "failed").length || 0}
               </Text>
             </View>
           </View>
@@ -205,14 +199,14 @@ export default function BackupScreen() {
           disabled={isCreatingBackup}
           style={styles.createButton}
         >
-          <Database size={20} />
+          <IconDatabase size={20} />
           <Text>Criar Novo Backup</Text>
         </Button>
 
         {/* Backups List */}
         <Text style={styles.sectionTitle}>Backups Recentes</Text>
-        {backups?.data && backups.data.length > 0 ? (
-          backups.data.map((backup: any) => (
+        {backups && backups.length > 0 ? (
+          backups.map((backup: any) => (
             <Card key={backup.id} style={styles.backupCard}>
               <View style={styles.backupHeader}>
                 <View style={styles.backupTitleRow}>
@@ -255,7 +249,7 @@ export default function BackupScreen() {
                     size="sm"
                     style={styles.actionButton}
                   >
-                    <Download size={16} />
+                    <IconDownload size={16} />
                     <Text>Download</Text>
                   </Button>
                   <Button
@@ -264,7 +258,7 @@ export default function BackupScreen() {
                     size="sm"
                     style={styles.actionButton}
                   >
-                    <Trash2 size={16} />
+                    <IconTrash size={16} />
                     <Text>Excluir</Text>
                   </Button>
                 </View>
@@ -272,7 +266,7 @@ export default function BackupScreen() {
 
               {backup.error && (
                 <View style={styles.errorContainer}>
-                  <AlertTriangle size={16} color="#dc2626" />
+                  <IconAlertTriangle size={16} color="#dc2626" />
                   <Text style={styles.errorText}>{backup.error}</Text>
                 </View>
               )}
@@ -280,7 +274,7 @@ export default function BackupScreen() {
           ))
         ) : (
           <Card style={styles.emptyCard}>
-            <Database size={48} color="#9ca3af" />
+            <IconDatabase size={48} color="#9ca3af" />
             <Text style={styles.emptyText}>Nenhum backup encontrado</Text>
             <Text style={styles.emptySubtext}>
               Crie seu primeiro backup clicando no botão acima

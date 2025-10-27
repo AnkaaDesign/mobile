@@ -121,7 +121,6 @@ export const TABLER_ICONS = {
 
   // Borrowing/Lending
   borrowing: "IconArrowsExchange", // Borrowing cycle
-  loan: "IconRepeat",
   repeat: "IconRepeat", // Repeat/cycle icon (for favorites)
   return: "IconArrowLeft", // Return items
 

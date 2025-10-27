@@ -9,16 +9,10 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import {
-  IconBuildingSkyscraper,
   IconRefresh,
   IconEdit,
   IconTrash,
   IconHistory,
-  IconUsers,
-  IconClipboardList,
-  IconInfoCircle,
-  IconShieldCheck,
-  IconUserShield,
 } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { TouchableOpacity } from "react-native";
@@ -29,7 +23,7 @@ import { hasPrivilege } from "../../../../../utils";
 import { useAuth } from "@/contexts/auth-context";
 
 // Import modular components
-import { SectorInfoCard, UsersCard, TasksCard, ManagersCard } from "@/components/administration/sector/detail";
+import { SpecificationsCard, SectorUsersCard, SectorTasksCard } from "@/components/administration/sector/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function SectorDetailScreen() {
@@ -56,16 +50,21 @@ export default function SectorDetailScreen() {
         include: {
           position: true,
           sector: true,
+          managedSector: true,
         },
-        orderBy: { name: "asc" },
-        take: 50,
+        orderBy: {
+          name: "asc",
+        },
       },
-      managedByUsers: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
+      managedByUsers: true,
+      changelogs: {
+        include: {
+          user: true,
         },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 10,
       },
       _count: {
         select: {
@@ -95,9 +94,14 @@ export default function SectorDetailScreen() {
       return;
     }
 
+    const userCount = sector?._count?.users || 0;
+    const warningMessage = userCount > 0
+      ? `\n\nAtenção: Este setor possui ${userCount} usuário${userCount !== 1 ? "s" : ""} associado${userCount !== 1 ? "s" : ""}.`
+      : "";
+
     Alert.alert(
       "Excluir Setor",
-      `Tem certeza que deseja excluir o setor "${sector?.name}"? Esta ação não pode ser desfeita.`,
+      `Tem certeza que deseja excluir o setor "${sector?.name}"?${warningMessage}\n\nEsta ação não pode ser desfeita.`,
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -189,61 +193,31 @@ export default function SectorDetailScreen() {
           </CardContent>
         </Card>
 
-        {/* Basic Information - Sector Info */}
-        <SectorInfoCard sector={sector} />
-
-        {/* Statistics Section */}
-        <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconClipboardList size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Estatísticas</ThemedText>
-          </View>
-          <View style={styles.statsGrid}>
-            <View style={StyleSheet.flatten([styles.statItem, { backgroundColor: colors.muted + "30" }])}>
-              <IconUsers size={20} color={colors.mutedForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.statValue, { color: colors.foreground }])}>
-                {sector._count?.users || 0}
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: colors.mutedForeground }])}>
-                {sector._count?.users === 1 ? 'Usuário' : 'Usuários'}
-              </ThemedText>
+        {/* Info Grid - Specifications and Changelog side by side on larger screens */}
+        <View style={styles.infoGrid}>
+          <SpecificationsCard sector={sector} />
+          <Card style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <IconHistory size={20} color={colors.primary} />
+              <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
             </View>
-            <View style={StyleSheet.flatten([styles.statItem, { backgroundColor: colors.muted + "30" }])}>
-              <IconClipboardList size={20} color={colors.mutedForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.statValue, { color: colors.foreground }])}>
-                {sector._count?.tasks || 0}
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: colors.mutedForeground }])}>
-                {sector._count?.tasks === 1 ? 'Tarefa' : 'Tarefas'}
-              </ThemedText>
+            <View style={{ paddingHorizontal: spacing.md }}>
+              <ChangelogTimeline
+                entityType={CHANGE_LOG_ENTITY_TYPE.SECTOR}
+                entityId={sector.id}
+                entityName={sector.name}
+                entityCreatedAt={sector.createdAt}
+                maxHeight={400}
+              />
             </View>
-          </View>
-        </Card>
+          </Card>
+        </View>
 
-        {/* Managers Section */}
-        {sector.managedByUsers && sector.managedByUsers.length > 0 && (
-          <ManagersCard managers={sector.managedByUsers} />
-        )}
+        {/* Related Tasks */}
+        <SectorTasksCard sector={sector} />
 
-        {/* Users Section */}
-        <UsersCard sector={sector} />
-
-        {/* Changelog History */}
-        <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconHistory size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
-          </View>
-          <View style={{ paddingHorizontal: spacing.md }}>
-            <ChangelogTimeline
-              entityType={CHANGE_LOG_ENTITY_TYPE.SECTOR}
-              entityId={sector.id}
-              entityName={sector.name}
-              entityCreatedAt={sector.createdAt}
-              maxHeight={400}
-            />
-          </View>
-        </Card>
+        {/* Related Users - Last Section */}
+        <SectorUsersCard sector={sector} />
 
         {/* Bottom spacing for mobile navigation */}
         <View style={{ height: spacing.xxl * 2 }} />
@@ -287,6 +261,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  infoGrid: {
+    gap: spacing.lg,
+  },
   card: {
     padding: spacing.md,
   },
@@ -302,24 +279,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: spacing.sm,
     flex: 1,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  statItem: {
-    flex: 1,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  statValue: {
-    fontSize: fontSize["2xl"],
-    fontWeight: fontWeight.bold,
-  },
-  statLabel: {
-    fontSize: fontSize.xs,
-    textAlign: "center",
   },
 });

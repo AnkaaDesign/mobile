@@ -1,21 +1,23 @@
 import React, { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useItem, usePpeSizes, usePpeDeliveries, usePpeDeliverySchedules } from '../../../../../hooks';
+import { useItem } from '../../../../../hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Header } from "@/components/ui/header";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconShield, IconRefresh, IconEdit, IconHistory } from "@tabler/icons-react-native";
+import { spacing } from "@/constants/design-system";
+import { IconShield, IconRefresh, IconEdit, IconHistory, IconAlertTriangle } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { showToast } from "@/components/ui/toast";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
-// Import modular components
-import { PpeCard, ItemCard, SizesCard, DeliveriesCard, SchedulesCard } from "@/components/human-resources/ppe/detail";
+// Import item detail components (matching web pattern)
+import { SpecificationsCard, MetricsCard, PpeInfoCard, ActivityHistoryCard, RelatedItemsCard } from "@/components/inventory/item/detail";
+
+// Import skeleton
 import { PpeDetailSkeleton } from "@/components/human-resources/ppe/skeleton";
 
 export default function PPEDetailsScreen() {
@@ -25,7 +27,7 @@ export default function PPEDetailsScreen() {
 
   const id = params?.id || "";
 
-  // Fetch the item (PPE config is now part of Item)
+  // Fetch the item with all necessary includes (matching web pattern)
   const {
     data: itemResponse,
     isLoading: itemLoading,
@@ -36,10 +38,54 @@ export default function PPEDetailsScreen() {
       brand: true,
       category: true,
       supplier: true,
-      measures: true,
       prices: {
         orderBy: { createdAt: "desc" },
-        take: 5,
+        take: 10,
+      },
+      activities: {
+        include: {
+          user: { select: { name: true, id: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      },
+      relatedItems: {
+        include: {
+          brand: true,
+          category: true,
+        },
+      },
+      relatedTo: {
+        include: {
+          brand: true,
+          category: true,
+        },
+      },
+      orderItems: {
+        include: {
+          order: {
+            include: {
+              supplier: true,
+              items: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      },
+      borrows: {
+        include: {
+          user: { select: { name: true, id: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      },
+      changeLogs: {
+        include: {
+          user: { select: { name: true, id: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
       },
     },
     enabled: !!id && id !== "",
@@ -47,64 +93,15 @@ export default function PPEDetailsScreen() {
 
   const item = itemResponse?.data;
 
-  // Fetch PPE sizes for the first user (if item has associated deliveries)
-  const {
-    data: sizesResponse,
-    isLoading: sizesLoading,
-  } = usePpeSizes({
-    where: item?.ppeDeliveries?.[0]?.userId ? { userId: item.ppeDeliveries[0].userId } : undefined,
-    take: 1,
-  }, {
-    enabled: !!item && !!item.ppeDeliveries?.[0]?.userId,
-  });
-
-  const userSizes = sizesResponse?.data?.[0];
-
-  // Fetch recent deliveries for this item
-  const {
-    data: deliveriesResponse,
-    isLoading: deliveriesLoading,
-  } = usePpeDeliveries({
-    where: { itemId: id },
-    include: {
-      user: { select: { name: true, id: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-  }, {
-    enabled: !!id && id !== "",
-  });
-
-  const deliveries = deliveriesResponse?.data || [];
-
-  // Fetch delivery schedules related to this PPE type
-  const {
-    data: schedulesResponse,
-    isLoading: schedulesLoading,
-  } = usePpeDeliverySchedules({
-    where: item?.ppeType ? { ppes: { has: item.ppeType } } : undefined,
-    include: {
-      user: { select: { name: true, id: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-  }, {
-    enabled: !!item && !!item.ppeType,
-  });
-
-  const schedules = schedulesResponse?.data || [];
-
   const handleEdit = () => {
     if (item) {
-      router.push(routeToMobilePath(routes.inventory.products.edit(item.id)) as any);
+      router.push(routeToMobilePath(routes.humanResources.ppe.edit(item.id)) as any);
     }
   };
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    Promise.all([
-      refetchItem(),
-    ]).finally(() => {
+    refetchItem().finally(() => {
       setRefreshing(false);
       showToast({ message: "Dados atualizados com sucesso", type: "success" });
     });
@@ -122,26 +119,33 @@ export default function PPEDetailsScreen() {
 
   if (itemError || !item || !id || id === "" || !item.ppeType) {
     return (
-      <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
-        <View style={styles.container}>
-          <Card>
-            <CardContent style={styles.errorContent}>
-              <View style={StyleSheet.flatten([styles.errorIcon, { backgroundColor: colors.muted }])}>
-                <IconShield size={32} color={colors.mutedForeground} />
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
-                EPI não encontrado
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
-                O EPI solicitado não foi encontrado ou pode ter sido removido.
-              </ThemedText>
-              <Button onPress={() => router.back()}>
-                <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
-              </Button>
-            </CardContent>
-          </Card>
-        </View>
-      </ScrollView>
+      <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>
+        <Header
+          title="EPI não encontrado"
+          showBackButton={true}
+          onBackPress={() => router.back()}
+        />
+        <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
+          <View style={styles.container}>
+            <Card>
+              <CardContent style={styles.errorContent}>
+                <View style={StyleSheet.flatten([styles.errorIcon, { backgroundColor: colors.muted }])}>
+                  <IconShield size={32} color={colors.mutedForeground} />
+                </View>
+                <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
+                  EPI não encontrado
+                </ThemedText>
+                <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
+                  O EPI que você está procurando não existe ou foi removido do sistema.
+                </ThemedText>
+                <Button onPress={() => router.push(routeToMobilePath(routes.humanResources.ppe.root) as any)}>
+                  <ThemedText style={{ color: colors.primaryForeground }}>Ir para Lista de EPIs</ThemedText>
+                </Button>
+              </CardContent>
+            </Card>
+          </View>
+        </ScrollView>
+      </View>
     );
   }
 
@@ -200,20 +204,15 @@ export default function PPEDetailsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.container}>
-          {/* PPE Information Card */}
-          <PpeCard item={item} />
+          {/* Core Information Grid - Specifications and Metrics */}
+          <SpecificationsCard item={item} />
+          <MetricsCard item={item} />
 
-          {/* Linked Item Information */}
-          <ItemCard item={item} />
+          {/* PPE Information - Always show for EPIs */}
+          <PpeInfoCard item={item} />
 
-          {/* Size Configuration (if applicable) */}
-          {userSizes && <SizesCard item={item} userSizes={userSizes} />}
-
-          {/* Recent Deliveries */}
-          <DeliveriesCard item={item} deliveries={deliveries} />
-
-          {/* Delivery Schedules */}
-          <SchedulesCard item={item} schedules={schedules} />
+          {/* Activity History */}
+          <ActivityHistoryCard item={item} />
 
           {/* Changelog Timeline */}
           <Card>
@@ -229,7 +228,7 @@ export default function PPEDetailsScreen() {
             </View>
             <View style={{ paddingHorizontal: 0 }}>
               <ChangelogTimeline
-                entityType={CHANGE_LOG_ENTITY_TYPE.PPE_CONFIG}
+                entityType={CHANGE_LOG_ENTITY_TYPE.ITEM}
                 entityId={item.id}
                 entityName={item.name}
                 entityCreatedAt={item.createdAt}
@@ -237,6 +236,9 @@ export default function PPEDetailsScreen() {
               />
             </View>
           </Card>
+
+          {/* Related Items */}
+          <RelatedItemsCard item={item} />
 
           {/* Bottom spacing for mobile navigation */}
           <View style={{ height: spacing.xxl * 2 }} />
@@ -267,19 +269,19 @@ const styles = StyleSheet.create({
   errorIcon: {
     width: 64,
     height: 64,
-    borderRadius: borderRadius.full,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.lg,
   },
   errorTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
+    fontSize: 20,
+    fontWeight: "600",
     marginBottom: spacing.sm,
     textAlign: "center",
   },
   errorDescription: {
-    fontSize: fontSize.base,
+    fontSize: 16,
     textAlign: "center",
     marginBottom: spacing.xl,
     paddingHorizontal: spacing.xl,
@@ -296,12 +298,12 @@ const styles = StyleSheet.create({
   titleIcon: {
     width: 32,
     height: 32,
-    borderRadius: borderRadius.md,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
   titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontSize: 18,
+    fontWeight: "600",
   },
 });

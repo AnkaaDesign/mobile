@@ -17,6 +17,7 @@ import { BorrowStatusCard } from "@/components/inventory/borrow/detail/borrow-st
 import { BorrowItemInfoCard } from "@/components/inventory/borrow/detail/borrow-item-info-card";
 import { BorrowUserInfoCard } from "@/components/inventory/borrow/detail/borrow-user-info-card";
 import { BorrowDatesCard } from "@/components/inventory/borrow/detail/borrow-dates-card";
+import { BorrowHistoryCard } from "@/components/inventory/borrow/detail/borrow-history-card";
 import {
   IconRefresh,
   IconEdit,
@@ -247,6 +248,9 @@ export default function BorrowDetailsScreen() {
 
         {/* Borrow Details/Dates Card */}
         <BorrowDatesCard borrow={borrow} />
+
+        {/* History Card */}
+        <BorrowHistoryCard borrow={borrow} />
 
         {/* Action Buttons */}
         {borrow.status === BORROW_STATUS.ACTIVE && (

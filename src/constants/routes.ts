@@ -83,12 +83,12 @@ export const routes = {
     verifyPasswordReset: "/autenticacao/verificar-redefinicao-senha", // verificação de redefinição de senha
   },
 
-  // Basic Catalog - Catálogo Básico - Basic catalog access for leaders
-  catalog: {
-    details: (id: string) => `/pintura/catalogo/detalhes/${id}`,
-    list: "/catalogo/listar",
-    root: "/pintura/catalogo-basico",
-  },
+  // Basic Catalog - Catálogo Básico - Basic catalog access for leaders (removed - now unified with painting.catalog)
+  // catalog: {
+  //   details: (id: string) => `/pintura/catalogo/detalhes/${id}`,
+  //   list: "/catalogo/listar",
+  //   root: "/pintura/catalogo-basico",
+  // },
 
   // Dashboard - Painéis de Controle
   dashboard: {
@@ -247,7 +247,7 @@ export const routes = {
       list: "/estoque/retiradas-externas",
       root: "/estoque/retiradas-externas",
     },
-    loans: {
+    borrows: {
       batchEdit: "/estoque/emprestimos/editar-lote",
       create: "/estoque/emprestimos/cadastrar",
       details: (id: string) => `/estoque/emprestimos/detalhes/${id}`,
@@ -269,7 +269,7 @@ export const routes = {
         root: "/estoque/manutencao/agendamentos",
       },
     },
-    movements: {
+    activities: {
       batchEdit: "/estoque/movimentacoes/editar-lote",
       create: "/estoque/movimentacoes/cadastrar",
       details: (id: string) => `/estoque/movimentacoes/detalhes/${id}`,
@@ -306,11 +306,12 @@ export const routes = {
     },
     ppe: {
       create: "/estoque/epi/cadastrar",
+      list: "/estoque/epi/listar",
       deliveries: {
         create: "/estoque/epi/entregas/cadastrar",
         details: (id: string) => `/estoque/epi/entregas/detalhes/${id}`,
         edit: (id: string) => `/estoque/epi/entregas/editar/${id}`,
-        list: "/estoque/epi/entregas",
+        list: "/estoque/epi/entregas/listar",
         root: "/estoque/epi/entregas",
       },
       details: (id: string) => `/estoque/epi/detalhes/${id}`,
@@ -320,6 +321,7 @@ export const routes = {
         create: "/estoque/epi/agendamentos/cadastrar",
         details: (id: string) => `/estoque/epi/agendamentos/detalhes/${id}`,
         edit: (id: string) => `/estoque/epi/agendamentos/editar/${id}`,
+        list: "/estoque/epi/agendamentos/listar",
         root: "/estoque/epi/agendamentos",
       },
     },
@@ -384,7 +386,7 @@ export const routes = {
 
   // My Team - Meu Pessoal - Team management for leaders (simplified routes)
   myTeam: {
-    loans: "/meu-pessoal/emprestimos",
+    borrows: "/meu-pessoal/emprestimos",
     root: "/meu-pessoal",
     vacations: "/meu-pessoal/ferias",
     warnings: "/meu-pessoal/avisos",
@@ -478,7 +480,7 @@ export const routes = {
     myHolidays: {
       root: "/pessoal/meus-feriados",
     },
-    myLoans: {
+    myBorrows: {
       details: (id: string) => `/pessoal/meus-emprestimos/detalhes/${id}`,
       root: "/pessoal/meus-emprestimos",
     },
@@ -536,8 +538,6 @@ export const routes = {
       root: "/producao/garagens",
     },
     history: {
-      cancelled: "/producao/historico/cancelados",
-      completed: "/producao/historico/concluidos",
       root: "/producao/historico",
       details: (id: string) => `/producao/historico/detalhes/${id}`,
     },

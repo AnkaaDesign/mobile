@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,27 +60,18 @@ export function DeliveryHistoryCard({ schedule, maxHeight = 400 }: DeliveryHisto
 
   if (sortedDeliveries.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.titleRow}>
-              <View
-                style={StyleSheet.flatten([
-                  styles.titleIcon,
-                  { backgroundColor: colors.primary + "10" },
-                ])}
-              >
-                <IconHistory size={18} color={colors.primary} />
-              </View>
-              <ThemedText
-                style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}
-              >
-                Histórico de Entregas
-              </ThemedText>
+      <Card style={styles.card}>
+        <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+          <View style={styles.titleRow}>
+            <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+              <IconHistory size={18} color={colors.primary} />
             </View>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+            <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+              Histórico de Entregas
+            </ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
           <View
             style={StyleSheet.flatten([
               styles.emptyState,
@@ -94,45 +85,34 @@ export function DeliveryHistoryCard({ schedule, maxHeight = 400 }: DeliveryHisto
               Nenhuma entrega registrada
             </ThemedText>
           </View>
-        </CardContent>
+        </View>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <View style={styles.header}>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.titleRow}>
-              <View
-                style={StyleSheet.flatten([
-                  styles.titleIcon,
-                  { backgroundColor: colors.primary + "10" },
-                ])}
-              >
-                <IconHistory size={18} color={colors.primary} />
-              </View>
-              <ThemedText
-                style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}
-              >
-                Histórico de Entregas
-              </ThemedText>
-            </View>
-          </CardTitle>
-          <Badge variant="secondary">
-            <ThemedText
-              style={{
-                color: colors.secondaryForeground,
-                fontSize: fontSize.xs,
-              }}
-            >
-              {sortedDeliveries.length}
-            </ThemedText>
-          </Badge>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+            <IconHistory size={18} color={colors.primary} />
+          </View>
+          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+            Histórico de Entregas
+          </ThemedText>
         </View>
-      </CardHeader>
-      <CardContent>
+        <Badge variant="secondary">
+          <ThemedText
+            style={{
+              color: colors.secondaryForeground,
+              fontSize: fontSize.xs,
+            }}
+          >
+            {sortedDeliveries.length}
+          </ThemedText>
+        </Badge>
+      </View>
+      <View style={styles.content}>
         <ScrollView
           style={StyleSheet.flatten([styles.scrollView, { maxHeight }])}
           showsVerticalScrollIndicator={true}
@@ -228,20 +208,22 @@ export function DeliveryHistoryCard({ schedule, maxHeight = 400 }: DeliveryHisto
             })}
           </View>
         </ScrollView>
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  card: {
+    padding: spacing.md,
   },
-  sectionTitle: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   titleRow: {
     flexDirection: "row",
@@ -258,6 +240,9 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
+  },
+  content: {
+    gap: spacing.md,
   },
   emptyState: {
     padding: spacing.xl,

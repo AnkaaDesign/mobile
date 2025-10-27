@@ -110,7 +110,10 @@ export const Combobox = React.memo(function Combobox({
     if (disabled) return;
 
     measureSelect();
-    setModalVisible(true);
+    // Use setTimeout to prevent flicker when modal opens
+    setTimeout(() => {
+      setModalVisible(true);
+    }, 0);
     setSearchText("");
     onOpen?.();
   }, [disabled, measureSelect, onOpen]);
@@ -190,9 +193,26 @@ export const Combobox = React.memo(function Combobox({
 
       const isSelected = item.value === value;
 
-      // Use custom render if provided
+      // Use custom render if provided - wrap in TouchableOpacity with proper padding
       if (renderOption) {
-        return renderOption(item, isSelected, () => handleSelect(item));
+        return (
+          <TouchableOpacity
+            style={StyleSheet.flatten([
+              styles.option,
+              {
+                backgroundColor: isSelected ? colors.primary + "20" : "transparent",
+                borderBottomColor: colors.border,
+              },
+            ])}
+            onPress={() => handleSelect(item)}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel={item.label}
+            accessibilityState={{ selected: isSelected }}
+          >
+            {renderOption(item, isSelected, () => handleSelect(item))}
+          </TouchableOpacity>
+        );
       }
 
       return (
@@ -319,7 +339,7 @@ export const Combobox = React.memo(function Combobox({
               data={combinedOptions}
               renderItem={renderItem}
               keyExtractor={(item) => (item.key || item.value) as string}
-              showsVerticalScrollIndicator={false}
+              showsVerticalScrollIndicator={true}
               keyboardShouldPersistTaps="handled"
               onEndReached={handleEndReached}
               onEndReachedThreshold={onEndReachedThreshold}
@@ -328,18 +348,22 @@ export const Combobox = React.memo(function Combobox({
               style={{
                 maxHeight: inputLayout.width > 0 ? LIST_MAX_HEIGHT : undefined,
               }}
-              // Virtualization optimizations
-              getItemLayout={(data, index) => ({
+              contentContainerStyle={{
+                flexGrow: 1,
+              }}
+              // Virtualization optimizations - disabled for custom renderOption to ensure proper measurement
+              getItemLayout={!renderOption ? (data, index) => ({
                 length: 48, // Fixed item height
                 offset: 48 * index,
                 index,
-              })}
-              initialNumToRender={10}
-              maxToRenderPerBatch={10}
-              windowSize={10}
-              removeClippedSubviews={true}
+              }) : undefined}
+              initialNumToRender={15}
+              maxToRenderPerBatch={15}
+              windowSize={11}
+              removeClippedSubviews={Platform.OS === 'android'}
               updateCellsBatchingPeriod={50}
               disableVirtualization={false}
+              nestedScrollEnabled={true}
             />
           </Pressable>
         </Pressable>
@@ -356,7 +380,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: fontSize.sm,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
     fontWeight: fontWeight.medium,
   },
   selector: {

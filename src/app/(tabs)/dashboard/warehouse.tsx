@@ -179,7 +179,7 @@ export default function WarehouseDashboardScreen() {
               title="Empréstimos"
               icon="refresh-cw"
               color="#ef4444"
-              onPress={() => router.push('/inventory/loans/list' as any)}
+              onPress={() => router.push('/inventory/borrows/list' as any)}
             />
           </View>
         </View>

@@ -95,9 +95,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const handleAuthError = async (error: { statusCode: number; message: string; category: any }) => {
       console.log("[MOBILE AUTH DEBUG] Authentication error detected:", error);
 
-      // Check if it's a deleted user or token-related error
-      if (error.statusCode === 401 || error.statusCode === 403) {
-        console.log("[MOBILE AUTH DEBUG] Triggering logout due to authentication error");
+      // Only logout for actual authentication errors (invalid/expired tokens), not authorization errors (insufficient permissions)
+      const isTokenError =
+        error.message?.toLowerCase().includes("token") ||
+        error.message?.toLowerCase().includes("expirado") ||
+        error.message?.toLowerCase().includes("expired") ||
+        error.message?.toLowerCase().includes("inválido") ||
+        error.message?.toLowerCase().includes("invalid") ||
+        error.message?.toLowerCase().includes("não autenticado") ||
+        error.message?.toLowerCase().includes("unauthenticated");
+
+      // Check if it's a token-related 401 error, not just any unauthorized action
+      if (error.statusCode === 401 && isTokenError) {
+        console.log("[MOBILE AUTH DEBUG] Triggering logout due to token authentication error");
 
         try {
           // Clear auth state immediately
@@ -134,6 +144,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         } catch (cleanupError) {
           console.error("[MOBILE AUTH DEBUG] Error during auth error cleanup:", cleanupError);
         }
+      } else {
+        // This is an authorization error (insufficient permissions), not an authentication error
+        console.log("[MOBILE AUTH DEBUG] Authorization error detected, NOT logging out user");
+        console.log("[MOBILE AUTH DEBUG] User likely lacks permission for this action");
       }
     };
 
@@ -304,11 +318,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const token = await getStoredToken();
       console.log(`[AUTH DEBUG] Token retrieved: ${token ? `exists (length: ${token.length})` : "null"}`);
 
+      // Check if token is valid before using it
       if (token) {
-        console.log("[AUTH DEBUG] Token found, setting access token and auth token");
+        const decodedToken = decodeToken(token);
+        if (!decodedToken) {
+          console.warn("[AUTH DEBUG] Token exists but cannot be decoded, clearing corrupted token");
+          await removeStoredToken();
+          await removeUserData();
+          setAccessToken(null);
+          setCachedToken(null);
+          setUser(null);
+          setAuthToken(null);
+          return;
+        }
+      }
+
+      if (token) {
+        console.log("[AUTH DEBUG] Token found, setting token synchronously in API client");
+        // CRITICAL: Set token in API client FIRST (synchronously) before any API calls
+        setAuthToken(token);
+
+        // Then update state (these trigger useEffects but we don't need to wait)
         setAccessToken(token);
         setCachedToken(token);
-        setAuthToken(token);
 
         console.log("[AUTH DEBUG] Calling fetchAndUpdateUserData");
         const userData = await fetchAndUpdateUserData(token);
@@ -442,6 +474,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (contact: string, password: string) => {
     try {
       setLoading(true);
+      console.log("[AUTH DEBUG] Starting login");
       const response = await apiLogin(contact, password);
 
       // Response structure: { success: true, message: string, data: { token: string, user: userData } }
@@ -466,7 +499,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (!userData.verified) {
         throw new Error("VERIFICATION_REDIRECT");
       }
-      // Only store token and complete login if user is allowed
+
+      // CRITICAL: Set token SYNCHRONOUSLY in API client BEFORE any API calls
+      // This prevents race condition where fetchAndUpdateUserData runs before useEffect
+      console.log("[AUTH DEBUG] Setting token synchronously in API client");
+      setAuthToken(access_token);
+
+      // Store token and update state
       await storeToken(access_token);
       setAccessToken(access_token);
       setCachedToken(access_token);

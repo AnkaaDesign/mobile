@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -21,8 +21,8 @@ export function UserCard({ user }: UserCardProps) {
   const statusVariant = getBadgeVariant(user.status, "USER");
 
   return (
-    <Card>
-      <CardContent style={styles.content}>
+    <Card style={styles.card}>
+      <View style={styles.content}>
         <View style={styles.headerSection}>
           <Avatar
             size="lg"
@@ -103,14 +103,17 @@ export function UserCard({ user }: UserCardProps) {
             </View>
           )}
         </View>
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
+  card: {
+    padding: spacing.md,
+  },
   content: {
-    gap: spacing.lg,
+    gap: spacing.md,
   },
   headerSection: {
     flexDirection: "row",

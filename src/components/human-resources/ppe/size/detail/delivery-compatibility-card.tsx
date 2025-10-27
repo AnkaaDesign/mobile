@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconPackage, IconCircleCheck, IconCircleX, IconInfoCircle } from "@tabler/icons-react-native";
@@ -82,18 +82,16 @@ export function DeliveryCompatibilityCard({ ppeSize }: DeliveryCompatibilityCard
   const unavailableTypes = ppeTypeMapping.filter((item) => !item.isAvailable);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
-          <View style={styles.titleRow}>
-            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-              <IconPackage size={18} color={colors.primary} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Compatibilidade de Entregas</ThemedText>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+            <IconPackage size={18} color={colors.primary} />
           </View>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>Compatibilidade de Entregas</ThemedText>
+        </View>
+      </View>
+      <View style={styles.content}>
         <View style={styles.compatibilityContent}>
           {/* Info Note */}
           <View style={[styles.infoNote, { backgroundColor: colors.muted + "20", borderColor: colors.border }]}>
@@ -182,15 +180,21 @@ export function DeliveryCompatibilityCard({ ppeSize }: DeliveryCompatibilityCard
             </View>
           )}
         </View>
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
+  card: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   titleRow: {
     flexDirection: "row",
@@ -207,6 +211,9 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
+  },
+  content: {
+    gap: spacing.md,
   },
   compatibilityContent: {
     gap: spacing.xl,

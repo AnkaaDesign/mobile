@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
@@ -79,27 +79,18 @@ export function TimelineCard({ schedule }: TimelineCardProps) {
 
   if (!schedule.isActive) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.titleRow}>
-              <View
-                style={StyleSheet.flatten([
-                  styles.titleIcon,
-                  { backgroundColor: colors.primary + "10" },
-                ])}
-              >
-                <IconTimeline size={18} color={colors.primary} />
-              </View>
-              <ThemedText
-                style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}
-              >
-                Próximas Entregas
-              </ThemedText>
+      <Card style={styles.card}>
+        <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+          <View style={styles.titleRow}>
+            <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+              <IconTimeline size={18} color={colors.primary} />
             </View>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+            <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+              Próximas Entregas
+            </ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
           <View
             style={StyleSheet.flatten([
               styles.inactiveState,
@@ -121,34 +112,25 @@ export function TimelineCard({ schedule }: TimelineCardProps) {
               Ative o cronograma para visualizar as próximas entregas
             </ThemedText>
           </View>
-        </CardContent>
+        </View>
       </Card>
     );
   }
 
   if (upcomingDeliveries.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.titleRow}>
-              <View
-                style={StyleSheet.flatten([
-                  styles.titleIcon,
-                  { backgroundColor: colors.primary + "10" },
-                ])}
-              >
-                <IconTimeline size={18} color={colors.primary} />
-              </View>
-              <ThemedText
-                style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}
-              >
-                Próximas Entregas
-              </ThemedText>
+      <Card style={styles.card}>
+        <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+          <View style={styles.titleRow}>
+            <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+              <IconTimeline size={18} color={colors.primary} />
             </View>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+            <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+              Próximas Entregas
+            </ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
           <View
             style={StyleSheet.flatten([
               styles.emptyState,
@@ -162,45 +144,34 @@ export function TimelineCard({ schedule }: TimelineCardProps) {
               Nenhuma entrega agendada
             </ThemedText>
           </View>
-        </CardContent>
+        </View>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <View style={styles.header}>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.titleRow}>
-              <View
-                style={StyleSheet.flatten([
-                  styles.titleIcon,
-                  { backgroundColor: colors.primary + "10" },
-                ])}
-              >
-                <IconTimeline size={18} color={colors.primary} />
-              </View>
-              <ThemedText
-                style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}
-              >
-                Próximas Entregas
-              </ThemedText>
-            </View>
-          </CardTitle>
-          <Badge variant="secondary">
-            <ThemedText
-              style={{
-                color: colors.secondaryForeground,
-                fontSize: fontSize.xs,
-              }}
-            >
-              {upcomingDeliveries.length}
-            </ThemedText>
-          </Badge>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+            <IconTimeline size={18} color={colors.primary} />
+          </View>
+          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+            Próximas Entregas
+          </ThemedText>
         </View>
-      </CardHeader>
-      <CardContent>
+        <Badge variant="secondary">
+          <ThemedText
+            style={{
+              color: colors.secondaryForeground,
+              fontSize: fontSize.xs,
+            }}
+          >
+            {upcomingDeliveries.length}
+          </ThemedText>
+        </Badge>
+      </View>
+      <View style={styles.content}>
         <View style={styles.timeline}>
           {upcomingDeliveries.map((delivery, index) => {
             const isFirst = index === 0;
@@ -337,20 +308,22 @@ export function TimelineCard({ schedule }: TimelineCardProps) {
             );
           })}
         </View>
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  card: {
+    padding: spacing.md,
   },
-  sectionTitle: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   titleRow: {
     flexDirection: "row",
@@ -367,6 +340,9 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
+  },
+  content: {
+    gap: spacing.md,
   },
   emptyState: {
     padding: spacing.xl,

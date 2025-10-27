@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
@@ -27,7 +27,7 @@ export function ObservationMetadataCard({ createdAt, updatedAt }: ObservationMet
         <ThemedText style={styles.sectionTitle}>Metadados</ThemedText>
       </View>
 
-      <CardContent style={styles.cardContent}>
+      <View style={styles.content}>
         <View style={styles.datesContainer}>
           {/* Created At */}
           <View style={[styles.dateRow, { backgroundColor: colors.muted }]}>
@@ -67,7 +67,7 @@ export function ObservationMetadataCard({ createdAt, updatedAt }: ObservationMet
             </View>
           )}
         </View>
-      </CardContent>
+      </View>
     </Card>
   );
 }
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
     flex: 1,
   },
-  cardContent: {
+  content: {
     padding: spacing.md,
   },
   datesContainer: {

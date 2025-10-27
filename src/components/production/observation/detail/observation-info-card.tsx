@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge, getBadgeVariantFromStatus } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
@@ -43,7 +43,7 @@ export function ObservationInfoCard({ observation }: ObservationInfoCardProps) {
         <ThemedText style={styles.sectionTitle}>Informações</ThemedText>
       </View>
 
-      <CardContent style={styles.cardContent}>
+      <View style={styles.content}>
         {/* Description Section */}
         <View style={styles.section}>
           <ThemedText style={[styles.subsectionTitle, { color: colors.foreground }]}>
@@ -121,7 +121,7 @@ export function ObservationInfoCard({ observation }: ObservationInfoCardProps) {
             </View>
           </View>
         )}
-      </CardContent>
+      </View>
     </Card>
   );
 }
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
     flex: 1,
   },
-  cardContent: {
+  content: {
     padding: spacing.md,
     gap: spacing.lg,
   },

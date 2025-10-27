@@ -1,390 +1,252 @@
-import React, { useState, useMemo } from "react";
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import React, { useState, useMemo, useCallback } from "react";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { SearchBar } from "@/components/ui/search-bar";
+import { ListActionButton } from "@/components/ui/list-action-button";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconClipboardList, IconAlertCircle, IconChevronRight, IconChevronLeft } from "@tabler/icons-react-native";
+import { spacing, fontSize } from "@/constants/design-system";
+import { IconClipboardList, IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
-import { routes, TASK_STATUS, TASK_STATUS_LABELS } from '../../../../constants';
-import { formatDate, formatCurrency } from '../../../../utils';
+import { routes, TASK_STATUS } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { extendedColors } from "@/lib/theme/extended-colors";
-import { TaskStatusBadge } from "@/components/production/task/list/task-status-badge";
+import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
+import { getDefaultVisibleColumns } from "@/components/production/task/list/column-visibility-manager";
+import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useTasks } from "@/hooks";
 
 interface TasksTableProps {
   customer: Customer;
   maxHeight?: number;
 }
 
+// Local storage key for column preferences
+const STORAGE_KEY = "customer_tasks_visible_columns";
+
 export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
-  const { colors, isDark } = useTheme();
-  const [currentPage, setCurrentPage] = useState(0);
-  const pageSize = 10;
+  const { colors } = useTheme();
+  const totalTasks = customer._count?.tasks || 0;
 
-  const tasks = customer.tasks || [];
-  const totalTasks = customer._count?.tasks || tasks.length;
+  // Load saved column preferences from localStorage on mount
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : Array.from(getDefaultVisibleColumns());
+      }
+    } catch (error) {
+      console.warn("Failed to load column preferences:", error);
+    }
+    return Array.from(getDefaultVisibleColumns());
+  });
 
-  // Sort tasks by status priority (active first) and date
-  const sortedTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => {
-      // Priority for active statuses
-      const statusPriority: Record<string, number> = {
-        [TASK_STATUS.IN_PRODUCTION]: 1,
-        [TASK_STATUS.ON_HOLD]: 2,
-        [TASK_STATUS.PENDING]: 3,
-        [TASK_STATUS.COMPLETED]: 4,
-        [TASK_STATUS.CANCELLED]: 5,
-      };
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
-      const aPriority = statusPriority[a.status] ?? 6;
-      const bPriority = statusPriority[b.status] ?? 6;
+  // Column visibility drawer state
+  const [showColumnManager, setShowColumnManager] = useState(false);
 
-      if (aPriority !== bPriority) return aPriority - bPriority;
+  // Fetch tasks for this customer
+  const {
+    data: tasksResponse,
+    isLoading,
+    error,
+  } = useTasks({
+    where: {
+      customerId: customer.id,
+    },
+    include: {
+      customer: true,
+      sector: true,
+      generalPainting: true,
+      services: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      createdBy: {
+        select: {
+          name: true,
+          id: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    search: debouncedSearch || undefined,
+    enabled: true,
+  });
 
-      // Then sort by date (newest first)
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  }, [tasks]);
+  const tasks = tasksResponse?.data || [];
 
-  // Paginate tasks
-  const paginatedTasks = useMemo(() => {
-    const start = currentPage * pageSize;
-    return sortedTasks.slice(start, start + pageSize);
-  }, [sortedTasks, currentPage]);
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
 
-  const totalPages = Math.ceil(sortedTasks.length / pageSize);
+  // Handle columns change and persist to localStorage
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    const newColumnsArray = Array.from(newColumns);
+    setVisibleColumnKeys(newColumnsArray);
 
-  // Calculate statistics
-  const statistics = useMemo(() => {
-    const activeTasks = tasks.filter(
-      (task) => task.status !== TASK_STATUS.CANCELLED && task.status !== TASK_STATUS.COMPLETED
-    ).length;
-    const completedTasks = tasks.filter((task) => task.status === TASK_STATUS.COMPLETED).length;
-    const totalValue = 0; // Price field not available on Task type
-
-    return {
-      totalTasks: tasks.length,
-      activeTasks,
-      completedTasks,
-      totalValue,
-    };
-  }, [tasks]);
+    // Persist to localStorage
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newColumnsArray));
+    } catch (error) {
+      console.warn("Failed to save column preferences:", error);
+    }
+  }, []);
 
   const handleTaskPress = (taskId: string) => {
     router.push(routeToMobilePath(routes.production.schedule.details(taskId)) as any);
   };
 
-  const handleViewAllTasks = () => {
-    const path = routeToMobilePath(
-      `${routes.production.schedule.list}?customerId=${customer.id}&customerName=${encodeURIComponent(
-        customer.fantasyName || ""
-      )}`
-    );
-    router.push(path as any);
-  };
-
   if (totalTasks === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.headerRow}>
-              <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                <IconClipboardList size={18} color={colors.primary} />
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-                Tarefas Relacionadas
-              </ThemedText>
-            </View>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card style={styles.card}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconClipboardList size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Tarefas Relacionadas</ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
           <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
             <IconAlertCircle size={48} color={colors.mutedForeground} />
             <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
               Nenhuma tarefa associada a este cliente.
             </ThemedText>
           </View>
-        </CardContent>
+        </View>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
-          <View style={styles.headerRowWithActions}>
-            <View style={styles.headerRow}>
-              <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                <IconClipboardList size={18} color={colors.primary} />
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-                Tarefas Relacionadas
-              </ThemedText>
-            </View>
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={handleViewAllTasks}
-              style={styles.viewAllButton}
-            >
-              <ThemedText style={StyleSheet.flatten([styles.viewAllText, { color: colors.primary }])}>
-                Ver todas
-              </ThemedText>
-            </Button>
-          </View>
-        </CardTitle>
-      </CardHeader>
+    <Card style={styles.card}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconClipboardList size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>
+            Tarefas Relacionadas {tasks.length > 0 && `(${tasks.length})`}
+          </ThemedText>
+        </View>
+      </View>
 
-      <CardContent style={{ paddingHorizontal: 0, paddingBottom: 0 }}>
-        {/* Statistics Summary */}
-        <View style={styles.statsContainer}>
-          <View style={[styles.statItem, { backgroundColor: colors.muted + "20", borderColor: colors.border }]}>
-            <ThemedText style={[styles.statLabel, { color: colors.mutedForeground }]}>Total</ThemedText>
-            <ThemedText style={[styles.statValue, { color: colors.foreground }]}>{statistics.totalTasks}</ThemedText>
-          </View>
-
-          <View
-            style={[
-              styles.statItem,
-              {
-                backgroundColor: isDark ? extendedColors.blue[900] + "20" : extendedColors.blue[50] + "80",
-                borderColor: isDark ? extendedColors.blue[700] + "40" : extendedColors.blue[200] + "40",
-              },
-            ]}
-          >
-            <ThemedText
-              style={[
-                styles.statLabel,
-                { color: isDark ? extendedColors.blue[200] : extendedColors.blue[800] },
-              ]}
-            >
-              Ativas
-            </ThemedText>
-            <ThemedText
-              style={[
-                styles.statValue,
-                { color: isDark ? extendedColors.blue[200] : extendedColors.blue[800] },
-              ]}
-            >
-              {statistics.activeTasks}
-            </ThemedText>
-          </View>
-
-          <View
-            style={[
-              styles.statItem,
-              {
-                backgroundColor: isDark ? extendedColors.green[900] + "20" : extendedColors.green[50] + "80",
-                borderColor: isDark ? extendedColors.green[700] + "40" : extendedColors.green[200] + "40",
-              },
-            ]}
-          >
-            <ThemedText
-              style={[
-                styles.statLabel,
-                { color: isDark ? extendedColors.green[200] : extendedColors.green[800] },
-              ]}
-            >
-              Valor Total
-            </ThemedText>
-            <ThemedText
-              style={[
-                styles.statValue,
-                { color: isDark ? extendedColors.green[200] : extendedColors.green[800] },
-              ]}
-            >
-              {formatCurrency(statistics.totalValue)}
-            </ThemedText>
-          </View>
+      <View style={styles.content}>
+        {/* Search and Column Visibility Controls */}
+        <View style={styles.controlsContainer}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Buscar tarefas..."
+            style={styles.searchBar}
+          />
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={() => setShowColumnManager(true)}
+            badgeCount={visibleColumnKeys.length}
+            badgeVariant="primary"
+          />
         </View>
 
-        {/* Tasks Table */}
-        <ScrollView
-          style={[styles.tableContainer, maxHeight ? { maxHeight } : undefined]}
-          showsVerticalScrollIndicator={false}
-          nestedScrollEnabled
-        >
-          {/* Table Header */}
-          <View
-            style={[
-              styles.tableHeader,
-              {
-                backgroundColor: isDark ? extendedColors.neutral[800] : extendedColors.neutral[100],
-                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
-              },
-            ]}
-          >
-            <ThemedText style={[styles.headerCell, styles.nameColumn, { color: colors.foreground }]}>
-              NOME
-            </ThemedText>
-            <ThemedText style={[styles.headerCell, styles.statusColumn, { color: colors.foreground }]}>
-              STATUS
-            </ThemedText>
-            <ThemedText style={[styles.headerCell, styles.dateColumn, { color: colors.foreground }]}>
-              FINALIZADO
-            </ThemedText>
-          </View>
+        {/* Task Table */}
+        <View style={[styles.tableContainer, maxHeight ? { maxHeight } : undefined]}>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <ThemedText style={styles.loadingText}>Carregando tarefas...</ThemedText>
+            </View>
+          ) : error ? (
+            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+              <IconAlertCircle size={48} color={colors.mutedForeground} />
+              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+                Erro ao carregar tarefas.
+              </ThemedText>
+            </View>
+          ) : tasks.length === 0 ? (
+            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+              <IconAlertCircle size={48} color={colors.mutedForeground} />
+              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+                {searchQuery
+                  ? `Nenhuma tarefa encontrada para "${searchQuery}".`
+                  : "Nenhuma tarefa associada a este cliente."}
+              </ThemedText>
+            </View>
+          ) : (
+            <TaskTable
+              tasks={tasks}
+              onTaskPress={handleTaskPress}
+              enableSwipeActions={false}
+              visibleColumnKeys={visibleColumnKeys}
+            />
+          )}
+        </View>
+      </View>
 
-          {/* Table Rows */}
-          {paginatedTasks.map((task, index) => (
-            <TouchableOpacity
-              key={task.id}
-              onPress={() => handleTaskPress(task.id)}
-              style={[
-                styles.tableRow,
-                {
-                  backgroundColor:
-                    index % 2 === 0
-                      ? colors.background
-                      : isDark
-                      ? extendedColors.neutral[900]
-                      : extendedColors.neutral[50],
-                  borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
-                },
-              ]}
-              activeOpacity={0.7}
-            >
-              {/* Name Column */}
-              <View style={styles.nameColumn}>
-                <ThemedText
-                  style={[styles.taskName, { color: colors.foreground }]}
-                  numberOfLines={2}
-                >
-                  {task.name || "Sem nome"}
-                </ThemedText>
-                {task.serialNumber && (
-                  <ThemedText
-                    style={[styles.taskSubtext, { color: colors.mutedForeground }]}
-                    numberOfLines={1}
-                  >
-                    SN: {task.serialNumber}
-                  </ThemedText>
-                )}
-                {task.sector && (
-                  <ThemedText
-                    style={[styles.taskSubtext, { color: colors.mutedForeground }]}
-                    numberOfLines={1}
-                  >
-                    {task.sector.name}
-                  </ThemedText>
-                )}
-              </View>
-
-              {/* Status Column */}
-              <View style={styles.statusColumn}>
-                <TaskStatusBadge status={task.status} />
-              </View>
-
-              {/* Date Column */}
-              <View style={styles.dateColumn}>
-                <ThemedText style={[styles.cellText, { color: colors.foreground }]} numberOfLines={1}>
-                  {task.finishedAt ? formatDate(task.finishedAt) : "-"}
-                </ThemedText>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <View
-            style={[
-              styles.pagination,
-              {
-                backgroundColor: colors.muted + "20",
-                borderTopColor: colors.border,
-              },
-            ]}
-          >
-            <TouchableOpacity
-              onPress={() => setCurrentPage(Math.max(0, currentPage - 1))}
-              disabled={currentPage === 0}
-              style={[
-                styles.paginationButton,
-                { backgroundColor: colors.background, borderColor: colors.border },
-              ]}
-              activeOpacity={0.7}
-            >
-              <IconChevronLeft
-                size={16}
-                color={currentPage === 0 ? colors.mutedForeground : colors.foreground}
-              />
-            </TouchableOpacity>
-
-            <ThemedText style={[styles.paginationText, { color: colors.foreground }]}>
-              Página {currentPage + 1} de {totalPages}
-            </ThemedText>
-
-            <TouchableOpacity
-              onPress={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
-              disabled={currentPage === totalPages - 1}
-              style={[
-                styles.paginationButton,
-                { backgroundColor: colors.background, borderColor: colors.border },
-              ]}
-              activeOpacity={0.7}
-            >
-              <IconChevronRight
-                size={16}
-                color={currentPage === totalPages - 1 ? colors.mutedForeground : colors.foreground}
-              />
-            </TouchableOpacity>
-
-            <ThemedText style={[styles.paginationInfo, { color: colors.mutedForeground }]}>
-              {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, sortedTasks.length)} de{" "}
-              {sortedTasks.length}
-            </ThemedText>
-          </View>
-        )}
-      </CardContent>
+      {/* Column Visibility Drawer */}
+      <ColumnVisibilityDrawerV2
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        open={showColumnManager}
+        onOpenChange={setShowColumnManager}
+      />
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
-    flexDirection: "column",
-    gap: spacing.md,
+  card: {
+    padding: spacing.md,
   },
-  headerRowWithActions: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    width: "100%",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
-  headerRow: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
     gap: spacing.md,
   },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
+  controlsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+  },
+  searchBar: {
+    flex: 1,
+  },
+  tableContainer: {
+    flex: 1,
+  },
+  loadingContainer: {
+    padding: spacing.xxl,
     alignItems: "center",
     justifyContent: "center",
+    gap: spacing.md,
   },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
-  viewAllButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  viewAllText: {
+  loadingText: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    opacity: 0.7,
   },
   emptyState: {
     padding: spacing.xl,
-    borderRadius: borderRadius.md,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.md,
@@ -392,101 +254,5 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: fontSize.sm,
     textAlign: "center",
-  },
-  statsContainer: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  statItem: {
-    flex: 1,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    alignItems: "center",
-  },
-  statLabel: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
-    marginBottom: spacing.xs,
-  },
-  statValue: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-  },
-  tableContainer: {
-    flex: 1,
-  },
-  tableHeader: {
-    flexDirection: "row",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 2,
-  },
-  headerCell: {
-    fontSize: 10,
-    fontWeight: fontWeight.bold,
-    textTransform: "uppercase",
-  },
-  tableRow: {
-    flexDirection: "row",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    minHeight: 60,
-  },
-  nameColumn: {
-    flex: 2,
-    justifyContent: "center",
-    paddingRight: spacing.sm,
-  },
-  statusColumn: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  dateColumn: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "flex-end",
-  },
-  taskName: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    marginBottom: spacing.xs / 2,
-  },
-  taskSubtext: {
-    fontSize: fontSize.xs,
-    marginTop: spacing.xs / 2,
-  },
-  cellText: {
-    fontSize: fontSize.sm,
-  },
-  pagination: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderTopWidth: 1,
-    gap: spacing.sm,
-  },
-  paginationButton: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  paginationText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    marginHorizontal: spacing.sm,
-  },
-  paginationInfo: {
-    fontSize: fontSize.xs,
-    marginLeft: spacing.sm,
   },
 });

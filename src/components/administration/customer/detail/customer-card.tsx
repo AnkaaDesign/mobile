@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet, Image } from "react-native";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
@@ -18,20 +18,14 @@ export function CustomerCard({ customer }: CustomerCardProps) {
   const { colors } = useTheme();
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
-          <View style={styles.titleRow}>
-            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-              <IconBuilding size={18} color={colors.primary} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-              Informações Básicas
-            </ThemedText>
-          </View>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Card style={styles.card}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconBuilding size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Informações Básicas</ThemedText>
+        </View>
+      </View>
+      <View style={styles.content}>
         <View style={styles.infoContainer}>
           {/* Logo Section */}
           {customer.logo && customer.logo.id && (
@@ -48,7 +42,7 @@ export function CustomerCard({ customer }: CustomerCardProps) {
 
           {/* Identification Section */}
           <View style={styles.section}>
-            <ThemedText style={StyleSheet.flatten([styles.sectionHeader, { color: colors.foreground }])}>
+            <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
               Identificação
             </ThemedText>
             <View style={styles.fieldsContainer}>
@@ -68,7 +62,11 @@ export function CustomerCard({ customer }: CustomerCardProps) {
                   <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
                     Razão Social
                   </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                  <ThemedText
+                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {customer.corporateName}
                   </ThemedText>
                 </View>
@@ -109,7 +107,7 @@ export function CustomerCard({ customer }: CustomerCardProps) {
           {/* Tags Section */}
           {customer.tags && customer.tags.length > 0 && (
             <View style={StyleSheet.flatten([styles.section, styles.tagsSection, { borderTopColor: colors.border + "50" }])}>
-              <ThemedText style={StyleSheet.flatten([styles.sectionHeader, { color: colors.foreground }])}>
+              <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
                 Tags
               </ThemedText>
               <View style={styles.tagsContainer}>
@@ -127,31 +125,34 @@ export function CustomerCard({ customer }: CustomerCardProps) {
             </View>
           )}
         </View>
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
+  card: {
+    padding: spacing.md,
+  },
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
-  titleRow: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.md,
   },
   infoContainer: {
     gap: spacing.xl,
@@ -176,7 +177,7 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.lg,
   },
-  sectionHeader: {
+  subsectionHeader: {
     fontSize: fontSize.base,
     fontWeight: fontWeight.semibold,
   },
@@ -203,6 +204,8 @@ const styles = StyleSheet.create({
   fieldValue: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
+    flex: 1,
+    textAlign: "right",
   },
   tagsSection: {
     paddingTop: spacing.xl,

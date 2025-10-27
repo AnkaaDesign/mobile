@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
 import { TASK_STATUS } from '../../../../constants';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -79,20 +79,18 @@ export function PerformanceCard({ employee }: PerformanceCardProps) {
   const performanceInfo = getPerformanceLevelInfo(employee.performanceLevel);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
-          <View style={styles.titleRow}>
-            <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-              <IconChartBar size={18} color={colors.primary} />
-            </View>
-            <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
-              Desempenho
-            </ThemedText>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+            <IconChartBar size={18} color={colors.primary} />
           </View>
-        </CardTitle>
-      </CardHeader>
-      <CardContent style={styles.content}>
+          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+            Desempenho
+          </ThemedText>
+        </View>
+      </View>
+      <View style={styles.content}>
         {/* Performance Level */}
         <View style={[styles.performanceLevelCard, { backgroundColor: performanceInfo.bgColor }]}>
           <View style={styles.performanceLevelHeader}>
@@ -174,15 +172,21 @@ export function PerformanceCard({ employee }: PerformanceCardProps) {
             )}
           </View>
         )}
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
+  card: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   titleRow: {
     flexDirection: "row",

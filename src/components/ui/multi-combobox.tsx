@@ -147,7 +147,10 @@ export const MultiCombobox = React.memo(function MultiCombobox({
     if (disabled) return;
 
     measureSelect();
-    setModalVisible(true);
+    // Use setTimeout to prevent flicker when modal opens
+    setTimeout(() => {
+      setModalVisible(true);
+    }, 0);
     setSearchText("");
     onOpen?.();
   }, [disabled, measureSelect, onOpen]);
@@ -238,10 +241,27 @@ export const MultiCombobox = React.memo(function MultiCombobox({
       const isSelected = selectedValues.includes(item.value);
       const isAtLimit = maxSelections && selectedValues.length >= maxSelections && !isSelected;
 
-      // Use custom render if provided
+      // Use custom render if provided - wrap in TouchableOpacity with proper padding
       if (renderOption) {
-        const customRender = renderOption(item, isSelected, () => handleSelect(item));
-        return customRender as React.ReactElement;
+        return (
+          <TouchableOpacity
+            style={StyleSheet.flatten([
+              styles.option,
+              {
+                backgroundColor: isSelected ? colors.primary + "20" : "transparent",
+                borderBottomColor: colors.border,
+                opacity: isAtLimit ? 0.5 : 1,
+              },
+            ])}
+            onPress={() => handleSelect(item)}
+            disabled={loading || isAtLimit}
+            accessibilityRole="button"
+            accessibilityLabel={item.label}
+            accessibilityState={{ selected: isSelected, disabled: isAtLimit }}
+          >
+            {renderOption(item, isSelected, () => handleSelect(item))}
+          </TouchableOpacity>
+        );
       }
 
       return (
@@ -420,7 +440,7 @@ export const MultiCombobox = React.memo(function MultiCombobox({
               data={combinedOptions}
               renderItem={renderItem}
               keyExtractor={(item) => item.key || item.value}
-              showsVerticalScrollIndicator={false}
+              showsVerticalScrollIndicator={true}
               keyboardShouldPersistTaps="handled"
               onEndReached={handleEndReached}
               onEndReachedThreshold={onEndReachedThreshold}
@@ -429,17 +449,22 @@ export const MultiCombobox = React.memo(function MultiCombobox({
               style={{
                 maxHeight: inputLayout.width > 0 ? LIST_MAX_HEIGHT : undefined,
               }}
-              // Virtualization optimizations
-              getItemLayout={(_data: MultiComboboxOption[] | null | undefined, index: number) => ({
+              contentContainerStyle={{
+                flexGrow: 1,
+              }}
+              // Virtualization optimizations - disabled for custom renderOption to ensure proper measurement
+              getItemLayout={!renderOption ? (_data: MultiComboboxOption[] | null | undefined, index: number) => ({
                 length: 48, // Fixed item height
                 offset: 48 * index,
                 index,
-              })}
-              initialNumToRender={10}
-              maxToRenderPerBatch={10}
-              windowSize={10}
-              removeClippedSubviews={true}
+              }) : undefined}
+              initialNumToRender={15}
+              maxToRenderPerBatch={15}
+              windowSize={11}
+              removeClippedSubviews={Platform.OS === 'android'}
               updateCellsBatchingPeriod={50}
+              disableVirtualization={false}
+              nestedScrollEnabled={true}
             />
           </Pressable>
         </Pressable>
@@ -510,7 +535,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: fontSize.sm,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
     fontWeight: fontWeight.medium,
   },
   selector: {

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,59 +89,55 @@ export function UserTasksTable({ user, maxHeight = 500 }: UserTasksTableProps) {
 
   if (totalTasks === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.headerRow}>
-              <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                <IconClipboardList size={18} color={colors.primary} />
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-                Tarefas Atribuídas
-              </ThemedText>
+      <Card style={styles.card}>
+        <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerRow}>
+            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
+              <IconClipboardList size={18} color={colors.primary} />
             </View>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
+              Tarefas Atribuídas
+            </ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
           <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
             <IconAlertCircle size={48} color={colors.mutedForeground} />
             <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
               Nenhuma tarefa atribuída a este usuário.
             </ThemedText>
           </View>
-        </CardContent>
+        </View>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
-          <View style={styles.headerRowWithActions}>
-            <View style={styles.headerRow}>
-              <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                <IconClipboardList size={18} color={colors.primary} />
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-                Tarefas Atribuídas
-              </ThemedText>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerRowWithActions}>
+          <View style={styles.headerRow}>
+            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
+              <IconClipboardList size={18} color={colors.primary} />
             </View>
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={handleViewAllTasks}
-              style={styles.viewAllButton}
-            >
-              <ThemedText style={StyleSheet.flatten([styles.viewAllText, { color: colors.primary }])}>
-                Ver todas
-              </ThemedText>
-            </Button>
+            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
+              Tarefas Atribuídas
+            </ThemedText>
           </View>
-        </CardTitle>
-      </CardHeader>
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={handleViewAllTasks}
+            style={styles.viewAllButton}
+          >
+            <ThemedText style={StyleSheet.flatten([styles.viewAllText, { color: colors.primary }])}>
+              Ver todas
+            </ThemedText>
+          </Button>
+        </View>
+      </View>
 
-      <CardContent style={{ paddingHorizontal: 0, paddingBottom: 0 }}>
+      <View style={styles.content}>
         {/* Statistics Summary */}
         <View style={styles.statsContainer}>
           <View style={[styles.statItem, { backgroundColor: colors.muted + "20", borderColor: colors.border }]}>
@@ -341,14 +337,23 @@ export function UserTasksTable({ user, maxHeight = 500 }: UserTasksTableProps) {
             </ThemedText>
           </View>
         )}
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
-    flexDirection: "column",
+  card: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  content: {
     gap: spacing.md,
   },
   headerRowWithActions: {

@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet, Linking, TouchableOpacity } from "react-native";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
@@ -83,20 +83,14 @@ export function AddressCard({ customer }: AddressCardProps) {
   const fullAddress = getFullAddress();
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
-          <View style={styles.titleRow}>
-            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-              <IconMapPin size={18} color={colors.primary} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-              Endereço
-            </ThemedText>
-          </View>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Card style={styles.card}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconMapPin size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Endereço</ThemedText>
+        </View>
+      </View>
+      <View style={styles.content}>
         {hasAddress ? (
           <View style={styles.addressContainer}>
             {/* Full Address Display */}
@@ -227,31 +221,34 @@ export function AddressCard({ customer }: AddressCardProps) {
             </ThemedText>
           </View>
         )}
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
+  card: {
+    padding: spacing.md,
+  },
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
-  titleRow: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.md,
   },
   addressContainer: {
     gap: spacing.xl,

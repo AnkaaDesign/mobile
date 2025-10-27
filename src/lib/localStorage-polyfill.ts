@@ -8,16 +8,24 @@ const initializeMemoryStorage = async () => {
   try {
     const keys = await AsyncStorage.getAllKeys();
     const items = await AsyncStorage.multiGet(keys);
+    // Clear existing memory first
+    const existingKeys = Object.keys(memoryStorage);
+    existingKeys.forEach(key => delete memoryStorage[key]);
     memoryStorage = {};
+
     items.forEach(([key, value]) => {
       if (value !== null) {
         memoryStorage[key] = value;
       }
     });
+    console.log("[LOCALSTORAGE POLYFILL] Memory storage initialized with", Object.keys(memoryStorage).length, "keys");
   } catch (error) {
     console.error("Failed to initialize memory storage:", error);
   }
 };
+
+// Export function to manually sync memory storage (useful after clearing AsyncStorage)
+export const syncMemoryStorage = initializeMemoryStorage;
 
 // Synchronous localStorage polyfill for React Native
 const localStoragePolyfill = {
@@ -42,7 +50,11 @@ const localStoragePolyfill = {
   },
 
   clear: (): void => {
+    // Clear memory storage immediately
+    const keys = Object.keys(memoryStorage);
+    keys.forEach(key => delete memoryStorage[key]);
     memoryStorage = {};
+
     // Async clear AsyncStorage (fire and forget)
     AsyncStorage.clear().catch((error) => {
       console.error("localStorage.clear async clear error:", error);

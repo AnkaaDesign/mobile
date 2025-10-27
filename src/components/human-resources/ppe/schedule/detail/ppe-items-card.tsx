@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
@@ -19,27 +19,18 @@ export function PpeItemsCard({ schedule }: PpeItemsCardProps) {
 
   if (!schedule.ppeItems || schedule.ppeItems.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.titleRow}>
-              <View
-                style={StyleSheet.flatten([
-                  styles.titleIcon,
-                  { backgroundColor: colors.primary + "10" },
-                ])}
-              >
-                <IconShield size={18} color={colors.primary} />
-              </View>
-              <ThemedText
-                style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}
-              >
-                Itens de EPI
-              </ThemedText>
+      <Card style={styles.card}>
+        <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+          <View style={styles.titleRow}>
+            <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+              <IconShield size={18} color={colors.primary} />
             </View>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+            <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+              Itens de EPI
+            </ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
           <View
             style={StyleSheet.flatten([
               styles.emptyState,
@@ -53,7 +44,7 @@ export function PpeItemsCard({ schedule }: PpeItemsCardProps) {
               Nenhum item de EPI configurado
             </ThemedText>
           </View>
-        </CardContent>
+        </View>
       </Card>
     );
   }
@@ -61,41 +52,30 @@ export function PpeItemsCard({ schedule }: PpeItemsCardProps) {
   const totalItems = schedule.ppeItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <Card>
-      <CardHeader>
-        <View style={styles.header}>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.titleRow}>
-              <View
-                style={StyleSheet.flatten([
-                  styles.titleIcon,
-                  { backgroundColor: colors.primary + "10" },
-                ])}
-              >
-                <IconShield size={18} color={colors.primary} />
-              </View>
-              <ThemedText
-                style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}
-              >
-                Itens de EPI
-              </ThemedText>
-            </View>
-          </CardTitle>
-          <Badge variant="secondary">
-            <IconPackage size={14} color={colors.secondaryForeground} />
-            <ThemedText
-              style={{
-                color: colors.secondaryForeground,
-                fontSize: fontSize.xs,
-                marginLeft: spacing.xs,
-              }}
-            >
-              {schedule.ppeItems.length} tipo(s)
-            </ThemedText>
-          </Badge>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+            <IconShield size={18} color={colors.primary} />
+          </View>
+          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+            Itens de EPI
+          </ThemedText>
         </View>
-      </CardHeader>
-      <CardContent>
+        <Badge variant="secondary">
+          <IconPackage size={14} color={colors.secondaryForeground} />
+          <ThemedText
+            style={{
+              color: colors.secondaryForeground,
+              fontSize: fontSize.xs,
+              marginLeft: spacing.xs,
+            }}
+          >
+            {schedule.ppeItems.length} tipo(s)
+          </ThemedText>
+        </Badge>
+      </View>
+      <View style={styles.content}>
         <View style={styles.content}>
           {/* Total Items Summary */}
           <View
@@ -202,20 +182,22 @@ export function PpeItemsCard({ schedule }: PpeItemsCardProps) {
             ))}
           </View>
         </View>
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  card: {
+    padding: spacing.md,
   },
-  sectionTitle: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   titleRow: {
     flexDirection: "row",

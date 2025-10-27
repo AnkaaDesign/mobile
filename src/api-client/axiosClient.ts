@@ -229,7 +229,7 @@ interface RetryTrackingEntry {
 
 class RequestRetryTracker {
   private retryingRequests = new Map<string, RetryTrackingEntry>();
-  private readonly deduplicationWindow = 2000; // 2 seconds window for deduplication
+  private readonly deduplicationWindow = 5000; // 5 seconds window for deduplication (matches toast manager)
 
   private getRequestKey(url: string, method: string): string {
     return `${method.toUpperCase()}:${url}`;
@@ -467,27 +467,25 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       }
 
       // Always check for fresh token, even if Authorization header exists
-      if (tokenProvider) {
+      // But skip public auth endpoints to avoid sending corrupted tokens
+      const isPublicAuthEndpoint = config.url?.includes("/auth/login") ||
+                                    config.url?.includes("/auth/register") ||
+                                    config.url?.includes("/auth/password-reset") ||
+                                    config.url?.includes("/auth/verify") ||
+                                    config.url?.includes("/auth/send-verification") ||
+                                    config.url?.includes("/auth/resend-verification");
+
+      if (tokenProvider && !isPublicAuthEndpoint) {
         try {
           console.log(`[API CLIENT DEBUG] Calling tokenProvider to get token for ${config.url}`);
           const token = await tokenProvider();
           console.log(`[API CLIENT DEBUG] Token provider result: ${token ? `exists (length: ${token.length})` : "null"}`);
 
-          // Also check localStorage directly to debug
-          const localStorageToken = safeLocalStorage.getItem("ankaa_token");
-          console.log(`[API CLIENT DEBUG] Direct localStorage check - ankaa_token: ${localStorageToken ? `exists (length: ${localStorageToken.length})` : "null"}`);
-
-          // If we have a token, always use the fresh one
+          // If we have a token, use it
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-            console.log(`[API CLIENT DEBUG] Fresh authorization header set for ${config.url}`);
+            console.log(`[API CLIENT DEBUG] Authorization header set for ${config.url}`);
           } else if (!config.url?.includes("/auth/")) {
-            // FALLBACK: If no token from provider, check localStorage directly
-            const fallbackToken = safeLocalStorage.getItem("ankaa_token");
-            if (fallbackToken) {
-              console.warn(`[API CLIENT DEBUG] FALLBACK: Using token from localStorage directly for ${config.url}`);
-              config.headers.Authorization = `Bearer ${fallbackToken}`;
-            }
             // If no token and not an auth endpoint, check if we just logged in
             if ((client as any).__justLoggedIn) {
               if (finalConfig.enableLogging) {
@@ -680,12 +678,16 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
 
       // Show success notification for write operations
       if (finalConfig.enableNotifications && isWriteMethod(config.method)) {
-        // Skip notifications for batch operations - they'll be handled by the dialog
+        // Skip notifications for specific operations that handle their own success messages
         const isBatchOperation = config.url?.includes("/batch");
+        const isAuthOperation = config.url?.includes("/auth/login") ||
+                                config.url?.includes("/auth/register") ||
+                                config.url?.includes("/auth/logout");
+
         // Only show success if the response indicates success
         const isSuccess = response.data?.success !== false as boolean; // Show success unless explicitly false
 
-        if (!isBatchOperation && isSuccess) {
+        if (!isBatchOperation && !isAuthOperation && isSuccess) {
           const message = response.data?.message || getSuccessMessage(config.method);
           notify.success("Sucesso", message);
         }
@@ -732,65 +734,18 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       // Process and handle the error
       const errorInfo = handleApiError(error);
 
-      // Handle 401 errors - try to refresh token first
-      if (errorInfo._statusCode === 401 && !config.url?.includes("/auth/refresh") && !config.url?.includes("/auth/login")) {
-        if (finalConfig.enableLogging) {
-          console.log("[API CLIENT DEBUG] Got 401, attempting to refresh token");
-        }
+      // NOTE: This API uses JWT access tokens without separate refresh tokens.
+      // The /auth/refresh endpoint requires a valid access token to extract userId,
+      // so it cannot be used to recover from expired/invalid tokens.
+      // On 401 errors, we should clear auth state and redirect to login (handled by auth error handler).
 
-        // Check if we're already refreshing to avoid infinite loops
-        if (!(config as any).__isRetryRequest) {
-          try {
-            // Import authService dynamically to avoid circular dependency
-            const { authService } = await import("./auth");
-
-            // Try to refresh the token
-            const refreshResponse = await authService.refreshToken();
-
-            if (refreshResponse?.success && refreshResponse?.data?.token) {
-              if (finalConfig.enableLogging) {
-                console.log("[API CLIENT DEBUG] Token refreshed successfully");
-              }
-
-              // Update the stored token
-              const newToken = refreshResponse.data.token;
-
-              // Update token in storage with proper key prefix
-              safeLocalStorage.setItem("ankaa_token", newToken);
-              // Also update global token (only in web environment)
-              if (typeof (globalThis as any).window !== "undefined") {
-                (globalThis as any).window.__ANKAA_AUTH_TOKEN__ = newToken;
-              }
-
-              // Retry the original request with new token
-              config.headers.Authorization = `Bearer ${newToken}`;
-              (config as any).__isRetryRequest = true;
-
-              return client.request(config);
-            }
-          } catch (refreshError: any) {
-            if (finalConfig.enableLogging) {
-              console.error("[API CLIENT DEBUG] Token refresh failed:", refreshError);
-            }
-
-            // If refresh returns 401, it means the refresh token is also invalid
-            // Don't try to refresh again, just proceed to logout
-            const refreshStatus = refreshError?.originalError?.response?.status || refreshError?._statusCode;
-            if (refreshStatus === 401) {
-              if (finalConfig.enableLogging) {
-                console.log("[API CLIENT DEBUG] Refresh token is also invalid, proceeding to logout");
-              }
-            }
-            // Continue to logout flow below
-          }
-        }
-      }
-
-      // Handle authentication errors (401/403) - trigger logout if refresh failed
+      // Handle authentication errors (401/403) - trigger logout and redirect to login
+      // Skip auth error handler for login endpoint itself to avoid infinite loops
       if (
         (errorInfo.category === ErrorCategory.AUTHENTICATION || errorInfo.category === ErrorCategory.AUTHORIZATION) &&
         globalAuthErrorHandler &&
-        (errorInfo._statusCode === 401 || errorInfo._statusCode === 403)
+        (errorInfo._statusCode === 401 || errorInfo._statusCode === 403) &&
+        !config.url?.includes("/auth/login")
       ) {
         if (finalConfig.enableLogging) {
           console.log(`[API CLIENT DEBUG] Authentication error detected (${errorInfo._statusCode}), calling auth error handler`);
@@ -1157,27 +1112,31 @@ const getSingletonInstance = (): ExtendedAxiosInstance => {
   console.log("[AXIOS SINGLETON] Creating THE ONLY instance (lazy initialization)");
   singletonInstance = createApiClient({
     tokenProvider: async () => {
-      // Try all possible token sources in order of preference
+      // Try token sources - for React Native, only use globalTokenProvider
+      // For web, try localStorage and window as fallbacks
       let token = null;
 
       // 1. Try the global token provider first (this is what auth context sets)
       if (globalTokenProvider) {
         try {
           token = await globalTokenProvider();
-        } catch (e) {}
+        } catch (e) {
+          console.error("[API CLIENT] Token provider error:", e);
+        }
       }
 
-      // 2. Direct localStorage check with proper key as fallback
+      // 2. For web only: Check localStorage as fallback (will return null in React Native)
       if (!token) {
-        // CRITICAL: Use the correct key with prefix!
         const localToken = safeLocalStorage.getItem("ankaa_token");
         if (localToken) {
+          console.log("[API CLIENT] Using token from localStorage fallback");
           token = localToken;
         }
       }
 
-      // 3. Check global window token as last resort
+      // 3. For web only: Check global window token as last resort
       if (!token && typeof (globalThis as any).window !== "undefined" && (globalThis as any).window.__ANKAA_AUTH_TOKEN__) {
+        console.log("[API CLIENT] Using token from window global fallback");
         token = (globalThis as any).window.__ANKAA_AUTH_TOKEN__;
       }
 
@@ -1252,8 +1211,10 @@ export const setAuthToken = (token: string | null): void => {
 
     instance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-    // ALSO store in localStorage and global for fallback
+    // Store in localStorage for web only (safeLocalStorage will no-op in React Native)
     safeLocalStorage.setItem("ankaa_token", token);
+
+    // Store in global window for web fallback
     if (typeof (globalThis as any).window !== "undefined") {
       (globalThis as any).window.__ANKAA_AUTH_TOKEN__ = token;
     }
@@ -1263,8 +1224,10 @@ export const setAuthToken = (token: string | null): void => {
       console.log("[API CLIENT] Token cleared from THE singleton headers");
     }
 
-    // ALSO clear from localStorage and global
+    // Clear from localStorage for web only (safeLocalStorage will no-op in React Native)
     safeLocalStorage.removeItem("ankaa_token");
+
+    // Clear from global window
     if (typeof (globalThis as any).window !== "undefined") {
       delete (globalThis as any).window.__ANKAA_AUTH_TOKEN__;
     }
@@ -1341,8 +1304,10 @@ export const forceTokenRefresh = (token: string): void => {
     instance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     console.log("[API CLIENT] Forced token refresh on THE singleton");
 
-    // ALSO update localStorage and global
+    // Update localStorage for web only (will no-op in React Native)
     safeLocalStorage.setItem("ankaa_token", token);
+
+    // Update global window
     if (typeof (globalThis as any).window !== "undefined") {
       (globalThis as any).window.__ANKAA_AUTH_TOKEN__ = token;
     }

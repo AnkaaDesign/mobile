@@ -16,7 +16,7 @@ interface PaintFormulaComponentCardProps {
 
 export function PaintFormulaComponentCard({ component, showCalculations = true }: PaintFormulaComponentCardProps) {
   const item = component.item;
-  const hasRatio = component.ratio !== null && component.ratio !== undefined;
+  const hasRatio = typeof component.ratio === 'number';
 
   // Get item measures
   const weightMeasure = item?.measures?.find((m) => m.measureType === "WEIGHT");
@@ -109,7 +109,7 @@ export function PaintFormulaComponentCard({ component, showCalculations = true }
             )}
 
             {/* Item Density if both measures exist */}
-            {weightMeasure && volumeMeasure && volumeMeasure.value > 0 && (
+            {weightMeasure && volumeMeasure && typeof weightMeasure.value === 'number' && typeof volumeMeasure.value === 'number' && volumeMeasure.value > 0 && (
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center gap-2">
                   <Icon name="gauge" size={14} className="text-muted-foreground" />
@@ -123,7 +123,7 @@ export function PaintFormulaComponentCard({ component, showCalculations = true }
       )}
 
       {/* Conversion Ratios */}
-      {showCalculations && weightMeasure && volumeMeasure && volumeMeasure.value > 0 && (
+      {showCalculations && weightMeasure && volumeMeasure && typeof weightMeasure.value === 'number' && typeof volumeMeasure.value === 'number' && volumeMeasure.value > 0 && weightMeasure.value > 0 && (
         <View className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3">
           <View className="flex-row items-center gap-2 mb-2">
             <Icon name="arrows-exchange" size={14} className="text-blue-600" />

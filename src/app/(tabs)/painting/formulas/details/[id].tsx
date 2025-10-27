@@ -13,6 +13,7 @@ import { hasPrivilege, formatCurrency, formatDateTime } from '../../../../../uti
 import { showToast } from "@/components/ui/toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { MobilePaintFormulaCalculator } from "@/components/painting/formula/mobile-paint-formula-calculator";
 import {
   IconFlask,
   IconRefresh,
@@ -238,6 +239,11 @@ export default function FormulaDetailsScreen() {
           </View>
         </Card>
 
+        {/* Production Calculator */}
+        {formula.components && formula.components.length > 0 && (
+          <MobilePaintFormulaCalculator formula={formula} />
+        )}
+
         {/* Formula Details Card */}
         <Card style={styles.card}>
           <View style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}>
@@ -271,124 +277,6 @@ export default function FormulaDetailsScreen() {
             </View>
           </View>
         </Card>
-
-        {/* Paint Information Card */}
-        {formula.paint && (
-          <Card style={styles.card}>
-            <View style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}>
-              <IconPaint size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Informações da Tinta</ThemedText>
-            </View>
-            <View style={styles.itemDetails}>
-              <View style={styles.detailRow}>
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                  Nome:
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {formula.paint.name}
-                </ThemedText>
-              </View>
-              {formula.paint.code && (
-                <View style={styles.detailRow}>
-                  <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                    Código:
-                  </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                    {formula.paint.code}
-                  </ThemedText>
-                </View>
-              )}
-              <View style={styles.badgeContainer}>
-                {formula.paint.paintType && (
-                  <Badge variant="outline" style={styles.typeBadge}>
-                    <IconTag size={14} color={colors.foreground} />
-                    <ThemedText style={styles.badgeText}>{formula.paint.paintType.name}</ThemedText>
-                  </Badge>
-                )}
-                {formula.paint.paintBrand && (
-                  <Badge variant="outline" style={styles.brandBadge}>
-                    <IconBuildingFactory size={14} color={colors.foreground} />
-                    <ThemedText style={styles.badgeText}>{formula.paint.paintBrand.name}</ThemedText>
-                  </Badge>
-                )}
-                {formula.paint.color && (
-                  <Badge variant="outline" style={styles.colorBadge}>
-                    <View style={[styles.colorSwatch, { backgroundColor: formula.paint.color.hexCode || colors.muted }]} />
-                    <ThemedText style={styles.badgeText}>{formula.paint.color.name}</ThemedText>
-                  </Badge>
-                )}
-              </View>
-            </View>
-          </Card>
-        )}
-
-        {/* Components Section */}
-        {formula.components && formula.components.length > 0 && (
-          <Card style={styles.card}>
-            <View style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}>
-              <IconPackage size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Componentes</ThemedText>
-              <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                {formula.components.length}
-              </Badge>
-            </View>
-            <View style={styles.componentsList}>
-              {formula.components.map((component, index) => (
-                <View
-                  key={component.id}
-                  style={StyleSheet.flatten([
-                    styles.componentCard,
-                    {
-                      backgroundColor: colors.muted + '20',
-                      borderColor: colors.border,
-                    },
-                    index < formula.components!.length - 1 && styles.componentCardMargin
-                  ])}
-                >
-                  <View style={styles.componentHeader}>
-                    <View style={styles.componentInfo}>
-                      <ThemedText style={styles.componentName} numberOfLines={1}>
-                        {component.item?.name || "Item desconhecido"}
-                      </ThemedText>
-                      {component.item?.uniCode && (
-                        <View style={styles.componentCode}>
-                          <IconBarcode size={12} color={colors.mutedForeground} />
-                          <ThemedText style={styles.componentCodeText}>
-                            {component.item.uniCode}
-                          </ThemedText>
-                        </View>
-                      )}
-                    </View>
-                    <View style={styles.componentRatio}>
-                      <IconPercentage size={16} color={colors.primary} />
-                      <ThemedText style={StyleSheet.flatten([styles.ratioText, { color: colors.primary }])}>
-                        {component.ratio ? component.ratio.toFixed(2) : '0.00'}%
-                      </ThemedText>
-                    </View>
-                  </View>
-                  {(component.item?.brand || component.item?.category) && (
-                    <View style={styles.componentBadges}>
-                      {component.item?.brand && (
-                        <Badge variant="outline" size="sm">
-                          <ThemedText style={styles.componentBadgeText}>
-                            {component.item.brand.name}
-                          </ThemedText>
-                        </Badge>
-                      )}
-                      {component.item?.category && (
-                        <Badge variant="outline" size="sm">
-                          <ThemedText style={styles.componentBadgeText}>
-                            {component.item.category.name}
-                          </ThemedText>
-                        </Badge>
-                      )}
-                    </View>
-                  )}
-                </View>
-              ))}
-            </View>
-          </Card>
-        )}
 
         {/* Productions Summary Card */}
         {formula._count?.productions !== undefined && formula._count.productions > 0 && (

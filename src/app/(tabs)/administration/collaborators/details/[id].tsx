@@ -1,14 +1,14 @@
 import React, { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import { useUser } from '../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
+import { useAuth } from '../../../../../hooks';
+import { CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
 import { Card, CardContent } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconUser, IconRefresh, IconEdit } from "@tabler/icons-react-native";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { IconUser } from "@tabler/icons-react-native";
 import { showToast } from "@/components/ui/toast";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { Card as UICard, CardHeader, CardTitle, CardContent as UICardContent } from "@/components/ui/card";
@@ -16,21 +16,31 @@ import { IconHistory } from "@tabler/icons-react-native";
 
 // Import modular components
 import {
-  EmployeeCard,
-  PersonalInfoCard,
-  EmploymentInfoCard,
-  TasksCard,
-  CommissionsCard,
-  PerformanceCard,
+  BasicInfoCard,
+  AddressCard,
+  PpeSizesCard,
+  LoginInfoCard,
+  ProfessionalInfoCard,
+  ActivitiesTimelineCard,
 } from "@/components/administration/employee/detail";
 import { EmployeeDetailSkeleton } from "@/components/administration/employee/skeleton";
 
 export default function EmployeeDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { user: currentUser, accessToken } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
+
+  // Debug logging
+  console.log("[EMPLOYEE DETAILS] Screen mounted with ID:", id);
+  console.log("[EMPLOYEE DETAILS] Full params:", params);
+  console.log("[EMPLOYEE DETAILS] Current logged-in user:", currentUser ? `${currentUser.name} (${currentUser.id})` : "null");
+  console.log("[EMPLOYEE DETAILS] User privileges:", currentUser?.sectorPrivileges || "none");
+  console.log("[EMPLOYEE DETAILS] Has access token:", !!accessToken);
+  console.log("[EMPLOYEE DETAILS] Is viewing own profile:", id === currentUser?.id);
+  console.log("[EMPLOYEE DETAILS] Access token (first 50 chars):", accessToken ? accessToken.substring(0, 50) + "..." : "null");
 
   const {
     data: response,
@@ -43,29 +53,18 @@ export default function EmployeeDetailsScreen() {
       sector: true,
       managedSector: true,
       ppeSize: true,
-      createdTasks: true,
-      bonuses: true,
-      vacations: true,
-      warningsCollaborator: true,
-      _count: {
-        select: {
-          createdTasks: true,
-          bonuses: true,
-          vacations: true,
-          warningsCollaborator: true,
+      activities: {
+        include: {
+          item: true,
         },
       },
+      changeLogs: true,
+      vacations: true,
     },
     enabled: !!id && id !== "",
   });
 
   const employee = response?.data;
-
-  const handleEdit = () => {
-    if (employee) {
-      router.push(routeToMobilePath(routes.humanResources.employees.edit(employee.id)) as any);
-    }
-  };
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -121,54 +120,20 @@ export default function EmployeeDetailsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.container}>
-        {/* Employee Name Header Card */}
-        <Card>
-          <CardContent style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <IconUser size={24} color={colors.primary} />
-              <ThemedText style={[styles.employeeName, { color: colors.foreground }]}>
-                {employee.name}
-              </ThemedText>
-            </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={handleRefresh}
-                style={[styles.actionButton, { backgroundColor: colors.muted }]}
-                activeOpacity={0.7}
-                disabled={refreshing}
-              >
-                <IconRefresh size={18} color={colors.foreground} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleEdit}
-                style={[styles.actionButton, { backgroundColor: colors.primary }]}
-                activeOpacity={0.7}
-              >
-                <IconEdit size={18} color={colors.primaryForeground} />
-              </TouchableOpacity>
-            </View>
-          </CardContent>
-        </Card>
-          {/* Main Employee Card */}
-          <EmployeeCard employee={employee} />
+          {/* Basic Information and Address */}
+          <BasicInfoCard employee={employee} />
+          <AddressCard employee={employee} />
 
-          {/* Personal Information */}
-          <PersonalInfoCard employee={employee} />
+          {/* Professional Information and Login Info */}
+          <ProfessionalInfoCard employee={employee} />
+          <LoginInfoCard employee={employee} />
 
-          {/* Employment Information */}
-          <EmploymentInfoCard employee={employee} />
+          {/* PPE Sizes */}
+          <PpeSizesCard employee={employee} />
 
-          {/* Performance Card - only show if has tasks */}
-          {employee.tasks && employee.tasks.length > 0 && (
-            <PerformanceCard employee={employee} />
-          )}
-
-          {/* Tasks Card */}
-          <TasksCard employee={employee} maxItems={5} />
-
-          {/* Commissions Card */}
-          {employee.bonuses && employee.bonuses.length > 0 && (
-            <CommissionsCard employee={employee} maxItems={5} />
+          {/* Activities Timeline */}
+          {employee.activities && employee.activities.length > 0 && (
+            <ActivitiesTimelineCard employee={employee} maxHeight={500} />
           )}
 
           {/* Changelog Timeline */}
@@ -212,34 +177,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     gap: spacing.lg,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.lg,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    flex: 1,
-  },
-  employeeName: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    flex: 1,
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
   },
   errorContent: {
     alignItems: "center",

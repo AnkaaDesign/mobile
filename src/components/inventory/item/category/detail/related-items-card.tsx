@@ -1,6 +1,6 @@
 import React from "react";
 import { View, ScrollView, Pressable, StyleSheet} from "react-native";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconPackage, IconChevronRight, IconLayoutList } from "@tabler/icons-react-native";
@@ -30,23 +30,19 @@ export function RelatedItemsCard({ category }: RelatedItemsCardProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <View style={styles.headerContainer}>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.titleRow}>
-              <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                <IconLayoutList size={18} color={colors.primary} />
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Produtos desta Categoria</ThemedText>
-            </View>
-          </CardTitle>
-          <Badge variant="secondary" style={{ backgroundColor: colors.muted }}>
-            <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.mutedForeground }])}>{items.length}</ThemedText>
-          </Badge>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
+            <IconLayoutList size={18} color={colors.primary} />
+          </View>
+          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Produtos desta Categoria</ThemedText>
         </View>
-      </CardHeader>
-      <CardContent>
+        <Badge variant="secondary" style={{ backgroundColor: colors.muted }}>
+          <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.mutedForeground }])}>{items.length}</ThemedText>
+        </Badge>
+      </View>
+      <View style={styles.content}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {items.map((item) => (
             <Pressable
@@ -130,20 +126,25 @@ export function RelatedItemsCard({ category }: RelatedItemsCardProps) {
             <ThemedText style={StyleSheet.flatten([styles.scrollIndicator, { color: colors.mutedForeground }])}>Deslize para ver mais →</ThemedText>
           </View>
         )}
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  headerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  card: {
+    padding: spacing.md,
   },
-  sectionTitle: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  content: {
+    gap: spacing.md,
   },
   titleRow: {
     flexDirection: "row",

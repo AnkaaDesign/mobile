@@ -448,7 +448,6 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   external: IconSend, // Alias
   team: IconUsers, // Alias
   warning: IconAlertTriangle, // Alias
-  loan: IconArrowsExchange, // Alias
   safety: IconShieldCheck, // Alias
   cutting: IconScissors, // Alias
   userCircle: IconUserCircle, // camelCase version

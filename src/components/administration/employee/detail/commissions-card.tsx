@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
 import { formatCurrency } from '../../../../utils';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -48,25 +48,23 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
-          <View style={styles.titleRow}>
-            <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-              <IconCurrencyDollar size={18} color={colors.primary} />
-            </View>
-            <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
-              Comissões e Bonificações
-            </ThemedText>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+            <IconCurrencyDollar size={18} color={colors.primary} />
           </View>
-          {totalBonuses > 0 && (
-            <Badge variant="secondary">
-              {totalBonuses} {totalBonuses === 1 ? "registro" : "registros"}
-            </Badge>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent style={styles.content}>
+          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+            Comissões e Bonificações
+          </ThemedText>
+        </View>
+        {totalBonuses > 0 && (
+          <Badge variant="secondary">
+            {totalBonuses} {totalBonuses === 1 ? "registro" : "registros"}
+          </Badge>
+        )}
+      </View>
+      <View style={styles.content}>
         {bonuses.length === 0 ? (
           <EmptyState
             icon="currency-dollar"
@@ -180,16 +178,22 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
             </View>
           </>
         )}
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
+  card: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   titleRow: {
     flexDirection: "row",

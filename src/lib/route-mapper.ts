@@ -24,8 +24,7 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.production.garages.create]: "/production/garages/create",
   [routes.production.garages.list]: "/production/garages/list",
   [routes.production.history.root]: "/production/history",
-  [routes.production.history.cancelled]: "/production/history/cancelled",
-  [routes.production.history.completed]: "/production/history/completed",
+  [routes.production.history.details("")]: "/production/history/details",
   [routes.production.observations.root]: "/production/observations",
   [routes.production.observations.create]: "/production/observations/create",
   [routes.production.observations.list]: "/production/observations/list",
@@ -35,11 +34,9 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.production.scheduleOnHold.root]: "/production/on-hold",
   [routes.production.serviceOrders.root]: "/production/service-orders",
   [routes.production.serviceOrders.create]: "/production/service-orders/create",
-  [routes.production.serviceOrders.list]: "/production/service-orders/list",
   [routes.production.services.root]: "/production/services",
   [routes.production.services.create]: "/production/services/create",
   [routes.production.services.list]: "/production/services/list",
-  [routes.production.settings]: "/production/settings",
   [routes.production.trucks.root]: "/production/trucks",
   [routes.production.trucks.create]: "/production/trucks/create",
   [routes.production.trucks.list]: "/production/trucks/list",
@@ -64,9 +61,9 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.inventory.maintenance.root]: "/inventory/maintenance",
   [routes.inventory.maintenance.create]: "/inventory/maintenance/create",
   [routes.inventory.maintenance.list]: "/inventory/maintenance/list",
-  [routes.inventory.movements.root]: "/inventory/movements",
-  [routes.inventory.movements.create]: "/inventory/movements/create",
-  [routes.inventory.movements.list]: "/inventory/movements/list",
+  [routes.inventory.activities.root]: "/inventory/activities",
+  [routes.inventory.activities.create]: "/inventory/activities/create",
+  [routes.inventory.activities.list]: "/inventory/activities/list",
   [routes.inventory.orders.root]: "/inventory/orders",
   [routes.inventory.orders.create]: "/inventory/orders/create",
   [routes.inventory.orders.list]: "/inventory/orders/list",
@@ -76,7 +73,6 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.inventory.orders.automatic.list]: "/inventory/orders/automatic/list",
   [routes.inventory.orders.schedules.root]: "/inventory/orders/schedules",
   [routes.inventory.orders.schedules.create]: "/inventory/orders/schedules/create",
-  [routes.inventory.orders.schedules.list]: "/inventory/orders/schedules/list",
   [routes.inventory.ppe.root]: "/inventory/ppe",
   [routes.inventory.ppe.create]: "/inventory/ppe/create",
   [routes.inventory.ppe.list]: "/inventory/ppe/list",
@@ -97,7 +93,6 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.inventory.products.categories.list]: "/inventory/products/categories/list",
   [routes.inventory.suppliers.root]: "/inventory/suppliers",
   [routes.inventory.suppliers.create]: "/inventory/suppliers/create",
-  [routes.inventory.suppliers.list]: "/inventory/suppliers/list",
 
   // ========== PAINTING ROUTES ==========
   [routes.painting.root]: "/painting",
@@ -107,9 +102,6 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.painting.paintBrands.root]: "/painting/paint-brands",
   [routes.painting.paintBrands.create]: "/painting/paint-brands/create",
   [routes.painting.paintBrands.list]: "/painting/paint-brands/list",
-  [routes.painting.paintGrounds.root]: "/painting/paint-grounds",
-  [routes.painting.paintGrounds.create]: "/painting/paint-grounds/create",
-  [routes.painting.paintGrounds.list]: "/painting/paint-grounds/list",
   [routes.painting.paintTypes.root]: "/painting/paint-types",
   [routes.painting.paintTypes.create]: "/painting/paint-types/create",
   [routes.painting.paintTypes.list]: "/painting/paint-types/list",
@@ -122,10 +114,6 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.dashboard.inventory]: "/dashboard/inventory",
   [routes.dashboard.production]: "/dashboard/production",
   [routes.dashboard.warehouse]: "/dashboard/warehouse",
-
-  // ========== CATALOG ROUTES ==========
-  [routes.catalog.root]: "/catalog",
-  [routes.catalog.list]: "/catalog/list",
 
   // ========== ADMINISTRATION ROUTES ==========
   [routes.administration.root]: "/administration",
@@ -150,26 +138,17 @@ export const routeEnglishMap: Record<string, string> = {
 
   // ========== SERVER ROUTES ==========
   [routes.server.root]: "/server",
-  [routes.server.backups.root]: "/server/backups",
-  [routes.server.backups.create]: "/server/backups/create",
-  [routes.server.backups.list]: "/server/backups/list",
+  [routes.server.backup]: "/server/backups",
   [routes.server.changeLogs.root]: "/server/change-logs",
-  [routes.server.changeLogs.list]: "/server/change-logs/list",
   [routes.server.databaseSync]: "/server/database-sync",
   [routes.server.deployments.root]: "/server/deployments",
   [routes.server.deployments.create]: "/server/deployments/create",
-  [routes.server.deployments.list]: "/server/deployments/list",
   [routes.server.logs]: "/server/logs",
-  [routes.server.maintenance]: "/server/maintenance",
   [routes.server.metrics]: "/server/metrics",
-  [routes.server.rateLimiting]: "/server/rate-limiting",
-  [routes.server.resources]: "/server/resources",
   [routes.server.services]: "/server/services",
   [routes.server.sharedFolders]: "/server/shared-folders",
-  [routes.server.status]: "/server/status",
-  [routes.server.systemUsers.root]: "/server/system-users",
-  [routes.server.systemUsers.create]: "/server/system-users/create",
-  [routes.server.systemUsers.list]: "/server/system-users/list",
+  [routes.server.users.root]: "/server/system-users",
+  [routes.server.users.create]: "/server/system-users/create",
 
   // ========== HUMAN RESOURCES ROUTES ==========
   [routes.humanResources.root]: "/human-resources",
@@ -207,19 +186,18 @@ export const routeEnglishMap: Record<string, string> = {
   [routes.personal.myHolidays.root]: "/personal/my-holidays",
   [routes.personal.myBorrows.root]: "/personal/my-borrows",
   [routes.personal.myNotifications.root]: "/personal/my-notifications",
-  [routes.personal.myNotifications.settings]: "/personal/my-notifications/settings",
   [routes.personal.myPpes.root]: "/personal/my-ppes",
   [routes.personal.myPpes.request]: "/personal/my-ppes/request",
   [routes.personal.myProfile.root]: "/personal/my-profile",
   [routes.personal.myVacations.root]: "/personal/my-vacations",
   [routes.personal.myWarnings.root]: "/personal/my-warnings",
   [routes.personal.preferences.root]: "/personal/preferences",
-  [routes.personal.preferences.notifications]: "/personal/preferences/notifications",
-  [routes.personal.preferences.privacy]: "/personal/preferences/privacy",
-  [routes.personal.preferences.theme]: "/personal/preferences/theme",
 
   // ========== DETAIL PAGE ROUTES (DYNAMIC) ==========
   // These are handled dynamically by the functions but we include base patterns for reference
+  // Production details routes
+  "/producao/cronograma/detalhes": "/production/schedule/details",
+
   // Inventory details routes
   "/estoque/produtos/detalhes": "/inventory/products/details",
   "/estoque/produtos/editar": "/inventory/products/edit",
@@ -253,13 +231,9 @@ export const routeEnglishMap: Record<string, string> = {
   // ========== INTEGRATIONS ROUTES ==========
   [routes.integrations.root]: "/integrations",
   [routes.integrations.secullum.root]: "/integrations/secullum",
-  [routes.integrations.secullum.calculations.root]: "/integrations/secullum/calculations",
-  [routes.integrations.secullum.calculations.list]: "/integrations/secullum/calculations/list",
-  [routes.integrations.secullum.holidays.root]: "/integrations/secullum/holidays",
-  [routes.integrations.secullum.holidays.list]: "/integrations/secullum/holidays/list",
+  [routes.integrations.secullum.calculations]: "/integrations/secullum/calculations",
   [routes.integrations.secullum.syncStatus]: "/integrations/secullum/sync-status",
   [routes.integrations.secullum.timeEntries.root]: "/integrations/secullum/time-entries",
-  [routes.integrations.secullum.timeEntries.list]: "/integrations/secullum/time-entries/list",
 };
 
 // Dynamic route mappings for edit and detail pages
@@ -542,7 +516,6 @@ export function routeToMobilePath(routeConstant: string): string {
       "calculos-ponto": "time-calculations",
       calendario: "calendar",
       caminhoes: "trucks",
-      canceladas: "cancelled",
       cargos: "positions",
       catalogo: "catalog",
       categorias: "categories",
@@ -605,7 +578,7 @@ export function routeToMobilePath(routeConstant: string): string {
       "minhas-notificacoes": "my-notifications",
       monitoramento: "monitoring",
       movimentacao: "stock-movement",
-      movimentacoes: "movements",
+      movimentacoes: "activities",
       "niveis-desempenho": "performance-levels",
       notificacoes: "notifications",
       observacoes: "observations",

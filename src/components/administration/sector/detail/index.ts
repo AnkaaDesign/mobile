@@ -1,4 +1,3 @@
-export { SectorInfoCard } from "./sector-info-card";
-export { UsersCard } from "./users-card";
-export { TasksCard } from "./tasks-card";
-export { ManagersCard } from "./managers-card";
+export { SpecificationsCard } from "./specifications-card";
+export { SectorUsersCard } from "./sector-users-card";
+export { SectorTasksCard } from "./sector-tasks-card";

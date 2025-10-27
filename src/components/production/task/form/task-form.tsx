@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { useForm, Controller, FormProvider } from "react-hook-form";
+import { useEditForm } from "@/hooks/useEditForm";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import * as DocumentPicker from "expo-document-picker";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
+import { createFormDataWithContext, prepareFilesForUpload, type FileWithContext } from "@/utils/form-data-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -12,35 +14,94 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
+import { MultiCombobox } from "@/components/ui/multi-combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useCustomers, useSectors, usePaints } from '../../../../hooks';
+import { useSectors } from '../../../../hooks';
 import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS } from '../../../../constants';
 import { IconLoader, IconX } from "@tabler/icons-react-native";
+import { CustomerSelector } from "./customer-selector";
+import { ServiceSelector } from "./service-selector";
+import { GeneralPaintingSelector, LogoPaintsSelector } from "./paint-selector";
 
-// Simplified Task Form Schema for Mobile
+// Enhanced Task Form Schema for Mobile with Cross-field Validation
 const taskFormSchema = z.object({
   name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres").max(200, "Nome muito longo"),
   customerId: z.string().uuid("Cliente é obrigatório").min(1, "Cliente é obrigatório"),
   sectorId: z.string().uuid().nullable().optional(),
-  serialNumber: z.string().nullable().optional(),
-  chassisNumber: z.string().nullable().optional(),
-  plate: z.string().nullable().optional(),
-  details: z.string().nullable().optional(),
+  serialNumber: z.string()
+    .nullable()
+    .optional()
+    .refine((val) => !val || /^[A-Z0-9-]+$/.test(val), {
+      message: "Número de série deve conter apenas letras maiúsculas, números e hífens",
+    }),
+  chassisNumber: z.string()
+    .nullable()
+    .optional()
+    .refine((val) => {
+      if (!val) return true;
+      const cleaned = val.replace(/\s/g, "").toUpperCase();
+      return /^[A-Z0-9]{17}$/.test(cleaned);
+    }, {
+      message: "Número do chassi deve ter exatamente 17 caracteres alfanuméricos",
+    }),
+  plate: z.string()
+    .nullable()
+    .optional()
+    .refine((val) => !val || /^[A-Z0-9-]+$/.test(val), {
+      message: "Placa deve conter apenas letras maiúsculas, números e hífens",
+    }),
+  details: z.string().max(1000, "Detalhes muito longos (máx. 1000 caracteres)").nullable().optional(),
   entryDate: z.date().nullable().optional(),
   term: z.date().nullable().optional(),
   generalPaintingId: z.string().uuid().nullable().optional(),
   paintIds: z.array(z.string().uuid()).optional(),
   services: z.array(z.object({
-    description: z.string().min(3, "Mínimo de 3 caracteres"),
+    description: z.string().min(3, "Mínimo de 3 caracteres").max(400, "Máximo de 400 caracteres"),
     status: z.enum(Object.values(SERVICE_ORDER_STATUS) as [string, ...string[]]).optional(),
   })).min(1, "Pelo menos um serviço é obrigatório"),
   status: z.enum(Object.values(TASK_STATUS) as [string, ...string[]]).optional(),
   commission: z.string().nullable().optional(),
   startedAt: z.date().nullable().optional(),
   finishedAt: z.date().nullable().optional(),
+}).superRefine((data, ctx) => {
+  // Cross-field validation: term must be after entryDate
+  if (data.entryDate && data.term && data.term <= data.entryDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Prazo de entrega deve ser posterior à data de entrada",
+      path: ["term"],
+    });
+  }
+
+  // Status-dependent validation: IN_PRODUCTION requires startedAt
+  if (data.status === TASK_STATUS.IN_PRODUCTION && !data.startedAt) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Data de início é obrigatória quando status é 'Em Produção'",
+      path: ["startedAt"],
+    });
+  }
+
+  // Status-dependent validation: COMPLETED requires finishedAt
+  if (data.status === TASK_STATUS.COMPLETED && !data.finishedAt) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Data de conclusão é obrigatória quando status é 'Concluída'",
+      path: ["finishedAt"],
+    });
+  }
+
+  // finishedAt must be after startedAt
+  if (data.startedAt && data.finishedAt && data.finishedAt <= data.startedAt) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Data de conclusão deve ser posterior à data de início",
+      path: ["finishedAt"],
+    });
+  }
 });
 
 type TaskFormData = z.infer<typeof taskFormSchema>;
@@ -63,42 +124,50 @@ const TASK_STATUS_OPTIONS = [
 
 export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }: TaskFormProps) {
   const { colors } = useTheme();
-  const [customerSearch, setCustomerSearch] = useState("");
   const [sectorSearch, setSectorSearch] = useState("");
-  const [paintSearch, setPaintSearch] = useState("");
 
   // File upload state (for future implementation with expo-document-picker)
   const [budgetFiles, setBudgetFiles] = useState<any[]>([]);
   const [invoiceFiles, setInvoiceFiles] = useState<any[]>([]);
   const [receiptFiles, setReceiptFiles] = useState<any[]>([]);
 
-  const form = useForm<TaskFormData>({
-    resolver: zodResolver(taskFormSchema),
-    defaultValues: {
-      name: initialData?.name || "",
-      customerId: initialData?.customerId || "",
-      sectorId: initialData?.sectorId || null,
-      serialNumber: initialData?.serialNumber || null,
-      chassisNumber: initialData?.chassisNumber || null,
-      plate: initialData?.plate || null,
-      details: initialData?.details || null,
-      entryDate: initialData?.entryDate || null,
-      term: initialData?.term || null,
-      generalPaintingId: initialData?.generalPaintingId || null,
-      paintIds: initialData?.paintIds || [],
-      services: initialData?.services || [{ description: "", status: SERVICE_ORDER_STATUS.PENDING }],
-      status: initialData?.status || TASK_STATUS.PENDING,
-      commission: initialData?.commission || COMMISSION_STATUS.FULL_COMMISSION,
-      startedAt: initialData?.startedAt || null,
-      finishedAt: initialData?.finishedAt || null,
-    },
-  });
+  // Use useEditForm for edit mode with change detection, regular useForm for create mode
+  const defaultFormValues = {
+    name: initialData?.name || "",
+    customerId: initialData?.customerId || "",
+    sectorId: initialData?.sectorId || null,
+    serialNumber: initialData?.serialNumber || null,
+    chassisNumber: initialData?.chassisNumber || null,
+    plate: initialData?.plate || null,
+    details: initialData?.details || null,
+    entryDate: initialData?.entryDate || null,
+    term: initialData?.term || null,
+    generalPaintingId: initialData?.generalPaintingId || null,
+    paintIds: initialData?.paintIds || [],
+    services: initialData?.services || [{ description: "", status: SERVICE_ORDER_STATUS.PENDING }],
+    status: initialData?.status || TASK_STATUS.PENDING,
+    commission: initialData?.commission || COMMISSION_STATUS.FULL_COMMISSION,
+    startedAt: initialData?.startedAt || null,
+    finishedAt: initialData?.finishedAt || null,
+  };
 
-  // Fetch customers
-  const { data: customers, isLoading: isLoadingCustomers } = useCustomers({
-    searchingFor: customerSearch,
-    orderBy: { fantasyName: "asc" },
-  });
+  const form = mode === "edit" && initialData
+    ? useEditForm<TaskFormData>({
+        resolver: zodResolver(taskFormSchema),
+        originalData: initialData,
+        mapDataToForm: (data) => data as TaskFormData,
+        onSubmit: async (changedData, fullData) => {
+          console.log("[TaskForm Edit] Submitting only changed fields:", changedData);
+          // In edit mode, submit only changed fields to optimize payload
+          await handleSubmit(fullData); // Still pass full data for now
+        },
+        fieldsToOmitIfUnchanged: ["services", "paintIds"], // Don't include if unchanged
+        defaultValues: defaultFormValues,
+      })
+    : useForm<TaskFormData>({
+        resolver: zodResolver(taskFormSchema),
+        defaultValues: defaultFormValues,
+      });
 
   // Fetch sectors (production only)
   const { data: sectors, isLoading: isLoadingSectors } = useSectors({
@@ -106,58 +175,10 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
     orderBy: { name: "asc" },
   });
 
-  // Fetch paints
-  const { data: paints, isLoading: isLoadingPaints } = usePaints({
-    searchingFor: paintSearch,
-    orderBy: { name: "asc" },
-  });
-
-  const customerOptions = customers?.data?.map((customer) => ({
-    value: customer.id,
-    label: customer.fantasyName,
-  })) || [];
-
   const sectorOptions = sectors?.data?.map((sector) => ({
     value: sector.id,
     label: sector.name,
   })) || [];
-
-  const paintOptions = paints?.data?.map((paint) => ({
-    value: paint.id,
-    label: paint.name,
-  })) || [];
-
-  // Add service
-  const addService = () => {
-    const services = form.getValues("services");
-    form.setValue("services", [...services, { description: "", status: SERVICE_ORDER_STATUS.PENDING }]);
-  };
-
-  // Remove service
-  const removeService = (index: number) => {
-    const services = form.getValues("services");
-    if (services.length > 1) {
-      form.setValue("services", services.filter((_, i) => i !== index));
-    }
-  };
-
-  // Move service up
-  const moveServiceUp = (index: number) => {
-    if (index === 0) return;
-    const services = form.getValues("services");
-    const newServices = [...services];
-    [newServices[index - 1], newServices[index]] = [newServices[index], newServices[index - 1]];
-    form.setValue("services", newServices);
-  };
-
-  // Move service down
-  const moveServiceDown = (index: number) => {
-    const services = form.getValues("services");
-    if (index === services.length - 1) return;
-    const newServices = [...services];
-    [newServices[index], newServices[index + 1]] = [newServices[index + 1], newServices[index]];
-    form.setValue("services", newServices);
-  };
 
   // File picking functions
   const pickBudgetFiles = async () => {
@@ -239,49 +260,61 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
   };
 
   const handleSubmit = async (data: TaskFormData) => {
-    // If we have files, convert to FormData for multiple file support
+    // If we have files, convert to FormData with context for proper file organization
     if (budgetFiles.length > 0 || invoiceFiles.length > 0 || receiptFiles.length > 0) {
-      const formData = new FormData();
+      // Prepare files with proper structure
+      const files = prepareFilesForUpload({
+        budgets: budgetFiles,
+        invoices: invoiceFiles,
+        receipts: receiptFiles,
+      });
 
-      // Add all form fields
-      formData.append("name", data.name);
-      formData.append("customerId", data.customerId);
+      // Prepare form data (excluding files)
+      const formDataFields: Record<string, any> = {
+        name: data.name,
+        customerId: data.customerId,
+        services: data.services, // Will be serialized as JSON in helper
+      };
 
-      if (data.sectorId) formData.append("sectorId", data.sectorId);
-      if (data.serialNumber) formData.append("serialNumber", data.serialNumber);
-      if (data.chassisNumber) formData.append("chassisNumber", data.chassisNumber);
-      if (data.plate) formData.append("plate", data.plate);
-      if (data.details) formData.append("details", data.details);
-      if (data.entryDate) formData.append("entryDate", data.entryDate.toISOString());
-      if (data.term) formData.append("term", data.term.toISOString());
-      if (data.generalPaintingId) formData.append("generalPaintingId", data.generalPaintingId);
-      if (data.status) formData.append("status", data.status);
-      if (data.commission) formData.append("commission", data.commission);
-      if (data.startedAt) formData.append("startedAt", data.startedAt.toISOString());
-      if (data.finishedAt) formData.append("finishedAt", data.finishedAt.toISOString());
-
-      // Add services as JSON string
-      formData.append("services", JSON.stringify(data.services));
-
-      // Add paintIds as JSON string if present
-      if (data.paintIds && data.paintIds.length > 0) {
-        formData.append("paintIds", JSON.stringify(data.paintIds));
+      // Add optional fields
+      if (data.sectorId) formDataFields.sectorId = data.sectorId;
+      if (data.serialNumber) formDataFields.serialNumber = data.serialNumber.toUpperCase();
+      if (data.chassisNumber) {
+        // Clean and uppercase chassis number
+        formDataFields.chassisNumber = data.chassisNumber.replace(/\s/g, "").toUpperCase();
       }
+      if (data.plate) formDataFields.plate = data.plate.toUpperCase();
+      if (data.details) formDataFields.details = data.details;
+      if (data.entryDate) formDataFields.entryDate = data.entryDate;
+      if (data.term) formDataFields.term = data.term;
+      if (data.generalPaintingId) formDataFields.generalPaintingId = data.generalPaintingId;
+      if (data.status) formDataFields.status = data.status;
+      if (data.commission) formDataFields.commission = data.commission;
+      if (data.startedAt) formDataFields.startedAt = data.startedAt;
+      if (data.finishedAt) formDataFields.finishedAt = data.finishedAt;
+      if (data.paintIds && data.paintIds.length > 0) formDataFields.paintIds = data.paintIds;
 
-      // Add multiple files per category
-      budgetFiles.forEach((file) => {
-        formData.append("budgets", file as any);
-      });
-      invoiceFiles.forEach((file) => {
-        formData.append("invoices", file as any);
-      });
-      receiptFiles.forEach((file) => {
-        formData.append("receipts", file as any);
-      });
+      // Create FormData with context for proper backend file organization
+      const formData = createFormDataWithContext(
+        formDataFields,
+        files,
+        {
+          entityType: "task",
+          // Customer context will be added by parent component if available
+        }
+      );
 
       await onSubmit(formData as any);
     } else {
-      await onSubmit(data);
+      // No files - submit as regular JSON with proper formatting
+      const cleanedData = {
+        ...data,
+        serialNumber: data.serialNumber?.toUpperCase() || null,
+        chassisNumber: data.chassisNumber?.replace(/\s/g, "").toUpperCase() || null,
+        plate: data.plate?.toUpperCase() || null,
+      };
+
+      await onSubmit(cleanedData);
     }
   };
 
@@ -300,7 +333,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                 control={form.control}
                 name="name"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
+                  <View style={styles.fieldGroup}>
                     <Label>Nome da Tarefa *</Label>
                     <Input
                       value={value}
@@ -318,22 +351,13 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                 control={form.control}
                 name="customerId"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Cliente *</Label>
-                    <Combobox
-                      value={value}
-                      onValueChange={onChange}
-                      options={customerOptions}
-                      placeholder="Selecione o cliente"
-                      searchPlaceholder="Buscar cliente..."
-                      emptyText="Nenhum cliente encontrado"
-                      onSearchChange={setCustomerSearch}
-                      disabled={isSubmitting || isLoadingCustomers}
-                      loading={isLoadingCustomers}
-                      clearable={false}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
+                  <CustomerSelector
+                    value={value}
+                    onValueChange={onChange}
+                    disabled={isSubmitting}
+                    error={error?.message}
+                    required={true}
+                  />
                 )}
               />
 
@@ -342,7 +366,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                 control={form.control}
                 name="serialNumber"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
+                  <View style={styles.fieldGroup}>
                     <Label>Número de Série</Label>
                     <Input
                       value={value || ""}
@@ -361,7 +385,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                 control={form.control}
                 name="plate"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
+                  <View style={styles.fieldGroup}>
                     <Label>Placa</Label>
                     <Input
                       value={value || ""}
@@ -380,7 +404,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                 control={form.control}
                 name="chassisNumber"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
+                  <View style={styles.fieldGroup}>
                     <Label>Número do Chassi</Label>
                     <Input
                       value={value || ""}
@@ -400,7 +424,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                 control={form.control}
                 name="sectorId"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
+                  <View style={styles.fieldGroup}>
                     <Label>Setor</Label>
                     <Combobox
                       value={value || ""}
@@ -423,7 +447,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                 control={form.control}
                 name="commission"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
+                  <View style={styles.fieldGroup}>
                     <Label>Status de Comissão</Label>
                     <Combobox
                       value={value || COMMISSION_STATUS.FULL_COMMISSION}
@@ -447,7 +471,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                   control={form.control}
                   name="status"
                   render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <View>
+                    <View style={styles.fieldGroup}>
                       <Label>Status</Label>
                       <Combobox
                         value={value || TASK_STATUS.PENDING}
@@ -468,7 +492,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                 control={form.control}
                 name="details"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
+                  <View style={styles.fieldGroup}>
                     <Label>Detalhes</Label>
                     <Textarea
                       value={value || ""}
@@ -495,7 +519,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                 control={form.control}
                 name="entryDate"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
+                  <View style={styles.fieldGroup}>
                     <Label>Data de Entrada</Label>
                     <DatePicker
                       value={value}
@@ -514,7 +538,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                 control={form.control}
                 name="term"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
+                  <View style={styles.fieldGroup}>
                     <Label>Prazo de Entrega</Label>
                     <DatePicker
                       value={value}
@@ -534,7 +558,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                   control={form.control}
                   name="startedAt"
                   render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <View>
+                    <View style={styles.fieldGroup}>
                       <Label>Data de Início</Label>
                       <DatePicker
                         value={value}
@@ -555,7 +579,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                   control={form.control}
                   name="finishedAt"
                   render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <View>
+                    <View style={styles.fieldGroup}>
                       <Label>Data de Conclusão</Label>
                       <DatePicker
                         value={value}
@@ -692,77 +716,21 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
           {/* Services */}
           <Card style={styles.card}>
             <CardHeader>
-              <View style={styles.cardHeaderRow}>
-                <CardTitle>Serviços *</CardTitle>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onPress={addService}
-                  disabled={isSubmitting}
-                >
-                  <Icon name="plus" size={16} color={colors.foreground} />
-                  <ThemedText>Adicionar</ThemedText>
-                </Button>
-              </View>
+              <CardTitle>Serviços</CardTitle>
             </CardHeader>
             <CardContent>
-              {form.watch("services").map((_, index) => (
-                <View key={index} style={[styles.serviceRow, { borderBottomColor: colors.border }]}>
-                  <View style={styles.serviceContent}>
-                    {/* Reorder buttons */}
-                    <View style={styles.serviceReorderButtons}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onPress={() => moveServiceUp(index)}
-                        disabled={isSubmitting || index === 0}
-                        style={styles.reorderButton}
-                      >
-                        <Icon name="chevron-up" size={18} color={index === 0 ? colors.muted : colors.foreground} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onPress={() => moveServiceDown(index)}
-                        disabled={isSubmitting || index === form.watch("services").length - 1}
-                        style={styles.reorderButton}
-                      >
-                        <Icon name="chevron-down" size={18} color={index === form.watch("services").length - 1 ? colors.muted : colors.foreground} />
-                      </Button>
-                    </View>
-
-                    {/* Service input */}
-                    <Controller
-                      control={form.control}
-                      name={`services.${index}.description`}
-                      render={({ field: { onChange, value }, fieldState: { error } }) => (
-                        <View style={styles.serviceInput}>
-                          <Input
-                            value={value}
-                            onChangeText={onChange}
-                            placeholder={`Serviço ${index + 1}`}
-                            disabled={isSubmitting}
-                          />
-                          {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                        </View>
-                      )}
-                    />
-
-                    {/* Remove button */}
-                    {form.watch("services").length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onPress={() => removeService(index)}
-                        disabled={isSubmitting}
-                        style={styles.removeButton}
-                      >
-                        <Icon name="trash" size={18} color={colors.destructive} />
-                      </Button>
-                    )}
-                  </View>
-                </View>
-              ))}
+              <Controller
+                control={form.control}
+                name="services"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <ServiceSelector
+                    services={value}
+                    onChange={onChange}
+                    disabled={isSubmitting}
+                    error={error?.message}
+                  />
+                )}
+              />
             </CardContent>
           </Card>
 
@@ -777,21 +745,26 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                 control={form.control}
                 name="generalPaintingId"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Pintura Geral</Label>
-                    <Combobox
-                      value={value || ""}
-                      onValueChange={(val) => onChange(val || null)}
-                      options={paintOptions}
-                      placeholder="Selecione a tinta"
-                      searchPlaceholder="Buscar tinta..."
-                      emptyText="Nenhuma tinta encontrada"
-                      onSearchChange={setPaintSearch}
-                      disabled={isSubmitting || isLoadingPaints}
-                      loading={isLoadingPaints}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
+                  <GeneralPaintingSelector
+                    value={value || undefined}
+                    onValueChange={onChange}
+                    disabled={isSubmitting}
+                    error={error?.message}
+                  />
+                )}
+              />
+
+              {/* Logo Paints (Multi-select) */}
+              <Controller
+                control={form.control}
+                name="paintIds"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <LogoPaintsSelector
+                    selectedValues={value || []}
+                    onValueChange={onChange}
+                    disabled={isSubmitting}
+                    error={error?.message}
+                  />
                 )}
               />
             </CardContent>
@@ -839,7 +812,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   cardContent: {
-    gap: spacing.lg,
+    gap: spacing.md,
+  },
+  fieldGroup: {
+    gap: spacing.sm,
   },
   cardHeaderRow: {
     flexDirection: "row",

@@ -3,7 +3,7 @@ import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useCustomer } from '../../../../../hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -23,7 +23,14 @@ import { TouchableOpacity } from "react-native";
 import { showToast } from "@/components/ui/toast";
 
 // Import modular components
-import { CustomerCard, ContactInfoCard, AddressCard, TasksTable } from "@/components/administration/customer/detail";
+import {
+  CustomerCard,
+  ContactInfoCard,
+  AddressCard,
+  TasksTable,
+  CustomerDocumentsCard,
+  CustomerInvoicesCard,
+} from "@/components/administration/customer/detail";
 import { CustomerDetailSkeleton } from "@/components/administration/customer/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
@@ -42,18 +49,6 @@ export default function CustomerDetailScreen() {
   } = useCustomer(id, {
     include: {
       logo: true,
-      tasks: {
-        include: {
-          user: {
-            select: {
-              name: true,
-              id: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-      },
       _count: {
         tasks: true,
         serviceOrders: true,
@@ -93,8 +88,8 @@ export default function CustomerDetailScreen() {
     return (
       <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
         <View style={styles.container}>
-          <Card>
-            <CardContent style={styles.errorContent}>
+          <Card style={styles.card}>
+            <View style={styles.errorContent}>
               <View style={StyleSheet.flatten([styles.errorIcon, { backgroundColor: colors.muted }])}>
                 <IconBuilding size={32} color={colors.mutedForeground} />
               </View>
@@ -107,7 +102,7 @@ export default function CustomerDetailScreen() {
               <Button onPress={() => router.back()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
-            </CardContent>
+            </View>
           </Card>
         </View>
       </ScrollView>
@@ -133,9 +128,9 @@ export default function CustomerDetailScreen() {
     >
       <View style={styles.container}>
         {/* Customer Name Header Card */}
-        <Card>
-          <CardContent style={styles.headerContent}>
-            <View style={styles.headerLeft}>
+        <Card style={styles.card}>
+          <View style={styles.headerContent}>
+            <View style={[styles.headerLeft, { flex: 1 }]}>
               <IconBuilding size={24} color={colors.primary} />
               <ThemedText style={StyleSheet.flatten([styles.customerName, { color: colors.foreground }])}>
                 {customer.fantasyName}
@@ -158,82 +153,26 @@ export default function CustomerDetailScreen() {
                 <IconEdit size={18} color={colors.primaryForeground} />
               </TouchableOpacity>
             </View>
-          </CardContent>
-        </Card>
-          {/* Quick Stats Cards */}
-          <View style={styles.statsGrid}>
-            <Card style={styles.statCard}>
-              <CardContent style={styles.statContent}>
-                <View
-                  style={[
-                    styles.statIcon,
-                    {
-                      backgroundColor: isDark ? extendedColors.blue[900] + "40" : extendedColors.blue[100],
-                    },
-                  ]}
-                >
-                  <IconClipboardList
-                    size={20}
-                    color={isDark ? extendedColors.blue[400] : extendedColors.blue[600]}
-                  />
-                </View>
-                <View style={styles.statInfo}>
-                  <ThemedText style={StyleSheet.flatten([styles.statValue, { color: colors.foreground }])}>
-                    {totalTasks}
-                  </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: colors.mutedForeground }])}>
-                    tarefas
-                  </ThemedText>
-                </View>
-              </CardContent>
-            </Card>
-
-            <Card style={styles.statCard}>
-              <CardContent style={styles.statContent}>
-                <View
-                  style={[
-                    styles.statIcon,
-                    {
-                      backgroundColor: isDark ? extendedColors.green[900] + "40" : extendedColors.green[100],
-                    },
-                  ]}
-                >
-                  <IconReceipt
-                    size={20}
-                    color={isDark ? extendedColors.green[400] : extendedColors.green[600]}
-                  />
-                </View>
-                <View style={styles.statInfo}>
-                  <ThemedText style={StyleSheet.flatten([styles.statValue, { color: colors.foreground }])}>
-                    {totalServiceOrders}
-                  </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: colors.mutedForeground }])}>
-                    O.S.
-                  </ThemedText>
-                </View>
-              </CardContent>
-            </Card>
           </View>
+        </Card>
 
           {/* Modular Components */}
           <CustomerCard customer={customer} />
           <ContactInfoCard customer={customer} />
           <AddressCard customer={customer} />
+          <CustomerDocumentsCard customer={customer} />
+          <CustomerInvoicesCard customer={customer} />
           <TasksTable customer={customer} maxHeight={400} />
 
           {/* Changelog Timeline */}
-          <Card>
-            <CardContent style={styles.changelogHeader}>
-              <View style={styles.titleRow}>
-                <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                  <IconHistory size={18} color={colors.primary} />
-                </View>
-                <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-                  Histórico de Alterações
-                </ThemedText>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconHistory size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
               </View>
-            </CardContent>
-            <CardContent style={{ paddingHorizontal: 0 }}>
+            </View>
+            <View style={styles.content}>
               <ChangelogTimeline
                 entityType={CHANGE_LOG_ENTITY_TYPE.CUSTOMER}
                 entityId={customer.id}
@@ -241,7 +180,7 @@ export default function CustomerDetailScreen() {
                 entityCreatedAt={customer.createdAt}
                 maxHeight={400}
               />
-            </CardContent>
+            </View>
           </Card>
 
           {/* Bottom spacing for mobile navigation */}
@@ -261,17 +200,34 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     gap: spacing.lg,
   },
-  headerContent: {
+  card: {
+    padding: spacing.md,
+  },
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: spacing.lg,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
     gap: spacing.md,
-    flex: 1,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.md,
   },
   customerName: {
     fontSize: fontSize.xl,
@@ -292,7 +248,7 @@ const styles = StyleSheet.create({
   errorContent: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: spacing.xxl * 2,
+    paddingVertical: spacing.xxl,
   },
   errorIcon: {
     width: 64,
@@ -312,56 +268,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     textAlign: "center",
     marginBottom: spacing.xl,
-    paddingHorizontal: spacing.xl,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  statCard: {
-    flex: 1,
-  },
-  statContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingVertical: spacing.lg,
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statInfo: {
-    flex: 1,
-  },
-  statValue: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-  },
-  statLabel: {
-    fontSize: fontSize.xs,
-    marginTop: 2,
-  },
-  changelogHeader: {
-    paddingBottom: 0,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
   },
 });

@@ -65,38 +65,64 @@ export const safeWebOperation = <T>(
 
 /**
  * Safe localStorage operations
+ *
+ * NOTE: In React Native, do NOT use this for critical auth tokens.
+ * The polyfill has memory cache sync issues. Use AsyncStorage directly instead.
+ * This is only safe for web environments or non-critical data.
  */
 export const safeLocalStorage = {
   getItem: (key: string): string | null => {
-    return safeWebOperation(
-      () => (globalThis as any).localStorage?.getItem(key),
-      null,
-      `localStorage.getItem is not available in this environment`
-    ) ?? null;
+    // Only use in web environment
+    if (isWebEnvironment()) {
+      try {
+        return (globalThis as any).localStorage.getItem(key);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    // React Native: Return null (don't use polyfill for auth tokens)
+    console.warn("[PLATFORM-UTILS] localStorage.getItem called in React Native - returning null");
+    return null;
   },
 
   setItem: (key: string, value: string): void => {
-    safeWebOperation(
-      () => (globalThis as any).localStorage?.setItem(key, value),
-      undefined,
-      `localStorage.setItem is not available in this environment`
-    );
+    // Only use in web environment
+    if (isWebEnvironment()) {
+      try {
+        (globalThis as any).localStorage.setItem(key, value);
+      } catch (error) {
+        // Silent fail
+      }
+    } else {
+      console.warn("[PLATFORM-UTILS] localStorage.setItem called in React Native - ignoring");
+    }
   },
 
   removeItem: (key: string): void => {
-    safeWebOperation(
-      () => (globalThis as any).localStorage?.removeItem(key),
-      undefined,
-      `localStorage.removeItem is not available in this environment`
-    );
+    // Only use in web environment
+    if (isWebEnvironment()) {
+      try {
+        (globalThis as any).localStorage.removeItem(key);
+      } catch (error) {
+        // Silent fail
+      }
+    } else {
+      console.warn("[PLATFORM-UTILS] localStorage.removeItem called in React Native - ignoring");
+    }
   },
 
   clear: (): void => {
-    safeWebOperation(
-      () => (globalThis as any).localStorage?.clear(),
-      undefined,
-      `localStorage.clear is not available in this environment`
-    );
+    // Only use in web environment
+    if (isWebEnvironment()) {
+      try {
+        (globalThis as any).localStorage.clear();
+      } catch (error) {
+        // Silent fail
+      }
+    } else {
+      console.warn("[PLATFORM-UTILS] localStorage.clear called in React Native - ignoring");
+    }
   }
 };
 

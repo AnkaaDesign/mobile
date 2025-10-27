@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import type { User } from '../../../../types';
 import { TASK_STATUS_LABELS, routes } from '../../../../constants';
 import { formatDate, formatCurrency } from '../../../../utils';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -30,25 +30,23 @@ export function TasksCard({ employee, maxItems = 5 }: TasksCardProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
-          <View style={styles.titleRow}>
-            <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-              <IconClipboardList size={18} color={colors.primary} />
-            </View>
-            <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
-              Ordens de Serviço Recentes
-            </ThemedText>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+            <IconClipboardList size={18} color={colors.primary} />
           </View>
-          {totalTasks > 0 && (
-            <Badge variant="secondary">
-              {totalTasks} {totalTasks === 1 ? "ordem" : "ordens"}
-            </Badge>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent style={styles.content}>
+          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+            Ordens de Serviço Recentes
+          </ThemedText>
+        </View>
+        {totalTasks > 0 && (
+          <Badge variant="secondary">
+            {totalTasks} {totalTasks === 1 ? "ordem" : "ordens"}
+          </Badge>
+        )}
+      </View>
+      <View style={styles.content}>
         {tasks.length === 0 ? (
           <EmptyState
             icon="clipboard-list"
@@ -127,16 +125,22 @@ export function TasksCard({ employee, maxItems = 5 }: TasksCardProps) {
             )}
           </View>
         )}
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
+  card: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   titleRow: {
     flexDirection: "row",

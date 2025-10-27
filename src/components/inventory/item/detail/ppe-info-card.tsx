@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet} from "react-native";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconShirt, IconShoe, IconBoxSeam, IconMask, IconBulb, IconCertificate, IconPackage, IconCalendar, IconUser, IconRuler } from "@tabler/icons-react-native";
 import type { Item } from '../../../../types';
@@ -40,17 +40,15 @@ export function PpeInfoCard({ item }: PpeInfoCardProps) {
   const Icon = getPpeIcon(item.ppeType);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Informações de EPI</ThemedText>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <View style={styles.content}>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Informações de EPI</ThemedText>
+      </View>
+      <View style={styles.content}>
+        <View style={styles.innerContent}>
           {/* PPE Type and Size */}
           <View>
-            <ThemedText style={StyleSheet.flatten([styles.sectionHeader, { color: colors.foreground }])}>Tipo de EPI</ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.subSectionHeader, { color: colors.foreground }])}>Tipo de EPI</ThemedText>
             <View style={styles.sectionContent}>
               <View style={StyleSheet.flatten([styles.infoRow, { backgroundColor: colors.muted + "50" }])}>
                 <View style={styles.labelContainer}>
@@ -83,7 +81,7 @@ export function PpeInfoCard({ item }: PpeInfoCardProps) {
           {/* Delivery Configuration */}
           <View style={StyleSheet.flatten([styles.divider, { borderTopColor: colors.border + "50" }])} />
           <View>
-            <ThemedText style={StyleSheet.flatten([styles.sectionHeader, { color: colors.foreground }])}>Configuração de Entrega</ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.subSectionHeader, { color: colors.foreground }])}>Configuração de Entrega</ThemedText>
             <View style={styles.deliveryGrid}>
               <View style={styles.deliveryRow}>
                 <View style={styles.deliveryItem}>
@@ -131,24 +129,33 @@ export function PpeInfoCard({ item }: PpeInfoCardProps) {
             </View>
           </View>
         </View>
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
+  card: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  content: {
+    gap: spacing.md,
   },
   titleText: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
   },
-  content: {
+  innerContent: {
     gap: spacing.lg,
   },
-  sectionHeader: {
+  subSectionHeader: {
     fontSize: fontSize.base,
     fontWeight: fontWeight.semibold,
     marginBottom: spacing.md,

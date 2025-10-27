@@ -84,6 +84,24 @@ export default function ItemDetailScreen() {
         orderBy: { createdAt: "desc" },
         take: 50,
       },
+      changeLogs: {
+        include: {
+          user: { select: { name: true, id: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      },
+      _count: {
+        select: {
+          activities: true,
+          borrows: true,
+          orderItems: true,
+          prices: true,
+          measures: true,
+          relatedItems: true,
+          relatedTo: true,
+        },
+      },
     },
     enabled: !!id && id !== "",
   });

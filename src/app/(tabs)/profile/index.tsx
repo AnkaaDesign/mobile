@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { Loading } from "@/components/ui/loading";
 import { PageHeader } from "@/components/ui/page-header";
-import { Camera, Trash2, User as UserIcon, Mail, Phone, MapPin, Save, RefreshCw } from "@tamagui/lucide-icons";
+import { IconCamera, IconTrash, IconUser, IconMail, IconPhone, IconMapPin, IconDeviceFloppy, IconRefresh } from "@tabler/icons-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useToast } from "@/hooks/use-toast";
 
@@ -262,12 +262,12 @@ export default function ProfileScreen() {
         showBack
         actions={[
           {
-            icon: RefreshCw,
+            icon: IconRefresh,
             onPress: handleRefresh,
             disabled: isRefreshing,
           },
           {
-            icon: Save,
+            icon: IconDeviceFloppy,
             onPress: handleSubmit(onSubmit),
             disabled: isSaving || !isDirty,
           },
@@ -301,7 +301,7 @@ export default function ProfileScreen() {
                 variant="outline"
                 style={styles.photoButton}
               >
-                <Camera size={16} />
+                <IconCamera size={16} />
                 <Text>{user.avatarId ? "Alterar Foto" : "Adicionar Foto"}</Text>
               </Button>
 
@@ -312,7 +312,7 @@ export default function ProfileScreen() {
                   variant="destructive"
                   style={styles.photoButton}
                 >
-                  <Trash2 size={16} />
+                  <IconTrash size={16} />
                   <Text>Remover Foto</Text>
                 </Button>
               )}
@@ -354,7 +354,7 @@ export default function ProfileScreen() {
             autoCapitalize="none"
             disabled={isSaving}
             error={errors.email?.message}
-            leftIcon={Mail}
+            leftIcon={IconMail}
           />
           <Input
             control={control}
@@ -364,7 +364,7 @@ export default function ProfileScreen() {
             keyboardType="phone-pad"
             disabled={isSaving}
             error={errors.phone?.message}
-            leftIcon={Phone}
+            leftIcon={IconPhone}
           />
         </Card>
 
@@ -380,7 +380,7 @@ export default function ProfileScreen() {
                 placeholder="Rua, avenida..."
                 disabled={isSaving}
                 error={errors.address?.message}
-                leftIcon={MapPin}
+                leftIcon={IconMapPin}
               />
             </View>
             <View style={styles.addressNumberField}>

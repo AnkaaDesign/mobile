@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconClipboard, IconUser, IconCurrencyDollar, IconCalendar, IconChevronRight } from "@tabler/icons-react-native";
@@ -30,18 +30,16 @@ export function TaskCard({ commission }: TaskCardProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
-          <View style={styles.titleRow}>
-            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-              <IconClipboard size={18} color={colors.primary} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Tarefa Relacionada</ThemedText>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
+            <IconClipboard size={18} color={colors.primary} />
           </View>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Tarefa Relacionada</ThemedText>
+        </View>
+      </View>
+      <View style={styles.content}>
         <TouchableOpacity onPress={handleTaskPress} activeOpacity={0.7}>
           <View style={StyleSheet.flatten([styles.taskContainer, { backgroundColor: colors.muted + "20", borderColor: colors.border }])}>
             {/* Task Header */}
@@ -122,15 +120,24 @@ export function TaskCard({ commission }: TaskCardProps) {
             </View>
           </View>
         </TouchableOpacity>
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
+  card: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  content: {
+    gap: spacing.md,
   },
   titleRow: {
     flexDirection: "row",

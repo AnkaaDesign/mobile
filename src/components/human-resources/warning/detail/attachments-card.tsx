@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import type { Warning } from '../../../../types';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
@@ -21,18 +21,16 @@ export function AttachmentsCard({ warning }: AttachmentsCardProps) {
 
   if (!warning.attachments || warning.attachments.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.titleRow}>
-              <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                <IconPaperclip size={18} color={colors.primary} />
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Anexos</ThemedText>
+      <Card style={styles.card}>
+        <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+          <View style={styles.titleRow}>
+            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
+              <IconPaperclip size={18} color={colors.primary} />
             </View>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Anexos</ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
           <View style={styles.emptyContainer}>
             <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted }])}>
               <IconFile size={32} color={colors.mutedForeground} />
@@ -41,50 +39,30 @@ export function AttachmentsCard({ warning }: AttachmentsCardProps) {
               Nenhum anexo encontrado
             </ThemedText>
           </View>
-        </CardContent>
+        </View>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerContent}>
           <View style={styles.titleRow}>
             <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
               <IconPaperclip size={18} color={colors.primary} />
             </View>
             <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Anexos</ThemedText>
-            <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-              {warning.attachments.length}
-            </Badge>
           </View>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {warning.attachments.length > 1 && (
-          <TouchableOpacity
-            style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
-            onPress={async () => {
-              for (const file of warning.attachments || []) {
-                try {
-                  await fileViewer.actions.downloadFile(file);
-                } catch (error) {
-                  console.error("Error downloading file:", error);
-                }
-              }
-              showToast({ message: `${warning.attachments?.length} arquivos baixados`, type: "success" });
-            }}
-            activeOpacity={0.7}
-          >
-            <IconDownload size={16} color={colors.primaryForeground} />
-            <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
-              Baixar Todos
+          <Badge variant="secondary">
+            <ThemedText style={styles.badgeText}>
+              {warning.attachments.length} arquivo{warning.attachments.length !== 1 ? "s" : ""}
             </ThemedText>
-          </TouchableOpacity>
-        )}
-
-        <View style={styles.listContainer}>
+          </Badge>
+        </View>
+      </View>
+      <View style={styles.content}>
+        <View style={styles.filesGrid}>
           {warning.attachments.map((file: any, index: number) => (
             <FileItem
               key={file.id}
@@ -97,15 +75,27 @@ export function AttachmentsCard({ warning }: AttachmentsCardProps) {
             />
           ))}
         </View>
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
+  card: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flex: 1,
   },
   titleRow: {
     flexDirection: "row",
@@ -122,6 +112,13 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
+  },
+  badgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+  },
+  content: {
+    gap: spacing.md,
   },
   emptyContainer: {
     alignItems: "center",
@@ -140,21 +137,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     textAlign: "center",
   },
-  downloadAllButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
-    alignSelf: "flex-start",
-    marginBottom: spacing.md,
-  },
-  downloadAllText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
-  },
-  listContainer: {
+  filesGrid: {
     gap: spacing.sm,
   },
 });

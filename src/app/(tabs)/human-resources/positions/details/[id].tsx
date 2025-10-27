@@ -10,16 +10,15 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconBriefcase, IconRefresh, IconEdit, IconTrash, IconHistory } from "@tabler/icons-react-native";
+import { IconRefresh, IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { showToast } from "@/components/ui/toast";
 import { hasPrivilege } from '../../../../../utils';
 
 // Import modular components
-import { PositionCard, SalaryInfoCard, EmployeesCard, RemunerationsCard, MetadataCard } from "@/components/human-resources/position/detail";
+import { SpecificationsCard, RemunerationHistoryCard, RelatedUsersCard } from "@/components/human-resources/position/detail";
 import { PositionDetailSkeleton } from "@/components/human-resources/position/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
-import { Card as CardComponent } from "@/components/ui/card";
 
 export default function PositionDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -43,24 +42,29 @@ export default function PositionDetailScreen() {
     include: {
       users: {
         include: {
-          position: true,
           sector: true,
         },
         orderBy: {
           name: "asc",
         },
       },
-      monetaryValues: {
-        orderBy: { createdAt: "desc" },
-      },
       remunerations: {
-        orderBy: { createdAt: "desc" },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+      changelogs: {
+        include: {
+          user: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
         take: 10,
       },
       _count: {
         select: {
           users: true,
-          monetaryValues: true,
           remunerations: true,
         },
       },
@@ -185,37 +189,21 @@ export default function PositionDetailScreen() {
           </CardContent>
         </Card>
 
-        {/* Overview Card - Informações Gerais */}
-        <PositionCard position={position} />
+        {/* Info Grid - Specifications and Remuneration History */}
+        <SpecificationsCard position={position} />
+        <RemunerationHistoryCard position={position} />
 
-        {/* Current Remuneration */}
-        <SalaryInfoCard position={position} />
+        {/* Changelog - Single column */}
+        <ChangelogTimeline
+          entityType={CHANGE_LOG_ENTITY_TYPE.POSITION}
+          entityId={id}
+          entityName={position.name}
+          entityCreatedAt={position.createdAt}
+          maxHeight={500}
+        />
 
-        {/* Employees List */}
-        <EmployeesCard position={position} />
-
-        {/* Monetary Values History */}
-        <RemunerationsCard position={position} />
-
-        {/* Metadata - System Dates */}
-        <MetadataCard position={position} />
-
-        {/* Changelog History */}
-        <CardComponent style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconHistory size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
-          </View>
-          <View style={{ paddingHorizontal: spacing.md }}>
-            <ChangelogTimeline
-              entityType={CHANGE_LOG_ENTITY_TYPE.POSITION}
-              entityId={position.id}
-              entityName={position.name}
-              entityCreatedAt={position.createdAt}
-              maxHeight={400}
-            />
-          </View>
-        </CardComponent>
+        {/* Related Users - Full width, last section */}
+        <RelatedUsersCard position={position} />
 
         {/* Bottom spacing for mobile navigation */}
         <View style={{ height: spacing.xxl * 2 }} />
@@ -258,21 +246,5 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
-  },
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-    marginLeft: spacing.sm,
-    flex: 1,
   },
 });

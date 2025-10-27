@@ -8,7 +8,13 @@ class GlobalMobileToastManager {
 
   private generateKey(title: string, description?: string): string {
     const desc = description || "";
-    return `${title}:${desc}`.toLowerCase().replace(/\s+/g, " ");
+    // Normalize the key by removing timestamps, request IDs, and other variable parts
+    const normalizedDesc = desc
+      .replace(/\d{13}/g, '') // Remove timestamps
+      .replace(/req_\w+/g, '') // Remove request IDs
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim();
+    return `${title}:${normalizedDesc}`.toLowerCase();
   }
 
   shouldShow(title: string, description?: string): boolean {
@@ -16,12 +22,24 @@ class GlobalMobileToastManager {
     const now = Date.now();
     const lastShown = this.lastToasts.get(key);
 
-    // Don't show if the same toast was shown within the last 3 seconds
-    if (lastShown && now - lastShown < 3000) {
+    // Don't show if the same toast was shown within the last 5 seconds
+    // Increased from 3 to 5 seconds to better handle React Query retries
+    if (lastShown && now - lastShown < 5000) {
+      console.log(`[TOAST DEBUG] Blocking duplicate toast: "${title}" (last shown ${now - lastShown}ms ago)`);
       return false;
     }
 
     this.lastToasts.set(key, now);
+
+    // Clean up old entries to prevent memory leaks
+    if (this.lastToasts.size > 100) {
+      const oldestKeys = Array.from(this.lastToasts.entries())
+        .sort((a, b) => a[1] - b[1])
+        .slice(0, 50)
+        .map(([k]) => k);
+      oldestKeys.forEach(k => this.lastToasts.delete(k));
+    }
+
     return true;
   }
 

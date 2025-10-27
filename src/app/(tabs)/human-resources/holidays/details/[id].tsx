@@ -3,10 +3,9 @@ import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useHoliday } from '../../../../../hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Header } from "@/components/ui/header";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconCalendar, IconRefresh, IconEdit, IconHistory } from "@tabler/icons-react-native";
@@ -56,7 +55,9 @@ export default function HolidayDetailScreen() {
   if (isLoading) {
     return (
       <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
-        <HolidayDetailSkeleton />
+        <View style={styles.container}>
+          <HolidayDetailSkeleton />
+        </View>
       </ScrollView>
     );
   }
@@ -65,19 +66,21 @@ export default function HolidayDetailScreen() {
     return (
       <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
         <View style={styles.container}>
-          <Card>
-            <CardContent style={styles.errorContent}>
+          <Card style={styles.card}>
+            <View style={styles.errorContent}>
               <View style={StyleSheet.flatten([styles.errorIcon, { backgroundColor: colors.muted }])}>
                 <IconCalendar size={32} color={colors.mutedForeground} />
               </View>
-              <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>Feriado não encontrado</ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
+                Feriado não encontrado
+              </ThemedText>
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 O feriado solicitado não foi encontrado ou pode ter sido removido.
               </ThemedText>
               <Button onPress={() => router.back()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
-            </CardContent>
+            </View>
           </Card>
         </View>
       </ScrollView>
@@ -85,83 +88,78 @@ export default function HolidayDetailScreen() {
   }
 
   return (
-    <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>
-      {/* Header */}
-      <Header
-        title={holiday.name}
-        showBackButton={true}
-        onBackPress={() => router.back()}
-        rightAction={
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={handleRefresh}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.muted,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-              disabled={refreshing}
-            >
-              <IconRefresh size={18} color={colors.foreground} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleEdit}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                backgroundColor: colors.primary,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              activeOpacity={0.7}
-            >
-              <IconEdit size={18} color={colors.primaryForeground} />
-            </TouchableOpacity>
-          </View>
-        }
-      />
-
-      <ScrollView
-        style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.container}>
-          {/* Holiday Information Card */}
-          <HolidayCard holiday={holiday} />
-
-          {/* Changelog Timeline */}
-          <Card>
-            <View style={styles.changelogHeader}>
-              <View style={styles.titleRow}>
-                <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                  <IconHistory size={18} color={colors.primary} />
-                </View>
-                <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Histórico de Alterações</ThemedText>
-              </View>
+    <ScrollView
+      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.container}>
+        {/* Holiday Name Header Card */}
+        <Card style={styles.card}>
+          <View style={styles.headerContent}>
+            <View style={[styles.headerLeft, { flex: 1 }]}>
+              <IconCalendar size={24} color={colors.primary} />
+              <ThemedText style={StyleSheet.flatten([styles.holidayName, { color: colors.foreground }])}>
+                {holiday.name}
+              </ThemedText>
             </View>
-            <CardContent style={{ paddingHorizontal: 0 }}>
-              <ChangelogTimeline entityType={CHANGE_LOG_ENTITY_TYPE.HOLIDAY} entityId={holiday.id} entityName={holiday.name} entityCreatedAt={holiday.createdAt} maxHeight={400} />
-            </CardContent>
-          </Card>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={handleRefresh}
+                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
+                activeOpacity={0.7}
+                disabled={refreshing}
+              >
+                <IconRefresh size={18} color={colors.foreground} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleEdit}
+                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
+                activeOpacity={0.7}
+              >
+                <IconEdit size={18} color={colors.primaryForeground} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Card>
 
-          {/* Bottom spacing for mobile navigation */}
-          <View style={{ height: spacing.xxl * 2 }} />
-        </View>
-      </ScrollView>
-    </View>
+        {/* Holiday Information Card */}
+        <HolidayCard holiday={holiday} />
+
+        {/* Changelog Timeline */}
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconHistory size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
+            <ChangelogTimeline
+              entityType={CHANGE_LOG_ENTITY_TYPE.HOLIDAY}
+              entityId={holiday.id}
+              entityName={holiday.name}
+              entityCreatedAt={holiday.createdAt}
+              maxHeight={400}
+            />
+          </View>
+        </Card>
+
+        {/* Bottom spacing for mobile navigation */}
+        <View style={{ height: spacing.xxl * 2 }} />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-  },
   scrollView: {
     flex: 1,
   },
@@ -171,10 +169,55 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     gap: spacing.lg,
   },
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.md,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.md,
+  },
+  holidayName: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    flex: 1,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   errorContent: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: spacing.xxl * 2,
+    paddingVertical: spacing.xxl,
   },
   errorIcon: {
     width: 64,
@@ -194,25 +237,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     textAlign: "center",
     marginBottom: spacing.xl,
-    paddingHorizontal: spacing.xl,
-  },
-  changelogHeader: {
-    padding: spacing.lg,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
   },
 });

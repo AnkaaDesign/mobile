@@ -1,6 +1,6 @@
-export { EmployeeCard } from "./employee-card";
-export { PersonalInfoCard } from "./personal-info-card";
-export { EmploymentInfoCard } from "./employment-info-card";
-export { TasksCard } from "./tasks-card";
-export { CommissionsCard } from "./commissions-card";
-export { PerformanceCard } from "./performance-card";
+export { BasicInfoCard } from "./basic-info-card";
+export { AddressCard } from "./address-card";
+export { PpeSizesCard } from "./ppe-sizes-card";
+export { LoginInfoCard } from "./login-info-card";
+export { ProfessionalInfoCard } from "./professional-info-card";
+export { ActivitiesTimelineCard } from "./activities-timeline-card";

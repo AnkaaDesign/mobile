@@ -1,13 +1,13 @@
 import React, { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useVacation } from '../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE, VACATION_STATUS } from '../../../../../constants';
+import { useVacationDetail } from '../../../../../hooks';
+import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/ui/header";
 import { ThemedText } from "@/components/ui/themed-text";
-import { IconBeach, IconEdit, IconRefresh } from "@tabler/icons-react-native";
+import { IconBeach, IconEdit, IconRefresh, IconTrash } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { TouchableOpacity } from "react-native";
@@ -15,7 +15,7 @@ import { showToast } from "@/components/ui/toast";
 import { routeToMobilePath } from "@/lib/route-mapper";
 
 // Import modular components
-import { VacationCard, EmployeeCard, TimelineCard, ApprovalCard } from "@/components/human-resources/vacation/detail";
+import { SpecificationsCard } from "@/components/human-resources/vacation/detail";
 import { VacationDetailSkeleton } from "@/components/human-resources/vacation/skeleton/vacation-detail-skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
@@ -27,30 +27,25 @@ export default function VacationDetailScreen() {
   const id = params?.id || "";
 
   const {
-    data: response,
+    data: vacation,
     isLoading,
     error,
     refetch,
-  } = useVacation(id, {
+  } = useVacationDetail(id || "", {
     include: {
       user: {
         include: {
-          position: {
-            include: {
-              sector: true,
-            },
-          },
+          position: true,
+          sector: true,
         },
       },
     },
-    enabled: !!id && id !== "",
+    enabled: !!id,
   });
 
-  const vacation = response?.data;
-
   const handleEdit = () => {
-    if (vacation) {
-      router.push(routeToMobilePath(routes.humanResources.vacations.edit(vacation.id)) as any);
+    if (vacation?.data) {
+      router.push(routeToMobilePath(routes.humanResources.vacations.edit(vacation.data.id)) as any);
     }
   };
 
@@ -72,7 +67,12 @@ export default function VacationDetailScreen() {
     );
   }
 
-  if (error || !vacation || !id || id === "") {
+  if (!id) {
+    router.replace(routeToMobilePath(routes.humanResources.vacations.root) as any);
+    return null;
+  }
+
+  if (error) {
     return (
       <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
         <View style={styles.container}>
@@ -82,7 +82,7 @@ export default function VacationDetailScreen() {
                 <IconBeach size={32} color={colors.mutedForeground} />
               </View>
               <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
-                Férias não encontradas
+                Erro ao carregar férias
               </ThemedText>
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 As férias solicitadas não foram encontradas ou podem ter sido removidas.
@@ -97,14 +97,16 @@ export default function VacationDetailScreen() {
     );
   }
 
-  // Check if vacation can be edited (only PENDING status)
-  const canEdit = vacation.status === VACATION_STATUS.PENDING;
+  if (!vacation) {
+    router.replace(routeToMobilePath(routes.humanResources.vacations.root) as any);
+    return null;
+  }
 
   return (
     <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>
       {/* Header */}
       <Header
-        title="Detalhes das Férias"
+        title={`Férias de ${vacation.data?.user?.name || "Colaborador"}`}
         showBackButton={true}
         onBackPress={() => router.back()}
         rightAction={
@@ -124,22 +126,20 @@ export default function VacationDetailScreen() {
             >
               <IconRefresh size={18} color={colors.foreground} />
             </TouchableOpacity>
-            {canEdit && (
-              <TouchableOpacity
-                onPress={handleEdit}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 8,
-                  backgroundColor: colors.primary,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                activeOpacity={0.7}
-              >
-                <IconEdit size={18} color={colors.primaryForeground} />
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              onPress={handleEdit}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                backgroundColor: colors.primary,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              activeOpacity={0.7}
+            >
+              <IconEdit size={18} color={colors.primaryForeground} />
+            </TouchableOpacity>
           </View>
         }
       />
@@ -157,26 +157,17 @@ export default function VacationDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.container}>
-          {/* Vacation Information Card */}
-          <VacationCard vacation={vacation} />
-
-          {/* Employee Card */}
-          <EmployeeCard vacation={vacation} />
-
-          {/* Timeline Card */}
-          <TimelineCard vacation={vacation} />
-
-          {/* Approval/Rejection Card (if applicable) */}
-          <ApprovalCard vacation={vacation} />
+          {/* Info Grid */}
+          {vacation.data && <SpecificationsCard vacation={vacation.data} />}
 
           {/* Changelog Timeline */}
           <Card>
             <CardContent style={{ paddingHorizontal: 0 }}>
               <ChangelogTimeline
                 entityType={CHANGE_LOG_ENTITY_TYPE.VACATION}
-                entityId={vacation.id}
-                entityName={`Férias - ${vacation.user?.name || "Funcionário"}`}
-                entityCreatedAt={vacation.createdAt}
+                entityId={id}
+                entityName={`Férias - ${vacation.data?.user?.name || "Funcionário"}`}
+                entityCreatedAt={vacation.data?.createdAt}
                 maxHeight={400}
               />
             </CardContent>

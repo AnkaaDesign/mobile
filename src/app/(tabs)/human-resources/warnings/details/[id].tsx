@@ -2,8 +2,8 @@ import React, { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useWarning, useWarningMutations } from '../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE, WARNING_SEVERITY_LABELS, SECTOR_PRIVILEGES } from '../../../../../constants';
-import { formatDate, hasPrivilege } from '../../../../../utils';
+import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from '../../../../../constants';
+import { hasPrivilege } from '../../../../../utils';
 import { Card, CardContent } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -11,13 +11,12 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { extendedColors } from "@/lib/theme/extended-colors";
-import { IconAlertTriangle, IconRefresh, IconEdit, IconTrash, IconHistory, IconCalendar } from "@tabler/icons-react-native";
+import { IconRefresh, IconEdit, IconTrash, IconHistory } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { showToast } from "@/components/ui/toast";
 
 // Import modular components
-import { WarningCard, EmployeeCard, DescriptionCard, IssuerCard, AttachmentsCard, WitnessCard } from "@/components/human-resources/warning/detail";
+import { SpecificationsCard, DescriptionCard, AttachmentsCard } from "@/components/human-resources/warning/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function WarningDetailScreen() {
@@ -43,29 +42,24 @@ export default function WarningDetailScreen() {
       collaborator: {
         include: {
           position: true,
-          sector: true,
-          warnings: {
-            where: {
-              id: {
-                not: id,
-              },
-            },
-          },
         },
       },
       supervisor: {
         include: {
           position: true,
-          sector: true,
         },
       },
-      witness: {
-        include: {
-          position: true,
-          sector: true,
-        },
-      },
+      witness: true,
       attachments: true,
+      changelogs: {
+        include: {
+          user: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 10,
+      },
     },
     enabled: !!id && id !== "",
   });
@@ -120,24 +114,6 @@ export default function WarningDetailScreen() {
     );
   };
 
-  // Get severity color
-  const getSeverityColor = () => {
-    if (!warning) return { bg: colors.muted, text: colors.foreground, icon: colors.foreground };
-
-    switch (warning.severity) {
-      case "VERBAL":
-        return { bg: extendedColors.blue[100], text: extendedColors.blue[700], icon: extendedColors.blue[600] };
-      case "WRITTEN":
-        return { bg: extendedColors.yellow[100], text: extendedColors.yellow[700], icon: extendedColors.yellow[600] };
-      case "SUSPENSION":
-        return { bg: extendedColors.orange[100], text: extendedColors.orange[700], icon: extendedColors.orange[600] };
-      case "FINAL_WARNING":
-        return { bg: extendedColors.red[100], text: extendedColors.red[700], icon: extendedColors.red[600] };
-      default:
-        return { bg: colors.muted, text: colors.foreground, icon: colors.foreground };
-    }
-  };
-
   if (isLoading) {
     return <LoadingScreen message="Carregando detalhes da advertência..." />;
   }
@@ -150,9 +126,6 @@ export default function WarningDetailScreen() {
       />
     );
   }
-
-  const severityColor = getSeverityColor();
-  const daysUntilFollowUp = warning.followUpDate ? Math.ceil((new Date(warning.followUpDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
 
   return (
     <ScrollView
@@ -172,10 +145,10 @@ export default function WarningDetailScreen() {
           <CardContent style={styles.headerContent}>
             <View style={styles.headerLeft}>
               <ThemedText style={StyleSheet.flatten([styles.warningTitle, { color: colors.foreground }])} numberOfLines={2}>
-                {WARNING_SEVERITY_LABELS[warning.severity]} - {warning.collaborator?.name}
+                Detalhes da Advertência
               </ThemedText>
               <ThemedText style={StyleSheet.flatten([styles.warningSubtitle, { color: colors.mutedForeground }])}>
-                {warning.reason}
+                {warning.collaborator?.name || "Advertência"}
               </ThemedText>
             </View>
             <View style={styles.headerActions}>
@@ -209,23 +182,10 @@ export default function WarningDetailScreen() {
           </CardContent>
         </Card>
 
-        {/* Warning Information Card - Status and Severity */}
-        <WarningCard warning={warning} />
-
-        {/* Employee Information */}
-        <EmployeeCard warning={warning} />
-
-        {/* Warning Details */}
-        <DescriptionCard warning={warning} />
-
-        {/* Supervisor/Manager Information */}
-        <IssuerCard warning={warning} />
-
-        {/* Witnesses */}
-        <WitnessCard warning={warning} />
-
-        {/* Attachments */}
+        {/* Main Content - Matches web version layout */}
+        <SpecificationsCard warning={warning} />
         <AttachmentsCard warning={warning} />
+        <DescriptionCard warning={warning} />
 
         {/* Changelog History */}
         <Card style={styles.card}>

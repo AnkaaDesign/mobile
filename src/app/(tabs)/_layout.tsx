@@ -938,7 +938,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
       // Calculate padding and margin for nested items to create hierarchy
       const paddingLeft = SPACING.md; // Keep padding constant for all levels
-      const marginLeft = SPACING.sm + level * SPACING.sm * 4; // Progressive indentation: 8px, 40px, 72px, etc.
+      // Domain items (level 0) flush left, submenus progressively indented to match favorites pattern
+      const marginLeft = level === 0 ? SPACING.sm : SPACING.sm + SPACING.lg * level; // 8px for domain, 24px, 40px, 56px for submenus
       const marginRight = SPACING.sm; // Keep right margin consistent
 
       // Handle long press for direct navigation on parent items
@@ -972,52 +973,49 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
       return (
         <View key={item.id} style={styles.menuItem}>
-          <Pressable
-            onPress={() => {
-              // For items with children and a path, navigate directly
-              if (hasChildren && item.path) {
-                handleMainItemClick(item);
-              } else if (!hasChildren) {
-                // For leaf items, navigate
-                handleMainItemClick(item);
-              } else {
-                // For parent items without a path, just expand/collapse
-                toggleSubmenu(item.id);
-              }
-            }}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            onLongPress={handleLongPress}
-            delayLongPress={500}
-            style={({ pressed }) => [
+          <View
+            style={[
               styles.menuItemPressable,
               { marginLeft, marginRight },
-              isActive
-                ? {
-                    backgroundColor: "#15803d", // green-700 - web primary
-                  }
-                : undefined,
-              !isActive && isInPath
-                ? {
-                    backgroundColor: isDarkMode ? "rgba(21, 128, 61, 0.15)" : "rgba(21, 128, 61, 0.1)",
-                    borderWidth: 1,
-                    borderColor: isDarkMode ? "rgba(21, 128, 61, 0.4)" : "rgba(21, 128, 61, 0.3)",
-                  }
-                : undefined,
-              (pressed || isNavigating) && !isActive
-                ? {
-                    backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)",
-                  }
-                : undefined,
-              {
-                transform: pressed || isNavigating ? [{ scale: 0.98 }] : [{ scale: 1 }],
-                opacity: isNavigating ? 0.7 : 1,
+              isActive && {
+                backgroundColor: "#15803d", // green-700 - web primary
+              },
+              !isActive && isInPath && {
+                backgroundColor: isDarkMode ? "rgba(21, 128, 61, 0.15)" : "rgba(21, 128, 61, 0.1)",
+                borderWidth: 1,
+                borderColor: isDarkMode ? "rgba(21, 128, 61, 0.4)" : "rgba(21, 128, 61, 0.3)",
               },
             ]}
-            accessibilityRole="button"
-            accessibilityLabel={item.title}
-            accessibilityState={{ expanded: isExpanded, selected: isActive }}
           >
+            <Pressable
+              onPress={() => {
+                // For items with children and a path, navigate directly
+                if (hasChildren && item.path) {
+                  handleMainItemClick(item);
+                } else if (!hasChildren) {
+                  // For leaf items, navigate
+                  handleMainItemClick(item);
+                } else {
+                  // For parent items without a path, just expand/collapse
+                  toggleSubmenu(item.id);
+                }
+              }}
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+              onLongPress={handleLongPress}
+              delayLongPress={500}
+              style={({ pressed }) => ({
+                flex: 1,
+                transform: pressed || isNavigating ? [{ scale: 0.98 }] : [{ scale: 1 }],
+                opacity: isNavigating ? 0.7 : 1,
+                backgroundColor: (pressed || isNavigating) && !isActive
+                  ? (isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)")
+                  : "transparent",
+              })}
+              accessibilityRole="button"
+              accessibilityLabel={item.title}
+              accessibilityState={{ expanded: isExpanded, selected: isActive }}
+            >
             <View style={styles.menuItemInner}>
               <View style={StyleSheet.flatten([styles.menuItemContent, { paddingLeft }])}>
                   <View style={styles.menuItemIcon}>{getIconComponentLocal(item.icon, isActive ? "onPrimary" : isInPath ? "primary" : "navigation")}</View>
@@ -1091,8 +1089,9 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                     </View>
                   </Pressable>
                 )}
-            </View>
-          </Pressable>
+              </View>
+            </Pressable>
+          </View>
 
           {/* Submenu with smooth animation */}
           {hasChildren && isExpanded && (
@@ -1209,7 +1208,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                         <View
                           style={[
                             styles.menuItemPressable,
-                            { marginLeft: SPACING.sm + SPACING.sm * 4, marginRight: SPACING.sm },
+                            { marginLeft: SPACING.sm + SPACING.lg, marginRight: SPACING.sm }, // Same as level 1 submenu indentation
                             isFavoriteActive && {
                               backgroundColor: "#15803d",
                             },

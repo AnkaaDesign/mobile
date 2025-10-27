@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconCircleCheck, IconCircleX, IconUser, IconCalendar, IconMessageCircle } from "@tabler/icons-react-native";
@@ -33,20 +33,18 @@ export function ApprovalCard({ vacation }: ApprovalCardProps) {
   const approverName = "Sistema"; // Placeholder - would come from approver user relation
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
-          <View style={styles.titleRow}>
-            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: statusColor[100 as keyof typeof statusColor] }])}>
-              <StatusIcon size={18} color={statusColor[600 as keyof typeof statusColor]} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-              {isApproved ? "Informações de Aprovação" : "Informações de Rejeição"}
-            </ThemedText>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: statusColor[100 as keyof typeof statusColor] }])}>
+            <StatusIcon size={18} color={statusColor[600 as keyof typeof statusColor]} />
           </View>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
+            {isApproved ? "Informações de Aprovação" : "Informações de Rejeição"}
+          </ThemedText>
+        </View>
+      </View>
+      <View style={styles.content}>
         <View style={styles.approvalContent}>
           {/* Status Badge */}
           <View style={styles.statusBadgeContainer}>
@@ -133,15 +131,21 @@ export function ApprovalCard({ vacation }: ApprovalCardProps) {
             </View>
           )}
         </View>
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
+  card: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   titleRow: {
     flexDirection: "row",
@@ -158,6 +162,9 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
+  },
+  content: {
+    gap: spacing.md,
   },
   approvalContent: {
     gap: spacing.lg,

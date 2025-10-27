@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
@@ -48,7 +48,7 @@ export function ObservationFilesCard({ files }: ObservationFilesCardProps) {
         </Badge>
       </View>
 
-      <CardContent style={styles.cardContent}>
+      <View style={styles.content}>
         {/* View Mode Controls */}
         <View style={styles.viewModeControls}>
           {files.length > 1 && (
@@ -107,7 +107,7 @@ export function ObservationFilesCard({ files }: ObservationFilesCardProps) {
             />
           ))}
         </View>
-      </CardContent>
+      </View>
     </Card>
   );
 }
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
     flex: 1,
   },
-  cardContent: {
+  content: {
     padding: spacing.md,
     gap: spacing.md,
   },

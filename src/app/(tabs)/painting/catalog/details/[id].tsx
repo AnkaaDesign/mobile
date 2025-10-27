@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { usePaintDetail } from '../../../../../hooks';
 import { PaintCatalogCard } from "@/components/painting";
+import { PaintFormulasCard } from "@/components/painting/catalog/detail/paint-formulas-card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Text } from "@/components/ui/text";
@@ -124,41 +125,48 @@ export default function CatalogDetailsScreen() {
         }}
       />
       <ScrollView className="flex-1 bg-background">
-        <View className="p-4 space-y-4">
-          <PaintCatalogCard paint={paint!} showFormulas={true} />
+        <View className="p-4 gap-4">
+          {/* Paint Info Card */}
+          <PaintCatalogCard paint={paint!} />
 
+          {/* Formulas Card */}
+          <PaintFormulasCard paint={paint!} />
+
+          {/* Metrics Card */}
           {metrics && (
             <Card className="p-4">
-              <View className="flex-row items-center gap-2 mb-3">
-                <Icon name="bar-chart" size={16} className="text-primary" />
-                <Text className="text-base font-medium text-foreground">Análise de Medidas</Text>
+              <View className="flex-row items-center gap-2 mb-4">
+                <View className="p-2 rounded-lg bg-primary/10">
+                  <Icon name="bar-chart" size={20} className="text-primary" />
+                </View>
+                <Text className="text-lg font-semibold text-foreground">Análise de Medidas</Text>
               </View>
 
-              <View className="space-y-3">
+              <View className="gap-3">
                 <View className="bg-muted/30 rounded-lg p-3">
-                  <View className="flex-row items-center justify-between mb-2">
+                  <View className="flex-row items-center justify-between mb-3">
                     <Text className="text-sm text-muted-foreground">Completude dos Dados</Text>
                     <Badge variant={metrics.measureDataCompleteness >= 80 ? "default" : metrics.measureDataCompleteness >= 50 ? "secondary" : "destructive"}>
-                      {metrics.measureDataCompleteness.toFixed(0)}%
+                      <Text className="text-xs font-medium">{metrics.measureDataCompleteness.toFixed(0)}%</Text>
                     </Badge>
                   </View>
 
-                  <View className="grid grid-cols-3 gap-2 text-xs">
-                    <View className="text-center">
-                      <Text className="text-muted-foreground">Peso</Text>
-                      <Text className="font-medium">
+                  <View className="flex-row justify-around">
+                    <View className="items-center">
+                      <Text className="text-xs text-muted-foreground mb-1">Peso</Text>
+                      <Text className="text-sm font-medium">
                         {metrics.formulasWithWeightData}/{metrics.totalFormulas}
                       </Text>
                     </View>
-                    <View className="text-center">
-                      <Text className="text-muted-foreground">Volume</Text>
-                      <Text className="font-medium">
+                    <View className="items-center">
+                      <Text className="text-xs text-muted-foreground mb-1">Volume</Text>
+                      <Text className="text-sm font-medium">
                         {metrics.formulasWithVolumeData}/{metrics.totalFormulas}
                       </Text>
                     </View>
-                    <View className="text-center">
-                      <Text className="text-muted-foreground">Densidade</Text>
-                      <Text className="font-medium">
+                    <View className="items-center">
+                      <Text className="text-xs text-muted-foreground mb-1">Densidade</Text>
+                      <Text className="text-sm font-medium">
                         {metrics.formulasWithDensityData}/{metrics.totalFormulas}
                       </Text>
                     </View>
@@ -180,6 +188,7 @@ export default function CatalogDetailsScreen() {
             </Card>
           )}
 
+          {/* Alerts */}
           {metrics && metrics.measureDataCompleteness < 50 && (
             <Alert variant="default">
               <Icon name="info" size={16} />

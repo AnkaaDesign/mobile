@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,45 +35,34 @@ export function ScheduleCard({ schedule, onDeliverNow }: ScheduleCardProps) {
     : "Não agendado";
 
   return (
-    <Card>
-      <CardHeader>
-        <View style={styles.header}>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.titleRow}>
-              <View
-                style={StyleSheet.flatten([
-                  styles.titleIcon,
-                  { backgroundColor: colors.primary + "10" },
-                ])}
-              >
-                <IconCalendarEvent size={18} color={colors.primary} />
-              </View>
-              <ThemedText
-                style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}
-              >
-                Informações do Cronograma
-              </ThemedText>
-            </View>
-          </CardTitle>
-          <Badge variant={schedule.isActive ? "success" : "secondary"}>
-            {schedule.isActive ? (
-              <IconCircleCheck size={14} color={extendedColors.green[600]} />
-            ) : (
-              <IconCircleX size={14} color={colors.secondaryForeground} />
-            )}
-            <ThemedText
-              style={{
-                color: schedule.isActive ? extendedColors.green[700] : colors.secondaryForeground,
-                fontSize: fontSize.xs,
-                marginLeft: spacing.xs,
-              }}
-            >
-              {schedule.isActive ? "Ativo" : "Inativo"}
-            </ThemedText>
-          </Badge>
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
+            <IconCalendarEvent size={18} color={colors.primary} />
+          </View>
+          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+            Informações do Cronograma
+          </ThemedText>
         </View>
-      </CardHeader>
-      <CardContent>
+        <Badge variant={schedule.isActive ? "success" : "secondary"}>
+          {schedule.isActive ? (
+            <IconCircleCheck size={14} color={extendedColors.green[600]} />
+          ) : (
+            <IconCircleX size={14} color={colors.secondaryForeground} />
+          )}
+          <ThemedText
+            style={{
+              color: schedule.isActive ? extendedColors.green[700] : colors.secondaryForeground,
+              fontSize: fontSize.xs,
+              marginLeft: spacing.xs,
+            }}
+          >
+            {schedule.isActive ? "Ativo" : "Inativo"}
+          </ThemedText>
+        </Badge>
+      </View>
+      <View style={styles.content}>
         <View style={styles.content}>
           {/* Frequency */}
           <View style={styles.infoRow}>
@@ -233,20 +222,22 @@ export function ScheduleCard({ schedule, onDeliverNow }: ScheduleCardProps) {
             </Button>
           )}
         </View>
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  card: {
+    padding: spacing.md,
   },
-  sectionTitle: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   titleRow: {
     flexDirection: "row",

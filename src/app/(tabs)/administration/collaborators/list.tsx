@@ -103,15 +103,15 @@ export default function AdministrationEmployeesListScreen() {
   }, [refresh]);
 
   const handleCreateEmployee = () => {
-    router.push(routeToMobilePath(routes.administration.users.create) as any);
+    router.push(routeToMobilePath(routes.administration.collaborators.create) as any);
   };
 
   const handleEmployeePress = (employeeId: string) => {
-    router.push(routeToMobilePath(routes.administration.users.details(employeeId)) as any);
+    router.push(routeToMobilePath(routes.administration.collaborators.details(employeeId)) as any);
   };
 
   const handleEditEmployee = (employeeId: string) => {
-    router.push(routeToMobilePath(routes.administration.users.edit(employeeId)) as any);
+    router.push(routeToMobilePath(routes.administration.collaborators.edit(employeeId)) as any);
   };
 
   const handleDeleteEmployee = useCallback(

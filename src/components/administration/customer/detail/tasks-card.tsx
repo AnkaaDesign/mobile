@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { router } from "expo-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
@@ -47,35 +47,8 @@ export function TasksCard({ customer, maxHeight = 400 }: TasksCardProps) {
 
   if (totalTasks === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle style={styles.sectionTitle}>
-            <View style={styles.titleRow}>
-              <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                <IconClipboardList size={18} color={colors.primary} />
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-                Tarefas Relacionadas
-              </ThemedText>
-            </View>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
-            <IconClipboardList size={32} color={colors.mutedForeground} />
-            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-              Nenhuma tarefa encontrada para este cliente
-            </ThemedText>
-          </View>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle style={styles.sectionTitle}>
+      <Card style={styles.card}>
+        <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
           <View style={styles.titleRow}>
             <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
               <IconClipboardList size={18} color={colors.primary} />
@@ -83,15 +56,38 @@ export function TasksCard({ customer, maxHeight = 400 }: TasksCardProps) {
             <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
               Tarefas Relacionadas
             </ThemedText>
-            <Badge variant="secondary" style={styles.countBadge}>
-              <ThemedText style={StyleSheet.flatten([styles.countText, { color: colors.foreground }])}>
-                {totalTasks}
-              </ThemedText>
-            </Badge>
           </View>
-        </CardTitle>
-      </CardHeader>
-      <CardContent style={{ paddingHorizontal: 0 }}>
+        </View>
+        <View style={styles.content}>
+          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+            <IconClipboardList size={32} color={colors.mutedForeground} />
+            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+              Nenhuma tarefa encontrada para este cliente
+            </ThemedText>
+          </View>
+        </View>
+      </Card>
+    );
+  }
+
+  return (
+    <Card style={styles.card}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+        <View style={styles.titleRow}>
+          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
+            <IconClipboardList size={18} color={colors.primary} />
+          </View>
+          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
+            Tarefas Relacionadas
+          </ThemedText>
+          <Badge variant="secondary" style={styles.countBadge}>
+            <ThemedText style={StyleSheet.flatten([styles.countText, { color: colors.foreground }])}>
+              {totalTasks}
+            </ThemedText>
+          </Badge>
+        </View>
+      </View>
+      <View style={{ paddingHorizontal: 0 }}>
         <ScrollView
           style={[styles.tasksList, maxHeight ? { maxHeight } : undefined]}
           showsVerticalScrollIndicator={false}
@@ -158,15 +154,24 @@ export function TasksCard({ customer, maxHeight = 400 }: TasksCardProps) {
             </TouchableOpacity>
           ))}
         </ScrollView>
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
+  card: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  content: {
+    gap: spacing.md,
   },
   titleRow: {
     flexDirection: "row",
