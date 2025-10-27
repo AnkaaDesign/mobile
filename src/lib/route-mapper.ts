@@ -1,282 +1,344 @@
-// Route mapping from English file paths to English user-facing routes
+// Route mapping from Portuguese paths (matching web) to English folder structure (mobile physical structure)
 import { routes } from '../constants';
 
-export const routeEnglishMap: Record<string, string> = {
-  // ========== CORE ROUTES ==========
-  [routes.home]: "/home",
+// Complete Portuguese to English route mappings - matching web version exactly
+export const portugueseToEnglishRoutes: Record<string, string> = {
+  // ==================== HOME ====================
+  "/": "/home",
 
-  // ========== AUTHENTICATION ROUTES ==========
-  [routes.authentication.login]: "/login",
-  [routes.authentication.register]: "/register",
-  [routes.authentication.recoverPassword]: "/recover-password",
-  [routes.authentication.verifyCode]: "/verify-code",
-  [routes.authentication.verifyPasswordReset]: "/verify-password-code",
-  // resetPassword is a function, handled separately
+  // ==================== ADMINISTRAÇÃO ====================
+  "/administracao": "/administration",
+  "/administracao/clientes": "/administration/customers",
+  "/administracao/clientes/cadastrar": "/administration/customers/create",
+  "/administracao/clientes/detalhes/:id": "/administration/customers/details/:id",
+  "/administracao/clientes/editar/:id": "/administration/customers/edit/:id",
+  "/administracao/colaboradores": "/administration/collaborators",
+  "/administracao/colaboradores/cadastrar": "/administration/collaborators/create",
+  "/administracao/colaboradores/detalhes/:id": "/administration/collaborators/details/:id",
+  "/administracao/colaboradores/editar/:id": "/administration/collaborators/edit/:id",
+  "/administracao/notificacoes": "/administration/notifications",
+  "/administracao/notificacoes/cadastrar/enviar": "/administration/notifications/create/send",
+  "/administracao/notificacoes/detalhes/:id": "/administration/notifications/details/:id",
+  "/administracao/notificacoes/editar/:id": "/administration/notifications/edit/:id",
+  "/administracao/setores": "/administration/sectors",
+  "/administracao/setores/cadastrar": "/administration/sectors/create",
+  "/administracao/setores/detalhes/:id": "/administration/sectors/details/:id",
+  "/administracao/setores/editar/:id": "/administration/sectors/edit/:id",
 
-  // ========== PRODUCTION ROUTES ==========
-  [routes.production.root]: "/production",
-  [routes.production.airbrushings.root]: "/production/airbrushing",
-  [routes.production.airbrushings.create]: "/production/airbrushing/create",
-  [routes.production.airbrushings.list]: "/production/airbrushing/list",
-  [routes.production.cutting.root]: "/production/cutting",
-  [routes.production.cutting.create]: "/production/cutting/create",
-  [routes.production.garages.root]: "/production/garages",
-  [routes.production.garages.create]: "/production/garages/create",
-  [routes.production.garages.list]: "/production/garages/list",
-  [routes.production.history.root]: "/production/history",
-  [routes.production.history.details("")]: "/production/history/details",
-  [routes.production.observations.root]: "/production/observations",
-  [routes.production.observations.create]: "/production/observations/create",
-  [routes.production.observations.list]: "/production/observations/list",
-  [routes.production.schedule.root]: "/production/schedule",
-  [routes.production.schedule.create]: "/production/schedule/create",
-  [routes.production.schedule.list]: "/production/schedule/list",
-  [routes.production.scheduleOnHold.root]: "/production/on-hold",
-  [routes.production.serviceOrders.root]: "/production/service-orders",
-  [routes.production.serviceOrders.create]: "/production/service-orders/create",
-  [routes.production.services.root]: "/production/services",
-  [routes.production.services.create]: "/production/services/create",
-  [routes.production.services.list]: "/production/services/list",
-  [routes.production.trucks.root]: "/production/trucks",
-  [routes.production.trucks.create]: "/production/trucks/create",
-  [routes.production.trucks.list]: "/production/trucks/list",
+  // ==================== ESTOQUE ====================
+  "/estoque": "/inventory",
+  "/estoque/emprestimos": "/inventory/borrows",
+  "/estoque/emprestimos/cadastrar": "/inventory/borrows/create",
+  "/estoque/emprestimos/detalhes/:id": "/inventory/borrows/details/:id",
+  "/estoque/emprestimos/editar/:id": "/inventory/borrows/edit/:id",
+  "/estoque/emprestimos/editar-lote": "/inventory/borrows/batch-edit",
+  "/estoque/epi": "/inventory/ppe",
+  "/estoque/epi/cadastrar": "/inventory/ppe/create",
+  "/estoque/epi/detalhes/:id": "/inventory/ppe/details/:id",
+  "/estoque/epi/editar/:id": "/inventory/ppe/edit/:id",
+  "/estoque/epi/agendamentos": "/inventory/ppe/schedules",
+  "/estoque/epi/agendamentos/cadastrar": "/inventory/ppe/schedules/create",
+  "/estoque/epi/agendamentos/detalhes/:id": "/inventory/ppe/schedules/details/:id",
+  "/estoque/epi/agendamentos/editar/:id": "/inventory/ppe/schedules/edit/:id",
+  "/estoque/epi/entregas": "/inventory/ppe/deliveries",
+  "/estoque/epi/entregas/cadastrar": "/inventory/ppe/deliveries/create",
+  "/estoque/epi/entregas/detalhes/:id": "/inventory/ppe/deliveries/details/:id",
+  "/estoque/epi/entregas/editar/:id": "/inventory/ppe/deliveries/edit/:id",
+  "/estoque/fornecedores": "/inventory/suppliers",
+  "/estoque/fornecedores/cadastrar": "/inventory/suppliers/create",
+  "/estoque/fornecedores/detalhes/:id": "/inventory/suppliers/details/:id",
+  "/estoque/fornecedores/editar/:id": "/inventory/suppliers/edit/:id",
+  "/estoque/manutencao": "/inventory/maintenance",
+  "/estoque/manutencao/cadastrar": "/inventory/maintenance/create",
+  "/estoque/manutencao/detalhes/:id": "/inventory/maintenance/details/:id",
+  "/estoque/manutencao/editar/:id": "/inventory/maintenance/edit/:id",
+  "/estoque/manutencao/agendamentos": "/inventory/maintenance/schedules",
+  "/estoque/manutencao/agendamentos/cadastrar": "/inventory/maintenance/schedules/create",
+  "/estoque/manutencao/agendamentos/detalhes/:id": "/inventory/maintenance/schedules/details/:id",
+  "/estoque/manutencao/agendamentos/editar/:id": "/inventory/maintenance/schedules/edit/:id",
+  "/estoque/movimentacoes": "/inventory/activities",
+  "/estoque/movimentacoes/cadastrar": "/inventory/activities/create",
+  "/estoque/movimentacoes/detalhes/:id": "/inventory/activities/details/:id",
+  "/estoque/movimentacoes/editar/:id": "/inventory/activities/edit/:id",
+  "/estoque/movimentacoes/editar-lote": "/inventory/activities/batch-edit",
+  "/estoque/pedidos": "/inventory/orders",
+  "/estoque/pedidos/cadastrar": "/inventory/orders/create",
+  "/estoque/pedidos/detalhes/:id": "/inventory/orders/details/:id",
+  "/estoque/pedidos/editar/:id": "/inventory/orders/edit/:id",
+  "/estoque/pedidos/agendamentos": "/inventory/orders/schedules",
+  "/estoque/pedidos/agendamentos/cadastrar": "/inventory/orders/schedules/create",
+  "/estoque/pedidos/agendamentos/detalhes/:id": "/inventory/orders/schedules/details/:id",
+  "/estoque/pedidos/agendamentos/editar/:id": "/inventory/orders/schedules/edit/:id",
+  "/estoque/pedidos/automaticos": "/inventory/orders/automatic",
+  "/estoque/pedidos/automaticos/configurar": "/inventory/orders/automatic/configure",
+  "/estoque/produtos": "/inventory/products",
+  "/estoque/produtos/cadastrar": "/inventory/products/create",
+  "/estoque/produtos/detalhes/:id": "/inventory/products/details/:id",
+  "/estoque/produtos/editar/:id": "/inventory/products/edit/:id",
+  "/estoque/produtos/editar-em-lote": "/inventory/products/batch-edit",
+  "/estoque/produtos/categorias": "/inventory/products/categories",
+  "/estoque/produtos/categorias/cadastrar": "/inventory/products/categories/create",
+  "/estoque/produtos/categorias/detalhes/:id": "/inventory/products/categories/details/:id",
+  "/estoque/produtos/categorias/editar/:id": "/inventory/products/categories/edit/:id",
+  "/estoque/produtos/categorias/editar-em-lote": "/inventory/products/categories/batch-edit",
+  "/estoque/produtos/marcas": "/inventory/products/brands",
+  "/estoque/produtos/marcas/cadastrar": "/inventory/products/brands/create",
+  "/estoque/produtos/marcas/detalhes/:id": "/inventory/products/brands/details/:id",
+  "/estoque/produtos/marcas/editar/:id": "/inventory/products/brands/edit/:id",
+  "/estoque/produtos/marcas/editar-em-lote": "/inventory/products/brands/batch-edit",
+  "/estoque/retiradas-externas": "/inventory/external-withdrawals",
+  "/estoque/retiradas-externas/cadastrar": "/inventory/external-withdrawals/create",
+  "/estoque/retiradas-externas/detalhes/:id": "/inventory/external-withdrawals/details/:id",
+  "/estoque/retiradas-externas/editar/:id": "/inventory/external-withdrawals/edit/:id",
 
-  // ========== MY TEAM ROUTES ==========
-  [routes.myTeam.root]: "/my-team",
-  [routes.myTeam.borrows]: "/my-team/borrows",
-  [routes.myTeam.vacations]: "/my-team/vacations",
-  [routes.myTeam.warnings]: "/my-team/warnings",
+  // ==================== PRODUÇÃO ====================
+  "/producao": "/production",
+  "/producao/aerografia": "/production/airbrushing",
+  "/producao/aerografia/cadastrar": "/production/airbrushing/create",
+  "/producao/aerografia/detalhes/:id": "/production/airbrushing/details/:id",
+  "/producao/aerografia/editar/:id": "/production/airbrushing/edit/:id",
+  "/producao/cronograma": "/production/schedule",
+  "/producao/cronograma/cadastrar": "/production/schedule/create",
+  "/producao/cronograma/detalhes/:id": "/production/schedule/details/:id",
+  "/producao/cronograma/editar/:id": "/production/schedule/edit/:id",
+  "/producao/em-espera": "/production/on-hold",
+  "/producao/garagens": "/production/garages",
+  "/producao/garagens/cadastrar": "/production/garages/create",
+  "/producao/garagens/detalhes/:id": "/production/garages/details/:id",
+  "/producao/garagens/editar/:id": "/production/garages/edit/:id",
+  "/producao/historico": "/production/history",
+  "/producao/observacoes": "/production/observations",
+  "/producao/observacoes/cadastrar": "/production/observations/create",
+  "/producao/observacoes/detalhes/:id": "/production/observations/details/:id",
+  "/producao/observacoes/editar/:id": "/production/observations/edit/:id",
+  "/producao/recorte": "/production/cutting",
+  "/producao/recorte/plano-de-recorte": "/production/cutting/cutting-plan",
+  "/producao/recorte/plano-de-recorte/cadastrar": "/production/cutting/cutting-plan/create",
+  "/producao/recorte/plano-de-recorte/detalhes/:id": "/production/cutting/cutting-plan/details/:id",
+  "/producao/recorte/plano-de-recorte/editar/:id": "/production/cutting/cutting-plan/edit/:id",
+  "/producao/recorte/requisicao-de-recorte": "/production/cutting/cutting-request",
+  "/producao/recorte/requisicao-de-recorte/cadastrar": "/production/cutting/cutting-request/create",
+  "/producao/recorte/requisicao-de-recorte/detalhes/:id": "/production/cutting/cutting-request/details/:id",
+  "/producao/recorte/requisicao-de-recorte/editar/:id": "/production/cutting/cutting-request/edit/:id",
+  "/producao/ordens-de-servico": "/production/service-orders",
+  "/producao/ordens-de-servico/cadastrar": "/production/service-orders/create",
+  "/producao/ordens-de-servico/detalhes/:id": "/production/service-orders/details/:id",
+  "/producao/ordens-de-servico/editar/:id": "/production/service-orders/edit/:id",
+  "/producao/servicos": "/production/services",
+  "/producao/servicos/cadastrar": "/production/services/create",
+  "/producao/servicos/detalhes/:id": "/production/services/details/:id",
+  "/producao/servicos/editar/:id": "/production/services/edit/:id",
+  "/producao/caminhoes": "/production/trucks",
+  "/producao/caminhoes/cadastrar": "/production/trucks/create",
+  "/producao/caminhoes/detalhes/:id": "/production/trucks/details/:id",
+  "/producao/caminhoes/editar/:id": "/production/trucks/edit/:id",
+  "/producao/tintas": "/production/paints",
+  "/producao/tintas/cadastrar": "/production/paints/create",
+  "/producao/tintas/detalhes/:id": "/production/paints/details/:id",
+  "/producao/tintas/editar/:id": "/production/paints/edit/:id",
 
-  // ========== MAINTENANCE ROUTES ==========
-  [routes.maintenance.root]: "/maintenance",
+  // ==================== PINTURA ====================
+  "/pintura": "/painting",
+  "/pintura/catalogo": "/painting/catalog",
+  "/pintura/catalogo/detalhes/:id": "/painting/catalog/details/:id",
+  "/pintura/catalogo/editar/:id": "/painting/catalog/edit/:id",
+  "/pintura/catalogo-basico": "/painting/basic-catalog",
+  "/pintura/catalogo-basico/detalhes/:id": "/painting/basic-catalog/details/:id",
+  "/pintura/formulas": "/painting/formulas",
+  "/pintura/formulas/cadastrar": "/painting/formulas/create",
+  "/pintura/formulas/detalhes/:id": "/painting/formulas/details/:id",
+  "/pintura/formulas/editar/:id": "/painting/formulas/edit/:id",
+  "/pintura/marcas-de-tinta": "/painting/paint-brands",
+  "/pintura/marcas-de-tinta/cadastrar": "/painting/paint-brands/create",
+  "/pintura/marcas-de-tinta/editar/:id": "/painting/paint-brands/edit/:id",
+  "/pintura/tipos-de-tinta": "/painting/paint-types",
+  "/pintura/tipos-de-tinta/cadastrar": "/painting/paint-types/create",
+  "/pintura/tipos-de-tinta/editar/:id": "/painting/paint-types/edit/:id",
+  "/pintura/producoes": "/painting/productions",
+  "/pintura/producoes/detalhes/:id": "/painting/productions/details/:id",
 
-  // ========== INVENTORY ROUTES ==========
-  [routes.inventory.root]: "/inventory",
-  [routes.inventory.externalWithdrawals.root]: "/inventory/external-withdrawals",
-  [routes.inventory.externalWithdrawals.create]: "/inventory/external-withdrawals/create",
-  [routes.inventory.externalWithdrawals.list]: "/inventory/external-withdrawals/list",
-  [routes.inventory.borrows.root]: "/inventory/borrows",
-  [routes.inventory.borrows.create]: "/inventory/borrows/create",
-  [routes.inventory.borrows.list]: "/inventory/borrows/list",
-  [routes.inventory.maintenance.root]: "/inventory/maintenance",
-  [routes.inventory.maintenance.create]: "/inventory/maintenance/create",
-  [routes.inventory.maintenance.list]: "/inventory/maintenance/list",
-  [routes.inventory.activities.root]: "/inventory/activities",
-  [routes.inventory.activities.create]: "/inventory/activities/create",
-  [routes.inventory.activities.list]: "/inventory/activities/list",
-  [routes.inventory.orders.root]: "/inventory/orders",
-  [routes.inventory.orders.create]: "/inventory/orders/create",
-  [routes.inventory.orders.list]: "/inventory/orders/list",
-  [routes.inventory.orders.automatic.root]: "/inventory/orders/automatic",
-  [routes.inventory.orders.automatic.configure]: "/inventory/orders/automatic/configure",
-  [routes.inventory.orders.automatic.create]: "/inventory/orders/automatic/create",
-  [routes.inventory.orders.automatic.list]: "/inventory/orders/automatic/list",
-  [routes.inventory.orders.schedules.root]: "/inventory/orders/schedules",
-  [routes.inventory.orders.schedules.create]: "/inventory/orders/schedules/create",
-  [routes.inventory.ppe.root]: "/inventory/ppe",
-  [routes.inventory.ppe.create]: "/inventory/ppe/create",
-  [routes.inventory.ppe.list]: "/inventory/ppe/list",
-  [routes.inventory.ppe.deliveries.root]: "/inventory/ppe/deliveries",
-  [routes.inventory.ppe.deliveries.create]: "/inventory/ppe/deliveries/create",
-  [routes.inventory.ppe.deliveries.list]: "/inventory/ppe/deliveries/list",
-  [routes.inventory.ppe.schedules.root]: "/inventory/ppe/schedules",
-  [routes.inventory.ppe.schedules.create]: "/inventory/ppe/schedules/create",
-  [routes.inventory.ppe.schedules.list]: "/inventory/ppe/schedules/list",
-  [routes.inventory.products.root]: "/inventory/products",
-  [routes.inventory.products.create]: "/inventory/products/create",
-  [routes.inventory.products.list]: "/inventory/products/list",
-  [routes.inventory.products.brands.root]: "/inventory/products/brands",
-  [routes.inventory.products.brands.create]: "/inventory/products/brands/create",
-  [routes.inventory.products.brands.list]: "/inventory/products/brands/list",
-  [routes.inventory.products.categories.root]: "/inventory/products/categories",
-  [routes.inventory.products.categories.create]: "/inventory/products/categories/create",
-  [routes.inventory.products.categories.list]: "/inventory/products/categories/list",
-  [routes.inventory.suppliers.root]: "/inventory/suppliers",
-  [routes.inventory.suppliers.create]: "/inventory/suppliers/create",
+  // ==================== RECURSOS HUMANOS ====================
+  "/recursos-humanos": "/human-resources",
+  "/recursos-humanos/avisos": "/human-resources/warnings",
+  "/recursos-humanos/avisos/cadastrar": "/human-resources/warnings/create",
+  "/recursos-humanos/avisos/detalhes/:id": "/human-resources/warnings/details/:id",
+  "/recursos-humanos/avisos/editar/:id": "/human-resources/warnings/edit/:id",
+  "/recursos-humanos/calculos": "/human-resources/calculations",
+  "/recursos-humanos/cargos": "/human-resources/positions",
+  "/recursos-humanos/cargos/cadastrar": "/human-resources/positions/create",
+  "/recursos-humanos/cargos/detalhes/:id": "/human-resources/positions/details/:id",
+  "/recursos-humanos/cargos/editar/:id": "/human-resources/positions/edit/:id",
+  "/recursos-humanos/controle-ponto": "/human-resources/time-control",
+  "/recursos-humanos/epi": "/human-resources/ppe",
+  "/recursos-humanos/epi/cadastrar": "/human-resources/ppe/create",
+  "/recursos-humanos/epi/detalhes/:id": "/human-resources/ppe/details/:id",
+  "/recursos-humanos/epi/editar/:id": "/human-resources/ppe/edit/:id",
+  "/recursos-humanos/epi/agendamentos": "/human-resources/ppe/schedules",
+  "/recursos-humanos/epi/agendamentos/cadastrar": "/human-resources/ppe/schedules/create",
+  "/recursos-humanos/epi/agendamentos/detalhes/:id": "/human-resources/ppe/schedules/details/:id",
+  "/recursos-humanos/epi/agendamentos/editar/:id": "/human-resources/ppe/schedules/edit/:id",
+  "/recursos-humanos/epi/entregas": "/human-resources/ppe/deliveries",
+  "/recursos-humanos/epi/entregas/cadastrar": "/human-resources/ppe/deliveries/create",
+  "/recursos-humanos/epi/entregas/detalhes/:id": "/human-resources/ppe/deliveries/details/:id",
+  "/recursos-humanos/epi/entregas/editar/:id": "/human-resources/ppe/deliveries/edit/:id",
+  "/recursos-humanos/epi/tamanhos": "/human-resources/ppe/sizes",
+  "/recursos-humanos/epi/tamanhos/cadastrar": "/human-resources/ppe/sizes/create",
+  "/recursos-humanos/epi/tamanhos/editar/:id": "/human-resources/ppe/sizes/edit/:id",
+  "/recursos-humanos/feriados": "/human-resources/holidays",
+  "/recursos-humanos/feriados/cadastrar": "/human-resources/holidays/create",
+  "/recursos-humanos/feriados/editar/:id": "/human-resources/holidays/edit/:id",
+  "/recursos-humanos/ferias": "/human-resources/vacations",
+  "/recursos-humanos/ferias/cadastrar": "/human-resources/vacations/create",
+  "/recursos-humanos/ferias/detalhes/:id": "/human-resources/vacations/details/:id",
+  "/recursos-humanos/folha-de-pagamento": "/human-resources/payroll",
+  "/recursos-humanos/niveis-desempenho": "/human-resources/performance-levels",
+  "/recursos-humanos/requisicoes": "/human-resources/requests",
+  "/recursos-humanos/simulacao-bonus": "/human-resources/bonus-simulation",
 
-  // ========== PAINTING ROUTES ==========
-  [routes.painting.root]: "/painting",
-  [routes.painting.catalog.root]: "/painting/catalog",
-  [routes.painting.catalog.create]: "/painting/catalog/create",
-  [routes.painting.catalog.list]: "/painting/catalog/list",
-  [routes.painting.paintBrands.root]: "/painting/paint-brands",
-  [routes.painting.paintBrands.create]: "/painting/paint-brands/create",
-  [routes.painting.paintBrands.list]: "/painting/paint-brands/list",
-  [routes.painting.paintTypes.root]: "/painting/paint-types",
-  [routes.painting.paintTypes.create]: "/painting/paint-types/create",
-  [routes.painting.paintTypes.list]: "/painting/paint-types/list",
-  [routes.painting.productions.root]: "/painting/productions",
+  // ==================== SERVIDOR ====================
+  "/servidor": "/server",
+  "/servidor/backup": "/server/backup",
+  "/servidor/sincronizacao-bd": "/server/database-sync",
+  "/servidor/implantacoes": "/server/deployments",
+  "/servidor/implantacoes/cadastrar": "/server/deployments/create",
+  "/servidor/implantacoes/detalhes/:id": "/server/deployments/details/:id",
+  "/servidor/logs": "/server/logs",
+  "/servidor/metricas": "/server/metrics",
+  "/servidor/pastas-compartilhadas": "/server/shared-folders",
+  "/servidor/servicos": "/server/services",
+  "/servidor/usuarios": "/server/users",
+  "/servidor/usuarios/cadastrar": "/server/users/create",
+  "/servidor/rate-limiting": "/server/rate-limiting",
+  "/servidor/registros-de-alteracoes": "/server/change-logs",
+  "/servidor/registros-de-alteracoes/detalhes/:id": "/server/change-logs/details/:id",
 
-  // ========== DASHBOARD ROUTES ==========
-  [routes.dashboard.index]: "/dashboard",
-  [routes.dashboard.financial]: "/dashboard/financial",
-  [routes.dashboard.humanResources]: "/dashboard/human-resources",
-  [routes.dashboard.inventory]: "/dashboard/inventory",
-  [routes.dashboard.production]: "/dashboard/production",
-  [routes.dashboard.warehouse]: "/dashboard/warehouse",
+  // ==================== MEU PESSOAL ====================
+  "/meu-pessoal": "/my-team",
+  "/meu-pessoal/avisos": "/my-team/warnings",
+  "/meu-pessoal/emprestimos": "/my-team/borrows",
+  "/meu-pessoal/ferias": "/my-team/vacations",
 
-  // ========== ADMINISTRATION ROUTES ==========
-  [routes.administration.root]: "/administration",
-  [routes.administration.customers.root]: "/administration/customers",
-  [routes.administration.customers.create]: "/administration/customers/create",
-  [routes.administration.customers.list]: "/administration/customers/list",
-  [routes.administration.collaborators.root]: "/administration/collaborators",
-  [routes.administration.collaborators.create]: "/administration/collaborators/create",
-  [routes.administration.collaborators.list]: "/administration/collaborators/list",
-  [routes.administration.files.root]: "/administration/files",
-  [routes.administration.files.list]: "/administration/files/list",
-  [routes.administration.files.upload]: "/administration/files/upload",
-  [routes.administration.files.orphans]: "/administration/files/orphans",
-  [routes.administration.notifications.root]: "/administration/notifications",
-  [routes.administration.notifications.create]: "/administration/notifications/create",
-  [routes.administration.notifications.list]: "/administration/notifications/list",
-  [routes.administration.sectors.root]: "/administration/sectors",
-  [routes.administration.sectors.create]: "/administration/sectors/create",
-  [routes.administration.sectors.list]: "/administration/sectors/list",
-  [routes.administration.changeLogs.root]: "/administration/change-logs",
-  [routes.administration.changeLogs.list]: "/administration/change-logs/list",
+  // ==================== PESSOAL ====================
+  "/pessoal": "/personal",
+  "/pessoal/meus-emprestimos": "/personal/my-borrows",
+  "/pessoal/meus-emprestimos/detalhes/:id": "/personal/my-borrows/details/:id",
+  "/pessoal/meus-feriados": "/personal/my-holidays",
+  "/pessoal/meus-feriados/detalhes/:id": "/personal/my-holidays/details/:id",
+  "/pessoal/minhas-notificacoes": "/personal/my-notifications",
+  "/pessoal/minhas-notificacoes/detalhes/:id": "/personal/my-notifications/details/:id",
+  "/pessoal/meus-epis": "/personal/my-ppes",
+  "/pessoal/minhas-ferias": "/personal/my-vacations",
+  "/pessoal/minhas-ferias/detalhes/:id": "/personal/my-vacations/details/:id",
+  "/pessoal/minhas-advertencias": "/personal/my-warnings",
+  "/pessoal/minhas-advertencias/detalhes/:id": "/personal/my-warnings/details/:id",
+  "/pessoal/meu-perfil": "/personal/my-profile",
+  "/pessoal/preferencias": "/personal/preferences",
 
-  // ========== SERVER ROUTES ==========
-  [routes.server.root]: "/server",
-  [routes.server.backup]: "/server/backups",
-  [routes.server.changeLogs.root]: "/server/change-logs",
-  [routes.server.databaseSync]: "/server/database-sync",
-  [routes.server.deployments.root]: "/server/deployments",
-  [routes.server.deployments.create]: "/server/deployments/create",
-  [routes.server.logs]: "/server/logs",
-  [routes.server.metrics]: "/server/metrics",
-  [routes.server.services]: "/server/services",
-  [routes.server.sharedFolders]: "/server/shared-folders",
-  [routes.server.users.root]: "/server/system-users",
-  [routes.server.users.create]: "/server/system-users/create",
+  // ==================== ESTATÍSTICAS ====================
+  "/estatisticas": "/statistics",
+  "/estatisticas/administracao": "/statistics/administration",
+  "/estatisticas/estoque": "/statistics/inventory",
+  "/estatisticas/estoque/consumo": "/statistics/inventory/consumption",
+  "/estatisticas/estoque/movimentacao": "/statistics/inventory/movement",
+  "/estatisticas/estoque/tendencias": "/statistics/inventory/trends",
+  "/estatisticas/estoque/top-itens": "/statistics/inventory/top-items",
+  "/estatisticas/producao": "/statistics/production",
+  "/estatisticas/recursos-humanos": "/statistics/human-resources",
 
-  // ========== HUMAN RESOURCES ROUTES ==========
-  [routes.humanResources.root]: "/human-resources",
-  [routes.humanResources.bonusSimulation]: "/human-resources/bonus-simulation",
-  [routes.humanResources.employees.root]: "/human-resources/employees",
-  [routes.humanResources.employees.create]: "/human-resources/employees/create",
-  [routes.humanResources.employees.list]: "/human-resources/employees/list",
-  [routes.humanResources.holidays.root]: "/human-resources/holidays",
-  [routes.humanResources.holidays.calendar]: "/human-resources/holidays/calendar",
-  [routes.humanResources.holidays.create]: "/human-resources/holidays/create",
-  [routes.humanResources.holidays.list]: "/human-resources/holidays/list",
-  [routes.humanResources.payroll.root]: "/human-resources/payroll",
-  [routes.humanResources.payroll.list]: "/human-resources/payroll/list",
-  [routes.humanResources.performanceLevels.list]: "/human-resources/performance-levels/list",
-  [routes.humanResources.positions.root]: "/human-resources/positions",
-  [routes.humanResources.positions.create]: "/human-resources/positions/create",
-  [routes.humanResources.positions.list]: "/human-resources/positions/list",
-  [routes.humanResources.ppe.root]: "/human-resources/ppe",
-  [routes.humanResources.ppe.create]: "/human-resources/ppe/create",
-  [routes.humanResources.ppe.deliveries.root]: "/human-resources/ppe/deliveries",
-  [routes.humanResources.ppe.deliveries.create]: "/human-resources/ppe/deliveries/create",
-  [routes.humanResources.ppe.schedules.root]: "/human-resources/ppe/schedules",
-  [routes.humanResources.ppe.schedules.create]: "/human-resources/ppe/schedules/create",
-  [routes.humanResources.ppe.sizes.root]: "/human-resources/ppe/sizes",
-  [routes.humanResources.ppe.sizes.create]: "/human-resources/ppe/sizes/create",
-  [routes.humanResources.sectors.list]: "/human-resources/sectors/list",
-  [routes.humanResources.vacations.root]: "/human-resources/vacations",
-  [routes.humanResources.vacations.calendar]: "/human-resources/vacations/calendar",
-  [routes.humanResources.vacations.create]: "/human-resources/vacations/create",
-  [routes.humanResources.warnings.root]: "/human-resources/warnings",
-  [routes.humanResources.warnings.create]: "/human-resources/warnings/create",
+  // ==================== INTEGRAÇÕES ====================
+  "/integracoes": "/integrations",
+  "/integracoes/secullum": "/integrations/secullum",
+  "/integracoes/secullum/calculos": "/integrations/secullum/calculations",
+  "/integracoes/secullum/registros-ponto": "/integrations/secullum/time-entries",
+  "/integracoes/secullum/registros-ponto/detalhes/:id": "/integrations/secullum/time-entries/details/:id",
+  "/integracoes/secullum/status-sincronizacao": "/integrations/secullum/sync-status",
 
-  // ========== PERSONAL ROUTES ==========
-  [routes.personal.root]: "/personal",
-  [routes.personal.myHolidays.root]: "/personal/my-holidays",
-  [routes.personal.myBorrows.root]: "/personal/my-borrows",
-  [routes.personal.myNotifications.root]: "/personal/my-notifications",
-  [routes.personal.myPpes.root]: "/personal/my-ppes",
-  [routes.personal.myPpes.request]: "/personal/my-ppes/request",
-  [routes.personal.myProfile.root]: "/personal/my-profile",
-  [routes.personal.myVacations.root]: "/personal/my-vacations",
-  [routes.personal.myWarnings.root]: "/personal/my-warnings",
-  [routes.personal.preferences.root]: "/personal/preferences",
+  // ==================== FINANCEIRO ====================
+  "/financeiro": "/financial",
+  "/financeiro/clientes": "/financial/customers",
+  "/financeiro/producao": "/financial/production",
+  "/financeiro/producao/aerografia": "/financial/production/airbrushing",
+  "/financeiro/producao/cronograma": "/financial/production/schedule",
+  "/financeiro/producao/em-espera": "/financial/production/on-hold",
+  "/financeiro/producao/historico-tarefas": "/financial/production/task-history",
 
-  // ========== DETAIL PAGE ROUTES (DYNAMIC) ==========
-  // These are handled dynamically by the functions but we include base patterns for reference
-  // Production details routes
-  "/producao/cronograma/detalhes": "/production/schedule/details",
-
-  // Inventory details routes
-  "/estoque/produtos/detalhes": "/inventory/products/details",
-  "/estoque/produtos/editar": "/inventory/products/edit",
-  "/estoque/movimentacoes/detalhes": "/inventory/movements/details",
-  "/estoque/movimentacoes/editar": "/inventory/movements/edit",
-  "/estoque/fornecedores/detalhes": "/inventory/suppliers/details",
-  "/estoque/fornecedores/editar": "/inventory/suppliers/edit",
-  "/estoque/pedidos/detalhes": "/inventory/orders/details",
-  "/estoque/pedidos/editar": "/inventory/orders/edit",
-  "/estoque/pedidos/agendamentos/detalhes": "/inventory/orders/schedules/details",
-  "/estoque/pedidos/agendamentos/editar": "/inventory/orders/schedules/edit",
-  "/estoque/pedidos/automaticos/detalhes": "/inventory/orders/automatic/details",
-  "/estoque/pedidos/automaticos/editar": "/inventory/orders/automatic/edit",
-  "/estoque/manutencao/detalhes": "/inventory/maintenance/details",
-  "/estoque/manutencao/editar": "/inventory/maintenance/edit",
-  "/estoque/retiradas-externas/detalhes": "/inventory/external-withdrawals/details",
-  "/estoque/retiradas-externas/editar": "/inventory/external-withdrawals/edit",
-  "/estoque/epi/detalhes": "/inventory/ppe/details",
-  "/estoque/epi/editar": "/inventory/ppe/edit",
-  "/estoque/epi/entregas/detalhes": "/inventory/ppe/deliveries/details",
-  "/estoque/epi/entregas/editar": "/inventory/ppe/deliveries/edit",
-  "/estoque/epi/agendamentos/detalhes": "/inventory/ppe/schedules/details",
-  "/estoque/epi/agendamentos/editar": "/inventory/ppe/schedules/edit",
-  "/estoque/emprestimos/detalhes": "/inventory/borrows/details",
-  "/estoque/emprestimos/editar": "/inventory/borrows/edit",
-  "/estoque/produtos/categorias/detalhes": "/inventory/products/categories/details",
-  "/estoque/produtos/categorias/editar": "/inventory/products/categories/edit",
-  "/estoque/produtos/marcas/detalhes": "/inventory/products/brands/details",
-  "/estoque/produtos/marcas/editar": "/inventory/products/brands/edit",
-
-  // ========== INTEGRATIONS ROUTES ==========
-  [routes.integrations.root]: "/integrations",
-  [routes.integrations.secullum.root]: "/integrations/secullum",
-  [routes.integrations.secullum.calculations]: "/integrations/secullum/calculations",
-  [routes.integrations.secullum.syncStatus]: "/integrations/secullum/sync-status",
-  [routes.integrations.secullum.timeEntries.root]: "/integrations/secullum/time-entries",
+  // ==================== MANUTENÇÃO STANDALONE ====================
+  "/manutencao": "/maintenance",
+  "/manutencao/cadastrar": "/maintenance/create",
+  "/manutencao/detalhes/:id": "/maintenance/details/:id",
+  "/manutencao/editar/:id": "/maintenance/edit/:id",
 };
 
-// Dynamic route mappings for edit and detail pages
+// Legacy English map for backward compatibility (will be phased out)
+export const routeEnglishMap: Record<string, string> = Object.entries(portugueseToEnglishRoutes).reduce(
+  (acc, [pt, en]) => {
+    // Create reverse mapping for legacy code
+    const cleanEn = en.replace('/home', '/');
+    acc[cleanEn] = pt;
+    return acc;
+  },
+  {} as Record<string, string>
+);
+
+// Dynamic route patterns for handling :id parameters
 export const dynamicRoutePatterns: Array<{ pattern: RegExp; mapper: (match: RegExpMatchArray) => string }> = [
-  // Edit routes
-  { pattern: /^\/[^/]+\/[^/]+\/editar\/(.+)$/, mapper: (match) => match[0].replace(/\/editar\//g, "/edit/") },
-  // Detail routes
-  { pattern: /^\/[^/]+\/[^/]+\/detalhes\/(.+)$/, mapper: (match) => match[0].replace(/\/detalhes\//g, "/details/") },
-  // Nested edit routes
-  { pattern: /^\/[^/]+\/[^/]+\/[^/]+\/editar\/(.+)$/, mapper: (match) => match[0].replace(/\/editar\//g, "/edit/") },
-  // Nested detail routes
-  { pattern: /^\/[^/]+\/[^/]+\/[^/]+\/detalhes\/(.+)$/, mapper: (match) => match[0].replace(/\/detalhes\//g, "/details/") },
+  // Portuguese patterns
+  { pattern: /^\/(.+)\/detalhes\/(.+)$/, mapper: (match) => `/${match[1]}/details/${match[2]}` },
+  { pattern: /^\/(.+)\/editar\/(.+)$/, mapper: (match) => `/${match[1]}/edit/${match[2]}` },
+  { pattern: /^\/(.+)\/cadastrar$/, mapper: (match) => `/${match[1]}/create` },
 ];
 
-// Reverse mapping for navigation
-export const routeReverseMap: Record<string, string> = Object.entries(routeEnglishMap).reduce((acc, [english, mapped]) => ({ ...acc, [mapped]: english }), {});
+// Main conversion function: Portuguese path to English folder path
+export function getEnglishPath(portuguesePath: string): string {
+  // Handle null or undefined
+  if (!portuguesePath) return "/home";
 
-// Helper functions
-export function getEnglishPath(inputPath: string): string {
   // Remove leading slash and (tabs) prefix if present
-  const cleanPath = inputPath.replace(/^\/(\(tabs\)\/)?/, "/");
+  const cleanPath = portuguesePath.replace(/^\/(\(tabs\)\/)?/, "/");
 
   // Handle home route special case
-  if (cleanPath === routes.home) {
+  if (cleanPath === "/" || cleanPath === routes.home) {
     return "/home";
   }
 
-  // Check if it's a known static route first
-  if (routeEnglishMap[cleanPath]) {
-    return routeEnglishMap[cleanPath];
+  // Handle dynamic segments - replace actual UUID with :id placeholder
+  const pathWithPlaceholder = cleanPath.replace(/\/[a-f0-9-]{36}($|\/)/g, '/:id$1');
+
+  // Try exact match first
+  if (portugueseToEnglishRoutes[pathWithPlaceholder]) {
+    const englishPath = portugueseToEnglishRoutes[pathWithPlaceholder];
+    // Restore actual ID if present
+    const idMatch = cleanPath.match(/\/([a-f0-9-]{36})($|\/)/);
+    if (idMatch) {
+      return englishPath.replace(':id', idMatch[1]);
+    }
+    return englishPath;
   }
 
-  // Handle dynamic segments
-  const pathWithoutId = cleanPath.replace(/\/[a-f0-9-]{36}$/, "");
-  const id = cleanPath.match(/\/([a-f0-9-]{36})$/)?.[1];
+  // Try partial matching for nested routes
+  const segments = cleanPath.split("/").filter(Boolean);
 
-  // Check if the path without ID is a known route
-  if (routeEnglishMap[pathWithoutId]) {
-    const mappedPath = routeEnglishMap[pathWithoutId];
-    return id ? `${mappedPath}/${id}` : mappedPath;
+  // Build progressively longer paths to find the best match
+  for (let i = segments.length; i > 0; i--) {
+    const partialPath = "/" + segments.slice(0, i).join("/");
+    const partialWithPlaceholder = partialPath.replace(/\/[a-f0-9-]{36}($|\/)/g, '/:id$1');
+
+    if (portugueseToEnglishRoutes[partialWithPlaceholder]) {
+      const baseMapped = portugueseToEnglishRoutes[partialWithPlaceholder];
+      const remainingSegments = segments.slice(i);
+
+      if (remainingSegments.length > 0) {
+        // Try to map remaining segments
+        const remainingPath = "/" + remainingSegments.join("/");
+        const mappedRemaining = getEnglishPath(remainingPath);
+        return baseMapped + mappedRemaining;
+      }
+
+      return baseMapped;
+    }
   }
 
-  // Try dynamic route patterns
+  // If no match found, try dynamic patterns
   for (const { pattern, mapper } of dynamicRoutePatterns) {
     const match = cleanPath.match(pattern);
     if (match) {
@@ -284,10 +346,12 @@ export function getEnglishPath(inputPath: string): string {
     }
   }
 
-  // If no mapping found, return the original path
+  // Last resort: return original path
+  console.warn(`No mapping found for path: ${portuguesePath}`);
   return cleanPath;
 }
 
+// Reverse conversion: English folder path to Portuguese path
 export function getOriginalPath(englishPath: string): string {
   // Handle undefined or null paths
   if (!englishPath) {
@@ -295,43 +359,42 @@ export function getOriginalPath(englishPath: string): string {
     return "/";
   }
 
+  // Create reverse map
+  const englishToPortugueseRoutes = Object.entries(portugueseToEnglishRoutes).reduce(
+    (acc, [pt, en]) => {
+      acc[en] = pt;
+      return acc;
+    },
+    {} as Record<string, string>
+  );
+
   // Remove leading slash if present
   const cleanPath = englishPath.startsWith("/") ? englishPath : `/${englishPath}`;
 
+  // Handle home route
+  if (cleanPath === "/home") {
+    return "/";
+  }
+
   // Handle dynamic segments
-  const pathWithoutId = cleanPath.replace(/\/[a-f0-9-]{36}$/, "");
-  const id = cleanPath.match(/\/([a-f0-9-]{36})$/)?.[1];
+  const pathWithPlaceholder = cleanPath.replace(/\/[a-f0-9-]{36}($|\/)/g, '/:id$1');
 
-  // First try exact match
-  let mappedPath = routeReverseMap[pathWithoutId];
-
-  // If not found, try to find a partial match (for nested routes)
-  if (!mappedPath) {
-    // Check if we can find a base path match
-    const segments = pathWithoutId.split("/").filter(Boolean);
-
-    // Try to find the longest matching prefix
-    for (let i = segments.length; i > 0; i--) {
-      const partialPath = "/" + segments.slice(0, i).join("/");
-      const baseMapped = routeReverseMap[partialPath];
-
-      if (baseMapped) {
-        // Found a base match, append the remaining segments
-        const remainingSegments = segments.slice(i);
-        mappedPath = remainingSegments.length > 0 ? `${baseMapped}/${remainingSegments.join("/")}` : baseMapped;
-        break;
-      }
+  // Try exact match first
+  if (englishToPortugueseRoutes[pathWithPlaceholder]) {
+    const portuguesePath = englishToPortugueseRoutes[pathWithPlaceholder];
+    // Restore actual ID if present
+    const idMatch = cleanPath.match(/\/([a-f0-9-]{36})($|\/)/);
+    if (idMatch) {
+      return portuguesePath.replace(':id', idMatch[1]);
     }
+    return portuguesePath;
   }
 
-  // If still not found, return the original path
-  if (!mappedPath) {
-    mappedPath = cleanPath;
-  }
-
-  return id ? `${mappedPath}/${id}` : mappedPath;
+  // If not found, return original
+  return cleanPath;
 }
 
+// Helper function to get title from path
 export function getEnglishTitle(inputPath: string): string {
   const englishPath = getEnglishPath(inputPath);
   const segments = englishPath.split("/").filter(Boolean);
@@ -390,242 +453,27 @@ export function getTitleFromMenuItems(path: string): string | null {
     return null;
   }
 
-  const title = searchMenuItems(MENU_ITEMS, normalizedPath);
+  // First try with the original path
+  let title = searchMenuItems(MENU_ITEMS, normalizedPath);
+
+  // If not found, try converting to Portuguese path
+  if (!title) {
+    const portuguesePath = getOriginalPath(path);
+    const normalizedPortuguese = portuguesePath.replace(/^\/+|\/+$/g, '');
+    title = searchMenuItems(MENU_ITEMS, normalizedPortuguese);
+  }
+
   return title;
 }
 
-/**
- * Get screen title with fallback to kebab-case conversion
- * Tries to find title from MENU_ITEMS first, falls back to simple conversion
- * @param path - The route path
- * @returns The screen title
- */
-export function getScreenTitle(path: string): string {
-  // Try to get title from menu structure first
-  const menuTitle = getTitleFromMenuItems(path);
-  if (menuTitle) {
-    return menuTitle;
-  }
-
-  // Fallback to simple kebab-case conversion
-  return getEnglishTitle(path);
+// Helper function to convert route to mobile path format
+export function routeToMobilePath(route: string): string {
+  const englishPath = getEnglishPath(route);
+  // Remove leading slash if present
+  const cleanPath = englishPath.startsWith("/") ? englishPath.slice(1) : englishPath;
+  // Add (tabs) prefix for tab routes
+  return `/(tabs)/${cleanPath}`;
 }
 
-/**
- * Navigation utility function to convert English routes to mobile navigation paths
- * @param englishPath - The English route path from routes.ts
- * @returns The mobile navigation path formatted for expo-router
- */
-export function getNavigationPath(englishPath: string): string {
-  const mappedPath = getEnglishPath(englishPath);
-
-  // Handle special cases for routes without (tabs) prefix
-  const authRoutes = [
-    routes.authentication.login,
-    routes.authentication.register,
-    routes.authentication.recoverPassword,
-    routes.authentication.verifyCode,
-    routes.authentication.verifyPasswordReset,
-  ];
-
-  // Check if the mapped path starts with any authentication route
-  const isAuthRoute = authRoutes.some((route) => mappedPath.startsWith(route));
-
-  // Check for reset password route (which is a function)
-  const resetPasswordBase = routes.authentication.resetPassword("").replace(/\/$/, "");
-  const isResetPasswordRoute = mappedPath.startsWith(resetPasswordBase);
-
-  if (isAuthRoute || isResetPasswordRoute) {
-    return `/(auth)${getOriginalPath(mappedPath)}`;
-  }
-
-  // For all other routes, add the (tabs) prefix
-  return `/(tabs)${getOriginalPath(mappedPath)}`;
-}
-
-/**
- * Convert route constants to mobile navigation paths
- * @param routeConstant - Route constant from @ankaa/constants routes
- * @returns The mobile navigation path formatted for expo-router
- */
-export function routeToMobilePath(routeConstant: string): string {
-  // Handle undefined or null route constants
-  if (!routeConstant) {
-    console.error("routeToMobilePath called with undefined or null route constant");
-    return "/(tabs)/home";
-  }
-
-  // Handle home route special case
-  if (routeConstant === routes.home) {
-    return "/(tabs)/home";
-  }
-
-  // Handle authentication routes by checking if they start with authentication prefix
-  const authPrefix = routes.authentication.login.split("/").slice(0, 2).join("/");
-  if (routeConstant.startsWith(authPrefix)) {
-    const authPath = routeEnglishMap[routeConstant];
-    return authPath ? `/(auth)${authPath}` : `/(auth)${routeConstant}`;
-  }
-
-  // Handle reset password function - check if it's a reset password route
-  const resetPasswordBase = routes.authentication.resetPassword("").replace(/\/$/, "");
-  if (routeConstant.startsWith(resetPasswordBase)) {
-    const token = routeConstant.split("/").pop();
-    return `/(auth)/reset-password/${token}`;
-  }
-
-  // Extract UUID from the path if present
-  const uuidPattern = /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
-  const uuidMatch = routeConstant.match(uuidPattern);
-  const uuid = uuidMatch ? uuidMatch[0] : null;
-
-  // Remove UUID from path to check base path
-  const basePathWithoutUuid = uuid ? routeConstant.replace(`/${uuid}`, "") : routeConstant;
-
-  // Check if base path exists in the map
-  const mappedBasePath = routeEnglishMap[basePathWithoutUuid];
-
-  if (mappedBasePath) {
-    // If we have a mapped path, append the UUID if it exists
-    const fullMappedPath = uuid ? `${mappedBasePath}/${uuid}` : mappedBasePath;
-    return `/(tabs)${fullMappedPath}`;
-  }
-
-  // If no mapping found, try to convert Portuguese path segments to English
-  // This handles dynamic routes like /estoque/produtos/detalhes/[id]
-  const pathSegments = routeConstant.split("/").filter(Boolean);
-  const translatedSegments = pathSegments.map((segment) => {
-    // Skip UUIDs
-    if (uuidPattern.test(segment)) return segment;
-
-    // Common Portuguese to English translations for routes
-    const translations: Record<string, string> = {
-      administracao: "administration",
-      aerografia: "airbrushing",
-      agendamentos: "schedules",
-      alertas: "alerts",
-      almoxarifado: "warehouse",
-      arquivos: "files",
-      atividades: "activities",
-      automaticos: "automatic",
-      avisos: "warnings",
-      backups: "backups",
-      bonificacoes: "bonus",
-      cadastrar: "create",
-      calculos: "calculations",
-      "calculos-ponto": "time-calculations",
-      calendario: "calendar",
-      caminhoes: "trucks",
-      cargos: "positions",
-      catalogo: "catalog",
-      categorias: "categories",
-      clientes: "customers",
-      colaboradores: "collaborators",
-      comissoes: "commissions",
-      componentes: "components",
-      concluidos: "completed",
-      configuracoes: "settings",
-      configurar: "configure",
-      consumo: "consumption",
-      "controle-ponto": "time-clock",
-      cronograma: "schedule",
-      dashboard: "dashboard",
-      detalhes: "details",
-      editar: "edit",
-      "em-espera": "on-hold",
-      emprestimos: "borrows",
-      entregas: "deliveries",
-      "entregas-epi": "ppe-deliveries",
-      enviar: "send",
-      epi: "ppe",
-      estatisticas: "statistics",
-      estoque: "inventory",
-      ferias: "vacations",
-      feriados: "holidays",
-      files: "files",
-      financeiro: "financial",
-      finalizadas: "completed",
-      "folha-de-pagamento": "payroll",
-      formulas: "formulas",
-      fornecedores: "suppliers",
-      fundos: "paint-grounds",
-      funcionarios: "employees",
-      garagens: "garages",
-      geral: "general",
-      historico: "history",
-      holerite: "payroll",
-      integracoes: "integrations",
-      itens: "items",
-      layouts: "layouts",
-      listar: "list",
-      logs: "logs",
-      "logs-de-alteracao": "change-logs",
-      manutencao: "maintenance",
-      "marcas-de-tinta": "paint-brands",
-      marcas: "brands",
-      "meu-holerite": "my-payroll",
-      "meu-perfil": "my-profile",
-      "meu-pessoal": "my-team",
-      "meus-avisos": "my-warnings",
-      "meus-emprestimos": "my-borrows",
-      "meus-epis": "my-ppes",
-      "meus-feriados": "my-holidays",
-      metricas: "metrics",
-      "minhas-atividades": "my-activities",
-      "minhas-comissoes": "my-commissions",
-      "minhas-entregas-epi": "my-ppe-deliveries",
-      "minhas-ferias": "my-vacations",
-      "minhas-notificacoes": "my-notifications",
-      monitoramento: "monitoring",
-      movimentacao: "stock-movement",
-      movimentacoes: "activities",
-      "niveis-desempenho": "performance-levels",
-      notificacoes: "notifications",
-      observacoes: "observations",
-      "ordens-de-servico": "service-orders",
-      orfaos: "orphans",
-      painel: "dashboard",
-      pedidos: "orders",
-      pessoal: "personal",
-      pintura: "painting",
-      "plano-de-recorte": "cutting-plan",
-      preferencias: "preferences",
-      privacidade: "privacy",
-      producao: "production",
-      producoes: "productions",
-      produtos: "products",
-      recorte: "cutting",
-      recortes: "cuts",
-      recursos: "resources",
-      "recursos-humanos": "human-resources",
-      "registros-de-alteracoes": "change-logs",
-      "registros-ponto": "time-entries",
-      remuneracoes: "remunerations",
-      "requisicao-de-recorte": "cutting-request",
-      requisicoes: "requisitions",
-      "retiradas-externas": "external-withdrawals",
-      secoes: "sections",
-      secullum: "secullum",
-      seguranca: "security",
-      servidor: "server",
-      servicos: "services",
-      setores: "sectors",
-      "simulacao-bonus": "bonus-simulation",
-      solicitar: "request",
-      "status-sincronizacao": "sync-status",
-      tamanhos: "sizes",
-      tema: "theme",
-      tendencias: "trends",
-      tintas: "paints",
-      "tipos-de-tinta": "paint-types",
-      "top-itens": "top-items",
-      upload: "upload",
-      usuarios: "users",
-    };
-
-    return translations[segment] || segment;
-  });
-
-  const translatedPath = "/" + translatedSegments.join("/");
-  return `/(tabs)${translatedPath}`;
-}
+// Export reverse map for backward compatibility
+export const routeReverseMap = routeEnglishMap;
