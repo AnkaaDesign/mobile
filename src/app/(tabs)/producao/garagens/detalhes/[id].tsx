@@ -98,7 +98,7 @@ export default function GarageDetailsScreen() {
       showToast({ message: "Você não tem permissão para editar", type: "error" });
       return;
     }
-    router.push(`/production/garages/edit/${id}`);
+    router.push(`/producao/garagens/editar/${id}`);
   };
 
   // Handle delete
@@ -388,7 +388,7 @@ export default function GarageDetailsScreen() {
                     }
                   ])}
                   onPress={() => {
-                    router.push(`/production/trucks/details/${truck.id}`);
+                    router.push(`/producao/caminhoes/detalhes/${truck.id}`);
                   }}
                   activeOpacity={0.7}
                 >

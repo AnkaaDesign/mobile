@@ -90,7 +90,7 @@ export default function PaintBrandListScreen() {
       showToast("Você não tem permissão para editar", "error");
       return;
     }
-    router.push(`/painting/paint-brands/edit/${paintBrandId}`);
+    router.push(`/pintura/marcas-de-tinta/editar/${paintBrandId}`);
   };
 
   const handleDelete = (paintBrandId: string, brandName: string) => {
@@ -122,7 +122,7 @@ export default function PaintBrandListScreen() {
 
   // Render paint brand card
   const renderPaintBrandCard = ({ item: paintBrand }: { item: PaintBrand }) => (
-    <TouchableOpacity onPress={() => router.push(`/painting/paint-brands/details/${paintBrand.id}`)}>
+    <TouchableOpacity onPress={() => router.push(`/pintura/marcas-de-tinta/detalhes/${paintBrand.id}`)}>
       <Card style={styles.paintBrandCard}>
         <View style={styles.cardContent}>
           <View style={styles.iconContainer}>
@@ -301,7 +301,7 @@ export default function PaintBrandListScreen() {
         {canCreate && (
           <FAB
             icon="plus"
-            onPress={() => router.push("/painting/paint-brands/create")}
+            onPress={() => router.push("/pintura/marcas-de-tinta/cadastrar")}
             style={styles.fab}
           />
         )}

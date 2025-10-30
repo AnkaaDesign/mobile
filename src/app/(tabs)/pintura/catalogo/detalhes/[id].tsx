@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/lib/theme";
 import { spacing } from "@/lib/constants";
 
 export default function CatalogDetailsScreen() {

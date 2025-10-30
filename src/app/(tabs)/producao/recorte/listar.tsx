@@ -167,7 +167,7 @@ export default function CuttingListScreen() {
 
   // Handle cut press
   const handleCutPress = (cutId: string) => {
-    router.push(`/production/cutting/details/${cutId}` as any);
+    router.push(`/producao/recorte/detalhes/${cutId}` as any);
   };
 
   // Filter modal content
@@ -311,7 +311,7 @@ export default function CuttingListScreen() {
       {canCreate && (
         <FAB
           icon="plus"
-          onPress={() => router.push("/production/cutting/create" as any)}
+          onPress={() => router.push("/producao/recorte/cadastrar" as any)}
           style={styles.fab}
         />
       )}

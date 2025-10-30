@@ -123,7 +123,7 @@ export default function CatalogListScreen() {
       toast({ title: "Você não tem permissão para editar", variant: "destructive" });
       return;
     }
-    router.push(`/painting/catalog/edit/${paintId}`);
+    router.push(`/pintura/catalogo/editar/${paintId}`);
   };
 
   const handleDelete = (paintId: string, paintName: string) => {
@@ -159,7 +159,7 @@ export default function CatalogListScreen() {
     const taskCount = (paint._count?.logoTasks || 0) + (paint._count?.generalPaintings || 0);
 
     return (
-      <TouchableOpacity onPress={() => router.push(`/painting/catalog/details/${paint.id}`)}>
+      <TouchableOpacity onPress={() => router.push(`/pintura/catalogo/detalhes/${paint.id}`)}>
         <Card style={styles.paintCard}>
           {/* Color Preview */}
           <View style={[styles.colorPreview, { backgroundColor: paint.hex || colors.muted }]}>
@@ -423,7 +423,7 @@ export default function CatalogListScreen() {
         {canCreate && (
           <FloatingActionButton
             icon="plus"
-            onPress={() => router.push("/painting/catalog/create")}
+            onPress={() => router.push("/pintura/catalogo/cadastrar")}
             style={styles.fab}
           />
         )}

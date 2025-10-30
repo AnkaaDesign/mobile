@@ -1,6 +1,9 @@
 // lib/constants.ts - Mobile app specific constants
 import { ACTIVE_USER_STATUSES } from '../constants';
 
+// Re-export design system constants for convenience
+export { spacing, borderRadius, fontSize, fontWeight } from '../constants/design-system';
+
 // Available columns for item tables
 export const AVAILABLE_ITEMS_COLUMNS = [
   { id: "name", label: "Nome", sortable: true },

@@ -130,7 +130,7 @@ export default function TimeEntriesListScreen() {
 
   // Handle entry press
   const handleEntryPress = (entry: TimeEntry) => {
-    router.push(`/(tabs)/integrations/secullum/time-entries/details/${entry.id}`);
+    router.push(`/(tabs)/integracoes/secullum/registros-ponto/detalhes/${entry.id}`);
   };
 
   // Format time display

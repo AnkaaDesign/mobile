@@ -136,7 +136,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // Navigate to login page
           setTimeout(() => {
             try {
-              router.replace(routeToMobilePath(routes.authentication.login) as any);
+              router.replace('/(autenticacao)/entrar' as any);
             } catch (navError) {
               console.error("Navigation error during auth error logout:", navError);
             }
@@ -643,7 +643,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Use setTimeout to ensure state updates are complete before navigation
       setTimeout(() => {
         try {
-          router.replace(routeToMobilePath(routes.authentication.login) as any);
+          router.replace('/(autenticacao)/entrar' as any);
         } catch (navError) {
           console.error("Navigation error during logout:", navError);
         }

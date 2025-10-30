@@ -175,7 +175,7 @@ export default function ScheduleDetailsScreen() {
       showToast({ message: "Você não tem permissão para editar", type: "error" });
       return;
     }
-    router.push(`/production/schedule/edit/${id}`);
+    router.push(`/producao/cronograma/editar/${id}`);
   };
 
   // Handle delete

@@ -25,9 +25,9 @@ export default function Index() {
     hasRedirected.current = true;
 
     if (user) {
-      router.replace(routeToMobilePath(routes.home) as any);
+      router.replace('/(tabs)/inicio' as any);
     } else {
-      router.replace(routeToMobilePath(routes.authentication.login) as any);
+      router.replace('/(autenticacao)/entrar' as any);
     }
   }, [isAuthReady, user, router]);
 

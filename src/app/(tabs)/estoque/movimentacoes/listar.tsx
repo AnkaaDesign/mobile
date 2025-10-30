@@ -114,7 +114,7 @@ export default function ActivityListScreen() {
 
   const handleCreateActivity = () => {
     // Navigate to create page if route exists
-    router.push("/(tabs)/inventory/activities/create" as any);
+    router.push("/(tabs)/estoque/movimentacoes/cadastrar" as any);
   };
 
   const handleActivityPress = (activityId: string) => {
@@ -123,7 +123,7 @@ export default function ActivityListScreen() {
 
   const handleEditActivity = (activityId: string) => {
     // Navigate to edit page using activities route
-    router.push(`/(tabs)/inventory/activities/edit/${activityId}` as any);
+    router.push(`/(tabs)/estoque/movimentacoes/editar/${activityId}` as any);
   };
 
   const handleDeleteActivity = useCallback(

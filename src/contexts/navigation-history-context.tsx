@@ -38,7 +38,7 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
   const addToHistory = (path: string) => {
     setHistory((prev) => {
       // Clear history when navigating to auth routes (logout scenario)
-      if (path.startsWith("/(auth)")) {
+      if (path.startsWith("/(autenticacao)")) {
         return [];
       }
 
@@ -74,7 +74,7 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
       const previousRoute = history[history.length - 2];
 
       // Validate the previous route exists and is accessible
-      if (previousRoute && !previousRoute.startsWith("/(auth)")) {
+      if (previousRoute && !previousRoute.startsWith("/(autenticacao)")) {
         console.log('[NAV HISTORY] Going back to:', previousRoute);
         // Update history state to remove current route
         setHistory((prev) => prev.slice(0, -1));
@@ -85,12 +85,12 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
         // If previous route is invalid, clear history and go to home
         console.log('[NAV HISTORY] Invalid previous route, going to home');
         setHistory([]);
-        router.push("/(tabs)/home" as any);
+        router.push("/(tabs)/inicio" as any);
       }
     } else {
       // Fallback to home if no history
       console.log('[NAV HISTORY] No history, going to home');
-      router.push("/(tabs)/home" as any);
+      router.push("/(tabs)/inicio" as any);
     }
   };
 

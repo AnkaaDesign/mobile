@@ -84,7 +84,7 @@ export default function TruckDetailsScreen() {
       showToast({ message: "Você não tem permissão para editar", type: "error" });
       return;
     }
-    router.push(`/production/trucks/edit/${id}`);
+    router.push(`/producao/caminhoes/editar/${id}`);
   };
 
   // Handle delete

@@ -114,7 +114,7 @@ export default function ComponentListScreen() {
       showToast("Você não tem permissão para editar", "error");
       return;
     }
-    router.push(`/painting/formulas/${formulaId}/components/edit/${componentId}`);
+    router.push(`/pintura/formulas/${formulaId}/componentes/editar/${componentId}`);
   };
 
   const handleDelete = (componentId: string, itemName: string) => {
@@ -146,7 +146,7 @@ export default function ComponentListScreen() {
 
   // Render component card
   const renderComponentCard = ({ item: component }: { item: PaintFormulaComponent }) => (
-    <TouchableOpacity onPress={() => router.push(`/painting/formulas/${formulaId}/components/details/${component.id}`)}>
+    <TouchableOpacity onPress={() => router.push(`/pintura/formulas/${formulaId}/componentes/detalhes/${component.id}`)}>
       <Card style={styles.componentCard}>
       <View style={styles.cardHeader}>
         <View style={styles.cardTitleContainer}>
@@ -349,7 +349,7 @@ export default function ComponentListScreen() {
         {canCreate && (
           <FAB
             icon="plus"
-            onPress={() => router.push(`/painting/formulas/${formulaId}/components/create`)}
+            onPress={() => router.push(`/pintura/formulas/${formulaId}/componentes/cadastrar`)}
             style={styles.fab}
           />
         )}

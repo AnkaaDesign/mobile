@@ -85,7 +85,7 @@ export default function AirbrushingListScreen() {
 
   // Handle navigation to details
   const handleAirbrushingPress = useCallback((airbrushingId: string) => {
-    router.push(`/production/airbrushing/details/${airbrushingId}`);
+    router.push(`/producao/aerografia/detalhes/${airbrushingId}`);
   }, []);
 
   // Handle deletion
@@ -231,7 +231,7 @@ export default function AirbrushingListScreen() {
         {/* Create FAB */}
         {canManageAirbrushing && (
           <FAB
-            onPress={() => router.push("/production/airbrushing/create")}
+            onPress={() => router.push("/producao/aerografia/cadastrar")}
             style={{
               bottom: insets.bottom + spacing.lg,
               right: spacing.lg,

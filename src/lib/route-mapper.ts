@@ -11,7 +11,7 @@ import { routes } from '../constants';
 export function routeToMobilePath(route: string): string {
   // Handle home route special case
   if (route === '/' || route === routes.home) {
-    return '/(tabs)/home';
+    return '/(tabs)/inicio';
   }
 
   // Remove leading slash if present

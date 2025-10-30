@@ -105,7 +105,7 @@ export default function PPEDeliveryDetailsScreen() {
       showToast({ message: "Você não tem permissão para editar", type: "error" });
       return;
     }
-    router.push(`/inventory/ppe/deliveries/edit/${id}`);
+    router.push(`/estoque/epi/entregas/editar/${id}`);
   };
 
   // Handle mark as delivered

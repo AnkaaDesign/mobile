@@ -14,11 +14,11 @@ import {
   IconAlertCircle,
 } from "@tabler/icons-react-native";
 import { Card } from "@/components/ui/card";
-import { ThemedText } from "@/components/themed-text";
+import { ThemedText } from "@/components/ui/themed-text";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { TaskTable } from "@/components/production/task/list/task-table";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/lib/theme";
 import { borderRadius, fontSize, fontWeight, spacing } from "@/lib/constants";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useTasks } from "@/hooks/useTask";
@@ -41,21 +41,21 @@ const defaultVisibleColumns = [
 ];
 
 const allColumns = [
-  { key: "name", label: "Tarefa" },
-  { key: "customer.fantasyName", label: "Cliente" },
-  { key: "sector.name", label: "Setor" },
-  { key: "status", label: "Status" },
-  { key: "priority", label: "Prioridade" },
-  { key: "entryDate", label: "Entrada" },
-  { key: "startedAt", label: "Início" },
-  { key: "finishedAt", label: "Conclusão" },
-  { key: "term", label: "Prazo" },
-  { key: "serialNumber", label: "Número Série" },
-  { key: "plate", label: "Placa" },
-  { key: "chassisNumber", label: "Chassi" },
-  { key: "price", label: "Preço" },
-  { key: "createdBy.name", label: "Criado por" },
-  { key: "observation", label: "Observação" },
+  { key: "name", header: "Tarefa" },
+  { key: "customer.fantasyName", header: "Cliente" },
+  { key: "sector.name", header: "Setor" },
+  { key: "status", header: "Status" },
+  { key: "priority", header: "Prioridade" },
+  { key: "entryDate", header: "Entrada" },
+  { key: "startedAt", header: "Início" },
+  { key: "finishedAt", header: "Conclusão" },
+  { key: "term", header: "Prazo" },
+  { key: "serialNumber", header: "Número Série" },
+  { key: "plate", header: "Placa" },
+  { key: "chassisNumber", header: "Chassi" },
+  { key: "price", header: "Preço" },
+  { key: "createdBy.name", header: "Criado por" },
+  { key: "observation", header: "Observação" },
 ];
 
 export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) {
@@ -303,8 +303,8 @@ export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) 
         visibleColumns={new Set(visibleColumnKeys)}
         onVisibilityChange={handleColumnsChange}
         open={showColumnManager}
-        onClose={() => setShowColumnManager(false)}
-        title="Colunas Visíveis"
+        onOpenChange={setShowColumnManager}
+        defaultColumns={new Set(defaultVisibleColumns)}
       />
     </Card>
   );

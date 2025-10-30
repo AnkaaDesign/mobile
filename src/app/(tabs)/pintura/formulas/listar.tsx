@@ -109,7 +109,7 @@ export default function FormulasListScreen() {
       <TouchableOpacity
         onPress={() => {
           if (formula.paintId) {
-            router.push(`/painting/catalog/details/${formula.paintId}`);
+            router.push(`/pintura/catalogo/detalhes/${formula.paintId}`);
           }
         }}
       >

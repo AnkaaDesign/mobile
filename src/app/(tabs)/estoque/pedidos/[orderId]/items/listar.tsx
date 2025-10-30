@@ -78,11 +78,11 @@ export default function OrderItemsListScreen() {
   }, [refetch]);
 
   const handleAddItem = () => {
-    router.push(`/inventory/orders/${orderId}/items/add` as any);
+    router.push(`/estoque/pedidos/${orderId}/items/adicionar` as any);
   };
 
   const handleItemPress = (itemId: string) => {
-    router.push(`/inventory/orders/${orderId}/items/details/${itemId}` as any);
+    router.push(`/estoque/pedidos/${orderId}/items/detalhes/${itemId}` as any);
   };
 
   const handleEditItem = (itemId: string) => {
@@ -90,7 +90,7 @@ export default function OrderItemsListScreen() {
       Alert.alert("Sem permissão", "Você não tem permissão para editar itens");
       return;
     }
-    router.push(`/inventory/orders/${orderId}/items/edit/${itemId}` as any);
+    router.push(`/estoque/pedidos/${orderId}/items/editar/${itemId}` as any);
   };
 
   const handleDeleteItem = useCallback(

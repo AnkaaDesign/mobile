@@ -30,7 +30,7 @@ export function PrivilegeGuard({
   children,
   requiredPrivilege,
   requireAll = false,
-  fallbackScreen = routeToMobilePath(routes.authentication.login),
+  fallbackScreen = '/(autenticacao)/entrar',
   showUnauthorized = true,
 }: PrivilegeGuardProps) {
   const { user, isLoading } = useAuth();
@@ -46,7 +46,7 @@ export function PrivilegeGuard({
 
   // If user is not authenticated, redirect to login
   if (!user) {
-    router.replace(routeToMobilePath(routes.authentication.login) as any);
+    router.replace('/(autenticacao)/entrar' as any);
     return null;
   }
 
@@ -139,17 +139,17 @@ function UnauthorizedScreen({ requiredPrivilege, fallbackScreen }: { requiredPri
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace(routeToMobilePath(routes.home) as any);
+      router.replace('/(tabs)/inicio' as any);
     }
   };
 
   const handleGoHome = () => {
-    router.replace(routeToMobilePath(routes.home) as any);
+    router.replace('/(tabs)/inicio' as any);
   };
 
   const handleLogout = async () => {
     await logout();
-    router.replace(routeToMobilePath(routes.authentication.login) as any);
+    router.replace('/(autenticacao)/entrar' as any);
   };
 
   return (

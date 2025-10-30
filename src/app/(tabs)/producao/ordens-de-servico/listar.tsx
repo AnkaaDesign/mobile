@@ -75,7 +75,7 @@ export default function ServiceOrderListScreen() {
 
   // Handle navigation to details
   const handleServiceOrderPress = useCallback((serviceOrderId: string) => {
-    router.push(`/production/service-orders/details/${serviceOrderId}`);
+    router.push(`/producao/ordens-de-servico/detalhes/${serviceOrderId}`);
   }, []);
 
   // Handle deletion
@@ -244,7 +244,7 @@ export default function ServiceOrderListScreen() {
         {/* Create FAB */}
         {canManageServiceOrders && (
           <FAB
-            onPress={() => router.push("/production/service-orders/create")}
+            onPress={() => router.push("/producao/ordens-de-servico/cadastrar")}
             style={{
               bottom: insets.bottom + spacing.lg,
               right: spacing.lg,

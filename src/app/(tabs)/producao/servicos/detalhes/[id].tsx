@@ -42,7 +42,7 @@ export default function ServiceDetailsScreen() {
 
   const handleEdit = () => {
     if (!service) return;
-    router.push(`/production/services/edit/${service.id}`);
+    router.push(`/producao/servicos/editar/${service.id}`);
   };
 
   const handleDelete = () => {

@@ -91,7 +91,7 @@ function getRequiredPrivilegeForRoute(segments: string[]): SECTOR_PRIVILEGES | S
  * Automatically determines required privileges based on current route
  * Similar to web AutoPrivilegeRoute but optimized for mobile navigation
  */
-export function RoutePrivilegeGuard({ children, fallbackScreen = routeToMobilePath(routes.authentication.login) }: RoutePrivilegeGuardProps) {
+export function RoutePrivilegeGuard({ children, fallbackScreen = '/(autenticacao)/entrar' }: RoutePrivilegeGuardProps) {
   const segments = useSegments();
 
   // Get required privilege for current route

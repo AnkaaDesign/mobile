@@ -100,7 +100,7 @@ export default function ProductionsListScreen() {
 
   // Render production card
   const renderProductionCard = ({ item: production }: { item: PaintProduction }) => (
-    <TouchableOpacity onPress={() => router.push(`/painting/productions/details/${production.id}`)}>
+    <TouchableOpacity onPress={() => router.push(`/pintura/producoes/detalhes/${production.id}`)}>
       <Card style={styles.productionCard}>
         <View style={styles.cardContent}>
           {/* Header */}

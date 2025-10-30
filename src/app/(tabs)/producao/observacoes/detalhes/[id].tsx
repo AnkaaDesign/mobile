@@ -66,7 +66,7 @@ export default function ObservationDetailsScreen() {
       showToast({ message: "Você não tem permissão para editar", type: "error" });
       return;
     }
-    router.push(`/production/observations/edit/${id}`);
+    router.push(`/producao/observacoes/editar/${id}`);
   };
 
   // Handle delete

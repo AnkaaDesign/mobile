@@ -103,7 +103,7 @@ export default function CuttingPlanDetailsScreen() {
       showToast({ message: "Você não tem permissão para editar", type: "error" });
       return;
     }
-    router.push(`/production/cutting/cutting-plan/edit/${id}`);
+    router.push(`/producao/recorte/plano-de-recorte/editar/${id}`);
   };
 
   // Handle delete
@@ -381,7 +381,7 @@ export default function CuttingPlanDetailsScreen() {
             </View>
             <TouchableOpacity
               style={styles.relatedCutItem}
-              onPress={() => router.push(`/production/cutting/cutting-plan/details/${cut.parentCut!.id}`)}
+              onPress={() => router.push(`/producao/recorte/plano-de-recorte/detalhes/${cut.parentCut!.id}`)}
               activeOpacity={0.7}
             >
               <View style={{ flex: 1 }}>
@@ -404,7 +404,7 @@ export default function CuttingPlanDetailsScreen() {
               <IconClipboardList size={20} color={colors.primary} />
               <ThemedText style={styles.sectionTitle}>Informações da Tarefa</ThemedText>
               <TouchableOpacity
-                onPress={() => router.push(`/production/schedule/details/${cut.task!.id}`)}
+                onPress={() => router.push(`/producao/cronograma/detalhes/${cut.task!.id}`)}
                 style={styles.viewDetailsButton}
                 activeOpacity={0.7}
               >
@@ -494,7 +494,7 @@ export default function CuttingPlanDetailsScreen() {
                 <TouchableOpacity
                   key={childCut.id}
                   style={styles.relatedCutItem}
-                  onPress={() => router.push(`/production/cutting/cutting-plan/details/${childCut.id}`)}
+                  onPress={() => router.push(`/producao/recorte/plano-de-recorte/detalhes/${childCut.id}`)}
                   activeOpacity={0.7}
                 >
                   <View style={{ flex: 1 }}>

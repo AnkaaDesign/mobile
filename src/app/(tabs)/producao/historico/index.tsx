@@ -134,7 +134,7 @@ export default function ProductionHistoryScreen() {
   };
 
   const handleTaskPress = (task: Task) => {
-    router.push(`/production/schedule/details/${task.id}` as any);
+    router.push(`/producao/cronograma/detalhes/${task.id}` as any);
   };
 
   const handleDeleteTask = async (taskId: string) => {

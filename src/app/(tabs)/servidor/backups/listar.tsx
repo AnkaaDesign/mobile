@@ -60,7 +60,7 @@ export default function BackupsListScreen() {
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-2xl font-bold">Backups do Sistema</Text>
             <Button
-              onPress={() => router.push("/administration/backups/create")}
+              onPress={() => router.push("/servidor/backups/cadastrar")}
               size="sm"
             >
               <Icon name="plus" className="w-4 h-4 mr-2" />
@@ -96,7 +96,7 @@ export default function BackupsListScreen() {
               <Card
                 className="mb-4"
                 onPress={() =>
-                  router.push(`/administration/backups/details/${item.id}`)
+                  router.push(`/servidor/backups/detalhes/${item.id}`)
                 }
               >
                 <CardHeader>

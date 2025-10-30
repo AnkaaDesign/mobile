@@ -71,7 +71,7 @@ export default function PaintsListScreen() {
 
   // Handle navigation to details
   const handlePaintPress = useCallback((paintId: string) => {
-    router.push(`/production/paints/details/${paintId}`);
+    router.push(`/producao/tintas/detalhes/${paintId}`);
   }, []);
 
   // Handle paint deletion
@@ -199,7 +199,7 @@ export default function PaintsListScreen() {
         {/* Create FAB - Only for admin */}
         {isAdmin && (
           <FAB
-            onPress={() => router.push("/production/paints/create")}
+            onPress={() => router.push("/producao/tintas/cadastrar")}
             style={{
               bottom: insets.bottom + spacing.lg,
               right: spacing.lg,

@@ -123,7 +123,7 @@ export default function ScheduleListScreen() {
       showToast({ message: "Você não tem permissão para editar tarefas", type: "error" });
       return;
     }
-    router.push(`/production/schedule/edit/${taskId}`);
+    router.push(`/producao/cronograma/editar/${taskId}`);
   };
 
   const handleDeleteTask = (taskId: string) => {
@@ -177,7 +177,7 @@ export default function ScheduleListScreen() {
   };
 
   const handleTaskPress = (taskId: string) => {
-    router.push(`/production/schedule/details/${taskId}`);
+    router.push(`/producao/cronograma/detalhes/${taskId}`);
   };
 
 
@@ -310,7 +310,7 @@ export default function ScheduleListScreen() {
       {canCreate && (
         <FAB
           icon="plus"
-          onPress={() => router.push("/production/schedule/create")}
+          onPress={() => router.push("/producao/cronograma/cadastrar")}
           style={styles.fab}
         />
       )}

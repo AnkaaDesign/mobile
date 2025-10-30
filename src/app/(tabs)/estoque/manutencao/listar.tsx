@@ -70,7 +70,7 @@ export default function InventoryMaintenanceListScreen() {
 
   // Handle navigation to details
   const handleMaintenancePress = useCallback((maintenanceId: string) => {
-    router.push(`/inventory/maintenance/details/${maintenanceId}`);
+    router.push(`/estoque/manutencao/detalhes/${maintenanceId}`);
   }, []);
 
   // Handle maintenance deletion
@@ -202,7 +202,7 @@ export default function InventoryMaintenanceListScreen() {
         {isAdmin && (
           <FAB
             icon="plus"
-            onPress={() => router.push("/inventory/maintenance/create")}
+            onPress={() => router.push("/estoque/manutencao/cadastrar")}
           />
         )}
 

@@ -81,7 +81,7 @@ export default function PaintTypeDetailsScreen() {
       showToast({ message: "Você não tem permissão para editar", type: "error" });
       return;
     }
-    router.push(`/painting/paint-types/edit/${id}`);
+    router.push(`/pintura/tipos-de-tinta/editar/${id}`);
   };
 
   // Handle delete
@@ -239,7 +239,7 @@ export default function PaintTypeDetailsScreen() {
                       borderColor: colors.border,
                     }
                   ])}
-                  onPress={() => router.push(`/painting/catalog/details/${paint.id}`)}
+                  onPress={() => router.push(`/pintura/catalogo/detalhes/${paint.id}`)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.paintItemLeft}>

@@ -70,7 +70,7 @@ export default function AirbrushingDetailsScreen() {
   }, [user]);
 
   const handleEdit = React.useCallback(() => {
-    router.push(`/production/airbrushing/edit/${id}`);
+    router.push(`/producao/aerografia/editar/${id}`);
   }, [id]);
 
   const handleDelete = React.useCallback(async () => {

@@ -73,7 +73,7 @@ export default function ComponentDetailsScreen() {
       showToast("Você não tem permissão para editar", "error");
       return;
     }
-    router.push(`/painting/formulas/${formulaId}/components/edit/${id}`);
+    router.push(`/pintura/formulas/${formulaId}/componentes/editar/${id}`);
   };
 
   const handleDelete = () => {

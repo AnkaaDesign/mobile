@@ -87,7 +87,7 @@ export default function DeploymentsListScreen() {
               <Card
                 className="mb-4"
                 onPress={() =>
-                  router.push(`/administration/deployments/details/${item.id}`)
+                  router.push(`/servidor/implantacoes/detalhes/${item.id}`)
                 }
               >
                 <CardHeader>

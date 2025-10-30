@@ -68,7 +68,7 @@ export default function ServicesListScreen() {
 
   // Handle navigation to details
   const handleServicePress = useCallback((serviceId: string) => {
-    router.push(`/production/services/details/${serviceId}`);
+    router.push(`/producao/servicos/detalhes/${serviceId}`);
   }, []);
 
   // Handle service deletion
@@ -192,7 +192,7 @@ export default function ServicesListScreen() {
         {/* Create FAB - Only for admin */}
         {isAdmin && (
           <FAB
-            onPress={() => router.push("/production/services/create")}
+            onPress={() => router.push("/producao/servicos/cadastrar")}
             style={{
               bottom: insets.bottom + spacing.lg,
               right: spacing.lg,
