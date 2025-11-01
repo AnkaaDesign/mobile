@@ -1,4 +1,4 @@
-import React from "react";
+
 import { FlatList, View, TouchableOpacity, RefreshControl, StyleSheet } from "react-native";
 import type { Task } from '../../../types';
 import { ThemedText } from "@/components/ui/themed-text";

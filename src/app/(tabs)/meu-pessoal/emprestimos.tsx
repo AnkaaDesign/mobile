@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet } from "react-native";
-import { router } from "expo-router";
+
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from '../../../constants';
 import { ThemedView } from "@/components/ui/themed-view";
@@ -13,7 +13,7 @@ import { TeamBorrowTable } from "@/components/my-team/borrow/team-borrow-table";
 import { TeamBorrowFilterModal, type TeamBorrowFilters } from "@/components/my-team/borrow/team-borrow-filter-modal";
 import { TeamBorrowFilterTags } from "@/components/my-team/borrow/team-borrow-filter-tags";
 import { useBorrowsInfiniteMobile } from "@/hooks";
-import { useAuth } from '../../../hooks';
+import { useAuth } from '../../../contexts/auth-context';
 import { IconPackage, IconFilter } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import type { User } from '../../../types';
@@ -91,12 +91,9 @@ export default function MyTeamLoansScreen() {
 
   // Fetch borrows with infinite scroll
   const {
-    data: borrows,
+    items: borrows,
     isLoading: isLoadingBorrows,
-    error: borrowsError,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
+    error: _error,
     refetch: refetchBorrows,
   } = useBorrowsInfiniteMobile({
     ...queryParams,
@@ -106,7 +103,7 @@ export default function MyTeamLoansScreen() {
   // Get unique team members for filter
   const teamMembers = useMemo(() => {
     const members = new Map<string, User>();
-    borrows.forEach((borrow) => {
+    borrows.forEach((borrow: any /* TODO: Add proper type */) => {
       if (borrow.user && !members.has(borrow.user.id)) {
         members.set(borrow.user.id, borrow.user);
       }
@@ -139,20 +136,15 @@ export default function MyTeamLoansScreen() {
     });
   }, []);
 
-  const handleBorrowPress = useCallback((borrowId: string) => {
+  const handleBorrowPress = useCallback((_borrowId: string) => {
     // Navigate to borrow details if needed
-    // router.push(`/inventory/borrows/details/${borrowId}`);
+    // router.push(`/inventory/borrows/details/${_borrowId}`);
   }, []);
 
   const handleRefresh = async () => {
     await refetchBorrows();
   };
 
-  const handleLoadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const isLoading = isLoadingAuth || isLoadingBorrows;
 

@@ -20,7 +20,7 @@ interface TaskTimelineCardProps {
   activities?: Activity[];
 }
 
-export const TaskTimelineCard: React.FC<TaskTimelineCardProps> = ({ task, activities = [] }) => {
+export const TaskTimelineCard: React.FC<TaskTimelineCardProps> = ({ task, activities: _activities = [] }) => {
   const { colors } = useTheme();
 
   const getStatusIcon = (status: TASK_STATUS) => {

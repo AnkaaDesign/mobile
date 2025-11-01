@@ -1,15 +1,14 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, RefreshControl, Alert , StyleSheet} from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
-import { IconButton, IconButtonWithLabel } from "@/components/ui/icon-button";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useTaskDetail, useTaskMutations, useLayoutsByTruck, useCutsByTask } from '../../../../../hooks';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { TASK_STATUS, SECTOR_PRIVILEGES, TASK_STATUS_LABELS, CHANGE_LOG_ENTITY_TYPE, AIRBRUSHING_STATUS_LABELS } from '../../../../../constants';
+import { SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE, AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from '../../../../../constants';
 import { hasPrivilege, formatCurrency, formatDate } from '../../../../../utils';
 import { useMemo } from "react";
 import { showToast } from "@/components/ui/toast";
@@ -17,20 +16,20 @@ import { TaskInfoCard } from "@/components/production/task/detail/task-info-card
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
 import { TaskServicesCard } from "@/components/production/task/detail/task-services-card";
 import { TaskCustomerCard } from "@/components/production/task/detail/task-customer-card";
-import { TaskAttachmentsCard } from "@/components/production/task/detail/task-attachments-card";
+
 import { TaskPaintCard } from "@/components/production/task/detail/task-paint-card";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge, getBadgeVariantFromStatus } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { TouchableOpacity } from "react-native";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { FileItem, useFileViewer, type FileViewMode } from "@/components/file";
 import {
-  IconTruck,
-  IconPaint,
+  
+  
   IconFileText,
   IconCalendarEvent,
-  IconLicense,
-  IconClipboardList,
+  
+  
   IconRefresh,
   IconEdit,
   IconTrash,
@@ -52,7 +51,7 @@ export default function ScheduleDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { update, delete: deleteAsync } = useTaskMutations();
+  const { delete: deleteAsync } = useTaskMutations();
   const [refreshing, setRefreshing] = useState(false);
   const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("list");
   const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("list");
@@ -143,9 +142,7 @@ export default function ScheduleDetailsScreen() {
   const airbrushings = (task as any)?.airbrushings || [];
 
   // Fetch layouts for truck dimensions
-  const { data: layouts } = useLayoutsByTruck((task as any)?.truck?.id || '', {
-    enabled: !!(task as any)?.truck?.id,
-  });
+  const { data: layouts } = useLayoutsByTruck((task as any)?.truck?.id || '', !!(task as any)?.truck?.id);
 
   // Calculate truck dimensions from any available layout
   const truckDimensions = useMemo(() => {
@@ -156,7 +153,7 @@ export default function ScheduleDetailsScreen() {
 
     const height = Math.round(layout.height * 100); // Convert to cm and round
     const sections = layout.layoutSections;
-    const totalWidth = Math.round(sections.reduce((sum: number, s: any) => sum + s.width * 100, 0));
+    const totalWidth = Math.round(sections?.reduce((sum: number, s: any) => sum + s.width * 100, 0) || 0);
 
     return { width: totalWidth, height };
   }, [layouts]);
@@ -273,10 +270,22 @@ export default function ScheduleDetailsScreen() {
           </Card>
 
           {/* Overview Card - Informações Gerais */}
-          <TaskInfoCard task={task} truckDimensions={truckDimensions} />
+          <TaskInfoCard task={{
+            ...task,
+            plate: task.plate ?? undefined,
+            chassisNumber: task.chassisNumber ?? undefined,
+            truck: task.truck,
+            customer: task.customer,
+            details: task.details ?? "",
+          }} truckDimensions={truckDimensions} />
 
           {/* Dates Card - Datas */}
-          <TaskDatesCard task={task} />
+          <TaskDatesCard task={{
+            ...task,
+            entryDate: task.entryDate ?? new Date(),
+            term: task.term ?? new Date(),
+            createdBy: task.createdBy,
+          }} />
 
           {/* Customer Card */}
           {task.customer && <TaskCustomerCard customer={task.customer} />}
@@ -291,7 +300,7 @@ export default function ScheduleDetailsScreen() {
             <TaskPaintCard
               generalPainting={(task as any)?.generalPainting}
               logoPaints={(task as any)?.logoPaints}
-              onPaintPress={(paintId) => {
+              onPaintPress={(_paintId) => {
                 // Navigate to paint details if needed
                 // router.push(`/painting/catalog/details/${paintId}`);
               }}
@@ -469,7 +478,6 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-
           {/* Financial summary - Hidden for Warehouse sector users */}
           {!isWarehouseSector && task.price && (
             <Card style={styles.card}>
@@ -525,7 +533,8 @@ export default function ScheduleDetailsScreen() {
                         viewMode="grid"
                         baseUrl={process.env.EXPO_PUBLIC_API_URL}
                         onPress={() => {
-                          const cutFiles = cuts.map(c => c.file).filter(Boolean);
+                          const allFiles = cuts.map(c => c.file);
+                          const cutFiles = allFiles.filter((f): f is NonNullable<typeof f> => f !== undefined && f !== null);
                           fileViewer.actions.viewFiles(cutFiles, index);
                         }}
                         showFilename={true}
@@ -609,7 +618,7 @@ export default function ScheduleDetailsScreen() {
                         variant={airbrushing.status === 'COMPLETED' ? 'success' : airbrushing.status === 'IN_PROGRESS' ? 'warning' : 'default'}
                         style={{ marginLeft: spacing.sm }}
                       >
-                        {AIRBRUSHING_STATUS_LABELS[airbrushing.status] || airbrushing.status}
+                        {AIRBRUSHING_STATUS_LABELS[airbrushing.status as AIRBRUSHING_STATUS] || airbrushing.status}
                       </Badge>
                     </View>
 

@@ -120,8 +120,8 @@ export function useUrlFilters<T extends Record<string, any>>(filterConfigs: { [K
       const debounceMs = config.debounceMs;
 
       updateState(
-        (prevState) => {
-          const newState = { ...prevState };
+        (_prevState) => {
+          const newState = { ..._prevState };
 
           if (value === undefined) {
             delete newState[key];
@@ -142,8 +142,8 @@ export function useUrlFilters<T extends Record<string, any>>(filterConfigs: { [K
   const setFilters = useCallback(
     (newFilters: Partial<T>) => {
       // For batch updates, use immediate update (no debouncing)
-      updateState((prevState) => {
-        const newState = { ...prevState };
+      updateState((_prevState) => {
+        const newState = { ..._prevState };
 
         for (const [key, value] of Object.entries(newFilters) as Array<[keyof T, any]>) {
           const config = filterConfigs[key];
@@ -174,8 +174,8 @@ export function useUrlFilters<T extends Record<string, any>>(filterConfigs: { [K
   // Reset a single filter
   const resetFilter = useCallback(
     <K extends keyof T>(key: K) => {
-      updateState((prevState) => {
-        const newState = { ...prevState };
+      updateState((_prevState) => {
+        const newState = { ..._prevState };
         delete newState[key];
         return newState;
       }, 0); // Immediate update for reset
@@ -185,7 +185,7 @@ export function useUrlFilters<T extends Record<string, any>>(filterConfigs: { [K
 
   // Reset all filters
   const resetFilters = useCallback(() => {
-    updateState((prevState) => {
+    updateState((_prevState) => {
       const newState: Partial<T> = {};
       // Keep only default values
       for (const [key, config] of Object.entries(filterConfigs) as Array<[keyof T, FilterConfig<any>]>) {

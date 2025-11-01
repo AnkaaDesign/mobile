@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -34,8 +34,6 @@ export default function SupplierCreateScreen() {
     control,
     handleSubmit,
     formState: { errors, isValid, isDirty },
-    setValue,
-    watch,
   } = useForm<SupplierCreateFormData>({
     resolver: zodResolver(supplierCreateSchema),
     mode: "onChange",
@@ -104,7 +102,7 @@ export default function SupplierCreateScreen() {
         }
 
         // Add document files
-        documentFiles.forEach((file, index) => {
+        documentFiles.forEach((file) => {
           formData.append("documents", {
             uri: file.uri,
             name: file.name,
@@ -119,7 +117,7 @@ export default function SupplierCreateScreen() {
             {
               text: "OK",
               onPress: () => {
-                router.replace(routeToMobilePath(routes.inventory.suppliers.list) as any);
+                router.replace(routeToMobilePath(routes.inventory.suppliers.root) as any);
               },
             },
           ]);
@@ -135,7 +133,7 @@ export default function SupplierCreateScreen() {
             {
               text: "OK",
               onPress: () => {
-                router.replace(routeToMobilePath(routes.inventory.suppliers.list) as any);
+                router.replace(routeToMobilePath(routes.inventory.suppliers.root) as any);
               },
             },
           ]);

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector, IconPaperclip } from "@tabler/icons-react-native";
@@ -139,8 +139,8 @@ export const ObservationTable = React.memo<ObservationTableProps>(
   ({
     observations,
     onObservationPress,
-    onObservationEdit,
-    onObservationDelete,
+    // onObservationEdit removed
+    // onObservationDelete removed
     onRefresh,
     onEndReached,
     refreshing = false,
@@ -151,12 +151,12 @@ export const ObservationTable = React.memo<ObservationTableProps>(
     onSelectionChange,
     sortConfigs = [],
     onSort,
-    enableSwipeActions = true,
+    enableSwipeActions: _enableSwipeActions = true,
     visibleColumnKeys,
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -288,7 +288,6 @@ export const ObservationTable = React.memo<ObservationTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -464,7 +463,7 @@ export const ObservationTable = React.memo<ObservationTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 60, // Fixed row height
               offset: 60 * index,
               index,
@@ -629,3 +628,5 @@ const styles = StyleSheet.create({
 });
 
 ObservationTable.displayName = "ObservationTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

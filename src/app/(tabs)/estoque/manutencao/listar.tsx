@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Stack, router } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
@@ -14,23 +13,21 @@ import { MaintenanceFilterModal } from "@/components/inventory/maintenance/list/
 import { MaintenanceFilterTags } from "@/components/inventory/maintenance/list/maintenance-filter-tags";
 import { SearchBar } from "@/components/ui/search-bar";
 import { FAB } from "@/components/ui/fab";
-import { IconTools, IconPlus, IconFilter } from "@tabler/icons-react-native";
+import { IconFilter } from "@tabler/icons-react-native";
 import { useMaintenanceInfiniteMobile } from "@/hooks/use-maintenance-infinite-mobile";
-import { useMaintenanceMutations } from '../../../../hooks';
 import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 import type { MaintenanceGetManyFormData } from '../../../../schemas';
 
 export default function InventoryMaintenanceListScreen() {
-  const { colors, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+
   const { user } = useAuth();
   const [searchText, setSearchText] = useState("");
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [filters, setFilters] = useState<Partial<MaintenanceGetManyFormData>>({});
   const [showFilters, setShowFilters] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const { deleteAsync } = useMaintenanceMutations();
 
   // Permission check - Maintenance management is available for maintenance and admin
   const canManageMaintenance = useMemo(() => {
@@ -53,7 +50,6 @@ export default function InventoryMaintenanceListScreen() {
   const {
     items,
     isLoading,
-    error,
     loadMore,
     canLoadMore,
     isFetchingNextPage,
@@ -68,32 +64,6 @@ export default function InventoryMaintenanceListScreen() {
     setRefreshing(false);
   }, [refresh]);
 
-  // Handle navigation to details
-  const handleMaintenancePress = useCallback((maintenanceId: string) => {
-    router.push(`/estoque/manutencao/detalhes/${maintenanceId}`);
-  }, []);
-
-  // Handle maintenance deletion
-  const handleDelete = useCallback(async (maintenanceId: string) => {
-    Alert.alert(
-      "Excluir Manutenção",
-      "Tem certeza que deseja excluir esta manutenção? Esta ação é irreversível.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteAsync(maintenanceId);
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível excluir a manutenção");
-            }
-          },
-        },
-      ]
-    );
-  }, [deleteAsync]);
 
   // Handle search with debounce
   React.useEffect(() => {

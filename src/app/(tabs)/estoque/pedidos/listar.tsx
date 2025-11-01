@@ -1,12 +1,12 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, Alert, Pressable , StyleSheet} from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrderMutations } from '../../../../hooks';
 import { useOrdersInfiniteMobile } from "@/hooks";
 import type { OrderGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { OrderTable, createColumnDefinitions } from "@/components/inventory/order/list/order-table";
 import type { SortConfig } from "@/components/inventory/order/list/order-table";
 import { OrderFilterModal } from "@/components/inventory/order/list/order-filter-modal";
@@ -24,7 +24,7 @@ import { SECTOR_PRIVILEGES } from '../../../../constants';
 
 export default function OrderListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -49,7 +49,7 @@ export default function OrderListScreen() {
 
     // If only one sort, return as object
     if (sortConfigs.length === 1) {
-      const config = sortConfigs[0 as keyof typeof sortConfigs];
+      const config = sortConfigs[0];
       switch (config.columnKey) {
         case "description":
           return { description: config.direction };
@@ -103,7 +103,7 @@ export default function OrderListScreen() {
     items: orders,
     isLoading,
     error,
-    refetch,
+    
     isRefetching,
     loadMore,
     canLoadMore,
@@ -177,7 +177,7 @@ export default function OrderListScreen() {
 
   const handleDuplicateOrder = useCallback(
     (orderId: string) => {
-      const order = orders.find((o) => o.id === orderId);
+      const order = orders.find((o: any /* TODO: Add proper type */) => o.id === orderId);
       if (order) {
         // Navigate to create page with pre-filled data
         router.push({
@@ -228,7 +228,7 @@ export default function OrderListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   if (isLoading && !isRefetching) {

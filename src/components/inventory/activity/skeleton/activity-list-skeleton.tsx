@@ -11,7 +11,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 export const ActivityListSkeleton = () => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const animatedValue = useSharedValue(0);
 
   React.useEffect(() => {

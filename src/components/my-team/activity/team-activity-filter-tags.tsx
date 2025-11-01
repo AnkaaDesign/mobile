@@ -1,5 +1,5 @@
-import React from "react";
-import { View, ScrollView, StyleSheet, Pressable } from "react-native";
+
+import { ScrollView, StyleSheet, Pressable } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";

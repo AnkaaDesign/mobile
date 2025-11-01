@@ -1,8 +1,14 @@
-import React from "react";
+
 import { TouchableOpacity } from "react-native";
 import { Icon } from "./icon";
 import { useTheme } from "../../contexts/theme-context";
-export function AddButton({ onPress, open }) {
+
+interface AddButtonProps {
+  onPress: () => void;
+  open: boolean;
+}
+
+export function AddButton({ onPress, open }: AddButtonProps) {
   const { isDark } = useTheme();
   return (
     <>

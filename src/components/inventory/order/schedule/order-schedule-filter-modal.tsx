@@ -1,9 +1,8 @@
-import React from "react";
-import { View, Modal, Pressable, ScrollView } from "react-native";
+
+import { View, Modal, Pressable } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
+
 import { useTheme } from "@/lib/theme";
-import { IconX } from "@tabler/icons-react-native";
 
 interface OrderScheduleFilterModalProps {
   visible: boolean;
@@ -16,9 +15,9 @@ interface OrderScheduleFilterModalProps {
 export function OrderScheduleFilterModal({
   visible,
   onClose,
-  currentFilters,
-  onApply,
-  onReset,
+  // currentFilters removed
+  // onApply removed
+  // onReset removed
 }: OrderScheduleFilterModalProps) {
   const { colors, spacing } = useTheme();
 

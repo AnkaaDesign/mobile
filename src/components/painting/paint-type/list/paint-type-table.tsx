@@ -1,17 +1,16 @@
-import React, { useMemo, useCallback } from "react";
-import { View, StyleSheet, Pressable, Alert, FlatList } from "react-native";
+import React, { useCallback } from "react";
+import { View, StyleSheet, Pressable, FlatList } from "react-native";
 import { IconCheck, IconX } from "@tabler/icons-react-native";
 import type { PaintType } from "../../../../types";
 import { useTheme } from "@/lib/theme";
 import { formatDate } from "../../../../utils";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Card } from "@/components/ui/card";
+
 import { Badge } from "@/components/ui/badge";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { EmptyState } from "@/components/ui/empty-state";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import type { SortConfig } from "@/lib/sort-utils";
-
 
 // Column definition for PaintType
 export interface DataColumn<T> {
@@ -88,74 +87,22 @@ export function createColumnDefinitions(): DataColumn<PaintType>[] {
 export function PaintTypeTable({
   paintTypes,
   onPaintTypePress,
-  onPaintTypeEdit,
-  onPaintTypeDelete,
+  // onPaintTypeEdit removed
+  onPaintTypeDelete: _onPaintTypeDelete,
   onRefresh,
   onEndReached,
   refreshing = false,
-  loading = false,
-  loadingMore = false,
-  showSelection = false,
-  selectedPaintTypes = new Set(),
-  onSelectionChange,
-  sortConfigs = [],
-  onSort,
-  visibleColumnKeys,
-  enableSwipeActions = true,
+  loading: _loading = false,
+  loadingMore: _loadingMore = false,
+  showSelection: _showSelection = false,
+  selectedPaintTypes: _selectedPaintTypes = new Set(),
+  // onSelectionChange removed
+  sortConfigs: _sortConfigs = [],
+  // onSort removed
+  // visibleColumnKeys removed
+  enableSwipeActions: _enableSwipeActions = true,
 }: PaintTypeTableProps) {
   const { colors } = useTheme();
-
-  const columns = useMemo(() => createColumnDefinitions(), []);
-
-  const handleDelete = useCallback(
-    (paintType: PaintType) => {
-      Alert.alert(
-        "Confirmar exclusão",
-        `Tem certeza que deseja deletar o tipo "${paintType.name}"?`,
-        [
-          {
-            text: "Cancelar",
-            style: "cancel",
-          },
-          {
-            text: "Deletar",
-            style: "destructive",
-            onPress: () => onPaintTypeDelete(paintType.id),
-          },
-        ]
-      );
-    },
-    [onPaintTypeDelete]
-  );
-
-  const renderCell = useCallback((column: DataColumn<PaintType>, paintType: PaintType) => {
-    if (!column.render) return null;
-
-    const rendered = column.render(paintType);
-
-    // Handle badge type
-    if (typeof rendered === "object" && rendered !== null && "type" in rendered && !React.isValidElement(rendered)) {
-      const data = rendered as { type: "badge" | "number"; text?: string; value?: number; variant?: string; icon?: any };
-
-      if (data.type === "badge") {
-        const IconComponent = data.icon;
-        return (
-          <Badge variant={data.variant as any} style={styles.badge}>
-            {IconComponent && <IconComponent size={14} color={colors.foreground} />}
-            <ThemedText style={styles.badgeText}>{data.text}</ThemedText>
-          </Badge>
-        );
-      }
-      if (data.type === "number") {
-        return (
-          <ThemedText style={styles.numberText}>{data.value}</ThemedText>
-        );
-      }
-    }
-
-    // Handle string/ReactNode
-    return <ThemedText>{String(rendered)}</ThemedText>;
-  }, [colors]);
 
   const renderItem = useCallback(({ item }: { item: PaintType }) => (
     <Pressable
@@ -186,7 +133,7 @@ export function PaintTypeTable({
     </Pressable>
   ), [onPaintTypePress, colors]);
 
-  if (loading && paintTypes.length === 0) {
+  if (_loading && paintTypes.length === 0) {
     return <LoadingScreen />;
   }
 

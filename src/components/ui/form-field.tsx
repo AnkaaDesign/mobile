@@ -1,5 +1,5 @@
-import React from "react";
-import { View, ViewStyle } from "react-native";
+
+import { View } from "react-native";
 import { Controller, Control, FieldPath, FieldValues, FieldError } from "react-hook-form";
 import { Text } from "./text";
 import { Label } from "./label";
@@ -155,7 +155,7 @@ export function FormField<TFormData extends FieldValues>(props: FormFieldProps<T
         return (
           <Select value={field.value} onValueChange={field.onChange}>
             <SelectTrigger disabled={disabled}>
-              <SelectValue placeholder={props.placeholder} />
+              <SelectValue placeholder={props.placeholder || ""} />
             </SelectTrigger>
             <SelectContent>
               {props.emptyOption && (
@@ -259,15 +259,18 @@ export function FormField<TFormData extends FieldValues>(props: FormFieldProps<T
       <Controller
         control={control}
         name={name}
-        render={({ field }) => (
-          showFieldWrapper ? (
+        render={({ field }) => {
+          const fieldElement = renderField(field);
+          if (!fieldElement) return <View />;
+
+          return showFieldWrapper ? (
             <View>
-              {renderField(field)}
+              {fieldElement}
             </View>
           ) : (
-            renderField(field)
-          )
-        )}
+            <>{fieldElement}</>
+          );
+        }}
       />
 
       {error && (

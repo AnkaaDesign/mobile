@@ -13,7 +13,7 @@ import {
   ITEM_CATEGORY_TYPE,
   ITEM_CATEGORY_TYPE_LABELS,
 } from '../../../../constants';
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -21,9 +21,9 @@ import { MultiCombobox } from "@/components/ui/multi-combobox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
-import { DatePicker } from "@/components/ui/date-picker";
+
 import { Switch } from "@/components/ui/switch";
-import { Drawer, DrawerContent, DrawerHeader, DrawerFooter } from "@/components/ui/drawer";
+import { Drawer } from "@/components/ui/drawer";
 import type { ItemGetManyFormData } from '../../../../schemas';
 
 interface ItemFilterDrawerProps {
@@ -47,7 +47,8 @@ interface FilterState {
   supplierIds?: string[];
   quantityRange?: FilterRange;
   totalPriceRange?: FilterRange;
-  taxRange?: FilterRange;
+  icmsRange?: FilterRange;
+  ipiRange?: FilterRange;
   monthlyConsumptionRange?: FilterRange;
   measureValueRange?: FilterRange;
   measureUnits?: string[];
@@ -154,7 +155,8 @@ export function ItemFilterDrawer({ visible, onClose, onApply, currentFilters }: 
     if (filters.supplierIds?.length) count++;
     if (filters.quantityRange?.min !== undefined || filters.quantityRange?.max !== undefined) count++;
     if (filters.totalPriceRange?.min !== undefined || filters.totalPriceRange?.max !== undefined) count++;
-    if (filters.taxRange?.min !== undefined || filters.taxRange?.max !== undefined) count++;
+    if (filters.icmsRange?.min !== undefined || filters.icmsRange?.max !== undefined) count++;
+    if (filters.ipiRange?.min !== undefined || filters.ipiRange?.max !== undefined) count++;
     if (filters.monthlyConsumptionRange?.min !== undefined || filters.monthlyConsumptionRange?.max !== undefined) count++;
     if (filters.measureValueRange?.min !== undefined || filters.measureValueRange?.max !== undefined) count++;
     if (filters.measureUnits?.length) count++;
@@ -431,6 +433,46 @@ export function ItemFilterDrawer({ visible, onClose, onApply, currentFilters }: 
                 placeholder="Máx"
                 value={filters.totalPriceRange?.max?.toString() || ""}
                 onChangeText={(value) => handleRangeChange("totalPriceRange", "max", value)}
+                keyboardType="numeric"
+                style={styles.rangeInput}
+              />
+            </View>
+          </View>
+          <View style={styles.rangeSection}>
+            <Label style={styles.rangeLabel}>ICMS (%)</Label>
+            <View style={styles.rangeInputs}>
+              <Input
+                placeholder="Mín"
+                value={filters.icmsRange?.min?.toString() || ""}
+                onChangeText={(value) => handleRangeChange("icmsRange", "min", value)}
+                keyboardType="numeric"
+                style={styles.rangeInput}
+              />
+              <ThemedText style={[styles.rangeTo, { color: colors.mutedForeground }]}>até</ThemedText>
+              <Input
+                placeholder="Máx"
+                value={filters.icmsRange?.max?.toString() || ""}
+                onChangeText={(value) => handleRangeChange("icmsRange", "max", value)}
+                keyboardType="numeric"
+                style={styles.rangeInput}
+              />
+            </View>
+          </View>
+          <View style={styles.rangeSection}>
+            <Label style={styles.rangeLabel}>IPI (%)</Label>
+            <View style={styles.rangeInputs}>
+              <Input
+                placeholder="Mín"
+                value={filters.ipiRange?.min?.toString() || ""}
+                onChangeText={(value) => handleRangeChange("ipiRange", "min", value)}
+                keyboardType="numeric"
+                style={styles.rangeInput}
+              />
+              <ThemedText style={[styles.rangeTo, { color: colors.mutedForeground }]}>até</ThemedText>
+              <Input
+                placeholder="Máx"
+                value={filters.ipiRange?.max?.toString() || ""}
+                onChangeText={(value) => handleRangeChange("ipiRange", "max", value)}
                 keyboardType="numeric"
                 style={styles.rangeInput}
               />

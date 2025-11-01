@@ -10,7 +10,7 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SectorTableRowSwipe } from "./sector-table-row-swipe";
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { extendedColors } from "@/lib/theme/extended-colors";
 import { SECTOR_PRIVILEGES_LABELS } from '../../../../constants';
 import { getBadgeVariant } from '../../../../constants/badge-colors';
 import type { SortConfig } from "@/lib/sort-utils";
@@ -165,7 +165,7 @@ export const SectorTable = React.memo<SectorTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    const [_headerHeight, _setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -298,7 +298,7 @@ export const SectorTable = React.memo<SectorTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+            onLayout={(event) => _setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -362,7 +362,7 @@ export const SectorTable = React.memo<SectorTableProps>(
         if (enableSwipeActions && (onSectorEdit || onSectorDelete)) {
           return (
             <SectorTableRowSwipe key={item.id} sectorId={item.id} sectorName={item.name} onEdit={onSectorEdit} onDelete={onSectorDelete} disabled={showSelection}>
-              {(isActive) => (
+              {(_isActive) => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -515,7 +515,7 @@ export const SectorTable = React.memo<SectorTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 60, // Fixed row height
               offset: 60 * index,
               index,

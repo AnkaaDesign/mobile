@@ -20,7 +20,7 @@ interface OrderTimelineCardProps {
   activities?: Activity[];
 }
 
-export const OrderTimelineCard: React.FC<OrderTimelineCardProps> = ({ order, activities = [] }) => {
+export const OrderTimelineCard: React.FC<OrderTimelineCardProps> = ({ order, activities: _activities = [] }) => {
   const { colors } = useTheme();
 
   const getStatusIcon = (status: ORDER_STATUS) => {

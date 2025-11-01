@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, Text, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { InfoRow } from "@/components/ui/info-row";
@@ -6,7 +6,6 @@ import { FrequencyBadge } from "./frequency-badge";
 import type { OrderSchedule } from '../../../../types';
 import { SCHEDULE_FREQUENCY } from '../../../../constants';
 import { formatDate } from '../../../../utils';
-import { useTheme } from "@/lib/theme";
 
 interface ScheduleInfoCardProps {
   schedule: OrderSchedule;
@@ -31,15 +30,6 @@ export function ScheduleInfoCard({ schedule }: ScheduleInfoCardProps) {
   };
 
   const getDayOfWeekLabel = (day: string) => {
-    const days = [
-      "Segunda-feira",
-      "Terça-feira",
-      "Quarta-feira",
-      "Quinta-feira",
-      "Sexta-feira",
-      "Sábado",
-      "Domingo",
-    ];
     const dayMap: Record<string, string> = {
       MONDAY: "Segunda-feira",
       TUESDAY: "Terça-feira",

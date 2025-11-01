@@ -5,7 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Drawer, DrawerContent, DrawerHeader, DrawerFooter } from "@/components/ui/drawer";
+import { Drawer } from "@/components/ui/drawer";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import type { Warning } from '../../../../types';
 

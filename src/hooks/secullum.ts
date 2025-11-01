@@ -447,7 +447,7 @@ export const useSecullumCreateHoliday = () => {
 
   return useMutation({
     mutationFn: (_data: { Data: string; Descricao: string }) => secullumService.createHoliday(_data),
-    onSuccess: (response) => {
+    onSuccess: (_response) => {
       // Invalidate holidays queries to refresh the list
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "holidays"] });
     },
@@ -461,7 +461,7 @@ export const useSecullumDeleteHoliday = () => {
 
   return useMutation({
     mutationFn: (holidayId: string | number) => secullumService.deleteHoliday(holidayId),
-    onSuccess: (response) => {
+    onSuccess: (_response) => {
       // Invalidate holidays queries to refresh the list
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "holidays"] });
     },

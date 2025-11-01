@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
@@ -14,7 +14,7 @@ interface TeamActivityStatsCardProps {
 }
 
 export const TeamActivityStatsCard = ({ activities }: TeamActivityStatsCardProps) => {
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
 
   const stats = useMemo(() => {
     const total = activities.length;

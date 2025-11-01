@@ -1,6 +1,5 @@
-import React from "react";
+
 import { Image, ImageStyle, StyleProp, StyleSheet} from "react-native";
-import { cn } from "@/lib/utils";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";

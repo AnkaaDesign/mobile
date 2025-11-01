@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ViewStyle, TextStyle, StyleSheet} from "react-native";
+import { View, ViewStyle, TextStyle } from "react-native";
 import { useTheme } from "@/lib/theme";
 
 interface SearchableSelectOption {
@@ -22,17 +22,17 @@ interface SearchableSelectProps {
 }
 
 export function SearchableSelect({
-  value,
-  onValueChange,
-  options = [],
-  placeholder,
-  emptyText,
-  error,
-  renderOption,
+  // value removed
+  // onValueChange removed
+  options: _options = [],
+  // placeholder removed
+  // emptyText removed
+  // error removed
+  // renderOption removed
   children,
   style
 }: SearchableSelectProps) {
-  const { colors, spacing } = useTheme();
+  const { spacing } = useTheme();
 
   return (
     <View style={[{ padding: spacing.sm }, style as ViewStyle]}>

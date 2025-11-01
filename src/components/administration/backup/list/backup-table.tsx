@@ -1,19 +1,17 @@
-import React, { useMemo, useCallback } from "react";
+import { useCallback } from "react";
 import { View, FlatList, StyleSheet, Pressable, Alert } from "react-native";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { IconDownload, IconTrash, IconShieldCheck, IconClock, IconDatabase } from "@tabler/icons-react-native";
+import { IconClock, IconDatabase } from "@tabler/icons-react-native";
 import type { BackupMetadata } from '../../../../api-client';
 import { ThemedText } from "@/components/ui/themed-text";
-import { ThemedView } from "@/components/ui/themed-view";
+
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { SwipeActions } from "@/components/ui/swipe-actions";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import type { SortConfig } from "@/lib/sort-utils";
-
 
 interface BackupTableProps {
   backups: BackupMetadata[];
@@ -97,14 +95,12 @@ const getTypeIcon = (type: BackupMetadata["type"]) => {
 export function BackupTable({
   backups,
   onBackupPress,
-  onBackupDownload,
   onBackupRestore,
   onBackupDelete,
   onBackupVerify,
   onRefresh,
   onEndReached,
   refreshing = false,
-  loading = false,
   loadingMore = false,
   enableSwipeActions = true,
 }: BackupTableProps) {

@@ -1,11 +1,10 @@
 // apps/mobile/src/app/(tabs)/human-resources/ppe/schedules/list.tsx
 
-import React, { useState, useCallback, useMemo } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { usePpeDeliveryScheduleMutations } from '../../../../../hooks';
 import { usePpeSchedulesInfiniteMobile } from "@/hooks";
 import type { PpeDeliveryScheduleGetManyFormData } from '../../../../../schemas';
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton, Badge } from "@/components/ui";
@@ -22,7 +21,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function PpeScheduleListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -30,8 +29,7 @@ export default function PpeScheduleListScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<PpeDeliveryScheduleGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "nextRun", direction: "asc" }]);
-  const [showColumnManager, setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["nextRun", "frequency", "isActive"]);
+  const [_visibleColumnKeys] = useState<string[]>(["nextRun", "frequency", "isActive"]);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -85,8 +83,7 @@ export default function PpeScheduleListScreen() {
     },
   };
 
-  const { schedules, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePpeSchedulesInfiniteMobile(queryParams);
-  const { delete: deleteSchedule } = usePpeDeliveryScheduleMutations();
+  const { schedules, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePpeSchedulesInfiniteMobile(queryParams);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -130,7 +127,7 @@ export default function PpeScheduleListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   // Calculate overdue and upcoming counts
@@ -171,12 +168,6 @@ export default function PpeScheduleListScreen() {
           debounceMs={300}
         />
         <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
-            badgeCount={visibleColumnKeys.length}
-            badgeVariant="primary"
-          />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
             onPress={() => setShowFilters(true)}

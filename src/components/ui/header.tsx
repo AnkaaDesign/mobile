@@ -2,7 +2,7 @@ import * as React from "react";
 import { View, Text, ViewStyle, TextStyle, ViewProps, TouchableOpacity, StyleSheet} from "react-native";
 import { useTheme } from "@/contexts/theme-context";
 import { borderRadius, shadow, fontSize, fontWeight } from "@/constants/design-system";
-import { cn } from "@/lib/utils";
+
 import { IconChevronLeft } from "@tabler/icons-react-native";
 
 export interface HeaderProps extends ViewProps {

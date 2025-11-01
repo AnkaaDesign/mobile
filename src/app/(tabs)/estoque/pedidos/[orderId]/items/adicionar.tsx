@@ -50,7 +50,7 @@ export default function AddOrderItemScreen() {
   const {
     data: itemsResponse,
     isLoading: itemsLoading,
-    error: itemsError,
+    // // error: itemsError, (unused) (unused)
   } = useItems({
     ...(itemSearchText ? { searchingFor: itemSearchText } : {}),
     include: {
@@ -77,7 +77,8 @@ export default function AddOrderItemScreen() {
       orderId: orderId!,
       orderedQuantity: 1,
       price: 0,
-      tax: 0,
+      icms: 0,
+      ipi: 0,
       isCritical: false,
     },
     mode: "onChange",
@@ -340,14 +341,14 @@ export default function AddOrderItemScreen() {
               <View style={styles.formGroup}>
                 <Controller
                   control={control}
-                  name="tax"
+                  name="icms"
                   rules={{
-                    min: { value: 0, message: "Taxa deve ser maior ou igual a 0" },
-                    max: { value: 100, message: "Taxa deve ser menor ou igual a 100" },
+                    min: { value: 0, message: "ICMS deve ser entre 0 e 100%" },
+                    max: { value: 100, message: "ICMS deve ser entre 0 e 100%" },
                   }}
                   render={({ field: { value, onChange } }) => (
                     <ThemedTextInput
-                      label="Taxa (%)"
+                      label="ICMS (%)"
                       placeholder="0,00"
                       value={value?.toString() || ""}
                       onChangeText={(text) => {
@@ -355,7 +356,7 @@ export default function AddOrderItemScreen() {
                         onChange(numericValue);
                       }}
                       keyboardType="numeric"
-                      error={errors.tax?.message}
+                      error={errors.icms?.message}
                     />
                   )}
                 />
@@ -364,7 +365,32 @@ export default function AddOrderItemScreen() {
               <View style={styles.formGroup}>
                 <Controller
                   control={control}
-                  name="isCritical"
+                  name="ipi"
+                  rules={{
+                    min: { value: 0, message: "IPI deve ser entre 0 e 100%" },
+                    max: { value: 100, message: "IPI deve ser entre 0 e 100%" },
+                  }}
+                  render={({ field: { value, onChange } }) => (
+                    <ThemedTextInput
+                      label="IPI (%)"
+                      placeholder="0,00"
+                      value={value?.toString() || ""}
+                      onChangeText={(text) => {
+                        const numericValue = parseFloat(text) || 0;
+                        onChange(numericValue);
+                      }}
+                      keyboardType="numeric"
+                      error={errors.ipi?.message}
+                    />
+                  )}
+                />
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Controller
+                control={control}
+                name="isCritical"
                   render={({ field: { value, onChange } }) => (
                     <View style={styles.switchContainer}>
                       <ThemedText style={styles.switchLabel}>Item Crítico</ThemedText>
@@ -376,7 +402,6 @@ export default function AddOrderItemScreen() {
                   )}
                 />
               </View>
-            </View>
           </Card>
         </ScrollView>
 
@@ -409,7 +434,7 @@ interface ItemOptionProps {
   onPress: () => void;
 }
 
-const ItemOption: React.FC<ItemOptionProps> = ({ option, isSelected, onPress }) => {
+const ItemOption: React.FC<ItemOptionProps> = ({ option, isSelected, }) => {
   const { colors } = useTheme();
   const item = option.item;
 

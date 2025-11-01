@@ -3,7 +3,6 @@ import { View, FlatList, TouchableOpacity, StyleSheet, Switch as RNSwitch } from
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconChevronDown, IconChevronRight, IconX, IconFilter } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";

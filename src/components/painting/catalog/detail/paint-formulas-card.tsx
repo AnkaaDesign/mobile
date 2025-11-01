@@ -1,9 +1,9 @@
-import React from "react";
+
 import { View, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
-import { Badge } from "@/components/ui/badge";
+
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -18,15 +18,15 @@ export function PaintFormulasCard({ paint }: PaintFormulasCardProps) {
   const hasFormulas = paint.formulas && paint.formulas.length > 0;
 
   const handleFormulaClick = (formulaId: string) => {
-    router.push(`/painting/formulas/details/${formulaId}`);
+    router.push(`/painting/formulas/details/${formulaId}` as any);
   };
 
   const handleShowAll = () => {
-    router.push(`/painting/formulas/list?paintId=${paint.id}`);
+    router.push(`/painting/formulas/list?paintId=${paint.id}` as any);
   };
 
   const handleCreateFormula = () => {
-    router.push(`/painting/catalog/edit/${paint.id}?step=2`);
+    router.push(`/painting/catalog/edit/${paint.id}?step=2` as any);
   };
 
   return (

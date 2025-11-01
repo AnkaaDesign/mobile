@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, Modal } from "react-native";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { useAuth } from "@/contexts/auth-context";
 import { useItems } from '@/hooks';
-import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '@/constants';
+import { PPE_DELIVERY_STATUS_LABELS } from '@/constants';
 
 interface PersonalPpeDeliveryFilterModalProps {
   visible: boolean;
@@ -22,7 +21,7 @@ export function PersonalPpeDeliveryFilterModal({
   onApplyFilters,
   onClose,
 }: PersonalPpeDeliveryFilterModalProps) {
-  const { user } = useAuth();
+
   const [localFilters, setLocalFilters] = useState(filters);
 
   const { data: items } = useItems({

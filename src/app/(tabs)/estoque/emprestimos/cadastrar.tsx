@@ -20,7 +20,7 @@ export default function EstoqueEmprestimosCadastrarScreen() {
           {
             text: "OK",
             onPress: () => {
-              router.replace(routeToMobilePath(routes.inventory.borrows.root));
+              router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
             },
           },
         ]);

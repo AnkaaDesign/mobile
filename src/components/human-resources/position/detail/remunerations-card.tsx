@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
@@ -67,9 +67,9 @@ export function RemunerationsCard({ position }: RemunerationsCardProps) {
                 const getTrendColor = () => {
                   switch (trend) {
                     case "up":
-                      return isDark ? extendedColors.green[400] : extendedColors.green[600 as keyof typeof green];
+                      return isDark ? extendedColors.green[400] : extendedColors.green[600];
                     case "down":
-                      return isDark ? extendedColors.red[400] : extendedColors.red[600 as keyof typeof red];
+                      return isDark ? extendedColors.red[400] : extendedColors.red[600];
                     default:
                       return colors.mutedForeground;
                   }

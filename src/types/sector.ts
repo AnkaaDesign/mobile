@@ -12,6 +12,7 @@ import type { Task, TaskIncludes } from "./task";
 export interface Sector extends BaseEntity {
   name: string;
   privileges: SECTOR_PRIVILEGES;
+  color?: string;
 
   // Relations
   users?: User[];
@@ -126,6 +127,7 @@ export interface SectorGetManyFormData {
     gte?: Date;
     lte?: Date;
   };
+  [key: string]: unknown;
 }
 
 export interface SectorBatchCreateFormData {

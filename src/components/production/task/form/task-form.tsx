@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import { useEditForm } from "@/hooks/useEditForm";
@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import * as DocumentPicker from "expo-document-picker";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
-import { createFormDataWithContext, prepareFilesForUpload, type FileWithContext } from "@/utils/form-data-context";
+import { createFormDataWithContext, prepareFilesForUpload } from "@/utils/form-data-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
-import { MultiCombobox } from "@/components/ui/multi-combobox";
+
 import { DatePicker } from "@/components/ui/date-picker";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
@@ -156,10 +156,10 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
         resolver: zodResolver(taskFormSchema),
         originalData: initialData,
         mapDataToForm: (data) => data as TaskFormData,
-        onSubmit: async (changedData, fullData) => {
-          console.log("[TaskForm Edit] Submitting only changed fields:", changedData);
+        onSubmit: async (data: Partial<TaskFormData>) => {
+          console.log("[TaskForm Edit] Submitting changed fields:", data);
           // In edit mode, submit only changed fields to optimize payload
-          await handleSubmit(fullData); // Still pass full data for now
+          await handleSubmit(data as TaskFormData);
         },
         fieldsToOmitIfUnchanged: ["services", "paintIds"], // Don't include if unchanged
         defaultValues: defaultFormValues,
@@ -522,7 +522,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                   <View style={styles.fieldGroup}>
                     <Label>Data de Entrada</Label>
                     <DatePicker
-                      value={value}
+                      value={value ?? undefined}
                       onChange={onChange}
                       type="date"
                       placeholder="Selecione a data"
@@ -541,7 +541,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                   <View style={styles.fieldGroup}>
                     <Label>Prazo de Entrega</Label>
                     <DatePicker
-                      value={value}
+                      value={value ?? undefined}
                       onChange={onChange}
                       type="datetime"
                       placeholder="Selecione o prazo"
@@ -561,7 +561,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                     <View style={styles.fieldGroup}>
                       <Label>Data de Início</Label>
                       <DatePicker
-                        value={value}
+                        value={value ?? undefined}
                         onChange={onChange}
                         type="datetime"
                         placeholder="Selecione a data de início"
@@ -582,7 +582,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                     <View style={styles.fieldGroup}>
                       <Label>Data de Conclusão</Label>
                       <DatePicker
-                        value={value}
+                        value={value ?? undefined}
                         onChange={onChange}
                         type="datetime"
                         placeholder="Selecione a data de conclusão"
@@ -777,7 +777,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                 Cancelar
               </Button>
               <Button
-                onPress={form.handleSubmit(handleSubmit)}
+                onPress={(form as any).handleSubmit?.(handleSubmit) || handleSubmit}
                 disabled={isSubmitting}
                 style={styles.submitButton}
               >

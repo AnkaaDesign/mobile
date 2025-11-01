@@ -1,8 +1,7 @@
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack } from "expo-router";
 import { UnderConstruction } from "@/components/ui/under-construction";
 
 export default function ProducaoGaragensEditScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
 
   return (
     <>

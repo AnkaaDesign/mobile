@@ -1,13 +1,12 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet, Pressable, FlatList, ActivityIndicator, RefreshControl } from "react-native";
-import { IconBuilding, IconChevronDown, IconChevronUp, IconEdit, IconTrash, IconEye } from "@tabler/icons-react-native";
+import { IconBuilding, IconEdit, IconTrash, IconEye } from "@tabler/icons-react-native";
 import type { Garage } from "../../../../types";
 import { Text } from "@/components/ui/text";
 import { useTheme } from "@/lib/theme";
 import { ReanimatedSwipeableRow, type SwipeAction } from "@/components/ui/reanimated-swipeable-row";
 import { formatDateTime } from "@/utils";
 import type { SortConfig } from "@/lib/sort-utils";
-
 
 export interface GarageTableProps {
   garages: Garage[];
@@ -316,3 +315,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

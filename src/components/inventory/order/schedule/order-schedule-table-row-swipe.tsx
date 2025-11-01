@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { StyleSheet, Pressable } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { ReanimatedSwipeableRow, type SwipeAction } from "@/components/ui/reanimated-swipeable-row";
@@ -15,13 +15,13 @@ interface OrderScheduleTableRowSwipeProps {
 }
 
 export function OrderScheduleTableRowSwipe({
-  scheduleId,
+  // scheduleId removed
   onEdit,
   onDelete,
   onPress,
   children,
-  isOpen = false,
-  onOpenChange,
+  isOpen: _isOpen = false,
+  // onOpenChange removed
 }: OrderScheduleTableRowSwipeProps) {
   const { colors } = useTheme();
 

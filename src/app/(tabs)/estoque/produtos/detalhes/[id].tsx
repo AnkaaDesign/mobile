@@ -1,20 +1,20 @@
-import React, { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, Alert, StyleSheet} from "react-native";
+import { useState, useCallback } from "react";
+import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useItem } from '../../../../../hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE, MEASURE_UNIT_LABELS } from '../../../../../constants';
-import { formatCurrency, formatDate, itemUtils } from '../../../../../utils';
+import { formatCurrency, itemUtils } from '../../../../../utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LoadingSpinner, LoadingOverlay, SkeletonCard } from "@/components/ui/loading";
-import { Badge } from "@/components/ui/badge";
+import { LoadingOverlay, SkeletonCard } from "@/components/ui/loading";
+
 import { ThemedText } from "@/components/ui/themed-text";
-import { Separator } from "@/components/ui/separator";
+
 import { ProgressWithMarkers } from "@/components/ui/progress-with-markers";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight, shadow } from "@/constants/design-system";
+import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
-import { IconPackage, IconCircleCheck, IconCircleX, IconRefresh, IconEdit, IconPlus, IconMinus, IconHistory, IconBox, IconCurrencyDollar } from "@tabler/icons-react-native";
+import { IconPackage, IconRefresh, IconEdit, IconHistory, IconBox, IconCurrencyDollar } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { TouchableOpacity } from "react-native";
 import { showToast } from "@/components/ui/toast";
@@ -27,7 +27,7 @@ export default function ItemDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors, isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionLoading, ] = useState<string | null>(null);
 
   const id = params?.id || "";
 
@@ -143,12 +143,6 @@ export default function ItemDetailScreen() {
     return { label: "Estoque Normal", color: "success" as const, health: "good" };
   };
 
-  // Calculate stock progress percentage
-  const getStockPercentage = () => {
-    if (!item || !item.maxQuantity) return 0;
-    return Math.min((item.quantity / item.maxQuantity) * 100, 100);
-  };
-
   if (isLoading) {
     return (
       <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
@@ -191,7 +185,7 @@ export default function ItemDetailScreen() {
   }
 
   const stockStatus = getStockStatus();
-  const stockPercentage = getStockPercentage();
+
   const currentPrice = item.prices?.[0]?.value;
 
   return (
@@ -242,7 +236,7 @@ export default function ItemDetailScreen() {
                 >
                   <IconPackage
                     size={20}
-                    color={stockStatus.health === "critical" ? extendedColors.red[600] : stockStatus.health === "warning" ? extendedColors.yellow[600] : extendedColors.green[600 as keyof typeof green]}
+                    color={stockStatus.health === "critical" ? extendedColors.red[600] : stockStatus.health === "warning" ? extendedColors.yellow[600] : extendedColors.green[600]}
                   />
                 </View>
                 <View style={styles.statInfo}>
@@ -257,8 +251,8 @@ export default function ItemDetailScreen() {
             {currentPrice && (
               <Card style={styles.statCard}>
                 <CardContent style={styles.statContent}>
-                  <View style={[styles.statIcon, { backgroundColor: extendedColors.green[100 as keyof typeof green] }]}>
-                    <IconCurrencyDollar size={20} color={extendedColors.green[600 as keyof typeof green]} />
+                  <View style={[styles.statIcon, { backgroundColor: extendedColors.green[100] }]}>
+                    <IconCurrencyDollar size={20} color={extendedColors.green[600]} />
                   </View>
                   <View style={styles.statInfo}>
                     <ThemedText style={StyleSheet.flatten([styles.statValue, { color: colors.foreground }])}>{formatCurrency(currentPrice)}</ThemedText>
@@ -304,8 +298,8 @@ export default function ItemDetailScreen() {
                         },
                       ]}
                     >
-                      <ThemedText style={[styles.stockLevelLabel, { color: isDark ? extendedColors.yellow[400] : extendedColors.yellow[700 as keyof typeof yellow] }]}>Reposição</ThemedText>
-                      <ThemedText style={[styles.stockLevelValue, { color: isDark ? extendedColors.yellow[300] : extendedColors.yellow[800 as keyof typeof yellow] }]}>
+                      <ThemedText style={[styles.stockLevelLabel, { color: isDark ? extendedColors.yellow[400] : extendedColors.yellow[700] }]}>Reposição</ThemedText>
+                      <ThemedText style={[styles.stockLevelValue, { color: isDark ? extendedColors.yellow[300] : extendedColors.yellow[800] }]}>
                         {item.reorderPoint.toLocaleString("pt-BR")}
                       </ThemedText>
                     </View>

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -22,7 +22,7 @@ interface Invoice {
   total: number;
 }
 
-export function CustomerInvoicesCard({ customer }: CustomerInvoicesCardProps) {
+export function CustomerInvoicesCard({}: CustomerInvoicesCardProps) {
   const { colors } = useTheme();
 
   // Placeholder - this will be populated when customer invoices are fetched

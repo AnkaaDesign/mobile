@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { IconX } from "@tabler/icons-react-native";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -92,7 +92,7 @@ export function ObservationFilterTags({
   const removeTaskId = (taskId: string) => {
     if (!filters.taskIds) return;
 
-    const newTaskIds = filters.taskIds.filter((id) => id !== taskId);
+    const newTaskIds = filters.taskIds.filter((id: any /* TODO: Add proper type */) => id !== taskId);
     const newFilters = { ...filters };
 
     if (newTaskIds.length === 0) {
@@ -119,7 +119,7 @@ export function ObservationFilterTags({
           />
         )}
 
-        {filters.taskIds?.map((taskId) => (
+        {filters.taskIds?.map((taskId: any /* TODO: Add proper type */) => (
           <FilterTag
             key={taskId}
             label={`Tarefa: ${getTaskName(taskId)}`}

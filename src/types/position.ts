@@ -3,7 +3,7 @@
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
 import type { ORDER_BY_DIRECTION } from '@/constants';
 import type { User, UserIncludes, UserOrderBy } from "./user";
-import type { Sector, SectorIncludes, SectorOrderBy } from "./sector";
+import type { Sector, SectorIncludes } from "./sector";
 
 // =====================
 // Main Entity Interfaces

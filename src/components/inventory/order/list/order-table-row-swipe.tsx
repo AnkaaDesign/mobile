@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect } from "react";
-import { View, StyleSheet, ViewStyle, Alert } from "react-native";
+import { View, StyleSheet, ViewStyle, Alert, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconCopy } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/contexts/theme-context";
@@ -24,7 +24,7 @@ interface OrderTableRowSwipeProps {
   onDelete?: (orderId: string) => void;
   onDuplicate?: (orderId: string) => void;
   customActions?: CustomSwipeAction[];
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   disabled?: boolean;
 }
 
@@ -130,7 +130,7 @@ const OrderTableRowSwipeComponent = ({ children, orderId, orderName, onEdit, onD
   ];
 
   const handleWillOpen = useCallback(
-    (direction: "left" | "right") => {
+    (_direction: "left" | "right") => {
       // Clear any existing timer
       if (autoCloseTimerRef.current) {
         clearTimeout(autoCloseTimerRef.current);
@@ -147,7 +147,7 @@ const OrderTableRowSwipeComponent = ({ children, orderId, orderName, onEdit, onD
   );
 
   const handleOpen = useCallback(
-    (direction: "left" | "right", swipeable: Swipeable) => {
+    (_direction: "left" | "right", swipeable: Swipeable) => {
       setActiveRowId(orderId);
 
       // Register the close function for legacy compatibility
@@ -195,7 +195,7 @@ const OrderTableRowSwipeComponent = ({ children, orderId, orderName, onEdit, onD
       onWillOpen={handleWillOpen}
       onOpen={handleOpen}
       onClose={handleClose}
-      containerStyle={[styles.container, style]}
+      containerStyle={StyleSheet.flatten([styles.container, style])}
       childrenContainerStyle={styles.rowContainer}
       actionWidth={ACTION_WIDTH}
     >

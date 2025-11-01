@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { View, Text, ScrollView } from 'react-native';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ export default function FinanceiroScreen() {
           <Text className="text-lg font-semibold mb-2 text-foreground">Clientes</Text>
           <Text className="text-muted-foreground mb-4">Gerenciar informações financeiras de clientes</Text>
           <Button
-            onPress={() => router.push('/(tabs)/financeiro/clientes')}
+            onPress={() => router.push('/(tabs)/financeiro/clientes' as any)}
             className="bg-primary"
           >
             <Text className="text-primary-foreground">Acessar</Text>
@@ -27,7 +27,7 @@ export default function FinanceiroScreen() {
           <Text className="text-lg font-semibold mb-2 text-foreground">Produção</Text>
           <Text className="text-muted-foreground mb-4">Acompanhar financeiro da produção</Text>
           <Button
-            onPress={() => router.push('/(tabs)/financeiro/producao')}
+            onPress={() => router.push('/(tabs)/financeiro/producao' as any)}
             className="bg-primary"
           >
             <Text className="text-primary-foreground">Acessar</Text>

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, TouchableOpacity } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from "@/components/ui/card";
@@ -43,7 +43,7 @@ export function PaintCatalogCard({ paint, onPress }: PaintCatalogCardProps) {
           {paint.finish && (
             <LinearGradient
               colors={
-                paint.finish === 'GLOSSY'
+                paint.finish === 'METALLIC'
                   ? ['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)', 'rgba(0,0,0,0.1)']
                   : paint.finish === 'MATTE'
                   ? ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']

@@ -1,9 +1,24 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Dimensions, Modal } from "react-native";
 import { IconX, IconChevronDown } from "@tabler/icons-react-native";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTheme } from "@/contexts/theme-context";
-export const MultiSelectCombobox = ({
+
+interface MultiSelectComboboxProps {
+  options?: any[];
+  selectedValues?: any[];
+  onValueChange: (values: any[]) => void;
+  onCreate?: (value: string) => void;
+  placeholder?: string;
+  selectedText?: string;
+  searchPlaceholder?: string;
+  onSearchChange?: (text: string) => void;
+  onEndReached?: () => void;
+  isLoading?: boolean;
+  disabled?: boolean;
+  className?: string;
+}
+export const MultiSelectCombobox: React.FC<MultiSelectComboboxProps> = ({
   options = [],
   selectedValues = [],
   onValueChange,
@@ -15,12 +30,12 @@ export const MultiSelectCombobox = ({
   onEndReached,
   isLoading = false,
   disabled = false,
-  className = "",
+  className: _className = "",
 }) => {
   const { colors, isDark } = useTheme();
   const [open, setOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const selectRef = useRef(null);
+  const selectRef = useRef<View>(null);
   const [inputLayout, setInputLayout] = useState({
     x: 0,
     y: 0,
@@ -37,7 +52,7 @@ export const MultiSelectCombobox = ({
         });
   // Measure button position for proper dropdown placement
   const measureSelect = () => {
-    selectRef.current?.measureInWindow((x, y, width, height) => {
+    selectRef.current?.measureInWindow((x: any /* TODO: Add proper type */, y: any /* TODO: Add proper type */, width: any /* TODO: Add proper type */, height: any /* TODO: Add proper type */) => {
       setInputLayout({ x, y, width, height });
     });
   };
@@ -54,7 +69,7 @@ export const MultiSelectCombobox = ({
     setSearchText("");
   };
   // Handle option selection
-  const handleSelect = (value) => {
+  const handleSelect = (value: any /* TODO: Add proper type */) => {
     let newSelectedValues;
     if (selectedValues.includes(value)) {
       // Remove the value if already selected
@@ -83,12 +98,12 @@ export const MultiSelectCombobox = ({
     }
   };
   // Remove a selected item
-  const removeItem = (value) => {
+  const removeItem = (value: any /* TODO: Add proper type */) => {
     const newSelectedValues = selectedValues.filter((v) => v !== value);
     onValueChange(newSelectedValues);
   };
   // Handle search input change
-  const handleSearchChange = (text) => {
+  const handleSearchChange = (text: any /* TODO: Add proper type */) => {
     setSearchText(text);
     if (onSearchChange) {
       onSearchChange(text);
@@ -119,7 +134,7 @@ export const MultiSelectCombobox = ({
     }`;
   };
   // Get label for an option by its value
-  const getLabelByValue = (value) => {
+  const getLabelByValue = (value: any /* TODO: Add proper type */) => {
     const option = options.find((opt) => opt && opt.value === value);
     return option?.label || String(value);
   };
@@ -146,7 +161,7 @@ export const MultiSelectCombobox = ({
     );
   };
   // Render option item
-  const renderOptionItem = ({ item }) => {
+  const renderOptionItem = ({ item }: { item: any }) => {
     if (!item) return null;
     const isSelected = selectedValues.includes(item.value);
     return (
@@ -163,7 +178,7 @@ export const MultiSelectCombobox = ({
           backgroundColor: colors.popover,
         }}
       >
-        <Checkbox checked={isSelected} onCheckedChange={(checked) => handleSelect(item.value)} style={{ marginRight: 8 }} />
+        <Checkbox checked={isSelected} onCheckedChange={(_checked) => handleSelect(item.value)} style={{ marginRight: 8 }} />
         <Text
           style={{
             flex: 1,
@@ -352,41 +367,14 @@ export const MultiSelectCombobox = ({
     </View>
   );
 };
-const Badge = ({ label, onRemove }) => {
-  const { colors, isDark } = useTheme();
 
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: isDark ? "rgba(59, 130, 246, 0.2)" : "#dbeafe", // blue-100 light, blue-500 with 20% opacity dark
-        borderWidth: 1,
-        borderColor: isDark ? "rgba(59, 130, 246, 0.3)" : "#93c5fd", // blue-300 light, blue-500 with 30% opacity dark
-        borderRadius: 6,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 12,
-          color: isDark ? "#93c5fd" : "#1e40af", // blue-400 dark, blue-800 light
-          marginRight: 4,
-        }}
-        numberOfLines={1}
-        ellipsizeMode="tail"
-      >
-        {label}
-      </Text>
-      <TouchableOpacity onPress={onRemove} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
-        <IconX size={14} color={isDark ? "#93c5fd" : "#2563eb"} />
-      </TouchableOpacity>
-    </View>
-  );
-};
-const Chip = ({ label, onRemove }) => {
-  const { colors, isDark } = useTheme();
+interface BadgeProps {
+  label: string;
+  onRemove: () => void;
+}
+
+const Badge: React.FC<BadgeProps> = ({ label, onRemove }) => {
+  const { colors } = useTheme();
 
   return (
     <View

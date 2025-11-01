@@ -16,7 +16,7 @@ interface PaintTypeColumn {
   sortable?: boolean;
   align?: "left" | "center" | "right";
   width?: number;
-  render?: (paintType: PaintType) => React.ReactNode;
+  render?: (paintType: PaintType) => React.ReactNode | { type: "badge" | "number"; text?: string; value?: number; variant?: string; icon?: any };
 }
 
 // Function to get default visible columns for paint types

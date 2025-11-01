@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, Alert, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconTruck, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
-import { useSuppliers, useSupplierMutations } from "@/hooks";
+import { useSupplierDetail, useUpdateSupplier } from "@/hooks";
 import { supplierUpdateSchema, type SupplierUpdateFormData } from "@/schemas";
 import {
   ThemedView,
@@ -45,11 +45,10 @@ export default function SupplierEditScreen() {
   const [logoFiles, setLogoFiles] = useState<FileUpload[]>([]);
   const [documentFiles, setDocumentFiles] = useState<FileUpload[]>([]);
 
-  const { data: supplier, isLoading, error, refetch } = useSuppliers(
-    { where: { id } },
+  const { data: supplier, isLoading, error, refetch } = useSupplierDetail(
+    id!,
     {
       enabled: !!id,
-      select: (data) => ({ ...data, data: data?.data?.[0] }),
     }
   );
 
@@ -57,8 +56,6 @@ export default function SupplierEditScreen() {
     control,
     handleSubmit,
     formState: { errors, isValid, isDirty },
-    setValue,
-    watch,
     reset,
   } = useForm<SupplierUpdateFormData>({
     resolver: zodResolver(supplierUpdateSchema),
@@ -82,7 +79,7 @@ export default function SupplierEditScreen() {
     },
   });
 
-  const { updateAsync } = useSupplierMutations();
+  const { mutateAsync: updateAsync } = useUpdateSupplier(id!);
 
   // Populate form when supplier data is loaded
   useEffect(() => {
@@ -118,7 +115,7 @@ export default function SupplierEditScreen() {
         const formData = new FormData();
 
         // Add all form fields
-        formData.append("fantasyName", data.fantasyName);
+        if (data.fantasyName) formData.append("fantasyName", data.fantasyName);
         if (data.cnpj) formData.append("cnpj", data.cnpj);
         if (data.corporateName) formData.append("corporateName", data.corporateName);
         if (data.email) formData.append("email", data.email);
@@ -152,7 +149,7 @@ export default function SupplierEditScreen() {
         }
 
         // Add document files
-        documentFiles.forEach((file, index) => {
+        documentFiles.forEach((file) => {
           formData.append("documents", {
             uri: file.uri,
             name: file.name,
@@ -160,7 +157,7 @@ export default function SupplierEditScreen() {
           } as any);
         });
 
-        const result = await updateAsync({ id: id!, data: formData as SupplierUpdateFormData });
+        const result = await updateAsync(formData as SupplierUpdateFormData);
 
         if (result?.data) {
           Alert.alert("Sucesso", "Fornecedor atualizado com sucesso!", [
@@ -176,7 +173,7 @@ export default function SupplierEditScreen() {
         }
       } else {
         // No files, send regular JSON data
-        const result = await updateAsync({ id: id!, data });
+        const result = await updateAsync(data);
 
         if (result?.data) {
           Alert.alert("Sucesso", "Fornecedor atualizado com sucesso!", [

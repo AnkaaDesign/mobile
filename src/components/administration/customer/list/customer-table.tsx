@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet, Image } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { Customer } from '../../../../types';
@@ -61,7 +61,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
           <Image
             source={{ uri: getFileUrl(customer.logo) }}
             style={[styles.logoImage, { borderColor: extendedColors.neutral[300] }]}
-            onError={(e) => {
+            onError={(_e) => {
               // On error, the fallback avatar will be shown via react-native's onError handling
               console.log('Failed to load logo for customer:', customer.fantasyName);
             }}
@@ -503,7 +503,7 @@ export const CustomerTable = React.memo<CustomerTableProps>(
               onDelete={onCustomerDelete}
               disabled={showSelection}
             >
-              {(isActive) => (
+              {(_isActive) => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -663,7 +663,7 @@ export const CustomerTable = React.memo<CustomerTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 36,
               offset: 36 * index,
               index,

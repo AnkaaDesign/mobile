@@ -4,7 +4,7 @@ import { ThemedText } from "./themed-text";
 import { Button } from "./button";
 import { Badge } from "./badge";
 import { useTheme } from "@/lib/theme";
-import { IconX, IconFilter } from "@tabler/icons-react-native";
+import { IconX } from "@tabler/icons-react-native";
 
 interface FilterModalProps {
   visible: boolean;

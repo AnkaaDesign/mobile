@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -16,7 +16,7 @@ import {
   IconAlertTriangle,
   IconTruck,
 } from "@tabler/icons-react-native";
-import { SCHEDULE_FREQUENCY_LABELS, getDynamicFrequencyLabel } from '../../../../../constants';
+import { getDynamicFrequencyLabel } from '../../../../../constants';
 import { formatDate, formatRelativeTime } from '../../../../../utils';
 import type { PpeDeliverySchedule } from '../../../../../types';
 

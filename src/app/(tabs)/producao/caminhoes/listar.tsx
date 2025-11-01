@@ -1,17 +1,18 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, Alert, StyleSheet} from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTruckMutations } from '../../../../hooks';
 import { useTrucksInfiniteMobile } from "@/hooks";
 import type { TruckGetManyFormData } from '../../../../schemas';
 import type { SortConfig } from "@/lib/sort-utils";
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import type { Truck } from '../../../../types';
+import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { TruckTable, createColumnDefinitions, getDefaultVisibleColumns } from "@/components/production/truck/list/truck-table";
 import { TruckFilterModal } from "@/components/production/truck/list/truck-filter-modal";
 import { TruckFilterTags } from "@/components/production/truck/list/truck-filter-tags";
-import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
+import { ColumnVisibilityDrawer } from "@/components/ui/column-visibility-drawer";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { TruckListSkeleton } from "@/components/production/truck/skeleton/truck-list-skeleton";
@@ -21,7 +22,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function TruckListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -60,7 +61,7 @@ export default function TruckListScreen() {
 
     // If only one sort, return as object
     if (sortConfigs.length === 1) {
-      const config = sortConfigs[0 as keyof typeof sortConfigs];
+      const config = sortConfigs[0];
       return convertColumnKeyToOrderBy(config.columnKey, config.direction);
     }
 
@@ -88,7 +89,7 @@ export default function TruckListScreen() {
     },
   };
 
-  const { trucks, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useTrucksInfiniteMobile(queryParams);
+  const { trucks, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useTrucksInfiniteMobile(queryParams);
   const { delete: deleteTruck } = useTruckMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -127,7 +128,7 @@ export default function TruckListScreen() {
 
   const handleDuplicateTruck = useCallback(
     (truckId: string) => {
-      const truck = trucks.find((truck) => truck.id === truckId);
+      const truck = trucks.find((truck: Truck) => truck.id === truckId);
       if (truck) {
         // Navigate to create page with pre-filled data
         router.push({
@@ -177,7 +178,7 @@ export default function TruckListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   if (isLoading && !isRefetching) {
@@ -238,9 +239,7 @@ export default function TruckListScreen() {
       {hasTrucks ? (
         <TableErrorBoundary onRetry={handleRefresh}>
           <TruckTable
-            data={trucks}
-            isLoading={isLoading && !isRefetching}
-            error={error}
+            trucks={trucks}
             onRefresh={handleRefresh}
             onTruckPress={handleTruckPress}
             onTruckEdit={handleEditTruck}
@@ -280,7 +279,7 @@ export default function TruckListScreen() {
       <TruckFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
 
       {/* Column Visibility Drawer */}
-      <ColumnVisibilityDrawerV2
+      <ColumnVisibilityDrawer
         columns={allColumns}
         visibleColumns={new Set(visibleColumnKeys)}
         onVisibilityChange={handleColumnsChange}

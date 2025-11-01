@@ -18,7 +18,7 @@ interface TimelineCardProps {
 interface TimelineEvent {
   status: VACATION_STATUS;
   label: string;
-  icon: React.ComponentType<{ size: number; color: string }>;
+  icon: React.ComponentType<any>;
   color: string;
   date?: Date;
   isActive: boolean;
@@ -30,7 +30,6 @@ export function TimelineCard({ vacation }: TimelineCardProps) {
 
   const getTimelineEvents = (): TimelineEvent[] => {
     const events: TimelineEvent[] = [];
-    const now = new Date();
 
     // Define the status flow
     const statusFlow = [
@@ -46,7 +45,7 @@ export function TimelineCard({ vacation }: TimelineCardProps) {
     // Build timeline
     statusFlow.forEach((status, index) => {
       let date: Date | undefined = undefined;
-      let icon: React.ComponentType<{ size: number; color: string }> = IconClock;
+      let icon: React.ComponentType<any> = IconClock;
       let color: string = extendedColors.gray[500];
 
       switch (status) {

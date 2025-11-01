@@ -1,8 +1,8 @@
-import React from "react";
+
 import { View, FlatList, ActivityIndicator } from "react-native";
 import { Text } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+
 import { Badge } from "@/components/ui/badge";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/contexts/auth-context";
@@ -38,7 +38,6 @@ export function MyPpeList({ className }: MyPpeListProps) {
 
     const alertDate = delivery.item.ppeConfig.alertDaysBefore ? addDays(expirationDate, -delivery.item.ppeConfig.alertDaysBefore) : null;
 
-    const now = new Date();
     const isExpired = isDateInPast(expirationDate);
     const isNearExpiration = alertDate && isDateInPast(alertDate) && !isExpired;
 
@@ -61,7 +60,7 @@ export function MyPpeList({ className }: MyPpeListProps) {
               {delivery.size && <Text className="text-sm text-muted-foreground">Tamanho: {delivery.size}</Text>}
               {delivery.item?.ppeConfig?.ca && <Text className="text-sm text-muted-foreground">CA: {delivery.item.ppeConfig.ca}</Text>}
             </View>
-            <Badge variant={delivery.status === PPE_DELIVERY_STATUS.DELIVERED ? "success" : "secondary"}>{PPE_DELIVERY_STATUS_LABELS[delivery.status]}</Badge>
+            <Badge variant={delivery.status === PPE_DELIVERY_STATUS.DELIVERED ? "success" : "secondary"}>{PPE_DELIVERY_STATUS_LABELS[delivery.status as PPE_DELIVERY_STATUS]}</Badge>
           </View>
 
           <View className="flex-row items-center gap-4">

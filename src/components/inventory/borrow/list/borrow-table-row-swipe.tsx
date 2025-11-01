@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect } from "react";
-import { View, StyleSheet, ViewStyle, Alert } from "react-native";
+import { View, StyleSheet, ViewStyle, Alert, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconCheck, IconAlertTriangle } from "@tabler/icons-react-native";
 import { useTheme } from "@/contexts/theme-context";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
@@ -17,7 +17,7 @@ interface BorrowTableRowSwipeProps {
   onDelete?: (borrowId: string) => void;
   onReturn?: (borrowId: string) => void;
   onMarkAsLost?: (borrowId: string) => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   disabled?: boolean;
 }
 
@@ -189,7 +189,7 @@ const BorrowTableRowSwipeComponent = ({
   }
 
   const handleWillOpen = useCallback(
-    (direction: "left" | "right") => {
+    (_direction: "left" | "right") => {
       // Clear any existing timer
       if (autoCloseTimerRef.current) {
         clearTimeout(autoCloseTimerRef.current);
@@ -206,7 +206,7 @@ const BorrowTableRowSwipeComponent = ({
   );
 
   const handleOpen = useCallback(
-    (direction: "left" | "right", swipeable: Swipeable) => {
+    (_direction: "left" | "right", swipeable: Swipeable) => {
       setActiveRowId(borrowId);
 
       // Register the close function for legacy compatibility
@@ -254,7 +254,7 @@ const BorrowTableRowSwipeComponent = ({
       onWillOpen={handleWillOpen}
       onOpen={handleOpen}
       onClose={handleClose}
-      containerStyle={[styles.container, style]}
+      containerStyle={StyleSheet.flatten([styles.container, style])}
       childrenContainerStyle={styles.rowContainer}
       actionWidth={ACTION_WIDTH}
     >

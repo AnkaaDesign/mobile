@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
 import { Card } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconUser, IconBriefcase, IconBuilding, IconShieldCheck } from "@tabler/icons-react-native";
+import { IconBriefcase, IconBuilding, IconShieldCheck } from "@tabler/icons-react-native";
 import { getBadgeVariant } from '../../../../constants/badge-colors';
 import { getUserStatusBadgeText } from '../../../../utils/user';
 
@@ -27,7 +27,7 @@ export function UserCard({ user }: UserCardProps) {
           <Avatar
             size="lg"
             label={user.name}
-            uri={user.avatar || undefined}
+            uri={user.avatar?.url || undefined}
             style={styles.avatar}
           />
           <View style={styles.headerInfo}>

@@ -1,9 +1,9 @@
-import React, { forwardRef, useCallback, useEffect, useState } from "react";
+import { forwardRef, useCallback, useEffect, useState } from "react";
 import { TextInput as RNTextInput, View, Text, StyleSheet, TextInputProps as RNTextInputProps } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, fontSize, spacing } from "@/constants/design-system";
 
-interface CpfInputProps extends Omit<RNTextInputProps, 'value' | 'onChangeText' | 'style'> {
+interface CpfInputProps extends Omit<RNTextInputProps, 'value' | 'onChangeText' | 'style' | 'onChange'> {
   value?: string;
   onChange?: (value: string | undefined) => void;
   onBlur?: () => void;

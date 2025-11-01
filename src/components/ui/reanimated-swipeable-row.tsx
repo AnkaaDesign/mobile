@@ -57,7 +57,7 @@ export const ReanimatedSwipeableRow = React.forwardRef<Swipeable, ReanimatedSwip
       childrenContainerStyle,
       actionWidth = 80,
       enableTrackpadTwoFingerGesture = false,
-      renderOverlay,
+      renderOverlay: _renderOverlay,
     },
     ref,
   ) => {
@@ -85,7 +85,7 @@ export const ReanimatedSwipeableRow = React.forwardRef<Swipeable, ReanimatedSwip
     );
 
     const renderLeftActions = useCallback(
-      (progress: SharedValue<number>, drag: SharedValue<number>) => {
+      (progress: SharedValue<number>, _drag: SharedValue<number>) => {
         if (leftActions.length === 0) return null;
 
         return (
@@ -114,7 +114,7 @@ export const ReanimatedSwipeableRow = React.forwardRef<Swipeable, ReanimatedSwip
     );
 
     const renderRightActions = useCallback(
-      (progress: SharedValue<number>, drag: SharedValue<number>) => {
+      (progress: SharedValue<number>, _drag: SharedValue<number>) => {
         if (rightActions.length === 0) return null;
 
         return (
@@ -188,14 +188,14 @@ interface ActionItemProps {
   swipeableRef: React.RefObject<Swipeable> | React.Ref<Swipeable>;
 }
 
-const ActionItem: React.FC<ActionItemProps> = ({ action, progress, backgroundColor, textColor, width, index, swipeableRef }) => {
+const ActionItem: React.FC<ActionItemProps> = ({ action, progress, backgroundColor, textColor, width, swipeableRef }) => {
   const handlePress = useCallback(() => {
     if (Platform.OS === "ios") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
     if (action.closeOnPress !== false) {
-      if ('current' in swipeableRef && swipeableRef.current) {
+      if (swipeableRef && 'current' in swipeableRef && swipeableRef.current) {
         swipeableRef.current.close();
       }
     }

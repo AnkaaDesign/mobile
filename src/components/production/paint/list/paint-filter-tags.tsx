@@ -1,8 +1,6 @@
-import React from "react";
-import { View, Pressable } from "react-native";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
-import { IconX } from "@tabler/icons-react-native";
+
+import { View } from "react-native";
+
 import { useTheme } from "@/lib/theme";
 
 interface PaintFilterTagsProps {
@@ -10,8 +8,8 @@ interface PaintFilterTagsProps {
   onRemove: (key: string) => void;
 }
 
-export function PaintFilterTags({ filters, onRemove }: PaintFilterTagsProps) {
-  const { spacing, colors } = useTheme();
+export function PaintFilterTags({ }: PaintFilterTagsProps) {
+  const { spacing} = useTheme();
 
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs }}>

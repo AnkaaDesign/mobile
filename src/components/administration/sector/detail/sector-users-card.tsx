@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { IconUsers, IconChevronRight } from "@tabler/icons-react-native";
 import { router } from "expo-router";
 import type { Sector } from '../../../../types';
-import { routes, USER_STATUS, ACTIVE_USER_STATUSES } from '../../../../constants';
+import { routes, USER_STATUS } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";

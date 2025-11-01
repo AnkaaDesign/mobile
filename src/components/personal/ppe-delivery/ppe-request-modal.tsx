@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { View, ScrollView, Modal, ActivityIndicator } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,8 +38,9 @@ export function PpeRequestModal({
   const [stockAvailable, setStockAvailable] = useState<number | null>(null);
 
   // Get user's PPE size
-  const { data: userPpeSize } = usePpeSize(user?.ppeSizeId || "", {
-    enabled: !!user?.ppeSizeId,
+  const ppeSizeId = user?.ppeSize ? String(user.ppeSize) : "";
+  const { data: userPpeSize } = usePpeSize(ppeSizeId, {
+    enabled: !!user?.ppeSize,
   });
 
   // Get available PPE items
@@ -75,12 +76,24 @@ export function PpeRequestModal({
   useEffect(() => {
     if (watchedItemId && items?.data) {
       const item = items.data.find((i) => i.id === watchedItemId);
-      setSelectedItem(item);
+      if (item) {
+        setSelectedItem({
+          id: item.id,
+          name: item.name,
+          ppeType: item.ppeType,
+          ppeCA: item.ppeCA ?? undefined,
+          brand: item.brand,
+          currentStock: ((item as any).currentStock),
+        });
 
-      // Get stock availability
-      if (item?.currentStock !== undefined) {
-        setStockAvailable(item.currentStock);
+        // Get stock availability
+        if (((item as any).currentStock) !== undefined) {
+          setStockAvailable(((item as any).currentStock));
+        } else {
+          setStockAvailable(null);
+        }
       } else {
+        setSelectedItem(null);
         setStockAvailable(null);
       }
     } else {
@@ -114,7 +127,7 @@ export function PpeRequestModal({
     // Validate based on PPE type
     switch (ppeType) {
       case PPE_TYPE.SHIRT:
-      case PPE_TYPE.UNIFORM:
+      case "UNIFORM" as any:
         if (!userSize.shirts) {
           return {
             isValid: false,
@@ -345,7 +358,7 @@ export function PpeRequestModal({
                       Data Desejada (Opcional)
                     </Text>
                     <DatePicker
-                      value={value}
+                      value={value ?? undefined}
                       onChange={onChange}
                       placeholder="Selecione uma data"
                       disabled={isLoading}

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ScrollView, StyleSheet } from "react-native";
 import { SkeletonCard, SkeletonText } from "@/components/ui/loading";
 import { spacing, borderRadius } from "@/constants/design-system";

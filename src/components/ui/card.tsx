@@ -58,7 +58,7 @@ interface CardHeaderProps extends ViewProps {
 }
 
 function CardHeader({ style, children, ...props }: CardHeaderProps) {
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
 
   const headerStyles: StyleProp<ViewStyle> = [
     {
@@ -153,7 +153,7 @@ interface CardFooterProps extends ViewProps {
 }
 
 function CardFooter({ style, flexDirection = "column", children, ...props }: CardFooterProps) {
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
 
   const footerStyles: StyleProp<ViewStyle> = [
     {

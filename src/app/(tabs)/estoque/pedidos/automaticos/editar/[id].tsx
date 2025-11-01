@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { View, ScrollView, Alert, KeyboardAvoidingView, Platform , StyleSheet} from "react-native";
+import { useState, useCallback, useEffect } from "react";
+import { View, ScrollView, Alert, KeyboardAvoidingView, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +16,7 @@ import {
   Card,
   Button,
   Input,
-  Select,
+  
   Switch,
   LoadingScreen,
   ErrorScreen,
@@ -83,7 +83,7 @@ export default function EditAutomaticOrderScreen() {
   });
 
   const { update: updateOrderSchedule } = useOrderScheduleMutations({
-    onUpdateSuccess: (data) => {
+    onUpdateSuccess: (_data) => {
       Alert.alert("Sucesso", "Agendamento automático atualizado com sucesso", [
         {
           text: "OK",
@@ -146,23 +146,6 @@ export default function EditAutomaticOrderScreen() {
       router.back();
     }
   }, [router, isDirty]);
-
-  const handleReset = useCallback(() => {
-    if (schedule) {
-      Alert.alert("Resetar", "Tem certeza que deseja resetar todas as alterações?", [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Resetar",
-          style: "destructive",
-          onPress: () => {
-            const formData = mapOrderScheduleToFormData(schedule);
-            reset(formData);
-            setSelectedSupplierId(schedule.supplierId || null);
-          },
-        },
-      ]);
-    }
-  }, [schedule, reset]);
 
   if (!canEdit) {
     return (

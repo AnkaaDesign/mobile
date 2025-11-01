@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector } from "@tabler/icons-react-native";
@@ -158,9 +158,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
         );
       }
 
-      const formattedConsumption = consumption % 1 === 0
-        ? consumption.toLocaleString("pt-BR")
-        : consumption.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const formattedConsumption = Math.round(consumption).toLocaleString("pt-BR");
 
       return (
         <View style={styles.consumptionCell}>
@@ -349,15 +347,29 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "tax",
-    header: "TAXA",
+    key: "icms",
+    header: "ICMS",
     align: "right",
     sortable: true,
     width: 0,
     accessor: (item: Item) => (
       <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
-        {item.tax !== null && item.tax !== undefined
-          ? `${item.tax % 1 === 0 ? item.tax.toLocaleString("pt-BR") : item.tax.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
+        {item.icms !== null && item.icms !== undefined
+          ? `${item.icms % 1 === 0 ? item.icms.toLocaleString("pt-BR") : item.icms.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
+          : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "ipi",
+    header: "IPI",
+    align: "right",
+    sortable: true,
+    width: 0,
+    accessor: (item: Item) => (
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
+        {item.ipi !== null && item.ipi !== undefined
+          ? `${item.ipi % 1 === 0 ? item.ipi.toLocaleString("pt-BR") : item.ipi.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
           : "-"}
       </ThemedText>
     ),
@@ -582,7 +594,7 @@ export const ItemTable = React.memo<ItemTableProps>(
     onItemPress,
     onItemEdit,
     onItemDelete,
-    onItemDuplicate,
+    // onItemDuplicate removed
     onRefresh,
     onEndReached,
     refreshing = false,
@@ -598,7 +610,7 @@ export const ItemTable = React.memo<ItemTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -632,7 +644,8 @@ export const ItemTable = React.memo<ItemTableProps>(
         reorderPoint: 1.2,
         reorderQuantity: 1.2,
         boxQuantity: 1.0,
-        tax: 0.8,
+        icms: 0.8,
+        ipi: 0.8,
         "supplier.fantasyName": 1.4,
         ppeType: 1.2,
         ppeSize: 1.0,
@@ -753,7 +766,6 @@ export const ItemTable = React.memo<ItemTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -817,7 +829,7 @@ export const ItemTable = React.memo<ItemTableProps>(
         if (enableSwipeActions && (onItemEdit || onItemDelete)) {
           return (
             <ItemTableRowSwipe key={item.id} itemId={item.id} itemName={item.name} onEdit={onItemEdit} onDelete={onItemDelete} disabled={showSelection}>
-              {(isActive) => (
+              {() => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -970,7 +982,7 @@ export const ItemTable = React.memo<ItemTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 60, // Fixed row height
               offset: 60 * index,
               index,
@@ -1180,3 +1192,5 @@ const styles = StyleSheet.create({
 });
 
 ItemTable.displayName = "ItemTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

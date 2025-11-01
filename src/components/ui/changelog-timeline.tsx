@@ -1,9 +1,7 @@
 import { useMemo, useCallback } from "react";
 import { View, ScrollView, TouchableOpacity , StyleSheet} from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
-import { ThemedView } from "@/components/ui/themed-view";
-import { LoadingSpinner } from "@/components/ui/loading";
-import { EmptyState } from "@/components/ui/empty-state";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   IconHistory,
@@ -24,7 +22,7 @@ import {
 } from "@tabler/icons-react-native";
 import type { ChangeLog } from '../../types';
 import { CHANGE_LOG_ENTITY_TYPE, CHANGE_ACTION, CHANGE_TRIGGERED_BY, CHANGE_LOG_ENTITY_TYPE_LABELS } from '../../constants';
-import { formatDateTime, formatRelativeTime, getFieldLabel, formatFieldValue, getActionLabel, isBatchOperation } from '../../utils';
+import { formatRelativeTime, getFieldLabel, formatFieldValue, getActionLabel } from '../../utils';
 import { useChangeLogs } from '../../hooks';
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
@@ -40,7 +38,7 @@ interface ChangelogTimelineProps {
 }
 
 // Map actions to icons
-type IconComponent = React.ComponentType<{ size?: number; color?: string }>;
+type IconComponent = React.ComponentType<any>;
 
 const actionConfig: Record<CHANGE_ACTION, { icon: IconComponent; color: string }> = {
   [CHANGE_ACTION.CREATE]: { icon: IconPlus, color: "#22c55e" },
@@ -93,7 +91,7 @@ const groupChangelogsByEntity = (changelogs: ChangeLog[]) => {
 };
 
 export function ChangelogTimeline({ entityType, entityId, entityName, entityCreatedAt, maxHeight = 400, limit = 50 }: ChangelogTimelineProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   // Fetch changelogs
   const {
@@ -130,7 +128,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
         newValue: null,
         triggeredBy: CHANGE_TRIGGERED_BY.USER as any,
         userId: null,
-        user: null,
+        user: undefined,
         createdAt: new Date(entityCreatedAt),
         updatedAt: new Date(entityCreatedAt),
       };

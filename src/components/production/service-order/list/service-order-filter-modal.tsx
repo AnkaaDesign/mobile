@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useTheme } from "@/lib/theme";
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from '../../../../constants';
 import type { ServiceOrderGetManyFormData } from '../../../../schemas';
 
@@ -23,7 +22,7 @@ export const ServiceOrderFilterModal: React.FC<ServiceOrderFilterModalProps> = (
   onApply,
   currentFilters,
 }) => {
-  const { colors } = useTheme();
+
   const [localFilters, setLocalFilters] = useState(currentFilters);
 
   // Status options for select

@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { View } from "react-native";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { ThemedText } from "@/components/ui/themed-text";
-import { showToast } from "@/components/ui/toast";
+
 import { useItemCategories, useItemCategoryMutations } from '../../../../hooks';
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';
 import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from '../../../../constants';

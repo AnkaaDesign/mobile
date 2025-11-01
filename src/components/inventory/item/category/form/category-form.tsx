@@ -1,7 +1,7 @@
-import React from "react";
+
 import { View, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { useForm, Controller, FormProvider } from "react-hook-form";
-import type { Control } from "react-hook-form";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ interface ItemCategoryFormProps<TMode extends "create" | "update"> {
 }
 
 export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, onCancel, isSubmitting, defaultValues, mode }: ItemCategoryFormProps<TMode>) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   type FormData = TMode extends "create" ? ItemCategoryCreateFormData : ItemCategoryUpdateFormData;
 

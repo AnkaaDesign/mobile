@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { usePosition, usePositionMutations } from '../../../../../hooks';
@@ -17,7 +17,7 @@ import { hasPrivilege } from '../../../../../utils';
 
 // Import modular components
 import { SpecificationsCard, RemunerationHistoryCard, RelatedUsersCard } from "@/components/human-resources/position/detail";
-import { PositionDetailSkeleton } from "@/components/human-resources/position/skeleton";
+
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function PositionDetailScreen() {

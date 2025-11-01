@@ -1,6 +1,6 @@
 // apps/mobile/src/components/human-resources/ppe/schedule/list/ppe-schedule-filter-modal.tsx
 
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Modal, View, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconChevronUp, IconChevronDown, IconX } from "@tabler/icons-react-native";
@@ -151,7 +151,7 @@ export function PpeScheduleFilterModal({ visible, onClose, onApply, currentFilte
   };
 
   // Frequency options
-  const frequencyOptions = Object.entries(SCHEDULE_FREQUENCY).map(([key, value]) => ({
+  const frequencyOptions = Object.entries(SCHEDULE_FREQUENCY).map(([_key, value]) => ({
     value,
     label: SCHEDULE_FREQUENCY_LABELS[value as keyof typeof SCHEDULE_FREQUENCY_LABELS],
   }));
@@ -181,7 +181,7 @@ export function PpeScheduleFilterModal({ visible, onClose, onApply, currentFilte
               <Button
                 variant="ghost"
                 onPress={() => toggleSection("status")}
-                style={[styles.sectionHeader, { borderBottomColor: colors.border }]}
+                style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}
               >
                 <ThemedText style={styles.sectionTitle}>Status</ThemedText>
                 {expandedSections.has("status") ? <IconChevronUp size={20} color={colors.foreground} /> : <IconChevronDown size={20} color={colors.foreground} />}
@@ -209,7 +209,7 @@ export function PpeScheduleFilterModal({ visible, onClose, onApply, currentFilte
               <Button
                 variant="ghost"
                 onPress={() => toggleSection("employees")}
-                style={[styles.sectionHeader, { borderBottomColor: colors.border }]}
+                style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}
               >
                 <View style={styles.sectionTitleContainer}>
                   <ThemedText style={styles.sectionTitle}>Funcionários</ThemedText>
@@ -242,7 +242,7 @@ export function PpeScheduleFilterModal({ visible, onClose, onApply, currentFilte
               <Button
                 variant="ghost"
                 onPress={() => toggleSection("items")}
-                style={[styles.sectionHeader, { borderBottomColor: colors.border }]}
+                style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}
               >
                 <View style={styles.sectionTitleContainer}>
                   <ThemedText style={styles.sectionTitle}>Itens de EPI</ThemedText>
@@ -275,7 +275,7 @@ export function PpeScheduleFilterModal({ visible, onClose, onApply, currentFilte
               <Button
                 variant="ghost"
                 onPress={() => toggleSection("categories")}
-                style={[styles.sectionHeader, { borderBottomColor: colors.border }]}
+                style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}
               >
                 <View style={styles.sectionTitleContainer}>
                   <ThemedText style={styles.sectionTitle}>Categorias</ThemedText>
@@ -308,7 +308,7 @@ export function PpeScheduleFilterModal({ visible, onClose, onApply, currentFilte
               <Button
                 variant="ghost"
                 onPress={() => toggleSection("frequency")}
-                style={[styles.sectionHeader, { borderBottomColor: colors.border }]}
+                style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}
               >
                 <View style={styles.sectionTitleContainer}>
                   <ThemedText style={styles.sectionTitle}>Frequência</ThemedText>

@@ -160,7 +160,8 @@ export function defaultGetLabel(key: string): string {
     stockLevels: "Níveis de estoque",
     quantity: "Quantidade",
     price: "Preço",
-    tax: "Imposto",
+    icms: "ICMS",
+    ipi: "IPI",
     taskCount: "Qtd. tarefas",
     orderCount: "Qtd. pedidos",
     itemCount: "Qtd. itens",
@@ -178,7 +179,7 @@ export function defaultGetLabel(key: string): string {
 /**
  * Default value formatter
  */
-export function defaultGetDisplayValue(key: string, value: any): string {
+export function defaultGetDisplayValue(_key: string, value: any): string {
   // Handle null/undefined
   if (value === null || value === undefined) {
     return "Vazio";

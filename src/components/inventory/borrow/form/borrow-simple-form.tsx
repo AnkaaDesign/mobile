@@ -1,13 +1,12 @@
-import React, { useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { useState } from "react";
+import { View, StyleSheet } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView } from "react-native";
-import { IconPackage, IconDeviceFloppy, IconX, IconLoader } from "@tabler/icons-react-native";
+import { IconPackage, IconX, IconLoader } from "@tabler/icons-react-native";
 import {
-  ThemedView,
   ThemedText,
   Card,
   Input,
@@ -15,18 +14,17 @@ import {
   SelectItem,
   Button,
   SimpleFormField,
-  Textarea,
 } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
+import { spacing } from "@/constants/design-system";
 import { useItems, useUsers } from "@/hooks";
 
-// Simple Borrow Form Schema
+// Simple Borrow Form Schema - matches backend API structure
 const borrowSimpleSchema = z.object({
   userId: z.string().uuid("Colaborador é obrigatório").min(1, "Colaborador é obrigatório"),
   itemId: z.string().uuid("Item é obrigatório").min(1, "Item é obrigatório"),
   quantity: z.number().positive("Quantidade deve ser positiva").int("Quantidade deve ser um número inteiro"),
-  notes: z.string().nullable().optional(),
+  returnedAt: z.date().nullable().optional(),
 });
 
 type BorrowSimpleFormData = z.infer<typeof borrowSimpleSchema>;
@@ -39,8 +37,8 @@ interface BorrowSimpleFormProps {
 
 export function BorrowSimpleForm({ onSubmit, onCancel, isSubmitting }: BorrowSimpleFormProps) {
   const { colors } = useTheme();
-  const [itemSearch, setItemSearch] = useState("");
-  const [userSearch, setUserSearch] = useState("");
+  const [itemSearch] = useState("");
+  const [userSearch] = useState("");
 
   const form = useForm<BorrowSimpleFormData>({
     resolver: zodResolver(borrowSimpleSchema),
@@ -48,19 +46,19 @@ export function BorrowSimpleForm({ onSubmit, onCancel, isSubmitting }: BorrowSim
       userId: "",
       itemId: "",
       quantity: 1,
-      notes: null,
+      returnedAt: null,
     },
     mode: "onChange",
   });
 
   // Fetch items
-  const { data: items, isLoading: isLoadingItems } = useItems({
+  const { data: items } = useItems({
     searchingFor: itemSearch,
     orderBy: { name: "asc" },
   });
 
   // Fetch users (employees)
-  const { data: users, isLoading: isLoadingUsers } = useUsers({
+  const { data: users } = useUsers({
     searchingFor: userSearch,
     orderBy: { username: "asc" },
   });
@@ -150,21 +148,6 @@ export function BorrowSimpleForm({ onSubmit, onCancel, isSubmitting }: BorrowSim
                       keyboardType="numeric"
                       editable={!isSubmitting}
                       error={!!form.formState.errors.quantity}
-                    />
-                  )}
-                />
-              </SimpleFormField>
-
-              <SimpleFormField label="Observações" error={form.formState.errors.notes}>
-                <Controller
-                  control={form.control}
-                  name="notes"
-                  render={({ field: { onChange, value } }) => (
-                    <Textarea
-                      value={value || ""}
-                      onChangeText={onChange}
-                      placeholder="Observações sobre o empréstimo..."
-                      editable={!isSubmitting}
                     />
                   )}
                 />

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, Alert, KeyboardAvoidingView , StyleSheet} from "react-native";
 import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
@@ -13,13 +13,13 @@ import {
   Card,
   Button,
   Input,
-  Select,
+  
   Switch,
   LoadingScreen,
 } from "@/components/ui";
 import { FormHeader } from "@/components/ui/form-header";
 import { FormSection } from "@/components/ui/form-section";
-import { SupplierSelector } from "@/components/inventory/supplier/supplier-selector";
+
 import { ItemMultiSelector } from "@/components/inventory/item/item-multi-selector";
 import { FrequencySelector } from "@/components/inventory/order/schedule/frequency-selector";
 import { ScheduleConfigurationForm } from "@/components/inventory/order/schedule/schedule-configuration-form";
@@ -58,7 +58,7 @@ export default function CreateAutomaticOrderScreen() {
   });
 
   const { create: createOrderSchedule } = useOrderScheduleMutations({
-    onCreateSuccess: (data) => {
+    onCreateSuccess: (_data) => {
       Alert.alert("Sucesso", "Agendamento automático criado com sucesso", [
         {
           text: "OK",
@@ -237,7 +237,6 @@ export default function CreateAutomaticOrderScreen() {
               />
             </Card>
           </FormSection>
-
 
           {/* Items Selection */}
           <FormSection title="Itens" icon="package">

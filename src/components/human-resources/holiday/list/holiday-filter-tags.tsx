@@ -1,10 +1,10 @@
-import React from "react";
+
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX, IconSearch, IconCalendar, IconTag } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { HOLIDAY_TYPE, HOLIDAY_TYPE_LABELS } from '../../../../constants';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { Badge } from "@/components/ui/badge";
+
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 

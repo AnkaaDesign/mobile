@@ -1,6 +1,5 @@
 // apps/mobile/src/components/human-resources/ppe/schedule/skeleton/ppe-schedule-list-skeleton.tsx
 
-import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemedView } from "@/components/ui/themed-view";

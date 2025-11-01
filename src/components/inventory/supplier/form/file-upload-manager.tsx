@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, StyleSheet, TouchableOpacity, Alert, Image, ActivityIndicator } from "react-native";
-import { IconPlus, IconX, IconFile, IconUpload, IconPhoto } from "@tabler/icons-react-native";
+import { IconX, IconFile, IconUpload, IconPhoto } from "@tabler/icons-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ThemedText, Button, Card } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
@@ -19,15 +19,16 @@ interface FileUploadManagerProps {
   maxFiles?: number;
   allowImages?: boolean;
   allowDocuments?: boolean;
+  existingFileUrl?: string;
 }
 
 export function FileUploadManager({
   files,
   onChange,
-  label = "Arquivos",
+  label: _label = "Arquivos",
   maxFiles = 5,
   allowImages = true,
-  allowDocuments = false,
+  allowDocuments: _allowDocuments = false,
 }: FileUploadManagerProps) {
   const { colors } = useTheme();
   const [isLoading, setIsLoading] = useState(false);

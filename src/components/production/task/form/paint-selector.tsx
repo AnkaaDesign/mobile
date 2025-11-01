@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
 import { MultiCombobox } from "@/components/ui/multi-combobox";
@@ -95,7 +95,7 @@ function usePaintRenderOption() {
   const { colors } = useTheme();
 
   return useCallback(
-    (option: any, isSelected: boolean, onPress?: () => void) => {
+    (option: any, isSelected: boolean, _onPress?: () => void) => {
       const paint = option.paint as Paint;
 
       return (
@@ -189,8 +189,7 @@ export function GeneralPaintingSelector({
   const shouldFetchSelectedPaint = value && (!initialPaint || initialPaint.id !== value);
   const { data: selectedPaint } = usePaint(
     value || "",
-    { include: { paintType: true, paintBrand: true } },
-    { enabled: shouldFetchSelectedPaint }
+    { include: { paintType: true, paintBrand: true }, enabled: !!shouldFetchSelectedPaint }
   );
 
   // Fetch paints with pagination
@@ -210,8 +209,8 @@ export function GeneralPaintingSelector({
     const paintList = [...paints];
 
     // Add selected paint if fetched and not in list
-    if (selectedPaint && !paintList.some((p) => p.id === selectedPaint.id)) {
-      paintList.unshift(selectedPaint);
+    if (selectedPaint?.data && !paintList.some((p) => p.id === selectedPaint.data!.id)) {
+      paintList.unshift(selectedPaint.data);
     }
 
     if (initialPaint && !paintList.some((p) => p.id === initialPaint.id)) {

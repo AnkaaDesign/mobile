@@ -1,9 +1,9 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { IconCalendar, IconClock, IconBeach, IconInfoCircle } from "@tabler/icons-react-native";
+import { IconCalendar, IconClock, IconBeach } from "@tabler/icons-react-native";
 import type { Vacation } from '../../../../types';
 import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS, getBadgeVariant } from '../../../../constants';
 import { formatDate, formatRelativeTime } from '../../../../utils';
@@ -16,7 +16,7 @@ interface VacationCardProps {
 }
 
 export function VacationCard({ vacation }: VacationCardProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   // Calculate vacation days
   const startDate = new Date(vacation.startAt);

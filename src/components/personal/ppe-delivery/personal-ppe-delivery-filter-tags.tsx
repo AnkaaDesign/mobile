@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ScrollView } from "react-native";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,8 +44,8 @@ export function PersonalPpeDeliveryFilterTags({
               size="icon"
               className="h-4 w-4 p-0"
               onPress={() => {
-                const newStatus = filters.status.filter((s: string) => s !== status);
-                if (newStatus.length === 0) {
+                const newStatus = filters.status?.filter((s: string) => s !== status);
+                if (!newStatus || newStatus.length === 0) {
                   onRemoveFilter("status");
                 } else {
                   // This needs to be handled by parent

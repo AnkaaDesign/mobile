@@ -1,9 +1,9 @@
-import React, { forwardRef, useCallback, useEffect, useState } from "react";
+import { forwardRef, useCallback, useEffect, useState } from "react";
 import { TextInput as RNTextInput, View, Text, StyleSheet, TextInputProps as RNTextInputProps, ActivityIndicator } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, fontSize, spacing } from "@/constants/design-system";
 
-interface ZipCodeInputProps extends Omit<RNTextInputProps, 'value' | 'onChangeText' | 'style'> {
+interface ZipCodeInputProps extends Omit<RNTextInputProps, 'value' | 'onChangeText' | 'style' | 'onChange'> {
   value?: string;
   onChange?: (value: string | undefined) => void;
   onBlur?: () => void;
@@ -19,10 +19,11 @@ interface ZipCodeInputProps extends Omit<RNTextInputProps, 'value' | 'onChangeTe
   helperText?: string;
   containerStyle?: any;
   inputStyle?: any;
+  editable?: boolean;
 }
 
 export const ZipCodeInput = forwardRef<RNTextInput, ZipCodeInputProps>(
-  ({ value, onChange, onBlur, onCepChange, label, error, helperText, containerStyle, inputStyle, placeholder = "00000-000", ...props }, ref) => {
+  ({ value, onChange, onBlur, onCepChange, label, error, helperText, containerStyle, inputStyle, placeholder = "00000-000", editable = true, ...props }, ref) => {
     const { colors } = useTheme();
     const [displayValue, setDisplayValue] = useState(() => formatZipCode(value || ""));
     const [isLoading, setIsLoading] = useState(false);
@@ -132,7 +133,7 @@ export const ZipCodeInput = forwardRef<RNTextInput, ZipCodeInputProps>(
           keyboardType="numeric"
           style={StyleSheet.flatten([baseInputStyle, inputStyle])}
           placeholderTextColor={colors.mutedForeground}
-          editable={!isLoading}
+          editable={editable && !isLoading}
           {...props}
         />
         {isLoading && (

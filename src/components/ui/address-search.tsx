@@ -1,9 +1,19 @@
 // AddressSearchInput.jsx - Fixed component with proper dropdown positioning
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import { ActivityIndicator, Dimensions, FlatList, Keyboard, TextInput, TouchableOpacity, View , StyleSheet} from "react-native";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { ActivityIndicator, FlatList, Keyboard, TextInput, TouchableOpacity, View , StyleSheet} from "react-native";
 import { Text } from "./text";
 // Remove lodash dependency - use native implementation
 import { IconSearch, IconX } from "@tabler/icons-react-native";
+
+interface AddressSearchInputProps {
+  placeholder?: string;
+  onPlaceSelect: (place: any) => void;
+  apiKey: string;
+  searchDelay?: number;
+  country?: string;
+  language?: string;
+}
+
 export function AddressSearchInput({
   placeholder = "Buscar endereço ou empresa...",
   onPlaceSelect,
@@ -11,17 +21,17 @@ export function AddressSearchInput({
   searchDelay = 300,
   country = "br",
   language = "pt-BR",
-}) {
+}: AddressSearchInputProps) {
   // All hooks must be called before any conditional returns
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [searchAttempts, setSearchAttempts] = useState(0);
+  const [_searchAttempts, _setSearchAttempts] = useState(0);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef(null);
-  const screenWidth = Dimensions.get("window").width;
+
   // Native debounce implementation to prevent too many API calls
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -61,7 +71,7 @@ export function AddressSearchInput({
           const response = await fetch(url);
           const data = await response.json();
           if (data.status === "OK" && data.predictions) {
-            const options = data.predictions.map((prediction) => {
+            const options = data.predictions.map((prediction: any /* TODO: Add proper type */) => {
               const mainText = prediction.structured_formatting?.main_text || "";
               const secondaryText = prediction.structured_formatting?.secondary_text || "";
               let label = prediction.description;
@@ -82,14 +92,14 @@ export function AddressSearchInput({
               setDropdownVisible(true);
             }
             if (options.length === 0 && attempt < 3) {
-              setSearchAttempts(attempt + 1);
+              _setSearchAttempts(attempt + 1);
               debouncedSearch(text, attempt + 1);
             } else if (options.length === 0) {
               setErrorMessage("Nenhum resultado encontrado. Tente modificar sua busca.");
             }
           } else {
             if (attempt < 3) {
-              setSearchAttempts(attempt + 1);
+              _setSearchAttempts(attempt + 1);
               debouncedSearch(text, attempt + 1);
             } else {
               setErrorMessage(`Erro na busca: ${data.status || "Falha na API"}`);
@@ -116,9 +126,9 @@ export function AddressSearchInput({
     };
   }, []);
   // Handle text input changes
-  const handleTextChange = (text) => {
+  const handleTextChange = (text: any /* TODO: Add proper type */) => {
     setSearchText(text);
-    setSearchAttempts(0);
+    _setSearchAttempts(0);
     setIsEditing(false); // Reset editing mode when text changes
     if (text.length > 0) {
       debouncedSearch(text);
@@ -133,7 +143,7 @@ export function AddressSearchInput({
     setDropdownVisible(false); // Keep dropdown hidden when first focusing
   };
   // Fetch place details when a place is selected
-  const fetchPlaceDetails = async (placeId) => {
+  const fetchPlaceDetails = async (placeId: any /* TODO: Add proper type */) => {
     if (!placeId) return null;
     setIsLoading(true);
     try {
@@ -159,7 +169,7 @@ export function AddressSearchInput({
           longitude = details.geometry.location.lng.toString();
         }
         if (details.address_components) {
-          details.address_components.forEach((component) => {
+          details.address_components.forEach((component: any /* TODO: Add proper type */) => {
             const types = component.types;
             if (types.includes("street_number")) {
               streetNumber = component.long_name;
@@ -214,7 +224,7 @@ export function AddressSearchInput({
     }
   };
   // Handle option selection
-  const handleSelectOption = async (option) => {
+  const handleSelectOption = async (option: any /* TODO: Add proper type */) => {
     setDropdownVisible(false);
     setSearchText(option.label);
     setIsEditing(true); // Set editing mode to true when an option is selected
@@ -243,13 +253,13 @@ export function AddressSearchInput({
   // Try a different search approach
   const handleRetry = () => {
     if (searchText) {
-      setSearchAttempts(0);
+      _setSearchAttempts(0);
       setIsEditing(false);
       debouncedSearch(`empresa ${searchText}`);
     }
   };
   // Render each item in the results list
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.resultItem} onPress={() => handleSelectOption(item)} activeOpacity={0.7}>
       <Text style={styles.resultLabel}>{item.label}</Text>
     </TouchableOpacity>

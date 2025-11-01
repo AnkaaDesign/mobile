@@ -15,6 +15,7 @@ export interface BackupMetadata {
   compressionLevel?: number;
   encrypted?: boolean;
   progress?: number; // Progress percentage (0-100)
+  duration?: number; // Duration in milliseconds
 }
 
 export interface CreateBackupRequest {
@@ -76,6 +77,9 @@ export interface BackupQueryParams {
   type?: "database" | "files" | "full";
   status?: "pending" | "in_progress" | "completed" | "failed";
   limit?: number;
+  orderBy?: {
+    createdAt?: "asc" | "desc";
+  };
 }
 
 export interface SystemHealthSummary {

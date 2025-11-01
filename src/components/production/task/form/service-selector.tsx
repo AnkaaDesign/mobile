@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
@@ -63,7 +63,7 @@ export function ServiceSelector({
   }, [availableServices, services]);
 
   // Map to combobox options
-  const getOptions = useCallback((index: number) => {
+  const getOptions = useCallback((_index: number) => {
     return allServices.map((service) => ({
       value: service.description,
       label: service.description,

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet, Linking } from "react-native";
 import type { User } from '../../../../types';
 import { formatBrazilianPhone, getUserStatusBadgeText } from '../../../../utils';
@@ -19,11 +19,13 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
 
   const getBadgeVariant = (status: string) => {
     switch (status) {
-      case USER_STATUS.ACTIVE:
+      case USER_STATUS.CONTRACTED:
+      case USER_STATUS.EXPERIENCE_PERIOD_1:
+      case USER_STATUS.EXPERIENCE_PERIOD_2:
         return "success";
-      case USER_STATUS.INACTIVE:
+      case USER_STATUS.DISMISSED:
         return "destructive";
-      case USER_STATUS.ON_VACATION:
+      case "ON_VACATION":
         return "warning";
       default:
         return "secondary";

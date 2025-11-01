@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet, ScrollView } from "react-native";
 import { Chip, ThemedText } from "@/components/ui";
 import { COMMISSION_STATUS_LABELS } from '../../../../constants';
@@ -21,33 +21,53 @@ export function CommissionFilterTags({
   onClearAll,
 }: CommissionFilterTagsProps) {
   const hasFilters =
-    (filters.statuses && filters.statuses.length > 0) ||
-    (filters.userIds && filters.userIds.length > 0) ||
-    (filters.taskIds && filters.taskIds.length > 0) ||
-    filters.createdAt?.gte ||
-    filters.createdAt?.lte ||
+    (filters.where?.statuses && filters.where.statuses.length > 0) ||
+    (filters.where?.userIds && filters.where.userIds.length > 0) ||
+    (filters.where?.taskIds && filters.where.taskIds.length > 0) ||
+    filters.where?.createdAt?.gte ||
+    filters.where?.createdAt?.lte ||
     searchText;
 
   if (!hasFilters) return null;
 
   const removeStatus = (status: string) => {
-    const newStatuses = filters.statuses?.filter((s) => s !== status) || [];
-    onFilterChange({ ...filters, statuses: newStatuses.length > 0 ? newStatuses : undefined });
+    const newStatuses = filters.where?.statuses?.filter((s: any /* TODO: Add proper type */) => s !== status) || [];
+    onFilterChange({
+      ...filters,
+      where: {
+        ...filters.where,
+        statuses: newStatuses.length > 0 ? newStatuses : undefined
+      }
+    });
   };
 
   const removeUserId = (userId: string) => {
-    const newUserIds = filters.userIds?.filter((id) => id !== userId) || [];
-    onFilterChange({ ...filters, userIds: newUserIds.length > 0 ? newUserIds : undefined });
+    const newUserIds = filters.where?.userIds?.filter((id: any /* TODO: Add proper type */) => id !== userId) || [];
+    onFilterChange({
+      ...filters,
+      where: {
+        ...filters.where,
+        userIds: newUserIds.length > 0 ? newUserIds : undefined
+      }
+    });
   };
 
   const removeTaskId = (taskId: string) => {
-    const newTaskIds = filters.taskIds?.filter((id) => id !== taskId) || [];
-    onFilterChange({ ...filters, taskIds: newTaskIds.length > 0 ? newTaskIds : undefined });
+    const newTaskIds = filters.where?.taskIds?.filter((id: any /* TODO: Add proper type */) => id !== taskId) || [];
+    onFilterChange({
+      ...filters,
+      where: {
+        ...filters.where,
+        taskIds: newTaskIds.length > 0 ? newTaskIds : undefined
+      }
+    });
   };
 
   const removeDateFilter = () => {
     const newFilters = { ...filters };
-    delete newFilters.createdAt;
+    if (newFilters.where) {
+      delete newFilters.where.createdAt;
+    }
     onFilterChange(newFilters);
   };
 
@@ -75,7 +95,7 @@ export function CommissionFilterTags({
           </Chip>
         )}
 
-        {filters.statuses?.map((status) => (
+        {filters.where?.statuses?.map((status: any /* TODO: Add proper type */) => (
           <Chip
             key={status}
             onPress={() => removeStatus(status)}
@@ -87,7 +107,7 @@ export function CommissionFilterTags({
           </Chip>
         ))}
 
-        {filters.userIds?.map((userId, index) => (
+        {filters.where?.userIds?.map((userId: any /* TODO: Add proper type */, index: any /* TODO: Add proper type */) => (
           <Chip
             key={userId}
             onPress={() => removeUserId(userId)}
@@ -99,7 +119,7 @@ export function CommissionFilterTags({
           </Chip>
         ))}
 
-        {filters.taskIds?.map((taskId, index) => (
+        {filters.where?.taskIds?.map((taskId: any /* TODO: Add proper type */, index: any /* TODO: Add proper type */) => (
           <Chip
             key={taskId}
             onPress={() => removeTaskId(taskId)}
@@ -111,16 +131,16 @@ export function CommissionFilterTags({
           </Chip>
         ))}
 
-        {(filters.createdAt?.gte || filters.createdAt?.lte) && (
+        {(filters.where?.createdAt?.gte || filters.where?.createdAt?.lte) && (
           <Chip
             onPress={removeDateFilter}
             variant="default"
             size="sm"
             icon="close"
           >
-            {filters.createdAt?.gte && formatDate(filters.createdAt.gte)}
-            {filters.createdAt?.gte && filters.createdAt?.lte && " - "}
-            {filters.createdAt?.lte && formatDate(filters.createdAt.lte)}
+            {filters.where?.createdAt?.gte && formatDate(filters.where.createdAt.gte)}
+            {filters.where?.createdAt?.gte && filters.where?.createdAt?.lte && " - "}
+            {filters.where?.createdAt?.lte && formatDate(filters.where.createdAt.lte)}
           </Chip>
         )}
       </ScrollView>

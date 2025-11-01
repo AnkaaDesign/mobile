@@ -33,7 +33,6 @@ export const TaskCustomerCard: React.FC<TaskCustomerCardProps> = ({ customer }) 
     });
   };
 
-  const document = customer.cpf || customer.cnpj;
   const formattedDocument = customer.cpf
     ? formatCPF(customer.cpf)
     : customer.cnpj

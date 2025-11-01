@@ -62,7 +62,11 @@ export interface ItemFilters {
     min?: number;
     max?: number;
   };
-  taxRange?: {
+  icmsRange?: {
+    min?: number;
+    max?: number;
+  };
+  ipiRange?: {
     min?: number;
     max?: number;
   };

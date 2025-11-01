@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, ScrollView, Pressable, ViewStyle } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Pressable, ViewStyle } from "react-native";
 import { SCHEDULE_FREQUENCY, WEEK_DAY, WEEK_DAY_LABELS } from '../../../../constants';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Input } from "@/components/ui/input";

@@ -80,20 +80,20 @@ export function useBackupMutations() {
 
   const createBackup = useMutation({
     mutationFn: (data: CreateBackupRequest) => backupApi.createBackup(data),
-    onSuccess: (result) => {
+    onSuccess: (_result) => {
       queryClient.invalidateQueries({ queryKey: backupQueryKeys.all });
     },
-    onError: (error: any) => {
+    onError: (_error: any) => {
     },
   });
 
   const restoreBackup = useMutation({
     mutationFn: ({ id, targetPath }: { id: string; targetPath?: string }) =>
       backupApi.restoreBackup(id, targetPath),
-    onSuccess: (result) => {
+    onSuccess: (_result) => {
       queryClient.invalidateQueries({ queryKey: backupQueryKeys.all });
     },
-    onError: (error: any) => {
+    onError: (_error: any) => {
     },
   });
 
@@ -102,16 +102,16 @@ export function useBackupMutations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: backupQueryKeys.all });
     },
-    onError: (error: any) => {
+    onError: (_error: any) => {
     },
   });
 
   const scheduleBackup = useMutation({
     mutationFn: (data: ScheduleBackupRequest) => backupApi.scheduleBackup(data),
-    onSuccess: (result) => {
+    onSuccess: (_result) => {
       queryClient.invalidateQueries({ queryKey: backupQueryKeys.scheduled() });
     },
-    onError: (error: any) => {
+    onError: (_error: any) => {
     },
   });
 
@@ -120,7 +120,7 @@ export function useBackupMutations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: backupQueryKeys.scheduled() });
     },
-    onError: (error: any) => {
+    onError: (_error: any) => {
     },
   });
 
@@ -132,7 +132,7 @@ export function useBackupMutations() {
       }
       queryClient.invalidateQueries({ queryKey: backupQueryKeys.verification(id) });
     },
-    onError: (error: any) => {
+    onError: (_error: any) => {
     },
   });
 

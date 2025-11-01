@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Text, View } from "react-native";
 import { Switch } from "./switch";
-import { RadioGroup } from "./radio-group";
+import { RadioGroup, RadioGroupItem } from "./radio-group";
 import { Card } from "./card";
 import { useHaptics, selectionHaptic } from "@/utils/haptics";
 import { useTheme } from "@/lib/theme";
@@ -101,12 +101,20 @@ export function HapticSettings() {
           <RadioGroup
             value={intensity}
             onValueChange={handleIntensityChange}
-            items={[
-              { value: "light", label: "Leve" },
-              { value: "medium", label: "Médio" },
-              { value: "heavy", label: "Forte" },
-            ]}
-          />
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <RadioGroupItem value="light" />
+              <Text style={{ fontSize: 16, color: colors.foreground }}>Leve</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <RadioGroupItem value="medium" />
+              <Text style={{ fontSize: 16, color: colors.foreground }}>Médio</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <RadioGroupItem value="heavy" />
+              <Text style={{ fontSize: 16, color: colors.foreground }}>Forte</Text>
+            </View>
+          </RadioGroup>
 
           <Text
             style={{

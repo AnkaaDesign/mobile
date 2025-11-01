@@ -1,13 +1,12 @@
-import React, { useMemo } from "react";
 import { FlatList, View, Pressable, RefreshControl, ActivityIndicator, Dimensions, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+
 import { Progress } from "@/components/ui/progress";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { formatRelativeTime, formatFileSize } from '../../../../../utils';
+import { formatRelativeTime } from '../../../../../utils';
 import type { SortConfig } from "@/lib/sort-utils";
 import {
   IconCpu,
@@ -22,7 +21,7 @@ import {
   IconMinus,
 } from "@tabler/icons-react-native";
 
-const { width: screenWidth } = Dimensions.get("window");
+const { width: _screenWidth } = Dimensions.get("window");
 
 export interface MetricData {
   id: string;
@@ -38,7 +37,6 @@ export interface MetricData {
 }
 
 export type MetricCategory = "cpu" | "memory" | "disk" | "network" | "system" | "temperature";
-
 
 interface MetricTableProps {
   metrics: MetricData[];
@@ -79,8 +77,8 @@ export function MetricTable({
   refreshing = false,
   loading = false,
   loadingMore = false,
-  sortConfigs = [],
-  onSort,
+  sortConfigs: _sortConfigs = [],
+  onSort: _onSort,
 }: MetricTableProps) {
   const { colors } = useTheme();
 
@@ -404,3 +402,5 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Stack, useLocalSearchParams, router } from "expo-router";
 import { Alert } from "react-native";
 import { useServiceDetail, useServiceMutations } from '../../../../../hooks';
@@ -44,7 +44,7 @@ export default function EditServiceScreen() {
           {
             text: "Ver Serviço",
             onPress: () => {
-              router.replace(`/production/services/details/${service.id}`);
+              router.replace(`/production/services/details/${service.id}` as any);
             }
           },
           {

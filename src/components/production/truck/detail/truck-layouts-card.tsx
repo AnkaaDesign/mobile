@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { LAYOUT_SIDE_LABELS } from "../../../../constants";
+import { LAYOUT_SIDE, LAYOUT_SIDE_LABELS } from "../../../../constants";
 import {
   IconLayoutGrid,
   IconRuler,
@@ -19,11 +19,8 @@ interface Layout {
   layoutSections?: Array<{
     id: string;
     width: number;
-    hasDoor: boolean;
-    doors?: Array<{
-      width: number;
-      offset: number;
-    }>;
+    isDoor: boolean;
+    doorOffset: number | null;
   }>;
 }
 
@@ -53,13 +50,13 @@ export const TruckLayoutsCard: React.FC<TruckLayoutsCardProps> = ({ layouts }) =
     const totalWidth = sections.reduce((sum, section) => sum + (section.width || 0), 0);
     const heightCm = Math.round(layout.height * 100);
     const widthCm = Math.round(totalWidth * 100);
-    const doorsCount = sections.filter(s => s.hasDoor).length;
+    const doorsCount = sections.filter(s => s.isDoor).length;
 
     return (
       <View key={layout.id} style={[styles.layoutItem, { borderColor: colors.border }]}>
         <View style={styles.layoutHeader}>
           <ThemedText style={[styles.layoutSide, { color: colors.foreground }]}>
-            {LAYOUT_SIDE_LABELS[layout.side] || sideName}
+            {LAYOUT_SIDE_LABELS[layout.side as LAYOUT_SIDE] || sideName}
           </ThemedText>
           {doorsCount > 0 && (
             <Badge variant="secondary" style={styles.doorBadge}>

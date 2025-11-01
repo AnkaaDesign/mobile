@@ -1,12 +1,12 @@
-import React, { useState, useCallback } from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { useState, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter } from "@tabler/icons-react-native";
+import { IconFilter } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useVacationMutations } from '../../../../hooks';
+
 import { useVacationsInfiniteMobile } from "@/hooks";
 import type { VacationGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { VacationTable } from "@/components/human-resources/vacation/list/vacation-table";
 import { VacationFilterModal } from "@/components/human-resources/vacation/list/vacation-filter-modal";
 import { VacationFilterTags } from "@/components/human-resources/vacation/list/vacation-filter-tags";
@@ -36,7 +36,7 @@ export default function VacationListScreen() {
     },
   };
 
-  const { items: vacations, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useVacationsInfiniteMobile(queryParams);
+  const { items: vacations, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useVacationsInfiniteMobile(queryParams);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);

@@ -1,12 +1,12 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useActivityMutations } from '../../../../hooks';
 import { useActivitiesInfiniteMobile } from "@/hooks/use-activities-infinite-mobile";
 import type { ActivityGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { ActivityTable, createColumnDefinitions } from "@/components/inventory/activity/list/activity-table";
 import type { SortConfig } from "@/components/inventory/activity/list/activity-table";
 import { ActivityFilterDrawerV2 } from "@/components/inventory/activity/list/activity-filter-drawer-v2";
@@ -20,11 +20,11 @@ import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from '../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../constants';
+import { SECTOR_PRIVILEGES, ACTIVITY_OPERATION, ACTIVITY_REASON } from '../../../../constants';
 
 export default function ActivityListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -50,7 +50,7 @@ export default function ActivityListScreen() {
 
     // If only one sort, return as object
     if (sortConfigs.length === 1) {
-      const config = sortConfigs[0 as keyof typeof sortConfigs];
+      const config = sortConfigs[0];
       switch (config.columnKey) {
         case "operation":
           return { operation: config.direction };
@@ -100,7 +100,7 @@ export default function ActivityListScreen() {
     ...filters,
   };
 
-  const { items, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useActivitiesInfiniteMobile(queryParams);
+  const { items, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useActivitiesInfiniteMobile(queryParams);
   const { deleteAsync } = useActivityMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -172,21 +172,17 @@ export default function ActivityListScreen() {
     setVisibleColumnKeys(Array.from(newColumns));
   }, []);
 
-  const handleFilterChange = useCallback((newFilters: Partial<ActivityGetManyFormData>) => {
-    setFilters(newFilters);
-  }, []);
-
   const handleRemoveFilter = useCallback((key: string) => {
     const newFilters = { ...filters };
 
     // Handle array filters (operations, reasons, etc.)
     if (key.startsWith("operation_")) {
       const operation = key.replace("operation_", "");
-      newFilters.operations = (newFilters.operations || []).filter(op => op !== operation);
+      newFilters.operations = (newFilters.operations || []).filter((op: ACTIVITY_OPERATION) => op !== operation);
       if (newFilters.operations.length === 0) delete newFilters.operations;
     } else if (key.startsWith("reason_")) {
       const reason = key.replace("reason_", "");
-      newFilters.reasons = (newFilters.reasons || []).filter(r => r !== reason);
+      newFilters.reasons = (newFilters.reasons || []).filter((r: ACTIVITY_REASON) => r !== reason);
       if (newFilters.reasons.length === 0) delete newFilters.reasons;
     } else {
       // Handle other filters
@@ -201,7 +197,7 @@ export default function ActivityListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   // Only show skeleton on initial load, not on refetch/sort
@@ -287,7 +283,7 @@ export default function ActivityListScreen() {
             loading={false}
             loadingMore={isFetchingNextPage}
             showSelection={showSelection}
-            selectedItems={selectedItems}
+            selectedActivities={selectedItems}
             onSelectionChange={handleSelectionChange}
             sortConfigs={sortConfigs}
             onSort={handleSort}

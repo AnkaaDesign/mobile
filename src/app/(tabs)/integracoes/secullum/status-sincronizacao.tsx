@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback} from "react";
 import { View, ScrollView, RefreshControl, Alert , StyleSheet} from "react-native";
 import { router } from "expo-router";
 import { secullumService } from '../../../../api-client';
@@ -11,9 +11,8 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Header } from "@/components/ui/header";
 import { ProgressWithMarkers } from "@/components/ui/progress-with-markers";
-import { IconRefresh, IconCloudCheck, IconCloudX, IconDatabase, IconUsers, IconClock, IconAlertTriangle, IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconHistory, IconSettings } from "@tabler/icons-react-native";
-import { format, differenceInMinutes, differenceInHours, differenceInDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { IconRefresh, IconCloudCheck, IconDatabase, IconClock, IconAlertTriangle, IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconHistory, IconSettings } from "@tabler/icons-react-native";
+import { differenceInMinutes, differenceInHours, differenceInDays } from "date-fns";
 
 interface SyncStatus {
   isRunning: boolean;
@@ -67,7 +66,7 @@ export default function SyncStatusScreen() {
   const loadSyncData = useCallback(async () => {
     try {
       setError(null);
-      const [statusResponse, metricsResponse] = await Promise.all([
+      const [ _metricsResponse] = await Promise.all([
         secullumService.getSyncStatus(),
         secullumService.getSystemMetrics(),
       ]);

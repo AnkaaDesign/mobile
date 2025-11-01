@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { PpeSize } from '../../../../../types';
@@ -148,7 +148,6 @@ const createColumnDefinitions = (): TableColumn[] => [
 
 export const PpeSizeTable = React.memo<PpeSizeTableProps>(({ ppeSizes, onSizePress, onRefresh, onEndReached, refreshing = false, loading = false, loadingMore = false, sortConfigs = [], onSort }) => {
   const { colors, isDark } = useTheme();
-  const [headerHeight, setHeaderHeight] = useState(50);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -231,7 +230,6 @@ export const PpeSizeTable = React.memo<PpeSizeTableProps>(({ ppeSizes, onSizePre
             },
           ])}
           contentContainerStyle={{ paddingHorizontal: 16 }}
-          onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
         >
           <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
             {displayColumns.map((column) => {
@@ -369,7 +367,7 @@ export const PpeSizeTable = React.memo<PpeSizeTableProps>(({ ppeSizes, onSizePre
           windowSize={5}
           initialNumToRender={15}
           updateCellsBatchingPeriod={50}
-          getItemLayout={(data, index) => ({
+          getItemLayout={(_data, index) => ({
             length: 36,
             offset: 36 * index,
             index,
@@ -517,3 +515,5 @@ const styles = StyleSheet.create({
 });
 
 PpeSizeTable.displayName = "PpeSizeTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

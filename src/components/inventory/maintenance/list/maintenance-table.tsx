@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, FlatList, TouchableOpacity, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { Text } from "@/components/ui/text";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { formatDate, formatCurrency } from '../../../../utils';
+import { formatDate } from '../../../../utils';
 import {
   MAINTENANCE_STATUS_LABELS
 } from '../../../../constants';
@@ -35,7 +35,7 @@ export function MaintenanceTable({
   const router = useRouter();
 
   const handlePress = (maintenance: Maintenance) => {
-    router.push(`/inventory/maintenance/details/${maintenance.id}`);
+    router.push(`/inventory/maintenance/details/${maintenance.id}` as any);
   };
 
   const getStatusColor = (status: string) => {
@@ -52,7 +52,6 @@ export function MaintenanceTable({
         return "secondary";
     }
   };
-
 
   const renderMaintenanceItem = ({ item }: { item: Maintenance }) => (
     <TouchableOpacity onPress={() => handlePress(item)} activeOpacity={0.7}>
@@ -174,7 +173,7 @@ export function MaintenanceTable({
       windowSize={5}
       initialNumToRender={15}
       updateCellsBatchingPeriod={50}
-      getItemLayout={(data, index) => ({
+      getItemLayout={(_data, index) => ({
         length: 220, // Estimate based on card height with content
         offset: 220 * index,
         index,

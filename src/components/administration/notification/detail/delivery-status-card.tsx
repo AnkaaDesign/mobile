@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import type { Notification } from '../../../../types';
 import { Card } from "@/components/ui/card";
@@ -23,8 +23,6 @@ export function DeliveryStatusCard({ notification }: DeliveryStatusCardProps) {
 
   // Calculate delivery statistics
   const sentCount = notification.sentAt ? totalRecipients : 0;
-  const deliveredCount = sentCount; // Assuming all sent are delivered
-  const failedCount = 0; // We don't track failures separately yet
 
   const readPercentage = totalRecipients > 0 ? (readCount / totalRecipients) * 100 : 0;
 
@@ -124,9 +122,6 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
-  },
-  content: {
-    gap: spacing.xl,
   },
   progressSection: {
     gap: spacing.md,

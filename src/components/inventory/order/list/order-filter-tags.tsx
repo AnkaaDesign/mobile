@@ -2,13 +2,12 @@ import React from "react";
 import { View, StyleSheet, ScrollView, Pressable } from "react-native";
 import { IconX } from "@tabler/icons-react-native";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
+
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { ORDER_STATUS_LABELS } from '../../../../constants';
+import { ORDER_STATUS, ORDER_STATUS_LABELS } from '../../../../constants';
 import { formatDate, formatCurrency } from '../../../../utils';
 import type { OrderGetManyFormData } from '../../../../schemas';
-import { useSuppliers } from '../../../../hooks';
 
 interface OrderFilterTagsProps {
   filters: Partial<OrderGetManyFormData>;
@@ -60,7 +59,7 @@ export const OrderFilterTags: React.FC<OrderFilterTagsProps> = ({
     filters.status.forEach(status => {
       tags.push({
         key: `status-${status}`,
-        label: ORDER_STATUS_LABELS[status],
+        label: ORDER_STATUS_LABELS[status as ORDER_STATUS],
         onRemove: () => removeFilter("status", status),
       });
     });

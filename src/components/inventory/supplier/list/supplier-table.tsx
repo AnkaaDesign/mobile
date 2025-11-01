@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector } from "@tabler/icons-react-native";
@@ -12,7 +12,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SupplierTableRowSwipe } from "./supplier-table-row-swipe";
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
 import { formatPhone } from '../../../../utils';
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { extendedColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -23,7 +23,6 @@ export interface TableColumn {
   align?: "left" | "center" | "right";
   sortable?: boolean;
 }
-
 
 interface SupplierTableProps {
   suppliers: Supplier[];
@@ -273,7 +272,7 @@ export const SupplierTable = React.memo<SupplierTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -414,7 +413,6 @@ export const SupplierTable = React.memo<SupplierTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -478,7 +476,7 @@ export const SupplierTable = React.memo<SupplierTableProps>(
         if (enableSwipeActions && (onSupplierEdit || onSupplierDelete)) {
           return (
             <SupplierTableRowSwipe key={item.id} supplierId={item.id} supplierName={item.fantasyName} onEdit={onSupplierEdit} onDelete={onSupplierDelete} disabled={showSelection}>
-              {(isActive) => (
+              {() => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -631,7 +629,7 @@ export const SupplierTable = React.memo<SupplierTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 60, // Fixed row height
               offset: 60 * index,
               index,
@@ -807,3 +805,5 @@ const styles = StyleSheet.create({
 });
 
 SupplierTable.displayName = "SupplierTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

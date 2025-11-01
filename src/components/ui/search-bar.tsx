@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ActivityIndicator, Animated, Keyboard, KeyboardAvoidingView,
+import { ActivityIndicator, Animated, Keyboard,
   Platform, Pressable, StyleSheet, TextInput,
   TextStyle, View, ViewStyle } from "react-native";
 import { useTheme } from "@/lib/theme";
@@ -189,11 +189,11 @@ const SearchBar = React.forwardRef<TextInput, SearchBarProps>(
               autoFocus={autoFocus}
               returnKeyType={returnKeyType}
               onSubmitEditing={handleSubmitEditing}
-              onFocus={(e) => {
+              onFocus={(_e) => {
                 setIsFocused(true);
                 onFocus?.();
               }}
-              onBlur={(e) => {
+              onBlur={(_e) => {
                 setIsFocused(false);
                 onBlur?.();
               }}

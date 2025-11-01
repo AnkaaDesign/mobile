@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector } from "@tabler/icons-react-native";
@@ -214,7 +214,7 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -347,7 +347,6 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -422,7 +421,7 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
               onDelete={onServiceOrderDelete}
               disabled={showSelection}
             >
-              {(isActive) => (
+              {() => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -575,7 +574,7 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 36, // Fixed row height
               offset: 36 * index,
               index,

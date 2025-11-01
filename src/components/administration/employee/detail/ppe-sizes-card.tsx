@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
 import { Card } from "@/components/ui/card";
@@ -97,7 +97,7 @@ export function PpeSizesCard({ employee }: PpeSizesCardProps) {
       </View>
       <View style={styles.content}>
         <View style={styles.grid}>
-          {ppeSizes.map((item, index) => (
+          {ppeSizes.map((item, _index) => (
             <View
               key={item.key}
               style={[

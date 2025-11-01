@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, StyleSheet } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from "expo-router";
@@ -11,16 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { usePaintsInfiniteMobile } from "@/hooks/use-paints-infinite-mobile";
-import { usePaintMutations } from '../../../../hooks';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES, PAINT_TYPE_ENUM, PAINT_TYPE_ENUM_LABELS, PAINT_FINISH_LABELS } from '../../../../constants';
-import { hasPrivilege, formatCurrency } from '../../../../utils';
+import { hasPrivilege } from '../../../../utils';
 import type { Paint } from '../../../../types';
 import { FilterModal } from "@/components/ui/filter-modal";
 import { Chip } from "@/components/ui/chip";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useToast } from "@/lib/toast/use-toast";
-import { Alert } from "react-native";
 import {
   IconPalette,
   IconBarcode,
@@ -33,13 +31,12 @@ import {
 export default function CatalogListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { delete: deletePaint } = usePaintMutations();
   const { toast } = useToast();
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<PAINT_TYPE_ENUM[]>([]);
-  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [_selectedBrand, _setSelectedBrand] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<"name" | "code" | "createdAt">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -49,8 +46,6 @@ export default function CatalogListScreen() {
 
   // Check user permissions
   const canCreate = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
-  const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
   // Build query params
   const queryParams = useMemo(() => {
@@ -77,8 +72,8 @@ export default function CatalogListScreen() {
     }
 
     // Brand filter
-    if (selectedBrand) {
-      whereConditions.push({ brandId: selectedBrand });
+    if (_selectedBrand) {
+      whereConditions.push({ brandId: _selectedBrand });
     }
 
     // Search filter
@@ -97,7 +92,7 @@ export default function CatalogListScreen() {
     }
 
     return params;
-  }, [selectedTypes, selectedBrand, debouncedSearch, sortBy, sortOrder]);
+  }, [selectedTypes, _selectedBrand, debouncedSearch, sortBy, sortOrder]);
 
   // Fetch paints
   const {
@@ -117,42 +112,6 @@ export default function CatalogListScreen() {
     toast({ title: "Catálogo atualizado", variant: "success" });
   };
 
-  // Handle actions
-  const handleEdit = (paintId: string) => {
-    if (!canEdit) {
-      toast({ title: "Você não tem permissão para editar", variant: "destructive" });
-      return;
-    }
-    router.push(`/pintura/catalogo/editar/${paintId}`);
-  };
-
-  const handleDelete = (paintId: string, paintName: string) => {
-    if (!canDelete) {
-      toast({ title: "Você não tem permissão para excluir", variant: "destructive" });
-      return;
-    }
-
-    Alert.alert(
-      "Excluir Tinta",
-      `Tem certeza que deseja excluir "${paintName}"? Esta ação não pode ser desfeita.`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deletePaint(paintId);
-              toast({ title: "Tinta excluída com sucesso", variant: "success" });
-            } catch (error) {
-              toast({ title: "Erro ao excluir tinta", variant: "destructive" });
-            }
-          },
-        },
-      ]
-    );
-  };
-
   // Render paint card
   const renderPaintCard = ({ item: paint }: { item: Paint }) => {
     const formulaCount = paint.formulas?.length || 0;
@@ -167,7 +126,7 @@ export default function CatalogListScreen() {
             {paint.finish && (
               <LinearGradient
                 colors={
-                  paint.finish === 'GLOSSY'
+                  paint.finish === 'METALLIC'
                     ? ['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)', 'rgba(0,0,0,0.1)']
                     : paint.finish === 'MATTE'
                     ? ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']
@@ -330,15 +289,6 @@ export default function CatalogListScreen() {
     </FilterModal>
   );
 
-  // Active filter count
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (selectedTypes.length > 0) count++;
-    if (selectedBrand) count++;
-    if (sortBy !== "name") count++;
-    if (sortOrder !== "asc") count++;
-    return count;
-  }, [selectedTypes, selectedBrand, sortBy, sortOrder]);
 
   if (error) {
     return (

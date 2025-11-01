@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { SearchBar } from "@/components/ui/search-bar";
 import { FAB } from "@/components/ui/fab";
-import { IconBrush, IconPlus, IconFilter } from "@tabler/icons-react-native";
+import { IconPlus, IconFilter } from "@tabler/icons-react-native";
 import { useAirbrushingsInfinite, useAirbrushingMutations } from '../../../../hooks';
 import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
@@ -21,7 +21,7 @@ import { AirbrushingFilterModal } from "@/components/production/airbrushing/list
 import { AirbrushingFilterTags } from "@/components/production/airbrushing/list/airbrushing-filter-tags";
 
 export default function AirbrushingListScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [searchText, setSearchText] = useState("");
@@ -60,7 +60,7 @@ export default function AirbrushingListScreen() {
   }), [debouncedSearchText, filters]);
 
   const {
-    data: airbrushings = [],
+    data: airbrushings,
     isLoading,
     error,
     fetchNextPage,
@@ -71,7 +71,8 @@ export default function AirbrushingListScreen() {
 
   // Flatten paginated data
   const items = useMemo(() => {
-    return Array.isArray(airbrushings) ? airbrushings.flatMap(page => page.data || []) : [];
+    const pages = (airbrushings as any)?.pages || [];
+    return pages.flatMap((page: { data?: any[] }) => page.data || []);
   }, [airbrushings]);
 
   const totalItemsLoaded = items.length;

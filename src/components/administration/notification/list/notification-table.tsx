@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
-import { Button } from "@/components/ui/button";
+
 import type { Notification } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,7 +10,7 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { NotificationTableRowSwipe } from "./notification-table-row-swipe";
-import { NOTIFICATION_IMPORTANCE, NOTIFICATION_TYPE, NOTIFICATION_IMPORTANCE_LABELS, NOTIFICATION_TYPE_LABELS } from '../../../../constants';
+import { NOTIFICATION_IMPORTANCE, NOTIFICATION_IMPORTANCE_LABELS, NOTIFICATION_TYPE_LABELS } from '../../../../constants';
 import { formatRelativeTime } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
@@ -23,7 +23,6 @@ export interface TableColumn {
   align?: "left" | "center" | "right";
   sortable?: boolean;
 }
-
 
 interface NotificationTableProps {
   notifications: Notification[];
@@ -171,7 +170,7 @@ export const NotificationTable = React.memo<NotificationTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    const [_headerHeight, _setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
     // Get all column definitions
@@ -301,7 +300,7 @@ export const NotificationTable = React.memo<NotificationTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+            onLayout={(event) => _setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -369,43 +368,41 @@ export const NotificationTable = React.memo<NotificationTableProps>(
         if (enableSwipeActions && onNotificationDelete) {
           return (
             <NotificationTableRowSwipe key={item.id} notificationId={item.id} notificationTitle={item.title} onDelete={onNotificationDelete} disabled={showSelection}>
-              {(isActive) => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                      borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
-                    },
-                    isSelected && { backgroundColor: colors.primary + "20" },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                scrollEnabled={tableWidth > availableWidth}
+                style={StyleSheet.flatten([
+                  styles.row,
+                  {
+                    backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                    borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                  },
+                  isSelected && { backgroundColor: colors.primary + "20" },
+                ])}
+                contentContainerStyle={{ paddingHorizontal: 16 }}
+              >
+                <Pressable
+                  style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                  onPress={() => onNotificationPress?.(item.id)}
+                  onLongPress={() => showSelection && handleSelectNotification(item.id)}
+                  android_ripple={{ color: colors.primary + "20" }}
                 >
-                  <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
-                    onPress={() => onNotificationPress?.(item.id)}
-                    onLongPress={() => showSelection && handleSelectNotification(item.id)}
-                    android_ripple={{ color: colors.primary + "20" }}
-                  >
-                    {showSelection && (
-                      <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
-                        <Checkbox checked={isSelected} onCheckedChange={() => handleSelectNotification(item.id)} />
-                      </View>
-                    )}
-                    {displayColumns.map((column) => (
-                      <View
-                        key={column.key}
-                        style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
-                      >
-                        {renderColumnValue(item, column)}
-                      </View>
-                    ))}
-                  </Pressable>
-                </ScrollView>
-              )}
+                  {showSelection && (
+                    <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
+                      <Checkbox checked={isSelected} onCheckedChange={() => handleSelectNotification(item.id)} />
+                    </View>
+                  )}
+                  {displayColumns.map((column) => (
+                    <View
+                      key={column.key}
+                      style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
+                    >
+                      {renderColumnValue(item, column)}
+                    </View>
+                  ))}
+                </Pressable>
+              </ScrollView>
             </NotificationTableRowSwipe>
           );
         }
@@ -521,7 +518,7 @@ export const NotificationTable = React.memo<NotificationTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 36, // Fixed row height
               offset: 36 * index,
               index,
@@ -670,3 +667,5 @@ const styles = StyleSheet.create({
 });
 
 NotificationTable.displayName = "NotificationTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

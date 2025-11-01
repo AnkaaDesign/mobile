@@ -4,9 +4,9 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Alert, Platform } from 'react-native';
+import { Alert } from 'react-native';
 import Constants from 'expo-constants';
-import type { File as AnkaaFile } from '../../types';
+import type { File as _AnkaaFile } from '../../types';
 import { PDFViewerProps } from './pdf-viewer';
 
 // Check if running in Expo Go

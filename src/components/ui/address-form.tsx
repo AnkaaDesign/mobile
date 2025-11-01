@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from "@/lib/theme";
-import { borderRadius, fontSize, spacing } from "@/constants/design-system";
+import { fontSize, spacing } from "@/constants/design-system";
 import { ZipCodeInput } from "./zipcode-input";
 import { TextInput } from "./text-input";
 
@@ -82,7 +82,7 @@ export function AddressForm({
         onCepChange={handleCepChange}
         error={!!errors.zipCode}
         helperText={errors.zipCode}
-        disabled={disabled}
+        editable={!disabled}
       />
 
       {/* Street - Logradouro */}
@@ -93,7 +93,7 @@ export function AddressForm({
         error={!!errors.street}
         helperText={errors.street}
         placeholder="Rua das Flores"
-        disabled={disabled}
+        editable={!disabled}
       />
 
       {/* Number and Complement Row */}
@@ -107,7 +107,7 @@ export function AddressForm({
             helperText={errors.number}
             placeholder="123"
             keyboardType="numeric"
-            disabled={disabled}
+            editable={!disabled}
           />
         </View>
         <View style={styles.complementField}>
@@ -118,7 +118,7 @@ export function AddressForm({
             error={!!errors.complement}
             helperText={errors.complement}
             placeholder="Apto 45"
-            disabled={disabled}
+            editable={!disabled}
           />
         </View>
       </View>
@@ -131,7 +131,7 @@ export function AddressForm({
         error={!!errors.neighborhood}
         helperText={errors.neighborhood}
         placeholder="Centro"
-        disabled={disabled}
+        editable={!disabled}
       />
 
       {/* City and State Row */}
@@ -144,7 +144,7 @@ export function AddressForm({
             error={!!errors.city}
             helperText={errors.city}
             placeholder="São Paulo"
-            disabled={disabled}
+            editable={!disabled}
           />
         </View>
         <View style={styles.stateField}>
@@ -157,7 +157,7 @@ export function AddressForm({
             placeholder="SP"
             maxLength={2}
             autoCapitalize="characters"
-            disabled={disabled}
+            editable={!disabled}
           />
         </View>
       </View>
@@ -171,7 +171,7 @@ export function AddressForm({
           error={!!errors.country}
           helperText={errors.country}
           placeholder="Brasil"
-          disabled={disabled}
+          editable={!disabled}
         />
       )}
     </View>

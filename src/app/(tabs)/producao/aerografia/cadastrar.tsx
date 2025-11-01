@@ -62,8 +62,8 @@ export default function AirbrushingCreateScreen() {
     handleSubmit,
     formState: { errors, isValid },
     watch,
-    setValue,
-    reset,
+    
+    
   } = useForm<AirbrushingCreateFormData>({
     resolver: zodResolver(airbrushingCreateSchema),
     defaultValues: {
@@ -75,7 +75,6 @@ export default function AirbrushingCreateScreen() {
     mode: "onChange",
   });
 
-  const watchedStartDate = watch("startDate");
   const watchedPrice = watch("price");
 
   const onSubmit = async (data: AirbrushingCreateFormData) => {
@@ -306,7 +305,7 @@ export default function AirbrushingCreateScreen() {
                   name="startDate"
                   render={({ field }) => (
                     <DatePicker
-                      value={field.value}
+                      value={field.value ?? undefined}
                       onChange={field.onChange}
                       placeholder="Selecione a data de início"
                     />
@@ -321,7 +320,7 @@ export default function AirbrushingCreateScreen() {
                   name="finishDate"
                   render={({ field }) => (
                     <DatePicker
-                      value={field.value}
+                      value={field.value ?? undefined}
                       onChange={field.onChange}
                       placeholder="Selecione a data de finalização"
                     />

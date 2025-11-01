@@ -15,7 +15,7 @@ export interface CheckboxProps {
 const Checkbox = React.forwardRef<View, CheckboxProps>(({ checked = false, onCheckedChange, disabled = false, style, className, ...props }, ref) => {
   const { colors } = useTheme();
   const [isFocused, setIsFocused] = React.useState(false);
-  const [isPressed, setIsPressed] = React.useState(false);
+  const [_isPressed, _setIsPressed] = React.useState(false);
 
   // Animation values
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
@@ -41,7 +41,7 @@ const Checkbox = React.forwardRef<View, CheckboxProps>(({ checked = false, onChe
 
   // Handle press animation
   const handlePressIn = () => {
-    setIsPressed(true);
+    _setIsPressed(true);
     Animated.timing(scaleAnim, {
       toValue: 0.95,
       duration: 100,
@@ -50,7 +50,7 @@ const Checkbox = React.forwardRef<View, CheckboxProps>(({ checked = false, onChe
   };
 
   const handlePressOut = () => {
-    setIsPressed(false);
+    _setIsPressed(false);
     Animated.timing(scaleAnim, {
       toValue: 1,
       duration: 100,

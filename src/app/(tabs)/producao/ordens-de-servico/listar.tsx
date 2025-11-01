@@ -7,15 +7,16 @@ import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
+import { Button } from "@/components/ui/button";
 import { ListActionButton } from "@/components/ui/list-action-button";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { ServiceOrderTable, createColumnDefinitions, getDefaultVisibleColumns } from "@/components/production/service-order/list/service-order-table";
 import { ServiceOrderFilterModal } from "@/components/production/service-order/list/service-order-filter-modal";
 import { ServiceOrderFilterTags } from "@/components/production/service-order/list/service-order-filter-tags";
-import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
+import { ColumnVisibilityDrawer } from "@/components/ui/column-visibility-drawer";
 import { SearchBar } from "@/components/ui/search-bar";
 import { FAB } from "@/components/ui/fab";
-import { IconClipboardList, IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
 import { useServiceOrdersInfiniteMobile } from "@/hooks/use-service-orders-infinite-mobile";
 import { useServiceOrderMutations } from '../../../../hooks';
 import { hasPrivilege } from '../../../../utils';
@@ -23,7 +24,7 @@ import { SECTOR_PRIVILEGES } from '../../../../constants';
 import type { ServiceOrderGetManyFormData } from '../../../../schemas';
 
 export default function ServiceOrderListScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [searchText, setSearchText] = useState("");
@@ -43,11 +44,6 @@ export default function ServiceOrderListScreen() {
            hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   }, [user]);
 
-  const isAdmin = useMemo(() => {
-    if (!user) return false;
-    return hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-  }, [user]);
-
   // Build query with filters
   const queryParams = useMemo(() => ({
     orderBy: { createdAt: "desc" },
@@ -58,9 +54,9 @@ export default function ServiceOrderListScreen() {
   const {
     items,
     isLoading,
-    error,
+    error: _error,
     loadMore,
-    canLoadMore,
+    canLoadMore: _canLoadMore,
     isFetchingNextPage,
     refresh,
     totalItemsLoaded,
@@ -130,7 +126,7 @@ export default function ServiceOrderListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   // Permission gate
@@ -229,14 +225,12 @@ export default function ServiceOrderListScreen() {
         {/* Service Orders Table */}
         <ServiceOrderTable
           serviceOrders={items}
-          isLoading={isLoading}
-          error={error}
+          loading={isLoading}
           onServiceOrderPress={handleServiceOrderPress}
-          onDelete={handleDelete}
+          onServiceOrderDelete={handleDelete}
           onRefresh={handleRefresh}
           refreshing={refreshing}
-          onEndReach={loadMore}
-          canLoadMore={canLoadMore}
+          onEndReached={loadMore}
           loadingMore={isFetchingNextPage}
           visibleColumnKeys={visibleColumnKeys}
         />
@@ -266,7 +260,7 @@ export default function ServiceOrderListScreen() {
         />
 
         {/* Column Visibility Drawer */}
-        <ColumnVisibilityDrawerV2
+        <ColumnVisibilityDrawer
           columns={allColumns}
           visibleColumns={new Set(visibleColumnKeys)}
           onVisibilityChange={handleColumnsChange}

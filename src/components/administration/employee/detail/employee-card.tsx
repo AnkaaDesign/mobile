@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
 import { Card } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconUser, IconBriefcase, IconBuilding } from "@tabler/icons-react-native";
+import { IconBriefcase, IconBuilding } from "@tabler/icons-react-native";
 import { getBadgeVariant } from '../../../../constants/badge-colors';
 import { getUserStatusBadgeText } from '../../../../utils/user';
 

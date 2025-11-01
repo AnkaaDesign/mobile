@@ -1,13 +1,13 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
-import { formatDate, formatCurrency, getAge } from '../../../../utils';
+import { formatDate } from '../../../../utils';
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconBriefcase, IconCalendar, IconBuilding, IconCurrencyDollar, IconUserCheck } from "@tabler/icons-react-native";
+import { IconBriefcase, IconCalendar, IconBuilding, IconUserCheck } from "@tabler/icons-react-native";
 
 interface EmploymentInfoCardProps {
   employee: User;

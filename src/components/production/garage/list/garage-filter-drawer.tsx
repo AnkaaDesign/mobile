@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, StyleSheet } from "react-native";
 import type { GarageGetManyFormData } from "../../../../schemas";
 import { BaseFilterDrawer, type FilterSectionConfig, StringFilter, BooleanFilter } from "@/components/common/filters";

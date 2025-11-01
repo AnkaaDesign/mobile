@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { View } from "react-native";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { ThemedText } from "@/components/ui/themed-text";
-import { showToast } from "@/components/ui/toast";
+
 import { useItemBrands, useItemBrandMutations } from '../../../../hooks';
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';
 
@@ -65,7 +65,7 @@ export function BrandSelector({ disabled, required }: BrandSelectorProps) {
             Marca {required && <ThemedText style={{ color: "#ef4444" }}>*</ThemedText>}
           </Label>
           <Combobox
-            value={value}
+            value={value ?? undefined}
             onValueChange={onChange}
             options={brandOptions}
             placeholder="Selecione uma marca"

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, ScrollView, Alert } from "react-native";
+import { View, ScrollView } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,9 @@ import { Icon } from "@/components/ui/icon";
 import { ActivityIndicator } from "@/components/ui/activity-indicator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
-import { routes, SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { useSupplierDetail, useSupplierMutations } from "@/hooks";
+import { useTheme } from "@/lib/theme";
 
 import { RoutePrivilegeGuard } from "@/components/navigation/route-privilege-guard";
 import { PageHeader } from "@/components/ui/page-header";
@@ -20,6 +21,7 @@ import { toast } from "@/lib/toast";
 export default function SupplierDetailsScreen() {
   // TODO: Implement usePageTracker hook for analytics
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors } = useTheme();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const {
@@ -51,7 +53,7 @@ export default function SupplierDetailsScreen() {
   const { delete: deleteSupplier } = useSupplierMutations();
 
   if (!id) {
-    router.replace(routes.inventory.suppliers.root);
+    router.replace(routes.inventory.suppliers.root as any);
     return null;
   }
 
@@ -60,7 +62,7 @@ export default function SupplierDetailsScreen() {
       <View className="flex flex-col items-center justify-center h-full p-4">
         <Icon name="alert-triangle" size={48} className="text-destructive mb-4" />
         <Text className="text-destructive mb-4">Erro ao carregar fornecedor</Text>
-        <Button onPress={() => router.replace(routes.inventory.suppliers.root)}>
+        <Button onPress={() => router.replace(routes.inventory.suppliers.root as any)}>
           <Text>Voltar para lista</Text>
         </Button>
       </View>
@@ -70,13 +72,13 @@ export default function SupplierDetailsScreen() {
   if (isLoading) {
     return (
       <View className="flex items-center justify-center h-full">
-        <ActivityIndicator size="large" className="text-muted-foreground" />
+        <ActivityIndicator size="large" color={colors.mutedForeground} />
       </View>
     );
   }
 
   if (!supplier) {
-    router.replace(routes.inventory.suppliers.root);
+    router.replace(routes.inventory.suppliers.root as any);
     return null;
   }
 
@@ -84,7 +86,7 @@ export default function SupplierDetailsScreen() {
     try {
       await deleteSupplier.mutateAsync(id);
       toast.success("Fornecedor excluído com sucesso");
-      router.replace(routes.inventory.suppliers.root);
+      router.replace(routes.inventory.suppliers.root as any);
     } catch (error) {
       toast.error("Erro ao excluir fornecedor");
     }
@@ -92,7 +94,7 @@ export default function SupplierDetailsScreen() {
   };
 
   return (
-    <RoutePrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.WAREHOUSE}>
+    <RoutePrivilegeGuard>
       <FileViewerProvider>
         <View className="flex flex-col h-full">
           <PageHeader
@@ -100,9 +102,9 @@ export default function SupplierDetailsScreen() {
             title={supplier.fantasyName}
             icon="building"
             breadcrumbs={[
-              { label: "Início", href: "/" },
+              { label: "Início", onPress: () => router.push("/") },
               { label: "Estoque" },
-              { label: "Fornecedores", href: routes.inventory.suppliers.root },
+              { label: "Fornecedores", onPress: () => router.push(routes.inventory.suppliers.root) },
               { label: supplier.fantasyName }
             ]}
             actions={[
@@ -117,7 +119,7 @@ export default function SupplierDetailsScreen() {
                 key: "edit",
                 label: "Editar",
                 icon: "edit",
-                onPress: () => router.push(routes.inventory.suppliers.edit(id)),
+                onPress: () => router.push(routes.inventory.suppliers.edit(id) as any),
               },
               {
                 key: "delete",
@@ -184,7 +186,7 @@ export default function SupplierDetailsScreen() {
                 >
                   {deleteSupplier.isPending ? (
                     <View className="flex flex-row items-center gap-2">
-                      <ActivityIndicator size="small" className="text-white" />
+                      <ActivityIndicator size="small" color="#ffffff" />
                       <Text className="text-white">Excluindo...</Text>
                     </View>
                   ) : (

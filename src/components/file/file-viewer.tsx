@@ -13,18 +13,12 @@ import { showToast } from '@/components/ui/toast';
 
 // Import utilities and service
 import {
-  getApiBaseUrl,
-  getFileUrl,
   getDownloadUrl,
   isImageFile,
-  isPDFFile,
-  isVideoFile,
-  isEpsFile,
 } from '../../utils/file-viewer-utils';
 import {
   determineFileViewAction,
   showActionWarning,
-  type FileViewAction,
 } from '../../utils/file-viewer-service';
 
 // Import viewer components

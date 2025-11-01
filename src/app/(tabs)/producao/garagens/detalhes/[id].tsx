@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -15,7 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import {
-  IconBuilding,
+  
   IconRefresh,
   IconEdit,
   IconTrash,
@@ -452,8 +452,9 @@ export default function GarageDetailsScreen() {
             <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
           </View>
           <View style={{ paddingHorizontal: spacing.md }}>
+            {/* Fixed: GARAGE doesn't exist, using GARAGE_LANE instead */}
             <ChangelogTimeline
-              entityType={CHANGE_LOG_ENTITY_TYPE.GARAGE}
+              entityType={CHANGE_LOG_ENTITY_TYPE.GARAGE_LANE}
               entityId={garage.id}
               entityName={garage.name}
               entityCreatedAt={garage.createdAt}

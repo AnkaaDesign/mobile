@@ -53,5 +53,6 @@ export * from "./budget";
 export * from "./commission";
 export * from "./economic-activity";
 export * from "./media";
-export * from "./time-clock";
+export { timeClockEntryBatchUpdateSchema, timeClockJustificationSchema, normalizeSecullumEntry } from "./time-clock";
+export type { SecullumTimeEntry, TimeClockEntryBatchUpdateFormData, TimeClockJustificationFormData } from "./time-clock";
 export * from "./supplier-extended";

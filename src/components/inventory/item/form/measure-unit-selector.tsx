@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Controller, useFormContext } from "react-hook-form";
 import { View } from "react-native";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas
 // The correct implementation uses a 'measures' array - see MeasuresManager component.
 // This component should either be updated to work with the measures array or removed.
 
-interface MeasureUnitSelectorProps<TFormData extends ItemCreateFormData | ItemUpdateFormData = ItemCreateFormData | ItemUpdateFormData> {
+interface MeasureUnitSelectorProps<_TFormData extends ItemCreateFormData | ItemUpdateFormData = ItemCreateFormData | ItemUpdateFormData> {
   disabled?: boolean;
 }
 

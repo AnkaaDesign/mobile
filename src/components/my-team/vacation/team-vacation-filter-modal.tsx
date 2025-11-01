@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, StyleSheet, Modal, TouchableOpacity } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -8,7 +8,7 @@ import { IconX, IconFilter, IconChevronDown, IconChevronUp } from "@tabler/icons
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { spacing } from "@/constants/design-system";
-import { VACATION_STATUS, VACATION_STATUS_LABELS, VACATION_TYPE, VACATION_TYPE_LABELS } from '../../../constants';
+import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '../../../constants';
 import type { VacationGetManyFormData } from '../../../schemas';
 
 interface TeamVacationFilterModalProps {

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useServiceOrderDetail } from "@/hooks";
@@ -27,7 +27,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function ServiceOrderDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";

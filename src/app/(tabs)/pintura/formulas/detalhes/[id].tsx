@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -20,15 +20,8 @@ import {
   IconEdit,
   IconTrash,
   IconDroplet,
-  IconCurrencyReal,
-  IconPaint,
-  IconTag,
-  IconBarcode,
-  IconPackage,
-  IconPercentage,
   IconCalendar,
   IconClipboardList,
-  IconBuildingFactory,
 } from "@tabler/icons-react-native";
 
 export default function FormulaDetailsScreen() {
@@ -226,13 +219,14 @@ export default function FormulaDetailsScreen() {
                 {totalComponents} {totalComponents === 1 ? "componente" : "componentes"}
               </ThemedText>
             </View>
-            {formula._count?.productions !== undefined && (
+            {/* Fixed: Changed productions to paintProduction to match API type */}
+            {formula._count?.paintProduction !== undefined && (
               <View style={styles.detailRow}>
                 <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
                   Produções:
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {formula._count.productions} {formula._count.productions === 1 ? "produção" : "produções"}
+                  {formula._count.paintProduction} {formula._count.paintProduction === 1 ? "produção" : "produções"}
                 </ThemedText>
               </View>
             )}
@@ -279,18 +273,19 @@ export default function FormulaDetailsScreen() {
         </Card>
 
         {/* Productions Summary Card */}
-        {formula._count?.productions !== undefined && formula._count.productions > 0 && (
+        {/* Fixed: Changed productions to paintProduction to match API type */}
+        {formula._count?.paintProduction !== undefined && formula._count.paintProduction > 0 && (
           <Card style={styles.card}>
             <View style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}>
               <IconClipboardList size={20} color={colors.primary} />
               <ThemedText style={styles.sectionTitle}>Produções</ThemedText>
               <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                {formula._count.productions}
+                {formula._count.paintProduction}
               </Badge>
             </View>
             <View style={styles.itemDetails}>
               <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.mutedForeground }])}>
-                Esta fórmula foi utilizada em {formula._count.productions} {formula._count.productions === 1 ? "produção" : "produções"}.
+                Esta fórmula foi utilizada em {formula._count.paintProduction} {formula._count.paintProduction === 1 ? "produção" : "produções"}.
               </ThemedText>
             </View>
           </Card>

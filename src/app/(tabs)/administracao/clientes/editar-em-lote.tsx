@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, ScrollView, Alert, StyleSheet } from "react-native";
+import { useState, useMemo } from "react";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconUsers, IconDeviceFloppy } from "@tabler/icons-react-native";
 import { useCustomers, useCustomerBatchMutations } from '../../../../hooks';
-import type { Customer } from '../../../../types';
-import { ThemedView, ThemedText, Button, ErrorScreen, LoadingScreen } from "@/components/ui";
+
+import { ThemedView, ThemedText, Button, LoadingScreen } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";

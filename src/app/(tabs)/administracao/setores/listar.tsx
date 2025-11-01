@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, Alert, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { IconFilter, IconPlus, IconList } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSectorMutations } from '../../../../hooks';
 import { useSectorsInfiniteMobile } from "@/hooks";
 import type { SectorGetManyFormData } from '../../../../types';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
+import { ThemedView, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
 import { SectorTable, createColumnDefinitions } from "@/components/administration/sector/list/sector-table";
 import { SectorFilterTags } from "@/components/administration/sector/list/sector-filter-tags";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -40,7 +40,7 @@ export default function SectorListScreen() {
     updatedDateRange?: { from?: Date; to?: Date };
   }>({});
 
-  const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
+  const { buildOrderBy } = useTableSort(
     [{ columnKey: "name", direction: "asc", order: 0 }],
     3,
     false
@@ -49,7 +49,6 @@ export default function SectorListScreen() {
   const {
     visibleColumns,
     setVisibleColumns,
-    isLoading: isColumnsLoading,
   } = useColumnVisibility(
     "sectors",
     ["name", "privileges"],
@@ -107,7 +106,7 @@ export default function SectorListScreen() {
     };
   }, [searchText, buildWhereClause, buildOrderBy, filters]);
 
-  const { items: sectors, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useSectorsInfiniteMobile(queryParams);
+  const { items: sectors, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useSectorsInfiniteMobile(queryParams);
   const { delete: deleteSector } = useSectorMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -157,7 +156,7 @@ export default function SectorListScreen() {
   }, []);
 
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {
-    setVisibleColumns(Array.from(newColumns));
+    setVisibleColumns(newColumns);
   }, [setVisibleColumns]);
 
   // Get all column definitions
@@ -273,7 +272,7 @@ export default function SectorListScreen() {
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
             onPress={() => setShowColumnManager(true)}
-            badgeCount={visibleColumns.length}
+            badgeCount={visibleColumns.size}
             badgeVariant="primary"
           />
           <ListActionButton
@@ -331,7 +330,7 @@ export default function SectorListScreen() {
           loading={false}
           loadingMore={isFetchingNextPage}
           enableSwipeActions={true}
-          visibleColumnKeys={visibleColumns}
+          visibleColumnKeys={Array.from(visibleColumns) as string[]}
         />
       ) : (
         <View style={styles.emptyContainer}>
@@ -371,7 +370,7 @@ export default function SectorListScreen() {
           sortable: col.sortable,
           align: col.align,
         }))}
-        visibleColumns={new Set(visibleColumns)}
+        visibleColumns={visibleColumns}
         onVisibilityChange={handleColumnsChange}
         open={showColumnManager}
         onOpenChange={setShowColumnManager}

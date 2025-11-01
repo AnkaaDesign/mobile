@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { UserTable } from "@/components/administration/user/list/user-table";
+import { UserTableWithData } from "@/components/administration/user/list/user-table-with-data";
 import { UserColumnVisibilityDrawer } from "@/components/administration/user/list/user-column-visibility-drawer";
 import { Input } from "@/components/ui/input";
 import { useColumnVisibility } from "@/hooks";
@@ -22,7 +22,8 @@ interface RelatedUsersCardProps {
 export function RelatedUsersCard({ position }: RelatedUsersCardProps) {
   const { colors } = useTheme();
   const [searchText, setSearchText] = useState("");
-  const [tableData, setTableData] = useState<{ users: User[]; totalRecords: number }>({
+  const [columnDrawerOpen, setColumnDrawerOpen] = useState(false);
+  const [_tableData, _setTableData] = useState<{ users: User[]; totalRecords: number }>({
     users: [],
     totalRecords: 0
   });
@@ -30,12 +31,12 @@ export function RelatedUsersCard({ position }: RelatedUsersCardProps) {
   // Visible columns state with localStorage persistence
   const { visibleColumns, setVisibleColumns } = useColumnVisibility(
     "position-detail-users-visible-columns",
-    new Set(["payrollNumber", "name", "email", "phone", "sector.name", "status"])
+    ["payrollNumber", "name", "email", "phone", "sector.name", "status"]
   );
 
   // Stable callback for table data updates
   const handleTableDataChange = useCallback((data: { users: User[]; totalRecords: number }) => {
-    setTableData(data);
+    _setTableData(data);
   }, []);
 
   // Filter to only show users from this position with search
@@ -70,7 +71,7 @@ export function RelatedUsersCard({ position }: RelatedUsersCardProps) {
               value={searchText}
               onChangeText={setSearchText}
               placeholder="Buscar por nome, email, CPF, PIS..."
-              style={[styles.searchInput, { color: colors.foreground }]}
+              inputStyle={{ ...styles.searchInput, color: colors.foreground }}
               placeholderTextColor={colors.mutedForeground}
             />
           </View>
@@ -79,6 +80,8 @@ export function RelatedUsersCard({ position }: RelatedUsersCardProps) {
             <UserColumnVisibilityDrawer
               visibleColumns={visibleColumns}
               onVisibilityChange={setVisibleColumns}
+              open={columnDrawerOpen}
+              onOpenChange={setColumnDrawerOpen}
             />
 
             <TouchableOpacity
@@ -96,8 +99,8 @@ export function RelatedUsersCard({ position }: RelatedUsersCardProps) {
 
         {/* User table */}
         <View style={styles.tableContainer}>
-          <UserTable
-            visibleColumns={visibleColumns}
+          <UserTableWithData
+            visibleColumnKeys={Array.from(visibleColumns)}
             filters={filters}
             onDataChange={handleTableDataChange}
           />

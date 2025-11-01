@@ -1,4 +1,4 @@
-import React from "react";
+
 import { ActivityIndicator as RNActivityIndicator, View, StyleSheet, ViewStyle } from "react-native";
 import { useTheme } from "@/lib/theme";
 

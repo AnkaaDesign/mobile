@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Controller, useFormContext } from "react-hook-form";
 import { View } from "react-native";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,7 @@ export function PriceInput({ disabled }: PriceInputProps) {
           <Label nativeID="price" style={{ marginBottom: 4 }}>
             Preço
           </Label>
-          <CurrencyInput value={value} onChange={onChange} onBlur={onBlur} editable={!disabled} />
+          <CurrencyInput value={value ?? undefined} onChange={onChange} onBlur={onBlur} editable={!disabled} />
           {error && <ThemedText style={{ fontSize: 14, color: "#ef4444", marginTop: 4 }}>{error.message}</ThemedText>}
         </View>
       )}

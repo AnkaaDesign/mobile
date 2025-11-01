@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Select } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
-import { COMMISSION_STATUS, COMMISSION_STATUS_LABELS, TASK_STATUS, TASK_STATUS_LABELS } from '../../../constants';
+import { COMMISSION_STATUS_LABELS, TASK_STATUS_LABELS } from '../../../constants';
 import type { User } from '../../../types';
 import { useTheme } from "@/lib/theme";
 import { IconFilter, IconX } from "@tabler/icons-react-native";

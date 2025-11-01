@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import type { Holiday } from '../../../../types';
 import { HOLIDAY_TYPE_LABELS } from '../../../../constants';

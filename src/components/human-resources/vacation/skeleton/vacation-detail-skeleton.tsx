@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { SkeletonCard } from "@/components/ui/loading";
 import { spacing } from "@/constants/design-system";

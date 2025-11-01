@@ -20,7 +20,7 @@ export interface DashboardCardProps {
   };
 }
 
-export const DashboardCard: React.FC<DashboardCardProps> = ({ title, value, unit = "", trend, change, icon, color = "#16a34a", style, onPress, badge }) => {
+export const DashboardCard: React.FC<DashboardCardProps> = ({ title, value, unit = "", trend, change, icon, color: _color = "#16a34a", style, onPress, badge }) => {
   const getTrendIcon = () => {
     switch (trend) {
       case "up":

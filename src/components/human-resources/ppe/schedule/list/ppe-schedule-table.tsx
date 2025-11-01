@@ -2,7 +2,6 @@
 
 import React, { useCallback } from "react";
 import { FlatList, View, Pressable, RefreshControl, ActivityIndicator, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
 import { Icon } from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -12,12 +11,10 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { badgeColors } from "@/lib/theme/extended-colors";
 import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS, PPE_TYPE_LABELS } from '../../../../../constants';
 import { formatDate } from '../../../../../utils';
-import { routes } from '../../../../../constants';
-import { routeToMobilePath } from "@/lib/route-mapper";
+
 import type { PpeDeliverySchedule } from '../../../../../types';
 import { differenceInDays } from "date-fns";
 import type { SortConfig } from "@/lib/sort-utils";
-
 
 interface PpeScheduleTableProps {
   schedules: PpeDeliverySchedule[];
@@ -39,11 +36,8 @@ export const PpeScheduleTable = React.memo<PpeScheduleTableProps>(({
   refreshing = false,
   loading = false,
   loadingMore = false,
-  sortConfigs = [],
-  onSort,
 }) => {
   const { colors, isDark } = useTheme();
-  const router = useRouter();
 
   // Get status badge variant and text based on schedule status
   const getStatusInfo = useCallback((schedule: PpeDeliverySchedule) => {
@@ -100,7 +94,7 @@ export const PpeScheduleTable = React.memo<PpeScheduleTableProps>(({
       const statusInfo = getStatusInfo(item);
 
       // Extract user or category for display
-      const assignmentDisplay = item.user?.name || item.category?.name || ASSIGNMENT_TYPE_LABELS[item.assignmentType as keyof typeof ASSIGNMENT_TYPE_LABELS];
+      const assignmentDisplay = (item as any).user?.name || (item as any).category?.name || ASSIGNMENT_TYPE_LABELS[item.assignmentType as keyof typeof ASSIGNMENT_TYPE_LABELS];
 
       // Get PPE items summary
       const ppeItemsCount = item.ppeItems?.length || 0;
@@ -344,3 +338,5 @@ const styles = StyleSheet.create({
 });
 
 PpeScheduleTable.displayName = "PpeScheduleTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

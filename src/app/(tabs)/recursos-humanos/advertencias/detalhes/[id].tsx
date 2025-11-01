@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useWarning, useWarningMutations } from '../../../../../hooks';
@@ -21,7 +21,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function WarningDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { user } = useAuth();
   const { delete: deleteAsync } = useWarningMutations();
   const [refreshing, setRefreshing] = useState(false);

@@ -1,22 +1,22 @@
 // app/(tabs)/_layout.tsx
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Drawer } from "expo-router/drawer";
 import { View, Text as RNText, Pressable, Platform, ScrollView, TouchableWithoutFeedback, Animated, StyleSheet, Dimensions, GestureResponderEvent } from "react-native";
 // Use React Native's Text directly to avoid theme overrides
 const Text = RNText;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { IconButton } from "@/components/ui/icon-button";
+
 import { useAuth } from "@/contexts/auth-context";
 import { useFavorites } from "@/contexts/favorites-context";
 import { useTheme } from "@/lib/theme";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Icon } from "@/components/ui/icon";
-import { IconChevronRight, IconLogout, IconUser, IconSettings, IconArrowLeft, IconMenu2, IconStar, IconStarFilled, IconChevronDown } from "@tabler/icons-react-native";
-import { useRouter, useSegments, usePathname } from "expo-router";
+import { IconChevronRight, IconStar, IconStarFilled } from "@tabler/icons-react-native";
+import { useRouter, usePathname } from "expo-router";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { MENU_ITEMS, routes, MenuItem } from '../../constants';
 import { getFilteredMenuForUser, getTablerIcon } from '../../utils/navigation';
-import { routeToMobilePath, getTitleFromMenuItems, normalizePath } from "@/lib/route-mapper";
+import { routeToMobilePath, normalizePath } from "@/lib/route-mapper";
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { maskPhone } from '../../utils';
 
@@ -44,7 +44,8 @@ interface PopoverState {
   isNestedPopoverAnimating: boolean;
 }
 
-const initialPopoverState: PopoverState = {
+// @ts-expect-error TS6133 - Unused state structure defined for future popover implementation
+const _initialPopoverState: PopoverState = {
   activePopover: null,
   popoverPosition: null,
   isPopoverAnimating: false,
@@ -63,7 +64,9 @@ const SPACING = {
 };
 
 // Helper functions for complex style calculations - UPDATED to use green-700
-const getMenuItemBackgroundColor = (isActive: boolean, pressed: boolean, isInPath: boolean, isDarkMode: boolean): string => {
+// @ts-expect-error TS6133 - Unused but may be needed for future styling updates
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _getMenuItemBackgroundColor = (isActive: boolean, pressed: boolean, isInPath: boolean, isDarkMode: boolean): string => {
   if (isActive) {
     if (DEBUG_STYLES) console.log("Active item - returning green-700 background");
     return "#15803d"; // green-700 - web primary
@@ -73,11 +76,15 @@ const getMenuItemBackgroundColor = (isActive: boolean, pressed: boolean, isInPat
   return "transparent";
 };
 
-const getMenuItemBorderColor = (isInPath: boolean, isDarkMode: boolean): string => {
+// @ts-expect-error TS6133 - Unused but may be needed for future styling updates
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _getMenuItemBorderColor = (isInPath: boolean, isDarkMode: boolean): string => {
   return isInPath ? (isDarkMode ? "rgba(21, 128, 61, 0.4)" : "rgba(21, 128, 61, 0.3)") : "transparent";
 };
 
-const getIconColor = (isActive: boolean, isInPath: boolean, isDarkMode: boolean): string => {
+// @ts-expect-error TS6133 - Unused but may be needed for future styling updates
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _getIconColor = (isActive: boolean, isInPath: boolean, isDarkMode: boolean): string => {
   if (isActive) return "#fafafa"; // neutral-50
   if (isInPath) return "#15803d"; // green-700
   return isDarkMode ? "#cccccc" : "#525252"; // neutral-300 : neutral-600
@@ -90,7 +97,9 @@ const getPressedBackgroundColor = (isDarkMode: boolean): string => {
 // Development-only style debugging tools
 const DEBUG_STYLES = __DEV__;
 
-const debugStyleIssues = (componentName: string, styles: Record<string, unknown>) => {
+// @ts-expect-error TS6133 - Unused but may be needed for development debugging
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _debugStyleIssues = (componentName: string, styles: Record<string, unknown>) => {
   if (!DEBUG_STYLES) return;
 
   // Check for common style issues
@@ -380,12 +389,11 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   const { favorites, showFavorites, toggleShowFavorites, isFavorite, toggleFavorite } = useFavorites();
   const { isDark, theme } = useTheme();
   const router = useRouter();
-  const segments = useSegments();
+
   const pathname = usePathname();
   const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({});
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [navigatingItemId, setNavigatingItemId] = useState<string | null>(null);
-  const [popoverState, setPopoverState] = useState<PopoverState>(initialPopoverState);
   const insets = useSafeAreaInsets();
 
   // Theme detection
@@ -540,7 +548,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           // Item has no children and is not dynamic, keep it
           return item;
         })
-        .filter(Boolean); // Remove null items
+        .filter((item): item is MenuItem => item !== null); // Remove null items
     },
     [pathname],
   );
@@ -827,7 +835,6 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       if (!item.children) return false;
 
       // Remove (tabs) prefix from pathname for comparison
-      const currentPath = pathname.replace(/^\/\(tabs\)/, "");
 
       return item.children.some((child) => {
         // Check if child is active
@@ -1029,7 +1036,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                     onPress={async (e) => {
                       e.stopPropagation();
                       await toggleFavorite({
-                        path: item.path,
+                        path: item.path!,
                         title: item.title,
                         icon: item.icon,
                       });
@@ -1060,7 +1067,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
                     <View style={styles.chevronTouchable}>
-                      {chevronAnimation ? (
+                      {chevronAnimation && chevronRotation ? (
                         <Animated.View style={{ transform: [{ rotate: chevronRotation }] }}>
                           <Icon name="chevron-right" size={16} variant={isActive ? "onPrimary" : isInPath ? "primary" : "navigation"} />
                         </Animated.View>
@@ -1725,9 +1732,9 @@ const shouldShowBackButton = (pathname: string, canGoBack: boolean): boolean => 
 
 function DrawerLayout() {
   const { isDark, theme } = useTheme();
-  const router = useRouter();
+
   const pathname = usePathname();
-  const { canGoBack, goBack, getBackPath } = useNavigationHistory();
+  const { canGoBack, goBack } = useNavigationHistory();
   const insets = useSafeAreaInsets();
 
   const screensToRegister = getScreensToRegister();

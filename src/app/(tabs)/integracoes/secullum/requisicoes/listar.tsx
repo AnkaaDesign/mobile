@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Alert } from "react-native";
 import { router } from "expo-router";
 import { useSecullumRequests, useSecullumApproveRequest, useSecullumRejectRequest } from '../../../../../hooks';
@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Header } from "@/components/ui/header";
-import { IconClockEdit, IconUser, IconCalendar, IconRefresh, IconCircleCheck, IconCircleX } from "@tabler/icons-react-native";
+import { IconUser, IconCalendar, IconRefresh, IconCircleCheck, IconCircleX } from "@tabler/icons-react-native";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 

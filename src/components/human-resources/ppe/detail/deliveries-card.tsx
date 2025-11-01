@@ -1,5 +1,5 @@
-import React from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+
+import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -20,14 +20,14 @@ interface DeliveriesCardProps {
   deliveries?: PpeDelivery[];
 }
 
-export function DeliveriesCard({ item, deliveries = [] }: DeliveriesCardProps) {
-  const { colors, isDark } = useTheme();
+export function DeliveriesCard({ deliveries = [] }: DeliveriesCardProps) {
+  const { colors } = useTheme();
 
   const recentDeliveries = deliveries.slice(0, 5);
 
   const handleViewAllDeliveries = () => {
     // Navigate to deliveries list filtered by this item
-    router.push(routeToMobilePath(routes.humanResources.ppe.deliveries.list) as any);
+    router.push(routeToMobilePath(routes.humanResources.ppe.deliveries.root) as any);
   };
 
   const handleAddDelivery = () => {
@@ -125,20 +125,20 @@ export function DeliveriesCard({ item, deliveries = [] }: DeliveriesCardProps) {
                     </View>
                     <Badge
                       variant="default"
-                      style={[
+                      style={StyleSheet.flatten([
                         styles.statusBadge,
                         {
                           backgroundColor: getStatusBgColor(delivery.status),
                         },
-                      ]}
+                      ])}
                     >
                       <ThemedText
-                        style={[
+                        style={StyleSheet.flatten([
                           styles.statusText,
                           {
                             color: getStatusColor(delivery.status),
                           },
-                        ]}
+                        ])}
                       >
                         {PPE_DELIVERY_STATUS_LABELS[delivery.status as keyof typeof PPE_DELIVERY_STATUS_LABELS]}
                       </ThemedText>

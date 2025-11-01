@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";

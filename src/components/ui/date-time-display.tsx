@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ViewStyle, TextStyle, StyleSheet} from "react-native";
+import { View, ViewStyle, StyleSheet } from "react-native";
 import { useTheme } from "@/lib/theme";
 
 interface DateTimeDisplayProps {
@@ -8,7 +8,7 @@ interface DateTimeDisplayProps {
 }
 
 export function DateTimeDisplay({ children, style }: DateTimeDisplayProps) {
-  const { colors, spacing } = useTheme();
+  const { spacing } = useTheme();
 
   return (
     <View style={StyleSheet.flatten([{ padding: spacing.sm }, style as ViewStyle])}>

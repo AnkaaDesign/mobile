@@ -1,11 +1,11 @@
-import React, { useCallback, useMemo } from "react";
-import { View, Text, FlatList, RefreshControl, Pressable, StyleSheet } from "react-native";
+import { useCallback } from "react";
+import { View, Text, FlatList, RefreshControl, StyleSheet } from "react-native";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { IconChevronRight, IconScissors, IconEdit, IconTrash } from "@tabler/icons-react-native";
 import type { Cut } from "../../../../types";
 import { useTheme } from "@/lib/theme";
-import { TableCard, TableCardRow, TableCardCell, TableCardActions, TableCardHeader } from "@/components/ui/table-card";
+import { TableCard, TableCardRow, TableCardCell, TableCardHeader } from "@/components/ui/table-card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ActivityIndicator } from "@/components/ui/activity-indicator";
@@ -13,7 +13,6 @@ import { ReanimatedSwipeableRow, type SwipeAction } from "@/components/ui/reanim
 import { CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from "../../../../constants";
 import { getBadgeVariant } from "../../../../constants/badge-colors";
 import type { SortConfig } from "@/lib/sort-utils";
-
 
 export interface ColumnDefinition {
   key: string;
@@ -66,12 +65,12 @@ export function CuttingPlanTable({
   showSelection = false,
   selectedCuts = new Set(),
   onSelectionChange,
-  sortConfigs = [],
-  onSort,
+  sortConfigs: _sortConfigs = [],
+  // onSort removed
   visibleColumnKeys = ["status", "type", "task"],
   enableSwipeActions = true,
 }: CuttingPlanTableProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   const handleCutPress = useCallback(
     (cutId: string) => {
@@ -127,7 +126,7 @@ export function CuttingPlanTable({
         <TableCard
           onPress={() => handleCutPress(cut.id)}
           selected={isSelected}
-          style={[isSelected && { backgroundColor: colors.accent }]}
+          style={isSelected ? { backgroundColor: colors.accent } : undefined}
         >
           <TableCardHeader>
             <View style={styles.headerContent}>
@@ -324,3 +323,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

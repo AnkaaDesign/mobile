@@ -1,8 +1,8 @@
-import React from "react";
+
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
+
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import {
@@ -12,7 +12,7 @@ import {
   IconExternalLink,
 } from "@tabler/icons-react-native";
 import type { ServiceOrder } from "@/types";
-import { formatDate, formatDateTime } from "@/utils";
+import { formatDate } from "@/utils";
 import { router } from "expo-router";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { routes } from "@/constants";
@@ -22,7 +22,7 @@ interface TaskInfoCardProps {
 }
 
 export function TaskInfoCard({ serviceOrder }: TaskInfoCardProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   if (!serviceOrder.task) {
     return (
@@ -96,11 +96,12 @@ export function TaskInfoCard({ serviceOrder }: TaskInfoCardProps) {
 
           {/* Dates */}
           <View style={styles.dateRow}>
-            {task.scheduledDate && (
+            {/* Fixed: scheduledDate doesn't exist, using term (deadline) instead */}
+            {task.term && (
               <View style={styles.infoRow}>
                 <IconCalendar size={16} color={colors.mutedForeground} />
                 <ThemedText style={[styles.infoText, { color: colors.mutedForeground }]}>
-                  {formatDate(task.scheduledDate)}
+                  {formatDate(task.term)}
                 </ThemedText>
               </View>
             )}

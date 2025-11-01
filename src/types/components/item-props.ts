@@ -188,11 +188,6 @@ export interface LeadTimeInputProps {
   disabled?: boolean;
 }
 
-export interface TaxInputProps {
-  form: UseFormReturn<ItemCreateFormData | ItemUpdateFormData>;
-  disabled?: boolean;
-}
-
 export interface PriceInputProps {
   form: UseFormReturn<ItemCreateFormData | ItemUpdateFormData>;
   disabled?: boolean;

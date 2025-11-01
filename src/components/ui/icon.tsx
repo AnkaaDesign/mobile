@@ -4,7 +4,6 @@ import { getTablerIcon } from '../../utils';
 import { useTheme } from "@/lib/theme";
 import { getIconSize, type IconSize } from "@/constants/icon-sizes";
 import { getIconColor } from "@/constants/icon-colors";
-import { cn } from "@/lib/utils";
 
 // Import the specific icons we need (expanded set to cover most used icons)
 import {
@@ -479,7 +478,7 @@ interface IconProps {
   accessible?: boolean;
 }
 
-export function Icon({ name, size = "md", color, variant = "default", opacity, className, testID, accessibilityLabel, accessible = true }: IconProps) {
+export function Icon({ name, size = "md", color, variant = "default", className, testID, accessibilityLabel, accessible = true }: IconProps) {
   const { colors } = useTheme();
 
   // Get size
@@ -494,7 +493,7 @@ export function Icon({ name, size = "md", color, variant = "default", opacity, c
       // Convert "IconHome" to "home", "IconChevronRight" to "chevron-right"
       return iconName
         .replace(/^Icon/, "") // Remove "Icon" prefix
-        .replace(/([A-Z])/g, (match, p1, offset) => (offset > 0 ? `-${p1.toLowerCase()}` : p1.toLowerCase())); // Convert CamelCase to kebab-case
+        .replace(/([A-Z])/g, (_match, p1, offset) => (offset > 0 ? `-${p1.toLowerCase()}` : p1.toLowerCase())); // Convert CamelCase to kebab-case
     }
     return iconName;
   };

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { View, TextInput, Pressable, Platform, AccessibilityInfo , StyleSheet} from "react-native";
+import { View, TextInput, Pressable, Platform, StyleSheet } from "react-native";
 import { ThemedText } from "./themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";

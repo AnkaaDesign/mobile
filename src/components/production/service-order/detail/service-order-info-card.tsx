@@ -1,8 +1,8 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
+
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import {
@@ -14,7 +14,7 @@ import {
 } from "@tabler/icons-react-native";
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from "@/constants";
 import type { ServiceOrder } from "@/types";
-import { formatDate, formatDateTime } from "@/utils";
+import { formatDateTime } from "@/utils";
 
 interface ServiceOrderInfoCardProps {
   serviceOrder: ServiceOrder;

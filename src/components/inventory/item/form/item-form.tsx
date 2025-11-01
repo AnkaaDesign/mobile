@@ -3,19 +3,16 @@ import { View, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { useForm, FormProvider, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
-import { Button } from "@/components/ui/button";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ThemedText } from "@/components/ui/themed-text";
+
 import { Separator } from "@/components/ui/separator";
-import { IconLoader } from "@tabler/icons-react-native";
+
 import { itemCreateSchema, itemUpdateSchema, type ItemCreateFormData, type ItemUpdateFormData } from '../../../../schemas';
 import { useItemCategories } from '../../../../hooks';
 import { ITEM_CATEGORY_TYPE } from '../../../../constants';
-import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
+import { spacing } from "@/constants/design-system";
 import type { Supplier, ItemBrand, ItemCategory } from '../../../../types';
-
-type ItemFormData = ItemCreateFormData | ItemUpdateFormData;
 
 // Import all form components
 import { NameInput } from "./name-input";
@@ -28,7 +25,8 @@ import { QuantityInput } from "./quantity-input";
 import { MaxQuantityInput } from "./max-quantity-input";
 import { BoxQuantityInput } from "./box-quantity-input";
 import { LeadTimeInput } from "./lead-time-input";
-import { TaxInput } from "./tax-input";
+import { IcmsInput } from "./icms-input";
+import { IpiInput } from "./ipi-input";
 import { PriceInput } from "./price-input";
 import { MeasuresManager } from "./measures-manager";
 import { BarcodeManager } from "./barcode-manager";
@@ -59,8 +57,7 @@ interface UpdateItemFormProps extends BaseItemFormProps {
 type ItemFormProps = CreateItemFormProps | UpdateItemFormProps;
 
 export function ItemForm(props: ItemFormProps) {
-  const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, initialSupplier, initialBrand, initialCategory } = props;
-  const { colors, isDark } = useTheme();
+  const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, initialCategory: _initialCategory, initialBrand: _initialBrand, initialSupplier: _initialSupplier } = props;
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(defaultValues?.categoryId || undefined);
   const [isPPE, setIsPPE] = useState(false);
 
@@ -73,7 +70,8 @@ export function ItemForm(props: ItemFormProps) {
     reorderQuantity: null,
     maxQuantity: null,
     boxQuantity: null,
-    tax: undefined,
+    icms: 0,
+    ipi: 0,
     measures: [], // Initialize with empty measures array
     barcodes: [],
     shouldAssignToUser: true,
@@ -91,6 +89,7 @@ export function ItemForm(props: ItemFormProps) {
     ppeDeliveryMode: null,
     ppeStandardQuantity: null,
     ppeAutoOrderMonths: null,
+    monthlyConsumptionTrendPercent: null,
     ...defaultValues,
   };
 
@@ -115,7 +114,7 @@ export function ItemForm(props: ItemFormProps) {
   });
 
   // useFieldArray for measures
-  const measuresFieldArray = useFieldArray({
+  const { fields: __measureFields } = useFieldArray({
     control: form.control,
     name: "measures",
   });
@@ -174,41 +173,6 @@ export function ItemForm(props: ItemFormProps) {
     }
   }, [categories]);
 
-  const handleSubmit = async (data: any) => {
-    console.group("ItemForm handleSubmit");
-    console.groupEnd();
-
-    try {
-      // Convert measures object to array if needed
-      let measuresArray = [];
-      if (data.measures) {
-        if (Array.isArray(data.measures)) {
-          measuresArray = data.measures;
-        } else if (typeof data.measures === "object") {
-          // Convert object with numeric keys to array
-          measuresArray = Object.values(data.measures);
-        }
-      }
-
-      // Ensure barcodes and measures are always arrays before submitting
-      const processedData = {
-        ...data,
-        barcodes: Array.isArray(data.barcodes) ? data.barcodes : [],
-        measures: measuresArray,
-      };
-
-      if (mode === "create") {
-        await (props as CreateItemFormProps).onSubmit(processedData);
-      } else {
-        await (props as UpdateItemFormProps).onSubmit(processedData);
-      }
-    } catch (error) {
-      console.error("Submit error:", error);
-      // Re-throw so parent can handle
-      throw error;
-    }
-  };
-
   const isRequired = mode === "create";
 
   return (
@@ -232,15 +196,12 @@ export function ItemForm(props: ItemFormProps) {
                   <CategorySelector
                     disabled={isSubmitting}
                     onCategoryChange={setSelectedCategoryId}
-                    initialCategory={initialCategory}
                   />
                   <BrandSelector
                     disabled={isSubmitting}
-                    initialBrand={initialBrand}
                   />
                   <SupplierSelector
                     disabled={isSubmitting}
-                    initialSupplier={initialSupplier}
                   />
                 </View>
               </CardContent>
@@ -270,12 +231,13 @@ export function ItemForm(props: ItemFormProps) {
               </CardHeader>
               <CardContent>
                 <View style={styles.fieldGroup}>
+                  <PriceInput disabled={isSubmitting} />
                   <View style={styles.fieldRow}>
                     <View style={styles.halfField}>
-                      <PriceInput disabled={isSubmitting} />
+                      <IcmsInput disabled={isSubmitting} required={isRequired} priceFieldName="price" />
                     </View>
                     <View style={styles.halfField}>
-                      <TaxInput disabled={isSubmitting} required={isRequired} />
+                      <IpiInput disabled={isSubmitting} required={isRequired} priceFieldName="price" />
                     </View>
                   </View>
                 </View>

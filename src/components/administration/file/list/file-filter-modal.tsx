@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Modal, View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";

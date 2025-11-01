@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector } from "@tabler/icons-react-native";
@@ -10,7 +10,7 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TruckTableRowSwipe } from "./truck-table-row-swipe";
-import { formatDateTime } from '../../../../utils';
+
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { TRUCK_MANUFACTURER_LABELS } from '../../../../constants';
 import type { SortConfig } from "@/lib/sort-utils";
@@ -23,7 +23,6 @@ export interface TableColumn {
   align?: "left" | "center" | "right";
   sortable?: boolean;
 }
-
 
 interface TruckTableProps {
   trucks: Truck[];
@@ -250,7 +249,7 @@ export const TruckTable = React.memo<TruckTableProps>(
     onTruckPress,
     onTruckEdit,
     onTruckDelete,
-    onTruckDuplicate,
+    // onTruckDuplicate removed
     onRefresh,
     onEndReached,
     refreshing = false,
@@ -266,7 +265,7 @@ export const TruckTable = React.memo<TruckTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -403,7 +402,6 @@ export const TruckTable = React.memo<TruckTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -467,7 +465,7 @@ export const TruckTable = React.memo<TruckTableProps>(
         if (enableSwipeActions && (onTruckEdit || onTruckDelete)) {
           return (
             <TruckTableRowSwipe key={item.id} truckId={item.id} truckPlate={item.plate} onEdit={onTruckEdit} onDelete={onTruckDelete} disabled={showSelection}>
-              {(isActive) => (
+              {() => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -620,7 +618,7 @@ export const TruckTable = React.memo<TruckTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 36, // Fixed row height
               offset: 36 * index,
               index,

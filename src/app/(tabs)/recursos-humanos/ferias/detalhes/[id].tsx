@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useVacationDetail } from '../../../../../hooks';
@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/ui/header";
 import { ThemedText } from "@/components/ui/themed-text";
-import { IconBeach, IconEdit, IconRefresh, IconTrash } from "@tabler/icons-react-native";
+import { IconBeach, IconEdit, IconRefresh } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { TouchableOpacity } from "react-native";

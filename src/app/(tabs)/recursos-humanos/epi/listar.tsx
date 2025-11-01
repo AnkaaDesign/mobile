@@ -1,11 +1,11 @@
-import React, { useState, useCallback } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { useState, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePpeInfiniteMobile } from "@/hooks";
 import type { ItemGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { PpeTable } from "@/components/human-resources/ppe/list/ppe-table";
 import type { SortConfig } from "@/components/human-resources/ppe/list/ppe-table";
 import { PpeFilterModal } from "@/components/human-resources/ppe/list/ppe-filter-modal";
@@ -19,7 +19,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function PpeListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors, } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -31,8 +31,8 @@ export default function PpeListScreen() {
     },
   });
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "name", direction: "asc" }]);
-  const [showColumnManager, setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["name", "ppeType", "ppeCA", "quantity"]);
+  const [_showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, ] = useState<string[]>(["name", "ppeType", "ppeCA", "quantity"]);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -100,7 +100,7 @@ export default function PpeListScreen() {
     },
   };
 
-  const { items, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePpeInfiniteMobile(queryParams);
+  const { items, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePpeInfiniteMobile(queryParams);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -123,11 +123,11 @@ export default function PpeListScreen() {
     router.push(routeToMobilePath(routes.humanResources.ppe.edit(ppeId)) as any);
   };
 
-  const handleViewDeliveries = (ppeId: string) => {
+  const handleViewDeliveries = (_epiId: string) => {
     router.push(routeToMobilePath(routes.humanResources.ppe.deliveries.root) as any);
   };
 
-  const handleViewSchedules = (ppeId: string) => {
+  const handleViewSchedules = (_epiId: string) => {
     router.push(routeToMobilePath(routes.humanResources.ppe.schedules.root) as any);
   };
 

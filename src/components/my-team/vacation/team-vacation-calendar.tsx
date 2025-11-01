@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -6,7 +6,7 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { IconChevronLeft, IconChevronRight, IconUser, IconUsers } from "@tabler/icons-react-native";
 import { spacing } from "@/constants/design-system";
 import { VACATION_STATUS } from '../../../constants';
-import { formatDate, getDaysInMonth, getMonthName, isDateInRange, isSameDay } from '../../../utils';
+import { getDaysInMonth, getMonthName, isDateInRange, isSameDay } from '../../../utils';
 import type { Vacation } from '../../../types';
 
 interface TeamVacationCalendarProps {
@@ -58,7 +58,7 @@ export const TeamVacationCalendar = ({ vacations, onVacationPress }: TeamVacatio
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
+
     const daysInMonth = getDaysInMonth(month, year);
 
     // Get first day of week (0 = Sunday)

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -17,7 +17,7 @@ import { IconRefresh, IconEdit, IconTrash } from "@tabler/icons-react-native";
 import {
   ObservationInfoCard,
   ObservationFilesCard,
-  ObservationCommissionsCard,
+  
   ObservationMetadataCard,
 } from "@/components/production/observation/detail";
 
@@ -76,10 +76,8 @@ export default function ObservationDetailsScreen() {
       return;
     }
 
-    const hasCommissions = observation?.commissions && observation.commissions.length > 0;
-    const warningMessage = hasCommissions
-      ? "Tem certeza que deseja excluir esta observação? As comissões suspensas serão restauradas automaticamente. Esta ação não pode ser desfeita."
-      : "Tem certeza que deseja excluir esta observação? Esta ação não pode ser desfeita.";
+    // Fixed: commissions property no longer exists on Observation type
+    const warningMessage = "Tem certeza que deseja excluir esta observação? Esta ação não pode ser desfeita.";
 
     Alert.alert(
       "Excluir Observação",
@@ -184,10 +182,7 @@ export default function ObservationDetailsScreen() {
           <ObservationFilesCard files={observation.files as any} />
         )}
 
-        {/* Commissions Card */}
-        {observation.commissions && observation.commissions.length > 0 && (
-          <ObservationCommissionsCard commissions={observation.commissions as any} />
-        )}
+        {/* Commissions Card - Removed: commissions no longer exist on Observation type */}
 
         {/* Metadata Card */}
         <ObservationMetadataCard

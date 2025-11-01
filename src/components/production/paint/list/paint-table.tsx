@@ -1,5 +1,5 @@
-import React from "react";
-import { View, FlatList, Pressable } from "react-native";
+
+import { FlatList, Pressable } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -22,7 +22,7 @@ export function PaintTable({
   onRefresh,
   onItemPress,
 }: PaintTableProps) {
-  const { spacing, colors } = useTheme();
+  const { spacing} = useTheme();
 
   if (isLoading) {
     return <LoadingScreen />;

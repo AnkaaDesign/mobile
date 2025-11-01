@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector } from "@tabler/icons-react-native";
@@ -259,7 +259,7 @@ export const BorrowTable = React.memo<BorrowTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -396,7 +396,6 @@ export const BorrowTable = React.memo<BorrowTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -470,7 +469,7 @@ export const BorrowTable = React.memo<BorrowTableProps>(
               onMarkAsLost={onMarkAsLost}
               disabled={showSelection}
             >
-              {(isActive) => (
+              {() => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -625,7 +624,7 @@ export const BorrowTable = React.memo<BorrowTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 60, // Fixed row height
               offset: 60 * index,
               index,
@@ -797,3 +796,5 @@ const styles = StyleSheet.create({
 });
 
 BorrowTable.displayName = "BorrowTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

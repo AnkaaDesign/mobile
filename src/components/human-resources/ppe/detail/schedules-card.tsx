@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
@@ -20,14 +20,14 @@ interface SchedulesCardProps {
   schedules?: PpeDeliverySchedule[];
 }
 
-export function SchedulesCard({ item, schedules = [] }: SchedulesCardProps) {
+export function SchedulesCard({ schedules = [] }: SchedulesCardProps) {
   const { colors } = useTheme();
 
   const activeSchedules = schedules.filter((s) => s.isActive);
 
   const handleViewAllSchedules = () => {
     // Navigate to schedules list
-    router.push(routeToMobilePath(routes.humanResources.ppe.schedules.list) as any);
+    router.push(routeToMobilePath(routes.humanResources.ppe.schedules.root) as any);
   };
 
   const handleAddSchedule = () => {
@@ -74,11 +74,11 @@ export function SchedulesCard({ item, schedules = [] }: SchedulesCardProps) {
                 >
                   <View style={styles.scheduleHeader}>
                     <View style={styles.scheduleInfo}>
-                      {schedule.user && (
+                      {((schedule as any).user) && (
                         <View style={styles.userRow}>
                           <IconUser size={16} color={colors.mutedForeground} />
                           <ThemedText style={StyleSheet.flatten([styles.userName, { color: colors.foreground }])}>
-                            {schedule.user.name}
+                            {((schedule as any).user).name}
                           </ThemedText>
                         </View>
                       )}
@@ -120,19 +120,19 @@ export function SchedulesCard({ item, schedules = [] }: SchedulesCardProps) {
                       </View>
                     )}
 
-                    {schedule.lastDeliveryDate && (
+                    {((schedule as any).lastDeliveryDate) && (
                       <View style={styles.detailRow}>
                         <IconCalendar size={14} color={colors.mutedForeground} />
                         <ThemedText style={StyleSheet.flatten([styles.detailText, { color: colors.mutedForeground }])}>
-                          Última entrega: {formatDate(schedule.lastDeliveryDate)}
+                          Última entrega: {formatDate(((schedule as any).lastDeliveryDate))}
                         </ThemedText>
                       </View>
                     )}
                   </View>
 
-                  {schedule.notes && (
+                  {((schedule as any).notes) && (
                     <ThemedText style={StyleSheet.flatten([styles.notes, { color: colors.mutedForeground }])}>
-                      {schedule.notes}
+                      {((schedule as any).notes)}
                     </ThemedText>
                   )}
                 </View>

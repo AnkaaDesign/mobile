@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useItem } from '../../../../../hooks';
@@ -8,7 +8,7 @@ import { Header } from "@/components/ui/header";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
-import { IconShield, IconRefresh, IconEdit, IconHistory, IconAlertTriangle } from "@tabler/icons-react-native";
+import { IconShield, IconRefresh, IconEdit, IconHistory } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { showToast } from "@/components/ui/toast";
 import { Card, CardContent } from "@/components/ui/card";

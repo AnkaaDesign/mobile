@@ -1,13 +1,13 @@
-import React, { memo, useCallback } from "react";
+import { memo, useCallback } from "react";
 import { View, FlatList, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { IconUser, IconPackage, IconCircleCheck, IconCircleX, IconClock, IconAlertCircle, IconX } from "@tabler/icons-react-native";
+import { IconUser, IconPackage, IconCircleCheck, IconClock, IconAlertCircle, IconX } from "@tabler/icons-react-native";
 import { PpeDeliveryListSkeleton } from "../skeleton/ppe-delivery-list-skeleton";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { spacing } from "@/constants/design-system";
-import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, BADGE_COLORS } from '../../../../../constants';
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '../../../../../constants';
 import { formatDate } from '../../../../../utils';
 import type { PpeDelivery } from '../../../../../types';
 
@@ -164,7 +164,7 @@ export const PpeDeliveryTable = memo(({ deliveries, isLoading, error, onDelivery
       windowSize={5}
       initialNumToRender={15}
       updateCellsBatchingPeriod={50}
-      getItemLayout={(data, index) => ({
+      getItemLayout={(_data, index) => ({
         length: 90,
         offset: 90 * index,
         index,

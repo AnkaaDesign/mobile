@@ -2,8 +2,6 @@ import React, { ReactNode } from "react";
 import { useSegments } from "expo-router";
 import { SECTOR_PRIVILEGES } from '../constants';
 import { PrivilegeGuard } from "./privilege-guard";
-import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes } from '../constants';
 
 interface RoutePrivilegeGuardProps {
   children: ReactNode;
@@ -99,7 +97,7 @@ export function RoutePrivilegeGuard({ children, fallbackScreen = '/(autenticacao
 
   // Use the base PrivilegeGuard with route-determined privileges
   return (
-    <PrivilegeGuard requiredPrivilege={requiredPrivilege} fallbackScreen={fallbackScreen} showUnauthorized={true}>
+    <PrivilegeGuard requiredPrivilege={requiredPrivilege || undefined} fallbackScreen={fallbackScreen} showUnauthorized={true}>
       {children}
     </PrivilegeGuard>
   );

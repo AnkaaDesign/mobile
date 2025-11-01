@@ -21,4 +21,8 @@ declare module "../src/types" {
   }
 }
 
+// CSS module declarations for NativeWind
+declare module "*.css";
+declare module "../../global.css";
+
 export {};

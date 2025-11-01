@@ -1,11 +1,11 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { useItemCategories } from '../../../../hooks';
-import { PPE_TYPE_LABELS } from '../../../../constants';
+import { PPE_TYPE, PPE_TYPE_LABELS } from '../../../../constants';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { Badge } from "@/components/ui/badge";
+
 import { ThemedText } from "@/components/ui/themed-text";
 import type { ItemGetManyFormData } from '../../../../schemas';
 
@@ -52,7 +52,7 @@ export function PpeFilterTags({ filters, searchText, onFilterChange, onSearchCha
       where.ppeType.in.forEach((type: string) => {
         tags.push({
           id: `ppeType-${type}`,
-          label: `Tipo: ${PPE_TYPE_LABELS[type] || type}`,
+          label: `Tipo: ${PPE_TYPE_LABELS[type as PPE_TYPE] || type}`,
           onRemove: () => {
             const newTypes = where.ppeType.in.filter((t: string) => t !== type);
             const newWhere = { ...where };

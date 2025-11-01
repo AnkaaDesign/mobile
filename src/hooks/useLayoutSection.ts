@@ -66,8 +66,8 @@ export const useLayoutSectionMutations = () => {
       });
       return response;
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || "Erro ao criar seção";
+    onError: (_error: any) => {
+
     },
   });
 
@@ -90,8 +90,8 @@ export const useLayoutSectionMutations = () => {
       }
       return response;
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || "Erro ao atualizar seção";
+    onError: (_error: any) => {
+
     },
   });
 
@@ -112,8 +112,8 @@ export const useLayoutSectionMutations = () => {
       });
 
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || "Erro ao excluir seção";
+    onError: (_error: any) => {
+
     },
   });
 
@@ -136,8 +136,8 @@ export const useLayoutSectionMutations = () => {
 
       return response;
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || "Erro ao criar seções em lote";
+    onError: (_error: any) => {
+
     },
   });
 
@@ -148,8 +148,8 @@ export const useLayoutSectionMutations = () => {
       queryClient.invalidateQueries({ queryKey: ["layouts"] });
       return response;
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || "Erro ao excluir seções em lote";
+    onError: (_error: any) => {
+
     },
   });
 

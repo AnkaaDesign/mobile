@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -30,7 +30,7 @@ export default function MyVacationDetailsScreen() {
   });
 
   // Vacation mutations
-  const { update, delete: deleteVacation } = useVacationMutations();
+  const { updateAsync, deleteAsync, updateMutation, deleteMutation } = useVacationMutations();
 
   const vacation = vacationData?.data;
 
@@ -47,7 +47,7 @@ export default function MyVacationDetailsScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await update.mutateAsync({
+              await updateAsync({
                 id: vacation.id,
                 data: {
                   status: VACATION_STATUS.CANCELLED,
@@ -90,7 +90,7 @@ export default function MyVacationDetailsScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteVacation.mutateAsync(vacation.id);
+              await deleteAsync(vacation.id);
 
               Alert.alert(
                 "Férias Excluídas",
@@ -155,9 +155,9 @@ export default function MyVacationDetailsScreen() {
                 variant="outline"
                 onPress={handleCancel}
                 style={styles.actionButton}
-                disabled={update.isPending}
+                disabled={updateMutation.isPending}
               >
-                <ThemedText>{update.isPending ? "Cancelando..." : "Cancelar Férias"}</ThemedText>
+                <ThemedText>{updateMutation.isPending ? "Cancelando..." : "Cancelar Férias"}</ThemedText>
               </Button>
             )}
 
@@ -166,11 +166,11 @@ export default function MyVacationDetailsScreen() {
                 variant="destructive"
                 onPress={handleDelete}
                 style={styles.actionButton}
-                disabled={deleteVacation.isPending}
+                disabled={deleteMutation.isPending}
               >
                 <IconTrash size={18} color={colors.destructiveForeground} />
                 <ThemedText style={{ color: colors.destructiveForeground }}>
-                  {deleteVacation.isPending ? "Excluindo..." : "Excluir"}
+                  {deleteMutation.isPending ? "Excluindo..." : "Excluir"}
                 </ThemedText>
               </Button>
             )}

@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { View, ScrollView, Alert, StyleSheet } from "react-native";
+import { useState, useMemo, useEffect } from "react";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconBuildingSkyscraper, IconDeviceFloppy } from "@tabler/icons-react-native";
 import { useSectors, useSectorBatchMutations } from '../../../../hooks';
 import type { Sector } from '../../../../types';
-import { ThemedView, ThemedText, Button, ErrorScreen, LoadingScreen } from "@/components/ui";
+import { ThemedView, ThemedText, Button, LoadingScreen } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
@@ -33,7 +33,6 @@ export default function SectorBatchEditScreen() {
       id: { in: selectedIds },
     },
     limit: 100,
-    enabled: selectedIds.length > 0,
   });
 
   const { batchUpdateAsync: batchUpdate } = useSectorBatchMutations();

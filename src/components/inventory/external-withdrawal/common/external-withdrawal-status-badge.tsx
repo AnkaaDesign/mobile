@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Badge, BadgeProps } from "@/components/ui/badge";
 import {
   EXTERNAL_WITHDRAWAL_STATUS,

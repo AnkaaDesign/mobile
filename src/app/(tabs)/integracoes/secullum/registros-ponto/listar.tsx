@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, Alert, TouchableOpacity } from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { useSecullumTimeEntries, useUsers } from '../../../../../hooks';
 import { ThemedView } from "@/components/ui/themed-view";
@@ -246,7 +246,7 @@ export default function TimeEntriesListScreen() {
           <View style={styles.datePickerContainer}>
             <DatePicker
               value={selectedDate}
-              onChange={setSelectedDate}
+              onChange={(date) => setSelectedDate(date || new Date())}
               type="date"
               placeholder="Selecionar mês"
             />

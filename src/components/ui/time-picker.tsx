@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Modal, Platform, StyleSheet,
-  TextStyle, TouchableOpacity, View, ViewStyle } from "react-native";
+   TouchableOpacity, View, ViewStyle } from "react-native";
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ interface TimePickerProps {
 
 // TimePicker.tsx
 export function TimePicker({ value, onChange, label, labelColor, labelSize = 64, fontSize = 12, selectText = "Selecionar", style }: TimePickerProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date | undefined>(undefined);
 
@@ -117,7 +117,7 @@ export function TimePicker({ value, onChange, label, labelColor, labelSize = 64,
                 value={tempDate || new Date()}
                 mode="time"
                 display="spinner"
-                onChange={(event, selectedTime) => {
+                onChange={(_event, selectedTime) => {
                   if (selectedTime) {
                     const finalDate = tempDate || new Date();
                     finalDate.setHours(selectedTime.getHours(), selectedTime.getMinutes());

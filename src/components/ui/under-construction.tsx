@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, Text, ScrollView } from "react-native";
 import { IconCircleCheck } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -13,10 +13,10 @@ interface UnderConstructionProps {
 export function UnderConstruction({
   title,
   description = "Esta funcionalidade será implementada em breve. Estamos trabalhando para trazer uma experiência completa.",
-  icon = "construction",
-  showBackButton = false,
+  icon: _icon = "construction",
+  showBackButton: _showBackButton = false,
 }: UnderConstructionProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>

@@ -1,8 +1,7 @@
-import React from "react";
+
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
-import { IconX, IconSearch, IconDatabase, IconClock, IconCalendar } from "@tabler/icons-react-native";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { IconX, IconSearch, IconDatabase, IconClock } from "@tabler/icons-react-native";
+
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";

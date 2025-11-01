@@ -1,14 +1,14 @@
 import React from "react";
-import { View, Text, ViewStyle, TextStyle, StyleSheet} from "react-native";
+import { View, ViewStyle, StyleSheet } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "./themed-text";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 
-type IconComponent = React.ComponentType<{ size?: number; color?: string }>;
+type IconComponent = React.ComponentType<any>;
 
 interface DetailRowProps {
   children?: React.ReactNode;
-  style?: ViewStyle | TextStyle;
+  style?: ViewStyle;
   icon?: IconComponent;
   label?: string;
   value?: string | React.ReactNode;

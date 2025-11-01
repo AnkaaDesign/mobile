@@ -1,10 +1,9 @@
-import React from "react";
+
 import { View, StyleSheet, Pressable } from "react-native";
 import type { ItemBrand } from '../../../../../types';
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 
 interface BrandDetailCardProps {
@@ -15,8 +14,7 @@ interface BrandDetailCardProps {
   variant?: "default" | "compact";
 }
 
-export function BrandDetailCard({ brand, onPress, onEdit, showActions = true, variant = "default" }: BrandDetailCardProps) {
-  const { colors } = useTheme();
+export function BrandDetailCard({ brand, onPress, showActions: _showActions = true, variant = "default" }: BrandDetailCardProps) {
 
   const itemCount = brand.items?.length || 0;
 

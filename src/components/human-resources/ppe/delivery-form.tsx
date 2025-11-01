@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { View, ScrollView } from "react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { PpeSizeSelector } from "@/components/inventory/item/form/ppe-size-selector";
+
 import { DatePicker } from "@/components/ui/date-picker";
 import { usePpeDeliveryMutations, useUsers, useItems } from '../../../hooks';
 import { ppeDeliveryCreateSchema } from '../../../schemas';
@@ -14,8 +14,7 @@ import type { PpeDeliveryCreateFormData } from '../../../schemas';
 import type { User, Item } from '../../../types';
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, USER_STATUS } from '../../../constants';
 import { Controller } from "react-hook-form";
-import { showToast } from "@/components/ui/toast";
-import { TextArea } from "@/components/ui/text-area";
+
 import { cn } from "@/lib/utils";
 
 interface PpeDeliveryFormProps {
@@ -27,7 +26,7 @@ interface PpeDeliveryFormProps {
 
 export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, onCancel }: PpeDeliveryFormProps) {
   const { createAsync, createMutation } = usePpeDeliveryMutations();
-  const [selectedItem, setSelectedItem] = useState<Item | null>(preselectedItem || null);
+  const [_selectedItem, _setSelectedItem] = useState<Item | null>(preselectedItem || null);
 
   const { data: users } = useUsers({
     where: { status: { not: USER_STATUS.DISMISSED } },
@@ -56,7 +55,7 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
   useEffect(() => {
     if (form.watch("itemId")) {
       const item = items?.data?.find((i) => i.id === form.watch("itemId"));
-      setSelectedItem(item || null);
+      _setSelectedItem(item || null);
     }
   }, [form.watch("itemId"), items]);
 
@@ -66,32 +65,6 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
   };
 
   const isLoading = createMutation.isPending;
-
-  const getSizeType = () => {
-    if (!selectedItem) return undefined;
-
-    const itemName = selectedItem.name.toLowerCase();
-
-    if (itemName.includes("bota") || itemName.includes("sapato")) {
-      return "BOOT";
-    } else if (itemName.includes("luva")) {
-      return "GLOVE";
-    } else if (itemName.includes("calça")) {
-      return "PANTS";
-    } else if (itemName.includes("camisa") || itemName.includes("camiseta")) {
-      return "SHIRT";
-    } else if (itemName.includes("macacão")) {
-      return "OVERALL";
-    } else if (itemName.includes("capacete")) {
-      return "HELMET";
-    } else if (itemName.includes("máscara") || itemName.includes("respirador")) {
-      return "MASK";
-    } else if (itemName.includes("uniforme")) {
-      return "UNIFORM";
-    }
-
-    return "SHIRT";
-  };
 
   return (
     <ScrollView className="flex-1">
@@ -159,7 +132,6 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
             }}
           />
 
-
           <Controller
             control={form.control}
             name="quantity"
@@ -190,7 +162,7 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
                 <Text className="text-sm font-medium text-foreground">
                   Data de Entrega <Text className="text-destructive">*</Text>
                 </Text>
-                <DatePicker value={value} onChange={onChange} placeholder="Selecione a data" disabled={isLoading} />
+                <DatePicker value={value ?? undefined} onChange={onChange} placeholder="Selecione a data" disabled={isLoading} />
                 {error && <Text className="text-sm text-destructive">{error.message}</Text>}
               </View>
             )}

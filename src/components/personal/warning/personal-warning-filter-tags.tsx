@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { StyleSheet, ScrollView } from "react-native";
 import { Chip } from "@/components/ui/chip";
 import { spacing } from "@/constants/design-system";

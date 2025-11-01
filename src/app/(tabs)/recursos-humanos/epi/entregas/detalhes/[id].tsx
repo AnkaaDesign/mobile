@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { usePpeDelivery } from '../../../../../../hooks';
@@ -20,7 +20,7 @@ import { PpeDeliveryDetailSkeleton } from "@/components/human-resources/ppe/deli
 
 export default function HRPPEDeliveryDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
-  const { colors, isDark } = useTheme();
+  const { colors, } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";

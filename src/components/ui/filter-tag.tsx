@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -39,10 +39,10 @@ export function FilterTag({ tags, onRemove, onClearAll }: FilterTagProps) {
           <Badge
             key={tag.key}
             variant={tag.variant || "secondary"}
-            style={[
+            style={StyleSheet.flatten([
               styles.filterTag,
               { backgroundColor: colors.muted }
-            ]}
+            ])}
           >
             <View style={styles.tagContent}>
               <ThemedText style={styles.tagLabel}>{tag.label}:</ThemedText>

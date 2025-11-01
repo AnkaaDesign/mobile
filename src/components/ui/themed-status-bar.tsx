@@ -1,4 +1,4 @@
-import React from "react";
+
 import { StatusBar, StatusBarProps } from "react-native";
 import { useTheme } from "@/lib/theme";
 

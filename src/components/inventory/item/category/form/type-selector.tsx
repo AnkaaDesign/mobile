@@ -1,7 +1,7 @@
-import React from "react";
+
 import { View, StyleSheet} from "react-native";
 import { Controller, useFormContext } from "react-hook-form";
-import type { Control } from "react-hook-form";
+
 import { Label } from "@/components/ui/label";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Combobox } from "@/components/ui/combobox";
@@ -17,7 +17,7 @@ interface TypeSelectorProps {
 }
 
 export function TypeSelector({ disabled }: TypeSelectorProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { control } = useFormContext<ItemCategoryFormData>();
 
   const typeOptions = Object.values(ITEM_CATEGORY_TYPE).map((type) => ({

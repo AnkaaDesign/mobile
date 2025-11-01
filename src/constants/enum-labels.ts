@@ -944,7 +944,6 @@ export const ENTITY_TYPE_LABELS: Record<ENTITY_TYPE, string> = {
   [ENTITY_TYPE.PAINT_FORMULA]: "Fórmula de Tinta",
   [ENTITY_TYPE.PAINT_FORMULA_COMPONENT]: "Componente de Fórmula",
   [ENTITY_TYPE.PAINT_PRODUCTION]: "Produção de Tinta",
-  [ENTITY_TYPE.PARKING_SPOT]: "Vaga de Estacionamento",
   [ENTITY_TYPE.PAYROLL]: "Folha de Pagamento",
   [ENTITY_TYPE.PIECE]: "Peça",
   [ENTITY_TYPE.POSITION]: "Cargo",
@@ -1311,7 +1310,7 @@ export const CHANGE_LOG_ENTITY_TYPE_LABELS: Record<CHANGE_LOG_ENTITY_TYPE, strin
   [CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL]: "Retirada Externa",
   [CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL_ITEM]: "Item de Retirada Externa",
   [CHANGE_LOG_ENTITY_TYPE.FILE]: "Arquivo",
-  [CHANGE_LOG_ENTITY_TYPE.GARAGE]: "Garagem",
+  // Fixed: GARAGE doesn't exist in enum, removed
   [CHANGE_LOG_ENTITY_TYPE.GARAGE_LANE]: "Faixa de Garagem",
   [CHANGE_LOG_ENTITY_TYPE.ITEM]: "Item",
   [CHANGE_LOG_ENTITY_TYPE.ITEM_BRAND]: "Marca de Item",
@@ -1331,7 +1330,7 @@ export const CHANGE_LOG_ENTITY_TYPE_LABELS: Record<CHANGE_LOG_ENTITY_TYPE, strin
   [CHANGE_LOG_ENTITY_TYPE.PAINT_FORMULA]: "Fórmula de Tinta",
   [CHANGE_LOG_ENTITY_TYPE.PAINT_FORMULA_COMPONENT]: "Componente de Fórmula",
   [CHANGE_LOG_ENTITY_TYPE.PAINT_PRODUCTION]: "Produção de Pintura",
-  [CHANGE_LOG_ENTITY_TYPE.PARKING_SPOT]: "Vaga de Estacionamento",
+  // Fixed: PARKING_SPOT doesn't exist in enum, removed
   [CHANGE_LOG_ENTITY_TYPE.PIECE]: "Peça",
   [CHANGE_LOG_ENTITY_TYPE.POSITION]: "Cargo",
   [CHANGE_LOG_ENTITY_TYPE.PRODUCTION]: "Produção",

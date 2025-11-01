@@ -1,10 +1,9 @@
-import React, { useMemo } from "react";
-import { View, Text, StyleSheet} from "react-native";
+import { useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { IconChartLine, IconCurrencyDollar, IconActivity, IconAlertTriangle, IconSquareArrowUpFilled, IconSquareArrowDownFilled, IconTags } from "@tabler/icons-react-native";
+
+import { IconChartLine, IconCurrencyDollar, IconSquareArrowUpFilled, IconSquareArrowDownFilled, IconTags } from "@tabler/icons-react-native";
 import type { Item } from '../../../../types';
 import { formatCurrency, itemUtils, determineStockLevel, getStockLevelMessage } from '../../../../utils';
 import { STOCK_LEVEL, STOCK_LEVEL_LABELS, ABC_CATEGORY_LABELS, XYZ_CATEGORY_LABELS, ACTIVITY_OPERATION, ORDER_STATUS } from '../../../../constants';
@@ -17,14 +16,7 @@ interface MetricsCardProps {
 }
 
 export function MetricsCard({ item }: MetricsCardProps) {
-  const { colors, isDark } = useTheme();
-
-  // Helper function to format quantity with units
-  const formatQuantityWithUnit = (quantity: number | null): string => {
-    if (quantity === null) return "-";
-    // Create a temporary item object with the same measureUnit
-    return itemUtils.formatItemQuantity({ ...item, quantity });
-  };
+  const { colors } = useTheme();
 
   const metrics = useMemo(() => {
     const activities = item.activities || [];

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, StyleSheet, Modal, TouchableOpacity } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -71,7 +71,7 @@ export const PpeDeliveryFilterModal = ({ visible, onClose, onApply, currentFilte
       if (checked) {
         return { ...prev, statuses: [...statuses, status as keyof typeof PPE_DELIVERY_STATUS] };
       } else {
-        return { ...prev, statuses: statuses.filter((s) => s !== status) };
+        return { ...prev, statuses: statuses.filter((s: PPE_DELIVERY_STATUS) => s !== status) };
       }
     });
   }, []);
@@ -81,7 +81,7 @@ export const PpeDeliveryFilterModal = ({ visible, onClose, onApply, currentFilte
     setFilters((prev) => {
       const userIds = prev.userIds || [];
       if (userIds.includes(userId)) {
-        return { ...prev, userIds: userIds.filter((id) => id !== userId) };
+        return { ...prev, userIds: userIds.filter((id: any /* TODO: Add proper type */) => id !== userId) };
       } else {
         return { ...prev, userIds: [...userIds, userId] };
       }
@@ -93,7 +93,7 @@ export const PpeDeliveryFilterModal = ({ visible, onClose, onApply, currentFilte
     setFilters((prev) => {
       const itemIds = prev.itemIds || [];
       if (itemIds.includes(itemId)) {
-        return { ...prev, itemIds: itemIds.filter((id) => id !== itemId) };
+        return { ...prev, itemIds: itemIds.filter((id: any /* TODO: Add proper type */) => id !== itemId) };
       } else {
         return { ...prev, itemIds: [...itemIds, itemId] };
       }
@@ -101,7 +101,7 @@ export const PpeDeliveryFilterModal = ({ visible, onClose, onApply, currentFilte
   }, []);
 
   // Handle date range
-  const handleDateRangeChange = useCallback((field: "startDate" | "endDate", date: Date | null) => {
+  const handleDateRangeChange = useCallback((field: "startDate" | "endDate", date: Date | undefined) => {
     setFilters((prev) => {
       const dateRange = prev.dateRange || {};
       return {
@@ -217,7 +217,9 @@ export const PpeDeliveryFilterModal = ({ visible, onClose, onApply, currentFilte
                   placeholder="Selecione funcionários"
                   options={users}
                   value={filters.userIds || []}
-                  onChange={handleUserChange}
+                  onChange={(value: string | undefined) => {
+                    if (value) handleUserChange(value);
+                  }}
                   multiple
                   searchable
                   emptyText="Nenhum funcionário encontrado"
@@ -235,7 +237,9 @@ export const PpeDeliveryFilterModal = ({ visible, onClose, onApply, currentFilte
 
             {expandedSections.has("item") && (
               <View style={styles.sectionContent}>
-                <Combobox placeholder="Selecione EPIs" options={items} value={filters.itemIds || []} onChange={handleItemChange} multiple searchable emptyText="Nenhum EPI encontrado" />
+                <Combobox placeholder="Selecione EPIs" options={items} value={filters.itemIds || []} onChange={(value: string | undefined) => {
+                  if (value) handleItemChange(value);
+                }} multiple searchable emptyText="Nenhum EPI encontrado" />
               </View>
             )}
           </View>
@@ -252,11 +256,11 @@ export const PpeDeliveryFilterModal = ({ visible, onClose, onApply, currentFilte
                 <View style={styles.dateRangeRow}>
                   <View style={styles.dateField}>
                     <ThemedText style={styles.dateLabel}>Data Inicial</ThemedText>
-                    <DatePicker value={filters.dateRange?.startDate ? new Date(filters.dateRange.startDate) : null} onChange={(date) => handleDateRangeChange("startDate", date)} />
+                    <DatePicker value={filters.dateRange?.startDate ? new Date(filters.dateRange.startDate) : undefined} onChange={(date) => handleDateRangeChange("startDate", date)} />
                   </View>
                   <View style={styles.dateField}>
                     <ThemedText style={styles.dateLabel}>Data Final</ThemedText>
-                    <DatePicker value={filters.dateRange?.endDate ? new Date(filters.dateRange.endDate) : null} onChange={(date) => handleDateRangeChange("endDate", date)} />
+                    <DatePicker value={filters.dateRange?.endDate ? new Date(filters.dateRange.endDate) : undefined} onChange={(date) => handleDateRangeChange("endDate", date)} />
                   </View>
                 </View>
               </View>

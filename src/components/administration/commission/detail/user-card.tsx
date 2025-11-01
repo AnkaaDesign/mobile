@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { Card } from "@/components/ui/card";
@@ -46,7 +46,7 @@ export function UserCard({ commission }: UserCardProps) {
             {/* User Header */}
             <View style={styles.userHeader}>
               <View style={styles.userInfo}>
-                <Avatar size="lg" name={user.name} imageUrl={user.profilePictureUrl} />
+                <Avatar size="lg" name={user.name} imageUrl={user.profilePictureUrl ?? undefined} />
                 <View style={styles.userBasicInfo}>
                   <ThemedText style={StyleSheet.flatten([styles.userName, { color: colors.foreground }])}>{user.name}</ThemedText>
                   {user.position && <ThemedText style={StyleSheet.flatten([styles.userPosition, { color: colors.mutedForeground }])}>{user.position.name}</ThemedText>}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector, IconArrowUp, IconArrowDown } from "@tabler/icons-react-native";
@@ -227,7 +227,6 @@ export const ActivityTable = React.memo<ActivityTableProps>(
   ({
     activities,
     onActivityPress,
-    onActivityEdit,
     onActivityDelete,
     onRefresh,
     onEndReached,
@@ -244,7 +243,6 @@ export const ActivityTable = React.memo<ActivityTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -379,7 +377,6 @@ export const ActivityTable = React.memo<ActivityTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -449,7 +446,7 @@ export const ActivityTable = React.memo<ActivityTableProps>(
               onDelete={onActivityDelete}
               disabled={showSelection}
             >
-              {(isActive) => (
+              {() => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -601,7 +598,7 @@ export const ActivityTable = React.memo<ActivityTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 60, // Fixed row height
               offset: 60 * index,
               index,
@@ -785,3 +782,5 @@ const styles = StyleSheet.create({
 });
 
 ActivityTable.displayName = "ActivityTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

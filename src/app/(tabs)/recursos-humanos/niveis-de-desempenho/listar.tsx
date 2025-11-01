@@ -1,12 +1,11 @@
-import React, { useState, useCallback } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { useState, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
+import { } from "expo-router";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useUserMutations } from '../../../../hooks/useUser';
 import { useUsersInfiniteMobile } from "@/hooks";
 import type { UserGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import { ThemedView, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { PerformanceLevelTable } from "@/components/human-resources/performance-level/list/performance-level-table";
 import type { SortConfig } from "@/components/human-resources/performance-level/list/performance-level-table";
 import { PerformanceLevelFilterModal } from "@/components/human-resources/performance-level/list/performance-level-filter-modal";
@@ -15,12 +14,10 @@ import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { PerformanceLevelListSkeleton } from "@/components/human-resources/performance-level/skeleton/performance-level-list-skeleton";
 import { useTheme } from "@/lib/theme";
-import { routes } from '../../../../constants';
-import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function PerformanceLevelsListScreen() {
-  const router = useRouter();
-  const { colors, isDark } = useTheme();
+
+  const { colors, } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -28,8 +25,8 @@ export default function PerformanceLevelsListScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<UserGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "name", direction: "asc" }]);
-  const [showColumnManager, setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["name", "position", "performanceLevel"]);
+  const [_showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, ] = useState<string[]>(["name", "position", "performanceLevel"]);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -87,8 +84,7 @@ export default function PerformanceLevelsListScreen() {
     },
   };
 
-  const { users, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useUsersInfiniteMobile(queryParams);
-  const { delete: deleteUser } = useUserMutations();
+  const { users, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useUsersInfiniteMobile(queryParams);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -99,9 +95,9 @@ export default function PerformanceLevelsListScreen() {
     }
   }, [refresh]);
 
-  const handleUserPress = (userId: string) => {
+  const handleUserPress = (_userId: string) => {
     // Navigate to user details page if available
-    // router.push(routeToMobilePath(routes.humanResources.users.details(userId)) as any);
+    // router.push(routeToMobilePath(routes.humanResources.users.details(_userId)) as any);
   };
 
   const handleSort = useCallback((configs: SortConfig[]) => {
@@ -129,7 +125,7 @@ export default function PerformanceLevelsListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   if (isLoading && !isRefetching) {

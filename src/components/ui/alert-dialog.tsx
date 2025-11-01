@@ -2,7 +2,7 @@ import * as AlertDialogPrimitive from "@rn-primitives/alert-dialog";
 import * as React from "react";
 import { Platform, View , StyleSheet} from "react-native";
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from "react-native-reanimated";
-import { Button } from "./button";
+
 import { cn } from "../../lib/utils";
 
 interface AlertDialogHeaderProps {
@@ -28,6 +28,8 @@ interface AlertDialogDescriptionProps {
 interface AlertDialogActionProps {
   className?: string;
   children?: React.ReactNode;
+  onPress?: () => void;
+  disabled?: boolean;
 }
 
 interface AlertDialogCancelProps {
@@ -37,7 +39,7 @@ interface AlertDialogCancelProps {
 const AlertDialog = AlertDialogPrimitive.Root;
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
 const AlertDialogPortal = AlertDialogPrimitive.Portal;
-const AlertDialogOverlayWeb = React.forwardRef<any, { className?: string }>(({ className, ...props }, ref) => {
+const AlertDialogOverlayWeb = React.forwardRef<any, { className?: string; children?: React.ReactNode }>(({ className, ...props }, ref) => {
   const { open } = AlertDialogPrimitive.useRootContext();
   return (
     <AlertDialogPrimitive.Overlay
@@ -67,7 +69,7 @@ const AlertDialogOverlay = Platform.select({
   web: AlertDialogOverlayWeb,
   default: AlertDialogOverlayNative,
 });
-const AlertDialogContentWeb = React.forwardRef<any, { className?: string; portalHost?: string }>(({ className, portalHost, ...props }, ref) => {
+const AlertDialogContentWeb = React.forwardRef<any, { className?: string; portalHost?: string; children?: React.ReactNode }>(({ className, portalHost, ...props }, ref) => {
   const { open } = AlertDialogPrimitive.useRootContext();
   return (
     <AlertDialogPortal hostName={portalHost}>
@@ -125,7 +127,7 @@ AlertDialogContentNative.displayName = "AlertDialogContentNative";
 const AlertDialogContent = Platform.select({
   web: AlertDialogContentWeb,
   default: AlertDialogContentNative,
-}) as typeof AlertDialogContentWeb;
+}) as React.ForwardRefExoticComponent<{ className?: string; portalHost?: string; children?: React.ReactNode } & React.RefAttributes<any>>;
 const AlertDialogHeader = ({ className, ...props }: AlertDialogHeaderProps) => <View className={cn("flex flex-col gap-2", className)} {...props} />;
 AlertDialogHeader.displayName = "AlertDialogHeader";
 const AlertDialogFooter = ({ className, ...props }: AlertDialogFooterProps) => <View className={cn("flex flex-col-reverse sm:flex-row sm:justify-end gap-2", className)} {...props} />;

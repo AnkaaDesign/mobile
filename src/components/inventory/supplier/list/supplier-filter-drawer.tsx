@@ -3,7 +3,7 @@ import { View, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { IconChevronDown, IconChevronRight, IconX, IconFilter } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { BRAZILIAN_STATES } from '../../../../constants';
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Switch } from "@/components/ui/switch";
-import { Drawer, DrawerContent, DrawerHeader, DrawerFooter } from "@/components/ui/drawer";
+import { Drawer } from "@/components/ui/drawer";
 import type { SupplierGetManyFormData } from '../../../../schemas';
 
 interface SupplierFilterDrawerProps {

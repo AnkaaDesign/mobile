@@ -20,12 +20,12 @@ export function RelatedItemsCard({ items, supplierId, className }: RelatedItemsC
   const safeItems = items || [];
 
   const handleItemPress = (itemId: string) => {
-    router.push(routes.inventory.products.details(itemId));
+    router.push(routes.inventory.products.details(itemId) as any);
   };
 
   const handleViewAll = () => {
     if (supplierId) {
-      router.push(`${routes.inventory.products.list}?suppliers=${supplierId}`);
+      router.push(`${routes.inventory.products.list}?suppliers=${supplierId}` as any);
     }
   };
 
@@ -83,8 +83,9 @@ export function RelatedItemsCard({ items, supplierId, className }: RelatedItemsC
           {displayItems.map((item) => {
             const stockLevel = determineStockLevel(
               item.quantity,
-              item.minimumQuantity,
-              item.maximumQuantity
+              ((item as any).minimumQuantity),
+              item.maxQuantity,
+              false
             );
             const stockLevelColor = getStockLevelTextColor(stockLevel);
 
@@ -129,7 +130,7 @@ export function RelatedItemsCard({ items, supplierId, className }: RelatedItemsC
                     Qtd: <Text className="text-foreground font-semibold">{item.quantity}</Text>
                   </Text>
                   <Text className="text-sm font-semibold text-foreground">
-                    {formatCurrency(item.price)}
+                    {formatCurrency(item.price || 0)}
                   </Text>
                 </View>
               </Pressable>

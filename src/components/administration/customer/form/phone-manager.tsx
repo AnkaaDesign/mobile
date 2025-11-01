@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { IconPlus, IconX, IconPhone } from "@tabler/icons-react-native";
-import { ThemedText, Input, Button, Card } from "@/components/ui";
+import { ThemedText, Input, Button } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { formatBrazilianPhone, cleanPhone } from '../../../../utils';
 

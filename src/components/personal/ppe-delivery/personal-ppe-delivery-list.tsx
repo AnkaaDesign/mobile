@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { View, FlatList, ActivityIndicator, RefreshControl } from "react-native";
 import { Text } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
@@ -91,7 +91,7 @@ export function PersonalPpeDeliveryList({ className }: PersonalPpeDeliveryListPr
               )}
             </View>
             <Badge variant={getStatusBadgeVariant(delivery.status)}>
-              {PPE_DELIVERY_STATUS_LABELS[delivery.status]}
+              {PPE_DELIVERY_STATUS_LABELS[delivery.status as PPE_DELIVERY_STATUS]}
             </Badge>
           </View>
 

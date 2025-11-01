@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
 import { formatCurrency } from '../../../../utils';
@@ -17,7 +17,7 @@ interface CommissionsCardProps {
 }
 
 export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   const bonuses = employee.bonuses?.slice(0, maxItems) || [];
   const totalBonuses = employee._count?.bonuses || employee.bonuses?.length || 0;
@@ -39,13 +39,6 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
     return totalEarnings / employee.bonuses.length;
   }, [employee.bonuses, totalEarnings]);
 
-  // Get performance level color
-  const getPerformanceColor = (level: number) => {
-    if (level >= 4) return isDark ? extendedColors.green[400] : extendedColors.green[600];
-    if (level >= 3) return isDark ? extendedColors.blue[400] : extendedColors.blue[600];
-    if (level >= 2) return isDark ? extendedColors.yellow[400] : extendedColors.yellow[600];
-    return isDark ? extendedColors.red[400] : extendedColors.red[600];
-  };
 
   return (
     <Card style={styles.card}>
@@ -112,7 +105,7 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
 
               {bonuses.map((bonus, index) => {
                 const monthYear = `${bonus.month.toString().padStart(2, "0")}/${bonus.year}`;
-                const performanceColor = getPerformanceColor(bonus.performanceLevel);
+
                 const bonusAmount = typeof bonus.baseBonus === 'number'
                   ? bonus.baseBonus
                   : bonus.baseBonus.toNumber();

@@ -19,7 +19,7 @@ export default function CreateBackupScreen() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    type: "FULL" as "FULL" | "DATABASE" | "FILES",
+    type: "full" as "full" | "database" | "files",
     encrypted: false,
     compress: true,
     compressionLevel: 6,
@@ -35,7 +35,8 @@ export default function CreateBackupScreen() {
 
     try {
       setIsSubmitting(true);
-      await create.mutateAsync(formData);
+      const { compress, ...apiData } = formData;
+      await create.mutateAsync(apiData);
       Alert.alert("Sucesso", "Backup criado com sucesso");
       router.back();
     } catch (error) {

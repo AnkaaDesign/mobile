@@ -130,7 +130,7 @@ export default function SharedFoldersScreen() {
                     </Badge>
                     <Badge variant="secondary">
                       <Icon name="hard-drive" className="w-3 h-3 mr-1" />
-                      {formatFileSize(item.size)}
+                      {formatFileSize(typeof item.size === 'number' ? item.size : parseInt(item.size || '0', 10))}
                     </Badge>
                   </View>
 

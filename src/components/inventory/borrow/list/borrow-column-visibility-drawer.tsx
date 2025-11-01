@@ -29,7 +29,7 @@ interface BorrowColumnVisibilityDrawerProps {
 }
 
 export function BorrowColumnVisibilityDrawer({ columns, visibleColumns, onVisibilityChange, open, onOpenChange }: BorrowColumnVisibilityDrawerProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
   const [localVisible, setLocalVisible] = useState(visibleColumns);

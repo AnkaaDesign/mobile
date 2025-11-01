@@ -13,8 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
 // Get screen dimensions for responsive design
-const { width: screenWidth } = Dimensions.get("window");
-const availableWidth = screenWidth - 32; // Account for padding
+const { width: _screenWidth } = Dimensions.get("window");
 
 export interface ColumnConfig {
   key: string;
@@ -69,7 +68,7 @@ interface ColumnVisibilityManagerProps {
 }
 
 export const ColumnVisibilityManager: React.FC<ColumnVisibilityManagerProps> = ({ visible, onClose, onColumnsChange, currentColumns }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [selectedColumns, setSelectedColumns] = useState<Set<string>>(new Set(currentColumns));
   const [searchQuery, setSearchQuery] = useState("");

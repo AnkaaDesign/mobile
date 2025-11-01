@@ -142,7 +142,7 @@ function CategoryTableRowSwipeComponent({
   }
 
   const handleWillOpen = useCallback(
-    (direction: "left" | "right") => {
+    (_direction: "left" | "right") => {
       // Close any other open rows
       if (activeRowId && activeRowId !== categoryId) {
         closeActiveRow();
@@ -167,7 +167,7 @@ function CategoryTableRowSwipeComponent({
   }, [activeRowId, categoryId, setActiveRowId]);
 
   const handleOpen = useCallback(
-    (direction: "left" | "right", swipeable: Swipeable) => {
+    (_direction: "left" | "right", swipeable: Swipeable) => {
       // Store reference to the swipeable
       swipeableRef.current = swipeable;
       // Store the close function for legacy compatibility

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ViewStyle } from "react-native";
 import { Icon } from "./icon";
 import { useTheme } from "@/lib/theme";

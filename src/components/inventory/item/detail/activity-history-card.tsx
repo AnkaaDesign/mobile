@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { View, Text, ScrollView, StyleSheet} from "react-native";
+import { useMemo } from "react";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -262,7 +262,7 @@ export function ActivityHistoryCard({ item, maxHeight }: ActivityHistoryCardProp
           </View>
         ) : (
           <ScrollView style={StyleSheet.flatten([styles.activitiesContainer, maxHeight ? { maxHeight } : {}])} showsVerticalScrollIndicator={false}>
-            {groupedActivities.map(([date, dayActivities], groupIndex) => (
+            {groupedActivities.map(([date, dayActivities], _groupIndex) => (
               <View key={date} style={styles.dateGroup}>
                 {/* Date Header */}
                 <View style={styles.dateHeader}>
@@ -284,7 +284,7 @@ export function ActivityHistoryCard({ item, maxHeight }: ActivityHistoryCardProp
 
                 {/* Activities for this date */}
                 <View style={styles.activitiesList}>
-                  {dayActivities.map((activity, index) => {
+                  {dayActivities.map((activity) => {
                     const iconColor = getActivityColor(activity.reason, "icon");
                     const isInbound = activity.operation === ACTIVITY_OPERATION.INBOUND;
 

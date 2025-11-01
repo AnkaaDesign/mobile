@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useFieldArray, useWatch, useFormContext } from "react-hook-form";
 import { View, TouchableOpacity, StyleSheet} from "react-native";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconPlus, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';
 
 type ItemFormData = ItemCreateFormData | ItemUpdateFormData;
@@ -65,7 +65,7 @@ export function BarcodeManager({ disabled }: BarcodeManagerProps) {
 
       {barcodes.length > 0 && (
         <View style={styles.barcodeList}>
-          {barcodes.map((barcode, index) => (
+          {barcodes.map((barcode: any /* TODO: Add proper type */, index: any /* TODO: Add proper type */) => (
             <View key={`barcode-${index}`} style={StyleSheet.flatten([styles.barcodeItem, { backgroundColor: colors.muted + "50" }])}>
               <ThemedText style={styles.barcodeText}>{barcode}</ThemedText>
               <TouchableOpacity

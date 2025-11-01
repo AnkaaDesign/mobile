@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View } from "react-native";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
@@ -22,17 +22,6 @@ export function PaintFormulaComponentCard({ component, showCalculations = true }
   const weightMeasure = item?.measures?.find((m) => m.measureType === "WEIGHT");
   const volumeMeasure = item?.measures?.find((m) => m.measureType === "VOLUME");
   const hasItemMeasures = !!(weightMeasure || volumeMeasure);
-
-  // Format measures safely
-  const formatWeight = (value: number | null) => {
-    if (value === null || value === undefined) return null;
-    return measureUtils.formatMeasure({ value, unit: MEASURE_UNIT.GRAM });
-  };
-
-  const formatVolume = (value: number | null) => {
-    if (value === null || value === undefined) return null;
-    return measureUtils.formatMeasure({ value, unit: MEASURE_UNIT.MILLILITER });
-  };
 
   return (
     <Card className="p-4">
@@ -85,8 +74,8 @@ export function PaintFormulaComponentCard({ component, showCalculations = true }
                 </View>
                 <Text className="text-sm font-medium">
                   {measureUtils.formatMeasure({
-                    value: weightMeasure.value,
-                    unit: weightMeasure.unit,
+                    value: weightMeasure.value ?? 0,
+                    unit: weightMeasure.unit ?? MEASURE_UNIT.GRAM,
                   })}
                 </Text>
               </View>
@@ -101,8 +90,8 @@ export function PaintFormulaComponentCard({ component, showCalculations = true }
                 </View>
                 <Text className="text-sm font-medium">
                   {measureUtils.formatMeasure({
-                    value: volumeMeasure.value,
-                    unit: volumeMeasure.unit,
+                    value: volumeMeasure.value ?? 0,
+                    unit: volumeMeasure.unit ?? MEASURE_UNIT.LITER,
                   })}
                 </Text>
               </View>

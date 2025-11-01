@@ -234,8 +234,8 @@ export const useCalculatePayrollBonuses = () => {
       if (totalFailed > 0) {
       }
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Erro ao calcular bonificações';
+    onError: (_error: any) => {
+
     },
   });
 };
@@ -250,16 +250,15 @@ export const useSaveMonthlyBonuses = () => {
   return useMutation({
     mutationFn: ({ year, month }: { year: number; month: number }) =>
       bonusService.saveMonthlyBonuses({ year: year.toString(), month: month.toString() }),
-    onSuccess: (result: any) => {
+    onSuccess: (_result: any) => {
       queryClient.invalidateQueries({ queryKey: payrollDetailsKeys.all });
       queryClient.invalidateQueries({ queryKey: bonusKeys.all });
 
       // Access the result from the axios response
-      const responseData = result?.data || result;
-      const totalSuccess = responseData?.data?.totalSuccess || 0;
+
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Erro ao salvar bonificações';
+    onError: (_error: any) => {
+
     },
   });
 };

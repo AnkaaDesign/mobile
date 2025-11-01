@@ -1,9 +1,9 @@
-import React from "react";
-import { Alert, View, StyleSheet } from "react-native";
+
+import { Alert, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TaskForm } from "@/components/production/task/form/task-form";
-import { useTask, useTaskMutations } from "@/hooks";
+import { useTaskDetail, useTaskMutations } from "@/hooks";
 import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { ErrorScreen, Skeleton, ThemedScrollView, Card, CardContent } from "@/components/ui";
@@ -12,9 +12,10 @@ import { spacing } from "@/constants/design-system";
 export default function EditServiceOrderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { updateAsync, isUpdating } = useTaskMutations();
+  // Fixed: isUpdating doesn't exist, use isLoading instead
+  const { updateAsync, isLoading: isUpdating } = useTaskMutations();
 
-  const { data: task, isLoading, error, refetch } = useTask(id!, {
+  const { data: task, isLoading, error, refetch } = useTaskDetail(id!, {
     include: {
       customer: true,
       sector: true,
@@ -95,23 +96,23 @@ export default function EditServiceOrderScreen() {
 
   const initialData = {
     name: task.data.name,
-    customerId: task.data.customerId,
-    sectorId: task.data.sectorId,
-    serialNumber: task.data.serialNumber,
-    chassisNumber: task.data.chassisNumber,
-    plate: task.data.plate,
-    details: task.data.details,
+    customerId: task.data.customerId || "",
+    sectorId: task.data.sectorId ?? null,
+    serialNumber: task.data.serialNumber ?? null,
+    chassisNumber: task.data.chassisNumber ?? null,
+    plate: task.data.plate ?? null,
+    details: task.data.details ?? null,
     entryDate: task.data.entryDate ? new Date(task.data.entryDate) : null,
     term: task.data.term ? new Date(task.data.term) : null,
-    price: task.data.price,
-    generalPaintingId: task.data.generalPaintingId,
-    paintIds: task.data.paints?.map((p) => p.id) || [],
+    generalPaintingId: task.data.generalPainting?.id ?? null,
+    // Fixed: paints doesn't exist, should use logoPaints instead
+    paintIds: task.data.logoPaints?.map((p: any /* TODO: Add proper type */) => p.id) || [],
     services: task.data.services?.map((s) => ({
       description: s.description,
-      status: s.status,
+      status: s.status ?? undefined,
     })) || [{ description: "", status: "PENDING" }],
     status: task.data.status,
-    commission: task.data.commission,
+    commission: task.data.commission ?? null,
     startedAt: task.data.startedAt ? new Date(task.data.startedAt) : null,
     finishedAt: task.data.finishedAt ? new Date(task.data.finishedAt) : null,
   };

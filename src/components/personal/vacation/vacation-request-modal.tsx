@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, StyleSheet, Modal, TouchableOpacity, ScrollView, Platform } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -77,7 +77,7 @@ export function VacationRequestModal({ visible, onClose, onSubmit, availableDays
     });
   };
 
-  const handleStartDateChange = (event: any, selectedDate?: Date) => {
+  const handleStartDateChange = (_event: any, selectedDate?: Date) => {
     setShowStartPicker(Platform.OS === "ios");
     if (selectedDate) {
       setStartDate(selectedDate);
@@ -85,7 +85,7 @@ export function VacationRequestModal({ visible, onClose, onSubmit, availableDays
     }
   };
 
-  const handleEndDateChange = (event: any, selectedDate?: Date) => {
+  const handleEndDateChange = (_event: any, selectedDate?: Date) => {
     setShowEndPicker(Platform.OS === "ios");
     if (selectedDate) {
       setEndDate(selectedDate);

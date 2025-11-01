@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView , StyleSheet} from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { Service } from '../../../../types';
@@ -67,14 +67,14 @@ export const ServiceTable = React.memo<ServiceTableProps>(
   ({
     services,
     onServicePress,
-    onDelete,
+    // onDelete removed
     onRefresh,
     onEndReach,
     refreshing = false,
     isLoading = false,
     loadingMore = false,
     error = null,
-    canLoadMore = false,
+    canLoadMore: _canLoadMore = false,
     showSelection = false,
     selectedServices = new Set(),
     onSelectionChange,
@@ -83,8 +83,8 @@ export const ServiceTable = React.memo<ServiceTableProps>(
     columns,
     visibleColumnKeys = DEFAULT_COLUMN_KEYS,
   }) => {
-    const { colors, isDark } = useTheme();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    const { colors } = useTheme();
+    // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
     // Build visible columns based on selection
@@ -207,7 +207,6 @@ export const ServiceTable = React.memo<ServiceTableProps>(
       return (
         <View
           style={StyleSheet.flatten([styles.headerContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }])}
-          onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
         >
           <ScrollView horizontal showsHorizontalScrollIndicator={false} bounces={false}>
             <View style={styles.header}>

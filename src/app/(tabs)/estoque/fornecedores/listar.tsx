@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { IconList, IconFilter } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ThemedView, ThemedText, FAB, SearchBar, ErrorScreen, EmptyState, ItemsCountDisplay, ListActionButton } from "@/components/ui";
+import { ThemedView, FAB, SearchBar, ErrorScreen, EmptyState, ItemsCountDisplay, ListActionButton } from "@/components/ui";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
@@ -55,7 +55,7 @@ export default function SuppliersListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   // Fetch suppliers with infinite scroll
@@ -88,7 +88,7 @@ export default function SuppliersListScreen() {
     [router],
   );
 
-  const handleSupplierDelete = useCallback((supplierId: string) => {
+  const handleSupplierDelete = useCallback((_supplierId: string) => {
     // Delete handled by table component
   }, []);
 

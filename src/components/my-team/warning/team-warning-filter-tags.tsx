@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { useMemo } from "react";
+import { StyleSheet, ScrollView } from "react-native";
 import { Chip } from "@/components/ui/chip";
 import { spacing } from "@/constants/design-system";
 import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from '../../../constants';

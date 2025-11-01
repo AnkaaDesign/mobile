@@ -1,9 +1,9 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { Item } from '../../../../types';
-import { useTheme } from "@/lib/theme";
-import { determineStockLevel, getStockLevelColor } from '../../../../utils';
+
+import { determineStockLevel } from '../../../../utils';
 import { STOCK_LEVEL } from '../../../../constants';
 
 interface StockStatusIndicatorProps {

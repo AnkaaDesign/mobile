@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Stack, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -14,23 +14,21 @@ import { PaintFilterModal } from "@/components/production/paint/list/paint-filte
 import { PaintFilterTags } from "@/components/production/paint/list/paint-filter-tags";
 import { SearchBar } from "@/components/ui/search-bar";
 import { FAB } from "@/components/ui/fab";
-import { IconPalette, IconPlus, IconFilter } from "@tabler/icons-react-native";
+import { IconPlus, IconFilter } from "@tabler/icons-react-native";
 import { usePaintsInfiniteMobile } from "@/hooks/use-paints-infinite-mobile";
-import { usePaintMutations } from '../../../../hooks';
 import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 import type { PaintGetManyFormData } from '../../../../schemas';
 
 export default function PaintsListScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [searchText, setSearchText] = useState("");
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [filters, setFilters] = useState<Partial<PaintGetManyFormData>>({});
   const [showFilters, setShowFilters] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const { deleteAsync } = usePaintMutations();
+  const [_refreshing] = useState(false);
 
   // Permission check - Paint management is available for production and admin
   const canManagePaints = useMemo(() => {
@@ -55,18 +53,16 @@ export default function PaintsListScreen() {
     items,
     isLoading,
     error,
-    loadMore,
-    canLoadMore,
-    isFetchingNextPage,
+    
+    
+    
     refresh,
     totalItemsLoaded,
   } = usePaintsInfiniteMobile(queryParams);
 
   // Handle pull to refresh
   const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
     await refresh();
-    setRefreshing(false);
   }, [refresh]);
 
   // Handle navigation to details
@@ -75,26 +71,26 @@ export default function PaintsListScreen() {
   }, []);
 
   // Handle paint deletion
-  const handleDelete = useCallback(async (paintId: string) => {
-    Alert.alert(
-      "Excluir Tinta",
-      "Tem certeza que deseja excluir esta tinta? Esta ação é irreversível.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteAsync(paintId);
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível excluir a tinta");
-            }
-          },
-        },
-      ]
-    );
-  }, [deleteAsync]);
+  // const handleDelete = useCallback(async (paintId: string) => {
+  //   Alert.alert(
+  //     "Excluir Tinta",
+  //     "Tem certeza que deseja excluir esta tinta? Esta ação é irreversível.",
+  //     [
+  //       { text: "Cancelar", style: "cancel" },
+  //       {
+  //         text: "Excluir",
+  //         style: "destructive",
+  //         onPress: async () => {
+  //           try {
+  //             await deleteAsync(paintId);
+  //           } catch (error) {
+  //             Alert.alert("Erro", "Não foi possível excluir a tinta");
+  //           }
+  //         },
+  //       },
+  //     ]
+  //   );
+  // }, [deleteAsync]);
 
   // Handle search with debounce
   React.useEffect(() => {
@@ -103,13 +99,6 @@ export default function PaintsListScreen() {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchText]);
-
-  // Clear all filters
-  const handleClearFilters = useCallback(() => {
-    setFilters({});
-    setSearchText("");
-    setDebouncedSearchText("");
-  }, []);
 
   // Check active filters
   const hasActiveFilters = useMemo(() => {

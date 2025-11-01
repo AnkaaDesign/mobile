@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, Alert, Pressable , StyleSheet} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   IconEdit,
-  IconTrash,
+  
   IconPlayerPlay,
   IconPlayerPause,
   IconCalendar,
@@ -24,20 +24,20 @@ import {
   ErrorScreen,
   LoadingScreen,
 } from "@/components/ui";
-import type { OrderSchedule } from '../../../../../../types';
+
 import { ActionSheet, type ActionSheetItem } from "@/components/ui/action-sheet";
 import { Header } from "@/components/ui/header";
 import { InfoRow } from "@/components/ui/info-row";
 import { FrequencyBadge } from "@/components/inventory/order/schedule/frequency-badge";
 import { ScheduleInfoCard } from "@/components/inventory/order/schedule/schedule-info-card";
-import { ItemsList } from "@/components/inventory/order/schedule/items-list";
+
 import { ScheduleHistory } from "@/components/inventory/order/schedule/schedule-history";
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege, formatDateTime, formatDate } from '../../../../../../utils';
-import { SECTOR_PRIVILEGES, SCHEDULE_FREQUENCY_LABELS } from '../../../../../../constants';
+import { SECTOR_PRIVILEGES } from '../../../../../../constants';
 
 export default function AutomaticOrderDetailScreen() {
   const router = useRouter();
@@ -75,7 +75,6 @@ export default function AutomaticOrderDetailScreen() {
   // Fetch orders created from this schedule
   const {
     data: ordersResponse,
-    isLoading: isLoadingOrders,
   } = useOrders({
     where: {
       orderScheduleId: scheduleId,
@@ -322,7 +321,7 @@ export default function AutomaticOrderDetailScreen() {
           </ThemedText>
           {schedule?.items && schedule.items.length > 0 && (
             <View style={{ marginTop: 8 }}>
-              {schedule.items.map((itemId, index) => (
+              {schedule.items.map((itemId, ) => (
                 <ThemedText key={itemId} style={{ color: colors.foreground, marginVertical: 2 }}>
                   • Item ID: {itemId}
                 </ThemedText>

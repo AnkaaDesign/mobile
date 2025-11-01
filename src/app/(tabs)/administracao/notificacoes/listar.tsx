@@ -1,12 +1,12 @@
-import React, { useState, useCallback } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { useState, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNotificationMutations } from '../../../../hooks';
 import { useNotificationsInfiniteMobile } from "@/hooks";
 import type { NotificationGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { NotificationTable } from "@/components/administration/notification/list/notification-table";
 import type { SortConfig } from "@/components/administration/notification/list/notification-table";
 import { NotificationFilterModal } from "@/components/administration/notification/list/notification-filter-modal";
@@ -20,7 +20,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function NotificationListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -30,8 +30,8 @@ export default function NotificationListScreen() {
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "sentAt", direction: "desc" }]);
   const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["title", "importance", "type", "sentAt"]);
+  const [_showColumnManager, _setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, _setVisibleColumnKeys] = useState<string[]>(["title", "importance", "type", "sentAt"]);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -88,7 +88,7 @@ export default function NotificationListScreen() {
     },
   };
 
-  const { items: notifications, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useNotificationsInfiniteMobile(queryParams);
+  const { items: notifications, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useNotificationsInfiniteMobile(queryParams);
   const { delete: deleteNotification } = useNotificationMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -152,7 +152,7 @@ export default function NotificationListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   if (isLoading && !isRefetching) {
@@ -184,7 +184,7 @@ export default function NotificationListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={() => _setShowColumnManager(true)}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />

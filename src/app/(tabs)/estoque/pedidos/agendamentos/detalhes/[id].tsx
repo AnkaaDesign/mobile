@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, Alert, Pressable, StyleSheet, RefreshControl } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
@@ -26,7 +26,7 @@ import {
   LoadingScreen,
 } from "@/components/ui";
 import { ActionSheet, type ActionSheetItem } from "@/components/ui/action-sheet";
-import { Header } from "@/components/ui/header";
+
 import { InfoRow } from "@/components/ui/info-row";
 import { FrequencyBadge } from "@/components/inventory/order/schedule/frequency-badge";
 import { ScheduleInfoCard } from "@/components/inventory/order/schedule/schedule-info-card";
@@ -76,7 +76,6 @@ export default function OrderScheduleDetailsScreen() {
   // Fetch orders created from this schedule
   const {
     data: ordersResponse,
-    isLoading: isLoadingOrders,
   } = useOrders({
     where: {
       orderScheduleId: scheduleId,

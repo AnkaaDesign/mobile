@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -8,7 +8,7 @@ import type { Vacation } from '@/types';
 import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '@/constants';
 import { formatDate, formatDateTime } from '@/utils';
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 
 interface SpecificationsCardProps {
   vacation: Vacation & { user?: { name: string; email: string | null } };

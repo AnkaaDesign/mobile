@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Badge, BadgeProps } from "@/components/ui/badge";
 import { MAINTENANCE_STATUS, MAINTENANCE_STATUS_LABELS, getBadgeVariant } from "@/constants";
 
@@ -15,7 +15,7 @@ export function MaintenanceStatusBadge({
   size = "default",
   style,
   textStyle,
-  showIcon = false,
+  showIcon: _showIcon = false,
 }: MaintenanceStatusBadgeProps) {
   // Use centralized badge configuration with entity context
   const variant = getBadgeVariant(status, "MAINTENANCE");

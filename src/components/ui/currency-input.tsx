@@ -1,19 +1,21 @@
-import React, { useCallback, useRef, useState, useEffect } from "react";
-import { TextInput, TextInputProps, View, ViewStyle, TextStyle, Animated, StyleSheet, NativeSyntheticEvent, TextInputFocusEventData} from "react-native";
+import { useCallback, useRef, useState, useEffect } from "react";
+import { TextInput, TextInputProps, View, ViewStyle, TextStyle, Animated, StyleSheet } from "react-native";
+import type { BlurEvent, FocusEvent } from "react-native/Libraries/Types/CoreEventTypes";
 import { useTheme } from "@/lib/theme";
-import { borderRadius, shadow, fontSize, lineHeight, transitions } from "@/constants/design-system";
+import { borderRadius, shadow, fontSize, transitions } from "@/constants/design-system";
 
-interface CurrencyInputProps extends Omit<TextInputProps, "onChange" | "value" | "onChangeText" | "keyboardType"> {
+interface CurrencyInputProps extends Omit<TextInputProps, "onChange" | "value" | "onChangeText" | "keyboardType" | "onBlur" | "onFocus"> {
   value?: number;
   onChange?: (value: number | undefined) => void;
-  onBlur?: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
+  onBlur?: (e: BlurEvent) => void;
+  onFocus?: (e: FocusEvent) => void;
   error?: boolean;
   containerStyle?: ViewStyle;
   inputStyle?: TextStyle;
 }
 
-export function CurrencyInput({ value, onChange, onBlur, placeholder = "R$ 0,00", error, containerStyle, inputStyle, editable = true, ...props }: CurrencyInputProps) {
-  const { colors, isDark } = useTheme();
+export function CurrencyInput({ value, onChange, onBlur, onFocus, placeholder = "R$ 0,00", error, containerStyle, inputStyle, editable = true, ...props }: CurrencyInputProps) {
+  const { colors } = useTheme();
   const inputRef = useRef<TextInput>(null);
   const [isFocused, setIsFocused] = useState(false);
   const borderColorAnim = useRef(new Animated.Value(0)).current;
@@ -117,7 +119,7 @@ export function CurrencyInput({ value, onChange, onBlur, placeholder = "R$ 0,00"
 
   // Handle blur
   const handleBlur = useCallback(
-    (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+    (e: BlurEvent) => {
       setIsFocused(false);
       onBlur?.(e);
     },
@@ -125,9 +127,10 @@ export function CurrencyInput({ value, onChange, onBlur, placeholder = "R$ 0,00"
   );
 
   // Handle focus
-  const handleFocus = useCallback(() => {
+  const handleFocus = useCallback((e: FocusEvent) => {
     setIsFocused(true);
-  }, []);
+    onFocus?.(e);
+  }, [onFocus]);
 
   // Update cents when value prop changes
   useEffect(() => {

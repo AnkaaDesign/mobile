@@ -10,7 +10,6 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 import {
   IconMap,
   IconBuildingWarehouse,
-  IconRoad,
   IconMapPin,
   IconChevronRight,
 } from "@tabler/icons-react-native";

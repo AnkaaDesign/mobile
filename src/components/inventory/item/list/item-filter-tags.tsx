@@ -1,5 +1,5 @@
-import React from "react";
-import { View, ScrollView, TouchableOpacity, ViewStyle, TextStyle, StyleSheet } from "react-native";
+
+import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import {
   IconX,
   IconSearch,
@@ -10,7 +10,6 @@ import {
   IconChartPie,
   IconBox,
   IconPackage as IconBoxMultiple,
-  IconId,
   IconUser,
   IconEye,
   IconTrendingDown,
@@ -23,7 +22,7 @@ import {
 } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { useItemBrands, useItemCategories, useSuppliers } from '../../../../hooks';
-import { MEASURE_UNIT, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from '../../../../constants';
+import { MEASURE_UNIT, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE_LABELS } from '../../../../constants';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";

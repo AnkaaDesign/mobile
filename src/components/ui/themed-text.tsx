@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Text, TextProps, StyleSheet} from "react-native";
 import { useTheme } from "@/lib/theme";
 
@@ -9,7 +9,7 @@ interface ThemedTextProps extends TextProps {
 }
 
 export function ThemedText({ style, variant = "default", size = "base", weight = "normal", ...props }: ThemedTextProps) {
-  const { isDark, colors } = useTheme();
+  const { colors } = useTheme();
 
   const textColors = {
     default: colors.foreground,
@@ -51,7 +51,3 @@ export function ThemedText({ style, variant = "default", size = "base", weight =
 }
 
 ThemedText.displayName = "ThemedText";
-
-const styles = StyleSheet.create({
-  // Additional styles can be added here if needed
-});

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { PrivilegeGuard } from "@/components/privilege-guard";
@@ -103,7 +103,7 @@ export default function MyTeamVacationsScreen() {
 
   const handleVacationPress = useCallback(
     (vacationId: string) => {
-      router.push(`/meu-pessoal/ferias/detalhes/${vacationId}`);
+      router.push(`/meu-pessoal/ferias/detalhes/${vacationId}` as any);
     },
     [router],
   );

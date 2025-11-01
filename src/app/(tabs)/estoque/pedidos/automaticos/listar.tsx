@@ -1,11 +1,11 @@
-import React, { useState, useCallback } from "react";
-import { View, Alert, Pressable , StyleSheet} from "react-native";
+import { useState, useCallback } from "react";
+import { View, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconClock, IconCalendar } from "@tabler/icons-react-native";
+import { IconFilter } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrderScheduleMutations, useOrderSchedules } from '../../../../../hooks';
 import type { OrderScheduleGetManyFormData } from '../../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { OrderScheduleTable } from "@/components/inventory/order/schedule/order-schedule-table";
 import type { SortConfig } from "@/components/inventory/order/schedule/order-schedule-table";
 import { OrderScheduleFilterModal } from "@/components/inventory/order/schedule/order-schedule-filter-modal";
@@ -22,7 +22,7 @@ import { SECTOR_PRIVILEGES } from '../../../../../constants';
 
 export default function AutomaticOrderListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -33,7 +33,7 @@ export default function AutomaticOrderListScreen() {
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "createdAt", direction: "desc" }]);
   const [selectedSchedules, setSelectedSchedules] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["frequency", "isActive", "nextRun", "supplier"]);
+  const [visibleColumnKeys, ] = useState<string[]>(["frequency", "isActive", "nextRun", "supplier"]);
 
   // Check permissions
   const canCreate = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
@@ -46,7 +46,7 @@ export default function AutomaticOrderListScreen() {
 
     // If only one sort, return as object
     if (sortConfigs.length === 1) {
-      const config = sortConfigs[0 as keyof typeof sortConfigs];
+      const config = sortConfigs[0];
       switch (config.columnKey) {
         case "frequency":
           return { frequency: config.direction };
@@ -215,7 +215,7 @@ export default function AutomaticOrderListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   if (isLoading && !isRefetching) {

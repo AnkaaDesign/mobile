@@ -1,7 +1,7 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, Image, Text, StyleSheet } from "react-native";
 import { useTheme } from "@/lib/theme";
-import { fontSize, fontWeight } from "@/constants/design-system";
+import { fontWeight } from "@/constants/design-system";
 
 export interface CustomerLogoDisplayProps {
   logo?: { id: string; url?: string } | null;

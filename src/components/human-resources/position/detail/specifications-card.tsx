@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -6,7 +6,7 @@ import { IconInfoCircle, IconCalendar } from "@tabler/icons-react-native";
 import type { Position } from '../../../../types';
 import { formatDateTime, formatCurrency } from '../../../../utils';
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 
 interface SpecificationsCardProps {
   position: Position;

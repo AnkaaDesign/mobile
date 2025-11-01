@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
 import { CustomerLogoDisplay } from "@/components/ui/customer-logo-display";
@@ -51,8 +51,7 @@ export function CustomerSelector({
   const shouldFetchSelectedCustomer = value && (!initialCustomer || initialCustomer.id !== value);
   const { data: selectedCustomer } = useCustomer(
     value || "",
-    { include: { logo: true } },
-    { enabled: shouldFetchSelectedCustomer }
+    { include: { logo: true }, enabled: !!shouldFetchSelectedCustomer }
   );
 
   // Fetch customers with pagination
@@ -72,8 +71,8 @@ export function CustomerSelector({
     const customerList = [...customers];
 
     // Add selected customer if fetched and not in list
-    if (selectedCustomer && !customerList.some(c => c.id === selectedCustomer.id)) {
-      customerList.unshift(selectedCustomer);
+    if (selectedCustomer?.data && !customerList.some(c => c.id === selectedCustomer.data!.id)) {
+      customerList.unshift(selectedCustomer.data);
     }
 
     // Add initial customer if provided and not already in list
@@ -108,7 +107,7 @@ export function CustomerSelector({
 
   // Custom render option with logo and metadata
   const renderOption = useCallback(
-    (option: any, isSelected: boolean, onPress: () => void) => {
+    (option: any, isSelected: boolean, _onPress: () => void) => {
       const customer = option.customer as Customer;
 
       return (

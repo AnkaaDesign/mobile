@@ -1,4 +1,4 @@
-import React from "react";
+
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from '../../constants';
 import { ThemedView } from "@/components/ui/themed-view";

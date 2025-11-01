@@ -201,7 +201,7 @@ export function AlertFilterModal({ visible, onClose, onApply, currentFilters }: 
                 selectedValues={filters.severities || []}
                 onValueChange={(values) => handleArrayChange("severities", values)}
                 placeholder="Selecionar severidades..."
-                renderBadge={(option, onRemove) => {
+                renderBadge={(option, _onRemove) => {
                   const severity = option.value as NOTIFICATION_IMPORTANCE;
                   return (
                     <Badge style={{ backgroundColor: getSeverityColor(severity) }}>

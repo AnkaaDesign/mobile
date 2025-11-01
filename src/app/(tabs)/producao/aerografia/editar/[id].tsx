@@ -59,7 +59,6 @@ export default function AirbrushingEditScreen() {
 
   // Fetch available tasks (including current one)
   const {
-    data: tasksResponse,
     isLoading: isLoadingTasks,
     error: tasksError,
   } = useTasks({
@@ -77,14 +76,12 @@ export default function AirbrushingEditScreen() {
     },
   });
 
-  const tasks = tasksResponse?.data || [];
-
   const {
     control,
     handleSubmit,
     formState: { errors, isValid, isDirty },
     watch,
-    setValue,
+    
     reset,
   } = useForm<AirbrushingUpdateFormData>({
     resolver: zodResolver(airbrushingUpdateSchema),
@@ -97,7 +94,6 @@ export default function AirbrushingEditScreen() {
     mode: "onChange",
   });
 
-  const watchedStartDate = watch("startDate");
   const watchedPrice = watch("price");
 
   // Update form when airbrushing data loads
@@ -330,7 +326,7 @@ export default function AirbrushingEditScreen() {
                   name="startDate"
                   render={({ field }) => (
                     <DatePicker
-                      value={field.value}
+                      value={field.value ?? undefined}
                       onChange={field.onChange}
                       placeholder="Selecione a data de início"
                     />
@@ -345,7 +341,7 @@ export default function AirbrushingEditScreen() {
                   name="finishDate"
                   render={({ field }) => (
                     <DatePicker
-                      value={field.value}
+                      value={field.value ?? undefined}
                       onChange={field.onChange}
                       placeholder="Selecione a data de finalização"
                     />

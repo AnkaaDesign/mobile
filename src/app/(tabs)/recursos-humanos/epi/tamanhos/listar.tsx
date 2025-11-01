@@ -1,9 +1,8 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { usePpeSizeMutations } from '../../../../../hooks';
 import { usePpeSizesInfiniteMobile } from "@/hooks";
 import type { PpeSizeGetManyFormData } from '../../../../../schemas';
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
@@ -20,7 +19,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function PpeSizeListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors, } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -35,7 +34,7 @@ export default function PpeSizeListScreen() {
 
     // If only one sort, return as object
     if (sortConfigs.length === 1) {
-      const config = sortConfigs[0 as keyof typeof sortConfigs];
+      const config = sortConfigs[0];
       switch (config.columnKey) {
         case "employee":
           return { user: { name: config.direction } };
@@ -81,8 +80,7 @@ export default function PpeSizeListScreen() {
     },
   };
 
-  const { ppeSizes, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePpeSizesInfiniteMobile(queryParams);
-  const { delete: deletePpeSize } = usePpeSizeMutations();
+  const { ppeSizes, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePpeSizesInfiniteMobile(queryParams);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -125,7 +123,7 @@ export default function PpeSizeListScreen() {
   }, []);
 
   // Count active filters
-  const activeFiltersCount = Object.entries(filters).filter(([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
+  const activeFiltersCount = Object.entries(filters).filter(([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
 
   // Calculate completion statistics
   const statistics = useMemo(() => {

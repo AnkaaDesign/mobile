@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, ScrollView, TouchableOpacity, TextInput, Modal, Dimensions, ActivityIndicator, StyleSheet } from "react-native";
+import { View, ScrollView, TouchableOpacity, TextInput, Modal, Dimensions, StyleSheet } from "react-native";
 import { IconColumns, IconSearch, IconX, IconRefresh } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
@@ -43,7 +43,7 @@ interface ColumnVisibilityManagerProps {
 }
 
 export function ColumnVisibilityManager({ columns, visibleColumns, onVisibilityChange, open, onOpenChange }: ColumnVisibilityManagerProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
   const [localVisible, setLocalVisible] = useState(visibleColumns);

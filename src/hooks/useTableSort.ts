@@ -203,7 +203,7 @@ export function useSimpleTableSort(config: {
   } = config;
 
   const defaultSort = defaultColumn
-    ? [{ column: defaultColumn, direction: defaultDirection, order: 0 }]
+    ? [{ columnKey: defaultColumn, direction: defaultDirection, order: 0 }]
     : [];
 
   const {

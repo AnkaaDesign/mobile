@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ViewStyle } from "react-native";
 import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from '../../../../constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

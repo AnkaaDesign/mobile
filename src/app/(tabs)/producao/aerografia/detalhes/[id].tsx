@@ -8,8 +8,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { IconEdit, IconTrash, IconBrush, IconUser, IconTruck, IconCalendar, IconCurrencyDollar } from "@tabler/icons-react-native";
+
+import { IconEdit, IconTrash, IconBrush, IconUser, IconCalendar, IconCurrencyDollar } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { formatCurrency, formatDate } from '../../../../../utils';
@@ -285,13 +285,13 @@ export default function AirbrushingDetailsScreen() {
                   </View>
                 )}
 
-                {airbrushing.task.logoPaints?.length > 0 && (
+                {(airbrushing.task.logoPaints?.length ?? 0) > 0 && (
                   <View>
                     <ThemedText style={{ fontWeight: "500", marginBottom: spacing.xs }}>
-                      Tintas do Logo ({airbrushing.task.logoPaints.length}):
+                      Tintas do Logo ({airbrushing.task.logoPaints?.length ?? 0}):
                     </ThemedText>
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs }}>
-                      {airbrushing.task.logoPaints.map((logoPaint) => (
+                      {airbrushing.task.logoPaints?.map((logoPaint) => (
                         <Badge key={logoPaint.id} variant="outline">
                           {(logoPaint as any)?.paint?.name || "Tinta sem nome"}
                         </Badge>
@@ -304,19 +304,19 @@ export default function AirbrushingDetailsScreen() {
           ) : null}
 
           {/* Files */}
-          {(airbrushing.receipts?.length || airbrushing.nfes?.length || airbrushing.artworks?.length) ? (
+          {((airbrushing.receipts?.length ?? 0) > 0 || (airbrushing.nfes?.length ?? 0) > 0 || (airbrushing.artworks?.length ?? 0) > 0) ? (
             <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
               <ThemedText style={{ fontSize: 18, fontWeight: "600", marginBottom: spacing.md }}>
                 Arquivos
               </ThemedText>
 
               <View style={{ gap: spacing.md }}>
-                {airbrushing.receipts?.length > 0 && (
+                {(airbrushing.receipts?.length ?? 0) > 0 && (
                   <View>
                     <ThemedText style={{ fontWeight: "500", marginBottom: spacing.xs }}>
-                      Recibos ({airbrushing.receipts.length}):
+                      Recibos ({airbrushing.receipts?.length ?? 0}):
                     </ThemedText>
-                    {airbrushing.receipts.map((file) => (
+                    {airbrushing.receipts?.map((file) => (
                       <ThemedText key={file.id} style={{ fontSize: 14, color: colors.muted }}>
                         • {file.filename}
                       </ThemedText>
@@ -324,12 +324,12 @@ export default function AirbrushingDetailsScreen() {
                   </View>
                 )}
 
-                {airbrushing.nfes?.length > 0 && (
+                {(airbrushing.nfes?.length ?? 0) > 0 && (
                   <View>
                     <ThemedText style={{ fontWeight: "500", marginBottom: spacing.xs }}>
-                      NFEs ({airbrushing.nfes.length}):
+                      NFEs ({airbrushing.nfes?.length ?? 0}):
                     </ThemedText>
-                    {airbrushing.nfes.map((file) => (
+                    {airbrushing.nfes?.map((file) => (
                       <ThemedText key={file.id} style={{ fontSize: 14, color: colors.muted }}>
                         • {file.filename}
                       </ThemedText>
@@ -337,12 +337,12 @@ export default function AirbrushingDetailsScreen() {
                   </View>
                 )}
 
-                {airbrushing.artworks?.length > 0 && (
+                {(airbrushing.artworks?.length ?? 0) > 0 && (
                   <View>
                     <ThemedText style={{ fontWeight: "500", marginBottom: spacing.xs }}>
-                      Arte ({airbrushing.artworks.length}):
+                      Arte ({airbrushing.artworks?.length ?? 0}):
                     </ThemedText>
-                    {airbrushing.artworks.map((file) => (
+                    {airbrushing.artworks?.map((file) => (
                       <ThemedText key={file.id} style={{ fontSize: 14, color: colors.muted }}>
                         • {file.filename}
                       </ThemedText>
@@ -354,14 +354,14 @@ export default function AirbrushingDetailsScreen() {
           ) : null}
 
           {/* Services */}
-          {airbrushing.task?.services?.length > 0 && (
+          {(airbrushing.task?.services?.length ?? 0) > 0 && (
             <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
               <ThemedText style={{ fontSize: 18, fontWeight: "600", marginBottom: spacing.md }}>
-                Serviços ({airbrushing.task.services.length})
+                Serviços ({airbrushing.task?.services?.length ?? 0})
               </ThemedText>
 
               <View style={{ gap: spacing.sm }}>
-                {airbrushing.task.services.map((service) => (
+                {airbrushing.task?.services?.map((service) => (
                   <View key={service.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                     <ThemedText style={{ flex: 1, fontSize: 14 }}>
                       {(service as any)?.name}

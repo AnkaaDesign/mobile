@@ -5,16 +5,11 @@ import { IconChevronDown, IconChevronRight, IconX, IconFilter } from "@tabler/ic
 import { useTheme } from "@/lib/theme";
 import { useItemBrands, useItemCategories, useSuppliers } from '../../../../hooks';
 import {
-  MEASURE_UNIT,
-  MEASURE_TYPE,
   STOCK_LEVEL,
   STOCK_LEVEL_LABELS,
-  MEASURE_UNIT_LABELS,
-  MEASURE_TYPE_LABELS,
   ITEM_CATEGORY_TYPE,
   ITEM_CATEGORY_TYPE_LABELS,
 } from '../../../../constants';
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";

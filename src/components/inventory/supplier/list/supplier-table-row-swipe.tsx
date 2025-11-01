@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect } from "react";
-import { View, StyleSheet, ViewStyle, Alert } from "react-native";
+import { View, StyleSheet, ViewStyle, Alert, StyleProp } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/contexts/theme-context";
@@ -23,7 +23,7 @@ interface SupplierTableRowSwipeProps {
   onEdit?: (supplierId: string) => void;
   onDelete?: (supplierId: string) => void;
   customActions?: CustomSwipeAction[];
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   disabled?: boolean;
 }
 
@@ -116,7 +116,7 @@ const SupplierTableRowSwipeComponent = ({ children, supplierId, supplierName, on
   ];
 
   const handleWillOpen = useCallback(
-    (direction: "left" | "right") => {
+    (_direction: "left" | "right") => {
       // Clear any existing timer
       if (autoCloseTimerRef.current) {
         clearTimeout(autoCloseTimerRef.current);
@@ -133,7 +133,7 @@ const SupplierTableRowSwipeComponent = ({ children, supplierId, supplierName, on
   );
 
   const handleOpen = useCallback(
-    (direction: "left" | "right", swipeable: Swipeable) => {
+    (_direction: "left" | "right", swipeable: Swipeable) => {
       setActiveRowId(supplierId);
 
       // Register the close function for legacy compatibility
@@ -181,7 +181,7 @@ const SupplierTableRowSwipeComponent = ({ children, supplierId, supplierName, on
       onWillOpen={handleWillOpen}
       onOpen={handleOpen}
       onClose={handleClose}
-      containerStyle={[styles.container, style]}
+      containerStyle={StyleSheet.flatten([styles.container, style])}
       childrenContainerStyle={styles.rowContainer}
       actionWidth={ACTION_WIDTH}
     >

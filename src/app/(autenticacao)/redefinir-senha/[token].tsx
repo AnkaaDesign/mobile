@@ -6,8 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { passwordResetSchema, type PasswordResetFormData } from '../../../schemas';
 import { authService } from '../../../api-client';
 import { useTheme } from "@/lib/theme";
-import { routes } from '../../../constants';
-import { routeToMobilePath } from "@/lib/route-mapper";
+
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { ThemedText } from "@/components/ui/themed-text";

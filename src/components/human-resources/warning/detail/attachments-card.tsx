@@ -1,14 +1,12 @@
-import React from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { View, StyleSheet } from "react-native";
 import type { Warning } from '../../../../types';
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { IconPaperclip, IconFile, IconDownload } from "@tabler/icons-react-native";
-import { FileItem, useFileViewer, type FileViewMode } from "@/components/file";
-import { showToast } from "@/components/ui/toast";
+import { IconPaperclip, IconFile } from "@tabler/icons-react-native";
+import { FileItem, useFileViewer } from "@/components/file";
 
 interface AttachmentsCardProps {
   warning: Warning;
@@ -17,7 +15,6 @@ interface AttachmentsCardProps {
 export function AttachmentsCard({ warning }: AttachmentsCardProps) {
   const { colors } = useTheme();
   const fileViewer = useFileViewer();
-  const [viewMode, setViewMode] = React.useState<FileViewMode>("list");
 
   if (!warning.attachments || warning.attachments.length === 0) {
     return (

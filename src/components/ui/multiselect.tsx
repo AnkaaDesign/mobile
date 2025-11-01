@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, Text, TouchableOpacity, Modal, FlatList, TextInput, Keyboard, Platform, ScrollView, Dimensions, Pressable , StyleSheet} from "react-native";
+import { View, Text, TouchableOpacity, Modal, FlatList, TextInput, Keyboard, Platform, Dimensions, Pressable, StyleSheet } from "react-native";
 import { Icon } from "./icon";
 import { useTheme } from "@/contexts/theme-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -83,7 +83,7 @@ export function Multiselect({
 
   const renderItem = ({ item }: { item: MultiselectOption }) => {
     const isSelected = value.includes(item.value);
-    const isDisabled = !isSelected && maxSelections && value.length >= maxSelections;
+    const isDisabled = !!(!isSelected && maxSelections && value.length >= maxSelections);
 
     return (
       <TouchableOpacity
@@ -96,7 +96,7 @@ export function Multiselect({
           isDisabled && styles.optionDisabled,
         ])}
         onPress={() => handleToggleOption(item)}
-        disabled={loading || isDisabled}
+        disabled={!!loading || !!isDisabled}
       >
         <View
           style={StyleSheet.flatten([

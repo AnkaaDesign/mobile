@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet, Alert } from "react-native";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

@@ -11,7 +11,7 @@ interface LoadingSpinnerProps {
   className?: string;
 }
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ size = "default", variant = "primary", style, className }) => {
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ size = "default", variant = "primary", style}) => {
   const { colors } = useTheme();
 
   const colorMap = {
@@ -388,3 +388,6 @@ export const PulseView: React.FC<PulseViewProps> = ({ children, isLoading = fals
 
   return <Animated.View style={StyleSheet.flatten([style, { opacity: isLoading ? pulseAnim : 1 }])}>{children}</Animated.View>;
 };
+
+// Alias for backward compatibility
+export const Loading = LoadingSpinner;

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Pressable, Text, View, ViewStyle, TextStyle, Animated, StyleSheet} from "react-native";
-import { cn } from "@/lib/utils";
+
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, fontSize, fontWeight, transitions, componentSizes } from "@/constants/design-system";
 import type { ThemeColors } from "@/types/theme";

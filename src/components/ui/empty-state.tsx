@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, ViewStyle, TextStyle, StyleSheet} from "react-native";
+
+import { View, Text, ViewStyle, StyleSheet } from "react-native";
 import { Icon } from "./icon";
 import { useTheme } from "@/contexts/theme-context";
 import { Button } from "./button";
@@ -24,10 +24,9 @@ interface EmptyStateProps {
   iconColor?: string;
 }
 
-export function EmptyState({ title, description, icon = "package", iconSize = 64, actionLabel, onAction, action, actionVariant = "default", style, iconColor }: EmptyStateProps) {
+export function EmptyState({ title, description, icon = "package", iconSize = 64, actionLabel, onAction, actionVariant = "default", style, iconColor }: EmptyStateProps) {
   // Support both action object and individual props
-  const finalActionLabel = action?.label || actionLabel;
-  const finalOnAction = action?.onPress || onAction;
+
   const { colors, isDark } = useTheme();
 
   const getIconBackground = () => {

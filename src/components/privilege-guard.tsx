@@ -1,12 +1,11 @@
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
 import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from '../constants';
 import { hasAnyPrivilege, hasPrivilege, hasAllPrivileges } from '../utils';
 import { getSectorPrivilegesLabel } from '../utils';
-import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes } from '../constants';
+
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -132,7 +131,7 @@ function getUserPrivilegeLabels(user: User | null): string {
 /**
  * Unauthorized Access Screen for Mobile
  */
-function UnauthorizedScreen({ requiredPrivilege, fallbackScreen }: { requiredPrivilege: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]; fallbackScreen: string }) {
+function UnauthorizedScreen({ requiredPrivilege}: { requiredPrivilege: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]; fallbackScreen: string }) {
   const { user, logout } = useAuth();
 
   const handleGoBack = () => {

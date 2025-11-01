@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, Alert , StyleSheet} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,7 +16,7 @@ import {
   Select,
   SelectItem,
   Button,
-  ErrorScreen,
+  
   Skeleton,
   SimpleFormField,
 } from "@/components/ui";
@@ -43,7 +43,7 @@ export default function TruckCreateScreen() {
     handleSubmit,
     formState: { errors, isValid },
     setValue,
-    watch,
+    
   } = useForm<TruckCreateFormData>({
     resolver: zodResolver(truckCreateSchema),
     mode: "onChange",
@@ -93,7 +93,7 @@ export default function TruckCreateScreen() {
             {
               text: "OK",
               onPress: () => {
-                router.replace(routeToMobilePath(routes.production.trucks.details(result.data.id)) as any);
+                router.replace(routeToMobilePath(routes.production.trucks.details(result.data?.id || '')) as any);
               },
             },
           ]

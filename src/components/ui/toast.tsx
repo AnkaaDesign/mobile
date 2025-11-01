@@ -2,22 +2,22 @@ import * as React from "react";
 import { Dimensions, Pressable, StyleSheet,
   Text, TextStyle, View, ViewStyle } from "react-native";
 import Animated, { 
-  FadeIn,
-  FadeOut,
+  
+  
   SlideInUp,
   SlideOutUp,
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSequence,
-  withDelay,
-  runOnJS,
+  
+  
+  
  } from "react-native-reanimated";
 import { IconCheck, IconX, IconAlertTriangle, IconInfoCircle } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, spacing, fontSize, fontWeight, transitions } from "@/constants/design-system";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: _SCREEN_WIDTH } = Dimensions.get("window");
 
 type ToastType = "success" | "error" | "warning" | "info";
 
@@ -124,7 +124,7 @@ const ToastItem: React.FC<ToastItemProps> = ({
   position,
   onDismiss,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
   const progress = useSharedValue(1);
 
   React.useEffect(() => {

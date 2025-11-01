@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Controller, FormProvider, useFormContext } from "react-hook-form";
 import type { ControllerProps, FieldPath, FieldValues } from "react-hook-form";
 import { useTheme } from "@/lib/theme";
-import { Label } from "./label";
+
 import { fontSize, spacing, fontWeight } from "@/constants/design-system";
 
 const Form = FormProvider;

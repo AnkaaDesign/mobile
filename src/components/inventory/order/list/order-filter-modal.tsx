@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { DatePickerInput } from "@/components/ui/date-picker";
 import { MultiCombobox } from "@/components/ui/multi-combobox";
-import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
-import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { ORDER_STATUS, ORDER_STATUS_LABELS } from '../../../../constants';
 import type { OrderGetManyFormData } from '../../../../schemas';
@@ -26,7 +25,7 @@ export const OrderFilterModal: React.FC<OrderFilterModalProps> = ({
   onApply,
   currentFilters,
 }) => {
-  const { colors } = useTheme();
+
   const { data: suppliersResponse } = useSuppliers({ limit: 100 });
   const suppliers = suppliersResponse?.data || [];
 
@@ -169,7 +168,6 @@ export const OrderFilterModal: React.FC<OrderFilterModalProps> = ({
             </View>
           </View>
         </View>
-
 
         {/* Action Buttons */}
         <View style={styles.actions}>

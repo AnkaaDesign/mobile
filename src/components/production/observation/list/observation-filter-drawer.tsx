@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { View, StyleSheet } from "react-native";
+import { useState, useEffect, useMemo } from "react";
+import { View } from "react-native";
 import type { ObservationGetManyFormData } from "@/schemas";
 import { BaseFilterDrawer } from "@/components/common/filters";
 import { BooleanFilter, DateRangeFilter } from "@/components/common/filters";

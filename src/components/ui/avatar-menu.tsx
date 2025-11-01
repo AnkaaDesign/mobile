@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, Text, TouchableOpacity, Modal, Pressable } from "react-native";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
@@ -19,10 +19,10 @@ export function AvatarMenu({ onClose }: AvatarMenuProps) {
   const [userCardLayout, setUserCardLayout] = useState({ width: 0, height: 0, x: 0, y: 0 });
 
   // Enhanced theme colors matching updated navigation design
-  const drawerBackgroundColor = isDark ? "#171717" : "#fafafa"; // neutral-900 : neutral-50
+
   const drawerTextColor = isDark ? "#f5f5f5" : "#0a0a0a"; // neutral-100 : neutral-950
   const activeBackgroundColor = "#16a34a"; // green-600 - unified brand color
-  const hoverBackgroundColor = isDark ? "#262626" : "#f0f0f0"; // neutral-800 : neutral-100
+
   const borderColor = isDark ? "#404040" : "#e5e5e5"; // neutral-700 : neutral-200
   const cardBackgroundColor = isDark ? "#262626" : "#ffffff"; // neutral-800 : white
   const mutedTextColor = isDark ? "#a3a3a3" : "#6b7280"; // neutral-400 : neutral-500
@@ -119,7 +119,7 @@ export function AvatarMenu({ onClose }: AvatarMenuProps) {
             {/* Menu Items - No user info header since it's already in sidebar */}
             <View className="py-2">
               <TouchableOpacity
-                onPress={() => handleNavigation(routes.myProfile.root)}
+                onPress={() => handleNavigation(routes.personal.myProfile.root)}
                 className="flex-row items-center px-4 py-3.5 mx-2 rounded-lg"
                 style={{
                   backgroundColor: "transparent",
@@ -135,7 +135,7 @@ export function AvatarMenu({ onClose }: AvatarMenuProps) {
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => handleNavigation(routes.preferences.root)}
+                onPress={() => handleNavigation(routes.personal.preferences.root)}
                 className="flex-row items-center px-4 py-3.5 mx-2 rounded-lg"
                 style={{
                   backgroundColor: "transparent",

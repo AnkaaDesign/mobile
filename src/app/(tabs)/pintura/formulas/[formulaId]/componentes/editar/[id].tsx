@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import { View, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator , StyleSheet} from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
@@ -29,7 +29,7 @@ import {
 export default function EditComponentScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { formulaId, id } = useLocalSearchParams<{ formulaId: string; id: string }>();
+  const { id } = useLocalSearchParams<{ formulaId: string; id: string }>();
   const { update: updateComponent, isLoading: isUpdating } = usePaintFormulaComponentMutations();
 
   // Check permissions
@@ -84,7 +84,7 @@ export default function EditComponentScreen() {
     },
   });
 
-  const { handleSubmit, control, formState: { errors, isValid, isDirty }, watch, reset, setValue } = form;
+  const { handleSubmit, control, formState: { errors, isValid, isDirty }, watch, reset } = form;
 
   // Set initial values when component data loads
   useEffect(() => {

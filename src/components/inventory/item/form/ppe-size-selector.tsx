@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View } from "react-native";
 import { Controller, useFormContext } from "react-hook-form";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -7,7 +7,7 @@ import { PPE_SIZE, PPE_SIZE_LABELS, PPE_TYPE } from '../../../../constants';
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';
 import { StyleSheet } from "react-native";
 
-interface PpeSizeSelectorProps<TFormData extends ItemCreateFormData | ItemUpdateFormData = ItemCreateFormData | ItemUpdateFormData> {
+interface PpeSizeSelectorProps<_TFormData extends ItemCreateFormData | ItemUpdateFormData = ItemCreateFormData | ItemUpdateFormData> {
   ppeType?: PPE_TYPE;
   disabled?: boolean;
   required?: boolean;

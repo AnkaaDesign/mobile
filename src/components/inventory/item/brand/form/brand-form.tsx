@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import type { DefaultValues } from "react-hook-form";
@@ -15,8 +15,6 @@ import { useItems } from '../../../../../hooks';
 import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 import { Label } from "@/components/ui/label";
 
-type ItemBrandFormData = ItemBrandCreateFormData | ItemBrandUpdateFormData;
-
 // Import form components
 import { NameInput } from "./name-input";
 
@@ -29,7 +27,7 @@ interface ItemBrandFormProps<TMode extends "create" | "update"> {
 }
 
 export function ItemBrandForm<TMode extends "create" | "update">({ onSubmit, onCancel, isSubmitting, defaultValues, mode }: ItemBrandFormProps<TMode>) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   type FormData = TMode extends "create" ? ItemBrandCreateFormData : ItemBrandUpdateFormData;
 

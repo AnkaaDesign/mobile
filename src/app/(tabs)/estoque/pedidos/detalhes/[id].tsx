@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, Alert, RefreshControl , StyleSheet} from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { IconArrowLeft, IconEdit, IconTrash, IconRefresh, IconCheck, IconX } from "@tabler/icons-react-native";

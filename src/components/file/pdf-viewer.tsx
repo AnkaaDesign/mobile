@@ -13,7 +13,6 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
-  Platform,
 } from 'react-native';
 import Pdf from 'react-native-pdf';
 import { IconX, IconChevronLeft, IconChevronRight, IconDownload, IconShare } from '@tabler/icons-react-native';
@@ -42,7 +41,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [controlsVisible, setControlsVisible] = useState(true);
+  const [controlsVisible, _setControlsVisible] = useState(true);
 
   const pdfUrl = getFileUrl(file, baseUrl);
 
@@ -55,7 +54,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   }, []);
 
   // Handle PDF load error
-  const handleError = useCallback((error: Error) => {
+  const handleError = useCallback((error: object) => {
     console.error('[PDF Viewer] Load error:', error);
     setLoading(false);
     setError('Erro ao carregar PDF. Tente novamente ou baixe o arquivo.');
@@ -91,11 +90,6 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
       }
     }
   }, [file, onShare]);
-
-  // Toggle controls visibility
-  const handlePress = useCallback(() => {
-    setControlsVisible(prev => !prev);
-  }, []);
 
   // Close modal
   const handleClose = useCallback(() => {

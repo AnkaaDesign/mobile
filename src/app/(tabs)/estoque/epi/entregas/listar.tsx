@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
-import { IconFilter, IconPackage } from "@tabler/icons-react-native";
+import { IconFilter } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePpeDeliveriesInfiniteMobile } from "@/hooks";
 import type { PpeDeliveryGetManyFormData } from '../../../../../schemas';
@@ -50,7 +50,7 @@ export default function PPEDeliveryListScreen() {
     };
   }, [searchText, filters]);
 
-  const { deliveries, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePpeDeliveriesInfiniteMobile(queryParams);
+  const { deliveries, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePpeDeliveriesInfiniteMobile(queryParams);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);

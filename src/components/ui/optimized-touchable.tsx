@@ -4,8 +4,8 @@
  */
 
 import React, { memo, useCallback } from "react";
-import { StyleSheet, TextStyle, View, ViewStyle, TouchableOpacity as RNTouchableOpacity } from "react-native";
-import { TapGestureHandler, LongPressGestureHandler, State, GestureHandlerRootView } from "react-native-gesture-handler";
+import { StyleSheet, ViewStyle, TouchableOpacity as RNTouchableOpacity } from "react-native";
+import { TapGestureHandler, LongPressGestureHandler, State } from "react-native-gesture-handler";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS, interpolate } from "react-native-reanimated";
 
 interface OptimizedTouchableProps {
@@ -226,6 +226,5 @@ const OptimizedTouchable: React.FC<OptimizedTouchableProps> = ({
 };
 
 export default memo(OptimizedTouchable);
-
 
 export { OptimizedTouchable };

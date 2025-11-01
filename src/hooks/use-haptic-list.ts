@@ -23,11 +23,11 @@ import { selectionHaptic, longPressHaptic, scrollBoundaryHaptic, successHaptic, 
  * ```
  */
 export function useHapticList() {
-  const handleItemPress = useCallback(async <T = unknown>(item?: T) => {
+  const handleItemPress = useCallback(async <T = unknown>(_item?: T) => {
     await selectionHaptic();
   }, []);
 
-  const handleItemLongPress = useCallback(async <T = unknown>(item?: T) => {
+  const handleItemLongPress = useCallback(async <T = unknown>(_item?: T) => {
     await longPressHaptic();
   }, []);
 

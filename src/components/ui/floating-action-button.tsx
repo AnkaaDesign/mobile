@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 import { Icon } from "./icon";
 import { cn } from "@/lib/cn";
 import * as Haptics from "expo-haptics";

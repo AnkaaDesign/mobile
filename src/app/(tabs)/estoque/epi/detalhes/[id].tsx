@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
-import { ThemedView } from "@/components/ui/themed-view";
+
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
@@ -14,12 +14,12 @@ import { Badge } from "@/components/ui/badge";
 import { usePpeDelivery, usePpeDeliveryMutations } from '../../../../../hooks';
 import { hasPrivilege, formatDate, formatDateTime } from '../../../../../utils';
 import { SECTOR_PRIVILEGES, PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '../../../../../constants';
-import { IconShield, IconUser, IconCalendar, IconPackage, IconRefresh, IconAlertTriangle } from "@tabler/icons-react-native";
+import { IconRefresh, IconAlertTriangle } from "@tabler/icons-react-native";
 import { PpeDetailSkeleton } from "@/components/inventory/ppe/skeleton/ppe-detail-skeleton";
 
 export default function PPEDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
@@ -364,7 +364,6 @@ export default function PPEDetailsScreen() {
               </CardContent>
             </Card>
           )}
-
 
           {/* Actions */}
           <View style={styles.actions}>

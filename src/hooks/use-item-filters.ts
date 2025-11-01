@@ -33,7 +33,8 @@ const DEFAULT_FILTERS: ItemFilters = {
   abcCategories: [],
   xyzCategories: [],
   quantityRange: undefined,
-  taxRange: undefined,
+  icmsRange: undefined,
+  ipiRange: undefined,
   monthlyConsumptionRange: undefined,
   hasMeasures: undefined,
   hasMultipleMeasures: undefined,
@@ -79,7 +80,11 @@ export interface ItemFilters {
     min?: number;
     max?: number;
   };
-  taxRange?: {
+  icmsRange?: {
+    min?: number;
+    max?: number;
+  };
+  ipiRange?: {
     min?: number;
     max?: number;
   };

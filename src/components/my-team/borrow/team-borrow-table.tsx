@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback} from "react";
 import { FlatList, View, Pressable, RefreshControl, ActivityIndicator, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { Borrow } from '../../../types';

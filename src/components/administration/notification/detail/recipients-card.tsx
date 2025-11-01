@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ScrollView, StyleSheet } from "react-native";
 import type { Notification } from '../../../../types';
 import { formatDateTime } from '../../../../utils';

@@ -12,7 +12,7 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { ServiceTable } from "@/components/production/service/list/service-table";
 import { SearchBar } from "@/components/ui/search-bar";
 import { FAB } from "@/components/ui/fab";
-import { IconPlus, IconFilter } from "@tabler/icons-react-native";
+import { IconPlus } from "@tabler/icons-react-native";
 import { useServicesInfiniteMobile } from "@/hooks/use-services-infinite-mobile";
 import { useServiceMutations } from '../../../../hooks';
 import { hasPrivilege } from '../../../../utils';
@@ -20,7 +20,7 @@ import { SECTOR_PRIVILEGES } from '../../../../constants';
 import type { ServiceGetManyFormData } from '../../../../schemas';
 
 export default function ServicesListScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [searchText, setSearchText] = useState("");

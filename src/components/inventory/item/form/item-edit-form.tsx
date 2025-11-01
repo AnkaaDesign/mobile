@@ -4,21 +4,17 @@ import { useEditForm } from '../../../../hooks';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Separator } from "@/components/ui/separator";
 import { IconLoader } from "@tabler/icons-react-native";
-import { itemUpdateSchema, type ItemUpdateFormData, type ItemCreateFormData } from '../../../../schemas';
+import { itemUpdateSchema, type ItemUpdateFormData } from '../../../../schemas';
 import type { Item } from '../../../../types';
 import { useItemCategories } from '../../../../hooks';
 import { ITEM_CATEGORY_TYPE } from '../../../../constants';
 import { FormProvider } from "react-hook-form";
-import type { Control } from "react-hook-form";
-import { spacing, fontSize } from "@/constants/design-system";
-import { useTheme } from "@/lib/theme";
-import { showToast } from "@/components/ui/toast";
 
-type ItemFormData = ItemCreateFormData | ItemUpdateFormData;
+import { spacing } from "@/constants/design-system";
 
 // Import all form components
 import { NameInput } from "./name-input";
@@ -31,7 +27,8 @@ import { QuantityInput } from "./quantity-input";
 import { MaxQuantityInput } from "./max-quantity-input";
 import { BoxQuantityInput } from "./box-quantity-input";
 import { LeadTimeInput } from "./lead-time-input";
-import { TaxInput } from "./tax-input";
+import { IcmsInput } from "./icms-input";
+import { IpiInput } from "./ipi-input";
 import { PriceInput } from "./price-input";
 import { MeasuresManager } from "./measures-manager";
 import { BarcodeManager } from "./barcode-manager";
@@ -61,7 +58,8 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       quantity: apiData.quantity,
       maxQuantity: apiData.maxQuantity,
       boxQuantity: apiData.boxQuantity,
-      tax: apiData.tax,
+      icms: apiData.icms,
+      ipi: apiData.ipi,
       barcodes: apiData.barcodes || [],
       shouldAssignToUser: apiData.shouldAssignToUser,
       brandId: apiData.brandId,
@@ -179,12 +177,13 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
               </CardHeader>
               <CardContent>
                 <View style={styles.fieldGroup}>
+                  <PriceInput disabled={isSubmitting} />
                   <View style={styles.fieldRow}>
                     <View style={styles.halfField}>
-                      <PriceInput disabled={isSubmitting} />
+                      <IcmsInput disabled={isSubmitting} required={false} priceFieldName="price" />
                     </View>
                     <View style={styles.halfField}>
-                      <TaxInput disabled={isSubmitting} required={false} />
+                      <IpiInput disabled={isSubmitting} required={false} priceFieldName="price" />
                     </View>
                   </View>
                 </View>

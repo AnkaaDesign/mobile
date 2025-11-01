@@ -631,11 +631,9 @@ export const borrowCreateSchema = z
         required_error: "Quantidade é obrigatória",
         invalid_type_error: "Quantidade inválida",
       })
+      .int("Quantidade deve ser um número inteiro")
       .positive("Quantidade deve ser positiva")
       .default(1),
-    expectedReturnDate: nullableDate.optional(),
-    notes: z.string().max(500, "Notas devem ter no máximo 500 caracteres").optional(),
-    reason: z.string().max(200, "Motivo deve ter no máximo 200 caracteres").optional(),
     returnedAt: nullableDate.optional(),
   })
   .transform(toFormData);

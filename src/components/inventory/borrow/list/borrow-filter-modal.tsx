@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   View,
   ScrollView,
@@ -76,7 +76,7 @@ export const BorrowFilterModal = ({
       if (checked) {
         return { ...prev, statusIds: [...statusIds, status as any] };
       } else {
-        return { ...prev, statusIds: statusIds.filter(s => s !== status) };
+        return { ...prev, statusIds: statusIds.filter((s: BORROW_STATUS) => s !== status) };
       }
     });
   }, []);

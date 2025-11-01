@@ -1,6 +1,5 @@
 // apps/mobile/src/components/human-resources/ppe/schedule/list/ppe-schedule-filter-tags.tsx
 
-import React from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { Chip } from "@/components/ui/chip";
 import { SCHEDULE_FREQUENCY_LABELS } from '../../../../../constants';
@@ -23,9 +22,9 @@ export function PpeScheduleFilterTags({ filters, searchText, onFilterChange, onS
     return null;
   }
 
-  const removeFilter = (key: keyof typeof filters) => {
+  const removeFilter = (key: string) => {
     const newFilters = { ...filters };
-    delete newFilters[key];
+    delete (newFilters as any)[key];
     onFilterChange(newFilters);
   };
 

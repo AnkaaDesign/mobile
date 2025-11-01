@@ -33,7 +33,7 @@ const ActionSheet: React.FC<ActionSheetProps> = ({
   cancelLabel = "Cancelar",
   closeOnBackdropPress = true,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   // Handle Android back button
   React.useEffect(() => {

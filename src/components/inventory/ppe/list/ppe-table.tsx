@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector } from "@tabler/icons-react-native";
@@ -12,7 +12,6 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { PpeTableRowSwipe } from "./ppe-table-row-swipe";
 import { formatCurrency } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { STOCK_LEVEL, STOCK_LEVEL_LABELS } from '../../../../constants';
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -412,7 +411,7 @@ export const PpeTable = React.memo<PpeTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -557,7 +556,6 @@ export const PpeTable = React.memo<PpeTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -621,7 +619,7 @@ export const PpeTable = React.memo<PpeTableProps>(
         if (enableSwipeActions && (onPpeEdit || onPpeDelete)) {
           return (
             <PpeTableRowSwipe key={item.id} ppeId={item.id} ppeName={item.name} onEdit={onPpeEdit} onDelete={onPpeDelete} disabled={showSelection}>
-              {(isActive) => (
+              {() => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -774,7 +772,7 @@ export const PpeTable = React.memo<PpeTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 36, // Fixed row height
               offset: 36 * index,
               index,
@@ -948,3 +946,5 @@ const styles = StyleSheet.create({
 });
 
 PpeTable.displayName = "PpeTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

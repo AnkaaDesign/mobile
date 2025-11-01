@@ -1,22 +1,20 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, FlatList, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useCustomer } from '../../../../../hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { extendedColors } from "@/lib/theme/extended-colors";
+
 import {
   IconBuilding,
   IconRefresh,
   IconEdit,
-  IconClipboardList,
   IconHistory,
-  IconReceipt,
 } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { TouchableOpacity } from "react-native";
@@ -36,7 +34,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function CustomerDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -108,10 +106,6 @@ export default function CustomerDetailScreen() {
       </View>
     );
   }
-
-  const totalTasks = customer._count?.tasks || 0;
-  const totalServiceOrders = customer._count?.serviceOrders || 0;
-  const totalServices = customer._count?.services || 0;
 
   // Render all content except TasksTable as header
   const renderHeader = () => (

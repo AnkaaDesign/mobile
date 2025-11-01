@@ -4,11 +4,9 @@ import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { useRouter } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
-import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes } from '../constants';
 
 export default function Index() {
-  const { user, isLoading, isAuthReady } = useAuth();
+  const { user, isAuthReady } = useAuth();
   const { isDark } = useTheme();
   const router = useRouter();
   const hasRedirected = useRef(false);

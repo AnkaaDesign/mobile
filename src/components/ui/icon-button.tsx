@@ -1,5 +1,5 @@
-import React from "react";
-import { Pressable, StyleSheet, View, ViewStyle, Text } from "react-native";
+
+import { Pressable, View, ViewStyle, Text } from "react-native";
 import { Icon } from "./icon";
 import { useTheme } from "@/lib/theme";
 import { getTouchTargetStyle, ICON_BUTTON_CONFIGS } from "@/lib/icon-utils";
@@ -59,7 +59,7 @@ export function IconButton({
   const finalIconSize = iconSize || config.iconSize;
 
   // Calculate touch target style
-  const touchTargetStyle = getTouchTargetStyle(finalIconSize, config.touchTarget);
+  const touchTargetStyle = getTouchTargetStyle(finalIconSize as number, config.touchTarget);
 
   // Calculate background color
   const bgColor = showBackground ? backgroundColor || colors.card : "transparent";
@@ -196,7 +196,3 @@ export function IconButtonWithLabel({ label, labelPosition = "bottom", style, ..
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  // Add any additional styles here if needed
-});

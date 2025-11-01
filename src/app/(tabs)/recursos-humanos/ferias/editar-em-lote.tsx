@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,7 +17,7 @@ export default function VacationBatchEditScreen() {
 
   const selectedIds = params.ids ? params.ids.split(",").filter(Boolean) : [];
 
-  const { data, isLoading, error } = useVacations({
+  const { data, isLoading, } = useVacations({
     where: {
       id: { in: selectedIds },
     },
@@ -41,6 +40,14 @@ export default function VacationBatchEditScreen() {
   const formatDate = (date: string | Date) => {
     const dateObj = typeof date === "string" ? new Date(date) : date;
     return format(dateObj, "dd/MM/yyyy", { locale: ptBR });
+  };
+
+  const calculateDays = (startAt: string | Date, endAt: string | Date) => {
+    const start = typeof startAt === "string" ? new Date(startAt) : startAt;
+    const end = typeof endAt === "string" ? new Date(endAt) : endAt;
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays + 1; // Include both start and end days
   };
 
   if (selectedIds.length === 0) {
@@ -106,7 +113,7 @@ export default function VacationBatchEditScreen() {
         <Button
           variant="default"
           onPress={handleSave}
-          style={[styles.button, styles.saveButton]}
+          style={StyleSheet.flatten([styles.button, styles.saveButton])}
         >
           <IconCheck size={18} color="#fff" />
           <ThemedText style={styles.saveButtonText}>Salvar</ThemedText>
@@ -127,7 +134,7 @@ export default function VacationBatchEditScreen() {
                   Início:
                 </ThemedText>
                 <ThemedText style={styles.dateValue}>
-                  {formatDate(vacation.startDate)}
+                  {formatDate(vacation.startAt)}
                 </ThemedText>
               </View>
               <View style={styles.dateRow}>
@@ -135,19 +142,20 @@ export default function VacationBatchEditScreen() {
                   Término:
                 </ThemedText>
                 <ThemedText style={styles.dateValue}>
-                  {formatDate(vacation.endDate)}
+                  {formatDate(vacation.endAt)}
                 </ThemedText>
               </View>
-              {vacation.days && (
-                <View style={styles.dateRow}>
-                  <ThemedText style={[styles.dateLabel, { color: colors.mutedForeground }]}>
-                    Dias:
-                  </ThemedText>
-                  <ThemedText style={styles.dateValue}>
-                    {vacation.days} {vacation.days === 1 ? "dia" : "dias"}
-                  </ThemedText>
-                </View>
-              )}
+              <View style={styles.dateRow}>
+                <ThemedText style={[styles.dateLabel, { color: colors.mutedForeground }]}>
+                  Dias:
+                </ThemedText>
+                <ThemedText style={styles.dateValue}>
+                  {(() => {
+                    const days = calculateDays(vacation.startAt, vacation.endAt);
+                    return `${days} ${days === 1 ? "dia" : "dias"}`;
+                  })()}
+                </ThemedText>
+              </View>
             </View>
           ))}
         </View>

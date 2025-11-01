@@ -141,7 +141,7 @@ function BrandTableRowSwipeComponent({
   }
 
   const handleWillOpen = useCallback(
-    (direction: "left" | "right") => {
+    (_direction: "left" | "right") => {
       // Close any other open rows
       if (activeRowId && activeRowId !== brandId) {
         closeActiveRow();
@@ -166,7 +166,7 @@ function BrandTableRowSwipeComponent({
   }, [activeRowId, brandId, setActiveRowId]);
 
   const handleOpen = useCallback(
-    (direction: "left" | "right", swipeable: Swipeable) => {
+    (_direction: "left" | "right", swipeable: Swipeable) => {
       // Store reference to the swipeable
       swipeableRef.current = swipeable;
       // Store the close function for legacy compatibility

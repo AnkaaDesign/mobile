@@ -3,11 +3,10 @@ import { View, FlatList, TouchableOpacity, StyleSheet, Switch as RNSwitch } from
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconChevronDown, IconChevronRight, IconX, IconFilter } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { MultiCombobox } from "@/components/ui/multi-combobox";
+
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -20,11 +19,6 @@ interface ServiceOrderFilterDrawerV2Props {
   onClose: () => void;
   onApply: (filters: Partial<ServiceOrderGetManyFormData>) => void;
   currentFilters: Partial<ServiceOrderGetManyFormData>;
-}
-
-interface FilterRange {
-  min?: number;
-  max?: number;
 }
 
 interface FilterDateRange {
@@ -107,16 +101,6 @@ export function ServiceOrderFilterDrawerV2({ visible, onClose, onApply, currentF
     setFilters((prev) => ({
       ...prev,
       [key]: value.length > 0 ? value : undefined,
-    }));
-  }, []);
-
-  const handleDateRangeChange = useCallback((key: keyof FilterState, field: "start" | "end", value: Date | undefined) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: {
-        ...((prev[key] as FilterDateRange) || {}),
-        [field]: value,
-      },
     }));
   }, []);
 

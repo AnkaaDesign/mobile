@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Stack, useLocalSearchParams, router } from "expo-router";
 import { ScrollView, View, Alert , StyleSheet} from "react-native";
 import { useServiceDetail, useServiceMutations } from '../../../../../hooks';
@@ -103,7 +103,7 @@ export default function ServiceDetailsScreen() {
     );
   }
 
-  const headerButtons = [];
+  const headerButtons: React.ReactElement[] = [];
 
   if (canEdit) {
     headerButtons.push(

@@ -1,14 +1,13 @@
-import React, { useState, useCallback } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { useState, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHolidayMutations } from '../../../../hooks';
 import { useHolidaysInfiniteMobile } from "@/hooks";
 import type { HolidayGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { HolidayTable } from "@/components/human-resources/holiday/list/holiday-table";
-import type { SortConfig } from "@/components/human-resources/holiday/list/holiday-table";
+
 import { HolidayFilterModal } from "@/components/human-resources/holiday/list/holiday-filter-modal";
 import { HolidayFilterTags } from "@/components/human-resources/holiday/list/holiday-filter-tags";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
@@ -20,15 +19,15 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function HolidayListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors, } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<HolidayGetManyFormData>>({});
-  const [showColumnManager, setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["name", "date", "type"]);
+  const [_showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, ] = useState<string[]>(["name", "date", "type"]);
 
   // Build query parameters with default sort by date (upcoming first)
   const queryParams = {
@@ -38,8 +37,7 @@ export default function HolidayListScreen() {
     include: {},
   };
 
-  const { items: holidays, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useHolidaysInfiniteMobile(queryParams);
-  const { delete: deleteHoliday } = useHolidayMutations();
+  const { items: holidays, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useHolidaysInfiniteMobile(queryParams);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -79,7 +77,7 @@ export default function HolidayListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   if (isLoading && !isRefetching) {

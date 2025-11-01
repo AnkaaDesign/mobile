@@ -129,6 +129,7 @@ export interface DeploymentGetManyParams {
   cursor?: string;
   skip?: number;
   take?: number;
+  [key: string]: unknown;
 }
 
 export interface DeploymentGetByIdParams {

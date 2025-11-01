@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX, IconSearch, IconUser, IconCheck, IconAlertTriangle } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";

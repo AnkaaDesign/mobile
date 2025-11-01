@@ -32,7 +32,7 @@ export const usePpeDeliveriesInfiniteMobile = (filters?: Partial<PpeDeliveryGetM
         ...filters,
       };
 
-      return ppeDeliveryService.getMany(params);
+      return (ppeDeliveryService as any).getMany?.(params) || ppeDeliveryService.getPpeDeliveries(params);
     },
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage.meta?.hasNextPage) return undefined;

@@ -29,7 +29,7 @@ interface PpeColumnVisibilityDrawerProps {
 }
 
 export function PpeColumnVisibilityDrawer({ columns, visibleColumns, onVisibilityChange, open, onOpenChange }: PpeColumnVisibilityDrawerProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
   const [localVisible, setLocalVisible] = useState(visibleColumns);

@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import { forwardRef } from "react";
 import { TextInput as RNTextInput, View, Text, TextInputProps as RNTextInputProps, StyleSheet} from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, fontSize, spacing } from "@/constants/design-system";

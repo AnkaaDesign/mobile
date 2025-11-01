@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { useState } from "react";
+import { View, StyleSheet } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,7 +7,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView } from "react-native";
 import { IconArrowDown, IconArrowUp, IconDeviceFloppy, IconX, IconLoader } from "@tabler/icons-react-native";
 import {
-  ThemedView,
   ThemedText,
   Card,
   Input,
@@ -17,7 +16,7 @@ import {
   SimpleFormField,
 } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
+import { spacing } from "@/constants/design-system";
 import { useItems, useUsers } from "@/hooks";
 import { ACTIVITY_OPERATION, ACTIVITY_REASON, ACTIVITY_REASON_LABELS } from "@/constants";
 
@@ -40,8 +39,8 @@ interface ActivitySimpleFormProps {
 
 export function ActivitySimpleForm({ onSubmit, onCancel, isSubmitting }: ActivitySimpleFormProps) {
   const { colors } = useTheme();
-  const [itemSearch, setItemSearch] = useState("");
-  const [userSearch, setUserSearch] = useState("");
+  const [itemSearch] = useState("");
+  const [userSearch] = useState("");
 
   const form = useForm<ActivitySimpleFormData>({
     resolver: zodResolver(activitySimpleSchema),
@@ -56,13 +55,13 @@ export function ActivitySimpleForm({ onSubmit, onCancel, isSubmitting }: Activit
   });
 
   // Fetch items
-  const { data: items, isLoading: isLoadingItems } = useItems({
+  const { data: items } = useItems({
     searchingFor: itemSearch,
     orderBy: { name: "asc" },
   });
 
   // Fetch users
-  const { data: users, isLoading: isLoadingUsers } = useUsers({
+  const { data: users } = useUsers({
     searchingFor: userSearch,
     orderBy: { username: "asc" },
   });

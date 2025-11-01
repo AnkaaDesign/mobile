@@ -1,16 +1,15 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconClipboardList, IconAlertCircle, IconChevronRight, IconChevronLeft } from "@tabler/icons-react-native";
 import type { User } from '../../../../types';
-import { routes, TASK_STATUS, TASK_STATUS_LABELS } from '../../../../constants';
-import { formatDate, formatCurrency } from '../../../../utils';
+import { routes, TASK_STATUS } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { TaskStatusBadge } from "@/components/production/task/list/task-status-badge";

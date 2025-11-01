@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
@@ -108,10 +108,10 @@ export default function CuttingPlanListScreen() {
   );
 
   const {
-    cuts,
+    items: cuts,
     isLoading,
     error,
-    refetch,
+    
     isRefetching,
     loadMore,
     canLoadMore,
@@ -133,15 +133,15 @@ export default function CuttingPlanListScreen() {
   }, [refresh]);
 
   const handleCreateCut = () => {
-    router.push(routeToMobilePath(routes.production.cutting.cuttingPlan.create) as any);
+    router.push(routeToMobilePath(routes.production.cutting.create) as any);
   };
 
   const handleCutPress = (cutId: string) => {
-    router.push(routeToMobilePath(routes.production.cutting.cuttingPlan.details(cutId)) as any);
+    router.push(routeToMobilePath(routes.production.cutting.details(cutId)) as any);
   };
 
   const handleEditCut = (cutId: string) => {
-    router.push(routeToMobilePath(routes.production.cutting.cuttingPlan.edit(cutId)) as any);
+    router.push(routeToMobilePath(routes.production.cutting.edit(cutId)) as any);
   };
 
   const handleDeleteCut = useCallback(

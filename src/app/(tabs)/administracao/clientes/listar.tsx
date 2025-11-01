@@ -1,14 +1,14 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCustomerMutations } from '../../../../hooks';
 import { useCustomersInfiniteMobile } from "@/hooks";
-import type { CustomerGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
+
+import { ThemedView, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
 import { CustomerTable, createColumnDefinitions } from "@/components/administration/customer/list/customer-table";
-import type { SortConfig } from "@/lib/sort-utils";
+
 import { CustomerFilterTags } from "@/components/administration/customer/list/customer-filter-tags";
 import { CustomerColumnVisibilityDrawer } from "@/components/administration/customer/list/customer-column-visibility-drawer";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
@@ -21,14 +21,14 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 // New hooks and components
 import { useTableSort } from "@/hooks/useTableSort";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
-import { BaseFilterDrawer, FilterSection, StringFilter, BooleanFilter, SelectFilter, MultiSelectFilter } from "@/components/common/filters";
+import { BaseFilterDrawer, StringFilter, BooleanFilter } from "@/components/common/filters";
 import { BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from '../../../../constants';
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 
 export default function CustomerListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -56,7 +56,6 @@ export default function CustomerListScreen() {
   const {
     visibleColumns,
     setVisibleColumns,
-    isLoading: isColumnsLoading,
   } = useColumnVisibility(
     "customers",
     ["fantasyName", "document"],
@@ -119,7 +118,6 @@ export default function CustomerListScreen() {
     customers,
     isLoading,
     error,
-    refetch,
     isRefetching,
     loadMore,
     canLoadMore,
@@ -188,7 +186,7 @@ export default function CustomerListScreen() {
   }, []);
 
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {
-    setVisibleColumns(Array.from(newColumns));
+    setVisibleColumns(newColumns);
   }, [setVisibleColumns]);
 
   // Get all column definitions
@@ -313,7 +311,7 @@ export default function CustomerListScreen() {
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
             onPress={() => setShowColumnManager(true)}
-            badgeCount={visibleColumns.length}
+            badgeCount={visibleColumns.size}
             badgeVariant="primary"
           />
           <ListActionButton
@@ -368,7 +366,7 @@ export default function CustomerListScreen() {
             onSelectionChange={handleSelectionChange}
             sortConfigs={sortConfigs}
             onSort={(configs) => handleSort(configs[0]?.columnKey || "fantasyName")}
-            visibleColumnKeys={visibleColumns}
+            visibleColumnKeys={Array.from(visibleColumns) as string[]}
             enableSwipeActions={true}
           />
         </TableErrorBoundary>
@@ -406,7 +404,7 @@ export default function CustomerListScreen() {
       {/* Column Visibility Drawer */}
       <CustomerColumnVisibilityDrawer
         columns={allColumns}
-        visibleColumns={new Set(visibleColumns)}
+        visibleColumns={visibleColumns}
         onVisibilityChange={handleColumnsChange}
         open={showColumnManager}
         onOpenChange={setShowColumnManager}

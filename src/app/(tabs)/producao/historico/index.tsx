@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { View, FlatList, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { SearchBar } from "@/components/ui/search-bar";
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 import { getDefaultVisibleColumns } from "@/components/production/task/list/column-visibility-manager";
-import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
+import { ColumnVisibilityDrawer } from "@/components/ui/column-visibility-drawer";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
@@ -30,7 +30,7 @@ type HistoryTab = "completed" | "cancelled" | "all";
 export default function ProductionHistoryScreen() {
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
-  const { delete: deleteTask } = useTaskMutations();
+  const { deleteAsync: deleteTask } = useTaskMutations();
 
   // Tab state
   const [activeTab, setActiveTab] = useState<HistoryTab>("all");
@@ -40,7 +40,7 @@ export default function ProductionHistoryScreen() {
 
   // Column visibility state
   const [showColumnManager, setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(Array.from(getDefaultVisibleColumns()));
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<Set<string>>(getDefaultVisibleColumns());
 
   // Debounced search
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -109,22 +109,19 @@ export default function ProductionHistoryScreen() {
   }, [activeTab, debouncedSearch, isProduction, user?.sectorId]);
 
   // Fetch tasks with infinite scroll
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error, refetch } = useTasksInfiniteMobile(queryParams);
+  const { items, loadMore: fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error, refetch } = useTasksInfiniteMobile(queryParams);
 
   // Flatten and group tasks by sector
   const tasksBySector = useMemo(() => {
-    if (!data?.pages) return [];
-    const allTasks = data.pages.flatMap((page) => page.data || []);
-    return groupTasksBySector(allTasks);
-  }, [data?.pages]);
+    const grouped = groupTasksBySector(items);
+    return Object.entries(grouped).map(([sectorName, tasks]) => ({
+      sectorName,
+      tasks,
+    }));
+  }, [items]);
 
   // Column definitions
-  const columnDefinitions = useMemo(() => createColumnDefinitions(user), [user]);
-
-  const visibleColumns = useMemo(
-    () => columnDefinitions.filter((col) => visibleColumnKeys.includes(col.key)),
-    [columnDefinitions, visibleColumnKeys]
-  );
+  const columnDefinitions = useMemo(() => createColumnDefinitions(), []);
 
   // Handlers
   const handleLoadMore = () => {
@@ -133,22 +130,22 @@ export default function ProductionHistoryScreen() {
     }
   };
 
-  const handleTaskPress = (task: Task) => {
-    router.push(`/producao/cronograma/detalhes/${task.id}` as any);
+  const handleTaskPress = (taskId: string) => {
+    router.push(`/producao/cronograma/detalhes/${taskId}` as any);
   };
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      await deleteTask.mutateAsync(taskId);
+      await deleteTask(taskId);
       showToast({
-        title: "Tarefa excluída com sucesso",
+        message: "Tarefa excluída com sucesso",
         type: "success",
       });
       refetch();
     } catch (error) {
       showToast({
         title: "Erro ao excluir tarefa",
-        description: error instanceof Error ? error.message : "Ocorreu um erro desconhecido",
+        message: error instanceof Error ? error.message : "Ocorreu um erro desconhecido",
         type: "error",
       });
     }
@@ -157,12 +154,12 @@ export default function ProductionHistoryScreen() {
   // Render list header with tabs
   const ListHeaderComponent = () => (
     <View style={styles.header}>
-      <ThemedText variant="h1" style={styles.title}>
+      <ThemedText size="2xl" weight="bold" style={styles.title}>
         Histórico de Tarefas
       </ThemedText>
 
       {/* Tabs */}
-      <View style={[styles.tabContainer, { backgroundColor: isDark ? colors.cardBackground : "#f3f4f6" }]}>
+      <View style={[styles.tabContainer, { backgroundColor: isDark ? colors.background : "#f3f4f6" }]}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "all" && { backgroundColor: colors.primary }]}
           onPress={() => setActiveTab("all")}
@@ -194,7 +191,7 @@ export default function ProductionHistoryScreen() {
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: colors.cardBackground }]}
+          style={[styles.actionButton, { backgroundColor: colors.background }]}
           onPress={() => setShowColumnManager(true)}
         >
           <ThemedText style={styles.actionButtonText}>Colunas</ThemedText>
@@ -205,14 +202,14 @@ export default function ProductionHistoryScreen() {
 
   const renderSectorGroup = ({ item }: { item: SectorGroup }) => (
     <View key={item.sectorName} style={styles.sectorGroup}>
-      <ThemedText variant="h3" style={styles.sectorTitle}>
+      <ThemedText size="lg" weight="semibold" style={styles.sectorTitle}>
         {item.sectorName}
       </ThemedText>
       <TaskTable
         tasks={item.tasks}
-        columns={visibleColumns}
+        visibleColumnKeys={Array.from(visibleColumnKeys)}
         onTaskPress={handleTaskPress}
-        onDeleteTask={canDelete ? handleDeleteTask : undefined}
+        onTaskDelete={canDelete ? handleDeleteTask : undefined}
       />
     </View>
   );
@@ -263,23 +260,23 @@ export default function ProductionHistoryScreen() {
       <FlatList
         data={tasksBySector}
         renderItem={renderSectorGroup}
-        keyExtractor={(item) => item.sectorName}
+        keyExtractor={(item) => item.sectorName || "unknown-sector"}
         ListHeaderComponent={ListHeaderComponent}
         ListFooterComponent={ListFooterComponent}
         ListEmptyComponent={ListEmptyComponent}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         refreshControl={<RefreshControl refreshing={isLoading && !isFetchingNextPage} onRefresh={refetch} colors={[colors.primary]} />}
-        contentContainerStyle={tasksBySector.length === 0 && styles.emptyListContent}
+        contentContainerStyle={tasksBySector.length === 0 ? styles.emptyListContent : undefined}
       />
 
       {/* Column Visibility Manager */}
-      <ColumnVisibilityDrawerV2
-        visible={showColumnManager}
-        onClose={() => setShowColumnManager(false)}
+      <ColumnVisibilityDrawer
+        open={showColumnManager}
+        onOpenChange={setShowColumnManager}
         columns={columnDefinitions}
         visibleColumns={visibleColumnKeys}
-        onVisibleColumnsChange={setVisibleColumnKeys}
+        onVisibilityChange={setVisibleColumnKeys}
       />
     </View>
   );

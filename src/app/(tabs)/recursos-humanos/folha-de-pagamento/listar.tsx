@@ -1,10 +1,9 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, ScrollView, RefreshControl, Pressable } from "react-native";
 import { useRouter } from "expo-router";
-import { IconFilter, IconDownload } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePayrollBonuses } from '@/hooks';
-import { ThemedView, ThemedText, ErrorScreen, EmptyState, Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/ui";
+import { ThemedView, ThemedText, ErrorScreen, EmptyState, Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
 import { formatCurrency } from '@/utils';
 import { useTheme } from "@/lib/theme";
 import { SECTOR_PRIVILEGES } from '@/constants';

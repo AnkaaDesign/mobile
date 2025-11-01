@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState} from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator, NativeSyntheticEvent, ImageErrorEventData } from "react-native";
 import type { File as AnkaaFile } from "../../types";
-import { formatFileSize, isImageFile, getFileExtension, getFileCategory } from "../../utils/file";
+import { formatFileSize, isImageFile } from "../../utils/file";
 import { formatRelativeTime } from "../../utils";
 import { useTheme } from "@/lib/theme";
 import { FileTypeIcon } from "@/components/ui/file-type-icon";
@@ -68,15 +68,12 @@ const FileItemGrid: React.FC<FileItemProps> = ({
   onPress,
   showFilename = true,
   showFileSize = true,
-  showRelativeTime = true,
   baseUrl,
 }) => {
   const { colors } = useTheme();
   const [thumbnailError, setThumbnailError] = useState(false);
   const [thumbnailLoading, setThumbnailLoading] = useState(true);
 
-  const isImage = isImageFile(file);
-  const isPdf = file.mimetype === "application/pdf";
   const hasThumbnail = !!getThumbnailUrl(file, "medium", baseUrl);
 
   const handlePress = () => {
@@ -335,7 +332,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   gridFileSize: {
-    fontSize: fontSize["2xs"],
+    fontSize: fontSize.xs,
     textAlign: "center",
     marginTop: 2,
   },

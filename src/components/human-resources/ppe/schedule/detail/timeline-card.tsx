@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -175,7 +175,6 @@ export function TimelineCard({ schedule }: TimelineCardProps) {
         <View style={styles.timeline}>
           {upcomingDeliveries.map((delivery, index) => {
             const isFirst = index === 0;
-            const isLast = index === upcomingDeliveries.length - 1;
 
             return (
               <View key={index} style={styles.timelineItem}>

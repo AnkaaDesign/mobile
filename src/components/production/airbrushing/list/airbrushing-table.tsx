@@ -1,5 +1,5 @@
-import React from "react";
-import { View, FlatList, Pressable } from "react-native";
+
+import { FlatList, Pressable } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -25,14 +25,14 @@ export function AirbrushingTable({
   isLoading,
   error,
   onAirbrushingPress,
-  onDelete,
+  // onDelete removed
   onRefresh,
   refreshing,
   onEndReach,
-  canLoadMore,
-  loadingMore,
+  // canLoadMore removed
+  // loadingMore removed
 }: AirbrushingTableProps) {
-  const { spacing, colors } = useTheme();
+  const { spacing} = useTheme();
 
   if (isLoading) {
     return <LoadingScreen />;

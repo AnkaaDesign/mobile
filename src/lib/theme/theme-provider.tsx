@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme as useSystemColorScheme } from "react-native";
 import { useColorScheme as useNativeWindColorScheme } from "nativewind";

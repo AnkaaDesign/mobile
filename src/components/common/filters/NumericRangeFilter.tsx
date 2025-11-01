@@ -73,7 +73,7 @@ export function NumericRangeFilter({
   label,
   minPlaceholder = 'Mínimo',
   maxPlaceholder = 'Máximo',
-  step = 1,
+  step: _step = 1,
   prefix,
   suffix,
   showClearButton = true,

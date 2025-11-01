@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState, useContext, ReactNode, useCallback, useRef } from "react";
+import { createContext, useEffect, useState, useContext, ReactNode, useCallback, useRef } from "react";
 import { authService, setAuthToken, setTokenProvider, setAuthErrorHandler, removeAuthErrorHandler } from '../api-client';
 import { storeToken, getStoredToken, removeStoredToken, storeUserData, getUserData, removeUserData } from "@/lib/storage";
 import { useRouter } from "expo-router";
@@ -6,10 +6,9 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Alert, View, Text, AppState, AppStateStatus } from "react-native";
 import { detectContactMethod } from '../utils';
 import { jwtDecode } from "jwt-decode";
-import { routes } from '../constants';
+
 import type { SignUpFormData, PasswordResetRequestFormData, VerifyCodeFormData, SendVerificationFormData } from '../schemas';
 import type { User } from '../types';
-import { routeToMobilePath } from "@/lib/route-mapper";
 
 interface AuthContextType {
   user: User | null;
@@ -97,16 +96,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       // Only logout for actual authentication errors (invalid/expired tokens), not authorization errors (insufficient permissions)
       const isTokenError =
-        error.message?.toLowerCase().includes("token") ||
-        error.message?.toLowerCase().includes("expirado") ||
-        error.message?.toLowerCase().includes("expired") ||
-        error.message?.toLowerCase().includes("inválido") ||
-        error.message?.toLowerCase().includes("invalid") ||
-        error.message?.toLowerCase().includes("não autenticado") ||
-        error.message?.toLowerCase().includes("unauthenticated");
+        ((error as any).message)?.toLowerCase().includes("token") ||
+        ((error as any).message)?.toLowerCase().includes("expirado") ||
+        ((error as any).message)?.toLowerCase().includes("expired") ||
+        ((error as any).message)?.toLowerCase().includes("inválido") ||
+        ((error as any).message)?.toLowerCase().includes("invalid") ||
+        ((error as any).message)?.toLowerCase().includes("não autenticado") ||
+        ((error as any).message)?.toLowerCase().includes("unauthenticated");
 
       // Check if it's a token-related 401 error, not just any unauthorized action
-      if (error.statusCode === 401 && isTokenError) {
+      if (((error as any).statusCode) === 401 && isTokenError) {
         console.log("[MOBILE AUTH DEBUG] Triggering logout due to token authentication error");
 
         try {
@@ -241,7 +240,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       console.log("[AUTH DEBUG] User data fetch successful");
       return data;
-    } catch (error) {
+    } catch (apiError: unknown) {
+      const error = apiError as { statusCode?: number; message?: string; status?: number };
       console.error("[AUTH DEBUG] Error fetching user data:", error);
 
       // Handle rate limiting specifically

@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,7 +6,6 @@ import { IconBriefcase, IconCheck, IconX } from "@tabler/icons-react-native";
 import { ThemedView, ThemedText, Button, ErrorScreen } from "@/components/ui";
 import { usePositions } from "@/hooks";
 import { useTheme } from "@/lib/theme";
-import { routes } from "@/constants";
 
 export default function PositionBatchEditScreen() {
   const router = useRouter();
@@ -102,7 +100,7 @@ export default function PositionBatchEditScreen() {
         <Button
           variant="default"
           onPress={() => Alert.alert("Em desenvolvimento", "Funcionalidade de edição em lote em desenvolvimento.")}
-          style={[styles.button, styles.saveButton]}
+          style={StyleSheet.flatten([styles.button, styles.saveButton])}
         >
           <IconCheck size={18} color="#fff" />
           <ThemedText style={styles.saveButtonText}>Salvar</ThemedText>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -103,12 +103,12 @@ export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) 
   const tasks = tasksResponse?.data || [];
 
   const handleTaskPress = useCallback((task: Task) => {
-    router.push(`/(tabs)/production/tasks/details/${task.id}`);
+    router.push(`/(tabs)/production/tasks/details/${task.id}` as any);
   }, [router]);
 
   const handleViewAll = useCallback(() => {
     router.push({
-      pathname: "/(tabs)/production/tasks/list",
+      pathname: "/(tabs)/producao/cronograma" as any,
       params: { paintId: paint.id },
     });
   }, [router, paint.id]);
@@ -216,7 +216,7 @@ export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) 
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder="Buscar tarefas..."
-                style={[styles.searchInput, { color: colors.foreground }]}
+                inputStyle={StyleSheet.flatten([styles.searchInput, { color: colors.foreground }])}
                 placeholderTextColor={colors.mutedForeground}
               />
             </View>
@@ -267,7 +267,7 @@ export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) 
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="Buscar tarefas..."
-              style={[styles.searchInput, { color: colors.foreground }]}
+              inputStyle={StyleSheet.flatten([styles.searchInput, { color: colors.foreground }])}
               placeholderTextColor={colors.mutedForeground}
             />
           </View>
@@ -290,9 +290,12 @@ export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) 
         <View style={[styles.tableContainer, { maxHeight }]}>
           <TaskTable
             tasks={tasks}
-            onTaskPress={handleTaskPress}
+            onTaskPress={(taskId: string) => {
+              const task = tasks.find(t => t.id === taskId);
+              if (task) handleTaskPress(task);
+            }}
             visibleColumnKeys={visibleColumnKeys}
-            isLoading={isLoading}
+            loading={isLoading}
           />
         </View>
       </View>

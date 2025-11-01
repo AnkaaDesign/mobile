@@ -5,7 +5,6 @@ import { IconChevronDown, IconChevronRight, IconX, IconFilter } from "@tabler/ic
 import { useTheme } from "@/lib/theme";
 import { useUsers } from '../../../../hooks';
 import { WARNING_CATEGORY, WARNING_SEVERITY, WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from '../../../../constants';
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";

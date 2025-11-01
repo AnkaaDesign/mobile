@@ -1,7 +1,6 @@
-import React from "react";
+
 import { View, Text, StyleSheet} from "react-native";
 import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from '../../../../constants';
-import { useTheme } from "@/lib/theme";
 
 interface FrequencyBadgeProps {
   frequency: SCHEDULE_FREQUENCY;

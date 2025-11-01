@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { OrderSchedule } from '../../../../types';
@@ -10,7 +10,6 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { OrderScheduleTableRowSwipe } from "./order-schedule-table-row-swipe";
 import { formatDateTime } from '../../../../utils';
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { SCHEDULE_FREQUENCY_LABELS } from '../../../../constants';
 import type { SortConfig } from "@/lib/sort-utils";
 
@@ -121,11 +120,11 @@ export function OrderScheduleTable({
   onSchedulePress,
   onScheduleEdit,
   onScheduleDelete,
-  onScheduleToggleActive,
+  // onScheduleToggleActive removed
   onRefresh,
   onEndReached,
   refreshing = false,
-  loading = false,
+  loading: _loading = false,
   loadingMore = false,
   showSelection = false,
   selectedSchedules = new Set(),
@@ -135,7 +134,7 @@ export function OrderScheduleTable({
   visibleColumnKeys = ["supplier", "frequency", "specificDate", "isActive"],
   enableSwipeActions = true,
 }: OrderScheduleTableProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { activeRowId: openRowId, setActiveRowId: setOpenRowId } = useSwipeRow();
 
   // All column definitions
@@ -154,7 +153,7 @@ export function OrderScheduleTable({
       ...col,
       width: baseWidth,
     }));
-  }, [visibleColumns]);
+  }, [visibleColumns, availableWidth]);
 
   const handleToggleSelection = useCallback(
     (scheduleId: string) => {
@@ -379,3 +378,5 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

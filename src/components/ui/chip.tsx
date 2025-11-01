@@ -26,9 +26,9 @@ export function Chip({
   style,
   labelStyle,
   removable = true,
-  icon,
+  // icon removed
 }: ChipProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   const getVariantStyles = () => {
     switch (variant) {

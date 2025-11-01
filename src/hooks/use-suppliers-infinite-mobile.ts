@@ -24,5 +24,5 @@ export function useSuppliersInfiniteMobile(params?: Partial<SupplierGetManyFormD
   const infiniteQuery = useSuppliersInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile(infiniteQuery as any);
 }

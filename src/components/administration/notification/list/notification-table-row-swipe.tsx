@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { Alert } from "react-native";
 import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row";
 import { IconTrash } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -56,4 +56,3 @@ export function NotificationTableRowSwipe({ notificationId, notificationTitle, o
   );
 }
 
-const styles = StyleSheet.create({});

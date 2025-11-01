@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect } from "react";
-import { View, StyleSheet, ViewStyle, Alert } from "react-native";
+import { View, StyleSheet, ViewStyle, Alert, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconEye } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/contexts/theme-context";
@@ -24,7 +24,7 @@ interface EmployeeTableRowSwipeProps {
   onDelete?: (employeeId: string) => void;
   onView?: (employeeId: string) => void;
   customActions?: CustomSwipeAction[];
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   disabled?: boolean;
 }
 
@@ -140,7 +140,7 @@ const EmployeeTableRowSwipeComponent = ({
   ];
 
   const handleWillOpen = useCallback(
-    (direction: "left" | "right") => {
+    (_direction: "left" | "right") => {
       // Clear any existing timer
       if (autoCloseTimerRef.current) {
         clearTimeout(autoCloseTimerRef.current);
@@ -157,7 +157,7 @@ const EmployeeTableRowSwipeComponent = ({
   );
 
   const handleOpen = useCallback(
-    (direction: "left" | "right", swipeable: Swipeable) => {
+    (_direction: "left" | "right", swipeable: Swipeable) => {
       setActiveRowId(employeeId);
 
       // Register the close function for legacy compatibility
@@ -205,7 +205,7 @@ const EmployeeTableRowSwipeComponent = ({
       onWillOpen={handleWillOpen}
       onOpen={handleOpen}
       onClose={handleClose}
-      containerStyle={[styles.container, style]}
+      containerStyle={StyleSheet.flatten([styles.container, style])}
       childrenContainerStyle={styles.rowContainer}
       actionWidth={ACTION_WIDTH}
     >

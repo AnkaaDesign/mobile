@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { View } from "react-native";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";

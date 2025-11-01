@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
-import { IconX } from "@tabler/icons-react-native";
+
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";

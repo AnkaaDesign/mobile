@@ -1,5 +1,5 @@
-import React from "react";
-import { TouchableOpacity, TouchableOpacityProps, ViewStyle, TextStyle , StyleSheet} from "react-native";
+
+import { TouchableOpacity, TouchableOpacityProps, ViewStyle, StyleSheet } from "react-native";
 import { useTheme } from "@/lib/theme";
 
 interface ThemedTouchableOpacityProps extends TouchableOpacityProps {

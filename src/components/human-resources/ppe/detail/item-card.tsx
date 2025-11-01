@@ -1,10 +1,9 @@
-import React from "react";
+
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
-import { DetailRow } from "@/components/ui/detail-row";
+
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
@@ -19,7 +18,7 @@ interface ItemCardProps {
 }
 
 export function ItemCard({ item }: ItemCardProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   const getStockStatus = () => {
     const quantity = item.quantity || 0;

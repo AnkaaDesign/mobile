@@ -13,7 +13,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { EmployeeTableRowSwipe } from "./employee-table-row-swipe";
 import { formatCPF, formatBrazilianPhone, formatDate, formatDateTime } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { USER_STATUS_LABELS } from '../../../../constants';
+
 import { USER_STATUS } from '../../../../constants';
 import { getUserStatusBadgeText } from '../../../../utils/user';
 import type { SortConfig } from "@/lib/sort-utils";
@@ -26,7 +26,6 @@ export interface TableColumn {
   align?: "left" | "center" | "right";
   sortable?: boolean;
 }
-
 
 interface EmployeeTableProps {
   employees: User[];
@@ -475,7 +474,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    const [_headerHeight, _setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
     // Get all column definitions
@@ -624,7 +623,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+            onLayout={(event) => _setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -688,7 +687,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
         if (enableSwipeActions && (onEmployeeEdit || onEmployeeDelete || onEmployeeView)) {
           return (
             <EmployeeTableRowSwipe key={employee.id} employeeId={employee.id} employeeName={employee.name} onEdit={onEmployeeEdit} onDelete={onEmployeeDelete} onView={onEmployeeView} disabled={showSelection}>
-              {(isActive) => (
+              {(_isActive) => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -820,7 +819,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 50,
               offset: 50 * index,
               index,
@@ -1019,3 +1018,5 @@ const styles = StyleSheet.create({
 });
 
 EmployeeTable.displayName = "EmployeeTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, StyleSheet, Modal, TouchableOpacity } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Combobox } from "@/components/ui/combobox";
 import { spacing } from "@/constants/design-system";
-import { VACATION_STATUS, VACATION_STATUS_LABELS, VACATION_TYPE, VACATION_TYPE_LABELS } from '../../../../constants';
+import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '../../../../constants';
 import { useUsers } from '../../../../hooks';
 import type { VacationGetManyFormData } from '../../../../schemas';
 
@@ -60,7 +60,7 @@ export const VacationFilterModal = ({ visible, onClose, onApply, currentFilters 
           statuses: [...currentStatuses, status as any],
         };
       } else {
-        const newStatuses = currentStatuses.filter((s) => s !== status);
+        const newStatuses = currentStatuses.filter((s: any /* TODO: Add proper type */) => s !== status);
         return {
           ...prev,
           statuses: newStatuses.length > 0 ? newStatuses : undefined,
@@ -79,7 +79,7 @@ export const VacationFilterModal = ({ visible, onClose, onApply, currentFilters 
           types: [...currentTypes, type as any],
         };
       } else {
-        const newTypes = currentTypes.filter((t) => t !== type);
+        const newTypes = currentTypes.filter((t: any /* TODO: Add proper type */) => t !== type);
         return {
           ...prev,
           types: newTypes.length > 0 ? newTypes : undefined,

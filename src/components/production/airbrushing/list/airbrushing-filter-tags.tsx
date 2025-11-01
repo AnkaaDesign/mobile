@@ -1,8 +1,6 @@
-import React from "react";
-import { View, Pressable } from "react-native";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
-import { IconX } from "@tabler/icons-react-native";
+
+import { View } from "react-native";
+
 import { useTheme } from "@/lib/theme";
 
 interface AirbrushingFilterTagsProps {
@@ -13,8 +11,8 @@ interface AirbrushingFilterTagsProps {
   onClearSearch: () => void;
 }
 
-export function AirbrushingFilterTags({ filters, searchText, onClearAll, onRemoveFilter, onClearSearch }: AirbrushingFilterTagsProps) {
-  const { spacing, colors } = useTheme();
+export function AirbrushingFilterTags({ }: AirbrushingFilterTagsProps) {
+  const { spacing} = useTheme();
 
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs }}>

@@ -1,12 +1,12 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, Pressable, Alert, StyleSheet } from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUserMutations } from '../../../../hooks';
 import { useUsersInfiniteMobile } from "@/hooks";
 import type { UserGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { EmployeeTable, createColumnDefinitions, getDefaultVisibleColumns } from "@/components/administration/employee/list/employee-table";
 import type { SortConfig } from "@/components/administration/employee/list/employee-table";
 import { EmployeeFilterDrawer } from "@/components/administration/employee/list/employee-filter-drawer";
@@ -21,7 +21,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function AdministrationEmployeesListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -90,7 +90,7 @@ export default function AdministrationEmployeesListScreen() {
     },
   };
 
-  const { items: employees, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useUsersInfiniteMobile(queryParams);
+  const { items: employees, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useUsersInfiniteMobile(queryParams);
   const { delete: deleteEmployee } = useUserMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -164,7 +164,7 @@ export default function AdministrationEmployeesListScreen() {
   const allColumns = useMemo(() => createColumnDefinitions(), []);
 
   // Count active filters
-  const activeFiltersCount = Object.entries(filters).filter(([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
+  const activeFiltersCount = Object.entries(filters).filter(([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
 
   if (isLoading && !isRefetching) {
     return <EmployeeListSkeleton />;

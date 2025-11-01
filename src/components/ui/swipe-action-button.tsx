@@ -23,7 +23,7 @@ export const SwipeActionButton: React.FC<SwipeActionButtonProps> = ({
   icon,
   onPress,
   progress,
-  dragX,
+  // dragX removed
   position,
   index,
   totalActions,

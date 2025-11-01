@@ -1,10 +1,10 @@
-import React from "react";
+
 import { View, ScrollView, TouchableOpacity , StyleSheet} from "react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconX, IconSearch } from "@tabler/icons-react-native";
 import { spacing } from "@/constants/design-system";
-import { BORROW_STATUS_LABELS } from '../../../../constants';
+import { BORROW_STATUS, BORROW_STATUS_LABELS } from '../../../../constants';
 import type { BorrowGetManyFormData } from '../../../../schemas';
 
 interface BorrowFilterTagsProps {
@@ -28,7 +28,7 @@ export const BorrowFilterTags = ({
 
   // Add status filters
   if (filters.statusIds?.length) {
-    filters.statusIds.forEach(status => {
+    filters.statusIds.forEach((status: BORROW_STATUS) => {
       filterTags.push({
         key: `status_${status}`,
         label: "Status",

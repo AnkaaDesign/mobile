@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import { FlatList, View, Pressable, RefreshControl, StyleSheet, Alert as AlertDialog } from "react-native";
 import { IconAlertTriangle, IconAlertCircle, IconInfoCircle, IconClock, IconCheck, IconBell, IconX } from "@tabler/icons-react-native";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { formatRelativeTime } from '../../../../../utils';
 import { NOTIFICATION_IMPORTANCE } from '../../../../../constants';
-import { ReanimatedSwipeableRow, type SwipeAction, type Swipeable } from "@/components/ui/reanimated-swipeable-row";
+import { ReanimatedSwipeableRow, type SwipeAction } from "@/components/ui/reanimated-swipeable-row";
 
 const ACTION_WIDTH = 80;
 
@@ -44,9 +44,7 @@ export function AlertTable({
   onDismiss,
   onRefresh,
   refreshing = false,
-  loading = false,
   onEndReached,
-  loadingMore = false,
 }: AlertTableProps) {
   const { colors } = useTheme();
 

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -108,7 +108,7 @@ export function DeliveryCompatibilityCard({ ppeSize }: DeliveryCompatibilityCard
                 <View style={[styles.sectionIconContainer, { backgroundColor: extendedColors.green[100] }]}>
                   <IconCircleCheck size={16} color={extendedColors.green[600]} />
                 </View>
-                <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>Disponíveis para Entrega ({availableTypes.length})</ThemedText>
+                <ThemedText style={[(styles as any).sectionTitle, { color: colors.foreground }]}>Disponíveis para Entrega ({availableTypes.length})</ThemedText>
               </View>
               <View style={styles.itemsGrid}>
                 {availableTypes.map((item) => (
@@ -140,7 +140,7 @@ export function DeliveryCompatibilityCard({ ppeSize }: DeliveryCompatibilityCard
                 >
                   <IconCircleX size={16} color={isDark ? extendedColors.red[400] : extendedColors.red[600]} />
                 </View>
-                <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>Indisponíveis para Entrega ({unavailableTypes.length})</ThemedText>
+                <ThemedText style={[(styles as any).sectionTitle, { color: colors.foreground }]}>Indisponíveis para Entrega ({unavailableTypes.length})</ThemedText>
               </View>
               <View style={styles.itemsGrid}>
                 {unavailableTypes.map((item) => (

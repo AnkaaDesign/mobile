@@ -1,16 +1,16 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet} from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useItemCategory } from '../../../../../../hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE, ORDER_STATUS, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from '../../../../../../constants';
-import { formatDate, formatCurrency, determineStockLevel, getStockLevelTextColor, getStockLevelMessage } from '../../../../../../utils';
+import { formatDate, formatCurrency, determineStockLevel } from '../../../../../../utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SkeletonCard } from "@/components/ui/loading";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
-import { Separator } from "@/components/ui/separator";
+
 import { Header } from "@/components/ui/header";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useTheme } from "@/lib/theme";
@@ -21,10 +21,10 @@ import {
   IconHistory,
   IconInfoCircle,
   IconCalendar,
-  IconHash,
+  
   IconShieldCheck,
   IconBox,
-  IconArrowRight,
+  
   IconAlertCircle,
   IconAlertTriangle,
   IconRefresh,

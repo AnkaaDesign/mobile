@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
@@ -89,7 +89,7 @@ export function EntityLinkCard({ changeLog, entityName }: EntityLinkCardProps) {
       case CHANGE_LOG_ENTITY_TYPE.PAINT_TYPE:
         return routes.painting.paintTypes.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.PAINT_GROUND:
-        return routes.painting.paintGrounds.details(entityId);
+        return null; // Grounds route not implemented in mobile yet
       case CHANGE_LOG_ENTITY_TYPE.PAINT_FORMULA:
         return routes.painting.formulas.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.PAINT_PRODUCTION:

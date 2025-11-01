@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -195,7 +195,20 @@ export default function TruckDetailsScreen() {
         <TruckInfoCard truck={truck} />
 
         {/* Task/Service Order Information */}
-        {truck.task && <TruckTaskInfoCard task={truck.task} />}
+        {truck.task && (
+          <TruckTaskInfoCard
+            task={{
+              id: truck.task.id,
+              name: truck.task.name,
+              plate: truck.task.plate ?? undefined,
+              serialNumber: truck.task.serialNumber ?? undefined,
+              customer: truck.task.customer ? {
+                fantasyName: truck.task.customer.fantasyName,
+                corporateName: truck.task.customer.corporateName ?? undefined,
+              } : undefined,
+            }}
+          />
+        )}
 
         {/* Location Information */}
         <TruckLocationCard truck={truck} />
@@ -203,9 +216,9 @@ export default function TruckDetailsScreen() {
         {/* Layouts Information */}
         <TruckLayoutsCard
           layouts={{
-            leftSideLayout: truck.leftSideLayout,
-            rightSideLayout: truck.rightSideLayout,
-            backSideLayout: truck.backSideLayout,
+            leftSideLayout: truck.leftSideLayout ? { ...truck.leftSideLayout, side: "LEFT" } : null,
+            rightSideLayout: truck.rightSideLayout ? { ...truck.rightSideLayout, side: "RIGHT" } : null,
+            backSideLayout: truck.backSideLayout ? { ...truck.backSideLayout, side: "BACK" } : null,
           }}
         />
 

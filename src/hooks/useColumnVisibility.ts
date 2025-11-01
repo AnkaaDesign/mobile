@@ -40,7 +40,7 @@ export function useColumnVisibility(
   allColumns?: string[]
 ) {
   const storageKey = `@column_visibility_${entityKey}`;
-  const [visibleColumns, setVisibleColumnsState] = useState<string[]>(defaultColumns);
+  const [visibleColumns, setVisibleColumnsState] = useState<Set<string>>(new Set(defaultColumns));
   const [isLoading, setIsLoading] = useState(true);
 
   // Load persisted column visibility on mount
@@ -54,9 +54,9 @@ export function useColumnVisibility(
           // Validate columns if allColumns provided
           if (allColumns) {
             const valid = parsed.filter(col => allColumns.includes(col));
-            setVisibleColumnsState(valid.length > 0 ? valid : defaultColumns);
+            setVisibleColumnsState(new Set(valid.length > 0 ? valid : defaultColumns));
           } else {
-            setVisibleColumnsState(parsed);
+            setVisibleColumnsState(new Set(parsed));
           }
         }
       } catch (error) {
@@ -70,10 +70,10 @@ export function useColumnVisibility(
   }, [entityKey, storageKey, defaultColumns, allColumns]);
 
   // Persist column visibility whenever it changes
-  const setVisibleColumns = useCallback(async (columns: string[]) => {
+  const setVisibleColumns = useCallback(async (columns: Set<string>) => {
     try {
       setVisibleColumnsState(columns);
-      await AsyncStorage.setItem(storageKey, JSON.stringify(columns));
+      await AsyncStorage.setItem(storageKey, JSON.stringify(Array.from(columns)));
     } catch (error) {
       console.error('Error saving column visibility:', error);
     }
@@ -82,13 +82,15 @@ export function useColumnVisibility(
   // Toggle a single column
   const toggleColumn = useCallback(async (columnKey: string) => {
     setVisibleColumnsState(current => {
-      const isVisible = current.includes(columnKey);
-      const newColumns = isVisible
-        ? current.filter(key => key !== columnKey)
-        : [...current, columnKey];
+      const newColumns = new Set(current);
+      if (newColumns.has(columnKey)) {
+        newColumns.delete(columnKey);
+      } else {
+        newColumns.add(columnKey);
+      }
 
       // Persist immediately
-      AsyncStorage.setItem(storageKey, JSON.stringify(newColumns)).catch(error =>
+      AsyncStorage.setItem(storageKey, JSON.stringify(Array.from(newColumns))).catch(error =>
         console.error('Error saving column visibility:', error)
       );
 
@@ -98,47 +100,49 @@ export function useColumnVisibility(
 
   // Show a column
   const showColumn = useCallback(async (columnKey: string) => {
-    if (visibleColumns.includes(columnKey)) return;
+    if (visibleColumns.has(columnKey)) return;
 
-    const newColumns = [...visibleColumns, columnKey];
+    const newColumns = new Set(visibleColumns);
+    newColumns.add(columnKey);
     await setVisibleColumns(newColumns);
   }, [visibleColumns, setVisibleColumns]);
 
   // Hide a column
   const hideColumn = useCallback(async (columnKey: string) => {
-    if (!visibleColumns.includes(columnKey)) return;
+    if (!visibleColumns.has(columnKey)) return;
 
-    const newColumns = visibleColumns.filter(key => key !== columnKey);
+    const newColumns = new Set(visibleColumns);
+    newColumns.delete(columnKey);
     await setVisibleColumns(newColumns);
   }, [visibleColumns, setVisibleColumns]);
 
   // Reset to default columns
   const resetToDefaults = useCallback(async () => {
-    await setVisibleColumns(defaultColumns);
+    await setVisibleColumns(new Set(defaultColumns));
   }, [defaultColumns, setVisibleColumns]);
 
   // Check if a column is visible
   const isColumnVisible = useCallback((columnKey: string): boolean => {
-    return visibleColumns.includes(columnKey);
+    return visibleColumns.has(columnKey);
   }, [visibleColumns]);
 
   // Get hidden columns
   const getHiddenColumns = useCallback((): string[] => {
     if (!allColumns) return [];
-    return allColumns.filter(col => !visibleColumns.includes(col));
+    return allColumns.filter(col => !visibleColumns.has(col));
   }, [allColumns, visibleColumns]);
 
   // Show all columns
   const showAllColumns = useCallback(async () => {
     if (!allColumns) return;
-    await setVisibleColumns(allColumns);
+    await setVisibleColumns(new Set(allColumns));
   }, [allColumns, setVisibleColumns]);
 
   // Hide all columns (keep at least one)
   const hideAllColumns = useCallback(async () => {
-    if (visibleColumns.length === 0 || !allColumns) return;
+    if (visibleColumns.size === 0 || !allColumns) return;
     // Keep the first default column visible
-    await setVisibleColumns([defaultColumns[0]]);
+    await setVisibleColumns(new Set([defaultColumns[0]]));
   }, [defaultColumns, allColumns, visibleColumns, setVisibleColumns]);
 
   return {
@@ -194,9 +198,9 @@ export function useColumnVisibilityWithTracking(
 
   // Check if current columns differ from defaults
   const hasChanges = useCallback((): boolean => {
-    if (base.visibleColumns.length !== defaultColumns.length) return true;
+    if (base.visibleColumns.size !== defaultColumns.length) return true;
 
-    return !base.visibleColumns.every(col => defaultColumns.includes(col));
+    return !defaultColumns.every(col => base.visibleColumns.has(col));
   }, [base.visibleColumns, defaultColumns]);
 
   return {
@@ -243,7 +247,7 @@ export function useColumnVisibilityWithGroups(
     if (!groupColumns) return;
 
     // Merge with current visible columns (don't hide others)
-    const newColumns = Array.from(new Set([...base.visibleColumns, ...groupColumns]));
+    const newColumns = new Set([...base.visibleColumns, ...groupColumns]);
     await base.setVisibleColumns(newColumns);
   }, [config.groups, base]);
 
@@ -252,7 +256,7 @@ export function useColumnVisibilityWithGroups(
     const groupColumns = config.groups[groupKey];
     if (!groupColumns) return;
 
-    const newColumns = base.visibleColumns.filter(col => !groupColumns.includes(col));
+    const newColumns = new Set(Array.from(base.visibleColumns).filter(col => !groupColumns.includes(col)));
     await base.setVisibleColumns(newColumns);
   }, [config.groups, base]);
 
@@ -261,7 +265,7 @@ export function useColumnVisibilityWithGroups(
     const groupColumns = config.groups[groupKey];
     if (!groupColumns) return;
 
-    await base.setVisibleColumns(groupColumns);
+    await base.setVisibleColumns(new Set(groupColumns));
   }, [config.groups, base]);
 
   // Check if a group is fully visible
@@ -269,7 +273,7 @@ export function useColumnVisibilityWithGroups(
     const groupColumns = config.groups[groupKey];
     if (!groupColumns) return false;
 
-    return groupColumns.every(col => base.visibleColumns.includes(col));
+    return groupColumns.every(col => base.visibleColumns.has(col));
   }, [config.groups, base.visibleColumns]);
 
   // Check if a group is partially visible
@@ -277,7 +281,7 @@ export function useColumnVisibilityWithGroups(
     const groupColumns = config.groups[groupKey];
     if (!groupColumns) return false;
 
-    return groupColumns.some(col => base.visibleColumns.includes(col));
+    return groupColumns.some(col => base.visibleColumns.has(col));
   }, [config.groups, base.visibleColumns]);
 
   return {

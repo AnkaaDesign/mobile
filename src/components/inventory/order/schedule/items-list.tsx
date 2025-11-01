@@ -1,9 +1,8 @@
-import React from "react";
+
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import { Card } from "@/components/ui/card";
 import type { OrderItem } from '../../../../types';
 import { formatCurrency } from '../../../../utils';
-import { useTheme } from "@/lib/theme";
 
 interface ItemsListProps {
   items: OrderItem[];

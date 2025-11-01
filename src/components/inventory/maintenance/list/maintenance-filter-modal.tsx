@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, Modal, TouchableOpacity } from "react-native";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -143,14 +142,14 @@ export function MaintenanceFilterModal({
             <View className="space-y-2">
               <DatePicker
                 label="De"
-                value={(localFilters.where?.scheduledFor as any)?.gte || null}
-                onChange={(date) => handleDateRangeChange("scheduledFor", "from", date)}
+                value={(localFilters.where?.scheduledFor as any)?.gte || undefined}
+                onChange={(date) => handleDateRangeChange("scheduledFor", "from", date ?? null)}
                 placeholder="Data inicial"
               />
               <DatePicker
                 label="Até"
-                value={(localFilters.where?.scheduledFor as any)?.lte || null}
-                onChange={(date) => handleDateRangeChange("scheduledFor", "to", date)}
+                value={(localFilters.where?.scheduledFor as any)?.lte || undefined}
+                onChange={(date) => handleDateRangeChange("scheduledFor", "to", date ?? null)}
                 placeholder="Data final"
               />
             </View>
@@ -162,14 +161,14 @@ export function MaintenanceFilterModal({
             <View className="space-y-2">
               <DatePicker
                 label="De"
-                value={(localFilters.where?.finishedAt as any)?.gte || null}
-                onChange={(date) => handleDateRangeChange("finishedAt", "from", date)}
+                value={(localFilters.where?.finishedAt as any)?.gte || undefined}
+                onChange={(date) => handleDateRangeChange("finishedAt", "from", date ?? null)}
                 placeholder="Data inicial"
               />
               <DatePicker
                 label="Até"
-                value={(localFilters.where?.finishedAt as any)?.lte || null}
-                onChange={(date) => handleDateRangeChange("finishedAt", "to", date)}
+                value={(localFilters.where?.finishedAt as any)?.lte || undefined}
+                onChange={(date) => handleDateRangeChange("finishedAt", "to", date ?? null)}
                 placeholder="Data final"
               />
             </View>

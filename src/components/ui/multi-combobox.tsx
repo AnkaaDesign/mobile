@@ -38,7 +38,7 @@ interface MultiComboboxProps {
   badgeStyle?: "badge" | "chip";
 }
 
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
+const { height: SCREEN_HEIGHT, width: _SCREEN_WIDTH } = Dimensions.get("window");
 const MAX_MODAL_HEIGHT = SCREEN_HEIGHT * 0.6;
 const LIST_MAX_HEIGHT = 300;
 
@@ -176,7 +176,7 @@ export const MultiCombobox = React.memo(function MultiCombobox({
         newSelectedValues = [...selectedValues, option.value];
       }
 
-      onValueChange(newSelectedValues);
+      onValueChange?.(newSelectedValues);
     },
     [selectedValues, onValueChange, maxSelections],
   );
@@ -193,7 +193,7 @@ export const MultiCombobox = React.memo(function MultiCombobox({
   const handleRemoveBadge = useCallback(
     (value: string) => {
       const newSelectedValues = selectedValues.filter((v) => v !== value);
-      onValueChange(newSelectedValues);
+      onValueChange?.(newSelectedValues);
     },
     [selectedValues, onValueChange],
   );
@@ -239,7 +239,7 @@ export const MultiCombobox = React.memo(function MultiCombobox({
       }
 
       const isSelected = selectedValues.includes(item.value);
-      const isAtLimit = maxSelections && selectedValues.length >= maxSelections && !isSelected;
+      const isAtLimit = !!(maxSelections && selectedValues.length >= maxSelections && !isSelected);
 
       // Use custom render if provided - wrap in TouchableOpacity with proper padding
       if (renderOption) {
@@ -453,7 +453,7 @@ export const MultiCombobox = React.memo(function MultiCombobox({
                 flexGrow: 1,
               }}
               // Virtualization optimizations - disabled for custom renderOption to ensure proper measurement
-              getItemLayout={!renderOption ? (_data: MultiComboboxOption[] | null | undefined, index: number) => ({
+              getItemLayout={!renderOption ? (_data: ArrayLike<MultiComboboxOption> | null | undefined, index: number) => ({
                 length: 48, // Fixed item height
                 offset: 48 * index,
                 index,

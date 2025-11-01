@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import React, { useCallback, useMemo, useRef} from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView , StyleSheet} from "react-native";
-import { IconChevronUp, IconChevronDown, IconArrowsVertical, IconShieldCheck } from "@tabler/icons-react-native";
+import { IconChevronUp, IconChevronDown, IconArrowsVertical } from "@tabler/icons-react-native";
 import type { ItemCategory } from '../../../../../types';
 import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from '../../../../../constants';
 import { ThemedText } from "@/components/ui/themed-text";
@@ -21,7 +21,6 @@ export interface TableColumn {
   sortable?: boolean;
   render?: (category: ItemCategory) => React.ReactNode;
 }
-
 
 interface CategoryTableProps {
   categories: ItemCategory[];
@@ -129,10 +128,10 @@ export function CategoryTable({
   onSort,
   visibleColumnKeys = DEFAULT_COLUMNS,
   enableSwipeActions = true,
-  onColumnsManage,
+  // onColumnsManage removed
 }: CategoryTableProps) {
   const theme = useTheme();
-  const { closeActiveRow, closeOpenRow } = useSwipeRow();
+  const { closeOpenRow } = useSwipeRow();
   const flatListRef = useRef<FlatList>(null);
 
   // Calculate columns based on visible keys
@@ -191,7 +190,7 @@ export function CategoryTable({
 
   // Render column header
   const renderColumnHeader = useCallback(
-    (column: TableColumn, index: number) => {
+    (column: TableColumn, _index: number) => {
       const sortConfig = sortConfigs.find((config) => config.columnKey === column.key);
       const sortIndex = sortConfigs.findIndex((config) => config.columnKey === column.key);
 
@@ -592,3 +591,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

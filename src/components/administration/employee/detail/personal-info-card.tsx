@@ -1,7 +1,7 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
-import { formatCPF, formatPIS, formatBrazilianPhone, formatDate, formatZipCode } from '../../../../utils';
+import { formatBrazilianPhone, formatDate, formatZipCode } from '../../../../utils';
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";

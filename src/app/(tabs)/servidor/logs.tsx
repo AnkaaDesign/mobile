@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ScrollView, RefreshControl, TextInput, Alert } from 'react-native';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useState, useRef } from 'react';
+import { ScrollView, RefreshControl } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { getServiceLogs, getServices } from '../../../api-client';
 import { ThemedView } from '@/components/ui/themed-view';
 import { ThemedText } from '@/components/ui/themed-text';
@@ -18,7 +18,6 @@ import { ErrorScreen } from '@/components/ui/error-screen';
 import { Select } from '@/components/ui/select';
 import { SearchBar } from '@/components/ui/search-bar';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
-import { toast } from '@/lib/toast';
 
 interface LogEntry {
   timestamp: string;
@@ -51,8 +50,6 @@ export default function ServerLogsScreen() {
   const [levelFilter, setLevelFilter] = useState<string>('');
   const [autoRefresh, setAutoRefresh] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
-  const { success, error: showError, warning, info } = useToast();
-
 
   // Query for available services
   const { data: servicesData } = useQuery({
@@ -91,24 +88,6 @@ export default function ServerLogsScreen() {
     scrollViewRef.current?.scrollTo({ x: 0, y: 0, animated: true });
   };
 
-  const handleClearLogs = () => {
-    Alert.alert(
-      'Confirmar limpeza',
-      'Deseja limpar os logs exibidos? Esta ação apenas limpa a visualização local.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Limpar',
-          style: 'destructive',
-          onPress: () => {
-            // This would typically call an API to clear logs
-            success('Visualização de logs limpa');
-          },
-        },
-      ]
-    );
-  };
-
   const parseLogLine = (line: string, serviceName: string): LogEntry | null => {
     // Try to parse different log formats
     const timestampRegex = /^(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})?)/;
@@ -145,12 +124,13 @@ export default function ServerLogsScreen() {
   }));
 
   let logs: LogEntry[] = [];
-  if (logsData?.data?.logs && selectedService) {
-    logs = logsData.data.logs
+  if (logsData?.data && selectedService) {
+    const logsString = typeof logsData.data === 'string' ? logsData.data : (logsData.data as any).logs || '';
+    logs = logsString
       .split('\n')
-      .filter(line => line.trim())
-      .map(line => parseLogLine(line, selectedService))
-      .filter(entry => entry !== null) as LogEntry[];
+      .filter((line: string) => line.trim())
+      .map((line: string) => parseLogLine(line, selectedService))
+      .filter((entry: LogEntry | null) => entry !== null) as LogEntry[];
   }
 
   // Apply filters

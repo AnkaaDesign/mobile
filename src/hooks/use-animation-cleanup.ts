@@ -28,7 +28,7 @@ export const useAnimationCleanup = (): UseAnimationCleanupReturn => {
    * Register an animation for tracking and automatic cleanup
    */
   const registerAnimation = useCallback((config: AnimationConfig) => {
-    const { name, value, autoCleanup = true } = config;
+    const { name, autoCleanup = true } = config;
 
     // Cancel any existing animation with the same name
     if (animationsRef.current.has(name)) {

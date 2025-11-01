@@ -1,11 +1,11 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { View, StyleSheet} from "react-native";
 import { Controller, useWatch, useFormContext } from "react-hook-form";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { PpeSizeSelector } from "./ppe-size-selector";
-import { PPE_TYPE, PPE_DELIVERY_MODE, PPE_TYPE_LABELS, PPE_DELIVERY_MODE_LABELS } from '../../../../constants';
+import { PPE_TYPE_LABELS, PPE_DELIVERY_MODE_LABELS } from '../../../../constants';
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';
 import { spacing } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
@@ -81,7 +81,7 @@ export function PpeConfigSection({ disabled, required }: PpeConfigSectionProps) 
         />
 
         <View style={StyleSheet.flatten([styles.field, styles.halfField])}>
-          <PpeSizeSelector ppeType={ppeType} disabled={disabled || !ppeType} required={required} name="ppeSize" />
+          <PpeSizeSelector ppeType={ppeType ?? undefined} disabled={disabled || !ppeType} required={required} name="ppeSize" />
         </View>
       </View>
 

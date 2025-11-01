@@ -1,11 +1,11 @@
-import React from "react";
+
 import { View, ScrollView, TouchableOpacity , StyleSheet} from "react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
+
 import { IconX, IconSearch } from "@tabler/icons-react-native";
 import { spacing } from "@/constants/design-system";
-import { ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '../../../../constants';
+import { ACTIVITY_OPERATION, ACTIVITY_REASON, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '../../../../constants';
 import type { ActivityGetManyFormData } from '../../../../schemas';
 
 interface ActivityFilterTagsProps {
@@ -29,7 +29,7 @@ export const ActivityFilterTags = ({
 
   // Add operation filters
   if (filters.operations?.length) {
-    filters.operations.forEach(op => {
+    filters.operations.forEach((op: ACTIVITY_OPERATION) => {
       filterTags.push({
         key: `operation_${op}`,
         label: "Operação",
@@ -40,7 +40,7 @@ export const ActivityFilterTags = ({
 
   // Add reason filters
   if (filters.reasons?.length) {
-    filters.reasons.forEach(reason => {
+    filters.reasons.forEach((reason: ACTIVITY_REASON) => {
       filterTags.push({
         key: `reason_${reason}`,
         label: "Motivo",

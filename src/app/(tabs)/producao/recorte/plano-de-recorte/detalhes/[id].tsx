@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -366,7 +366,7 @@ export default function CuttingPlanDetailsScreen() {
                 file={cut.file}
                 viewMode="grid"
                 baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                onPress={() => fileViewer.actions.viewFile(cut.file)}
+                onPress={() => cut.file && fileViewer.actions.viewFile(cut.file)}
               />
             </View>
           </Card>

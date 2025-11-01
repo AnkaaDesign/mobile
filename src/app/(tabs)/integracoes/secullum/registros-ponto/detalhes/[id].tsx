@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { View, ScrollView, Alert, Image, Modal, Dimensions , StyleSheet} from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSecullumTimeEntries } from '../../../../../../hooks';

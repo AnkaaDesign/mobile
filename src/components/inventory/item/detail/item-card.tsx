@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, Pressable , StyleSheet} from "react-native";
 import type { Item } from '../../../../types';
 import { formatCurrency, determineStockLevel } from '../../../../utils';
@@ -17,7 +17,7 @@ interface ItemCardProps {
   variant?: "default" | "compact";
 }
 
-export function ItemCard({ item, onPress, onEdit, showActions = true, variant = "default" }: ItemCardProps) {
+export function ItemCard({ item, onPress, showActions: _showActions = true, variant = "default" }: ItemCardProps) {
   const { colors } = useTheme();
 
   const currentPrice = item.prices?.[0]?.value || 0;

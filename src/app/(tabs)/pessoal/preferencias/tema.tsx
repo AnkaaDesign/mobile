@@ -181,7 +181,7 @@ export default function PreferencesThemeScreen() {
             </CardDescription>
           </CardHeader>
           <CardContent style={{ gap: 12 }}>
-            <RadioGroup value={theme} onValueChange={handleThemeChange}>
+            <RadioGroup value={theme} onValueChange={(value) => handleThemeChange(value as ThemeMode)}>
               {themeOptions.map((option) => (
                 <ThemeOption
                   key={option.mode}

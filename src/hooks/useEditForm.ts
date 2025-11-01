@@ -14,9 +14,8 @@ interface UseEditFormProps<TFieldValues extends FieldValues = FieldValues, TCont
   fieldsToOmitIfUnchanged?: (keyof TFieldValues)[];
 }
 
-interface UseEditFormReturn<TFieldValues extends FieldValues = FieldValues> extends Omit<UseFormReturn<TFieldValues>, "handleSubmit"> {
+interface UseEditFormReturn<TFieldValues extends FieldValues = FieldValues> extends UseFormReturn<TFieldValues> {
   handleSubmitChanges: (onValid?: (data: Partial<TFieldValues>) => unknown, onInvalid?: (errors: Record<string, unknown>) => unknown) => (e?: React.BaseSyntheticEvent) => Promise<void>;
-  reset: UseFormReturn<TFieldValues>["reset"];
   getChangedFields: () => Partial<TFieldValues>;
 }
 
@@ -42,8 +41,8 @@ function deepCompare(value1: unknown, value2: unknown): boolean {
 
   // Handle dates
   if (value1 instanceof Date || value2 instanceof Date) {
-    const date1 = value1 instanceof Date ? value1 : new Date(value1);
-    const date2 = value2 instanceof Date ? value2 : new Date(value2);
+    const date1 = value1 instanceof Date ? value1 : new Date(value1 as string | number | Date);
+    const date2 = value2 instanceof Date ? value2 : new Date(value2 as string | number | Date);
 
     // Check if both dates are valid
     if (!isNaN(date1.getTime()) && !isNaN(date2.getTime())) {

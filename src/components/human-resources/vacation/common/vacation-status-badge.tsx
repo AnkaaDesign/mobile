@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Badge, BadgeProps } from "@/components/ui/badge";
 import { VACATION_STATUS, VACATION_STATUS_LABELS, getBadgeVariant } from "@/constants";
 

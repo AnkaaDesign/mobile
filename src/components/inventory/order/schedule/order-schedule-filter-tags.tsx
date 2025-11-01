@@ -1,14 +1,9 @@
-import React from "react";
+
 import { View, Pressable, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import {
-  SCHEDULE_FREQUENCY_LABELS,
-  ORDER_STATUS_LABELS,
-  USER_STATUS_LABELS
-} from '../../../../constants';
 import type { OrderScheduleGetManyFormData } from '../../../../schemas';
 
 interface OrderScheduleFilterTagsProps {
@@ -26,7 +21,7 @@ export function OrderScheduleFilterTags({
   onSearchChange,
   onClearAll
 }: OrderScheduleFilterTagsProps) {
-  const { spacing, colors } = useTheme();
+  const { colors } = useTheme();
 
   const removeFilter = (key: string) => {
     const newFilters = { ...filters };

@@ -5,7 +5,7 @@ import { IconChevronUp, IconChevronDown, IconX } from "@tabler/icons-react-nativ
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";

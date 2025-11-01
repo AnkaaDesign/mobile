@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Switch } from "react-native";
+import { View, StyleSheet, ScrollView } from "react-native";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Input } from "@/components/ui/input";
+
 import type { PpeDeliveryGetManyFormData } from '../../../../schemas';
 
 interface PpeFilterModalProps {
@@ -23,7 +21,7 @@ export const PpeFilterModal: React.FC<PpeFilterModalProps> = ({
   onApply,
   currentFilters,
 }) => {
-  const { colors } = useTheme();
+
   const [filters, setFilters] = useState<Partial<PpeDeliveryGetManyFormData>>(currentFilters);
 
   useEffect(() => {
@@ -32,10 +30,10 @@ export const PpeFilterModal: React.FC<PpeFilterModalProps> = ({
 
   const handleApply = () => {
     // Remove empty values
-    const cleanedFilters = Object.entries(filters).reduce((acc, [key, value]) => {
+    const cleanedFilters = Object.entries(filters).reduce((acc, [key, value]: [string, any]) => {
       if (value !== undefined && value !== null && value !== "" &&
           (!Array.isArray(value) || value.length > 0)) {
-        acc[key as keyof typeof filters] = value;
+        (acc as any)[key] = value;
       }
       return acc;
     }, {} as Partial<any>);
@@ -46,7 +44,6 @@ export const PpeFilterModal: React.FC<PpeFilterModalProps> = ({
   const handleClear = () => {
     setFilters({});
   };
-
 
   const handleDateChange = (field: 'gte' | 'lte', date: Date | undefined) => {
     if (!date) {
@@ -72,7 +69,6 @@ export const PpeFilterModal: React.FC<PpeFilterModalProps> = ({
     }
   };
 
-
   return (
     <Modal
       visible={visible}
@@ -83,8 +79,6 @@ export const PpeFilterModal: React.FC<PpeFilterModalProps> = ({
           <ThemedText style={styles.sectionTitle}>Filtros</ThemedText>
         </View>
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-
-
 
         {/* Date Filters */}
         <View style={styles.section}>

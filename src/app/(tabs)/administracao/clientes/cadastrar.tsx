@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -38,7 +38,6 @@ export default function CreateCustomerScreen() {
     handleSubmit,
     formState: { errors, isValid },
     setValue,
-    watch,
   } = useForm<CustomerCreateFormData>({
     resolver: zodResolver(customerCreateSchema),
     mode: "onChange",
@@ -102,7 +101,7 @@ export default function CreateCustomerScreen() {
           {
             text: "OK",
             onPress: () => {
-              router.replace(routeToMobilePath(routes.administration.customers.details(result.data.id)) as any);
+              router.replace(routeToMobilePath(routes.administration.customers.details(result.data?.id || '')) as any);
             },
           },
         ]);

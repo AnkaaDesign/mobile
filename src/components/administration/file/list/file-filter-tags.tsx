@@ -1,6 +1,6 @@
-import React from "react";
+
 import { View, ScrollView, StyleSheet } from "react-native";
-import { IconX } from "@tabler/icons-react-native";
+
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,7 @@ interface FileFilterTagsProps {
   onClearAll: () => void;
 }
 
-export function FileFilterTags({ filters, searchText, onFilterChange, onSearchChange, onClearAll }: FileFilterTagsProps) {
+export function FileFilterTags({ filters, searchText, onFilterChange: _onFilterChange }: FileFilterTagsProps) {
   const { colors } = useTheme();
 
   // Extract filter values
@@ -40,35 +40,6 @@ export function FileFilterTags({ filters, searchText, onFilterChange, onSearchCh
     updatedEnd !== undefined;
 
   if (!hasFilters) return null;
-
-  // Helper to remove a MIME type
-  const removeMimeType = (mimeType: string) => {
-    const newMimeTypes = mimeTypes.filter((m: string) => m !== mimeType);
-    onFilterChange({
-      ...filters,
-      where: {
-        ...filters.where,
-        mimetype: newMimeTypes.length > 0 ? { in: newMimeTypes } : undefined,
-      },
-    });
-  };
-
-  // Helper to remove size filter
-  const removeSizeFilter = () => {
-    const newWhere = { ...filters.where };
-    delete newWhere.size;
-    onFilterChange({
-      ...filters,
-      where: newWhere,
-    });
-  };
-
-  // Helper to remove date filter
-  const removeDateFilter = (field: "createdAt" | "updatedAt") => {
-    const updatedFilters = { ...filters };
-    delete updatedFilters[field];
-    onFilterChange(updatedFilters);
-  };
 
   // Get MIME type labels
   const getMimeTypeLabel = (mimeType: string) => {

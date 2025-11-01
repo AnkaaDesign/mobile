@@ -54,7 +54,7 @@ export const TaskPaintCard: React.FC<TaskPaintCardProps> = ({
         <View style={styles.previewContainer}>
           <PaintPreview
             baseColor={paint.hex || "#888888"}
-            finish={paint.finish || "SOLID"}
+            finish={paint.finish || PAINT_FINISH.SOLID}
             width={size}
             height={size}
             borderRadius={8}

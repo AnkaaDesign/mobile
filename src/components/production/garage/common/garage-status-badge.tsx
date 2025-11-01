@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Badge, BadgeProps } from "@/components/ui/badge";
 import { GARAGE_STATUS, GARAGE_STATUS_LABELS, getBadgeVariant } from "@/constants";
 

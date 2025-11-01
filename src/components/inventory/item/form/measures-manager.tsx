@@ -7,13 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Combobox } from "@/components/ui/combobox";
-import { Separator } from "@/components/ui/separator";
+
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { MEASURE_UNIT, MEASURE_TYPE, MEASURE_UNIT_LABELS, MEASURE_TYPE_LABELS } from '../../../../constants';
-import { getUnitsInCategory, getMeasureUnitCategory, convertValue, canConvertUnits, MEASURE_CATEGORIES } from '../../../../types/measure';
-import { validateMeasures, getConversionOptions, formatMeasureValue, type MeasureFormData } from "@/utils/measure-utils";
+import { getUnitsInCategory, getMeasureUnitCategory, convertValue, canConvertUnits } from '../../../../types/measure';
+import { validateMeasures, type MeasureFormData } from "@/utils/measure-utils";
 import { IconPlus, IconTrash, IconScale, IconRuler, IconPackage, IconDroplet, IconHash } from "@tabler/icons-react-native";
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';
 
@@ -27,9 +27,9 @@ interface MeasuresManagerProps {
 
 export function MeasuresManager({ disabled }: MeasuresManagerProps) {
   const { control } = useFormContext<ItemFormData>();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [expandedMeasure, setExpandedMeasure] = useState<number | null>(null);
-  const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: string[]; warnings: string[] } | null>(null);
+  const [_validationResult, _setValidationResult] = useState<{ isValid: boolean; errors: string[]; warnings: string[] } | null>(null);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -41,9 +41,9 @@ export function MeasuresManager({ disabled }: MeasuresManagerProps) {
     if (fields.length > 0) {
       const measures = fields.map((field) => field as unknown as MeasureFormData);
       const result = validateMeasures(measures);
-      setValidationResult(result);
+      _setValidationResult(result);
     } else {
-      setValidationResult(null);
+      _setValidationResult(null);
     }
   }, [fields]);
 

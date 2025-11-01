@@ -45,7 +45,7 @@ const Modal: React.FC<ModalProps> = ({
   statusBarTranslucent = Platform.OS === "android",
   style,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors: _colors } = useTheme();
 
   // Handle Android back button
   React.useEffect(() => {

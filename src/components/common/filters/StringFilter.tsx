@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TextInput } from '@/components/ui/text-input';
 import { Label } from '@/components/ui/label';

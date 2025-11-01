@@ -5,21 +5,21 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
-import { ThemedView } from "@/components/ui/themed-view";
+
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useActivity, useActivityMutations } from '../../../../../hooks';
-import { hasPrivilege, formatDate, formatDateTime, formatCurrency } from '../../../../../utils';
+import { hasPrivilege, formatDateTime, formatCurrency } from '../../../../../utils';
 import { SECTOR_PRIVILEGES, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS, ACTIVITY_OPERATION } from '../../../../../constants';
-import { IconBox, IconUser, IconCalendar, IconTruck, IconPackage, IconArrowUp, IconArrowDown, IconRefresh } from "@tabler/icons-react-native";
+import { IconArrowUp, IconArrowDown, IconRefresh } from "@tabler/icons-react-native";
 import { ActivityDetailSkeleton } from "@/components/inventory/activity/skeleton/activity-detail-skeleton";
 
 export default function ActivityDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);

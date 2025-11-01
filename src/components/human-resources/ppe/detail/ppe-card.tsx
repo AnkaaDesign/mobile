@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -51,12 +51,12 @@ export function PpeCard({ item }: PpeCardProps) {
         </View>
 
         {item.ppeCA && (
-          <DetailRow icon={IconCertificate} label="CA (Certificado de Aprovação)" value={item.ppeCA} />
+          <DetailRow icon={IconCertificate as any} label="CA (Certificado de Aprovação)" value={item.ppeCA} />
         )}
 
         {item.ppeStandardQuantity && (
           <DetailRow
-            icon={IconClock}
+            icon={IconClock as any}
             label="Quantidade Padrão"
             value={`${item.ppeStandardQuantity} unidade${item.ppeStandardQuantity > 1 ? "s" : ""}`}
           />
@@ -64,7 +64,7 @@ export function PpeCard({ item }: PpeCardProps) {
 
         {item.ppeAutoOrderMonths && (
           <DetailRow
-            icon={IconCalendar}
+            icon={IconCalendar as any}
             label="Período de Pedido Automático"
             value={`${item.ppeAutoOrderMonths} ${item.ppeAutoOrderMonths === 1 ? "mês" : "meses"}`}
           />

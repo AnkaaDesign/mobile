@@ -118,6 +118,13 @@ export const routes = {
 
   // Financial - Financeiro - Financial Management
   financial: {
+    customers: {
+      batchEdit: "/financeiro/clientes/editar-em-lote",
+      create: "/financeiro/clientes/cadastrar",
+      details: (id: string) => `/financeiro/clientes/detalhes/${id}`,
+      edit: (id: string) => `/financeiro/clientes/editar/${id}`,
+      root: "/financeiro/clientes",
+    },
     root: "/financeiro",
   },
 

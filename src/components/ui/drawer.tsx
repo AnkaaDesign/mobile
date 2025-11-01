@@ -10,7 +10,7 @@ import Animated, {
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
-import { borderRadius, shadow, spacing, transitions } from "@/constants/design-system";
+import { borderRadius, spacing } from "@/constants/design-system";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -47,11 +47,11 @@ interface DrawerFooterProps {
 
 const Drawer: React.FC<DrawerProps> = ({
   open,
-  visible,
+  // visible removed
   onOpenChange,
-  onClose,
+  onClose: _onClose,
   children,
-  title,
+  // title removed
   side = "left",
   position,
   width = "80%",
@@ -60,12 +60,6 @@ const Drawer: React.FC<DrawerProps> = ({
   closeOnSwipe = true,
   style,
 }) => {
-  // Handle both prop patterns
-  const isOpen = open ?? visible ?? false;
-  const handleClose = () => {
-    onOpenChange?.(false);
-    onClose?.();
-  };
   const actualSide = position === "left" || position === "right" ? position : side;
   const { colors } = useTheme();
   const translateX = useSharedValue(actualSide === "left" ? -SCREEN_WIDTH : SCREEN_WIDTH);
@@ -87,7 +81,7 @@ const Drawer: React.FC<DrawerProps> = ({
   React.useEffect(() => {
     if (Platform.OS === "android" && open) {
       const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
-        onOpenChange(false);
+        onOpenChange?.(false);
         return true;
       });
 
@@ -115,7 +109,7 @@ const Drawer: React.FC<DrawerProps> = ({
   }, [open, side, drawerWidth, opacity, translateX]);
 
   const close = React.useCallback(() => {
-    onOpenChange(false);
+    onOpenChange?.(false);
   }, [onOpenChange]);
 
   const startX = useSharedValue(0);

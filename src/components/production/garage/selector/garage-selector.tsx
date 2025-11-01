@@ -1,8 +1,6 @@
-import React, { useState } from "react";
 import { View, ViewStyle } from "react-native";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ThemedText } from "@/components/ui/themed-text";
-import { useTheme } from "@/lib/theme";
 
 interface GarageSelectorProps {
   value?: string;
@@ -19,7 +17,6 @@ export function GarageSelector({
   disabled = false,
   style,
 }: GarageSelectorProps) {
-  const { colors } = useTheme();
 
   return (
     <View style={style}>

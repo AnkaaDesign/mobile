@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, Alert, Pressable , StyleSheet} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { IconEdit, IconTrash, IconPackage, IconUser, IconCalendar, IconCurrency } from "@tabler/icons-react-native";
+import { IconEdit, IconTrash, IconPackage, IconCalendar, IconCurrency } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrderItem, useOrderItemMutations } from '../../../../../../../hooks';
 import { ThemedView, ThemedText, ErrorScreen, LoadingScreen, FAB } from "@/components/ui";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 import { useTheme } from "@/lib/theme";
 import { formatCurrency, formatDate } from '../../../../../../../utils';
 import { useAuth } from "@/contexts/auth-context";
@@ -19,7 +19,7 @@ export default function OrderItemDetailScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const [refreshing, setRefreshing] = useState(false);
+  const [_refreshing, setRefreshing] = useState(false);
 
   // Check permissions
   const canEdit = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);

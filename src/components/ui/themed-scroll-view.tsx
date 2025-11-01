@@ -1,4 +1,4 @@
-import React from "react";
+
 import { ScrollView, ScrollViewProps, StyleSheet} from "react-native";
 import { useTheme } from "@/contexts/theme-context";
 

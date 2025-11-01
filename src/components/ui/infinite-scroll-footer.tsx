@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ActivityIndicator , StyleSheet} from "react-native";
 import { IconCheck, IconAlertCircle } from "@tabler/icons-react-native";
 import { ThemedText } from "./themed-text";

@@ -1,8 +1,8 @@
-import React from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+
+import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
+
 import { IconClipboardList } from "@tabler/icons-react-native";
 import { router } from "expo-router";
 import type { Sector } from '../../../../types';

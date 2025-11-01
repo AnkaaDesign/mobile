@@ -57,7 +57,7 @@ export interface UseFilePreviewReturn {
  * );
  * ```
  */
-export function useFilePreview(options: UseFilePreviewOptions = {}): UseFilePreviewReturn {
+export function useFilePreview(_options: UseFilePreviewOptions = {}): UseFilePreviewReturn {
   const [isVisible, setIsVisible] = useState(false);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const [files, setFiles] = useState<AnkaaFile[]>([]);

@@ -5,7 +5,7 @@ import {
   CollapsibleTrigger,
   CollapsibleContent,
 } from '@/components/ui/collapsible';
-import { Button } from '@/components/ui/button';
+
 import { Text } from '@/components/ui/text';
 import { Badge } from '@/components/ui/badge';
 import { IconChevronDown } from '@tabler/icons-react-native';

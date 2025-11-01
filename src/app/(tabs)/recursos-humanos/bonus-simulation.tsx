@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Alert } from "react-native";
-import { useRouter } from "expo-router";
+import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ThemedView, ThemedText, ErrorScreen, EmptyState } from "@/components/ui";
+import { ThemedView, ThemedText, EmptyState } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -204,7 +204,7 @@ export default function BonusSimulationScreen() {
         <View style={styles.usersContainer}>
           <ThemedText style={styles.sectionTitle}>Colaboradores ({simulatedUsers.length})</ThemedText>
 
-          {simulatedUsers.map((user, index) => (
+          {simulatedUsers.map((user, ) => (
             <Card
               key={user.id}
               style={[

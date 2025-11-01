@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
 import { TASK_STATUS } from '../../../../constants';

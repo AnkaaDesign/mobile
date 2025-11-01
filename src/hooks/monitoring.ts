@@ -7,17 +7,6 @@ import {
   backupService,
   webDavService,
 } from '@/api-client';
-import type {
-  SystemHealthGetUniqueResponse,
-  SystemHealthGetManyResponse,
-  SystemMetricsGetUniqueResponse,
-  SystemServicesResponse,
-  ServiceLogsResponse,
-  SsdHealthDataGetManyResponse,
-  RaidStatusGetManyResponse,
-  BackupMetadataGetManyResponse,
-  WebDavInfoGetManyResponse,
-} from '@/types';
 
 // Query keys for monitoring
 export const monitoringKeys = {

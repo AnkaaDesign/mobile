@@ -1,4 +1,4 @@
-import React from "react";
+
 import { ThemedStatusBar } from "./ui/themed-status-bar";
 
 export function AppStatusBar() {

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
@@ -9,11 +9,11 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconClipboardList, IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
-import { routes, TASK_STATUS } from '../../../../constants';
+import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
-import { getDefaultVisibleColumns } from "@/components/production/task/list/column-visibility-manager";
-import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
+
+import { ColumnVisibilityDrawer } from "@/components/ui/column-visibility-drawer";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useTasks } from "@/hooks";
 
@@ -24,7 +24,6 @@ interface TasksTableProps {
 
 export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
   const { colors } = useTheme();
-  const totalTasks = customer._count?.tasks || 0;
 
   // Use only name and serialNumber columns for customer detail view
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
@@ -175,7 +174,7 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
       </View>
 
       {/* Column Visibility Drawer */}
-      <ColumnVisibilityDrawerV2
+      <ColumnVisibilityDrawer
         columns={allColumns}
         visibleColumns={new Set(visibleColumnKeys)}
         onVisibilityChange={handleColumnsChange}

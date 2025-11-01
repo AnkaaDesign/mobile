@@ -17,7 +17,7 @@ interface BorrowItemInfoCardProps {
   borrow: Borrow & {
     item?: {
       name: string;
-      uniCode?: string;
+      uniCode: string | null;
       brand?: {
         name: string;
       };

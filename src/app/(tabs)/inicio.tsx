@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { UnderConstruction } from "@/components/ui/under-construction";
 import { useTheme } from "@/lib/theme";

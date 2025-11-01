@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Modal, View, ScrollView, TouchableOpacity, Platform, Dimensions, StyleSheet} from "react-native";
+import { Modal, View, ScrollView, TouchableOpacity, Dimensions, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconChevronUp, IconChevronDown, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -54,7 +54,8 @@ interface FilterState {
   // Range filters
   quantityRange?: FilterRange;
   totalPriceRange?: FilterRange;
-  taxRange?: FilterRange;
+  icmsRange?: FilterRange;
+  ipiRange?: FilterRange;
   monthlyConsumptionRange?: FilterRange;
   measureValueRange?: FilterRange;
 
@@ -120,7 +121,8 @@ export function ItemFilterModal({ visible, onClose, onApply, currentFilters }: I
     if (filters.supplierIds?.length) count++;
     if (filters.quantityRange?.min !== undefined || filters.quantityRange?.max !== undefined) count++;
     if (filters.totalPriceRange?.min !== undefined || filters.totalPriceRange?.max !== undefined) count++;
-    if (filters.taxRange?.min !== undefined || filters.taxRange?.max !== undefined) count++;
+    if (filters.icmsRange?.min !== undefined || filters.icmsRange?.max !== undefined) count++;
+    if (filters.ipiRange?.min !== undefined || filters.ipiRange?.max !== undefined) count++;
     if (filters.monthlyConsumptionRange?.min !== undefined || filters.monthlyConsumptionRange?.max !== undefined) count++;
     if (filters.measureValueRange?.min !== undefined || filters.measureValueRange?.max !== undefined) count++;
     if (filters.measureUnits?.length) count++;
@@ -214,7 +216,7 @@ export function ItemFilterModal({ visible, onClose, onApply, currentFilters }: I
     setFilters({});
   };
 
-  const renderSection = (key: string, title: string, children: React.ReactNode, defaultExpanded = false) => {
+  const renderSection = (key: string, title: string, children: React.ReactNode, _defaultExpanded = false) => {
     const isExpanded = expandedSections.has(key);
 
     return (
@@ -265,7 +267,7 @@ export function ItemFilterModal({ visible, onClose, onApply, currentFilters }: I
     </View>
   );
 
-  const renderRangeInputs = (key: keyof FilterState, label: string, placeholder: string, suffix?: string) => {
+  const renderRangeInputs = (key: keyof FilterState, label: string, _placeholder: string, suffix?: string) => {
     const range = (filters[key] as FilterRange) || {};
 
     return (
@@ -498,7 +500,8 @@ export function ItemFilterModal({ visible, onClose, onApply, currentFilters }: I
               <View style={styles.rangeContainer}>
                 {renderRangeInputs("quantityRange", "Quantidade em Estoque", "quantidade")}
                 {renderRangeInputs("totalPriceRange", "Preço Total", "preço", "R$")}
-                {renderRangeInputs("taxRange", "Taxa", "taxa", "%")}
+                {renderRangeInputs("icmsRange", "ICMS", "ICMS", "%")}
+                {renderRangeInputs("ipiRange", "IPI", "IPI", "%")}
                 {renderRangeInputs("monthlyConsumptionRange", "Consumo Mensal", "consumo")}
                 {renderRangeInputs("measureValueRange", "Valor de Medida", "medida")}
               </View>,

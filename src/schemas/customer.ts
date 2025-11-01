@@ -435,7 +435,7 @@ const customerTransform = (data: any) => {
   delete data.take;
 
   // Extract convenience filters
-  const { searchingFor, hasTasks, hasLogo, cities, states, tags, taskCount } = data;
+  const { searchingFor, hasTasks, hasLogo, cities, states, tags} = data;
 
   // Build where conditions
   const andConditions: any[] = [];

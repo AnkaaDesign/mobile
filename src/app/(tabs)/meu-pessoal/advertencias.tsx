@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { PrivilegeGuard } from "@/components/privilege-guard";
@@ -13,7 +13,7 @@ import { TeamWarningTable } from "@/components/my-team/warning/team-warning-tabl
 import { TeamWarningFilterModal, type TeamWarningFilters } from "@/components/my-team/warning/team-warning-filter-modal";
 import { TeamWarningFilterTags } from "@/components/my-team/warning/team-warning-filter-tags";
 import { useWarningsInfiniteMobile } from "@/hooks";
-import { useAuth } from '../../../hooks';
+import { useAuth } from '../../../contexts/auth-context';
 import { IconAlertTriangle, IconFilter } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import type { User } from '../../../types';
@@ -85,12 +85,9 @@ export default function MyTeamWarningsScreen() {
 
   // Fetch warnings with infinite scroll
   const {
-    data: warnings,
+    items: warnings,
     isLoading: isLoadingWarnings,
-    error: warningsError,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
+    error: _error,
     refetch: refetchWarnings,
   } = useWarningsInfiniteMobile({
     ...queryParams,
@@ -100,7 +97,7 @@ export default function MyTeamWarningsScreen() {
   // Get unique team members for filter
   const teamMembers = useMemo(() => {
     const members = new Map<string, User>();
-    warnings.forEach((warning) => {
+    warnings.forEach((warning: any /* TODO: Add proper type */) => {
       if (warning.collaborator && !members.has(warning.collaborator.id)) {
         members.set(warning.collaborator.id, warning.collaborator);
       }
@@ -134,18 +131,12 @@ export default function MyTeamWarningsScreen() {
   }, []);
 
   const handleWarningPress = useCallback((warningId: string) => {
-    router.push(`/meu-pessoal/advertencias/detalhes/${warningId}`);
+    router.push(`/meu-pessoal/advertencias/detalhes/${warningId}` as any);
   }, []);
 
   const handleRefresh = async () => {
     await refetchWarnings();
   };
-
-  const handleLoadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const isLoading = isLoadingAuth || isLoadingWarnings;
 

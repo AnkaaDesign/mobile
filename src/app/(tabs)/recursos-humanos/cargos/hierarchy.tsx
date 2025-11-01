@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { useState, useEffect, useCallback } from "react";
+import { View, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist";
@@ -9,8 +9,6 @@ import { IconGripVertical, IconCheck, IconX } from "@tabler/icons-react-native";
 import { ThemedView, ThemedText, Button, ErrorScreen } from "@/components/ui";
 import { usePositions, usePositionBatchMutations } from "@/hooks";
 import { useTheme } from "@/lib/theme";
-import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
 
 interface Position {
   id: string;
@@ -40,13 +38,13 @@ export default function PositionHierarchyScreen() {
         if (a.hierarchy === null) return 1;
         if (b.hierarchy === null) return -1;
         return a.hierarchy - b.hierarchy;
-      });
+      }) as Position[];
       setPositions(sorted);
     }
   }, [positionsData]);
 
   const handleDragEnd = useCallback(({ data }: { data: Position[] }) => {
-    setPositions(data);
+    setPositions(data as Position[]);
     setHasChanges(true);
   }, []);
 
@@ -182,7 +180,7 @@ export default function PositionHierarchyScreen() {
             variant="default"
             onPress={handleSave}
             disabled={!hasChanges || isSaving}
-            style={[styles.button, styles.saveButton]}
+            style={StyleSheet.flatten([styles.button, styles.saveButton])}
           >
             {isSaving ? (
               <>

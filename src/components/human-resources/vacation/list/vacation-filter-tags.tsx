@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -24,7 +24,7 @@ export const VacationFilterTags = ({ filters, searchText, onFilterChange, onSear
   // Add status filters
   const statuses = filters.statuses || [];
   if (statuses.length > 0) {
-    statuses.forEach((status) => {
+    statuses.forEach((status: any /* TODO: Add proper type */) => {
       filterTags.push({
         key: `status_${status}`,
         label: "Status",
@@ -36,7 +36,7 @@ export const VacationFilterTags = ({ filters, searchText, onFilterChange, onSear
   // Add type filters
   const types = filters.types || [];
   if (types.length > 0) {
-    types.forEach((type) => {
+    types.forEach((type: any /* TODO: Add proper type */) => {
       filterTags.push({
         key: `type_${type}`,
         label: "Tipo",
@@ -77,7 +77,7 @@ export const VacationFilterTags = ({ filters, searchText, onFilterChange, onSear
     if (key.startsWith("status_")) {
       const statusToRemove = key.replace("status_", "");
       const currentStatuses = newFilters.statuses || [];
-      const newStatuses = currentStatuses.filter((s) => s !== statusToRemove);
+      const newStatuses = currentStatuses.filter((s: any /* TODO: Add proper type */) => s !== statusToRemove);
 
       if (newStatuses.length > 0) {
         newFilters.statuses = newStatuses as any;
@@ -87,7 +87,7 @@ export const VacationFilterTags = ({ filters, searchText, onFilterChange, onSear
     } else if (key.startsWith("type_")) {
       const typeToRemove = key.replace("type_", "");
       const currentTypes = newFilters.types || [];
-      const newTypes = currentTypes.filter((t) => t !== typeToRemove);
+      const newTypes = currentTypes.filter((t: any /* TODO: Add proper type */) => t !== typeToRemove);
 
       if (newTypes.length > 0) {
         newFilters.types = newTypes as any;

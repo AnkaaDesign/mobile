@@ -17,11 +17,10 @@ import { Icon } from "@/components/ui/icon";
 
 export default function BackupsListScreen() {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [_searchTerm, setSearchTerm] = useState("");
   const [displaySearch, setDisplaySearch] = useState("");
 
   const { data, isLoading, refetch, isFetching } = useBackups({
-    search: searchTerm,
     orderBy: { createdAt: "desc" },
   });
 
@@ -78,7 +77,7 @@ export default function BackupsListScreen() {
         {/* Content */}
         {isLoading ? (
           <LoadingScreen />
-        ) : !data?.data || data.data.length === 0 ? (
+        ) : !data || (Array.isArray(data) && data.length === 0) ? (
           <EmptyState
             icon="database"
             title="Nenhum backup encontrado"
@@ -86,7 +85,7 @@ export default function BackupsListScreen() {
           />
         ) : (
           <FlatList
-            data={data.data}
+            data={Array.isArray(data) ? data : []}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ padding: 16 }}
             refreshControl={
@@ -156,7 +155,7 @@ export default function BackupsListScreen() {
                     </Text>
                   )}
 
-                  {item.status === "FAILED" && item.error && (
+                  {item.status === "failed" && item.error && (
                     <View className="mt-2 p-2 bg-destructive/10 rounded-md">
                       <Text className="text-xs text-destructive">
                         Erro: {item.error}

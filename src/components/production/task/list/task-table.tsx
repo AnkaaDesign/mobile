@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector } from "@tabler/icons-react-native";
@@ -14,9 +14,9 @@ import { TaskPriorityIndicator } from "./task-priority-indicator";
 import { DeadlineCountdown } from "./deadline-countdown";
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
 import { formatDate, formatCurrency } from '../../../../utils';
-import { getDaysUntilDeadline, getTaskRowColor } from '../../../../utils/task';
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { TASK_STATUS } from '../../../../constants';
+import { getTaskRowColor } from '../../../../utils/task';
+import { extendedColors } from "@/lib/theme/extended-colors";
+import { TASK_STATUS, PRIORITY_TYPE } from '../../../../constants';
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -27,7 +27,6 @@ export interface TableColumn {
   align?: "left" | "center" | "right";
   sortable?: boolean;
 }
-
 
 interface TaskTableProps {
   tasks: Task[];
@@ -128,7 +127,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (task: Task) => (
       <View style={styles.centerAlign}>
-        <TaskPriorityIndicator priority={task.priority} />
+        <TaskPriorityIndicator priority={task.priority as PRIORITY_TYPE} />
       </View>
     ),
   },
@@ -303,7 +302,7 @@ export const TaskTable = React.memo<TaskTableProps>(
     onTaskPress,
     onTaskEdit,
     onTaskDelete,
-    onTaskDuplicate,
+    // onTaskDuplicate removed
     onTaskStatusChange,
     onRefresh,
     onEndReached,
@@ -317,7 +316,7 @@ export const TaskTable = React.memo<TaskTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -387,7 +386,6 @@ export const TaskTable = React.memo<TaskTableProps>(
       return displayColumns.reduce((sum, col) => sum + col.width, 0);
     }, [displayColumns]);
 
-
     // Sort handler - non-cumulative (only one sort at a time)
     const handleSort = useCallback(
       (columnKey: string) => {
@@ -433,7 +431,6 @@ export const TaskTable = React.memo<TaskTableProps>(
               },
             ])}
             contentContainerStyle={{}}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {displayColumns.map((column) => {
@@ -485,8 +482,8 @@ export const TaskTable = React.memo<TaskTableProps>(
 
     // Row component
     const renderRow = useCallback(
-      ({ item, index }: { item: Task; index: number }) => {
-        const isEven = index % 2 === 0;
+      ({ item}: { item: Task; index: number }) => {
+
         // Get row color based on task status and deadline (matches web version)
         const rowColor = getTaskRowColor(item, isDark);
 
@@ -502,7 +499,7 @@ export const TaskTable = React.memo<TaskTableProps>(
               onStatusChange={onTaskStatusChange}
               disabled={false}
             >
-              {(isActive) => (
+              {() => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -639,7 +636,7 @@ export const TaskTable = React.memo<TaskTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 48, // Fixed row height
               offset: 48 * index,
               index,

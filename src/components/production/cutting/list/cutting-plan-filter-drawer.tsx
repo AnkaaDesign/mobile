@@ -1,10 +1,8 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, Text } from "react-native";
+import { useCallback, useMemo } from "react";
 import type { CutGetManyFormData } from "../../../../schemas";
 import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from "../../../../constants";
 import { CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from "../../../../constants";
-import { BaseFilterDrawer, FilterSection, SelectFilter, DateRangeFilter, type DateRange } from "@/components/common/filters";
-import { useTheme } from "@/lib/theme";
+import { BaseFilterDrawer, SelectFilter, DateRangeFilter, type DateRange } from "@/components/common/filters";
 
 interface CuttingPlanFilterDrawerProps {
   open: boolean;
@@ -25,7 +23,6 @@ export function CuttingPlanFilterDrawer({
   onClear,
   activeFiltersCount,
 }: CuttingPlanFilterDrawerProps) {
-  const { colors } = useTheme();
 
   // Extract filter values from the filters object
   const status = filters.where?.status as CUT_STATUS | undefined;

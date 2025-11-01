@@ -1,12 +1,13 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, ActivityIndicator, Pressable, Alert , StyleSheet} from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useItemMutations } from '../../../../hooks';
 import { useItemsInfiniteMobile } from "@/hooks";
 import type { ItemGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import type { Item } from '../../../../types';
+import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { ItemTable, createColumnDefinitions } from "@/components/inventory/item/list/item-table";
 import type { SortConfig } from "@/components/inventory/item/list/item-table";
 import { ItemFilterDrawerV2 } from "@/components/inventory/item/list/item-filter-drawer-v2";
@@ -21,7 +22,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function ItemListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -40,7 +41,7 @@ export default function ItemListScreen() {
 
     // If only one sort, return as object
     if (sortConfigs.length === 1) {
-      const config = sortConfigs[0 as keyof typeof sortConfigs];
+      const config = sortConfigs[0];
       switch (config.columnKey) {
         case "name":
           return { name: config.direction };
@@ -101,7 +102,7 @@ export default function ItemListScreen() {
     },
   };
 
-  const { items, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useItemsInfiniteMobile(queryParams);
+  const { items, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useItemsInfiniteMobile(queryParams);
   const { delete: deleteItem } = useItemMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -140,7 +141,7 @@ export default function ItemListScreen() {
 
   const handleDuplicateProduct = useCallback(
     (productId: string) => {
-      const item = items.find((item) => item.id === productId);
+      const item = items.find((item: Item) => item.id === productId);
       if (item) {
         // Navigate to create page with pre-filled data
         router.push({
@@ -190,7 +191,7 @@ export default function ItemListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   // Only show skeleton on initial load, not on refetch/sort

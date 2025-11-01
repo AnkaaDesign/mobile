@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { View, StyleSheet } from 'react-native';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';

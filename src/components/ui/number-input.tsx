@@ -1,14 +1,15 @@
-import React, { useCallback, useRef, useState, useEffect } from "react";
-import { TextInput, TextInputProps, View, ViewStyle, TextStyle, Animated, StyleSheet, NativeSyntheticEvent, TextInputFocusEventData} from "react-native";
+import { useCallback, useRef, useState, useEffect } from "react";
+import { TextInput, TextInputProps, View, ViewStyle, TextStyle, Animated, StyleSheet } from "react-native";
+import type { BlurEvent, FocusEvent } from "react-native/Libraries/Types/CoreEventTypes";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, fontSize, transitions } from "@/constants/design-system";
-import { cn } from "@/lib/cn";
 
-interface NumberInputProps extends Omit<TextInputProps, "onChange" | "value" | "onChangeText" | "keyboardType"> {
+interface NumberInputProps extends Omit<TextInputProps, "onChange" | "value" | "onChangeText" | "keyboardType" | "onBlur" | "onFocus"> {
   value?: number;
   onChange?: (value: number | undefined) => void;
   onChangeValue?: (value: number) => void;
-  onBlur?: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
+  onBlur?: (e: BlurEvent) => void;
+  onFocus?: (e: FocusEvent) => void;
   error?: boolean;
   containerStyle?: ViewStyle;
   inputStyle?: TextStyle;
@@ -25,6 +26,7 @@ export function NumberInput({
   value,
   onChange,
   onBlur,
+  onFocus,
   placeholder = "0",
   error,
   containerStyle,
@@ -38,7 +40,7 @@ export function NumberInput({
   className,
   ...props
 }: NumberInputProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const inputRef = useRef<TextInput>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [internalValue, setInternalValue] = useState("");
@@ -132,7 +134,7 @@ export function NumberInput({
 
   // Handle blur
   const handleBlur = useCallback(
-    (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+    (e: BlurEvent) => {
       setIsFocused(false);
 
       // Format the value on blur
@@ -146,9 +148,10 @@ export function NumberInput({
   );
 
   // Handle focus
-  const handleFocus = useCallback(() => {
+  const handleFocus = useCallback((e: FocusEvent) => {
     setIsFocused(true);
-  }, []);
+    onFocus?.(e);
+  }, [onFocus]);
 
   // Create regex pattern for input validation
   const getInputPattern = useCallback(() => {

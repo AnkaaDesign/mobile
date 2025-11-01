@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet, Alert } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { Position } from '../../../../types';
@@ -164,6 +164,7 @@ function PositionTableRowSwipe({ positionId, positionName, onEdit, onDelete, chi
 
     if (onEdit) {
       actions.push({
+        key: "edit",
         label: "Editar",
         icon: "edit" as const,
         backgroundColor: colors.primary,
@@ -173,6 +174,7 @@ function PositionTableRowSwipe({ positionId, positionName, onEdit, onDelete, chi
 
     if (onDelete) {
       actions.push({
+        key: "delete",
         label: "Excluir",
         icon: "trash" as const,
         backgroundColor: colors.destructive,
@@ -190,10 +192,7 @@ function PositionTableRowSwipe({ positionId, positionName, onEdit, onDelete, chi
   return (
     <ReanimatedSwipeableRow
       rightActions={rightActions}
-      onSwipeableWillOpen={handleSwipeableWillOpen}
-      closeOnPress={true}
-      simultaneousHandlers={undefined}
-      isActive={isActive}
+      onWillOpen={handleSwipeableWillOpen}
     >
       {children(isActive)}
     </ReanimatedSwipeableRow>
@@ -209,7 +208,6 @@ export const PositionTable = React.memo<PositionTableProps>(
   ({ positions, onPositionPress, onPositionEdit, onPositionDelete, onRefresh, onEndReached, refreshing = false, loading = false, loadingMore = false, sortConfigs = [], onSort, enableSwipeActions = true, visibleColumnKeys }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -318,7 +316,6 @@ export const PositionTable = React.memo<PositionTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {displayColumns.map((column) => {
@@ -378,7 +375,7 @@ export const PositionTable = React.memo<PositionTableProps>(
         if (enableSwipeActions && (onPositionEdit || onPositionDelete)) {
           return (
             <PositionTableRowSwipe key={item.id} positionId={item.id} positionName={item.name} onEdit={onPositionEdit} onDelete={onPositionDelete} disabled={false}>
-              {(isActive) => (
+              {() => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -494,7 +491,7 @@ export const PositionTable = React.memo<PositionTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 60,
               offset: 60 * index,
               index,
@@ -642,3 +639,5 @@ const styles = StyleSheet.create({
 });
 
 PositionTable.displayName = "PositionTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

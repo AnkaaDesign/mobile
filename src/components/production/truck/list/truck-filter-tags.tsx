@@ -1,5 +1,5 @@
-import React from "react";
-import { View, ScrollView, TouchableOpacity, ViewStyle, TextStyle, StyleSheet } from "react-native";
+
+import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import {
   IconX,
   IconSearch,
@@ -8,11 +8,10 @@ import {
   IconTool,
   IconTractor,
   IconCalendar,
-  IconQuestionMark,
 } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { useGarages, useTasks } from '../../../../hooks';
-import { TRUCK_MANUFACTURER, TRUCK_MANUFACTURER_LABELS } from '../../../../constants';
+import { TRUCK_MANUFACTURER_LABELS } from '../../../../constants';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";

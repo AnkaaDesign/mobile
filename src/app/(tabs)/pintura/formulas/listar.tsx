@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, StyleSheet } from "react-native";
 import { Stack, router } from "expo-router";
 import { SearchBar } from "@/components/ui/search-bar";
@@ -217,13 +217,6 @@ export default function FormulasListScreen() {
     </FilterModal>
   );
 
-  // Active filter count
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (sortBy !== "createdAt") count++;
-    if (sortOrder !== "desc") count++;
-    return count;
-  }, [sortBy, sortOrder]);
 
   if (!canView) {
     return (

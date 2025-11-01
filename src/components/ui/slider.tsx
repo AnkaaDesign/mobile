@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ViewStyle, Text , StyleSheet} from "react-native";
 import SliderComponent from "@react-native-community/slider";
 import { useTheme } from "@/lib/theme";

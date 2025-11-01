@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, ViewStyle, TextStyle , StyleSheet} from "react-native";
-import { useTheme } from "@/lib/theme";
 
 interface InfoRowProps {
   label: string;
@@ -19,7 +18,7 @@ export function InfoRow({
   valueStyle,
   orientation = "horizontal",
 }: InfoRowProps) {
-  const { colors } = useTheme();
+
   const isVertical = orientation === "vertical";
 
   return (

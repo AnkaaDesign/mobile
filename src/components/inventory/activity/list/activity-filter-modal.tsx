@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   View,
   ScrollView,
@@ -11,7 +11,6 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Button } from "@/components/ui/button";
 import { IconX, IconFilter, IconCheck, IconChevronDown, IconChevronUp } from "@tabler/icons-react-native";
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,7 +78,7 @@ export const ActivityFilterModal = ({
       if (checked) {
         return { ...prev, operations: [...operations, operation as any] };
       } else {
-        return { ...prev, operations: operations.filter(op => op !== operation) };
+        return { ...prev, operations: operations.filter((op: ACTIVITY_OPERATION) => op !== operation) };
       }
     });
   }, []);
@@ -91,7 +90,7 @@ export const ActivityFilterModal = ({
       if (checked) {
         return { ...prev, reasons: [...reasons, reason as any] };
       } else {
-        return { ...prev, reasons: reasons.filter(r => r !== reason) };
+        return { ...prev, reasons: reasons.filter((r: ACTIVITY_REASON) => r !== reason) };
       }
     });
   }, []);

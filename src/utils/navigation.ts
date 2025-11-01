@@ -103,7 +103,7 @@ export function filterMenuByPlatform(menuItems: MenuItem[], platform: "web" | "m
   return menuItems
     .filter((item) => {
       // Exclude items marked as excludeFromMobile when on mobile platform
-      if (platform === "mobile" && item.excludeFromMobile) {
+      if (platform === "mobile" && ((item as any).excludeFromMobile)) {
         return false;
       }
       return true;

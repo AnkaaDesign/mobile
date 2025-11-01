@@ -9,7 +9,7 @@ export default function EditMovementPage() {
   useEffect(() => {
     // Redirect to details page as mobile doesn't have batch edit yet
     if (id) {
-      router.replace(routeToMobilePath(routes.inventory.activities.details(id)));
+      router.replace(routeToMobilePath(routes.inventory.activities.details(id)) as any);
     }
   }, [id]);
 

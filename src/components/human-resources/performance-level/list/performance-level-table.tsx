@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { PERFORMANCE_LEVEL_LABELS, PERFORMANCE_LEVEL } from '../../../../constants';
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -202,7 +201,7 @@ const createColumnDefinitions = (): TableColumn[] => [
 export const PerformanceLevelTable = React.memo<PerformanceLevelTableProps>(
   ({ users, onUserPress, onRefresh, onEndReached, refreshing = false, loading = false, loadingMore = false, sortConfigs = [], onSort, visibleColumnKeys }) => {
     const { colors, isDark } = useTheme();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    const [_headerHeight, _setHeaderHeight] = useState(50);
 
     // Get all column definitions
     const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -294,7 +293,7 @@ export const PerformanceLevelTable = React.memo<PerformanceLevelTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+            onLayout={(event) => _setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {displayColumns.map((column) => {
@@ -440,7 +439,7 @@ export const PerformanceLevelTable = React.memo<PerformanceLevelTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 60,
               offset: 60 * index,
               index,
@@ -605,3 +604,5 @@ const styles = StyleSheet.create({
 });
 
 PerformanceLevelTable.displayName = "PerformanceLevelTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

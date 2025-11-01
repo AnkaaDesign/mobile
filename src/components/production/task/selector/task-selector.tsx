@@ -1,8 +1,6 @@
-import React, { useState } from "react";
 import { View, ViewStyle } from "react-native";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ThemedText } from "@/components/ui/themed-text";
-import { useTheme } from "@/lib/theme";
 
 interface TaskSelectorProps {
   value?: string;
@@ -19,7 +17,6 @@ export function TaskSelector({
   disabled = false,
   style,
 }: TaskSelectorProps) {
-  const { colors } = useTheme();
 
   return (
     <View style={style}>

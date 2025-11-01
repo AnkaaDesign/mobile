@@ -15,7 +15,7 @@ interface TooltipContentProps {
   [key: string]: any;
 }
 
-const TooltipContent = React.forwardRef<View, TooltipContentProps>(({ className, sideOffset = 4, portalHost, ...props }, ref) => (
+const TooltipContent = React.forwardRef<View, TooltipContentProps>(({ className, sideOffset = 4, portalHost, ...props }, _ref) => (
   <TooltipPrimitive.Portal hostName={portalHost}>
     <TooltipPrimitive.Overlay style={Platform.OS !== "web" ? StyleSheet.absoluteFill : undefined}>
       <Animated.View entering={Platform.select({ web: undefined, default: FadeIn })} exiting={Platform.select({ web: undefined, default: FadeOut })}>

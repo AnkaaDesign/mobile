@@ -1,9 +1,8 @@
-import React from "react";
-import { View, Modal, Pressable, ScrollView } from "react-native";
+
+import { View, Modal, Pressable } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
+
 import { useTheme } from "@/lib/theme";
-import { IconX } from "@tabler/icons-react-native";
 
 interface AirbrushingFilterModalProps {
   visible: boolean;
@@ -15,8 +14,8 @@ interface AirbrushingFilterModalProps {
 export function AirbrushingFilterModal({
   visible,
   onClose,
-  onApply,
-  currentFilters,
+  // onApply removed
+  // currentFilters removed
 }: AirbrushingFilterModalProps) {
   const { colors, spacing } = useTheme();
 

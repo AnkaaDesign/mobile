@@ -140,7 +140,7 @@ export function ObservationColumnVisibilityDrawer({
   // Fixed item height for getItemLayout optimization
   const ITEM_HEIGHT = 56;
   const getItemLayout = useCallback(
-    (_: ObservationColumn[] | null | undefined, index: number) => ({
+    (_: ArrayLike<ObservationColumn> | null | undefined, index: number) => ({
       length: ITEM_HEIGHT,
       offset: ITEM_HEIGHT * index,
       index,

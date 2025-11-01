@@ -1,8 +1,7 @@
 import type { User } from '../types';
-import { USER_STATUS, SECTOR_PRIVILEGES, VERIFICATION_TYPE, USER_STATUS_LABELS } from '../constants';
+import { USER_STATUS, SECTOR_PRIVILEGES, VERIFICATION_TYPE } from '../constants';
 import { getSectorPrivilegeLevel } from "./privilege";
 import { dateUtils } from "./date";
-
 
 /**
  * Map USER_STATUS enum to string for API compatibility
@@ -261,8 +260,8 @@ export function isUserBlocked(user: User): boolean {
 /**
  * Check if user has specific privilege
  */
-export function hasPrivilege(user: User, requiredPrivilege: SECTOR_PRIVILEGES): boolean {
-  if (!user.sector?.privileges) return false;
+export function hasPrivilege(user: User | null, requiredPrivilege: SECTOR_PRIVILEGES): boolean {
+  if (!user?.sector?.privileges) return false;
 
   const userPrivilegeLevel = getSectorPrivilegeLevel(user.sector.privileges);
   const requiredPrivilegeLevel = getSectorPrivilegeLevel(requiredPrivilege);
@@ -274,8 +273,8 @@ export function hasPrivilege(user: User, requiredPrivilege: SECTOR_PRIVILEGES): 
  * Check if user has ANY of the specified privileges (OR logic)
  * Matches backend @Roles decorator behavior - user needs only one of the privileges
  */
-export function hasAnyPrivilege(user: User, requiredPrivileges: SECTOR_PRIVILEGES[]): boolean {
-  if (!user.sector?.privileges || !requiredPrivileges.length) return false;
+export function hasAnyPrivilege(user: User | null, requiredPrivileges: SECTOR_PRIVILEGES[]): boolean {
+  if (!user?.sector?.privileges || !requiredPrivileges.length) return false;
 
   return requiredPrivileges.some((privilege) => hasPrivilege(user, privilege));
 }
@@ -284,8 +283,8 @@ export function hasAnyPrivilege(user: User, requiredPrivileges: SECTOR_PRIVILEGE
  * Check if user has ALL of the specified privileges (AND logic)
  * User must have privilege level equal to or higher than ALL specified privileges
  */
-export function hasAllPrivileges(user: User, requiredPrivileges: SECTOR_PRIVILEGES[]): boolean {
-  if (!user.sector?.privileges || !requiredPrivileges.length) return false;
+export function hasAllPrivileges(user: User | null, requiredPrivileges: SECTOR_PRIVILEGES[]): boolean {
+  if (!user?.sector?.privileges || !requiredPrivileges.length) return false;
 
   return requiredPrivileges.every((privilege) => hasPrivilege(user, privilege));
 }
@@ -294,7 +293,7 @@ export function hasAllPrivileges(user: User, requiredPrivileges: SECTOR_PRIVILEG
  * Check if user can access based on privilege array (same as hasAnyPrivilege)
  * Alias function that matches backend controller terminology
  */
-export function canAccessWithPrivileges(user: User, allowedPrivileges: SECTOR_PRIVILEGES[]): boolean {
+export function canAccessWithPrivileges(user: User | null, allowedPrivileges: SECTOR_PRIVILEGES[]): boolean {
   return hasAnyPrivilege(user, allowedPrivileges);
 }
 

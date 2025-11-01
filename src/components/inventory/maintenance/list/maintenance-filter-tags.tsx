@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ScrollView, TouchableOpacity } from "react-native";
 import { Text } from "@/components/ui/text";
 import { Icon } from "@/components/ui/icon";
@@ -23,7 +23,7 @@ export function MaintenanceFilterTags({
   const filterTags: Array<{ key: string; label: string; value: any }> = [];
 
   // Status filters
-  if ((filters.where?.status as any)?.in && (filters.where.status as any).in.length > 0) {
+  if (filters.where?.status && (filters.where.status as any)?.in && (filters.where.status as any).in.length > 0) {
     (filters.where.status as any).in.forEach((status: string) => {
       filterTags.push({
         key: "status",
@@ -41,15 +41,15 @@ export function MaintenanceFilterTags({
   if ((filters.where?.scheduledFor as any)?.gte) {
     filterTags.push({
       key: "scheduledFor.gte",
-      label: `Agendado desde: ${formatDate((filters.where.scheduledFor as any).gte)}`,
-      value: (filters.where.scheduledFor as any).gte,
+      label: `Agendado desde: ${formatDate((filters.where?.scheduledFor as any).gte)}`,
+      value: (filters.where?.scheduledFor as any).gte,
     });
   }
   if ((filters.where?.scheduledFor as any)?.lte) {
     filterTags.push({
       key: "scheduledFor.lte",
-      label: `Agendado até: ${formatDate((filters.where.scheduledFor as any).lte)}`,
-      value: (filters.where.scheduledFor as any).lte,
+      label: `Agendado até: ${formatDate((filters.where?.scheduledFor as any).lte)}`,
+      value: (filters.where?.scheduledFor as any).lte,
     });
   }
 
@@ -57,15 +57,15 @@ export function MaintenanceFilterTags({
   if ((filters.where?.finishedAt as any)?.gte) {
     filterTags.push({
       key: "finishedAt.gte",
-      label: `Concluído desde: ${formatDate((filters.where.finishedAt as any).gte)}`,
-      value: (filters.where.finishedAt as any).gte,
+      label: `Concluído desde: ${formatDate((filters.where?.finishedAt as any).gte)}`,
+      value: (filters.where?.finishedAt as any).gte,
     });
   }
   if ((filters.where?.finishedAt as any)?.lte) {
     filterTags.push({
       key: "finishedAt.lte",
-      label: `Concluído até: ${formatDate((filters.where.finishedAt as any).lte)}`,
-      value: (filters.where.finishedAt as any).lte,
+      label: `Concluído até: ${formatDate((filters.where?.finishedAt as any).lte)}`,
+      value: (filters.where?.finishedAt as any).lte,
     });
   }
 

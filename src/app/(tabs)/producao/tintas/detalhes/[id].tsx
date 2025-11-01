@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { usePaintDetail } from '../../../../../hooks';
@@ -121,7 +121,7 @@ export default function PaintDetailsScreen() {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
-              <PaintCatalogCard paint={paint!} showFormulas={true} />
+              <PaintCatalogCard paint={paint!} />
 
               {/* Production Readiness */}
               <Card className="p-4">

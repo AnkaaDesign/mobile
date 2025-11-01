@@ -101,7 +101,7 @@ const getTextStyles = (variant: TextProps["variant"] = "p", isDark: boolean): Te
 
 const Text = React.forwardRef<RNText, TextProps>(({ variant = "p", style, className, ...props }, ref) => {
   const { isDark } = useTheme();
-  const contextClass = React.useContext(TextClassContext);
+
   const textStyles = getTextStyles(variant, isDark);
 
   // Note: className and contextClass are for compatibility with web patterns

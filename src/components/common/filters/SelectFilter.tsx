@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { View, StyleSheet } from 'react-native';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';

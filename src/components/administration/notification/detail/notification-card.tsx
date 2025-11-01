@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import type { Notification } from '../../../../types';
 import { NOTIFICATION_TYPE_LABELS, NOTIFICATION_IMPORTANCE_LABELS } from '../../../../constants';
@@ -132,9 +132,6 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
-  },
-  content: {
-    gap: spacing.lg,
   },
   section: {
     gap: spacing.sm,

@@ -395,12 +395,5 @@ export function getTaskRowColor(task: Task, isDark: boolean = false): string {
   }
 }
 
-/**
- * Get hours between two dates
- */
-export function getHoursBetween(startDate: Date | string, endDate: Date | string): number {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const diffMs = Math.abs(end.getTime() - start.getTime());
-  return Math.floor(diffMs / (1000 * 60 * 60));
-}
+// Re-export getHoursBetween from date utils to avoid duplication
+export { getHoursBetween } from "./date";

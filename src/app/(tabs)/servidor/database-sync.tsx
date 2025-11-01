@@ -2,13 +2,13 @@ import { View, ScrollView, RefreshControl, Alert } from "react-native";
 import { useState, useEffect } from "react";
 import { Text } from "@/components/ui/text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { Icon } from "@/components/ui/icon";
-import { Separator } from "@/components/ui/separator";
+
 import { apiClient } from "@/api-client";
 
 interface SyncStatus {

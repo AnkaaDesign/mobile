@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ViewStyle, TouchableOpacity } from "react-native";
 import { cn } from "@/lib/utils";
-import { getFileTypeInfo, getFileTypeCategory, FileCategory, getCategoryLabel, type FileCategory as FileCategoryType } from '../../utils/file-type-icons';
+import { getFileTypeInfo, getFileTypeCategory, FileCategory, getCategoryLabel, type FileCategory as _FileCategoryType } from '../../utils/file-type-icons';
 
 // Tabler Icons React Native imports
 import {
@@ -168,7 +168,7 @@ const getColorFromClass = (colorClass: string): string => {
  * Displays appropriate icons for different file types with consistent styling
  * and color coding. Supports processing and error states.
  */
-export const FileTypeIcon: React.FC<FileTypeIconProps> = ({ filename, mimeType, size = "md", style, showLabel = false, isProcessing = false, isError = false, color }) => {
+export const FileTypeIcon: React.FC<FileTypeIconProps> = ({ filename, mimeType, size = "md", showLabel = false, isProcessing = false, isError = false, color }) => {
   // Override category if in special states
   const category = React.useMemo(() => {
     if (isError) return FileCategory.ERROR;
@@ -190,14 +190,14 @@ export const FileTypeIcon: React.FC<FileTypeIconProps> = ({ filename, mimeType, 
     return (
       <View className="flex flex-col items-center gap-1">
         <View className={cn("flex items-center justify-center rounded-lg p-2 border", colors.bg, colors.border)}>
-          <IconComponent size={iconSize} stroke={strokeWidth} color={iconColor} />
+          <IconComponent size={iconSize} strokeWidth={strokeWidth} color={iconColor} />
         </View>
         <Text className={cn("text-xs font-medium text-center", colors.text, size === "xs" && "text-[10px]", size === "sm" && "text-[11px]")}>{getCategoryLabel(category)}</Text>
       </View>
     );
   }
 
-  return <IconComponent size={iconSize} stroke={strokeWidth} color={iconColor} />;
+  return <IconComponent size={iconSize} strokeWidth={strokeWidth} color={iconColor} />;
 };
 
 /**
@@ -237,7 +237,7 @@ export const FileTypeBadge: React.FC<FileTypeBadgeProps> = ({ filename, mimeType
 
   return (
     <View className={cn("flex-row items-center gap-1.5 rounded-full border", colors.bg, colors.border, config.padding)} style={style}>
-      <IconComponent size={config.iconSize} stroke={2} color={iconColor} />
+      <IconComponent size={config.iconSize} strokeWidth={2} color={iconColor} />
       <Text className={cn("font-medium", colors.text, config.textClass)}>{getCategoryLabel(category)}</Text>
     </View>
   );
@@ -257,20 +257,14 @@ export interface FileTypeAvatarProps {
   onPress?: () => void;
 }
 
-export const FileTypeAvatar: React.FC<FileTypeAvatarProps> = ({ filename, mimeType, style, isProcessing = false, isError = false, onPress }) => {
-  const category = React.useMemo(() => {
-    if (isError) return FileCategory.ERROR;
-    if (isProcessing) return FileCategory.PROCESSING;
-    return getFileTypeInfo(filename, mimeType).category;
-  }, [filename, mimeType, isError, isProcessing]);
-
+export const FileTypeAvatar: React.FC<FileTypeAvatarProps> = ({ filename, mimeType, style, isProcessing: _isProcessing = false, isError: _isError = false, onPress }) => {
   const fileInfo = getFileTypeInfo(filename, mimeType);
   const { colors, iconName } = fileInfo;
 
   const IconComponent = ICON_COMPONENTS[iconName as keyof typeof ICON_COMPONENTS] || ICON_COMPONENTS.IconFile;
   const iconColor = getColorFromClass(colors.icon);
 
-  const containerStyle = {
+  const containerStyle: ViewStyle = {
     width: 48,
     height: 48,
     borderRadius: 12,
@@ -281,7 +275,7 @@ export const FileTypeAvatar: React.FC<FileTypeAvatarProps> = ({ filename, mimeTy
 
   const content = (
     <View className={cn("items-center justify-center border-2", colors.bg, colors.border)} style={StyleSheet.flatten([containerStyle, style])}>
-      <IconComponent size={24} stroke={1.5} color={iconColor} />
+      <IconComponent size={24} strokeWidth={1.5} color={iconColor} />
     </View>
   );
 

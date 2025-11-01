@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { usePaintProductionDetail } from '../../../../../hooks';
@@ -78,7 +78,7 @@ export default function ProductionDetailsScreen() {
     let hasWeightData = false;
     let hasVolumeData = false;
 
-    formula.components.forEach((component) => {
+    formula.components?.forEach((component) => {
       if (component.ratio) {
         calculatedWeight += component.ratio;
         hasWeightData = true;

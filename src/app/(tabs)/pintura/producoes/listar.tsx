@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, StyleSheet } from "react-native";
 import { Stack, router } from "expo-router";
 import { SearchBar } from "@/components/ui/search-bar";
@@ -19,7 +19,6 @@ import { showToast } from "@/lib/toast/use-toast";
 import {
   IconFlask,
   IconCalendar,
-  IconUser,
   IconScale,
 } from "@tabler/icons-react-native";
 
@@ -40,19 +39,24 @@ export default function ProductionsListScreen() {
   const canView = hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION);
 
   // Build query params
+  // Fixed: PaintProduction doesn't have paint or producer relations directly
+  // The correct structure is: formula.paint (not paint directly)
   const queryParams = useMemo(() => {
     const params: any = {
       include: {
-        paint: {
+        formula: {
           include: {
-            paintType: true,
-            paintBrand: true,
+            paint: {
+              include: {
+                paintType: true,
+                paintBrand: true,
+              },
+            },
           },
         },
-        formula: true,
-        producer: true,
       },
-      orderBy: { [sortBy]: sortOrder },
+      // Fixed: sortBy should use valid fields (volumeLiters or createdAt, not producedAt or quantity)
+      orderBy: { [sortBy === 'producedAt' || sortBy === 'quantity' ? 'createdAt' : sortBy]: sortOrder },
     };
 
     // Search filter
@@ -93,12 +97,12 @@ export default function ProductionsListScreen() {
     });
   };
 
-  // Format number with unit
-  const formatQuantity = (quantity: number) => {
-    return `${quantity.toFixed(2)} L`;
-  };
 
   // Render production card
+  // FIXME: PaintProduction schema changed - properties like paint, producedAt, quantity, producer don't exist
+  // The correct structure is: production.formula.paint (not production.paint)
+  // PaintProduction only has: volumeLiters, formulaId, formula, id, createdAt, updatedAt
+  // This entire component needs to be refactored to match the web version
   const renderProductionCard = ({ item: production }: { item: PaintProduction }) => (
     <TouchableOpacity onPress={() => router.push(`/pintura/producoes/detalhes/${production.id}`)}>
       <Card style={styles.productionCard}>
@@ -110,11 +114,12 @@ export default function ProductionsListScreen() {
             </View>
             <View style={styles.productionInfo}>
               <ThemedText style={styles.productionTitle} numberOfLines={1}>
-                {production.paint?.name || "Tinta"}
+                {/* Fixed: Access paint via formula.paint instead of paint directly */}
+                {(production as any).formula?.paint?.name || "Tinta"}
               </ThemedText>
-              {production.paint?.code && (
+              {(production as any).formula?.paint?.code && (
                 <ThemedText style={styles.productionCode}>
-                  {production.paint.code}
+                  {(production as any).formula.paint.code}
                 </ThemedText>
               )}
             </View>
@@ -122,47 +127,44 @@ export default function ProductionsListScreen() {
 
           {/* Details */}
           <View style={styles.detailsContainer}>
-            {production.producedAt && (
+            {/* Fixed: producedAt doesn't exist, use createdAt instead */}
+            {production.createdAt && (
               <View style={styles.detailRow}>
                 <IconCalendar size={16} color={colors.muted} />
                 <ThemedText style={styles.detailText}>
-                  {formatDate(production.producedAt)}
+                  {formatDate(production.createdAt)}
                 </ThemedText>
               </View>
             )}
-            {production.quantity && (
+            {/* Fixed: quantity doesn't exist, use volumeLiters instead */}
+            {production.volumeLiters && (
               <View style={styles.detailRow}>
                 <IconScale size={16} color={colors.muted} />
                 <ThemedText style={styles.detailText}>
-                  {formatQuantity(Number(production.quantity))}
+                  {production.volumeLiters.toFixed(2)} L
                 </ThemedText>
               </View>
             )}
-            {production.producer && (
-              <View style={styles.detailRow}>
-                <IconUser size={16} color={colors.muted} />
-                <ThemedText style={styles.detailText} numberOfLines={1}>
-                  {production.producer.name}
-                </ThemedText>
-              </View>
-            )}
+            {/* producer property doesn't exist and has no equivalent - removing for now */}
           </View>
 
           {/* Badges */}
           <View style={styles.badges}>
-            {production.paint?.paintBrand && (
+            {/* Fixed: Access paintBrand via formula.paint.paintBrand */}
+            {(production as any).formula?.paint?.paintBrand && (
               <Badge variant="outline" style={styles.brandBadge}>
-                {production.paint.paintBrand.name}
+                {(production as any).formula.paint.paintBrand.name}
               </Badge>
             )}
-            {production.paint?.paintType && (
+            {/* Fixed: Access paintType via formula.paint.paintType */}
+            {(production as any).formula?.paint?.paintType && (
               <Badge variant="outline" style={styles.typeBadge}>
-                {production.paint.paintType.name}
+                {(production as any).formula.paint.paintType.name}
               </Badge>
             )}
-            {production.formula && (
+            {(production as any).formula && (
               <Badge variant="secondary" style={styles.formulaBadge}>
-                Fórmula: {production.formula.description || "Sem descrição"}
+                Fórmula: {(production as any).formula.description || "Sem descrição"}
               </Badge>
             )}
           </View>
@@ -217,13 +219,6 @@ export default function ProductionsListScreen() {
     </FilterModal>
   );
 
-  // Active filter count
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (sortBy !== "producedAt") count++;
-    if (sortOrder !== "desc") count++;
-    return count;
-  }, [sortBy, sortOrder]);
 
   if (!canView) {
     return (

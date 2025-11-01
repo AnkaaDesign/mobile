@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { useMemo } from "react";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -270,7 +270,7 @@ export function ActivitiesTimelineCard({ employee, maxHeight = 500 }: Activities
           </View>
         ) : (
           <ScrollView style={[styles.activitiesContainer, { maxHeight }]} showsVerticalScrollIndicator={false}>
-            {groupedActivities.map(([date, dayActivities], groupIndex) => (
+            {groupedActivities.map(([date, dayActivities], _groupIndex) => (
               <View key={date} style={styles.dateGroup}>
                 {/* Date Header */}
                 <View style={styles.dateHeader}>
@@ -294,7 +294,7 @@ export function ActivitiesTimelineCard({ employee, maxHeight = 500 }: Activities
 
                 {/* Activities for this date */}
                 <View style={styles.activitiesList}>
-                  {dayActivities.map((activity, index) => {
+                  {dayActivities.map((activity, _index) => {
                     const iconColor = getActivityColor(activity.reason, "icon");
                     const isInbound = activity.operation === ACTIVITY_OPERATION.INBOUND;
 

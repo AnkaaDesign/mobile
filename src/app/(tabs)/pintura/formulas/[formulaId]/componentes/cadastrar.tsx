@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, Alert, KeyboardAvoidingView, Platform , StyleSheet} from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
@@ -69,7 +69,7 @@ export default function CreateComponentScreen() {
     },
   });
 
-  const { handleSubmit, control, formState: { errors, isValid }, watch, reset } = form;
+  const { handleSubmit, control, formState: { errors, isValid }, watch} = form;
 
   // Watch selected item for display
   const selectedItemId = watch("itemId");

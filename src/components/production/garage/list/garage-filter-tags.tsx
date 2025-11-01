@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
 import type { GarageGetManyFormData } from "../../../../schemas";
 import { Chip } from "@/components/ui/chip";

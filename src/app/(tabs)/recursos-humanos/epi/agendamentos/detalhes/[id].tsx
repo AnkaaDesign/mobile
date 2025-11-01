@@ -1,16 +1,16 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { usePpeDeliverySchedule, usePpeDeliveryScheduleMutations } from '../../../../../../hooks';
+import { usePpeDeliverySchedule } from '../../../../../../hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../../constants';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LoadingOverlay, SkeletonCard } from "@/components/ui/loading";
+import { LoadingOverlay } from "@/components/ui/loading";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Header } from "@/components/ui/header";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconCalendarEvent, IconRefresh, IconEdit, IconHistory } from "@tabler/icons-react-native";
+import { IconCalendarEvent, IconRefresh, IconEdit } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { TouchableOpacity } from "react-native";
 import { showToast } from "@/components/ui/toast";
@@ -22,7 +22,7 @@ import { PpeScheduleDetailSkeleton } from "@/components/human-resources/ppe/sche
 
 export default function PPEScheduleDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 

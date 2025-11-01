@@ -1,8 +1,8 @@
 import * as React from "react";
 import { View, Text, ViewStyle, TextStyle, StyleSheet} from "react-native";
 import { useTheme } from "@/contexts/theme-context";
-import { borderRadius, fontSize, spacing, fontWeight } from "@/constants/design-system";
-import { getBadgeVariant as getCentralizedBadgeVariant, type BadgeVariant } from '../../constants';
+import { borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { getBadgeVariant as getCentralizedBadgeVariant } from "@/constants/badge-colors";
 
 export interface BadgeProps {
   children?: React.ReactNode;
@@ -173,7 +173,7 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
   };
 };
 
-const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: BadgeProps["size"] = "default", colors: any, isDark: boolean): TextStyle => {
+const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: BadgeProps["size"] = "default", colors: any, _isDark: boolean): TextStyle => {
   // Size-based font sizes matching web
   const sizeFont = {
     sm: { fontSize: 11 }, // 0.688rem

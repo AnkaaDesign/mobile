@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconChevronDown, IconChevronRight, IconX, IconFilter } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { TRUCK_MANUFACTURER, TRUCK_MANUFACTURER_LABELS } from '../../../../constants';
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -201,7 +200,7 @@ export function TruckFilterDrawerV2({ visible, onClose, onApply, currentFilters 
       component: (
         <View style={styles.sectionContent}>
           <MultiCombobox
-            options={Object.entries(TRUCK_MANUFACTURER).map(([key, value]) => ({
+            options={Object.entries(TRUCK_MANUFACTURER).map(([_key, value]) => ({
               label: TRUCK_MANUFACTURER_LABELS[value as keyof typeof TRUCK_MANUFACTURER_LABELS] || value,
               value: value,
             }))}

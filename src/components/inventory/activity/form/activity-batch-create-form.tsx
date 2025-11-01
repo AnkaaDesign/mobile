@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { useForm, Controller, FormProvider, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -449,7 +449,9 @@ export function ActivityBatchCreateForm({ onSubmit, onCancel, isSubmitting }: Ac
                 <Label>Adicionar Item</Label>
                 <Combobox
                   value=""
-                  onValueChange={handleAddItem}
+                  onValueChange={(value: string | undefined) => {
+                    if (value) handleAddItem(value);
+                  }}
                   options={itemOptions}
                   placeholder="Buscar e adicionar item..."
                   searchPlaceholder="Digite para buscar..."
@@ -470,7 +472,7 @@ export function ActivityBatchCreateForm({ onSubmit, onCancel, isSubmitting }: Ac
               </CardHeader>
               <CardContent>
                 <View style={styles.itemsList}>
-                  {selectedItems.map((item, index) => {
+                  {selectedItems.map((item) => {
                     const stockColor = getStockLevelColor(item.currentStock, item.quantity, operation);
                     const hasStockWarning = operation === ACTIVITY_OPERATION.OUTBOUND && item.currentStock < item.quantity;
                     const hasLowStock = operation === ACTIVITY_OPERATION.OUTBOUND && item.currentStock > 0 && item.currentStock < item.quantity * 2;

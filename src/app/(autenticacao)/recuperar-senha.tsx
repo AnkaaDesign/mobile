@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
@@ -6,8 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { passwordRecoverySchema, type PasswordRecoveryFormData } from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
-import { routes } from '../../constants';
-import { routeToMobilePath } from "@/lib/route-mapper";
+
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -23,7 +22,7 @@ import { shadow, spacing } from "@/constants/design-system";
 export default function RecoverPasswordScreen() {
   const router = useRouter();
   const { recoverPassword } = useAuth();
-  const { isDark, colors } = useTheme();
+  const { colors } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
 
   const {

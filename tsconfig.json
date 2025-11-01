@@ -8,7 +8,20 @@
     "allowJs": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "strict": false,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    // TODO: Re-enable when expo-file-system@16.1+ fixes type-only imports
+    // "verbatimModuleSyntax": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
@@ -19,14 +32,19 @@
     "paths": {
       "@/*": ["./src/*"],
       "@types": ["./src/types"],
+      "@types/*": ["./src/types/*"],
       "@constants": ["./src/constants"],
-      "@ankaa/utils/*": ["../../packages/utils/src/*"],
-      "@ankaa/types/*": ["../../packages/types/src/*"],
-      "@ankaa/schemas/*": ["../../packages/schemas/src/*"],
-      "@ankaa/constants/*": ["../../packages/constants/src/*"],
-      "@ankaa/services/*": ["../../packages/services/src/*"],
-      "@ankaa/api-client": ["../../packages/api-client/src"],
-      "@ankaa/hooks/*": ["../../packages/hooks/src/*"]
+      "@constants/*": ["./src/constants/*"],
+      "@schemas": ["./src/schemas"],
+      "@schemas/*": ["./src/schemas/*"],
+      "@api-client": ["./src/api-client"],
+      "@api-client/*": ["./src/api-client/*"],
+      "@hooks": ["./src/hooks"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@utils": ["./src/utils"],
+      "@utils/*": ["./src/utils/*"],
+      "@components/*": ["./src/components/*"],
+      "@lib/*": ["./src/lib/*"]
     },
     "typeRoots": ["./types", "./node_modules/@types"]
   },
@@ -40,8 +58,7 @@
     "expo-env.d.ts",
     "nativewind-env.d.ts",
     "src/types/**/*.d.ts",
-    "src/types/react-19-compat.d.ts",
-    "src/types/icon-compat.d.ts"
+    "types/**/*.d.ts"
   ],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx", "**/__tests__/**"]
 }

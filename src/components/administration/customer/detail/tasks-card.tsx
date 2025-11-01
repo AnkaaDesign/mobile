@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconClipboardList, IconChevronRight, IconCalendar, IconUser } from "@tabler/icons-react-native";
+import { IconClipboardList, IconChevronRight, IconCalendar } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
 import { routes, TASK_STATUS_LABELS } from '../../../../constants';
 import { formatDate } from '../../../../utils';

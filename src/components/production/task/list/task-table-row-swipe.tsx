@@ -1,7 +1,7 @@
 import React, { useRef, useCallback, useEffect } from "react";
-import { View, StyleSheet, ViewStyle, Alert } from "react-native";
+import { View, StyleSheet, ViewStyle, Alert, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconPlayerPlay, IconPlayerPause, IconCheck, IconX } from "@tabler/icons-react-native";
-import { Icon } from "@/components/ui/icon";
+
 import { useTheme } from "@/contexts/theme-context";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { ReanimatedSwipeableRow, type SwipeAction, type Swipeable } from "@/components/ui/reanimated-swipeable-row";
@@ -17,7 +17,7 @@ interface TaskTableRowSwipeProps {
   onEdit?: (taskId: string) => void;
   onDelete?: (taskId: string) => void;
   onStatusChange?: (taskId: string, status: TASK_STATUS) => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   disabled?: boolean;
 }
 
@@ -170,7 +170,7 @@ const TaskTableRowSwipeComponent = ({
   }
 
   const handleWillOpen = useCallback(
-    (direction: "left" | "right") => {
+    (_direction: "left" | "right") => {
       // Clear any existing timer
       if (autoCloseTimerRef.current) {
         clearTimeout(autoCloseTimerRef.current);
@@ -187,7 +187,7 @@ const TaskTableRowSwipeComponent = ({
   );
 
   const handleOpen = useCallback(
-    (direction: "left" | "right", swipeable: Swipeable) => {
+    (_direction: "left" | "right", swipeable: Swipeable) => {
       setActiveRowId(taskId);
 
       // Register the close function for legacy compatibility
@@ -235,7 +235,7 @@ const TaskTableRowSwipeComponent = ({
       onWillOpen={handleWillOpen}
       onOpen={handleOpen}
       onClose={handleClose}
-      containerStyle={[styles.container, style]}
+      containerStyle={StyleSheet.flatten([styles.container, style])}
       childrenContainerStyle={styles.rowContainer}
       actionWidth={ACTION_WIDTH}
     >

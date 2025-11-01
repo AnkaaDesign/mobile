@@ -1,5 +1,5 @@
-import React, { useCallback, useRef, useEffect } from "react";
-import { ActivityIndicator, FlatList, FlatListProps, ListRenderItem, NativeScrollEvent, NativeSyntheticEvent, RefreshControl, TextStyle, View, ViewStyle , StyleSheet} from "react-native";
+import React, { useCallback, useRef} from "react";
+import { FlatList, FlatListProps, ListRenderItem, NativeScrollEvent, NativeSyntheticEvent, RefreshControl, TextStyle, View, ViewStyle, StyleSheet } from "react-native";
 import { Button } from "./button";
 import { ThemedText } from "./themed-text";
 import { ThemedView } from "./themed-view";
@@ -226,7 +226,7 @@ interface PaginationItemProps {
   style?: ViewStyle;
 }
 
-export function PaginationItem({ children, onPress, style }: PaginationItemProps) {
+export function PaginationItem({ children, style }: PaginationItemProps) {
   const { colors } = useTheme();
 
   return <ThemedView style={StyleSheet.flatten([styles.itemContainer, { borderBottomColor: colors.border }, style])}>{children}</ThemedView>;

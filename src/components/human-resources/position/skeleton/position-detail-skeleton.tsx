@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ScrollView, StyleSheet } from "react-native";
 import { SkeletonCard } from "@/components/ui/loading";
 import { useTheme } from "@/lib/theme";

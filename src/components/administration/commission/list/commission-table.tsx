@@ -1,11 +1,11 @@
-import React from "react";
+
 import { FlatList, View, TouchableOpacity, RefreshControl, StyleSheet } from "react-native";
 import type { Commission } from '../../../../types';
-import { ThemedText, ThemedView } from "@/components/ui";
+import { ThemedText } from "@/components/ui";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { COMMISSION_STATUS_LABELS } from '../../../../constants';
-import { formatCurrency, formatDate } from '../../../../utils';
+import { formatDate } from '../../../../utils';
 import { CommissionTableRowSwipe } from "./commission-table-row-swipe";
 
 interface CommissionTableProps {

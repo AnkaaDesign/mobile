@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from "react";
+import { memo, useCallback } from "react";
 import { View, FlatList, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -9,7 +9,7 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { spacing } from "@/constants/design-system";
 import { VACATION_STATUS, VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '../../../../constants';
 import { formatDate, getDifferenceInDays } from '../../../../utils';
-import { badgeColors } from "@/lib/theme/extended-colors";
+
 import type { Vacation } from '../../../../types';
 
 interface VacationTableProps {

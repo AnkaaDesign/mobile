@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, RefreshControl, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getServices, startService, stopService, restartService } from '../../../api-client';
@@ -11,7 +11,7 @@ import { Icon } from '@/components/ui/icon';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorScreen } from '@/components/ui/error-screen';
 import { SearchBar } from '@/components/ui/search-bar';
-import { toast } from '@/lib/toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface ServiceItem {
   name: string;
@@ -29,8 +29,7 @@ export default function ServerServicesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
-  const { success, error: showError, warning, info } = useToast();
-
+  useToast();
 
   // Query for services
   const { data: servicesData, isLoading, error, refetch } = useQuery({

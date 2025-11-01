@@ -1,5 +1,5 @@
 import { View, ScrollView, RefreshControl } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { Text } from "@/components/ui/text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,7 @@ export default function DeploymentDetailsScreen() {
       >
         <View className="p-4 gap-4">
           <Text className="text-2xl font-bold">
-            {deployment.application} - v{deployment.version}
+            {(deployment as any).application || deployment.environment} - v{deployment.version || 'N/A'}
           </Text>
 
           {/* Status Card */}
@@ -42,7 +42,7 @@ export default function DeploymentDetailsScreen() {
                 <Badge variant={deployment.status === "COMPLETED" ? "success" : deployment.status === "FAILED" ? "destructive" : "default"}>
                   {deployment.status}
                 </Badge>
-                <Badge variant={deployment.environment === "production" ? "destructive" : deployment.environment === "staging" ? "warning" : "info"}>
+                <Badge variant={deployment.environment === "PRODUCTION" ? "destructive" : deployment.environment === "STAGING" ? "warning" : "info"}>
                   {deployment.environment}
                 </Badge>
               </View>
@@ -50,7 +50,7 @@ export default function DeploymentDetailsScreen() {
               <View className="gap-2">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-muted-foreground">Aplicação</Text>
-                  <Text className="font-medium">{deployment.application}</Text>
+                  <Text className="font-medium">{(deployment as any).application || deployment.environment}</Text>
                 </View>
                 <Separator />
                 <View className="flex-row items-center justify-between">
@@ -76,7 +76,7 @@ export default function DeploymentDetailsScreen() {
           </Card>
 
           {/* Git Info Card */}
-          {(deployment.commitSha || deployment.branch || deployment.commitAuthor) && (
+          {(deployment.commitSha || deployment.branch || (deployment as any).commitAuthor) && (
             <Card>
               <CardHeader>
                 <CardTitle>Informações Git</CardTitle>
@@ -94,16 +94,16 @@ export default function DeploymentDetailsScreen() {
                     <Text>{deployment.branch}</Text>
                   </View>
                 )}
-                {deployment.commitAuthor && (
+                {(deployment as any).commitAuthor && (
                   <View className="flex-row items-center gap-2">
                     <Icon name="user" className="w-4 h-4" />
-                    <Text>{deployment.commitAuthor}</Text>
+                    <Text>{(deployment as any).commitAuthor}</Text>
                   </View>
                 )}
-                {deployment.commitMessage && (
+                {(deployment as any).commitMessage && (
                   <View className="mt-2">
                     <Text className="text-muted-foreground text-sm">
-                      {deployment.commitMessage}
+                      {(deployment as any).commitMessage}
                     </Text>
                   </View>
                 )}
@@ -112,27 +112,27 @@ export default function DeploymentDetailsScreen() {
           )}
 
           {/* Logs Card */}
-          {deployment.logs && (
+          {deployment.deploymentLog && (
             <Card>
               <CardHeader>
                 <CardTitle>Logs</CardTitle>
               </CardHeader>
               <CardContent>
                 <ScrollView horizontal>
-                  <Text className="font-mono text-xs">{deployment.logs}</Text>
+                  <Text className="font-mono text-xs">{deployment.deploymentLog}</Text>
                 </ScrollView>
               </CardContent>
             </Card>
           )}
 
           {/* Error Card */}
-          {deployment.status === "FAILED" && deployment.error && (
+          {deployment.status === "FAILED" && (deployment as any).error && (
             <Card className="border-destructive">
               <CardHeader>
                 <CardTitle className="text-destructive">Erro</CardTitle>
               </CardHeader>
               <CardContent>
-                <Text className="text-destructive">{deployment.error}</Text>
+                <Text className="text-destructive">{(deployment as any).error}</Text>
               </CardContent>
             </Card>
           )}

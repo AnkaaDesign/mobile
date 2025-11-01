@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Modal, Platform, TouchableOpacity, View , StyleSheet} from "react-native";
 import { IconCalendar } from "@tabler/icons-react-native";
 import { Text } from "@/components/ui/text";
@@ -15,7 +15,7 @@ import type { DatePickerProps } from "@/types/components/form-props";
  * - Android uses the default native picker (which doesn't allow custom buttons).
  */
 export function DatePicker({ value, onChange, label, type = "date", style, placeholder, disabled }: DatePickerProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date | undefined>(undefined);
@@ -198,7 +198,7 @@ export function DatePicker({ value, onChange, label, type = "date", style, place
                 value={tempDate || new Date()}
                 mode="date"
                 display="spinner"
-                onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                onChange={(_event: DateTimePickerEvent, selectedDate?: Date) => {
                   if (selectedDate) {
                     setTempDate(selectedDate);
                   }
@@ -268,7 +268,7 @@ export function DatePicker({ value, onChange, label, type = "date", style, place
                 value={tempDate || new Date()}
                 mode="time"
                 display="spinner"
-                onChange={(event: DateTimePickerEvent, selectedTime?: Date) => {
+                onChange={(_event: DateTimePickerEvent, selectedTime?: Date) => {
                   if (selectedTime) {
                     const finalDate = tempDate || new Date();
                     finalDate.setHours(selectedTime.getHours(), selectedTime.getMinutes());

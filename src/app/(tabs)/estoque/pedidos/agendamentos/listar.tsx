@@ -1,14 +1,14 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrderScheduleMutations } from '../../../../../hooks';
 import { useOrderSchedulesInfiniteMobile } from "@/hooks";
-import type { OrderScheduleGetManyFormData } from '../../../../../schemas';
+
 import { ThemedView, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
-import { OrderScheduleTable, createColumnDefinitions } from "@/components/inventory/order/schedule/order-schedule-table";
-import type { SortConfig } from "@/components/inventory/order/schedule/order-schedule-table";
+import { OrderScheduleTable} from "@/components/inventory/order/schedule/order-schedule-table";
+
 import { OrderScheduleFilterTags } from "@/components/inventory/order/schedule/order-schedule-filter-tags";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -20,14 +20,14 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 // New hooks and components
 import { useTableSort } from "@/hooks/useTableSort";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
-import { BaseFilterDrawer, BooleanFilter, SelectFilter } from "@/components/common/filters";
-import { SCHEDULE_FREQUENCY_LABELS } from '../../../../../constants';
+import { BaseFilterDrawer, BooleanFilter } from "@/components/common/filters";
+import { } from '../../../../../constants';
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 
 export default function InventoryOrderSchedulesListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -35,7 +35,6 @@ export default function InventoryOrderSchedulesListScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSchedules, setSelectedSchedules] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -52,8 +51,6 @@ export default function InventoryOrderSchedulesListScreen() {
 
   const {
     visibleColumns,
-    setVisibleColumns,
-    isLoading: isColumnsLoading,
   } = useColumnVisibility(
     "orderSchedules",
     ["supplier", "frequency", "specificDate", "isActive"],
@@ -105,7 +102,7 @@ export default function InventoryOrderSchedulesListScreen() {
     items: schedules,
     isLoading,
     error,
-    refetch,
+    
     isRefetching,
     loadMore,
     canLoadMore,
@@ -174,26 +171,12 @@ export default function InventoryOrderSchedulesListScreen() {
     setShowSelection(false);
   }, []);
 
-  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
-    setVisibleColumns(Array.from(newColumns));
-  }, [setVisibleColumns]);
-
   // Get all column definitions
-  const allColumns = useMemo(() => createColumnDefinitions(), []);
 
   // Count active filters
   const activeFiltersCount = Object.values(filters).filter(
     (value) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : value === true)
   ).length;
-
-  // Frequency options for filter
-  const frequencyOptions = useMemo(() =>
-    Object.entries(SCHEDULE_FREQUENCY_LABELS).map(([value, label]) => ({
-      value,
-      label,
-    })),
-    []
-  );
 
   // Filter sections for BaseFilterDrawer
   const filterSections = useMemo(() => [
@@ -263,12 +246,6 @@ export default function InventoryOrderSchedulesListScreen() {
         />
         <View style={styles.buttonContainer}>
           <ListActionButton
-            icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
-            badgeCount={visibleColumns.length}
-            badgeVariant="primary"
-          />
-          <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
             onPress={() => setShowFilters(true)}
             badgeCount={activeFiltersCount}
@@ -307,7 +284,7 @@ export default function InventoryOrderSchedulesListScreen() {
             onSelectionChange={handleSelectionChange}
             sortConfigs={sortConfigs}
             onSort={(configs) => handleSort(configs[0]?.columnKey || "createdAt")}
-            visibleColumnKeys={visibleColumns}
+            visibleColumnKeys={Array.from(visibleColumns) as string[]}
             enableSwipeActions={true}
           />
         </TableErrorBoundary>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { View, Text, TouchableOpacity, Modal, FlatList, TextInput, Keyboard, Platform, Dimensions, ActivityIndicator, Pressable , StyleSheet} from "react-native";
 import { Icon } from "./icon";
 import { useTheme } from "@/lib/theme";
@@ -36,7 +36,7 @@ interface ComboboxProps {
   multiple?: boolean;
 }
 
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
+const { height: SCREEN_HEIGHT, width: _SCREEN_WIDTH } = Dimensions.get("window");
 const MAX_MODAL_HEIGHT = SCREEN_HEIGHT * 0.6;
 const LIST_MAX_HEIGHT = 300;
 
@@ -127,9 +127,9 @@ export const Combobox = React.memo(function Combobox({
     (option: ComboboxOption) => {
       if (option.value === value) {
         // Deselect if clicking the same option
-        onValueChange(undefined);
+        onValueChange?.(undefined);
       } else {
-        onValueChange(option.value);
+        onValueChange?.(option.value);
       }
       handleClose();
       setSearchText("");
@@ -148,7 +148,7 @@ export const Combobox = React.memo(function Combobox({
   }, [onCreate, searchText, handleClose]);
 
   const handleClear = useCallback(() => {
-    onValueChange(undefined);
+    onValueChange?.(undefined);
   }, [onValueChange]);
 
   const handleSearchChange = useCallback(
@@ -352,7 +352,7 @@ export const Combobox = React.memo(function Combobox({
                 flexGrow: 1,
               }}
               // Virtualization optimizations - disabled for custom renderOption to ensure proper measurement
-              getItemLayout={!renderOption ? (data, index) => ({
+              getItemLayout={!renderOption ? (_data, index) => ({
                 length: 48, // Fixed item height
                 offset: 48 * index,
                 index,

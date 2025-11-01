@@ -20,7 +20,7 @@ export default function BackupDetailsScreen() {
   const [isRestoring, setIsRestoring] = useState(false);
 
   const { data: backup, isLoading, refetch, isFetching } = useBackup(id!);
-  const { restore, deleteBackup } = useBackupMutations();
+  const { restore, delete: deleteBackup } = useBackupMutations();
 
   const handleRestore = () => {
     Alert.alert(
@@ -34,7 +34,7 @@ export default function BackupDetailsScreen() {
           onPress: async () => {
             try {
               setIsRestoring(true);
-              await restore.mutateAsync(id!);
+              await restore.mutateAsync({ id: id! });
               Alert.alert("Sucesso", "Backup restaurado com sucesso");
               router.back();
             } catch (error) {
@@ -75,16 +75,6 @@ export default function BackupDetailsScreen() {
     return <LoadingScreen />;
   }
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      COMPLETED: "text-green-500",
-      IN_PROGRESS: "text-blue-500",
-      FAILED: "text-red-500",
-      PENDING: "text-yellow-500",
-    };
-    return colors[status] || "text-gray-500";
-  };
-
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
       <ScrollView
@@ -108,10 +98,10 @@ export default function BackupDetailsScreen() {
             </CardHeader>
             <CardContent>
               <View className="flex-row items-center gap-2 mb-4">
-                <Badge variant={backup.status === "COMPLETED" ? "success" : backup.status === "FAILED" ? "destructive" : "default"}>
+                <Badge variant={backup.status === "completed" ? "success" : backup.status === "failed" ? "destructive" : "default"}>
                   {backup.status}
                 </Badge>
-                <Badge variant={backup.type === "FULL" ? "default" : backup.type === "DATABASE" ? "info" : "warning"}>
+                <Badge variant={backup.type === "full" ? "default" : backup.type === "database" ? "info" : "warning"}>
                   {backup.type}
                 </Badge>
                 {backup.encrypted && (
@@ -133,8 +123,8 @@ export default function BackupDetailsScreen() {
                 <View className="flex-row items-center justify-between">
                   <Text className="text-muted-foreground">Duração</Text>
                   <Text className="font-medium">
-                    {backup.duration
-                      ? `${Math.round(backup.duration / 1000)}s`
+                    {(backup as any).duration
+                      ? `${Math.round((backup as any).duration / 1000)}s`
                       : "N/A"}
                   </Text>
                 </View>
@@ -160,14 +150,14 @@ export default function BackupDetailsScreen() {
           )}
 
           {/* Contents Card */}
-          {backup.contents && backup.contents.length > 0 && (
+          {(backup as any).contents && (backup as any).contents.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Conteúdo</CardTitle>
               </CardHeader>
               <CardContent>
                 <View className="gap-2">
-                  {backup.contents.map((item: string, index: number) => (
+                  {(backup as any).contents.map((item: string, index: number) => (
                     <View key={index} className="flex-row items-center gap-2">
                       <Icon name="check" className="w-4 h-4 text-green-500" />
                       <Text>{item}</Text>
@@ -179,7 +169,7 @@ export default function BackupDetailsScreen() {
           )}
 
           {/* Error Card */}
-          {backup.status === "FAILED" && backup.error && (
+          {backup.status === "failed" && backup.error && (
             <Card className="border-destructive">
               <CardHeader>
                 <CardTitle className="text-destructive">Erro</CardTitle>
@@ -192,7 +182,7 @@ export default function BackupDetailsScreen() {
 
           {/* Actions */}
           <View className="gap-2">
-            {backup.status === "COMPLETED" && (
+            {backup.status === "completed" && (
               <Button
                 onPress={handleRestore}
                 disabled={isRestoring}

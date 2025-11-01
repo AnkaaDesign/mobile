@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   View,
   ScrollView,
@@ -73,7 +73,7 @@ export const ChangeLogFilterModal = ({
       if (checked) {
         return { ...prev, actions: [...actions, action as any] };
       } else {
-        return { ...prev, actions: actions.filter(a => a !== action) };
+        return { ...prev, actions: actions.filter((a: CHANGE_LOG_ACTION) => a !== action) };
       }
     });
   }, []);
@@ -85,7 +85,7 @@ export const ChangeLogFilterModal = ({
       if (checked) {
         return { ...prev, entityTypes: [...entityTypes, entityType as any] };
       } else {
-        return { ...prev, entityTypes: entityTypes.filter(et => et !== entityType) };
+        return { ...prev, entityTypes: entityTypes.filter((et: CHANGE_LOG_ENTITY_TYPE) => et !== entityType) };
       }
     });
   }, []);

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { IconPlus, IconX, IconTag } from "@tabler/icons-react-native";
 import { ThemedText, Input, Button } from "@/components/ui";

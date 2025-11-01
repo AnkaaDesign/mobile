@@ -1,5 +1,5 @@
 import * as React from "react";
-import { View, ViewStyle, Dimensions } from "react-native";
+import { View, ViewStyle, Dimensions, DimensionValue } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 
@@ -62,13 +62,15 @@ const Grid: React.FC<GridProps> = ({
             ? "100%"
             : `${(100 - (gap * (columns - 1))) / columns}%`;
 
+          const itemStyle: ViewStyle = {
+            width: itemWidth as DimensionValue,
+            ...(horizontal && { height: `${100 / columns}%` as DimensionValue }),
+          };
+
           return (
             <View
               key={index}
-              style={{
-                width: itemWidth,
-                ...(horizontal && { height: `${100 / columns}%` }),
-              }}
+              style={itemStyle}
             >
               {child}
             </View>
@@ -137,13 +139,14 @@ const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
       {childArray.map((child, index) => {
         if (React.isValidElement(child)) {
           const itemWidth = `${(100 - (gap * (columns - 1))) / columns}%`;
+          const itemStyle: ViewStyle = {
+            width: itemWidth as DimensionValue,
+          };
 
           return (
             <View
               key={index}
-              style={{
-                width: itemWidth,
-              }}
+              style={itemStyle}
             >
               {child}
             </View>
@@ -163,7 +166,7 @@ const MasonryGrid: React.FC<MasonryGridProps> = ({
   style
 }) => {
   const { colors } = useTheme();
-  const [columnHeights, setColumnHeights] = React.useState<number[]>(
+  const [columnHeights] = React.useState<number[]>(
     new Array(columns).fill(0)
   );
 

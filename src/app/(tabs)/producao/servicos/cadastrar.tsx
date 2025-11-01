@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Stack, router } from "expo-router";
 import { Alert } from "react-native";
 import { useServiceMutations } from '../../../../hooks';
@@ -32,7 +32,7 @@ export default function CreateServiceScreen() {
           {
             text: "Ver Serviço",
             onPress: () => {
-              router.replace(`/production/services/details/${result.data.id}`);
+              router.replace(`/production/services/details/${result.data?.id}` as any);
             }
           },
           {
@@ -44,7 +44,7 @@ export default function CreateServiceScreen() {
           {
             text: "Voltar à Lista",
             onPress: () => {
-              router.replace("/production/services/list");
+              router.replace("/production/services/list" as any);
             }
           }
         ]

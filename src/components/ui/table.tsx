@@ -1,9 +1,8 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 import { ActivityIndicator, NativeScrollEvent, NativeSyntheticEvent,
   RefreshControl, ScrollView,
   TouchableOpacity, View } from "react-native";
 import { Text } from "./text";
-import { IconChevronDown, IconChevronsUp, IconChevronUp } from "@tabler/icons-react-native";
 import type { SortConfig } from "@/lib/sort-utils";
 
 interface TableCellProps {
@@ -79,7 +78,7 @@ interface TableHeaderCellProps {
   className?: string;
 }
 
-export function TableHeaderCell({ children, columnKey, sortable, className }: TableHeaderCellProps) {
+export function TableHeaderCell({ children, className }: TableHeaderCellProps) {
   return (
     <View className={`flex-1 flex-row justify-between items-center bg-muted px-2 h-12 border-b-0 border-l-1 border-r-1 border-t-1 ${className ?? ""}`}>
       <Text className="font-semibold" numberOfLines={1}>

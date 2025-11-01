@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconFilter, IconList, IconUserPlus } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUserMutations } from '@/hooks';
 import { useUsersInfiniteMobile } from "@/hooks";
@@ -13,7 +13,7 @@ import { EmployeeFilterDrawer } from "@/components/administration/employee/list/
 import { EmployeeFilterTags } from "@/components/administration/employee/list/employee-filter-tags";
 import { EmployeeColumnVisibilityDrawer } from "@/components/administration/employee/list/employee-column-visibility-drawer";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
-import { ItemsCountDisplay } from "@/components/ui/items-count-display";
+
 import { EmployeeListSkeleton } from "@/components/administration/employee/skeleton/employee-list-skeleton";
 import { useTheme } from "@/lib/theme";
 import { routes, USER_STATUS } from '@/constants';
@@ -21,7 +21,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function EmployeesListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors, } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -121,12 +121,12 @@ export default function EmployeesListScreen() {
     items: employees,
     isLoading,
     error,
-    refetch,
+    
     isRefetching,
     loadMore,
     canLoadMore,
     isFetchingNextPage,
-    totalItemsLoaded,
+    
     refresh,
   } = useUsersInfiniteMobile(queryParams);
   const { delete: deleteEmployee } = useUserMutations();
@@ -203,7 +203,7 @@ export default function EmployeesListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   // Calculate status summary
@@ -216,7 +216,7 @@ export default function EmployeesListScreen() {
       dismissed: 0,
     };
 
-    employees.forEach((emp) => {
+    employees.forEach((emp: any /* TODO: Add proper type */) => {
       switch (emp.status) {
         case USER_STATUS.CONTRACTED:
           summary.active++;

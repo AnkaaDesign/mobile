@@ -1,20 +1,20 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet} from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useItemBrand } from '../../../../../../hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE, ORDER_STATUS, STOCK_LEVEL, STOCK_LEVEL_LABELS } from '../../../../../../constants';
-import { formatDate, formatCurrency, determineStockLevel, getStockLevelTextColor, getStockLevelMessage } from '../../../../../../utils';
+import { formatDate, formatCurrency, determineStockLevel } from '../../../../../../utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoadingSpinner, LoadingOverlay, SkeletonCard } from "@/components/ui/loading";
+import { SkeletonCard } from "@/components/ui/loading";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
-import { Separator } from "@/components/ui/separator";
+
 import { Header } from "@/components/ui/header";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight, shadow } from "@/constants/design-system";
+import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import {
   IconTags,
   IconEdit,
@@ -23,9 +23,9 @@ import {
   IconCalendar,
   IconHistory,
   IconInfoCircle,
-  IconHash,
+  
   IconBox,
-  IconArrowRight,
+  
   IconAlertCircle,
   IconAlertTriangle,
 } from "@tabler/icons-react-native";

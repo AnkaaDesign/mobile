@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -10,7 +10,8 @@ import type { TaskCreateFormData } from "@/schemas";
 
 export default function CreateServiceOrderScreen() {
   const router = useRouter();
-  const { createAsync, isCreating } = useTaskMutations();
+  // Fixed: isCreating doesn't exist, use isLoading instead
+  const { createAsync, isLoading: isCreating } = useTaskMutations();
 
   const handleSubmit = async (data: TaskCreateFormData) => {
     try {
@@ -23,7 +24,7 @@ export default function CreateServiceOrderScreen() {
             onPress: () => {
               router.replace(
                 routeToMobilePath(
-                  routes.production.serviceOrders.details(result.data.id)
+                  routes.production.serviceOrders.details(result.data?.id || '')
                 ) as any
               );
             },

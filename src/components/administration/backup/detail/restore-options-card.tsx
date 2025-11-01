@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet, Alert } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";

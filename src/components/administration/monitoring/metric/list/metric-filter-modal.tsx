@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { Drawer } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";

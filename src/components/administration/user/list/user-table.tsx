@@ -10,9 +10,9 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { UserTableRowSwipe } from "./user-table-row-swipe";
-import { formatCPF, formatBrazilianPhone, formatDate, formatDateTime } from '../../../../utils';
+import { formatBrazilianPhone, formatDateTime } from '../../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { USER_STATUS } from '../../../../constants';
+
 import { getUserStatusBadgeText } from '../../../../utils/user';
 import { getBadgeVariant } from '../../../../constants/badge-colors';
 import type { SortConfig } from "@/lib/sort-utils";
@@ -80,7 +80,7 @@ const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (user: User) => (
       <View style={styles.avatarContainer}>
-        <Avatar label={user.name} uri={user.avatar || undefined} size="sm" />
+        <Avatar label={user.name} uri={user.avatar?.url || undefined} size="sm" />
       </View>
     ),
   },
@@ -251,7 +251,7 @@ export const UserTable = React.memo<UserTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    const [_headerHeight, _setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
     // Get all column definitions
@@ -387,7 +387,7 @@ export const UserTable = React.memo<UserTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+            onLayout={(event) => _setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -440,7 +440,7 @@ export const UserTable = React.memo<UserTableProps>(
         if (enableSwipeActions && (onUserEdit || onUserDelete || onUserView)) {
           return (
             <UserTableRowSwipe key={user.id} userId={user.id} userName={user.name} onEdit={onUserEdit} onDelete={onUserDelete} onView={onUserView} disabled={showSelection}>
-              {(isActive) => (
+              {(_isActive) => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -572,7 +572,7 @@ export const UserTable = React.memo<UserTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 36,
               offset: 36 * index,
               index,

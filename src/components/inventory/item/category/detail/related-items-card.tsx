@@ -1,10 +1,10 @@
-import React from "react";
+
 import { View, ScrollView, Pressable, StyleSheet} from "react-native";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconPackage, IconChevronRight, IconLayoutList } from "@tabler/icons-react-native";
-import type { ItemCategory, Item } from '../../../../../types';
+import type { ItemCategory } from '../../../../../types';
 import { router } from "expo-router";
 import { routes } from '../../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";

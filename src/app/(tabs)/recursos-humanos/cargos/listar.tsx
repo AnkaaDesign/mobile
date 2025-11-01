@@ -1,12 +1,12 @@
-import React, { useState, useCallback } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { useState, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePositionMutations } from '../../../../hooks';
 import { usePositionsInfiniteMobile } from "@/hooks";
 import type { PositionGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { PositionTable } from "@/components/human-resources/position/list/position-table";
 import type { SortConfig } from "@/components/human-resources/position/list/position-table";
 import { PositionFilterModal } from "@/components/human-resources/position/list/position-filter-modal";
@@ -20,7 +20,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function PositionListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -28,8 +28,7 @@ export default function PositionListScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<PositionGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "hierarchy", direction: "asc" }]);
-  const [showColumnManager, setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["name", "hierarchy", "remuneration", "users"]);
+  const [visibleColumnKeys] = useState<string[]>(["name", "hierarchy", "remuneration", "users"]);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -94,7 +93,7 @@ export default function PositionListScreen() {
     },
   };
 
-  const { items: positions, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePositionsInfiniteMobile(queryParams);
+  const { items: positions, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = usePositionsInfiniteMobile(queryParams);
   const { delete: deletePosition } = usePositionMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -149,7 +148,7 @@ export default function PositionListScreen() {
   }, []);
 
   // Count active filters
-  const activeFiltersCount = Object.entries(filters).filter(([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
+  const activeFiltersCount = Object.entries(filters).filter(([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
 
   if (isLoading && !isRefetching) {
     return <PositionListSkeleton />;
@@ -171,12 +170,6 @@ export default function PositionListScreen() {
       <View style={[styles.searchContainer]}>
         <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar cargos..." style={styles.searchBar} debounceMs={300} />
         <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
-            badgeCount={visibleColumnKeys.length}
-            badgeVariant="primary"
-          />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
             onPress={() => setShowFilters(true)}

@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formatCurrency } from '../../../../utils';
 import type { Order } from '../../../../types';
-import { IconReceipt, IconCoin, IconPercentage } from "@tabler/icons-react-native";
+import { IconReceipt, IconCoin } from "@tabler/icons-react-native";
 
 interface OrderSummaryCardProps {
   order: Order;
@@ -34,7 +34,6 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
           </View>
           <ThemedText style={styles.value}>{formatCurrency(subtotal)}</ThemedText>
         </View>
-
 
         <View style={StyleSheet.flatten([styles.row, styles.totalRow])}>
           <ThemedText style={styles.totalLabel}>Total:</ThemedText>

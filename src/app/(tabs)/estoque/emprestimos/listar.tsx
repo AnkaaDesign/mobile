@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, ActivityIndicator, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBorrowMutations } from '../../../../hooks';
 import { useBorrowsInfiniteMobile } from "@/hooks/use-borrows-infinite-mobile";
@@ -21,7 +21,7 @@ import { BORROW_STATUS } from '../../../../constants';
 
 export default function BorrowListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -43,7 +43,7 @@ export default function BorrowListScreen() {
 
     // If only one sort, return as object
     if (sortConfigs.length === 1) {
-      const config = sortConfigs[0 as keyof typeof sortConfigs];
+      const config = sortConfigs[0];
       switch (config.columnKey) {
         case "item.uniCode":
           return { item: { uniCode: config.direction } };
@@ -105,7 +105,7 @@ export default function BorrowListScreen() {
     ...filters,
   };
 
-  const { items, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useBorrowsInfiniteMobile(queryParams);
+  const { items, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useBorrowsInfiniteMobile(queryParams);
   const { deleteAsync: deleteBorrow, update } = useBorrowMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -118,15 +118,15 @@ export default function BorrowListScreen() {
   }, [refresh]);
 
   const handleCreateBorrow = () => {
-    router.push(routeToMobilePath(routes.inventory.borrows.create));
+    router.push(routeToMobilePath(routes.inventory.borrows.create) as any);
   };
 
   const handleBorrowPress = (borrowId: string) => {
-    router.push(routeToMobilePath(routes.inventory.borrows.details(borrowId)));
+    router.push(routeToMobilePath(routes.inventory.borrows.details(borrowId)) as any);
   };
 
   const handleEditBorrow = (borrowId: string) => {
-    router.push(routeToMobilePath(routes.inventory.borrows.edit(borrowId)));
+    router.push(routeToMobilePath(routes.inventory.borrows.edit(borrowId)) as any);
   };
 
   const handleDeleteBorrow = useCallback(
@@ -233,7 +233,7 @@ export default function BorrowListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   // Only show skeleton on initial load, not on refetch/sort
@@ -294,9 +294,9 @@ export default function BorrowListScreen() {
         filters={filters}
         searchText={searchText}
         onClearAll={handleClearFilters}
-        onRemoveFilter={(key) => {
+        onRemoveFilter={(key: string) => {
           const newFilters = { ...filters };
-          delete newFilters[key as keyof BorrowGetManyFormData];
+          delete (newFilters as any)[key];
           setFilters(newFilters);
         }}
         onClearSearch={() => {

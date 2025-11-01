@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from "react";
+import { memo, useCallback } from "react";
 import {
   View,
   FlatList,
@@ -84,7 +84,7 @@ export const ChangeLogTable = memo(({
   canLoadMore,
   loadingMore,
 }: ChangeLogTableProps) => {
-  const { colors, isDark } = useTheme();
+  const { colors, } = useTheme();
 
   const renderItem = useCallback(({ item: changeLog }: { item: ChangeLog }) => (
     <ReanimatedSwipeableRow
@@ -153,7 +153,7 @@ export const ChangeLogTable = memo(({
               <View style={styles.userInfo}>
                 <Avatar size="sm" style={styles.avatar}>
                   {(changeLog.user.avatar?.url || changeLog.user.profilePictureUrl) && (
-                    <AvatarImage source={{ uri: changeLog.user.avatar?.url || changeLog.user.profilePictureUrl }} />
+                    <AvatarImage source={{ uri: (changeLog.user.avatar?.url || changeLog.user.profilePictureUrl)! }} />
                   )}
                   <AvatarFallback>{changeLog.user.name.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>

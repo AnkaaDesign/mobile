@@ -17,19 +17,19 @@ export interface DetailedBatchResult<T, U = unknown> extends BatchOperationResul
 }
 
 // Disabled for React Native - Components should handle toast display
-export function showBatchOperationToast<T, U = unknown>(result: DetailedBatchResult<T, U>, options: BatchToastOptions) {
+export function showBatchOperationToast<T, U = unknown>(_result: DetailedBatchResult<T, U>, _options: BatchToastOptions) {
   console.warn('showBatchOperationToast is disabled for React Native. Use useToast hook in components instead.');
   // Components using this should call useToast() and display toasts manually
 }
 
-export function showBorrowBatchToast<T, U = unknown>(result: DetailedBatchResult<T, U>, showDetails = true) {
+export function showBorrowBatchToast<T, U = unknown>(_result: DetailedBatchResult<T, U>, _showDetails = true) {
   console.warn('showBorrowBatchToast is disabled for React Native. Use useToast hook in components instead.');
 }
 
-export function showActivityBatchToast<T, U = unknown>(result: DetailedBatchResult<T, U>, showDetails = true) {
+export function showActivityBatchToast<T, U = unknown>(_result: DetailedBatchResult<T, U>, _showDetails = true) {
   console.warn('showActivityBatchToast is disabled for React Native. Use useToast hook in components instead.');
 }
 
-export function showGenericBatchToast<T, U = unknown>(result: DetailedBatchResult<T, U>, entityName: string, entityNamePlural: string, showDetails = true) {
+export function showGenericBatchToast<T, U = unknown>(_result: DetailedBatchResult<T, U>, _entityName: string, _entityNamePlural: string, _showDetails = true) {
   console.warn('showGenericBatchToast is disabled for React Native. Use useToast hook in components instead.');
 }

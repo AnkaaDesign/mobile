@@ -2,7 +2,6 @@ import * as React from "react";
 import { TextInput, View, ViewStyle, TextStyle, TextInputProps, Animated, StyleSheet} from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, fontSize, transitions } from "@/constants/design-system";
-import { cn } from "@/lib/cn";
 
 export interface TextareaProps extends Omit<TextInputProps, "style" | "multiline"> {
   style?: ViewStyle;

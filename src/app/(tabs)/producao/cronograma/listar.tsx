@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { View, FlatList, RefreshControl, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { FAB } from "@/components/ui/fab";
@@ -6,7 +6,7 @@ import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 import { getDefaultVisibleColumns } from "@/components/production/task/list/column-visibility-manager";
-import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
+import { ColumnVisibilityDrawer } from "@/components/ui/column-visibility-drawer";
 import { IconButton } from "@/components/ui/icon-button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
@@ -180,7 +180,6 @@ export default function ScheduleListScreen() {
     router.push(`/producao/cronograma/detalhes/${taskId}`);
   };
 
-
   // Group tasks by sector and convert to array for FlatList
   const sectorGroups = useMemo(() => {
     if (!tasks) return [];
@@ -211,7 +210,6 @@ export default function ScheduleListScreen() {
       tasks: sectorTasks,
     }));
   }, [tasks, isAdmin, user?.sector?.name]);
-
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -316,7 +314,7 @@ export default function ScheduleListScreen() {
       )}
 
       {/* Column Visibility Drawer */}
-      <ColumnVisibilityDrawerV2
+      <ColumnVisibilityDrawer
         columns={allColumns}
         visibleColumns={new Set(visibleColumnKeys)}
         onVisibilityChange={handleColumnsChange}

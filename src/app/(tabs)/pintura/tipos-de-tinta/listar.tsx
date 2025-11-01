@@ -1,14 +1,14 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePaintTypeMutations } from "../../../../hooks";
 import { usePaintTypesInfiniteMobile } from "@/hooks/use-paint-types-infinite-mobile";
-import type { PaintTypeGetManyFormData } from "../../../../schemas";
+
 import { ThemedView, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
 import { PaintTypeTable, createColumnDefinitions } from "@/components/painting/paint-type/list/paint-type-table";
-import type { SortConfig } from "@/components/painting/paint-type/list/paint-type-table";
+
 import { PaintTypeFilterTags } from "@/components/painting/paint-type/list/paint-type-filter-tags";
 import { PaintTypeFilterDrawer } from "@/components/painting/paint-type/list/paint-type-filter-drawer";
 import { PaintTypeColumnVisibilityDrawer } from "@/components/painting/paint-type/list/paint-type-column-visibility-drawer";
@@ -47,7 +47,6 @@ export default function PaintTypeListScreen() {
   const {
     visibleColumns,
     setVisibleColumns,
-    isLoading: isColumnsLoading,
   } = useColumnVisibility(
     "paint-types",
     ["name", "needGround"],
@@ -93,7 +92,6 @@ export default function PaintTypeListScreen() {
     paintTypes,
     isLoading,
     error,
-    refetch,
     isRefetching,
     loadMore,
     canLoadMore,
@@ -164,7 +162,7 @@ export default function PaintTypeListScreen() {
 
   const handleColumnsChange = useCallback(
     (newColumns: Set<string>) => {
-      setVisibleColumns(Array.from(newColumns));
+      setVisibleColumns(newColumns);
     },
     [setVisibleColumns]
   );
@@ -219,7 +217,7 @@ export default function PaintTypeListScreen() {
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
             onPress={() => setShowColumnManager(true)}
-            badgeCount={visibleColumns.length}
+            badgeCount={visibleColumns.size}
             badgeVariant="primary"
           />
           <ListActionButton
@@ -261,7 +259,7 @@ export default function PaintTypeListScreen() {
             onSelectionChange={handleSelectionChange}
             sortConfigs={sortConfigs}
             onSort={(configs) => handleSort(configs[0]?.columnKey || "name")}
-            visibleColumnKeys={visibleColumns}
+            visibleColumnKeys={Array.from(visibleColumns) as string[]}
             enableSwipeActions={true}
           />
         </TableErrorBoundary>
@@ -306,7 +304,7 @@ export default function PaintTypeListScreen() {
       {/* Column Visibility Drawer */}
       <PaintTypeColumnVisibilityDrawer
         columns={allColumns}
-        visibleColumns={new Set(visibleColumns)}
+        visibleColumns={visibleColumns}
         onVisibilityChange={handleColumnsChange}
         open={showColumnManager}
         onOpenChange={setShowColumnManager}

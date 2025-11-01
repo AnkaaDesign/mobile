@@ -41,20 +41,20 @@ export function ListActionButton({
       <Button
         variant="outline"
         onPress={onPress}
-        style={[
+        style={StyleSheet.flatten([
           styles.actionButton,
           { backgroundColor: colors.input },
           style,
-        ]}
+        ])}
       >
         {icon}
       </Button>
       {showBadge && badgeCount !== undefined && (
         <Badge
-          style={[
+          style={StyleSheet.flatten([
             styles.actionBadge,
             badgeVariant === "primary" && { backgroundColor: colors.primary },
-          ]}
+          ])}
           variant={badgeVariant}
           size="sm"
         >

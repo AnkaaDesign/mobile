@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector } from "@tabler/icons-react-native";
@@ -13,7 +13,7 @@ import { WarningTableRowSwipe } from "./warning-table-row-swipe";
 import { getDefaultVisibleColumns } from "./column-visibility-drawer-v2";
 import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from '../../../../constants';
 import { formatDate } from '../../../../utils';
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { extendedColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -24,7 +24,6 @@ export interface TableColumn {
   align?: "left" | "center" | "right";
   sortable?: boolean;
 }
-
 
 interface WarningTableProps {
   warnings: Warning[];
@@ -169,7 +168,6 @@ export const WarningTable = React.memo<WarningTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -302,7 +300,6 @@ export const WarningTable = React.memo<WarningTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -373,7 +370,7 @@ export const WarningTable = React.memo<WarningTableProps>(
               onDelete={onWarningDelete}
               disabled={showSelection}
             >
-              {(isActive) => (
+              {() => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -526,7 +523,7 @@ export const WarningTable = React.memo<WarningTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 60, // Fixed row height
               offset: 60 * index,
               index,
@@ -695,3 +692,5 @@ const styles = StyleSheet.create({
 });
 
 WarningTable.displayName = "WarningTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

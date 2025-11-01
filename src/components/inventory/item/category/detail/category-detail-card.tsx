@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, Pressable , StyleSheet} from "react-native";
 import type { ItemCategory } from '../../../../../types';
 import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from '../../../../../constants';
@@ -17,7 +17,7 @@ interface CategoryDetailCardProps {
   itemCount?: number;
 }
 
-export function CategoryDetailCard({ category, onPress, onEdit, showActions = true, variant = "default", itemCount = 0 }: CategoryDetailCardProps) {
+export function CategoryDetailCard({ category, onPress, showActions: _showActions = true, variant = "default", itemCount = 0 }: CategoryDetailCardProps) {
   const { colors } = useTheme();
 
   return (

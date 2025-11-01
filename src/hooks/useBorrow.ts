@@ -21,6 +21,7 @@ import type {
   BorrowInclude,
 } from '@/schemas';
 import type {
+  Borrow,
   BorrowGetManyResponse,
   BorrowGetUniqueResponse,
   BorrowCreateResponse,
@@ -67,7 +68,7 @@ const baseBorrowHooks = createEntityHooks<
   BorrowBatchCreateFormData,
   BorrowBatchCreateResponse<BorrowCreateFormData>,
   BorrowBatchUpdateFormData,
-  BorrowBatchUpdateResponse<BorrowUpdateFormData>,
+  BorrowBatchUpdateResponse<Borrow>,
   BorrowBatchDeleteFormData,
   BorrowBatchDeleteResponse
 >({

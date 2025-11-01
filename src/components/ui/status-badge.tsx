@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ViewStyle, TextStyle, StyleSheet} from "react-native";
+import { View, ViewStyle, TextStyle } from "react-native";
 import { useTheme } from "@/lib/theme";
 
 interface StatusBadgeProps {
@@ -8,7 +8,7 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ children, style }: StatusBadgeProps) {
-  const { colors, spacing } = useTheme();
+  const { spacing } = useTheme();
 
   return (
     <View style={[{ padding: spacing.sm }, style as ViewStyle]}>

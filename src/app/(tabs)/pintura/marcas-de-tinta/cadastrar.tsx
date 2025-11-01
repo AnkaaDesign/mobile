@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
+import { useState } from "react";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { Stack, router } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +18,6 @@ import { hasPrivilege } from '../../../../utils';
 import { showToast } from "@/lib/toast/use-toast";
 import {
   IconTag,
-  IconCheck,
 } from "@tabler/icons-react-native";
 
 export default function CreatePaintBrandScreen() {

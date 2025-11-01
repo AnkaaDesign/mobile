@@ -2,19 +2,15 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
+
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatDate, formatDateTime } from '../../../../utils';
-import { PRIORITY_TYPE } from '../../../../constants';
+
 import type { Task } from '../../../../types';
 import { TaskStatusBadge } from "../list/task-status-badge";
-import { TaskPriorityIndicator } from "../list/task-priority-indicator";
+
 import {
-  IconCalendar,
-  IconClock,
-  IconFlag,
   IconHash,
   IconBuildingFactory2,
   IconBuilding,

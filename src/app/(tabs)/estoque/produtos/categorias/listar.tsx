@@ -1,20 +1,19 @@
-import React, { useState, useCallback } from "react";
-import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { useState, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { ThemedView, ThemedText, FAB, SearchBar, ErrorScreen, EmptyState, ItemsCountDisplay } from "@/components/ui";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ThemedView, FAB, SearchBar, ErrorScreen, EmptyState, ItemsCountDisplay } from "@/components/ui";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing } from "@/constants/design-system";
 import { CategoryTable, type SortConfig } from "@/components/inventory/item/category/list/category-table";
 import { useItemCategoriesInfiniteMobile } from "@/hooks";
 import { routes } from '../../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { IconPlus } from "@tabler/icons-react-native";
 
 export default function ListarCategoriasScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
   // State
@@ -30,7 +29,7 @@ export default function ListarCategoriasScreen() {
 
     // If only one sort, return as object
     if (sortConfigs.length === 1) {
-      const config = sortConfigs[0 as keyof typeof sortConfigs];
+      const config = sortConfigs[0];
       return { [config.columnKey]: config.direction };
     }
 
@@ -48,7 +47,7 @@ export default function ListarCategoriasScreen() {
   };
 
   // Fetch categories with infinite scroll
-  const { items: categories, isLoading, error, refetch, refresh, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded } = useItemCategoriesInfiniteMobile(queryParams);
+  const { items: categories, isLoading, error, refetch, refresh, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount } = useItemCategoriesInfiniteMobile(queryParams);
 
   // Handlers
   const handleCategoryPress = useCallback(
@@ -65,7 +64,7 @@ export default function ListarCategoriasScreen() {
     [router],
   );
 
-  const handleCategoryDelete = useCallback((categoryId: string) => {
+  const handleCategoryDelete = useCallback((_categoryId: string) => {
     // Delete handled by table component
   }, []);
 

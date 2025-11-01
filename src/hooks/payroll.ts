@@ -302,7 +302,7 @@ export const useFinalizePayrollMonth = () => {
   return useMutation({
     mutationFn: ({ year, month }: { year: number; month: number }) =>
       payrollService.finalizeMonth(year, month).then(response => response.data),
-    onMutate: async (variables) => {
+    onMutate: async (_variables) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: payrollQueryKeys.all });
 
@@ -311,10 +311,10 @@ export const useFinalizePayrollMonth = () => {
 
       return { previousPayrolls };
     },
-    onSuccess: (_result, variables) => {
+    onSuccess: (_result, _variables) => {
       queryClient.invalidateQueries({ queryKey: payrollQueryKeys.all });
     },
-    onError: (error: any, variables, context) => {
+    onError: (_error: any, _variables, context) => {
       // Rollback optimistic update if needed
       if (context?.previousPayrolls) {
         queryClient.setQueryData(payrollQueryKeys.list(), context.previousPayrolls);

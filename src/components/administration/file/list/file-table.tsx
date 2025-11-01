@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
-import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet, Alert, Share } from "react-native";
+import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet, Alert } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { File } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
+
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -22,7 +22,6 @@ export interface TableColumn {
   align?: "left" | "center" | "right";
   sortable?: boolean;
 }
-
 
 interface FileTableProps {
   files: File[];
@@ -128,7 +127,7 @@ export const FileTable = React.memo<FileTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    const [_headerHeight, _setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
     // Get all column definitions
@@ -250,7 +249,7 @@ export const FileTable = React.memo<FileTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+            onLayout={(event) => _setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -482,7 +481,7 @@ export const FileTable = React.memo<FileTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 36,
               offset: 36 * index,
               index,

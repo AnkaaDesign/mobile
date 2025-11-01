@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Skeleton } from "@/components/ui/skeleton";

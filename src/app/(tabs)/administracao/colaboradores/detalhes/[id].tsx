@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useUser } from '../../../../../hooks';
-import { useAuth } from '../../../../../hooks';
+import { useAuth } from '../../../../../contexts/auth-context';
 import { CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
 import { Card, CardContent } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -37,7 +37,7 @@ export default function EmployeeDetailsScreen() {
   console.log("[EMPLOYEE DETAILS] Screen mounted with ID:", id);
   console.log("[EMPLOYEE DETAILS] Full params:", params);
   console.log("[EMPLOYEE DETAILS] Current logged-in user:", currentUser ? `${currentUser.name} (${currentUser.id})` : "null");
-  console.log("[EMPLOYEE DETAILS] User privileges:", currentUser?.sectorPrivileges || "none");
+  console.log("[EMPLOYEE DETAILS] User sector privileges:", currentUser?.sector?.privileges || currentUser?.position?.sector?.privileges || "none");
   console.log("[EMPLOYEE DETAILS] Has access token:", !!accessToken);
   console.log("[EMPLOYEE DETAILS] Is viewing own profile:", id === currentUser?.id);
   console.log("[EMPLOYEE DETAILS] Access token (first 50 chars):", accessToken ? accessToken.substring(0, 50) + "..." : "null");

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import type { Warning } from '../../../../types';
 import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from '../../../../constants';
@@ -17,7 +17,7 @@ interface SpecificationsCardProps {
 }
 
 export function SpecificationsCard({ warning }: SpecificationsCardProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   // Get severity badge color
   const getSeverityColor = () => {

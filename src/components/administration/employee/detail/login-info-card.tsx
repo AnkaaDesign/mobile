@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
 import { formatDateTime, formatRelativeTime } from '../../../../utils';

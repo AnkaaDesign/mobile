@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from "react";
 import { View, Alert, Pressable , StyleSheet} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { IconPlus, IconFilter, IconPackage, IconEdit, IconTrash } from "@tabler/icons-react-native";
+import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrderItemsByOrder, useOrderItemMutations, useOrder } from '../../../../../../hooks';
-import type { OrderItemGetManyFormData } from '../../../../../../schemas';
+
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -17,15 +17,15 @@ import { SECTOR_PRIVILEGES } from '../../../../../../constants';
 export default function OrderItemsListScreen() {
   const router = useRouter();
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const [refreshing, setRefreshing] = useState(false);
+  const [_refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
 
   // Check permissions
-  const canEdit = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
-  const canDelete = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.ADMIN);
+  const canEdit = !!(user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE));
+  const canDelete = !!(user && hasPrivilege(user as any, SECTOR_PRIVILEGES.ADMIN));
 
   // Get order details
   const { data: order, isLoading: orderLoading, error: orderError } = useOrder(orderId!, {
@@ -38,10 +38,10 @@ export default function OrderItemsListScreen() {
   // Get order items
   const {
     data: orderItemsResponse,
-    isLoading,
+    
     error,
     refetch,
-    isRefetching,
+    
   } = useOrderItemsByOrder(
     {
       orderId: orderId!,

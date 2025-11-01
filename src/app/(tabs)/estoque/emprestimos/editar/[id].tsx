@@ -58,7 +58,7 @@ function BorrowEditScreen() {
         message: "Empréstimo marcado como devolvido!",
         type: "success",
       });
-      router.replace(routeToMobilePath(routes.inventory.borrows.root));
+      router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
     } catch (error) {
       console.error("Error returning borrow:", error);
     }
@@ -76,14 +76,14 @@ function BorrowEditScreen() {
         message: "Empréstimo marcado como perdido!",
         type: "success",
       });
-      router.replace(routeToMobilePath(routes.inventory.borrows.root));
+      router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
     } catch (error) {
       console.error("Error marking borrow as lost:", error);
     }
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.inventory.borrows.root));
+    router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
   };
 
   if (isLoading) {

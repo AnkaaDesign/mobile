@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import {
   IconX,
@@ -8,12 +8,11 @@ import {
   IconFileText,
   IconMail,
   IconWorld,
-  IconBuilding,
   IconMapPin,
   IconId,
 } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { BRAZILIAN_STATES } from '../../../../constants';
+
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";

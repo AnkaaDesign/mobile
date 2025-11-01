@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { KeyboardAvoidingView, Platform } from "react-native";
 import { showToast } from "@/components/ui/toast";
-import { ThemedView } from "@/components/ui/themed-view";
+
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { ItemCategoryForm } from "@/components/inventory/item/category/form/category-form";
 import { useItemCategoryMutations } from '../../../../../hooks';

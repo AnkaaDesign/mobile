@@ -1,4 +1,4 @@
-import React from "react";
+
 import { ActivityIndicator, Text, TextStyle, View, ViewStyle } from "react-native";
 import { cn } from "@/lib/cn";
 

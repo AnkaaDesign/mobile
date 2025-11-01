@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, ScrollView, Alert, StyleSheet } from "react-native";
+import { useState, useMemo } from "react";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconUsers, IconDeviceFloppy } from "@tabler/icons-react-native";

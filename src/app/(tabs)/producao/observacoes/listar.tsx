@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
@@ -112,10 +112,10 @@ export default function ObservationListScreen() {
   );
 
   const {
-    observations,
+    items: observations,
     isLoading,
     error,
-    refetch,
+    
     isRefetching,
     loadMore,
     canLoadMore,

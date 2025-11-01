@@ -26,7 +26,7 @@ interface ToggleGroupProps {
 const ToggleGroup = React.forwardRef<
   React.ElementRef<typeof ToggleGroupPrimitive.Root>,
   ToggleGroupProps
->(({ className, variant, size, children, type, value, onValueChange, disabled }, ref) => {
+>(({ variant, size, children, type, value, onValueChange, disabled }, ref) => {
   const rootProps = {
     ref,
     type,

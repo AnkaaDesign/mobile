@@ -1,16 +1,15 @@
-import React, { useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { Pressable, Animated, Easing } from "react-native";
 import { IconMoon, IconSun } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { cn } from "../../lib/utils";
 
 interface ThemeToggleProps {
   size?: number;
   className?: string;
 }
 
-export function ThemeToggle({ size = 24, className }: ThemeToggleProps) {
-  const { theme, isDark, setTheme } = useTheme();
+export function ThemeToggle({ size = 24}: ThemeToggleProps) {
+  const { isDark, setTheme } = useTheme();
 
   // Animation values
   const sunScale = useRef(new Animated.Value(isDark ? 0 : 1)).current;

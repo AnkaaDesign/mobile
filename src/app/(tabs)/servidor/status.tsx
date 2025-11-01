@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, RefreshControl } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { getSystemHealth, getSystemStatus, getMetrics } from '../../../api-client';
@@ -103,7 +103,7 @@ export default function ServerStatusScreen() {
   }
 
   const systemHealth = healthData?.data;
-  const systemStatus = statusData?.data;
+
   const metrics = metricsData?.data;
 
   const uptime = metrics?.uptime ? formatUptime(metrics.uptime) : 'N/A';

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Controller, useFormContext } from "react-hook-form";
 import { View, StyleSheet} from "react-native";
 import { Switch } from "@/components/ui/switch";

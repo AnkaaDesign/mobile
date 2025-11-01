@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ScrollView, RefreshControl, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSystemStatus, getSystemHealth } from '../../../api-client';
@@ -35,7 +35,7 @@ export default function ServerMaintenanceScreen() {
   const [customMessage, setCustomMessage] = useState('');
   const [estimatedDuration, setEstimatedDuration] = useState('');
   const [allowedUser, setAllowedUser] = useState('');
-  const { success, error: showError, warning, info } = useToast();
+  const { success, error: showError} = useToast();
 
   const queryClient = useQueryClient();
 
@@ -64,7 +64,7 @@ export default function ServerMaintenanceScreen() {
         }, 1000);
       });
     },
-    onSuccess: (data, settings) => {
+    onSuccess: (_data, settings) => {
       success(
         settings.enabled
           ? 'Modo de manutenção ativado'
@@ -73,7 +73,7 @@ export default function ServerMaintenanceScreen() {
       queryClient.invalidateQueries({ queryKey: ['systemStatus'] });
       queryClient.invalidateQueries({ queryKey: ['systemHealth'] });
     },
-    onError: (error) => {
+    onError: (_error) => {
       showError('Erro ao alterar modo de manutenção');
     },
   });

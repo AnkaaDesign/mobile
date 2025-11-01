@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useUser } from '@/hooks';
@@ -23,8 +23,8 @@ import {
   IconMail,
   IconPhone,
   IconIdBadge,
-  IconClock,
-  IconCalendarOff,
+  
+  
   IconPackage,
 } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/lib/route-mapper";

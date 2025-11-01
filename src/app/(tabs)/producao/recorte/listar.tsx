@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { View, ScrollView, RefreshControl, ActivityIndicator, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import { View, RefreshControl, ActivityIndicator, StyleSheet, TouchableOpacity, FlatList } from "react-native";
 import { router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
@@ -24,12 +24,11 @@ const getCutStatusBadgeVariant = (status: CUT_STATUS): "default" | "secondary" |
   switch (status) {
     case CUT_STATUS.COMPLETED:
       return "success";
-    case CUT_STATUS.IN_PROGRESS:
+    // Fixed: IN_PROGRESS and CANCELLED don't exist, using CUTTING instead
+    case CUT_STATUS.CUTTING:
       return "default";
     case CUT_STATUS.PENDING:
       return "warning";
-    case CUT_STATUS.CANCELLED:
-      return "destructive";
     default:
       return "secondary";
   }
@@ -91,12 +90,13 @@ const CutCard: React.FC<CutCardProps> = ({ cut, onPress }) => {
 export default function CuttingListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const [refreshing, setRefreshing] = useState(false);
+  const [_refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<CUT_STATUS[]>([
     CUT_STATUS.PENDING,
-    CUT_STATUS.IN_PROGRESS,
+    // Fixed: IN_PROGRESS doesn't exist, using CUTTING instead
+    CUT_STATUS.CUTTING,
   ]);
 
   // Debounced search
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: spacing["3xl"],
+    paddingVertical: spacing.xxl,
   },
   emptyTitle: {
     fontSize: fontSize.lg,

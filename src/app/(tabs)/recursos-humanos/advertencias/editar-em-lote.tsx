@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,7 +17,7 @@ export default function WarningBatchEditScreen() {
 
   const selectedIds = params.ids ? params.ids.split(",").filter(Boolean) : [];
 
-  const { data, isLoading, error } = useWarnings({
+  const { data, isLoading, } = useWarnings({
     where: {
       id: { in: selectedIds },
     },
@@ -107,7 +106,7 @@ export default function WarningBatchEditScreen() {
         <Button
           variant="default"
           onPress={handleSave}
-          style={[styles.button, styles.saveButton]}
+          style={StyleSheet.flatten([styles.button, styles.saveButton])}
         >
           <IconCheck size={18} color="#fff" />
           <ThemedText style={styles.saveButtonText}>Salvar</ThemedText>
@@ -135,13 +134,13 @@ export default function WarningBatchEditScreen() {
                   </ThemedText>
                 </View>
               )}
-              {warning.date && (
+              {warning.createdAt && (
                 <View style={styles.infoRow}>
                   <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
                     Data:
                   </ThemedText>
                   <ThemedText style={styles.infoValue}>
-                    {formatDate(warning.date)}
+                    {formatDate(warning.createdAt)}
                   </ThemedText>
                 </View>
               )}

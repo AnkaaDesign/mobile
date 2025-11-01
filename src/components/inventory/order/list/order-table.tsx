@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector } from "@tabler/icons-react-native";
@@ -116,8 +116,10 @@ export const createColumnDefinitions = (): TableColumn[] => [
       const total = order.items?.reduce((sum, item) => {
         const quantity = item.orderedQuantity || 0;
         const price = item.price || 0;
-        const tax = item.tax || 0;
-        const itemTotal = quantity * price * (1 + tax / 100);
+        const icms = item.icms || 0;
+        const ipi = item.ipi || 0;
+        const subtotal = quantity * price;
+        const itemTotal = subtotal + (subtotal * icms / 100) + (subtotal * ipi / 100);
         return sum + itemTotal;
       }, 0) || 0;
       return (
@@ -187,7 +189,7 @@ export const OrderTable = React.memo<OrderTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
-    const [headerHeight, setHeaderHeight] = useState(50);
+    // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -322,7 +324,6 @@ export const OrderTable = React.memo<OrderTableProps>(
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
-            onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {showSelection && (
@@ -386,7 +387,7 @@ export const OrderTable = React.memo<OrderTableProps>(
         if (enableSwipeActions && (onOrderEdit || onOrderDelete)) {
           return (
             <OrderTableRowSwipe key={item.id} orderId={item.id} orderName={item.description} onEdit={onOrderEdit} onDelete={onOrderDelete} onDuplicate={onOrderDuplicate} disabled={showSelection}>
-              {(isActive) => (
+              {() => (
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -540,7 +541,7 @@ export const OrderTable = React.memo<OrderTableProps>(
             windowSize={5}
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_data, index) => ({
               length: 60, // Fixed row height
               offset: 60 * index,
               index,
@@ -712,3 +713,5 @@ const styles = StyleSheet.create({
 });
 
 OrderTable.displayName = "OrderTable";
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

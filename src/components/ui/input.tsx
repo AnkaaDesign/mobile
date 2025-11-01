@@ -1,8 +1,7 @@
 import * as React from "react";
 import { TextInput, View, ViewStyle, TextStyle, TextInputProps, Animated, StyleSheet} from "react-native";
 import { useTheme } from "@/lib/theme";
-import { borderRadius, shadow, fontSize, lineHeight, transitions } from "@/constants/design-system";
-import { cn } from "@/lib/cn";
+import { borderRadius, shadow, fontSize, transitions } from "@/constants/design-system";
 
 export interface InputProps extends Omit<TextInputProps, "style"> {
   style?: ViewStyle | ViewStyle[];
@@ -18,7 +17,7 @@ export interface InputProps extends Omit<TextInputProps, "style"> {
 const Input = React.forwardRef<TextInput, InputProps>(({ style, containerStyle, inputStyle, error, errorMessage, editable = true, disabled, withIcon, className, ...props }, ref) => {
   // Handle disabled prop
   const isEditable = disabled !== undefined ? !disabled : editable;
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [isFocused, setIsFocused] = React.useState(false);
   const borderColorAnim = React.useRef(new Animated.Value(0)).current;
   const shadowAnim = React.useRef(new Animated.Value(0)).current;

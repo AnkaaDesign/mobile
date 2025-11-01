@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -8,7 +8,7 @@ import type { Sector } from '../../../../types';
 import { SECTOR_PRIVILEGES_LABELS, SECTOR_PRIVILEGES } from '../../../../constants';
 import { formatDateTime } from '../../../../utils';
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 
 // Map privileges to badge colors (same as web list page)
 const getPrivilegeColor = (privilege: string) => {

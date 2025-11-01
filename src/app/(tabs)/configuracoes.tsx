@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { IconUser, IconBell, IconPalette, IconLock, IconChevronRight } from "@tabler/icons-react-native";

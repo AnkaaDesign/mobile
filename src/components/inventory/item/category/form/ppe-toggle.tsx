@@ -1,7 +1,7 @@
-import React from "react";
+
 import { View, StyleSheet} from "react-native";
 import { Controller, useFormContext } from "react-hook-form";
-import type { Control } from "react-hook-form";
+
 import { Label } from "@/components/ui/label";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Switch } from "@/components/ui/switch";

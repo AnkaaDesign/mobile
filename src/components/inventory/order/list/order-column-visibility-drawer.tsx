@@ -29,7 +29,7 @@ interface OrderColumnVisibilityDrawerProps {
 }
 
 export function OrderColumnVisibilityDrawer({ columns, visibleColumns, onVisibilityChange, open, onOpenChange }: OrderColumnVisibilityDrawerProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
   const [localVisible, setLocalVisible] = useState(visibleColumns);

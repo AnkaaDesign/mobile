@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { useState, useEffect } from "react";
+import { View, StyleSheet } from "react-native";
 import { InputOTP } from "@/components/ui/input-otp";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";

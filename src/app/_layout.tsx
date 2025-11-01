@@ -24,7 +24,7 @@ import { AppStatusBar } from "@/components/app-status-bar";
 import NetInfo from "@react-native-community/netinfo";
 import { updateApiUrl } from '../api-client';
 import { setupMobileNotifications } from "@/lib/setup-notifications";
-import "global.css";
+import "../../global.css";
 
 // Initialize API URL early - this is critical for mobile
 if (process.env.EXPO_PUBLIC_API_URL) {

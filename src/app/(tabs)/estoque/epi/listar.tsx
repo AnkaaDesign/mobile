@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, ActivityIndicator, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useItemMutations } from '../../../../hooks';
 import { useItemsInfiniteMobile } from "@/hooks";
@@ -21,7 +21,7 @@ import { ITEM_CATEGORY_TYPE } from '../../../../constants';
 
 export default function PPEListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -40,7 +40,7 @@ export default function PPEListScreen() {
 
     // If only one sort, return as object
     if (sortConfigs.length === 1) {
-      const config = sortConfigs[0 as keyof typeof sortConfigs];
+      const config = sortConfigs[0];
       switch (config.columnKey) {
         case "name":
           return { name: config.direction };
@@ -143,7 +143,7 @@ export default function PPEListScreen() {
     },
   };
 
-  const { items, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useItemsInfiniteMobile(queryParams);
+  const { items, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useItemsInfiniteMobile(queryParams);
   const { delete: deletePpe } = useItemMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -213,6 +213,12 @@ export default function PPEListScreen() {
     setShowSelection(false);
   }, []);
 
+  const handleRemoveFilter = useCallback((key: keyof ItemGetManyFormData) => {
+    const newFilters = { ...filters };
+    delete (newFilters as any)[key];
+    setFilters(newFilters);
+  }, [filters]);
+
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {
     setVisibleColumnKeys(Array.from(newColumns));
   }, []);
@@ -222,7 +228,7 @@ export default function PPEListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   // Only show skeleton on initial load, not on refetch/sort
@@ -282,10 +288,10 @@ export default function PPEListScreen() {
       <PpeFilterTags
         filters={filters}
         searchText={searchText}
-        onFilterChange={handleApplyFilters}
-        onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
+        onRemoveFilter={handleRemoveFilter}
+        onClearSearch={() => {
+          setSearchText("");
+          setDisplaySearchText("");
         }}
         onClearAll={handleClearFilters}
       />

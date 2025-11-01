@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
@@ -94,10 +94,10 @@ export default function GarageListScreen() {
   );
 
   const {
-    garages,
+    items: garages,
     isLoading,
     error,
-    refetch,
+    
     isRefetching,
     loadMore,
     canLoadMore,
@@ -201,7 +201,7 @@ export default function GarageListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)
+    ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)
   ).length;
 
   // Only show skeleton on initial load, not on refetch/sort

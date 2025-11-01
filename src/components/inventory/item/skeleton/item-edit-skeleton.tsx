@@ -1,14 +1,12 @@
-import React from "react";
+
 import { View } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { spacing } from "@/constants/design-system";
-import { useTheme } from "@/lib/theme";
 
 export function ItemEditSkeleton() {
-  const { colors } = useTheme();
 
   const styles = {
     container: {

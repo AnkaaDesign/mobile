@@ -1,14 +1,13 @@
 import React, { useRef } from "react";
-import { Dimensions, Text, TextStyle, View, ViewStyle, Animated as RNAnimated, StyleSheet } from "react-native";
-import { PanGestureHandler, State, RectButton, Swipeable, SwipeableProps } from "react-native-gesture-handler";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, interpolate, runOnJS, Extrapolate } from "react-native-reanimated";
+import { Dimensions, Text, View, ViewStyle, Animated as RNAnimated, StyleSheet } from "react-native";
+import { RectButton, Swipeable } from "react-native-gesture-handler";
+import Animated, { useAnimatedStyle, useSharedValue, interpolate, runOnJS, Extrapolate } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { IconTrash, IconPencil } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { borderRadius, transitions, shadow } from "@/constants/design-system";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const SWIPE_THRESHOLD = -SCREEN_WIDTH * 0.25;
+const { width: _SCREEN_WIDTH } = Dimensions.get("window");
+
 const ACTION_WIDTH = 80;
 
 export interface SwipeActionsProps {
@@ -33,7 +32,6 @@ interface ActionButtonProps {
 
 const ActionButton: React.FC<ActionButtonProps> = ({ onPress, backgroundColor, icon, label, x, progress }) => {
   const { colors } = useTheme();
-  const translateX = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => {
     const trans = interpolate(progress.value, [0, 1], [x, 0], Extrapolate.CLAMP);
@@ -76,19 +74,25 @@ export const SwipeActions: React.FC<SwipeActionsProps> = ({ children, onDelete, 
     onEdit?.();
   };
 
-  const renderRightActions = (progress: RNAnimated.Value, dragAnimatedX: RNAnimated.Value) => {
+  const renderRightActions = (
+    progress: RNAnimated.AnimatedInterpolation<number>,
+    dragAnimatedX: RNAnimated.AnimatedInterpolation<number>
+  ) => {
     // Convert to shared values for reanimated 2
     React.useEffect(() => {
-      const progressListener = progress.addListener(({ value }: { value: number }) => {
+      const progressValue = progress as unknown as RNAnimated.Value;
+      const dragValue = dragAnimatedX as unknown as RNAnimated.Value;
+
+      const progressListener = progressValue.addListener(({ value }: { value: number }) => {
         actionProgress.value = value;
       });
-      const dragListener = dragAnimatedX.addListener(({ value }: { value: number }) => {
+      const dragListener = dragValue.addListener(({ value }: { value: number }) => {
         dragX.value = value;
       });
 
       return () => {
-        progress.removeListener(progressListener);
-        dragAnimatedX.removeListener(dragListener);
+        progressValue.removeListener(progressListener);
+        dragValue.removeListener(dragListener);
       };
     }, [progress, dragAnimatedX]);
 

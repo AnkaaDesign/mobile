@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { View, ScrollView, Alert, KeyboardAvoidingView, Platform , StyleSheet} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
@@ -10,8 +10,7 @@ import type { OrderItemUpdateFormData } from '../../../../../../../schemas';
 import { ThemedView, ThemedText, ErrorScreen, LoadingScreen, Button } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { ThemedTextInput } from "@/components/ui/themed-text-input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+
 import { useTheme } from "@/lib/theme";
 import { formatCurrency, formatDate } from '../../../../../../../utils';
 import { useAuth } from "@/contexts/auth-context";
@@ -152,7 +151,7 @@ export default function EditOrderItemScreen() {
   const getItemStatus = () => {
     const received = watchedReceivedQuantity ?? orderItem?.data?.receivedQuantity ?? 0;
     const fulfilled = watchedFulfilledQuantity ?? orderItem?.data?.receivedQuantity ?? 0;
-    const ordered = watchedQuantity ?? orderItem?.data?.orderedQuantity;
+    const ordered = watchedQuantity ?? orderItem?.data?.orderedQuantity ?? 0;
 
     if (received >= ordered) {
       return { color: colors.primary, label: "Recebido" };
@@ -340,7 +339,6 @@ export default function EditOrderItemScreen() {
               )}
             </View>
           </Card>
-
 
           {/* Progress Summary */}
           <Card style={styles.card}>

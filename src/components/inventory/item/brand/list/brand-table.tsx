@@ -21,7 +21,6 @@ export interface TableColumn {
   render?: (brand: ItemBrand) => React.ReactNode;
 }
 
-
 interface BrandTableProps {
   brands: ItemBrand[];
   onBrandPress?: (brandId: string) => void;
@@ -121,10 +120,10 @@ export function BrandTable({
   onSort,
   visibleColumnKeys = DEFAULT_COLUMNS,
   enableSwipeActions = true,
-  onColumnsManage,
+  // onColumnsManage removed
 }: BrandTableProps) {
   const theme = useTheme();
-  const { closeActiveRow, closeOpenRow } = useSwipeRow();
+  const { closeOpenRow } = useSwipeRow();
   const flatListRef = useRef<FlatList>(null);
 
   // Calculate columns based on visible keys
@@ -183,7 +182,7 @@ export function BrandTable({
 
   // Render column header
   const renderColumnHeader = useCallback(
-    (column: TableColumn, index: number) => {
+    (column: TableColumn, _index: number) => {
       const sortConfig = sortConfigs.find((config) => config.columnKey === column.key);
       const sortIndex = sortConfigs.findIndex((config) => config.columnKey === column.key);
 
@@ -393,7 +392,7 @@ export function BrandTable({
           windowSize={5}
           initialNumToRender={15}
           updateCellsBatchingPeriod={50}
-          getItemLayout={(data, index) => ({
+          getItemLayout={(_data, index) => ({
             length: 60, // Fixed row height based on styles.rowContent minHeight
             offset: 60 * index,
             index,
@@ -541,3 +540,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+// Re-export SortConfig for consumer components
+export type { SortConfig } from "@/lib/sort-utils";

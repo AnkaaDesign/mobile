@@ -1,7 +1,7 @@
 // packages/schemas/src/task.ts
 
 import { z } from "zod";
-import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, createNameSchema, createDescriptionSchema, nullableDate, moneySchema } from "./common";
+import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, createNameSchema, createDescriptionSchema, nullableDate } from "./common";
 import type { Task } from '../types';
 import { TASK_STATUS, SERVICE_ORDER_STATUS } from '../constants';
 import { cutCreateNestedSchema } from "./cut";
@@ -683,7 +683,6 @@ const taskTransform = (data: any): any => {
     andConditions.push({ truck: { id: { in: data.truckIds } } });
     delete data.truckIds;
   }
-
 
   // Date range filters
   if (data.entryDateRange && typeof data.entryDateRange === "object") {
@@ -1390,9 +1389,9 @@ export const mapTaskToFormData = createMapToFormDataHelper<Task, TaskUpdateFormD
   paintId: task.paintId,
   customerId: task.customerId,
   sectorId: task.sectorId,
-  budgetId: task.budgetId,
-  nfeId: task.nfeId,
-  receiptId: task.receiptId,
+  budget: task.budget,
+  // Fixed: nfeId doesn't exist on Task type, removed
+  receipts: task.receipts,
   // Relations
   artworkIds: task.artworks?.map((artwork) => artwork.id),
   paintIds: task.logoPaints?.map((paint) => paint.id),

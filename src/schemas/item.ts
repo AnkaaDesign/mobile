@@ -749,7 +749,8 @@ export const itemOrderBySchema = z
         reorderPoint: orderByDirectionSchema.optional(),
         reorderQuantity: orderByDirectionSchema.optional(),
         boxQuantity: orderByDirectionSchema.optional(),
-        tax: orderByDirectionSchema.optional(),
+        icms: orderByDirectionSchema.optional(),
+        ipi: orderByDirectionSchema.optional(),
         totalPrice: orderByDirectionSchema.optional(),
         price: orderByDirectionSchema.optional(), // Virtual field for sorting by current price (prices[0].value)
         monthlyConsumption: orderByDirectionSchema.optional(),
@@ -806,7 +807,8 @@ export const itemOrderBySchema = z
           reorderPoint: orderByDirectionSchema.optional(),
           reorderQuantity: orderByDirectionSchema.optional(),
           boxQuantity: orderByDirectionSchema.optional(),
-          tax: orderByDirectionSchema.optional(),
+          icms: orderByDirectionSchema.optional(),
+          ipi: orderByDirectionSchema.optional(),
           totalPrice: orderByDirectionSchema.optional(),
           price: orderByDirectionSchema.optional(), // Virtual field for sorting by current price (prices[0].value)
           monthlyConsumption: orderByDirectionSchema.optional(),
@@ -1000,7 +1002,21 @@ export const itemWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
-      tax: z
+      icms: z
+        .union([
+          z.number(),
+          z.object({
+            equals: z.number().optional(),
+            not: z.number().optional(),
+            gt: z.number().optional(),
+            gte: z.number().optional(),
+            lt: z.number().optional(),
+            lte: z.number().optional(),
+          }),
+        ])
+        .optional(),
+
+      ipi: z
         .union([
           z.number(),
           z.object({
@@ -1302,13 +1318,6 @@ const itemFilters = {
 
   // Range filters
   quantityRange: z
-    .object({
-      min: z.number().optional(),
-      max: z.number().optional(),
-    })
-    .optional(),
-
-  taxRange: z
     .object({
       min: z.number().optional(),
       max: z.number().optional(),
@@ -1650,16 +1659,6 @@ const itemTransform = (data: any) => {
       andConditions.push({ quantity: condition });
     }
     delete data.quantityRange;
-  }
-
-  if (data.taxRange && typeof data.taxRange === "object") {
-    const condition: any = {};
-    if (typeof data.taxRange.min === "number") condition.gte = data.taxRange.min;
-    if (typeof data.taxRange.max === "number") condition.lte = data.taxRange.max;
-    if (Object.keys(condition).length > 0) {
-      andConditions.push({ tax: condition });
-    }
-    delete data.taxRange;
   }
 
   if (data.monthlyConsumptionRange && typeof data.monthlyConsumptionRange === "object") {
@@ -2051,7 +2050,8 @@ export const itemCreateSchemaBase = z.object({
   reorderPoint: optionalNonNegativeNumber.refine((val) => val === null || val === undefined || val >= 0, "Ponto de reposição deve ser não-negativo"),
   reorderQuantity: optionalPositiveNumber.refine((val) => val === null || val === undefined || val > 0, "Quantidade de reposição deve ser positiva"),
   boxQuantity: z.number().int().nullable().optional(),
-  tax: z.number().min(0, "Taxa deve ser não-negativa").default(0).optional(),
+  icms: z.number().min(0, "ICMS deve ser entre 0 e 100%").max(100, "ICMS deve ser entre 0 e 100%").default(0).optional(),
+  ipi: z.number().min(0, "IPI deve ser entre 0 e 100%").max(100, "IPI deve ser entre 0 e 100%").default(0).optional(),
   monthlyConsumption: z.number().min(0, "Consumo mensal deve ser não-negativo").default(0).optional(),
   monthlyConsumptionTrendPercent: z
     .number()
@@ -2128,7 +2128,8 @@ export const itemUpdateSchemaBase = z.object({
   reorderPoint: optionalNonNegativeNumber.refine((val) => val === null || val === undefined || val >= 0, "Ponto de reposição deve ser não-negativo"),
   reorderQuantity: optionalPositiveNumber.refine((val) => val === null || val === undefined || val > 0, "Quantidade de reposição deve ser positiva"),
   boxQuantity: z.number().int().nullable().optional(),
-  tax: z.number().min(0).optional(),
+  icms: z.number().min(0, "ICMS deve ser entre 0 e 100%").max(100, "ICMS deve ser entre 0 e 100%").optional(),
+  ipi: z.number().min(0, "IPI deve ser entre 0 e 100%").max(100, "IPI deve ser entre 0 e 100%").optional(),
   monthlyConsumption: z.number().min(0, "Consumo mensal deve ser não-negativo").optional(),
   monthlyConsumptionTrendPercent: z.number().min(-100, "Tendência não pode ser menor que -100%").max(1000, "Tendência não pode ser maior que 1000%").nullable().optional(),
   barcodes: z.array(z.string().min(1, "Código de barras não pode ser vazio")).optional(),
@@ -2471,7 +2472,8 @@ export const mapItemToFormData = createMapToFormDataHelper<Item, ItemUpdateFormD
   reorderPoint: item.reorderPoint || undefined,
   reorderQuantity: item.reorderQuantity || undefined,
   boxQuantity: item.boxQuantity || undefined,
-  tax: item.tax,
+  icms: item.icms,
+  ipi: item.ipi,
   monthlyConsumption: item.monthlyConsumption,
   monthlyConsumptionTrendPercent: item.monthlyConsumptionTrendPercent,
   barcodes: item.barcodes,

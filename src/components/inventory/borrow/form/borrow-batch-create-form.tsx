@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -305,7 +305,9 @@ export function BorrowBatchCreateForm({ onSubmit, onCancel, isSubmitting }: Borr
                 <Label>Adicionar Item</Label>
                 <Combobox
                   value=""
-                  onValueChange={handleAddItem}
+                  onValueChange={(value: string | undefined) => {
+                    if (value) handleAddItem(value);
+                  }}
                   options={itemOptions}
                   placeholder="Buscar e adicionar item..."
                   searchPlaceholder="Digite para buscar..."

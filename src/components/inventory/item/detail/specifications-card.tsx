@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, Platform, StyleSheet} from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -6,12 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import {
   IconInfoCircle,
   IconRuler,
-  IconId,
   IconUserCheck,
   IconBadge,
   IconTruck,
   IconBox,
-  IconBuilding,
   IconQrcode,
   IconCircleCheck,
   IconCircleX,
@@ -21,10 +19,9 @@ import {
 } from "@tabler/icons-react-native";
 import type { Item, Measure } from '../../../../types';
 import { MEASURE_UNIT_LABELS, MEASURE_TYPE_LABELS, MEASURE_TYPE } from '../../../../constants';
-import { getMeasureUnitCategory, convertValue, canConvertUnits, getUnitsInCategory, MEASURE_CATEGORIES } from '../../../../types/measure';
+import { getMeasureUnitCategory, convertValue, canConvertUnits, getUnitsInCategory } from '../../../../types/measure';
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { extendedColors } from "@/lib/theme/extended-colors";
 
 interface SpecificationsCardProps {
   item: Item;
@@ -59,13 +56,15 @@ export function SpecificationsCard({ item }: SpecificationsCardProps) {
   };
 
   const getConversionOptions = (measure: Measure) => {
+    if (!measure.unit) return [];
+
     const compatibleUnits = getUnitsInCategory(getMeasureUnitCategory(measure.unit))
-      .filter((unit) => unit !== measure.unit && canConvertUnits(measure.unit, unit))
+      .filter((unit) => unit !== measure.unit && canConvertUnits(measure.unit!, unit))
       .slice(0, 2); // Show only first 2 conversions
 
     return compatibleUnits
       .map((unit) => {
-        const converted = convertValue(measure.value, measure.unit, unit);
+        const converted = convertValue(measure.value || 0, measure.unit!, unit);
         return {
           unit,
           value: converted,
@@ -197,7 +196,7 @@ export function SpecificationsCard({ item }: SpecificationsCardProps) {
                         <ThemedText style={StyleSheet.flatten([styles.measureTypeLabel, { color: colors.mutedForeground }])}>{MEASURE_TYPE_LABELS[measure.measureType]}</ThemedText>
                       </View>
                       <ThemedText style={StyleSheet.flatten([styles.measureMainValue, { color: colors.foreground }])}>
-                        {measure.value.toLocaleString("pt-BR")} {MEASURE_UNIT_LABELS[measure.unit]}
+                        {measure.value?.toLocaleString("pt-BR")} {measure.unit ? MEASURE_UNIT_LABELS[measure.unit] : ""}
                       </ThemedText>
                     </View>
 

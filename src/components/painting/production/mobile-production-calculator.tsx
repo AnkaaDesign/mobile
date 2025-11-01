@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView } from "react-native";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
@@ -67,7 +67,7 @@ export function MobileProductionCalculator({ formula, targetQuantity = 1, onCalc
         const volumeMeasure = item?.measures?.find((m) => m.measureType === "VOLUME" && m.unit === MEASURE_UNIT.MILLILITER);
 
         // Calculate item density and volume
-        const itemDensity = weightMeasure && volumeMeasure && volumeMeasure.value > 0 ? weightMeasure.value / volumeMeasure.value : formula.density || 1.0;
+        const itemDensity = weightMeasure?.value && volumeMeasure?.value && volumeMeasure.value > 0 ? weightMeasure.value / volumeMeasure.value : formula.density || 1.0;
         const calculatedVolume = calculatedWeight / itemDensity;
 
         // Calculate required units based on item's measure unit

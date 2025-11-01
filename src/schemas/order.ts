@@ -310,7 +310,8 @@ export const orderItemOrderBySchema = z.union([
       orderedQuantity: orderByDirectionSchema.optional(),
       receivedQuantity: orderByDirectionSchema.optional(),
       price: orderByDirectionSchema.optional(),
-      tax: orderByDirectionSchema.optional(),
+      icms: orderByDirectionSchema.optional(),
+      ipi: orderByDirectionSchema.optional(),
       isCritical: orderByDirectionSchema.optional(),
       receivedAt: orderByDirectionSchema.optional(),
       createdAt: orderByDirectionSchema.optional(),
@@ -1317,11 +1318,17 @@ export const orderCreateSchema = z
           itemId: z.string().uuid({ message: "Item inválido" }),
           orderedQuantity: z.number().positive("Quantidade deve ser positiva"),
           price: moneySchema,
-          tax: z
+          icms: z
             .number()
-            .min(0, "Taxa deve ser maior ou igual a 0")
-            .max(100, "Taxa deve ser menor ou igual a 100")
-            .multipleOf(0.01, "Taxa deve ter no máximo 2 casas decimais")
+            .min(0, "ICMS deve ser entre 0 e 100%")
+            .max(100, "ICMS deve ser entre 0 e 100%")
+            .multipleOf(0.01, "ICMS deve ter no máximo 2 casas decimais")
+            .default(0),
+          ipi: z
+            .number()
+            .min(0, "IPI deve ser entre 0 e 100%")
+            .max(100, "IPI deve ser entre 0 e 100%")
+            .multipleOf(0.01, "IPI deve ter no máximo 2 casas decimais")
             .default(0),
           isCritical: z.boolean().default(false),
         }),
@@ -1370,11 +1377,17 @@ export const orderItemCreateSchema = z
     itemId: z.string().uuid({ message: "Item inválido" }),
     orderedQuantity: z.number().positive("Quantidade deve ser positiva"),
     price: moneySchema,
-    tax: z
+    icms: z
       .number()
-      .min(0, "Taxa deve ser maior ou igual a 0")
-      .max(100, "Taxa deve ser menor ou igual a 100")
-      .multipleOf(0.01, "Taxa deve ter no máximo 2 casas decimais")
+      .min(0, "ICMS deve ser entre 0 e 100%")
+      .max(100, "ICMS deve ser entre 0 e 100%")
+      .multipleOf(0.01, "ICMS deve ter no máximo 2 casas decimais")
+      .default(0),
+    ipi: z
+      .number()
+      .min(0, "IPI deve ser entre 0 e 100%")
+      .max(100, "IPI deve ser entre 0 e 100%")
+      .multipleOf(0.01, "IPI deve ter no máximo 2 casas decimais")
       .default(0),
     isCritical: z.boolean().default(false),
   })
@@ -1385,11 +1398,17 @@ export const orderItemUpdateSchema = z
     orderedQuantity: z.number().positive("Quantidade deve ser positiva").optional(),
     receivedQuantity: z.number().min(0, "Quantidade recebida deve ser não negativa").optional(),
     price: moneySchema.optional(),
-    tax: z
+    icms: z
       .number()
-      .min(0, "Taxa deve ser maior ou igual a 0")
-      .max(100, "Taxa deve ser menor ou igual a 100")
-      .multipleOf(0.01, "Taxa deve ter no máximo 2 casas decimais")
+      .min(0, "ICMS deve ser entre 0 e 100%")
+      .max(100, "ICMS deve ser entre 0 e 100%")
+      .multipleOf(0.01, "ICMS deve ter no máximo 2 casas decimais")
+      .optional(),
+    ipi: z
+      .number()
+      .min(0, "IPI deve ser entre 0 e 100%")
+      .max(100, "IPI deve ser entre 0 e 100%")
+      .multipleOf(0.01, "IPI deve ter no máximo 2 casas decimais")
       .optional(),
     isCritical: z.boolean().optional(),
     receivedAt: z.coerce.date().optional(),
@@ -1728,9 +1747,9 @@ export const mapOrderToFormData = createMapToFormDataHelper<Order, OrderUpdateFo
   status: order.status as ORDER_STATUS,
   supplierId: order.supplierId || undefined,
   orderScheduleId: order.orderScheduleId || undefined,
-  budgetId: order.budgetId || undefined,
-  nfeId: order.nfeId || undefined,
-  receiptId: order.receiptId || undefined,
+  budgetIds: order.budgetIds || undefined,
+  nfeId: ((order as any).nfeId) || undefined,
+  receiptIds: order.receiptIds || undefined,
   notes: order.notes || undefined,
 }));
 
@@ -1738,8 +1757,9 @@ export const mapOrderItemToFormData = createMapToFormDataHelper<OrderItem, Order
   orderedQuantity: orderItem.orderedQuantity,
   receivedQuantity: orderItem.receivedQuantity,
   price: orderItem.price,
-  tax: orderItem.tax,
-  isCritical: orderItem.isCritical,
+  icms: orderItem.icms,
+  ipi: orderItem.ipi,
+  isCritical: ((orderItem as any).isCritical),
   receivedAt: orderItem.receivedAt || undefined,
 }));
 

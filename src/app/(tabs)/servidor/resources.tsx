@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ScrollView, RefreshControl, Dimensions } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { getMetrics, getHealthHistory } from '../../../api-client';
@@ -12,7 +12,7 @@ import { ErrorScreen } from '@/components/ui/error-screen';
 import { DashboardCard } from '@/components/ui/dashboard-card';
 import { Badge } from '@/components/ui/badge';
 
-const { width: screenWidth } = Dimensions.get('window');
+Dimensions.get('window');
 
 interface ResourceMetrics {
   cpu: {
@@ -232,11 +232,11 @@ export default function ServerResourcesScreen() {
                 <ThemedText className="text-base font-medium">{load.toFixed(2)}</ThemedText>
               </ThemedView>
 
-              {metrics.cpu?.temperature && (
+              {metrics?.cpu?.temperature && (
                 <ThemedView>
                   <ThemedText className="text-sm text-muted-foreground">Temperatura</ThemedText>
                   <ThemedText className="text-base font-medium">
-                    {Math.round(metrics.cpu.temperature)}°C
+                    {Math.round(metrics?.cpu.temperature)}°C
                   </ThemedText>
                 </ThemedView>
               )}
@@ -258,7 +258,7 @@ export default function ServerResourcesScreen() {
               <ThemedView className="flex-row items-center justify-between mb-2">
                 <ThemedText className="text-sm">Uso atual</ThemedText>
                 <ThemedText className="text-sm font-medium">
-                  {formatBytes(metrics.memory?.used || 0)} / {formatBytes(metrics.memory?.total || 0)}
+                  {formatBytes(metrics?.memory?.used || 0)} / {formatBytes(metrics?.memory?.total || 0)}
                 </ThemedText>
               </ThemedView>
               <Progress value={memoryUsage} style={{ height: 12 }} />
@@ -268,21 +268,21 @@ export default function ServerResourcesScreen() {
               <ThemedView>
                 <ThemedText className="text-sm text-muted-foreground">Total</ThemedText>
                 <ThemedText className="text-base font-medium">
-                  {formatBytes(metrics.memory?.total || 0)}
+                  {formatBytes(metrics?.memory?.total || 0)}
                 </ThemedText>
               </ThemedView>
 
               <ThemedView>
                 <ThemedText className="text-sm text-muted-foreground">Usada</ThemedText>
                 <ThemedText className="text-base font-medium">
-                  {formatBytes(metrics.memory?.used || 0)}
+                  {formatBytes(metrics?.memory?.used || 0)}
                 </ThemedText>
               </ThemedView>
 
               <ThemedView>
                 <ThemedText className="text-sm text-muted-foreground">Disponível</ThemedText>
                 <ThemedText className="text-base font-medium">
-                  {formatBytes(metrics.memory?.available || 0)}
+                  {formatBytes(metrics?.memory?.available || 0)}
                 </ThemedText>
               </ThemedView>
             </ThemedView>
@@ -303,7 +303,7 @@ export default function ServerResourcesScreen() {
               <ThemedView className="flex-row items-center justify-between mb-2">
                 <ThemedText className="text-sm">Uso atual</ThemedText>
                 <ThemedText className="text-sm font-medium">
-                  {formatBytes(metrics.disk?.used || 0)} / {formatBytes(metrics.disk?.total || 0)}
+                  {formatBytes(metrics?.disk?.used || 0)} / {formatBytes(metrics?.disk?.total || 0)}
                 </ThemedText>
               </ThemedView>
               <Progress value={diskUsage} style={{ height: 12 }} />
@@ -313,21 +313,21 @@ export default function ServerResourcesScreen() {
               <ThemedView>
                 <ThemedText className="text-sm text-muted-foreground">Total</ThemedText>
                 <ThemedText className="text-base font-medium">
-                  {formatBytes(metrics.disk?.total || 0)}
+                  {formatBytes(metrics?.disk?.total || 0)}
                 </ThemedText>
               </ThemedView>
 
               <ThemedView>
                 <ThemedText className="text-sm text-muted-foreground">Usado</ThemedText>
                 <ThemedText className="text-base font-medium">
-                  {formatBytes(metrics.disk?.used || 0)}
+                  {formatBytes(metrics?.disk?.used || 0)}
                 </ThemedText>
               </ThemedView>
 
               <ThemedView>
                 <ThemedText className="text-sm text-muted-foreground">Disponível</ThemedText>
                 <ThemedText className="text-base font-medium">
-                  {formatBytes(metrics.disk?.available || 0)}
+                  {formatBytes(metrics?.disk?.available || 0)}
                 </ThemedText>
               </ThemedView>
             </ThemedView>

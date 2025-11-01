@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePayrollDetailsWithBonus } from '@/hooks';
+import type { Payroll } from '@/types';
 import {
   ThemedView,
   ThemedText,
@@ -75,8 +76,16 @@ export default function PayrollDetailScreen() {
 
   // Extract statistics
   const statistics = useMemo(() => {
+    if (!payrollData) {
+      return {
+        totalParticipants: 0,
+        totalTasks: 0,
+        totalWeightedTasks: 0,
+        averageWeightedTasks: 0,
+      };
+    }
     // Handle both direct Payroll and wrapped response formats
-    const data = 'payroll' in payrollData ? payrollData.payroll : payrollData;
+    const data = ('payroll' in (payrollData as any) ? (payrollData as any).payroll : payrollData) as Payroll;
     const bonus = data?.bonus;
 
     if (!bonus || typeof bonus === 'number') {
@@ -117,7 +126,7 @@ export default function PayrollDetailScreen() {
     }
 
     // Handle both direct Payroll and wrapped response formats
-    const data = 'payroll' in payrollData ? payrollData.payroll : payrollData;
+    const data = ('payroll' in (payrollData as any) ? (payrollData as any).payroll : payrollData) as Payroll;
     const bonus = data?.bonus;
 
     let baseRemuneration = 0;
@@ -191,7 +200,7 @@ export default function PayrollDetailScreen() {
   }
 
   // Handle both direct Payroll and wrapped response formats
-  const data = 'payroll' in payrollData ? payrollData.payroll : payrollData;
+  const data = ('payroll' in (payrollData as any) ? (payrollData as any).payroll : payrollData) as Payroll;
   const user = data.user;
   const userName = user?.name || 'Funcionário';
   const monthName = getMonthName(month);
@@ -243,8 +252,8 @@ export default function PayrollDetailScreen() {
               </View>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.infoLabel}>Performance:</ThemedText>
-                <Badge variant={user?.performanceLevel > 0 ? "default" : "secondary"}>
-                  <ThemedText style={{ color: "white" }}>{user?.performanceLevel || 0}</ThemedText>
+                <Badge variant={(user?.performanceLevel ?? 0) > 0 ? "default" : "secondary"}>
+                  <ThemedText style={{ color: "white" }}>{user?.performanceLevel ?? 0}</ThemedText>
                 </Badge>
               </View>
               <View style={styles.infoRow}>

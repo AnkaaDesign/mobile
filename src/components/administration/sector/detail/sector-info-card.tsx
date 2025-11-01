@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -8,7 +8,7 @@ import type { Sector } from '../../../../types';
 import { SECTOR_PRIVILEGES_LABELS } from '../../../../constants';
 import { formatDate } from '../../../../utils';
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 
 interface SectorInfoCardProps {
   sector: Sector & {

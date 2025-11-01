@@ -157,8 +157,6 @@ import {
   IconAward,
   IconFile,
   IconBuildingFactory2 as IconTractor,
-  IconClockPlay as IconClockPlayExtra,
-  IconClipboardCheck as IconClipboardCheckExtra,
   // IconFileDocument doesn't exist, using IconFileText
   IconNotebook,
   IconBuildingFactory2,

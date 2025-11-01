@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useEffect } from "react";
-import { View, TouchableOpacity, Animated, StyleSheet, Alert, Pressable } from "react-native";
+import { View, Animated, StyleSheet, Alert, Pressable } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { Icon } from "@/components/ui/icon";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -30,7 +30,7 @@ export function UserTableRowSwipe({ userId, userName, onEdit, onDelete, onView, 
   }, [activeRowId, userId]);
 
   const handleSwipeOpen = useCallback(
-    (direction: "left" | "right") => {
+    (_direction: "left" | "right") => {
       if (!disabled) {
         setActiveRowId(userId);
       }
@@ -73,7 +73,7 @@ export function UserTableRowSwipe({ userId, userName, onEdit, onDelete, onView, 
   }, [userId, userName, onDelete]);
 
   const renderRightActions = useCallback(
-    (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
+    (_progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
       const trans = dragX.interpolate({
         inputRange: [-200, 0],
         outputRange: [0, 200],

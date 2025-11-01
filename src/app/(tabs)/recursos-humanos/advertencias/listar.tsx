@@ -1,12 +1,12 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, ActivityIndicator, Alert, StyleSheet } from "react-native";
+import { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useWarningMutations } from '../../../../hooks';
 import { useWarningsInfiniteMobile } from "@/hooks";
 import type { WarningGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { WarningTable, createColumnDefinitions } from "@/components/human-resources/warning/list/warning-table";
 import type { SortConfig } from "@/components/human-resources/warning/list/warning-table";
 import { WarningFilterModal } from "@/components/human-resources/warning/list/warning-filter-modal";
@@ -21,7 +21,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function WarningListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -40,7 +40,7 @@ export default function WarningListScreen() {
 
     // If only one sort, return as object
     if (sortConfigs.length === 1) {
-      const config = sortConfigs[0 as keyof typeof sortConfigs];
+      const config = sortConfigs[0];
       switch (config.columnKey) {
         case "collaborator.name":
           return { collaborator: { name: config.direction } };
@@ -86,7 +86,7 @@ export default function WarningListScreen() {
     },
   };
 
-  const { items: warnings, isLoading, error, refetch, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useWarningsInfiniteMobile(queryParams);
+  const { items: warnings, isLoading, error, isRefetching, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount, refresh } = useWarningsInfiniteMobile(queryParams);
   const { delete: deleteWarning } = useWarningMutations();
 
   const handleRefresh = useCallback(async () => {
@@ -160,7 +160,7 @@ export default function WarningListScreen() {
   const allColumns = useMemo(() => createColumnDefinitions(), []);
 
   // Count active filters
-  const activeFiltersCount = Object.entries(filters).filter(([key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
+  const activeFiltersCount = Object.entries(filters).filter(([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
 
   if (isLoading && !isRefetching) {
     return <WarningListSkeleton />;

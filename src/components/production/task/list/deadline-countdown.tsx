@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { fontSize, fontWeight } from "@/constants/design-system";
@@ -25,9 +25,7 @@ export function DeadlineCountdown({ task }: DeadlineCountdownProps) {
     // Only show countdown for IN_PRODUCTION tasks with a deadline
     if (
       task.status !== TASK_STATUS.IN_PRODUCTION ||
-      !task.term ||
-      task.status === TASK_STATUS.COMPLETED ||
-      task.status === TASK_STATUS.CANCELLED
+      !task.term
     ) {
       setTimeDisplay("-");
       return;

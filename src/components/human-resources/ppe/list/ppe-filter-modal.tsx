@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Modal, View, ScrollView, TouchableOpacity, Platform, Dimensions, StyleSheet } from "react-native";
+import { useState, useMemo } from "react";
+import { Modal, View, ScrollView, TouchableOpacity, Dimensions, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconChevronUp, IconChevronDown, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -31,7 +31,7 @@ interface FilterState {
 }
 
 export function PpeFilterModal({ visible, onClose, onApply, currentFilters }: PpeFilterModalProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     ppeType: true,

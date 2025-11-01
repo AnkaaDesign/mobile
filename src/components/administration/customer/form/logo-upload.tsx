@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, StyleSheet, Image, TouchableOpacity, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { IconCamera, IconX, IconUpload } from "@tabler/icons-react-native";
@@ -12,7 +12,7 @@ interface LogoUploadProps {
   disabled?: boolean;
 }
 
-export function LogoUpload({ value, existingLogoUrl, onChange, disabled }: LogoUploadProps) {
+export function LogoUpload({ existingLogoUrl, onChange, disabled }: LogoUploadProps) {
   const { colors } = useTheme();
   const [previewUri, setPreviewUri] = useState<string | null>(existingLogoUrl || null);
 

@@ -17,7 +17,7 @@ const formatBytes = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i as keyof typeof sizes];
 };
 import type { File } from '../../../../types';
-import { IconPaperclip, IconDownload, IconFile } from "@tabler/icons-react-native";
+import { IconPaperclip, IconDownload } from "@tabler/icons-react-native";
 
 interface TaskAttachmentsCardProps {
   files: File[];

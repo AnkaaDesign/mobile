@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from "react";
-import { View, Pressable, StyleSheet } from "react-native";
+import { useState, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ChangeLogGetManyFormData } from '../../../../schemas';
-import { ThemedView, ThemedText, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
+import { ThemedView, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { ChangeLogTable } from "@/components/administration/change-log/list/change-log-table";
 import { ChangeLogFilterModal } from "@/components/administration/change-log/list/change-log-filter-modal";
 import { ChangeLogFilterTags } from "@/components/administration/change-log/list/change-log-filter-tags";
@@ -18,15 +18,15 @@ import { useChangeLogsInfiniteMobile } from "@/hooks";
 
 export default function AdministrationChangeLogsListScreen() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
+  const { colors, } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<ChangeLogGetManyFormData>>({});
-  const [showColumnManager, setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["action", "entity", "user", "createdAt"]);
+  const [_showColumnManager, setShowColumnManager] = useState(false);
+  const [visibleColumnKeys, ] = useState<string[]>(["action", "entity", "user", "createdAt"]);
 
   // Build query parameters
   const queryParams = {
@@ -42,12 +42,13 @@ export default function AdministrationChangeLogsListScreen() {
     items: changeLogs,
     isLoading,
     error,
-    refetch,
+    
     isRefetching,
     loadMore,
     canLoadMore,
     isFetchingNextPage,
     totalItemsLoaded,
+    totalCount,
     refresh,
   } = useChangeLogsInfiniteMobile(queryParams);
 
@@ -85,7 +86,7 @@ export default function AdministrationChangeLogsListScreen() {
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => {
+    ([_key, value]) => {
       if (value === undefined || value === null) return false;
       if (Array.isArray(value)) return value.length > 0;
       if (typeof value === "object" && !Array.isArray(value)) {

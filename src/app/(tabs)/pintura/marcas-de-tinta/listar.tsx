@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, StyleSheet } from "react-native";
 import { Stack, router } from "expo-router";
 import { FAB } from "@/components/ui/fab";
@@ -6,7 +6,7 @@ import { SearchBar } from "@/components/ui/search-bar";
 import { IconButton } from "@/components/ui/icon-button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { usePaintBrandsInfinite, usePaintBrandMutations } from '../../../../hooks';
@@ -20,7 +20,6 @@ import { showToast } from "@/lib/toast/use-toast";
 import { Alert } from "react-native";
 import {
   IconTag,
-  IconPalette,
 } from "@tabler/icons-react-native";
 
 export default function PaintBrandListScreen() {
@@ -207,13 +206,6 @@ export default function PaintBrandListScreen() {
     </FilterModal>
   );
 
-  // Active filter count
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (sortBy !== "name") count++;
-    if (sortOrder !== "asc") count++;
-    return count;
-  }, [sortBy, sortOrder]);
 
   if (error) {
     return (

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import type { Warning } from '../../../../types';
 import { Card } from "@/components/ui/card";

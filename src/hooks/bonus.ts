@@ -150,7 +150,7 @@ export const useCalculateBonuses = () => {
         month: params.month.toString()
       }).then(response => response.data);
     },
-    onMutate: async (variables) => {
+    onMutate: async (_variables) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: bonusKeys.all });
 
@@ -158,18 +158,15 @@ export const useCalculateBonuses = () => {
       const previousBonuses = queryClient.getQueryData(bonusKeys.list());
 
       // Optimistically update - show loading state
-      const monthName = new Date(variables.year, variables.month - 1).toLocaleDateString('pt-BR', { month: 'long' });
 
       return { previousBonuses };
     },
-    onSuccess: (result: BonusCalculationResult, variables) => {
+    onSuccess: (_result: BonusCalculationResult, _variables) => {
       // Invalidate all bonus-related queries
       queryClient.invalidateQueries({ queryKey: bonusKeys.all });
       queryClient.invalidateQueries({ queryKey: userKeys.all });
 
-      const monthName = new Date(variables.year, variables.month - 1).toLocaleDateString('pt-BR', { month: 'long' });
-      const successCount = result.data?.totalSuccess ?? 0;
-      const failedCount = result.data?.totalFailed ?? 0;
+      const failedCount = _result.data?.totalFailed ?? 0;
 
       // Dismiss loading toast and show success
 
@@ -177,14 +174,14 @@ export const useCalculateBonuses = () => {
       } else {
       }
     },
-    onError: (error: any, variables, context) => {
+    onError: (_error: any, _variables, _context) => {
       // Rollback optimistic update if needed
-      if (context?.previousBonuses) {
-        queryClient.setQueryData(bonusKeys.list(), context.previousBonuses);
+      if (_context?.previousBonuses) {
+        queryClient.setQueryData(bonusKeys.list(), _context.previousBonuses);
       }
 
       // Dismiss loading toast and show error
-      const message = error?.response?.data?.message ?? 'Erro ao calcular bônus';
+
     }
   });
 };
@@ -287,12 +284,11 @@ export const useExportPayroll = () => {
         window.URL.revokeObjectURL(url);
       }
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message ?? 'Erro ao exportar folha de pagamento';
+    onError: (_error: any) => {
+
     }
   });
 };
-
 
 // =====================================================
 // Bonus Discount Hooks
@@ -314,8 +310,8 @@ export const useBonusDiscountMutations = () => {
       onSuccess: () => {
         invalidateQueries();
       },
-      onError: (error: any) => {
-        const message = error?.response?.data?.message ?? 'Erro ao adicionar desconto';
+      onError: (_error: any) => {
+
       }
     }),
 
@@ -324,8 +320,8 @@ export const useBonusDiscountMutations = () => {
       onSuccess: () => {
         invalidateQueries();
       },
-      onError: (error: any) => {
-        const message = error?.response?.data?.message ?? 'Erro ao remover desconto';
+      onError: (_error: any) => {
+
       }
     })
   };
@@ -352,16 +348,12 @@ export const useSaveMonthlyBonuses = () => {
         data: { totalProcessed: 0, totalSuccess: 0, totalFailed: 0, details: [] }
       });
     },
-    onSuccess: (result: BonusCalculationResult, variables) => {
+    onSuccess: (_result: BonusCalculationResult, _variables) => {
       queryClient.invalidateQueries({ queryKey: bonusKeys.all });
 
-      const monthName = new Date(variables.year, variables.month - 1).toLocaleDateString('pt-BR', { month: 'long' });
-      const successCount = result.data?.totalSuccess ?? 0;
-      const failedCount = result.data?.totalFailed ?? 0;
-
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message ?? 'Erro ao salvar bônus mensais';
+    onError: (_error: any) => {
+
     }
   });
 };

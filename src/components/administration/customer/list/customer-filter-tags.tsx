@@ -1,10 +1,10 @@
-import React, { useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { BRAZILIAN_STATE_NAMES } from '../../../../constants';
+import { BRAZILIAN_STATE_NAMES, type BrazilianState } from '../../../../constants';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import type { CustomerGetManyFormData } from '../../../../schemas';
 import { formatDate } from '../../../../utils';
@@ -59,7 +59,7 @@ export function CustomerFilterTags({
         states.forEach((state) => {
           tags.push({
             key: `state-${state}`,
-            label: `Estado: ${BRAZILIAN_STATE_NAMES[state] || state}`,
+            label: `Estado: ${BRAZILIAN_STATE_NAMES[state as BrazilianState] || state}`,
             onRemove: () => {
               const newStates = states.filter((s) => s !== state);
               const newWhere = { ...where };

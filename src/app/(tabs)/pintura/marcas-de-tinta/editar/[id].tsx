@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
@@ -32,7 +32,9 @@ export default function EditPaintBrandScreen() {
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.BASIC);
 
   // Fetch paint brand data
-  const { data: paintBrand, isLoading, error } = usePaintBrand(id || "");
+  // Fixed: PaintBrandGetUniqueResponse has a data property, need to extract it
+  const { data: paintBrandResponse, isLoading, error } = usePaintBrand(id || "");
+  const paintBrand = paintBrandResponse?.data;
 
   // Form setup
   const form = useForm<PaintBrandUpdateFormData>({
@@ -73,7 +75,7 @@ export default function EditPaintBrandScreen() {
     setIsSubmitting(true);
 
     try {
-      await update(id, data);
+      await update({ id, data });
       showToast("Marca de tinta atualizada com sucesso", "success");
       router.back();
     } catch (error) {

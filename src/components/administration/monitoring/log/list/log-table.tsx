@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, Pressable, StyleSheet, Alert, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import { IconChevronDown, IconChevronRight, IconCopy, IconAlertCircle, IconInfoCircle, IconAlertTriangle, IconBug } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { ThemedText, ThemedView, Badge, Card } from "@/components/ui";
+import { ThemedText, Badge } from "@/components/ui";
 import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row";
 import { InfiniteScrollFooter } from "@/components/ui/infinite-scroll-footer";
 import { formatDate, formatTime } from '../../../../../utils';
@@ -27,7 +27,7 @@ interface LogTableProps {
   loadingMore?: boolean;
 }
 
-export function LogTable({ logs, onRefresh, onEndReached, refreshing = false, loading = false, loadingMore = false }: LogTableProps) {
+export function LogTable({ logs, onRefresh, onEndReached, refreshing = false, loading: _loading = false, loadingMore = false }: LogTableProps) {
   const { colors } = useTheme();
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
 
@@ -219,7 +219,7 @@ export function LogTable({ logs, onRefresh, onEndReached, refreshing = false, lo
     >
       {logs.map(renderLogRow)}
 
-      <InfiniteScrollFooter hasMore={!!onEndReached} isLoading={loadingMore} />
+      <InfiniteScrollFooter hasMore={!!onEndReached} loading={loadingMore} />
     </ScrollView>
   );
 }

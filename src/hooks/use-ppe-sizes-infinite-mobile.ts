@@ -12,7 +12,7 @@ export function usePpeSizesInfiniteMobile(params?: PpeSizeGetManyFormData) {
     error,
     fetchNextPage,
     hasNextPage,
-    isFetching,
+    // isFetching removed
     isFetchingNextPage,
     status,
     refetch,

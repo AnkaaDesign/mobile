@@ -6,16 +6,16 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBar } from "@/components/ui/search-bar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
+
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Header } from "@/components/ui/header";
-import { IconChartBar, IconUser, IconCalendar, IconClock, IconTrendingUp, IconRefresh, IconChevronLeft, IconChevronRight } from "@tabler/icons-react-native";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { IconChartBar, IconUser, IconCalendar, IconTrendingUp, IconRefresh, IconChevronLeft, IconChevronRight } from "@tabler/icons-react-native";
+import { format, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { USER_STATUS } from '../../../../../constants';
 
@@ -121,7 +121,7 @@ export default function CalculationsListScreen() {
     isLoading,
     error,
     refetch,
-  } = useSecullumCalculations(queryParams);
+  } = useSecullumCalculations(queryParams || undefined);
 
   // Transform calculations data
   const { calculationRows, totalsRow, summary } = useMemo(() => {

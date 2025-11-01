@@ -118,7 +118,7 @@ export function RelatedOrdersCard({ supplier, className }: RelatedOrdersCardProp
   }, [orders]);
 
   const handleOrderPress = (orderId: string) => {
-    router.push(routes.inventory.orders.details(orderId));
+    router.push(routes.inventory.orders.details(orderId) as any);
   };
 
   const handleViewAll = () => {

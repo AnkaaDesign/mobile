@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, Pressable, ActivityIndicator, ViewStyle } from "react-native";
 import { useItems } from '../../../hooks';
 import { ThemedText } from "@/components/ui/themed-text";
@@ -7,8 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { IconSearch } from "@tabler/icons-react-native";
-import type { Item } from '../../../types';
 
 interface ItemMultiSelectorProps {
   value?: string[];

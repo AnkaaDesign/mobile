@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, ActivityIndicator , StyleSheet} from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { IconButton } from "@/components/ui/icon-button";
@@ -17,8 +17,6 @@ import {
   IconFlask,
   IconBarcode,
   IconPercentage,
-  IconEdit,
-  IconTrash,
   IconPackage,
   IconTag,
   IconCalendar,

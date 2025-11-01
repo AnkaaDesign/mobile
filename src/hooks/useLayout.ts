@@ -55,8 +55,8 @@ export const useLayoutMutations = () => {
       queryClient.invalidateQueries({ queryKey: layoutQueryKeys.all });
       return response;
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || "Erro ao criar layout";
+    onError: (_error: any) => {
+
     },
   });
 
@@ -69,8 +69,8 @@ export const useLayoutMutations = () => {
       });
       return response;
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || "Erro ao atualizar layout";
+    onError: (_error: any) => {
+
     },
   });
 
@@ -82,8 +82,8 @@ export const useLayoutMutations = () => {
         queryKey: layoutQueryKeys.detail(id),
       });
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || "Erro ao excluir layout";
+    onError: (_error: any) => {
+
     },
   });
 
@@ -98,11 +98,11 @@ export const useLayoutMutations = () => {
       queryClient.invalidateQueries({
         queryKey: ["trucks", "detail", variables.truckId],
       });
-      const sideLabel = variables.side === "left" ? "esquerdo" : variables.side === "right" ? "direito" : "traseiro";
+
       return response;
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || "Erro ao salvar layout do caminhão";
+    onError: (_error: any) => {
+
     },
   });
 
@@ -124,7 +124,7 @@ export const useLayoutSVGDownload = () => {
     try {
       await layoutService.downloadSVG(id, filename);
     } catch (error: any) {
-      const message = error?.response?.data?.message || "Erro ao baixar SVG";
+
     }
   };
 

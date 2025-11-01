@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -22,8 +22,6 @@ import {
   IconComponents,
   IconInfoCircle,
   IconBrush,
-  IconCheck,
-  IconX,
   IconCalendar,
 } from "@tabler/icons-react-native";
 
@@ -35,7 +33,8 @@ export default function PaintTypeDetailsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // Check permissions
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.PAINTING);
+  // Fixed: PAINTING doesn't exist in SECTOR_PRIVILEGES, using PRODUCTION instead
+  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION);
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
   // Fetch paint type details

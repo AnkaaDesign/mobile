@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -6,6 +6,8 @@ import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import {
+  CHANGE_LOG_ACTION,
+  CHANGE_LOG_ENTITY_TYPE,
   CHANGE_LOG_ACTION_LABELS,
   CHANGE_LOG_ENTITY_TYPE_LABELS,
 } from '../../../../constants';
@@ -46,14 +48,14 @@ export const ChangeLogFilterTags = ({
   const removeAction = (action: string) => {
     onFilterChange({
       ...filters,
-      actions: filters.actions?.filter(a => a !== action),
+      actions: filters.actions?.filter((a: CHANGE_LOG_ACTION) => a !== action),
     });
   };
 
   const removeEntityType = (entityType: string) => {
     onFilterChange({
       ...filters,
-      entityTypes: filters.entityTypes?.filter(et => et !== entityType),
+      entityTypes: filters.entityTypes?.filter((et: CHANGE_LOG_ENTITY_TYPE) => et !== entityType),
     });
   };
 
@@ -97,7 +99,7 @@ export const ChangeLogFilterTags = ({
         )}
 
         {/* Action Tags */}
-        {filters.actions?.map((action) => (
+        {filters.actions?.map((action: CHANGE_LOG_ACTION) => (
           <TouchableOpacity key={action} onPress={() => removeAction(action)}>
             <Badge variant="secondary" style={styles.tag}>
               <ThemedText style={styles.tagText} numberOfLines={1}>
@@ -109,7 +111,7 @@ export const ChangeLogFilterTags = ({
         ))}
 
         {/* Entity Type Tags */}
-        {filters.entityTypes?.map((entityType) => (
+        {filters.entityTypes?.map((entityType: CHANGE_LOG_ENTITY_TYPE) => (
           <TouchableOpacity key={entityType} onPress={() => removeEntityType(entityType)}>
             <Badge variant="secondary" style={styles.tag}>
               <ThemedText style={styles.tagText} numberOfLines={1}>

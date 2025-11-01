@@ -1,9 +1,8 @@
-import React, { useMemo, useState } from "react";
-import { View } from "react-native";
-import { BaseFilterDrawer, FilterSection, BooleanFilter } from "@/components/common/filters";
-import { Text } from "@/components/ui/text";
+import { useMemo } from "react";
+
+import { BaseFilterDrawer, BooleanFilter } from "@/components/common/filters";
+
 import { useTheme } from "@/lib/theme";
-import type { PaintTypeGetManyFormData } from "../../../../schemas";
 
 interface PaintTypeFilterDrawerProps {
   open: boolean;

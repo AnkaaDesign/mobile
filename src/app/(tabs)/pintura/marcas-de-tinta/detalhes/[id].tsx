@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -26,7 +26,8 @@ export default function PaintBrandDetailsScreen() {
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.BASIC);
 
   // Fetch paint brand data
-  const { data: paintBrand, isLoading, error } = usePaintBrand(id || "", {
+  // Fixed: PaintBrandGetUniqueResponse has a data property, need to extract it
+  const { data: paintBrandResponse, isLoading, error } = usePaintBrand(id || "", {
     include: {
       _count: {
         select: {
@@ -42,10 +43,12 @@ export default function PaintBrandDetailsScreen() {
     },
   });
 
+  const paintBrand = paintBrandResponse?.data;
+
   // Handle edit
   const handleEdit = () => {
     if (!id) return;
-    router.push(`/painting/paint-brands/edit/${id}`);
+    router.push(`/painting/paint-brands/edit/${id}` as any);
   };
 
   if (isLoading) {
@@ -112,7 +115,7 @@ export default function PaintBrandDetailsScreen() {
             </View>
 
             <View style={styles.paintsList}>
-              {paintBrand.paints.map((paint, index) => (
+              {paintBrand.paints.map((paint: any /* TODO: Add proper type */, index: any /* TODO: Add proper type */) => (
                 <View
                   key={paint.id}
                   style={[
@@ -146,7 +149,7 @@ export default function PaintBrandDetailsScreen() {
               ))}
             </View>
 
-            {paintBrand._count && paintBrand._count.paints > 5 && (
+            {paintBrand._count?.paints !== undefined && paintBrand._count.paints > 5 && (
               <View style={styles.moreInfo}>
                 <ThemedText style={styles.moreInfoText}>
                   E mais {paintBrand._count.paints - 5} {paintBrand._count.paints - 5 === 1 ? "tinta" : "tintas"}

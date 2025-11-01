@@ -1,8 +1,7 @@
-import React from "react";
+
 import { View, Text, ViewStyle, TextStyle } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { Badge, BadgeProps } from "@/components/ui/badge";
-import { useTheme } from "@/lib/theme";
 import { fontSize, spacing } from "@/constants/design-system";
 import type { Item } from '../../../../types';
 import { determineStockLevel } from '../../../../utils';
@@ -26,7 +25,6 @@ interface StockStatus {
 }
 
 export function StockBadge({ item, size = "default", showIcon = true, showQuantity = false, style, textStyle, hasActiveOrder = false }: StockBadgeProps) {
-  const { colors } = useTheme();
 
   // Determine stock level using the utility
   const stockLevel = determineStockLevel(item.quantity || 0, item.reorderPoint || null, item.maxQuantity || null, hasActiveOrder);
@@ -170,7 +168,7 @@ export function getStockStatus(
 
 // Compact version for list views
 export function StockIndicator({ item, hasActiveOrder = false }: { item: Pick<Item, "quantity" | "reorderPoint" | "maxQuantity">; hasActiveOrder?: boolean }) {
-  const { colors } = useTheme();
+
   const status = getStockStatus(item, hasActiveOrder);
 
   const getIndicatorColor = () => {

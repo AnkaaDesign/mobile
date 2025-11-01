@@ -135,7 +135,7 @@ export function PositionFilterModal({ visible, onClose, onApply, currentFilters 
     setFilters({});
   };
 
-  const renderSection = (key: string, title: string, children: React.ReactNode, defaultExpanded = false) => {
+  const renderSection = (key: string, title: string, children: React.ReactNode, _defaultExpanded = false) => {
     const isExpanded = expandedSections.has(key);
 
     return (
@@ -164,7 +164,7 @@ export function PositionFilterModal({ visible, onClose, onApply, currentFilters 
     </View>
   );
 
-  const renderRangeInputs = (key: keyof FilterState, label: string, placeholder: string, suffix?: string) => {
+  const renderRangeInputs = (key: keyof FilterState, label: string, _placeholder: string, suffix?: string) => {
     const range = (filters[key] as FilterRange) || {};
 
     return (

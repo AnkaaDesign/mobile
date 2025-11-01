@@ -15,11 +15,10 @@ import { Icon } from "@/components/ui/icon";
 
 export default function DeploymentsListScreen() {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [_searchTerm, setSearchTerm] = useState("");
   const [displaySearch, setDisplaySearch] = useState("");
 
   const { data, isLoading, refetch, isFetching } = useDeployments({
-    search: searchTerm,
     orderBy: { createdAt: "desc" },
   });
 
@@ -94,7 +93,7 @@ export default function DeploymentsListScreen() {
                   <View className="flex-row items-start justify-between">
                     <View className="flex-1">
                       <CardTitle className="text-lg mb-2">
-                        {item.application} - v{item.version}
+                        {(item as any).application || item.environment} - v{item.version || 'N/A'}
                       </CardTitle>
                       <View className="flex-row items-center gap-2 flex-wrap">
                         <Badge variant={getStatusBadge(item.status)}>
@@ -158,10 +157,10 @@ export default function DeploymentsListScreen() {
                     </View>
                   </View>
 
-                  {item.status === "FAILED" && item.error && (
+                  {item.status === "FAILED" && (item as any).error && (
                     <View className="mt-2 p-2 bg-destructive/10 rounded-md">
                       <Text className="text-xs text-destructive">
-                        {item.error}
+                        {(item as any).error}
                       </Text>
                     </View>
                   )}

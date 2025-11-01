@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
 import { Modal, ThemedText, Button } from "@/components/ui";
 import { MultiCombobox } from "@/components/ui/multi-combobox";
@@ -20,7 +20,12 @@ export function CommissionFilterModal({
   onApply,
   currentFilters,
 }: CommissionFilterModalProps) {
-  const [filters, setFilters] = useState<Partial<CommissionGetManyFormData>>(currentFilters);
+  const [filters, setFilters] = useState<Partial<CommissionGetManyFormData> & {
+    statuses?: string[];
+    userIds?: string[];
+    taskIds?: string[];
+    createdAt?: { gte?: Date; lte?: Date };
+  }>(currentFilters);
 
   const { data: usersData } = useUsers({});
   const { data: tasksData } = useTasks({});

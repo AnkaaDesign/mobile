@@ -1,15 +1,15 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useHoliday } from '../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
+import { CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconCalendar, IconRefresh, IconEdit, IconHistory } from "@tabler/icons-react-native";
-import { routeToMobilePath } from "@/lib/route-mapper";
+
 import { TouchableOpacity } from "react-native";
 import { showToast } from "@/components/ui/toast";
 
@@ -20,7 +20,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function HolidayDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
-  const { colors, isDark } = useTheme();
+  const { colors, } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";

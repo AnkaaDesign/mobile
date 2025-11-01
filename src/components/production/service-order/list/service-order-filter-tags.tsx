@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 import { formatDate } from '../../../../utils';
-import { SERVICE_ORDER_STATUS_LABELS } from '../../../../constants';
+import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from '../../../../constants';
 import type { ServiceOrderGetManyFormData } from '../../../../schemas';
 
 interface FilterTag {
@@ -40,7 +40,7 @@ export const ServiceOrderFilterTags: React.FC<ServiceOrderFilterTagsProps> = ({
       tags.push({
         key: "status",
         label: "Status",
-        value: SERVICE_ORDER_STATUS_LABELS[filters.where.status],
+        value: SERVICE_ORDER_STATUS_LABELS[filters.where.status as SERVICE_ORDER_STATUS],
       });
     }
 

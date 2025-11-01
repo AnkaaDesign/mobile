@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, Alert, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -73,7 +73,7 @@ export default function BorrowDetailsScreen() {
       showToast({ message: "Você não tem permissão para editar", type: "error" });
       return;
     }
-    router.push(routeToMobilePath(routes.inventory.borrows.edit(id as string)));
+    router.push(routeToMobilePath(routes.inventory.borrows.edit(id as string)) as any);
   };
 
   // Handle return
@@ -241,7 +241,7 @@ export default function BorrowDetailsScreen() {
         <BorrowStatusCard borrow={borrow} />
 
         {/* Item Information Card */}
-        <BorrowItemInfoCard borrow={borrow} />
+        <BorrowItemInfoCard borrow={borrow as any} />
 
         {/* User Information Card */}
         <BorrowUserInfoCard borrow={borrow} />

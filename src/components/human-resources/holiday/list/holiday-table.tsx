@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import { FlatList, View, TouchableOpacity, RefreshControl, ActivityIndicator, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { Holiday } from '../../../../types';
@@ -10,8 +10,6 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import { HOLIDAY_TYPE, HOLIDAY_TYPE_LABELS } from '../../../../constants';
 import { format, isSameYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import type { SortConfig } from "@/lib/sort-utils";
-
 
 interface HolidayTableProps {
   holidays: Holiday[];

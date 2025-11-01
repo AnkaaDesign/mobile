@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -40,7 +40,7 @@ export function EmployeeCard({ ppeSize }: EmployeeCardProps) {
             <View style={styles.nameSection}>
               <ThemedText style={StyleSheet.flatten([styles.employeeName, { color: colors.foreground }])}>{user.name}</ThemedText>
               {user.status && (
-                <Badge variant={user.status === "ACTIVE" ? "success" : "secondary"}>
+                <Badge variant={user.status !== "DISMISSED" ? "success" : "secondary"}>
                   <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.primaryForeground }])}>{USER_STATUS_LABELS[user.status]}</ThemedText>
                 </Badge>
               )}

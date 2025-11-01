@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, Alert , StyleSheet} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -48,7 +48,7 @@ export default function TruckEditScreen() {
     control,
     handleSubmit,
     formState: { errors, isValid, isDirty },
-    setValue,
+    
     reset,
   } = useForm<TruckUpdateFormData>({
     resolver: zodResolver(truckUpdateSchema),

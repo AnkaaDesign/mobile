@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { View, TouchableOpacity, Modal, ScrollView } from "react-native";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
@@ -47,6 +47,7 @@ interface ComponentCalculation {
   wasAlreadyAdded?: boolean;
   correctedWeight?: number;
   additionalWeight?: number;
+  actualWeight?: number;
 }
 
 interface ErrorComponent {
@@ -223,7 +224,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
       return {
         id: comp.id || "",
         name: item?.name || `Componente`,
-        uniCode: item?.uniCode,
+        uniCode: item?.uniCode ?? undefined,
         ratio: comp.ratio,
         calculatedWeight,
         calculatedVolume,
@@ -268,7 +269,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
       </View>
 
       {!isValidRatioSum && (
-        <Alert variant="destructive" className="mb-4">
+        <Alert variant="destructive" style={{ marginBottom: 16 }}>
           <IconAlertTriangle size={16} color={colors.destructive} />
           <AlertDescription>
             A soma das proporções ({ratioSum.toFixed(1)}%) deve ser igual a 100%
@@ -321,7 +322,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
               <Icon name="currency-real" size={16} className="text-muted-foreground" />
               <Text className="text-sm text-foreground">Exibir Preços</Text>
             </View>
-            <Switch value={showPrices} onValueChange={setShowPrices} />
+            <Switch checked={showPrices} onCheckedChange={setShowPrices} />
           </View>
 
           <View className="flex-row items-center justify-between p-3 bg-muted/30 rounded-lg">
@@ -329,7 +330,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
               <IconExclamationCircle size={16} color={colors.mutedForeground} />
               <Text className="text-sm text-foreground">Modo Correção</Text>
             </View>
-            <Switch value={correctionMode} onValueChange={handleToggleCorrectionMode} />
+            <Switch checked={correctionMode} onCheckedChange={handleToggleCorrectionMode} />
           </View>
 
           {!correctionMode && (

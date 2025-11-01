@@ -1,17 +1,17 @@
-import React from "react";
+
 import { View, StyleSheet, ScrollView } from "react-native";
-import { router } from "expo-router";
+
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconHistory, IconUser, IconPackage, IconCalendar, IconCircleCheck, IconClock, IconAlertTriangle } from "@tabler/icons-react-native";
-import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, routes } from '../../../../../constants';
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '../../../../../constants';
 import { formatDate, formatRelativeTime } from '../../../../../utils';
-import { routeToMobilePath } from "@/lib/route-mapper";
+
 import type { PpeDeliverySchedule } from '../../../../../types';
 
 interface DeliveryHistoryCardProps {
@@ -43,7 +43,7 @@ export function DeliveryHistoryCard({ schedule, maxHeight = 400 }: DeliveryHisto
           text: isDark ? extendedColors.yellow[400] : extendedColors.yellow[700],
           icon: isDark ? extendedColors.yellow[400] : extendedColors.yellow[600],
         };
-      case PPE_DELIVERY_STATUS.REJECTED:
+      case PPE_DELIVERY_STATUS.REPROVED:
         return {
           bg: isDark ? extendedColors.red[900] : extendedColors.red[100],
           text: isDark ? extendedColors.red[400] : extendedColors.red[700],
@@ -143,7 +143,7 @@ export function DeliveryHistoryCard({ schedule, maxHeight = 400 }: DeliveryHisto
                       {delivery.status === PPE_DELIVERY_STATUS.PENDING && (
                         <IconClock size={14} color={statusColors.icon} />
                       )}
-                      {delivery.status === PPE_DELIVERY_STATUS.REJECTED && (
+                      {delivery.status === PPE_DELIVERY_STATUS.REPROVED && (
                         <IconAlertTriangle size={14} color={statusColors.icon} />
                       )}
                       <ThemedText

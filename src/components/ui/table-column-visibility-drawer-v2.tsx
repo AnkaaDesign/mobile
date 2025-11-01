@@ -4,7 +4,7 @@ import { IconColumns, IconSearch, IconX } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
+
 import { Drawer } from "@/components/ui/drawer";
 
 interface GenericColumn {

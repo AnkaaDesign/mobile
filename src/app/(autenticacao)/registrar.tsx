@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert, StatusBar, Pressable } from "react-native";
+import { useState } from "react";
+import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,8 +7,7 @@ import { contactMethodSchema } from '../../schemas';
 import { z } from "zod";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
-import { routes } from '../../constants';
-import { routeToMobilePath } from "@/lib/route-mapper";
+
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -40,7 +39,7 @@ type RegisterFormData = z.infer<typeof registerFormSchema>;
 export default function RegisterScreen() {
   const router = useRouter();
   const { register: registerUser } = useAuth();
-  const { isDark, colors } = useTheme();
+  const { colors } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);

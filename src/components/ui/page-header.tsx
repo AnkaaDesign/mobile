@@ -120,7 +120,7 @@ export function PageHeader(props: PageHeaderProps) {
               {renderTitle()}
 
               {/* Status Badge for Detail Pages */}
-              {props.variant === "detail" && props.status && (
+              {"variant" in props && props.variant === "detail" && "status" in props && props.status && (
                 <Badge variant={props.status.variant || "default"} style={styles.statusBadge}>
                   <Text>{props.status.label}</Text>
                 </Badge>
@@ -180,9 +180,9 @@ export function PageHeader(props: PageHeaderProps) {
       </View>
 
       {/* Metrics for Detail Pages */}
-      {props.variant === "detail" && props.metrics && props.metrics.length > 0 && (
+      {"variant" in props && props.variant === "detail" && "metrics" in props && props.metrics && props.metrics.length > 0 && (
         <View style={[styles.metricsContainer, { borderTopColor: colors.border }]}>
-          {props.metrics.map((metric, index) => (
+          {props.metrics.map((metric: any /* TODO: Add proper type */, index: any /* TODO: Add proper type */) => (
             <View key={index} style={styles.metricItem}>
               {metric.icon && (
                 <Icon name={metric.icon} size={16} color={colors.mutedForeground} />

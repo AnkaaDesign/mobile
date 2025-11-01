@@ -65,9 +65,9 @@ export * from "./usePositionRemuneration";
 export * from "./useSector";
 export * from "./bonus";
 export * from "./payroll";
+export type { PayrollComparison } from "./payrollDetails";
 export {
   payrollDetailsKeys,
-  PayrollComparison,
   usePayrollDetails,
   usePayrollLiveDetails,
   usePayrollUserStats,
@@ -170,6 +170,12 @@ export * from "./useFilterState";
 export * from "./useColumnVisibility";
 export * from "./useTableSort";
 export * from "./useDebouncedSearch";
+
+// =====================================================
+// Lookup & Validation Hooks
+// =====================================================
+export * from "./use-cnpj-lookup";
+export * from "./use-cep-lookup";
 
 // =====================================================
 // Monitoring & Utilities

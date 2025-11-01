@@ -37,7 +37,7 @@ export const ThemedTextInput = forwardRef<TextInput, ThemedTextInputProps>(
     },
     ref,
   ) => {
-    const { colors, isDark } = useTheme();
+    const { colors } = useTheme();
 
     const themedStyles = {
       container: {
@@ -112,7 +112,7 @@ ThemedTextInput.displayName = "ThemedTextInput";
 
 // Preset variants
 export const createThemedTextInputVariants = () => {
-  const { colors, isDark } = useTheme();
+  const { colors: _colors } = useTheme();
 
   return {
     default: {

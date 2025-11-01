@@ -11,6 +11,7 @@ interface MenuItem {
   isControlPanel?: boolean; // Indicates if this is a control panel/dashboard
   isDynamic?: boolean; // Indicates if this is a dynamic route
   onlyInStaging?: boolean; // Only show in staging environment
+  isContextual?: boolean; // Indicates if this is a contextual menu item
 }
 
 // Comprehensive Tabler icon mapping for Brazilian manufacturing system

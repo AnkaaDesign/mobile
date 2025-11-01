@@ -9,7 +9,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS, WARNING_SEVERITY } from '../../../constants';
 import { formatDate } from '../../../utils';
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { badgeColors } from "@/lib/theme/extended-colors";
 
 interface PersonalWarningTableProps {
   warnings: Warning[];

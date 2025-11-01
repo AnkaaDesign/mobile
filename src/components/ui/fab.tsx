@@ -1,4 +1,4 @@
-import { TouchableOpacity, Text, View, ViewStyle , StyleSheet} from "react-native";
+import { TouchableOpacity, Text, ViewStyle, StyleSheet } from "react-native";
 import { Icon } from "./icon";
 import { useTheme } from "@/contexts/theme-context";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
