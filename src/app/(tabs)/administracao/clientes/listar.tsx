@@ -10,33 +10,37 @@ import { ThemedView, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar }
 import { CustomerTable, createColumnDefinitions } from "@/components/administration/customer/list/customer-table";
 
 import { CustomerFilterTags } from "@/components/administration/customer/list/customer-filter-tags";
-import { CustomerColumnVisibilityDrawer } from "@/components/administration/customer/list/customer-column-visibility-drawer";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { CustomerListSkeleton } from "@/components/administration/customer/skeleton/customer-list-skeleton";
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 
 // New hooks and components
 import { useTableSort } from "@/hooks/useTableSort";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
-import { BaseFilterDrawer, StringFilter, BooleanFilter } from "@/components/common/filters";
+import { StringFilter, BooleanFilter } from "@/components/common/filters";
 import { BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from '../../../../constants';
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
+
+// Import drawer content components
+import { CustomerFilterDrawerContent } from "@/components/administration/customer/list/customer-filter-drawer-content";
+import { CustomerColumnDrawerContent } from "@/components/administration/customer/list/customer-column-drawer-content";
 
 export default function CustomerListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const searchInputRef = React.useRef<any>(null);
 
   // Filter state
@@ -50,7 +54,7 @@ export default function CustomerListScreen() {
 
   const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
     [{ columnKey: "fantasyName", direction: "asc", order: 0 }],
-    3,
+    1, // Single column sort only
     false
   );
 
@@ -176,10 +180,6 @@ export default function CustomerListScreen() {
     setDisplaySearchText(text);
   }, []);
 
-  const handleApplyFilters = useCallback(() => {
-    setShowFilters(false);
-  }, []);
-
   const handleClearFilters = useCallback(() => {
     setFilters({});
     setSearchText("");
@@ -192,6 +192,27 @@ export default function CustomerListScreen() {
     setVisibleColumns(newColumns);
   }, [setVisibleColumns]);
 
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <CustomerFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <CustomerColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
 
@@ -199,87 +220,6 @@ export default function CustomerListScreen() {
   const activeFiltersCount = Object.values(filters).filter(
     (value) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : value === true)
   ).length;
-
-  // State options for multi-select
-  const stateOptions = useMemo(() =>
-    BRAZILIAN_STATES.map((state) => ({
-      value: state,
-      label: BRAZILIAN_STATE_NAMES[state] || state,
-    })),
-    []
-  );
-
-  // Filter sections for BaseFilterDrawer
-  const filterSections = useMemo(() => [
-    {
-      id: "location",
-      title: "Localização",
-      defaultOpen: true,
-      badge: (filters.states?.length || 0) + (filters.city ? 1 : 0),
-      content: (
-        <>
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Estados</Text>
-            <Input
-              value={filters.states?.join(", ") || ""}
-              onChangeText={(value) => setFilters(prev => ({
-                ...prev,
-                states: value ? value.split(",").map(s => s.trim()).filter(Boolean) : undefined
-              }))}
-              placeholder="Ex: SP, RJ, MG"
-            />
-          </View>
-          <StringFilter
-            label="Cidade"
-            value={filters.city}
-            onChange={(value) => setFilters(prev => ({ ...prev, city: value as string | undefined }))}
-            placeholder="Digite o nome da cidade"
-          />
-        </>
-      ),
-    },
-    {
-      id: "documents",
-      title: "Documentos",
-      defaultOpen: false,
-      badge: (filters.hasCNPJ ? 1 : 0) + (filters.hasCPF ? 1 : 0),
-      content: (
-        <>
-          <BooleanFilter
-            label="Possui CNPJ"
-            description="Mostrar apenas clientes com CNPJ cadastrado"
-            value={!!filters.hasCNPJ}
-            onChange={(value) => setFilters(prev => ({ ...prev, hasCNPJ: value || undefined }))}
-          />
-          <BooleanFilter
-            label="Possui CPF"
-            description="Mostrar apenas clientes com CPF cadastrado"
-            value={!!filters.hasCPF}
-            onChange={(value) => setFilters(prev => ({ ...prev, hasCPF: value || undefined }))}
-          />
-        </>
-      ),
-    },
-    {
-      id: "tags",
-      title: "Tags",
-      defaultOpen: false,
-      badge: filters.tags?.length || 0,
-      content: (
-        <View style={{ gap: 8 }}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Tags</Text>
-          <Input
-            value={filters.tags?.join(", ") || ""}
-            onChangeText={(value) => setFilters(prev => ({
-              ...prev,
-              tags: value ? value.split(",").map(t => t.trim()).filter(Boolean) : undefined
-            }))}
-            placeholder="Ex: importante, vip, premium"
-          />
-        </View>
-      ),
-    },
-  ], [filters, colors, stateOptions]);
 
   // Only show skeleton on initial load, not on refetch/sort/search
   // This prevents the entire page from remounting during search
@@ -300,7 +240,8 @@ export default function CustomerListScreen() {
   const hasCustomers = Array.isArray(customers) && customers.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+    <UtilityDrawerWrapper>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Search and Filter */}
       <View style={[styles.searchContainer]}>
         <SearchBar
@@ -316,13 +257,13 @@ export default function CustomerListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumns.size}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -372,7 +313,14 @@ export default function CustomerListScreen() {
             selectedCustomers={selectedCustomers}
             onSelectionChange={handleSelectionChange}
             sortConfigs={sortConfigs}
-            onSort={(configs) => handleSort(configs[0]?.columnKey || "fantasyName")}
+            onSort={(configs) => {
+              // Handle empty array (clear sort)
+              if (configs.length === 0) {
+                handleSort("fantasyName"); // Reset to default
+              } else {
+                handleSort(configs[0].columnKey);
+              }
+            }}
             visibleColumnKeys={Array.from(visibleColumns) as string[]}
             enableSwipeActions={true}
           />
@@ -395,28 +343,8 @@ export default function CustomerListScreen() {
       {hasCustomers && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasCustomers && <FAB icon="plus" onPress={handleCreateCustomer} />}
-
-      {/* New BaseFilterDrawer */}
-      <BaseFilterDrawer
-        open={showFilters}
-        onOpenChange={setShowFilters}
-        sections={filterSections}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-        title="Filtros de Clientes"
-        description="Configure os filtros para refinar sua busca"
-      />
-
-      {/* Column Visibility Drawer */}
-      <CustomerColumnVisibilityDrawer
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
     </ThemedView>
+    </UtilityDrawerWrapper>
   );
 }
 

@@ -371,35 +371,25 @@ export const CustomerTable = React.memo<CustomerTableProps>(
       [selectedCustomers, onSelectionChange],
     );
 
-    // Sort handler
+    // Sort handler - Single column sorting only for mobile
     const handleSort = useCallback(
       (columnKey: string) => {
         if (!onSort) return;
 
-        const existingIndex = sortConfigs?.findIndex((config) => config.columnKey === columnKey) ?? -1;
+        const currentSort = sortConfigs?.[0];
 
-        if (existingIndex !== -1) {
-          // Column already sorted, toggle direction or remove
-          const newConfigs = [...(sortConfigs || [])];
-          if (newConfigs[existingIndex].direction === "asc") {
-            newConfigs[existingIndex].direction = "desc";
+        // If clicking the same column, toggle direction (asc -> desc -> no sort)
+        if (currentSort?.columnKey === columnKey) {
+          if (currentSort.direction === "asc") {
+            // Change to descending
+            onSort([{ columnKey, direction: "desc", order: 0 }]);
           } else {
-            // Remove from sorts
-            newConfigs.splice(existingIndex, 1);
+            // Remove sort (back to default)
+            onSort([]);
           }
-          // Update order values
-          const reorderedConfigs = newConfigs.map((config, index) => ({ ...config, order: index }));
-          onSort(reorderedConfigs);
         } else {
-          // Add new sort as primary (at the beginning)
-          const newConfigs = [{ columnKey: columnKey, direction: "asc" as const, order: 0 }, ...(sortConfigs || [])];
-          // Update order values for existing sorts
-          const reorderedConfigs = newConfigs.map((config, index) => ({ ...config, order: index }));
-          // Limit to 3 sorts max
-          if (reorderedConfigs.length > 3) {
-            reorderedConfigs.pop();
-          }
-          onSort(reorderedConfigs);
+          // New column clicked, sort ascending
+          onSort([{ columnKey, direction: "asc", order: 0 }]);
         }
       },
       [sortConfigs, onSort],
@@ -473,23 +463,14 @@ export const CustomerTable = React.memo<CustomerTableProps>(
                 </View>
               )}
               {displayColumns.map((column) => {
-                const sortIndex = sortConfigs?.findIndex((config) => config.columnKey === column.key) ?? -1;
-                const sortConfig = sortIndex !== -1 ? sortConfigs[sortIndex] : null;
+                // Single column sort - check if this column is currently sorted
+                const sortConfig = sortConfigs?.[0]?.columnKey === column.key ? sortConfigs[0] : null;
 
                 return (
                   <TouchableOpacity
                     key={column.key}
                     style={StyleSheet.flatten([styles.headerCell, { width: column.width }])}
                     onPress={() => column.sortable && handleSort(column.key)}
-                    onLongPress={() => {
-                      if (column.sortable && sortConfig) {
-                        // Remove this specific sort
-                        const newSorts = sortConfigs.filter((config) => config.columnKey !== column.key);
-                        // Update order values
-                        const reorderedSorts = newSorts.map((config, index) => ({ ...config, order: index }));
-                        onSort?.(reorderedSorts);
-                      }
-                    }}
                     disabled={!column.sortable}
                     activeOpacity={column.sortable ? 0.7 : 1}
                   >
@@ -499,18 +480,11 @@ export const CustomerTable = React.memo<CustomerTableProps>(
                       </ThemedText>
                       {column.sortable &&
                         (sortConfig ? (
-                          <View style={styles.sortIconContainer}>
-                            {sortConfig.direction === "asc" ? (
-                              <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
-                            ) : (
-                              <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
-                            )}
-                            {sortConfigs.length > 1 && (
-                              <ThemedText style={StyleSheet.flatten([styles.sortOrder, { color: isDark ? extendedColors.neutral[300] : extendedColors.neutral[700] }])}>
-                                {sortIndex + 1}
-                              </ThemedText>
-                            )}
-                          </View>
+                          sortConfig.direction === "asc" ? (
+                            <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                          ) : (
+                            <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                          )
                         ) : (
                           <Icon name="arrows-sort" size="sm" color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
                         ))}

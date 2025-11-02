@@ -20,7 +20,7 @@ export function ItemsCountDisplay({ loadedCount, totalCount, isLoading, itemType
   // Show total count if available and greater than 0
   const showTotal = totalCount !== undefined && totalCount !== null && totalCount > 0;
 
-  // Always show current count, even when loading more
+  // Always show current count (no loading indicator - table already shows it)
   const countText = showTotal
     ? `${loadedCount} ${loadedCount === 1 ? itemType : itemTypePlural} ${loadedCount === 1 ? 'carregado' : 'carregados'} de ${totalCount}`
     : `${loadedCount} ${loadedCount === 1 ? `${itemType} carregado` : `${itemTypePlural} carregados`}`;
@@ -29,7 +29,6 @@ export function ItemsCountDisplay({ loadedCount, totalCount, isLoading, itemType
     <View style={styles.container}>
       <ThemedText style={StyleSheet.flatten([styles.text, { color: colors.mutedForeground }])}>
         {countText}
-        {isLoading && loadedCount > 0 && " • Carregando mais..."}
       </ThemedText>
     </View>
   );

@@ -724,6 +724,10 @@ const Input = React.forwardRef<TextInput, InputProps>(
       outputRange: [colors.border, colors.ring],
     });
 
+    // Extract borderColor from style prop if it exists
+    const styleProp = Array.isArray(style) ? Object.assign({}, ...style) : style;
+    const { borderColor: _ignoredBorderColor, ...styleWithoutBorder } = (styleProp || {}) as any;
+
     const baseContainerViewStyles: ViewStyle = {
       height: 40,
       borderRadius: borderRadius.md,
@@ -733,7 +737,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
         opacity: 0.5,
         backgroundColor: colors.input,
       }),
-      ...(Array.isArray(style) ? Object.assign({}, ...style) : style),
+      ...styleWithoutBorder,
     };
 
     const baseInputStyles: TextStyle = {
@@ -748,11 +752,15 @@ const Input = React.forwardRef<TextInput, InputProps>(
       ...inputStyle,
     };
 
-    // Don't use animated border color at all - just use static colors based on state
-    const borderColor = error ? colors.destructive : (isFocused ? colors.ring : colors.border);
+    // Determine border color based on state - force re-evaluation on each render
+    const getBorderColor = () => {
+      if (error) return colors.destructive;
+      if (isFocused) return colors.ring;
+      return colors.border;
+    };
 
     const animatedStyles = {
-      borderColor: borderColor,
+      borderColor: getBorderColor(),
     };
 
     const animatedShadowStyles = {
@@ -780,7 +788,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
     return (
       <View style={baseContainerStyles} className={className}>
         <Animated.View style={animatedShadowStyles}>
-          <Animated.View style={StyleSheet.flatten([baseContainerViewStyles, animatedStyles])}>
+          <Animated.View style={[baseContainerViewStyles, animatedStyles]}>
             <TextInput
               ref={inputRef}
               style={baseInputStyles}

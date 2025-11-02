@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -31,11 +31,6 @@ export function CustomerFilterTags({
   onClearAll,
 }: CustomerFilterTagsProps) {
   const { colors, isDark } = useTheme();
-
-  // Memoized handlers for better performance
-  const handleClearAll = useCallback(() => {
-    onClearAll();
-  }, [onClearAll]);
 
   // Build array of active filter tags
   const filterTags = useMemo((): FilterTag[] => {
@@ -244,24 +239,7 @@ export function CustomerFilterTags({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Clear all button */}
-        <TouchableOpacity
-          onPress={handleClearAll}
-          style={[
-            styles.clearAllButton,
-            {
-              borderColor: colors.border,
-              backgroundColor: isDark ? colors.card : colors.background,
-            }
-          ]}
-          activeOpacity={0.7}
-        >
-          <ThemedText style={[styles.clearAllText, { color: colors.destructive }]}>
-            Limpar tudo
-          </ThemedText>
-        </TouchableOpacity>
-
-        {/* Individual filter tags */}
+        {/* Individual filter tags - no "Limpar tudo" button on mobile */}
         {filterTags.map((tag) => (
           <Badge
             key={tag.key}
@@ -301,19 +279,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     gap: spacing.sm,
     alignItems: "center",
-  },
-  clearAllButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    minHeight: 32,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  clearAllText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
   },
   filterTag: {
     flexDirection: "row",

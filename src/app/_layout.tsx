@@ -16,6 +16,7 @@ import { SwipeRowProvider } from "@/contexts/swipe-row-context";
 import { NavigationHistoryProvider } from "@/contexts/navigation-history-context";
 import { FavoritesProvider } from "@/contexts/favorites-context";
 import { FileViewerProvider } from "@/components/file";
+import { UtilityDrawerProvider } from "@/contexts/utility-drawer-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { PortalHost } from "@rn-primitives/portal";
 import { useEffect, useState } from "react";
@@ -144,7 +145,8 @@ export default function RootLayout() {
                 <FavoritesProvider>
                   <FileViewerProvider baseUrl={process.env.EXPO_PUBLIC_API_URL}>
                     <NavigationHistoryProvider>
-                      <SwipeRowProvider>
+                      <UtilityDrawerProvider>
+                        <SwipeRowProvider>
                       <AppStatusBar />
                       {!isHydrated ? (
                       // Show loading screen during hydration
@@ -178,7 +180,8 @@ export default function RootLayout() {
                         <PortalHost />
                       </>
                     )}
-                      </SwipeRowProvider>
+                        </SwipeRowProvider>
+                      </UtilityDrawerProvider>
                     </NavigationHistoryProvider>
                   </FileViewerProvider>
                 </FavoritesProvider>

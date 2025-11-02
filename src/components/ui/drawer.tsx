@@ -64,6 +64,7 @@ const Drawer: React.FC<DrawerProps> = ({
   const { colors } = useTheme();
   const translateX = useSharedValue(actualSide === "left" ? -SCREEN_WIDTH : SCREEN_WIDTH);
   const opacity = useSharedValue(0);
+  const [isModalVisible, setIsModalVisible] = React.useState(false);
 
   // Calculate drawer width
   const drawerWidth = React.useMemo(() => {
@@ -92,21 +93,25 @@ const Drawer: React.FC<DrawerProps> = ({
   // Animate in/out when open changes
   React.useEffect(() => {
     if (open) {
-      opacity.value = withTiming(1, { duration: 200 });
+      setIsModalVisible(true);
+      opacity.value = withTiming(1, { duration: 250 });
       translateX.value = withSpring(0, {
-        damping: 30,
-        stiffness: 300,
-        mass: 0.8,
+        damping: 35,
+        stiffness: 400,
+        mass: 0.7,
       });
     } else {
       opacity.value = withTiming(0, { duration: 200 });
-      translateX.value = withSpring(side === "left" ? -drawerWidth : drawerWidth, {
-        damping: 30,
-        stiffness: 300,
-        mass: 0.8,
+      translateX.value = withSpring(actualSide === "left" ? -drawerWidth : drawerWidth, {
+        damping: 35,
+        stiffness: 400,
+        mass: 0.7,
       });
+      // Delay hiding modal to allow animation to complete
+      const timer = setTimeout(() => setIsModalVisible(false), 250);
+      return () => clearTimeout(timer);
     }
-  }, [open, side, drawerWidth, opacity, translateX]);
+  }, [open, actualSide, drawerWidth, opacity, translateX]);
 
   const close = React.useCallback(() => {
     onOpenChange?.(false);
@@ -162,14 +167,14 @@ const Drawer: React.FC<DrawerProps> = ({
     opacity: opacity.value * backdropOpacity,
   }));
 
-  if (!open) return null;
+  if (!isModalVisible) return null;
 
-  const drawerPositionStyle: ViewStyle = side === "left"
+  const drawerPositionStyle: ViewStyle = actualSide === "left"
     ? { left: 0 }
     : { right: 0 };
 
   return (
-    <Modal visible={open} transparent statusBarTranslucent onRequestClose={close}>
+    <Modal visible={isModalVisible} transparent statusBarTranslucent onRequestClose={close}>
       <GestureHandlerRootView style={styles.modalContainer}>
         <View style={styles.container}>
           {/* Backdrop */}
@@ -196,8 +201,8 @@ const Drawer: React.FC<DrawerProps> = ({
                   backgroundColor: colors.background,
                   borderColor: colors.border,
                 },
-                side === "left" && styles.drawerLeft,
-                side === "right" && styles.drawerRight,
+                actualSide === "left" && styles.drawerLeft,
+                actualSide === "right" && styles.drawerRight,
                 drawerStyle,
                 style,
               ]}
