@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   content: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   infoContainer: {
     gap: spacing.xl,
@@ -188,8 +188,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: borderRadius.lg,
   },
   fieldLabel: {

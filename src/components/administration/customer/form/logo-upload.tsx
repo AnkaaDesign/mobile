@@ -125,7 +125,7 @@ export function LogoUpload({ existingLogoUrl, onChange, disabled }: LogoUploadPr
           </View>
           {!disabled && (
             <Button variant="outline" onPress={showOptions} style={styles.changeButton}>
-              <IconCamera size={16} />
+              <IconCamera size={16} color={colors.foreground} />
               <ThemedText>Trocar Logo</ThemedText>
             </Button>
           )}
@@ -141,11 +141,11 @@ export function LogoUpload({ existingLogoUrl, onChange, disabled }: LogoUploadPr
           {!disabled && (
             <View style={styles.buttonContainer}>
               <Button variant="outline" onPress={takePhoto} style={styles.actionButton}>
-                <IconCamera size={16} />
+                <IconCamera size={16} color={colors.foreground} />
                 <ThemedText>Tirar Foto</ThemedText>
               </Button>
               <Button variant="default" onPress={pickImage} style={styles.actionButton}>
-                <IconUpload size={16} />
+                <IconUpload size={16} color="white" />
                 <ThemedText style={{ color: "white" }}>Escolher da Galeria</ThemedText>
               </Button>
             </View>

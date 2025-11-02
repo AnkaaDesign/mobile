@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { View, ScrollView, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IconUserPlus, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
+import { IconBuilding, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useCustomerMutations } from "@/hooks";
 import { customerCreateSchema, type CustomerCreateFormData } from "@/schemas";
 import {
@@ -24,6 +24,7 @@ import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from 
 import { PhoneManager } from "@/components/administration/customer/form/phone-manager";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
 import { LogoUpload } from "@/components/administration/customer/form/logo-upload";
+import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 
 export default function CreateCustomerScreen() {
   const router = useRouter();
@@ -137,27 +138,28 @@ export default function CreateCustomerScreen() {
   }));
 
   return (
-    <ThemedView style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.headerContent}>
-          <View style={styles.titleSection}>
-            <IconUserPlus size={24} color={colors.primary} />
-            <ThemedText style={styles.title}>Novo Cliente</ThemedText>
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.subtitle, { color: colors.mutedForeground }])}>
-            Cadastro de novo cliente
-          </ThemedText>
-        </View>
-      </View>
-
+    <ThemedView style={StyleSheet.flatten([styles.wrapper, { backgroundColor: colors.background }])}>
       <ScrollView
-        style={styles.content}
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
       >
+        <View style={styles.container}>
+          {/* Customer Name Header Card */}
+          <Card style={styles.headerCard}>
+            <View style={styles.headerContent}>
+              <View style={[styles.headerLeft, { flex: 1 }]}>
+                <IconBuilding size={24} color={colors.primary} />
+                <ThemedText style={StyleSheet.flatten([styles.customerName, { color: colors.foreground }])}>
+                  Cadastrar Cliente
+                </ThemedText>
+              </View>
+              <View style={styles.headerActions}>
+                {/* Empty placeholder to match detail page structure */}
+              </View>
+            </View>
+          </Card>
         {/* Basic Information */}
-        <Card style={styles.section}>
+        <Card style={styles.card}>
           <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
 
           <SimpleFormField label="Nome Fantasia" required error={errors.fantasyName}>
@@ -233,77 +235,79 @@ export default function CreateCustomerScreen() {
         </Card>
 
         {/* Document */}
-        <Card style={styles.section}>
+        <Card style={styles.card}>
           <ThemedText style={styles.sectionTitle}>Documento</ThemedText>
 
-          <View style={styles.documentTypeContainer}>
-            <Button
-              variant={documentType === "cnpj" ? "default" : "outline"}
-              onPress={() => handleDocumentTypeChange("cnpj")}
-              style={styles.documentTypeButton}
-            >
-              <ThemedText style={{ color: documentType === "cnpj" ? "white" : colors.foreground }}>
-                CNPJ
-              </ThemedText>
-            </Button>
-            <Button
-              variant={documentType === "cpf" ? "default" : "outline"}
-              onPress={() => handleDocumentTypeChange("cpf")}
-              style={styles.documentTypeButton}
-            >
-              <ThemedText style={{ color: documentType === "cpf" ? "white" : colors.foreground }}>
-                CPF
-              </ThemedText>
-            </Button>
-          </View>
+          <View style={styles.documentRow}>
+            <View style={styles.documentTypeContainer}>
+              <Button
+                variant={documentType === "cnpj" ? "default" : "outline"}
+                onPress={() => handleDocumentTypeChange("cnpj")}
+                size="sm"
+                style={styles.documentTypeButton}
+              >
+                <ThemedText style={{ color: documentType === "cnpj" ? colors.primaryForeground : colors.foreground }}>
+                  CNPJ
+                </ThemedText>
+              </Button>
+              <Button
+                variant={documentType === "cpf" ? "default" : "outline"}
+                onPress={() => handleDocumentTypeChange("cpf")}
+                size="sm"
+                style={styles.documentTypeButton}
+              >
+                <ThemedText style={{ color: documentType === "cpf" ? colors.primaryForeground : colors.foreground }}>
+                  CPF
+                </ThemedText>
+              </Button>
+            </View>
 
-          {documentType === "cnpj" ? (
-            <SimpleFormField label="CNPJ" required error={errors.cnpj}>
-              <Controller
-                control={control}
-                name="cnpj"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    value={value ? formatCNPJ(value) : ""}
-                    onChangeText={(text) => onChange(cleanCNPJ(text))}
-                    onBlur={onBlur}
-                    placeholder="00.000.000/0000-00"
-                    keyboardType="numeric"
-                    maxLength={18}
-                    error={!!errors.cnpj}
-                  />
-                )}
-              />
-            </SimpleFormField>
-          ) : (
-            <SimpleFormField label="CPF" required error={errors.cpf}>
-              <Controller
-                control={control}
-                name="cpf"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    value={value ? formatCPF(value) : ""}
-                    onChangeText={(text) => onChange(cleanCPF(text))}
-                    onBlur={onBlur}
-                    placeholder="000.000.000-00"
-                    keyboardType="numeric"
-                    maxLength={14}
-                    error={!!errors.cpf}
-                  />
-                )}
-              />
-            </SimpleFormField>
-          )}
+            <View style={styles.documentInputField}>
+              {documentType === "cnpj" ? (
+                <Controller
+                  control={control}
+                  name="cnpj"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      value={value ? formatCNPJ(value) : ""}
+                      onChangeText={(text) => onChange(cleanCNPJ(text))}
+                      onBlur={onBlur}
+                      placeholder="00.000.000/0000-00"
+                      keyboardType="numeric"
+                      maxLength={18}
+                      error={!!errors.cnpj}
+                    />
+                  )}
+                />
+              ) : (
+                <Controller
+                  control={control}
+                  name="cpf"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      value={value ? formatCPF(value) : ""}
+                      onChangeText={(text) => onChange(cleanCPF(text))}
+                      onBlur={onBlur}
+                      placeholder="000.000.000-00"
+                      keyboardType="numeric"
+                      maxLength={14}
+                      error={!!errors.cpf}
+                    />
+                  )}
+                />
+              )}
+            </View>
+          </View>
         </Card>
 
         {/* Logo */}
-        <Card style={styles.section}>
+        <Card style={styles.card}>
           <ThemedText style={styles.sectionTitle}>Logo</ThemedText>
           <LogoUpload value={logoFile} onChange={setLogoFile} disabled={isSubmitting} />
         </Card>
 
         {/* Address */}
-        <Card style={styles.section}>
+        <Card style={styles.card}>
           <ThemedText style={styles.sectionTitle}>Endereço</ThemedText>
 
           <SimpleFormField label="CEP" error={errors.zipCode}>
@@ -341,41 +345,39 @@ export default function CreateCustomerScreen() {
             />
           </SimpleFormField>
 
-          <View style={styles.row}>
-            <SimpleFormField label="Número" error={errors.addressNumber} style={styles.smallField}>
-              <Controller
-                control={control}
-                name="addressNumber"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    value={value || ""}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    placeholder="123"
-                    maxLength={10}
-                    error={!!errors.addressNumber}
-                  />
-                )}
-              />
-            </SimpleFormField>
+          <SimpleFormField label="Número" error={errors.addressNumber}>
+            <Controller
+              control={control}
+              name="addressNumber"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="123"
+                  maxLength={10}
+                  error={!!errors.addressNumber}
+                />
+              )}
+            />
+          </SimpleFormField>
 
-            <SimpleFormField label="Complemento" error={errors.addressComplement} style={styles.largeField}>
-              <Controller
-                control={control}
-                name="addressComplement"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    value={value || ""}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    placeholder="Apto, Sala, etc."
-                    maxLength={100}
-                    error={!!errors.addressComplement}
-                  />
-                )}
-              />
-            </SimpleFormField>
-          </View>
+          <SimpleFormField label="Complemento" error={errors.addressComplement}>
+            <Controller
+              control={control}
+              name="addressComplement"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Apto, Sala, etc."
+                  maxLength={100}
+                  error={!!errors.addressComplement}
+                />
+              )}
+            />
+          </SimpleFormField>
 
           <SimpleFormField label="Bairro" error={errors.neighborhood}>
             <Controller
@@ -394,43 +396,41 @@ export default function CreateCustomerScreen() {
             />
           </SimpleFormField>
 
-          <View style={styles.row}>
-            <SimpleFormField label="Cidade" error={errors.city} style={styles.largeField}>
-              <Controller
-                control={control}
-                name="city"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    value={value || ""}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    placeholder="São Paulo"
-                    maxLength={100}
-                    error={!!errors.city}
-                  />
-                )}
-              />
-            </SimpleFormField>
+          <SimpleFormField label="Cidade" error={errors.city}>
+            <Controller
+              control={control}
+              name="city"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="São Paulo"
+                  maxLength={100}
+                  error={!!errors.city}
+                />
+              )}
+            />
+          </SimpleFormField>
 
-            <SimpleFormField label="Estado" error={errors.state} style={styles.smallField}>
-              <Controller
-                control={control}
-                name="state"
-                render={({ field: { onChange, value } }) => (
-                  <Select value={value || ""} onValueChange={onChange}>
-                    <SelectItem label="Selecione" value="" />
-                    {stateOptions.map((option) => (
-                      <SelectItem key={option.value} label={option.label} value={option.value} />
-                    ))}
-                  </Select>
-                )}
-              />
-            </SimpleFormField>
-          </View>
+          <SimpleFormField label="Estado" error={errors.state}>
+            <Controller
+              control={control}
+              name="state"
+              render={({ field: { onChange, value } }) => (
+                <Select value={value || ""} onValueChange={onChange}>
+                  <SelectItem label="Selecione" value="" />
+                  {stateOptions.map((option) => (
+                    <SelectItem key={option.value} label={option.label} value={option.value} />
+                  ))}
+                </Select>
+              )}
+            />
+          </SimpleFormField>
         </Card>
 
         {/* Contact */}
-        <Card style={styles.section}>
+        <Card style={styles.card}>
           <ThemedText style={styles.sectionTitle}>Contato</ThemedText>
 
           <SimpleFormField label="Telefones">
@@ -443,7 +443,7 @@ export default function CreateCustomerScreen() {
         </Card>
 
         {/* Tags */}
-        <Card style={styles.section}>
+        <Card style={styles.card}>
           <ThemedText style={styles.sectionTitle}>Tags</ThemedText>
 
           <SimpleFormField label="Tags do Cliente">
@@ -454,83 +454,120 @@ export default function CreateCustomerScreen() {
             />
           </SimpleFormField>
         </Card>
+
+        {/* Bottom spacing */}
+        <View style={{ height: spacing.md }} />
+        </View>
       </ScrollView>
 
       {/* Action Buttons */}
-      <View
-        style={[
-          styles.actionBar,
-          { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: insets.bottom },
-        ]}
-      >
-        <Button variant="outline" onPress={handleCancel} disabled={isSubmitting} style={styles.actionButton}>
-          <IconX size={20} />
-          <ThemedText>Cancelar</ThemedText>
-        </Button>
-
-        <Button
-          variant="default"
-          onPress={handleSubmit(onSubmit)}
-          disabled={!isValid || isSubmitting}
-          style={styles.actionButton}
+      <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.card }}>
+        <View
+          style={[
+            styles.actionBar,
+            {
+              backgroundColor: colors.card,
+              borderTopColor: colors.border,
+              paddingBottom: spacing.xl,
+            },
+          ]}
         >
-          <IconDeviceFloppy size={20} />
-          <ThemedText style={{ color: "white" }}>{isSubmitting ? "Salvando..." : "Salvar Cliente"}</ThemedText>
-        </Button>
-      </View>
+          <Button
+            variant="outline"
+            onPress={handleCancel}
+            disabled={isSubmitting}
+            style={{ flex: 1, minHeight: 40 }}
+          >
+            <>
+              <IconX size={20} color={colors.foreground} />
+              <ThemedText style={{ color: colors.foreground, marginLeft: 8 }}>Cancelar</ThemedText>
+            </>
+          </Button>
+
+          <Button
+            variant="default"
+            onPress={handleSubmit(onSubmit)}
+            disabled={!isValid || isSubmitting}
+            style={{ flex: 1, minHeight: 40 }}
+          >
+            <>
+              <IconDeviceFloppy size={20} color={colors.primaryForeground} />
+              <ThemedText style={{ color: colors.primaryForeground, marginLeft: 8 }}>
+                {isSubmitting ? "Salvando..." : "Salvar Cliente"}
+              </ThemedText>
+            </>
+          </Button>
+        </View>
+      </SafeAreaView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+  },
   container: {
     flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  headerContent: {
-    gap: 4,
-  },
-  titleSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 14,
-    marginLeft: 32,
-  },
-  content: {
+  scrollView: {
     flex: 1,
   },
-  section: {
-    margin: 16,
-    marginBottom: 0,
-    marginTop: 16,
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.xs,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    flex: 1,
+  },
+  customerName: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    flex: 1,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    minHeight: 36, // Match detail page button height
+  },
+  card: {
+    padding: spacing.md,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 16,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    marginBottom: spacing.md,
+  },
+  documentRow: {
+    flexDirection: "row",
+    gap: spacing.md,
+    alignItems: "center",
+  },
+  documentInputField: {
+    flex: 1,
   },
   documentTypeContainer: {
     flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
+    gap: spacing.xs,
   },
   documentTypeButton: {
-    flex: 1,
+    minWidth: 50,
   },
   row: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.md,
   },
   smallField: {
     flex: 1,
@@ -540,16 +577,9 @@ const styles = StyleSheet.create({
   },
   actionBar: {
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     borderTopWidth: 1,
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
+    gap: spacing.md,
   },
 });

@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, type SignInFormData } from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
-import { useTheme } from "@/lib/theme";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -24,7 +23,6 @@ import { useToast } from "@/hooks/use-toast";
 export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
-  const { colors } = useTheme();
   const { error: showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -98,12 +96,12 @@ export default function LoginScreen() {
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
             <ThemedScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.lg }}>
-              <Card style={{ position: "relative", backgroundColor: colors.card, borderColor: "transparent", ...shadow.lg, maxWidth: 400, width: "100%" }}>
-                <ThemedView style={{ backgroundColor: "transparent", position: "absolute", right: 8, top: 8 }}>
+              <View style={{ maxWidth: 400, width: "100%", position: "relative" }}>
+                <View style={{ position: "absolute", right: 8, top: 8, zIndex: 1000 }}>
                   <ThemeToggle size={24} />
-                </ThemedView>
-
-                <CardHeader style={{ alignItems: "center", paddingBottom: spacing.xl }}>
+                </View>
+                <Card style={{ borderColor: "transparent", ...shadow.lg, width: "100%" }}>
+                  <CardHeader style={{ alignItems: "center", paddingBottom: spacing.xl }}>
                   {/* Logo */}
                   <View style={{ marginBottom: spacing.md }}>
                     <Logo size="lg" />
@@ -208,7 +206,8 @@ export default function LoginScreen() {
                     </ThemedText>
                   </View>
                 </CardFooter>
-              </Card>
+                </Card>
+              </View>
             </ThemedScrollView>
           </KeyboardAvoidingView>
         </TouchableWithoutFeedback>

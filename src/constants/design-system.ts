@@ -90,10 +90,10 @@ export const transitions = {
 // Component-specific constants
 export const componentSizes = {
   button: {
-    sm: { height: 32, paddingHorizontal: 12 },
-    default: { height: 36, paddingHorizontal: 16 },
-    lg: { height: 40, paddingHorizontal: 24 },
-    icon: { width: 36, height: 36 },
+    sm: { height: 33, paddingHorizontal: 12 },
+    default: { height: 37, paddingHorizontal: 16 },
+    lg: { height: 41, paddingHorizontal: 24 },
+    icon: { width: 37, height: 37 },
   },
   input: {
     default: { height: 40, paddingHorizontal: 12 },

@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Pressable, Animated, Easing } from "react-native";
 import { IconMoon, IconSun } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -9,7 +9,10 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ size = 24}: ThemeToggleProps) {
-  const { isDark, setTheme } = useTheme();
+  const themeContext = useTheme();
+  console.log("ThemeToggle: Theme context:", themeContext);
+  const { isDark, setTheme } = themeContext;
+  const [isToggling, setIsToggling] = useState(false);
 
   // Animation values
   const sunScale = useRef(new Animated.Value(isDark ? 0 : 1)).current;
@@ -52,10 +55,25 @@ export function ThemeToggle({ size = 24}: ThemeToggleProps) {
     ]).start();
   }, [isDark]);
 
-  const toggleTheme = () => {
-    // Toggle between light and dark (not including system for simplicity)
-    const newTheme = isDark ? "light" : "dark";
-    setTheme(newTheme);
+  const toggleTheme = async () => {
+    console.log("ThemeToggle: Button pressed, current isDark:", isDark);
+    if (isToggling) {
+      console.log("ThemeToggle: Already toggling, skipping");
+      return; // Prevent multiple simultaneous toggles
+    }
+
+    setIsToggling(true);
+    try {
+      // Toggle between light and dark (not including system for simplicity)
+      const newTheme = isDark ? "light" : "dark";
+      console.log("ThemeToggle: Setting theme to:", newTheme);
+      await setTheme(newTheme);
+      console.log("ThemeToggle: Theme set successfully");
+    } catch (error) {
+      console.error("Failed to toggle theme:", error);
+    } finally {
+      setIsToggling(false);
+    }
   };
 
   // Use appropriate colors for React Native
@@ -75,6 +93,9 @@ export function ThemeToggle({ size = 24}: ThemeToggleProps) {
   return (
     <Pressable
       onPress={toggleTheme}
+      onPressIn={() => console.log("ThemeToggle: Press started")}
+      onPressOut={() => console.log("ThemeToggle: Press ended")}
+      disabled={isToggling}
       style={({ pressed }) => ({
         height: 40,
         width: 40,
@@ -82,10 +103,13 @@ export function ThemeToggle({ size = 24}: ThemeToggleProps) {
         justifyContent: "center",
         borderRadius: 8,
         backgroundColor: pressed ? pressedBackgroundColor : "transparent",
+        opacity: isToggling ? 0.5 : 1,
+        zIndex: 999, // Ensure it's on top
       })}
       accessibilityRole="button"
       accessibilityLabel={isDark ? "Mudar para tema claro" : "Mudar para tema escuro"}
       accessibilityHint="Alterna entre tema claro e escuro"
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // Increase touch area
     >
       {/* Container for overlapping icons */}
       <Animated.View

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useTheme } from "@/lib/theme";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -21,7 +20,6 @@ export default function VerifyPasswordCodeScreen() {
     contact: string;
     returnTo: string;
   }>();
-  const { colors } = useTheme();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -143,7 +141,7 @@ export default function VerifyPasswordCodeScreen() {
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
             <ThemedScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.lg }}>
-              <Card style={{ backgroundColor: colors.card, borderColor: "transparent", ...shadow.lg, maxWidth: 400, width: "100%" }}>
+              <Card style={{ borderColor: "transparent", ...shadow.lg, maxWidth: 400, width: "100%" }}>
                 <ThemedView style={{ backgroundColor: "transparent", position: "absolute", right: 8, top: 8 }}>
                   <ThemeToggle size={24} />
                 </ThemedView>

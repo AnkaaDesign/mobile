@@ -16,13 +16,13 @@ export const themeColors: Record<"light" | "dark", ThemeColors> = {
     mutedForeground: "#737373", // neutral-500 - matching web
     accent: "#15803d", // HSL: 142 72% 29% - green-700 matching web primary
     accentForeground: "#ffffff", // white - matching web
-    destructive: "#dc2626", // red-600 - matching web
+    destructive: "#b91c1c", // red-700 - Tailwind red-700 for better visibility
     destructiveForeground: "#ffffff", // white - matching web
     border: "#e3e3e3", // HSL: 0 0% 89% - matching web border
     input: "#f5f5f5", // HSL: 0 0% 96% - slightly darker than white for better contrast
     ring: "#15803d", // HSL: 142 72% 29% - green-700 matching web
     // Additional semantic colors
-    error: "#dc2626", // alias for destructive
+    error: "#b91c1c", // alias for destructive
     onError: "#ffffff", // alias for destructiveForeground
     onPrimary: "#ffffff", // alias for primaryForeground
     text: "#404040", // alias for foreground
@@ -48,13 +48,13 @@ export const themeColors: Record<"light" | "dark", ThemeColors> = {
     mutedForeground: "#a3a3a3", // neutral-400 - matching web
     accent: "#15803d", // HSL: 142 72% 29% - green-700 matching web primary
     accentForeground: "#ffffff", // white - matching web
-    destructive: "#f87171", // red-400 - matching web dark
+    destructive: "#ef4444", // red-500 - better visibility in dark mode
     destructiveForeground: "#ffffff", // white - matching web
     border: "#3a3a3a", // HSL: 0 0% 23% - matching web dark border
     input: "#262626", // Same as card - distinct from background for visibility
     ring: "#15803d", // HSL: 142 72% 29% - green-700 matching web
     // Additional semantic colors
-    error: "#f87171", // alias for destructive
+    error: "#ef4444", // alias for destructive
     onError: "#ffffff", // alias for destructiveForeground
     onPrimary: "#ffffff", // alias for primaryForeground
     text: "#d9d9d9", // alias for foreground

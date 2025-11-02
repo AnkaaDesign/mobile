@@ -79,7 +79,7 @@ export function PhoneManager({ phones, onChange }: PhoneManagerProps) {
         </View>
       ) : (
         <Button variant="outline" onPress={() => setIsAdding(true)} style={styles.addButton}>
-          <IconPlus size={16} />
+          <IconPlus size={16} color={colors.foreground} />
           <ThemedText>Adicionar Telefone</ThemedText>
         </Button>
       )}

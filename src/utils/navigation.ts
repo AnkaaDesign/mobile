@@ -4,7 +4,7 @@
 import { SECTOR_PRIVILEGES, TABLER_ICONS, type MenuItem } from '../constants';
 
 // Define minimal user interface for navigation
-interface NavigationUser {
+export interface NavigationUser {
   sector?: {
     privileges?: SECTOR_PRIVILEGES;
   };

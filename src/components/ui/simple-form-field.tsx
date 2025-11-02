@@ -21,12 +21,23 @@ export function SimpleFormField({
   children,
   style,
 }: SimpleFormFieldProps) {
+  // Use try-catch to safely get theme colors with fallback
+  let destructiveColor = "#b91c1c"; // Tailwind red-700 as fallback
+
+  try {
+    const { useTheme } = require("@/lib/theme");
+    const { colors } = useTheme();
+    destructiveColor = colors.destructive;
+  } catch {
+    // Use fallback color if theme is not available
+  }
+
   return (
     <View style={StyleSheet.flatten([{ marginBottom: 16 }, style])}>
       {label && (
         <Label style={{ marginBottom: 8 }}>
           {label}
-          {required && <ThemedText style={{ color: "red" }}> *</ThemedText>}
+          {required && <ThemedText style={{ color: destructiveColor }}> *</ThemedText>}
         </Label>
       )}
 
@@ -39,7 +50,7 @@ export function SimpleFormField({
       {children}
 
       {error && (
-        <ThemedText style={{ fontSize: 12, color: "red", marginTop: 4 }}>
+        <ThemedText style={{ fontSize: 12, color: destructiveColor, marginTop: 4 }}>
           {typeof error === "boolean" ? "Campo obrigatório" : error.message}
         </ThemedText>
       )}

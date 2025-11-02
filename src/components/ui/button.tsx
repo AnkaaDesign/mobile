@@ -207,7 +207,7 @@ const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size 
   const renderChildren = () => {
     if (typeof children === "string" || typeof children === "number") {
       return (
-        <Text style={StyleSheet.flatten([textStyles, { flex: 0 }])} numberOfLines={1}>
+        <Text style={StyleSheet.flatten([textStyles, { flexShrink: 1 }])} numberOfLines={1} adjustsFontSizeToFit>
           {children}
         </Text>
       );
@@ -225,7 +225,9 @@ const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size 
         ) {
           const element = child as React.ReactElement<{ style?: TextStyle }>;
           return React.cloneElement(element, {
-            style: StyleSheet.flatten([textStyles, element.props.style]),
+            style: StyleSheet.flatten([textStyles, { flexShrink: 1 }, element.props.style]),
+            numberOfLines: element.props.numberOfLines || 1,
+            adjustsFontSizeToFit: true
           });
         }
       }

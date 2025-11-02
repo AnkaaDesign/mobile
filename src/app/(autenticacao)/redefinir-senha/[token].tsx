@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { passwordResetSchema, type PasswordResetFormData } from '../../../schemas';
 import { authService } from '../../../api-client';
-import { useTheme } from "@/lib/theme";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -22,7 +21,6 @@ import { shadow, spacing, borderRadius } from "@/constants/design-system";
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
-  const { colors } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -104,7 +102,7 @@ export default function ResetPasswordScreen() {
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
             <ThemedScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.lg }}>
-              <Card style={{ backgroundColor: colors.card, borderColor: "transparent", ...shadow.lg, maxWidth: 400, width: "100%" }}>
+              <Card style={{ borderColor: "transparent", ...shadow.lg, maxWidth: 400, width: "100%" }}>
                 <ThemedView style={{ backgroundColor: "transparent", position: "absolute", right: 8, top: 8 }}>
                   <ThemeToggle size={24} />
                 </ThemedView>

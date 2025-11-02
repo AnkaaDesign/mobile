@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, FlatList, RefreshControl, StyleSheet } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useCustomer } from '../../../../../hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
@@ -12,7 +12,6 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 
 import {
   IconBuilding,
-  IconRefresh,
   IconEdit,
   IconHistory,
 } from "@tabler/icons-react-native";
@@ -26,8 +25,6 @@ import {
   ContactInfoCard,
   AddressCard,
   TasksTable,
-  CustomerDocumentsCard,
-  CustomerInvoicesCard,
 } from "@/components/administration/customer/detail";
 import { CustomerDetailSkeleton } from "@/components/administration/customer/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
@@ -107,85 +104,9 @@ export default function CustomerDetailScreen() {
     );
   }
 
-  // Render all content except TasksTable as header
-  const renderHeader = () => (
-    <View style={styles.container}>
-      {/* Customer Name Header Card */}
-      <Card style={styles.card}>
-        <View style={styles.headerContent}>
-          <View style={[styles.headerLeft, { flex: 1 }]}>
-            <IconBuilding size={24} color={colors.primary} />
-            <ThemedText style={StyleSheet.flatten([styles.customerName, { color: colors.foreground }])}>
-              {customer.fantasyName}
-            </ThemedText>
-          </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              onPress={handleRefresh}
-              style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-              activeOpacity={0.7}
-              disabled={refreshing}
-            >
-              <IconRefresh size={18} color={colors.foreground} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleEdit}
-              style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
-              activeOpacity={0.7}
-            >
-              <IconEdit size={18} color={colors.primaryForeground} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Card>
-
-      {/* Modular Components */}
-      <CustomerCard customer={customer} />
-      <ContactInfoCard customer={customer} />
-      <AddressCard customer={customer} />
-      <CustomerDocumentsCard customer={customer} />
-      <CustomerInvoicesCard customer={customer} />
-    </View>
-  );
-
-  // Render footer with Changelog
-  const renderFooter = () => (
-    <View style={styles.container}>
-      {/* Changelog Timeline */}
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconHistory size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
-          </View>
-        </View>
-        <View style={styles.content}>
-          <ChangelogTimeline
-            entityType={CHANGE_LOG_ENTITY_TYPE.CUSTOMER}
-            entityId={customer.id}
-            entityName={customer.fantasyName}
-            entityCreatedAt={customer.createdAt}
-            maxHeight={400}
-          />
-        </View>
-      </Card>
-
-      {/* Bottom spacing for mobile navigation */}
-      <View style={{ height: spacing.xxl * 2 }} />
-    </View>
-  );
-
-  // Main data array for FlatList (TasksTable component)
-  const data = [{ key: 'tasks', component: <TasksTable customer={customer} maxHeight={400} /> }];
-
   return (
-    <FlatList
+    <ScrollView
       style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
-      data={data}
-      renderItem={({ item }) => <View style={styles.container}>{item.component}</View>}
-      keyExtractor={(item) => item.key}
-      ListHeaderComponent={renderHeader}
-      ListFooterComponent={renderFooter}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -195,7 +116,60 @@ export default function CustomerDetailScreen() {
         />
       }
       showsVerticalScrollIndicator={false}
-    />
+    >
+      <View style={styles.container}>
+        {/* Customer Name Header Card */}
+        <Card style={styles.headerCard}>
+          <View style={styles.headerContent}>
+            <View style={[styles.headerLeft, { flex: 1 }]}>
+              <IconBuilding size={24} color={colors.primary} />
+              <ThemedText style={StyleSheet.flatten([styles.customerName, { color: colors.foreground }])}>
+                {customer.fantasyName}
+              </ThemedText>
+            </View>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={handleEdit}
+                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
+                activeOpacity={0.7}
+              >
+                <IconEdit size={18} color={colors.primaryForeground} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Card>
+
+        {/* Modular Components */}
+        <CustomerCard customer={customer} />
+        <ContactInfoCard customer={customer} />
+        <AddressCard customer={customer} />
+
+        {/* Tasks Table */}
+        <TasksTable customer={customer} maxHeight={400} />
+
+        {/* Changelog Timeline */}
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconHistory size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
+            <ChangelogTimeline
+              entityType={CHANGE_LOG_ENTITY_TYPE.CUSTOMER}
+              entityId={customer.id}
+              entityName={customer.fantasyName}
+              entityCreatedAt={customer.createdAt}
+              maxHeight={400}
+            />
+          </View>
+        </Card>
+
+        {/* Bottom spacing */}
+        <View style={{ height: spacing.md }} />
+      </View>
+    </ScrollView>
   );
 }
 
@@ -206,11 +180,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
   },
   card: {
     padding: spacing.md,
+  },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
   header: {
     flexDirection: "row",
@@ -230,13 +208,13 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   content: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.xs,
   },
   customerName: {
     fontSize: fontSize.xl,

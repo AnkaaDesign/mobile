@@ -1,5 +1,5 @@
 import React, { useCallback, useRef} from "react";
-import { FlatList, FlatListProps, ListRenderItem, NativeScrollEvent, NativeSyntheticEvent, RefreshControl, TextStyle, View, ViewStyle, StyleSheet } from "react-native";
+import { FlatList, FlatListProps, ListRenderItem, NativeScrollEvent, NativeSyntheticEvent, RefreshControl, TextStyle, View, ViewStyle, StyleSheet, ActivityIndicator } from "react-native";
 import { Button } from "./button";
 import { ThemedText } from "./themed-text";
 import { ThemedView } from "./themed-view";
@@ -68,7 +68,7 @@ export function Pagination<T>({
   onRefresh,
 
   loadMoreText = "Carregar mais",
-  loadingMoreText = "Carregando...",
+  loadingMoreText = "Carregando mais...",
   showPageIndicator = false,
   currentPage = 1,
   totalPages = 1,
@@ -150,7 +150,7 @@ export function Pagination<T>({
   // Empty state
   const isEmpty = !data || data.length === 0;
 
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (!hasNextPage && !isFetchingMore) {
       return null;
     }
@@ -158,7 +158,7 @@ export function Pagination<T>({
     if (isFetchingMore) {
       return (
         <View style={styles.footerContainer}>
-          <LoadingSpinner size="sm" />
+          <ActivityIndicator size="small" color={colors.primary} />
           <ThemedText style={styles.loadingMoreText}>{loadingMoreText}</ThemedText>
         </View>
       );
@@ -175,7 +175,7 @@ export function Pagination<T>({
     }
 
     return null;
-  };
+  }, [hasNextPage, isFetchingMore, colors.primary, loadingMoreText, enableInfiniteScroll, onLoadMore, loadMoreText, loadMoreButtonStyle]);
 
   const renderEmpty = () => {
     if (isEmpty && !isLoading) {

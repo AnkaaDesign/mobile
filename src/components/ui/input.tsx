@@ -97,17 +97,22 @@ const Input = React.forwardRef<TextInput, InputProps>(({ style, containerStyle, 
   };
 
   const animatedShadowStyles = {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2, // Positive value for bottom shadow
+    },
     shadowOpacity: shadowAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: [shadow.sm.shadowOpacity, 0.15],
+      outputRange: [0, 0.08], // Subtle shadow when focused
     }),
     shadowRadius: shadowAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: [shadow.sm.shadowRadius, 4],
+      outputRange: [0, 3],
     }),
     elevation: shadowAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: [shadow.sm.elevation, 3],
+      outputRange: [0, 2], // Android elevation
     }),
   };
 

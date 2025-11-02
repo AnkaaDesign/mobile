@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   content: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   controlsContainer: {
     flexDirection: "row",
@@ -219,6 +219,7 @@ const styles = StyleSheet.create({
   },
   tableContainer: {
     flex: 1,
+    overflow: 'hidden',
   },
   loadingContainer: {
     padding: spacing.xxl,

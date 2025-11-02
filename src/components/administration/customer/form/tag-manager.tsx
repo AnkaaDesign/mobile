@@ -46,7 +46,7 @@ export function TagManager({ tags, onChange }: TagManagerProps) {
                 <ThemedText style={styles.tagText}>{tag}</ThemedText>
               </View>
               <TouchableOpacity onPress={() => handleRemoveTag(index)} style={styles.removeButton}>
-                <IconX size={14} color="white" />
+                <IconX size={14} color={colors.destructive} />
               </TouchableOpacity>
             </View>
           ))}
@@ -77,7 +77,7 @@ export function TagManager({ tags, onChange }: TagManagerProps) {
         </View>
       ) : (
         <Button variant="outline" onPress={() => setIsAdding(true)} style={styles.addButton}>
-          <IconPlus size={16} />
+          <IconPlus size={16} color={colors.foreground} />
           <ThemedText>Adicionar Tag</ThemedText>
         </Button>
       )}

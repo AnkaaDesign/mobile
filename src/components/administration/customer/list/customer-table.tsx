@@ -419,7 +419,6 @@ export const CustomerTable = React.memo<CustomerTableProps>(
               styles.headerContainer,
               {
                 backgroundColor: isDark ? extendedColors.neutral[800] : extendedColors.neutral[100],
-                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
@@ -512,7 +511,6 @@ export const CustomerTable = React.memo<CustomerTableProps>(
                     styles.row,
                     {
                       backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                      borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
                     },
                     isSelected && { backgroundColor: colors.primary + "20" },
                   ])}
@@ -559,7 +557,6 @@ export const CustomerTable = React.memo<CustomerTableProps>(
               styles.row,
               {
                 backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
@@ -645,7 +642,7 @@ export const CustomerTable = React.memo<CustomerTableProps>(
 
     return (
       <View style={styles.wrapper}>
-        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])} onPress={handleContainerPress}>
+        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background, borderColor: colors.border }])} onPress={handleContainerPress}>
           {renderHeader()}
           <FlatList
             data={customers}
@@ -653,21 +650,16 @@ export const CustomerTable = React.memo<CustomerTableProps>(
             keyExtractor={(customer) => customer.id}
             refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} /> : undefined}
             onEndReached={onEndReached}
-            onEndReachedThreshold={0.2}
+            onEndReachedThreshold={0.5}
             onScroll={handleScroll}
             scrollEventThrottle={16}
             ListFooterComponent={renderFooter}
             ListEmptyComponent={renderEmpty}
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={10}
-            windowSize={5}
-            initialNumToRender={15}
+            removeClippedSubviews={false}
+            maxToRenderPerBatch={20}
+            windowSize={21}
+            initialNumToRender={20}
             updateCellsBatchingPeriod={50}
-            getItemLayout={(_data, index) => ({
-              length: 36,
-              offset: 36 * index,
-              index,
-            })}
             style={styles.flatList}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ flexGrow: 1 }}
@@ -689,6 +681,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
     borderRadius: 8,
+    borderWidth: 1,
     overflow: "hidden",
     elevation: 2,
     shadowColor: "#000",
@@ -700,7 +693,6 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   headerContainer: {
-    borderBottomWidth: 2,
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
   },
@@ -748,8 +740,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   row: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e5e5",
   },
   rowContent: {
     flexDirection: "row",
