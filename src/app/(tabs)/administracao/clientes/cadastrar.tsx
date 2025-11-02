@@ -240,7 +240,7 @@ export default function CreateCustomerScreen() {
   const handleCancel = () => {
     Alert.alert("Descartar Cadastro", "Deseja descartar o cadastro do cliente?", [
       { text: "Continuar Editando", style: "cancel" },
-      { text: "Descartar", style: "destructive", onPress: () => router.back() },
+      { text: "Descartar", style: "destructive", onPress: () => router.push(routeToMobilePath(routes.administration.customers.list) as any) },
     ]);
   };
 
@@ -263,7 +263,7 @@ export default function CreateCustomerScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
         <ScrollView
           style={styles.scrollView}

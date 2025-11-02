@@ -748,8 +748,11 @@ const Input = React.forwardRef<TextInput, InputProps>(
       ...inputStyle,
     };
 
+    // Don't use animated border color at all - just use static colors based on state
+    const borderColor = error ? colors.destructive : (isFocused ? colors.ring : colors.border);
+
     const animatedStyles = {
-      borderColor: error ? colors.destructive : (isFocused ? animatedBorderColor : colors.border),
+      borderColor: borderColor,
     };
 
     const animatedShadowStyles = {

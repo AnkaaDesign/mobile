@@ -31,6 +31,7 @@ interface CustomerTableProps {
   onCustomerDelete?: (customerId: string) => void;
   onRefresh?: () => Promise<void>;
   onEndReached?: () => void;
+  onPrefetch?: () => void;
   refreshing?: boolean;
   loading?: boolean;
   loadingMore?: boolean;
@@ -274,6 +275,7 @@ export const CustomerTable = React.memo<CustomerTableProps>(
     onCustomerDelete,
     onRefresh,
     onEndReached,
+    onPrefetch,
     refreshing = false,
     loading = false,
     loadingMore = false,
@@ -287,6 +289,7 @@ export const CustomerTable = React.memo<CustomerTableProps>(
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
+    const prefetchTriggeredRef = React.useRef(false);
 
     // Get all column definitions
     const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -406,6 +409,42 @@ export const CustomerTable = React.memo<CustomerTableProps>(
     const renderColumnValue = useCallback((customer: Customer, column: TableColumn) => {
       return column.accessor(customer);
     }, []);
+
+    // Viewability callback for aggressive prefetching
+    // Triggers prefetch when user scrolls to 70% of loaded items
+    // Must be stable reference (can't change nullability)
+    const handleViewableItemsChanged = React.useMemo(
+      () => ({
+        onViewableItemsChanged: ({ viewableItems }: any) => {
+          if (!onPrefetch || prefetchTriggeredRef.current) return;
+
+          const lastViewableIndex = viewableItems[viewableItems.length - 1]?.index;
+          if (lastViewableIndex !== undefined && lastViewableIndex !== null) {
+            const totalItems = customers.length;
+            const viewabilityThreshold = totalItems * 0.7;
+
+            if (lastViewableIndex >= viewabilityThreshold) {
+              prefetchTriggeredRef.current = true;
+              onPrefetch();
+            }
+          }
+        },
+      }),
+      [onPrefetch, customers.length],
+    );
+
+    const viewabilityConfig = React.useMemo(
+      () => ({
+        itemVisiblePercentThreshold: 50,
+        minimumViewTime: 100,
+      }),
+      [],
+    );
+
+    // Reset prefetch flag when data changes (new page loaded)
+    React.useEffect(() => {
+      prefetchTriggeredRef.current = false;
+    }, [customers.length]);
 
     // Header component
     const renderHeader = useCallback(
@@ -650,16 +689,18 @@ export const CustomerTable = React.memo<CustomerTableProps>(
             keyExtractor={(customer) => customer.id}
             refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} /> : undefined}
             onEndReached={onEndReached}
-            onEndReachedThreshold={0.5}
+            onEndReachedThreshold={0.8}
             onScroll={handleScroll}
             scrollEventThrottle={16}
+            onViewableItemsChanged={handleViewableItemsChanged.onViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
             ListFooterComponent={renderFooter}
             ListEmptyComponent={renderEmpty}
-            removeClippedSubviews={false}
-            maxToRenderPerBatch={20}
-            windowSize={21}
-            initialNumToRender={20}
-            updateCellsBatchingPeriod={50}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={15}
+            windowSize={11}
+            initialNumToRender={15}
+            updateCellsBatchingPeriod={100}
             style={styles.flatList}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ flexGrow: 1 }}

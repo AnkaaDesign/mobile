@@ -325,10 +325,10 @@ export default function CustomerEditScreen() {
     if (isDirty || logoFile) {
       Alert.alert("Descartar Alterações", "Você tem alterações não salvas. Deseja descartá-las?", [
         { text: "Continuar Editando", style: "cancel" },
-        { text: "Descartar", style: "destructive", onPress: () => router.back() },
+        { text: "Descartar", style: "destructive", onPress: () => router.push(routeToMobilePath(routes.administration.customers.list) as any) },
       ]);
     } else {
-      router.back();
+      router.push(routeToMobilePath(routes.administration.customers.list) as any);
     }
   };
 
@@ -378,7 +378,7 @@ export default function CustomerEditScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
         <ScrollView
           style={styles.scrollView}

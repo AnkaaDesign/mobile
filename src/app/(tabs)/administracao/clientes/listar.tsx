@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
@@ -37,6 +37,7 @@ export default function CustomerListScreen() {
   const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const [showColumnManager, setShowColumnManager] = useState(false);
+  const searchInputRef = React.useRef<any>(null);
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -125,6 +126,8 @@ export default function CustomerListScreen() {
     totalItemsLoaded,
     totalCount,
     refresh,
+    prefetchNext,
+    shouldPrefetch,
   } = useCustomersInfiniteMobile(queryParams);
   const { delete: deleteCustomer } = useCustomerMutations();
 
@@ -278,8 +281,9 @@ export default function CustomerListScreen() {
     },
   ], [filters, colors, stateOptions]);
 
-  // Only show skeleton on initial load, not on refetch/sort
-  const isInitialLoad = isLoading && !isRefetching && customers.length === 0;
+  // Only show skeleton on initial load, not on refetch/sort/search
+  // This prevents the entire page from remounting during search
+  const isInitialLoad = isLoading && customers.length === 0;
 
   if (isInitialLoad) {
     return <CustomerListSkeleton />;
@@ -300,12 +304,14 @@ export default function CustomerListScreen() {
       {/* Search and Filter */}
       <View style={[styles.searchContainer]}>
         <SearchBar
+          ref={searchInputRef}
           value={displaySearchText}
           onChangeText={handleDisplaySearchChange}
           onSearch={handleSearch}
           placeholder="Buscar clientes..."
           style={styles.searchBar}
           debounceMs={300}
+          loading={isRefetching && !isFetchingNextPage}
         />
         <View style={styles.buttonContainer}>
           <ListActionButton
@@ -358,6 +364,7 @@ export default function CustomerListScreen() {
             onCustomerDelete={handleDeleteCustomer}
             onRefresh={handleRefresh}
             onEndReached={canLoadMore ? loadMore : undefined}
+            onPrefetch={shouldPrefetch ? prefetchNext : undefined}
             refreshing={refreshing || isRefetching}
             loading={false}
             loadingMore={isFetchingNextPage}

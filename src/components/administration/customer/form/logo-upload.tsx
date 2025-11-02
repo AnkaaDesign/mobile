@@ -34,8 +34,7 @@ export function LogoUpload({ existingLogoUrl, onChange, disabled }: LogoUploadPr
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
+        allowsEditing: false,
         quality: 0.8,
       });
 
@@ -69,8 +68,7 @@ export function LogoUpload({ existingLogoUrl, onChange, disabled }: LogoUploadPr
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [1, 1],
+        allowsEditing: false,
         quality: 0.8,
       });
 
@@ -113,15 +111,7 @@ export function LogoUpload({ existingLogoUrl, onChange, disabled }: LogoUploadPr
       {previewUri ? (
         <View style={styles.previewContainer}>
           <View style={[styles.imageContainer, { borderColor: colors.border }]}>
-            <Image source={{ uri: previewUri }} style={styles.image} resizeMode="cover" />
-            {!disabled && (
-              <TouchableOpacity
-                style={[styles.removeButton, { backgroundColor: colors.destructive }]}
-                onPress={removeLogo}
-              >
-                <IconX size={16} color="white" />
-              </TouchableOpacity>
-            )}
+            <Image source={{ uri: previewUri }} style={styles.image} resizeMode="contain" />
           </View>
           {!disabled && (
             <Button variant="outline" onPress={showOptions} style={styles.changeButton}>

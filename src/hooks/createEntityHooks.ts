@@ -150,6 +150,11 @@ export function createEntityHooks<
       },
       initialPageParam: 1,
       staleTime,
+      // Keep previous data while new query is loading (prevents flash of empty state during search/filter)
+      placeholderData: (previousData, _previousQuery) => previousData,
+      // Ensure smooth transitions without showing loading states for cached queries
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
       ...options, // Allow overriding default options
     });
 
