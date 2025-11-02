@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconBuilding, IconCertificate, IconUser } from "@tabler/icons-react-native";
+import { IconBuilding, IconCertificate, IconUser, IconFileDescription } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
 import { formatCNPJ, formatCPF } from '../../../../utils';
 import { getFileUrl } from '@/utils/file';
@@ -98,6 +98,21 @@ export function CustomerCard({ customer }: CustomerCardProps) {
                   </View>
                   <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
                     {formatCPF(customer.cpf)}
+                  </ThemedText>
+                </View>
+              )}
+
+              {/* Situação Cadastral */}
+              {customer.situacaoCadastral && (
+                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                  <View style={styles.fieldLabelWithIcon}>
+                    <IconCertificate size={16} color={colors.mutedForeground} />
+                    <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                      Situação Cadastral
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                    {customer.situacaoCadastral}
                   </ThemedText>
                 </View>
               )}

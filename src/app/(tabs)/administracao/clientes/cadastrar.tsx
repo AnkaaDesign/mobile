@@ -12,13 +12,12 @@ import {
   ThemedText,
   Card,
   Input,
-  Select,
-  SelectItem,
+  Combobox,
   Button,
   SimpleFormField,
 } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
-import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
+import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, LOGRADOURO_TYPE_OPTIONS } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
 import { PhoneManager } from "@/components/administration/customer/form/phone-manager";
@@ -59,6 +58,10 @@ export default function CreateCustomerScreen() {
       phones: [],
       tags: [],
       logoId: null,
+      situacaoCadastral: null,
+      inscricaoEstadual: null,
+      economicActivityId: null,
+      logradouro: null,
     },
   });
 
@@ -232,6 +235,41 @@ export default function CreateCustomerScreen() {
               )}
             />
           </SimpleFormField>
+
+          <SimpleFormField label="Situação Cadastral" error={errors.situacaoCadastral}>
+            <Controller
+              control={control}
+              name="situacaoCadastral"
+              render={({ field: { onChange, value } }) => (
+                <Combobox
+                  value={value || ""}
+                  onValueChange={onChange}
+                  options={REGISTRATION_STATUS_OPTIONS}
+                  placeholder="Selecione a situação cadastral"
+                  searchPlaceholder="Pesquisar situação..."
+                  emptyText="Nenhuma situação encontrada"
+                  searchable={true}
+                  clearable={true}
+                />
+              )}
+            />
+          </SimpleFormField>
+
+          <SimpleFormField label="Inscrição Estadual" error={errors.inscricaoEstadual}>
+            <Controller
+              control={control}
+              name="inscricaoEstadual"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Ex: 123.456.789.012"
+                  error={!!errors.inscricaoEstadual}
+                />
+              )}
+            />
+          </SimpleFormField>
         </Card>
 
         {/* Document */}
@@ -309,6 +347,25 @@ export default function CreateCustomerScreen() {
         {/* Address */}
         <Card style={styles.card}>
           <ThemedText style={styles.sectionTitle}>Endereço</ThemedText>
+
+          <SimpleFormField label="Tipo de Logradouro" error={errors.logradouro}>
+            <Controller
+              control={control}
+              name="logradouro"
+              render={({ field: { onChange, value } }) => (
+                <Combobox
+                  value={value || ""}
+                  onValueChange={onChange}
+                  options={LOGRADOURO_TYPE_OPTIONS}
+                  placeholder="Selecione o tipo de logradouro"
+                  searchPlaceholder="Pesquisar tipo..."
+                  emptyText="Nenhum tipo encontrado"
+                  searchable={true}
+                  clearable={true}
+                />
+              )}
+            />
+          </SimpleFormField>
 
           <SimpleFormField label="CEP" error={errors.zipCode}>
             <Controller
@@ -418,12 +475,16 @@ export default function CreateCustomerScreen() {
               control={control}
               name="state"
               render={({ field: { onChange, value } }) => (
-                <Select value={value || ""} onValueChange={onChange}>
-                  <SelectItem label="Selecione" value="" />
-                  {stateOptions.map((option) => (
-                    <SelectItem key={option.value} label={option.label} value={option.value} />
-                  ))}
-                </Select>
+                <Combobox
+                  value={value || ""}
+                  onValueChange={onChange}
+                  options={stateOptions}
+                  placeholder="Selecione um estado"
+                  searchPlaceholder="Pesquisar estado..."
+                  emptyText="Nenhum estado encontrado"
+                  searchable={true}
+                  clearable={true}
+                />
               )}
             />
           </SimpleFormField>

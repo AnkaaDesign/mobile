@@ -602,6 +602,10 @@ export const customerCreateSchema = z
     phones: z.array(z.string()).default([]),
     tags: z.array(z.string()).default([]),
     logoId: z.string().uuid("Logo inválido").nullable().optional(),
+    situacaoCadastral: z.string().nullable().optional(),
+    inscricaoEstadual: z.string().nullable().optional(),
+    economicActivityId: z.string().uuid("Atividade econômica inválida").nullable().optional(),
+    logradouro: z.string().nullable().optional(),
   })
   .transform(toFormData)
   .refine(
@@ -648,6 +652,10 @@ export const customerUpdateSchema = z
     phones: z.array(z.string()).optional(),
     tags: z.array(z.string()).optional(),
     logoId: z.string().uuid("Logo inválido").nullable().optional(),
+    situacaoCadastral: z.string().nullable().optional(),
+    inscricaoEstadual: z.string().nullable().optional(),
+    economicActivityId: z.string().uuid("Atividade econômica inválida").nullable().optional(),
+    logradouro: z.string().nullable().optional(),
   })
   .transform(toFormData);
 
@@ -748,4 +756,8 @@ export const mapCustomerToFormData = createMapToFormDataHelper<Customer, Custome
   phones: customer.phones,
   tags: customer.tags,
   logoId: customer.logoId,
+  situacaoCadastral: customer.situacaoCadastral,
+  inscricaoEstadual: customer.inscricaoEstadual,
+  economicActivityId: customer.economicActivityId,
+  logradouro: customer.logradouro,
 }));
