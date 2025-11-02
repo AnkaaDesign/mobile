@@ -40,13 +40,13 @@ export function TagManager({ tags, onChange }: TagManagerProps) {
       {tags.length > 0 && (
         <View style={styles.tagList}>
           {tags.map((tag, index) => (
-            <View key={index} style={[styles.tagItem, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+            <View key={index} style={[styles.tagItem, { backgroundColor: colors.muted }]}>
               <View style={styles.tagInfo}>
-                <IconTag size={14} color="white" />
+                <IconTag size={16} color={colors.mutedForeground} />
                 <ThemedText style={styles.tagText}>{tag}</ThemedText>
               </View>
               <TouchableOpacity onPress={() => handleRemoveTag(index)} style={styles.removeButton}>
-                <IconX size={14} color={colors.destructive} />
+                <IconX size={16} color={colors.destructive} />
               </TouchableOpacity>
             </View>
           ))}
@@ -81,10 +81,6 @@ export function TagManager({ tags, onChange }: TagManagerProps) {
           <ThemedText>Adicionar Tag</ThemedText>
         </Button>
       )}
-
-      {tags.length === 0 && !isAdding && (
-        <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>Nenhuma tag cadastrada</ThemedText>
-      )}
     </View>
   );
 }
@@ -94,31 +90,26 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   tagList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
   },
   tagItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
+    justifyContent: "space-between",
+    padding: 12,
+    borderRadius: 8,
   },
   tagInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 8,
+    flex: 1,
   },
   tagText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "white",
+    fontSize: 14,
   },
   removeButton: {
-    padding: 2,
+    padding: 4,
   },
   addTagContainer: {
     gap: 8,
@@ -137,10 +128,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    textAlign: "center",
-    paddingVertical: 8,
   },
 });

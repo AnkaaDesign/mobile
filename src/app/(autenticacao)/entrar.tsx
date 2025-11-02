@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, type SignInFormData } from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -23,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
+  const { clearHistory } = useNavigationHistory();
   const { error: showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -47,6 +49,8 @@ export default function LoginScreen() {
 
     try {
       await login(data.contact, data.password);
+      // Clear navigation history so back button doesn't show after login
+      clearHistory();
       // After successful login, navigate to home
       router.replace('/(tabs)/inicio' as any);
     } catch (error: any) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, ScrollView, Alert, StyleSheet } from "react-native";
+import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
@@ -10,7 +10,7 @@ import { useCnpjLookup } from "@/hooks/use-cnpj-lookup";
 import { useCepLookup } from "@/hooks/use-cep-lookup";
 import { customerUpdateSchema, type CustomerUpdateFormData } from "@/schemas";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { getEconomicActivities, createEconomicActivity } from "@/api-client/economic-activity";
+import { getEconomicActivities, createEconomicActivity, getEconomicActivityById } from "@/api-client/economic-activity";
 import { showToast } from "@/components/ui/toast";
 import {
   ThemedView,
@@ -40,6 +40,7 @@ export default function CustomerEditScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cnpj");
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [economicActivityInitialOptions, setEconomicActivityInitialOptions] = useState<Array<{ value: string; label: string }>>([]);
   const queryClient = useQueryClient();
 
   const { data: customer, isLoading, error, refetch } = useCustomer(id!, {
@@ -145,6 +146,13 @@ export default function CustomerEditScreen() {
             description: data.economicActivityDescription,
           });
           setValue("economicActivityId", response.data.id, { shouldDirty: true, shouldValidate: true });
+
+          // Set initial options for the combobox
+          setEconomicActivityInitialOptions([{
+            value: response.data.id,
+            label: `${response.data.code} - ${response.data.description}`,
+          }]);
+
           queryClient.invalidateQueries({ queryKey: ["economic-activities"] });
         } catch (error) {
           console.error("Error handling economic activity:", error);
@@ -241,6 +249,22 @@ export default function CustomerEditScreen() {
         setDocumentType("cpf");
       } else {
         setDocumentType("cnpj");
+      }
+
+      // Load economic activity if present
+      if (customerData.economicActivityId) {
+        getEconomicActivityById(customerData.economicActivityId)
+          .then(response => {
+            if (response.data) {
+              setEconomicActivityInitialOptions([{
+                value: response.data.id,
+                label: `${response.data.code} - ${response.data.description}`,
+              }]);
+            }
+          })
+          .catch(error => {
+            console.error("Error loading economic activity:", error);
+          });
       }
     }
   }, [customer, isLoading, reset]);
@@ -351,11 +375,17 @@ export default function CustomerEditScreen() {
 
   return (
     <ThemedView style={StyleSheet.flatten([styles.wrapper, { backgroundColor: colors.background }])}>
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
-        <View style={styles.container}>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.container}>
           {/* Customer Name Header Card */}
           <Card style={styles.headerCard}>
             <View style={styles.headerContent}>
@@ -505,6 +535,8 @@ export default function CustomerEditScreen() {
                       hasMore: false,
                     };
                   }}
+                  initialOptions={economicActivityInitialOptions}
+                  minSearchLength={0}
                   allowCreate
                   onCreate={async (searchTerm: string) => {
                     try {
@@ -752,6 +784,7 @@ export default function CustomerEditScreen() {
         <View style={{ height: spacing.md }} />
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Action Buttons */}
       <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.card }}>

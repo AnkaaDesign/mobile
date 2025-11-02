@@ -89,7 +89,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MAX_MODAL_HEIGHT = SCREEN_HEIGHT * 0.7;
 const LIST_MAX_HEIGHT = 400;
 
-export const Combobox = React.memo(function Combobox<TData = ComboboxOption>({
+const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   value,
   onValueChange,
   options: propOptions,
@@ -829,7 +829,9 @@ export const Combobox = React.memo(function Combobox<TData = ComboboxOption>({
       </Modal>
     </View>
   );
-}) as <TData = ComboboxOption>(props: ComboboxProps<TData>) => React.ReactElement;
+};
+
+export const Combobox = React.memo(ComboboxComponent) as typeof ComboboxComponent;
 
 Combobox.displayName = "Combobox";
 
@@ -892,7 +894,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "transparent",
     justifyContent: "flex-end",
   },
   modalContent: {
@@ -1036,5 +1038,3 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
   },
 });
-
-export { Combobox };

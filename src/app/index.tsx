@@ -4,11 +4,13 @@ import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { useRouter } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 export default function Index() {
   const { user, isAuthReady } = useAuth();
   const { isDark } = useTheme();
   const router = useRouter();
+  const { clearHistory } = useNavigationHistory();
   const hasRedirected = useRef(false);
 
   useEffect(() => {
@@ -22,12 +24,15 @@ export default function Index() {
 
     hasRedirected.current = true;
 
+    // Clear navigation history on initial redirect
+    clearHistory();
+
     if (user) {
       router.replace('/(tabs)/inicio' as any);
     } else {
       router.replace('/(autenticacao)/entrar' as any);
     }
-  }, [isAuthReady, user, router]);
+  }, [isAuthReady, user, router, clearHistory]);
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>

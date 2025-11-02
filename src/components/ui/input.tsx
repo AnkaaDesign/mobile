@@ -729,9 +729,6 @@ const Input = React.forwardRef<TextInput, InputProps>(
       borderRadius: borderRadius.md,
       borderWidth: 1,
       backgroundColor: transparent ? "transparent" : colors.input,
-      ...(error && {
-        borderColor: colors.destructive,
-      }),
       ...(isEditable === false && {
         opacity: 0.5,
         backgroundColor: colors.input,
@@ -752,7 +749,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
     };
 
     const animatedStyles = {
-      borderColor: error ? colors.destructive : animatedBorderColor,
+      borderColor: error ? colors.destructive : (isFocused ? animatedBorderColor : colors.border),
     };
 
     const animatedShadowStyles = {
