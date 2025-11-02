@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -6,7 +6,12 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconBuilding, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useCustomerMutations } from "@/hooks";
+import { useCnpjLookup } from "@/hooks/use-cnpj-lookup";
+import { useCepLookup } from "@/hooks/use-cep-lookup";
 import { customerCreateSchema, type CustomerCreateFormData } from "@/schemas";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { getEconomicActivities, createEconomicActivity } from "@/api-client/economic-activity";
+import { showToast } from "@/components/ui/toast";
 import {
   ThemedView,
   ThemedText,
@@ -32,12 +37,14 @@ export default function CreateCustomerScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cnpj");
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const queryClient = useQueryClient();
 
   const {
     control,
     handleSubmit,
     formState: { errors, isValid },
     setValue,
+    watch,
   } = useForm<CustomerCreateFormData>({
     resolver: zodResolver(customerCreateSchema),
     mode: "onChange",
@@ -66,6 +73,109 @@ export default function CreateCustomerScreen() {
   });
 
   const { createAsync } = useCustomerMutations();
+
+  // CNPJ Lookup Hook
+  const { lookupCnpj } = useCnpjLookup({
+    onSuccess: async (data) => {
+      // Autofill fields with data from Brasil API
+      setValue("fantasyName", data.fantasyName, { shouldDirty: true, shouldValidate: true });
+      if (data.corporateName) {
+        setValue("corporateName", data.corporateName, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.email) {
+        setValue("email", data.email, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.zipCode) {
+        setValue("zipCode", data.zipCode, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.logradouroType) {
+        setValue("logradouro", data.logradouroType, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.address) {
+        setValue("address", data.address, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.addressNumber) {
+        setValue("addressNumber", data.addressNumber, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.addressComplement) {
+        setValue("addressComplement", data.addressComplement, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.neighborhood) {
+        setValue("neighborhood", data.neighborhood, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.city) {
+        setValue("city", data.city, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.state) {
+        setValue("state", data.state, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.phones && data.phones.length > 0) {
+        setValue("phones", data.phones, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.situacaoCadastral) {
+        setValue("situacaoCadastral", data.situacaoCadastral, { shouldDirty: true, shouldValidate: true });
+      }
+
+      // Handle economic activity (CNAE)
+      if (data.economicActivityCode && data.economicActivityDescription) {
+        try {
+          const response = await createEconomicActivity({
+            code: data.economicActivityCode,
+            description: data.economicActivityDescription,
+          });
+          setValue("economicActivityId", response.data.id, { shouldDirty: true, shouldValidate: true });
+          queryClient.invalidateQueries({ queryKey: ["economic-activities"] });
+        } catch (error) {
+          console.error("Error handling economic activity:", error);
+        }
+      }
+    },
+  });
+
+  // CEP Lookup Hook
+  const { lookupCep } = useCepLookup({
+    onSuccess: (data) => {
+      if (data.logradouroType) {
+        setValue("logradouro", data.logradouroType, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.logradouro) {
+        setValue("address", data.logradouro, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.bairro) {
+        setValue("neighborhood", data.bairro, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.localidade) {
+        setValue("city", data.localidade, { shouldDirty: true, shouldValidate: true });
+      }
+      if (data.uf) {
+        setValue("state", data.uf, { shouldDirty: true, shouldValidate: true });
+      }
+    },
+  });
+
+  // Watch CNPJ field and trigger lookup
+  const cnpjValue = watch("cnpj");
+  useEffect(() => {
+    if (cnpjValue) {
+      lookupCnpj(cnpjValue);
+    }
+  }, [cnpjValue, lookupCnpj]);
+
+  // Watch CEP field and trigger lookup
+  const cepValue = watch("zipCode");
+  useEffect(() => {
+    if (cepValue) {
+      lookupCep(cepValue);
+    }
+  }, [cepValue, lookupCep]);
+
+  // Economic Activity mutation
+  const { mutateAsync: createActivityAsync } = useMutation({
+    mutationFn: createEconomicActivity,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["economic-activities"] });
+    },
+  });
 
   const onSubmit = async (data: CustomerCreateFormData) => {
     if (isSubmitting) return;
@@ -266,6 +376,72 @@ export default function CreateCustomerScreen() {
                   onBlur={onBlur}
                   placeholder="Ex: 123.456.789.012"
                   error={!!errors.inscricaoEstadual}
+                />
+              )}
+            />
+          </SimpleFormField>
+
+          <SimpleFormField label="CNAE (Atividade Econômica)" error={errors.economicActivityId}>
+            <Controller
+              control={control}
+              name="economicActivityId"
+              render={({ field: { onChange, value } }) => (
+                <Combobox
+                  value={value || ""}
+                  onValueChange={onChange}
+                  async
+                  queryKey={["economic-activities"]}
+                  queryFn={async (searchTerm: string) => {
+                    const response = await getEconomicActivities({
+                      where: searchTerm
+                        ? {
+                            OR: [
+                              { code: { contains: searchTerm } },
+                              { description: { contains: searchTerm, mode: "insensitive" } },
+                            ],
+                          }
+                        : undefined,
+                      take: 20,
+                      orderBy: { code: "asc" },
+                    });
+
+                    return {
+                      data: response.data.map((activity) => ({
+                        value: activity.id,
+                        label: `${activity.code} - ${activity.description}`,
+                      })),
+                      hasMore: false,
+                    };
+                  }}
+                  allowCreate
+                  onCreate={async (searchTerm: string) => {
+                    try {
+                      const codeMatch = searchTerm.match(/^(\d{4}-?\d\/?\d{2})/);
+                      const code = codeMatch ? codeMatch[1].replace(/[^\d]/g, "") : searchTerm;
+
+                      const result = await createActivityAsync({
+                        code: code,
+                        description: searchTerm,
+                      });
+
+                      setValue("economicActivityId", result.data.id, { shouldDirty: true, shouldValidate: true });
+                      showToast({
+                        message: result.message || "Atividade econômica configurada com sucesso",
+                        type: "success",
+                      });
+                    } catch (error: any) {
+                      showToast({
+                        message: error.response?.data?.message || "Erro ao criar atividade econômica",
+                        type: "error",
+                      });
+                    }
+                  }}
+                  createLabel={(value) => `Criar CNAE "${value}"`}
+                  placeholder="Buscar por código ou descrição"
+                  searchPlaceholder="Digite o código ou descrição..."
+                  emptyText="Nenhuma atividade encontrada"
+                  searchable={true}
+                  clearable={true}
                 />
               )}
             />

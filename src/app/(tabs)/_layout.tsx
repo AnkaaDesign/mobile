@@ -1,32 +1,38 @@
-// Ultra-Optimized Navigation Layout with Full Original Design
-// This version combines privilege-based optimization with the original menu design
-// Original file backed up with .backup extension
+import { Drawer } from "expo-router/drawer";
+import { useTheme } from "@/lib/theme";
+import { Platform } from "react-native";
 
-// Choose optimization level:
-// Level 1: Basic optimization with lazy loading (all routes)
-// export { OptimizedDrawerLayout as default } from '@/navigation/optimized-layout';
+// Import the drawer content component
+import DrawerContent from '@/navigation/OriginalMenuDrawer';
 
-// Level 2: Privilege optimization (simplified design)
-// export { PrivilegeOptimizedDrawerLayout as default } from '@/navigation/privilege-optimized-layout';
+export default function TabsLayout() {
+  const { colors, isDark } = useTheme();
 
-// Level 3: FULL DESIGN with privilege optimization (current - recommended)
-export { PrivilegeOptimizedFullLayout as default } from '@/navigation/privilege-optimized-full';
-
-// Performance improvements:
-// Level 1 (Basic):
-// - 80% faster menu opening
-// - Lazy loading of route modules
-// - Fixed route naming warnings
-// - Built-in performance monitoring
-
-// Level 2 (Ultra - Current):
-// - 95% faster for limited users (only loads accessible routes)
-// - Privilege-based route filtering
-// - Dynamic module loading based on user role
-// - Minimal memory usage for basic users
-// - Example: Basic user loads 10 routes instead of 380 (97% reduction!)
-
-// To revert to original navigation:
-// 1. Delete this file
-// 2. Rename the backup file back to _layout.tsx
-// 3. Remove the /navigation folder
+  return (
+    <Drawer
+      drawerContent={(props) => <DrawerContent {...props} />}
+      screenOptions={{
+        headerShown: true,
+        drawerStyle: {
+          backgroundColor: colors.card,
+          width: Platform.OS === 'web' ? 280 : '80%',
+        },
+        headerStyle: {
+          backgroundColor: colors.card,
+        },
+        headerTintColor: colors.foreground,
+        contentStyle: {
+          backgroundColor: isDark ? "#1c1c1c" : "#e8e8e8",
+        },
+        sceneContainerStyle: {
+          backgroundColor: isDark ? "#1c1c1c" : "#e8e8e8",
+          paddingHorizontal: Platform.OS === 'ios' ? 16 : 12,
+        },
+        // Enable lazy loading for better performance
+        lazy: true,
+        // Unmount inactive screens to save memory
+        unmountOnBlur: false,
+      }}
+    />
+  );
+}
