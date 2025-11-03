@@ -1,6 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
-import DrawerLayout from 'react-native-drawer-layout';
+import { Drawer } from 'react-native-drawer-layout';
 import { useTheme } from '@/lib/theme';
 import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 
@@ -33,57 +33,52 @@ export function UtilityDrawerWrapper({ children }: UtilityDrawerWrapperProps) {
     columnDrawerContent,
   } = useUtilityDrawer();
 
-  const filterDrawerRef = useRef<DrawerLayout>(null);
-  const columnDrawerRef = useRef<DrawerLayout>(null);
+  // The onOpen is called by gesture/swipe, which we don't use
+  // The drawers are controlled programmatically via the context
+  const handleFilterOpen = () => {
+    // No-op since we control via context
+  };
 
-  // Control filter drawer
-  useEffect(() => {
-    if (isFilterDrawerOpen) {
-      filterDrawerRef.current?.openDrawer();
-    } else {
-      filterDrawerRef.current?.closeDrawer();
-    }
-  }, [isFilterDrawerOpen]);
-
-  // Control column drawer
-  useEffect(() => {
-    if (isColumnDrawerOpen) {
-      columnDrawerRef.current?.openDrawer();
-    } else {
-      columnDrawerRef.current?.closeDrawer();
-    }
-  }, [isColumnDrawerOpen]);
+  const handleColumnOpen = () => {
+    // No-op since we control via context
+  };
 
   return (
-    <DrawerLayout
-      ref={filterDrawerRef}
-      drawerWidth={SCREEN_WIDTH * 0.9}
+    <Drawer
+      open={isFilterDrawerOpen}
+      onOpen={handleFilterOpen}
+      onClose={closeFilterDrawer}
       drawerPosition="right"
       drawerType="front"
-      drawerBackgroundColor={colors.background}
-      onDrawerClose={closeFilterDrawer}
-      renderNavigationView={() => (
+      drawerStyle={{
+        width: SCREEN_WIDTH * 0.8,
+        backgroundColor: colors.background,
+      }}
+      renderDrawerContent={() => (
         <View style={[styles.drawerContainer, { backgroundColor: colors.background }]}>
-          {filterDrawerContent?.()}
+          {filterDrawerContent && filterDrawerContent()}
         </View>
       )}
     >
-      <DrawerLayout
-        ref={columnDrawerRef}
-        drawerWidth={SCREEN_WIDTH * 0.9}
+      <Drawer
+        open={isColumnDrawerOpen}
+        onOpen={handleColumnOpen}
+        onClose={closeColumnDrawer}
         drawerPosition="right"
         drawerType="front"
-        drawerBackgroundColor={colors.background}
-        onDrawerClose={closeColumnDrawer}
-        renderNavigationView={() => (
+        drawerStyle={{
+          width: SCREEN_WIDTH * 0.8,
+          backgroundColor: colors.background,
+        }}
+        renderDrawerContent={() => (
           <View style={[styles.drawerContainer, { backgroundColor: colors.background }]}>
-            {columnDrawerContent?.()}
+            {columnDrawerContent && columnDrawerContent()}
           </View>
         )}
       >
         {children}
-      </DrawerLayout>
-    </DrawerLayout>
+      </Drawer>
+    </Drawer>
   );
 }
 

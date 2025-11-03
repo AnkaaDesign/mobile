@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useRef, useEffect } from 'react';
 
 interface UtilityDrawerContextValue {
   // Filter drawer state
@@ -23,30 +23,88 @@ export function UtilityDrawerProvider({ children }: { children: ReactNode }) {
   const [isColumnDrawerOpen, setIsColumnDrawerOpen] = useState(false);
   const [columnDrawerContent, setColumnDrawerContent] = useState<(() => ReactNode) | null>(null);
 
+  // Store timeout refs to clear them when needed
+  const filterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const columnTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const openFilterDrawer = useCallback((renderContent: () => ReactNode) => {
-    // Close column drawer if open
-    setIsColumnDrawerOpen(false);
+    // Clear any pending content cleanup for filter drawer
+    if (filterTimeoutRef.current) {
+      clearTimeout(filterTimeoutRef.current);
+      filterTimeoutRef.current = null;
+    }
+
+    // Close column drawer if open (but don't clear its content yet)
+    if (isColumnDrawerOpen) {
+      setIsColumnDrawerOpen(false);
+      // Clear column content after its close animation
+      if (columnTimeoutRef.current) {
+        clearTimeout(columnTimeoutRef.current);
+      }
+      columnTimeoutRef.current = setTimeout(() => {
+        setColumnDrawerContent(null);
+        columnTimeoutRef.current = null;
+      }, 300);
+    }
+
+    // Set content and open drawer synchronously
     setFilterDrawerContent(() => renderContent);
     setIsFilterDrawerOpen(true);
-  }, []);
+  }, [isColumnDrawerOpen]);
 
   const closeFilterDrawer = useCallback(() => {
     setIsFilterDrawerOpen(false);
-    // Clear content after animation
-    setTimeout(() => setFilterDrawerContent(null), 300);
+    // Don't clear content immediately - wait for animation
+    filterTimeoutRef.current = setTimeout(() => {
+      setFilterDrawerContent(null);
+      filterTimeoutRef.current = null;
+    }, 300);
   }, []);
 
   const openColumnDrawer = useCallback((renderContent: () => ReactNode) => {
-    // Close filter drawer if open
-    setIsFilterDrawerOpen(false);
+    // Clear any pending content cleanup for column drawer
+    if (columnTimeoutRef.current) {
+      clearTimeout(columnTimeoutRef.current);
+      columnTimeoutRef.current = null;
+    }
+
+    // Close filter drawer if open (but don't clear its content yet)
+    if (isFilterDrawerOpen) {
+      setIsFilterDrawerOpen(false);
+      // Clear filter content after its close animation
+      if (filterTimeoutRef.current) {
+        clearTimeout(filterTimeoutRef.current);
+      }
+      filterTimeoutRef.current = setTimeout(() => {
+        setFilterDrawerContent(null);
+        filterTimeoutRef.current = null;
+      }, 300);
+    }
+
+    // Set content and open drawer synchronously
     setColumnDrawerContent(() => renderContent);
     setIsColumnDrawerOpen(true);
-  }, []);
+  }, [isFilterDrawerOpen]);
 
   const closeColumnDrawer = useCallback(() => {
     setIsColumnDrawerOpen(false);
-    // Clear content after animation
-    setTimeout(() => setColumnDrawerContent(null), 300);
+    // Don't clear content immediately - wait for animation
+    columnTimeoutRef.current = setTimeout(() => {
+      setColumnDrawerContent(null);
+      columnTimeoutRef.current = null;
+    }, 300);
+  }, []);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (filterTimeoutRef.current) {
+        clearTimeout(filterTimeoutRef.current);
+      }
+      if (columnTimeoutRef.current) {
+        clearTimeout(columnTimeoutRef.current);
+      }
+    };
   }, []);
 
   return (

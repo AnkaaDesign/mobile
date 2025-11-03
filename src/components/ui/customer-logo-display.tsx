@@ -1,10 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { View, Image, Text, StyleSheet } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { fontWeight } from "@/constants/design-system";
+import { getFileUrl } from "@/utils/file";
+import type { File as AnkaaFile } from "@/types";
 
 export interface CustomerLogoDisplayProps {
-  logo?: { id: string; url?: string } | null;
+  logo?: AnkaaFile | { id: string; url?: string } | null;
   customerName: string;
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
   shape?: "circle" | "square" | "rounded";
@@ -37,27 +39,46 @@ export function CustomerLogoDisplay({
   bordered = true,
 }: CustomerLogoDisplayProps) {
   const { colors } = useTheme();
+  const [imageError, setImageError] = useState(false);
 
   // Generate initials from customer name
   const initials = useMemo(() => {
+    // Defensive check: ensure customerName exists and is not empty
+    if (!customerName || typeof customerName !== 'string' || !customerName.trim()) {
+      return '??';
+    }
+
     const words = customerName.trim().split(/\s+/);
-    if (words.length >= 2) {
+    if (words.length >= 2 && words[0].length > 0 && words[1].length > 0) {
       return `${words[0][0]}${words[1][0]}`.toUpperCase();
     }
-    return customerName.substring(0, 2).toUpperCase();
+    if (customerName.trim().length >= 2) {
+      return customerName.trim().substring(0, 2).toUpperCase();
+    }
+    if (customerName.trim().length === 1) {
+      return customerName.trim().toUpperCase();
+    }
+    return '??';
   }, [customerName]);
 
   const dimension = SIZE_DIMENSIONS[size];
   const fontSize = FONT_SIZES[size];
 
-  // Get logo URL
+  // Get logo URL using the proper utility function
   const logoUri = useMemo(() => {
     if (!logo) return null;
-    if (logo.url) return logo.url;
-    if (logo.id) {
-      // Construct URL from file ID (adjust base URL as needed)
-      return `/api/files/${logo.id}/download`;
+
+    // If logo has a direct URL property, use it
+    if ('url' in logo && logo.url) {
+      return logo.url;
     }
+
+    // If it's a full File object with id, use the getFileUrl utility
+    if ('id' in logo && logo.id) {
+      // Type assertion to treat it as AnkaaFile for getFileUrl
+      return getFileUrl(logo as AnkaaFile);
+    }
+
     return null;
   }, [logo]);
 
@@ -90,11 +111,15 @@ export function CustomerLogoDisplay({
 
   return (
     <View style={containerStyle}>
-      {logoUri ? (
+      {logoUri && !imageError ? (
         <Image
           source={{ uri: logoUri }}
           style={styles.image}
           resizeMode="cover"
+          onError={(error) => {
+            console.warn('Failed to load customer logo:', error.nativeEvent.error);
+            setImageError(true);
+          }}
         />
       ) : (
         <View style={fallbackStyle}>

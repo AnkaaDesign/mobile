@@ -10,8 +10,10 @@ import { ThemedView, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar }
 import { CuttingPlanTable, createColumnDefinitions } from "@/components/production/cutting/list/cutting-plan-table";
 import type { SortConfig } from "@/components/production/cutting/list/cutting-plan-table";
 import { CuttingPlanFilterTags } from "@/components/production/cutting/list/cutting-plan-filter-tags";
-import { CuttingPlanColumnVisibilityDrawer } from "@/components/production/cutting/list/cutting-plan-column-visibility-drawer";
-import { CuttingPlanFilterDrawer } from "@/components/production/cutting/list/cutting-plan-filter-drawer";
+import { CuttingPlanFilterDrawerContent } from "@/components/production/cutting/list/cutting-plan-filter-drawer-content";
+import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { CuttingPlanListSkeleton } from "@/components/production/cutting/skeleton/cutting-plan-list-skeleton";
@@ -23,13 +25,12 @@ export default function CuttingPlanListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedCuts, setSelectedCuts] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["status", "type", "task"]);
 
   // Filter state
@@ -172,10 +173,6 @@ export default function CuttingPlanListScreen() {
     setDisplaySearchText(text);
   }, []);
 
-  const handleApplyFilters = useCallback(() => {
-    setShowFilters(false);
-  }, []);
-
   const handleFilterChange = useCallback((newFilters: Partial<CutGetManyFormData>) => {
     setFilters(newFilters);
   }, []);
@@ -206,6 +203,34 @@ export default function CuttingPlanListScreen() {
     return count;
   }, [filters]);
 
+  // Open filter drawer
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <CuttingPlanFilterDrawerContent
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleFilterChange, handleClearFilters, activeFiltersCount]);
+
+  // Open column drawer
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <ColumnVisibilityDrawerContent
+        columns={allColumns.map(col => ({
+          key: col.key,
+          header: col.label,
+          sortable: col.sortable,
+        }))}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        defaultColumns={new Set(["status", "type", "task"])}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumnKeys, handleColumnsChange]);
+
   // Only show skeleton on initial load, not on refetch/sort
   const isInitialLoad = isLoading && !isRefetching && cuts.length === 0;
 
@@ -224,33 +249,34 @@ export default function CuttingPlanListScreen() {
   const hasCuts = Array.isArray(cuts) && cuts.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Search and Filter */}
-      <View style={styles.searchContainer}>
-        <SearchBar
-          value={displaySearchText}
-          onChangeText={handleDisplaySearchChange}
-          onSearch={handleSearch}
-          placeholder="Buscar cortes..."
-          style={styles.searchBar}
-          debounceMs={300}
-        />
-        <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
-            badgeCount={visibleColumnKeys.length}
-            badgeVariant="primary"
+    <UtilityDrawerWrapper>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search and Filter */}
+        <View style={styles.searchContainer}>
+          <SearchBar
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar cortes..."
+            style={styles.searchBar}
+            debounceMs={300}
           />
-          <ListActionButton
-            icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
-            badgeCount={activeFiltersCount}
-            badgeVariant="destructive"
-            showBadge={activeFiltersCount > 0}
-          />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumnKeys.length}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
         </View>
-      </View>
 
       {/* Individual filter tags */}
       <CuttingPlanFilterTags
@@ -303,27 +329,8 @@ export default function CuttingPlanListScreen() {
       {hasCuts && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasCuts && <FAB icon="plus" onPress={handleCreateCut} />}
-
-      {/* Filter Drawer */}
-      <CuttingPlanFilterDrawer
-        open={showFilters}
-        onOpenChange={setShowFilters}
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-
-      {/* Column Visibility Drawer */}
-      <CuttingPlanColumnVisibilityDrawer
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
-    </ThemedView>
+      </ThemedView>
+    </UtilityDrawerWrapper>
   );
 }
 

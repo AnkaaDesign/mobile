@@ -18,7 +18,8 @@ import {
   CUT_TYPE_LABELS,
   CUT_ORIGIN_LABELS,
   CUT_REQUEST_REASON_LABELS,
-  CHANGE_LOG_ENTITY_TYPE
+  CHANGE_LOG_ENTITY_TYPE,
+  routes
 } from "@/constants";
 import { hasPrivilege, formatDate } from "@/utils";
 import { showToast } from "@/components/ui/toast";
@@ -28,8 +29,6 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { FileItem, useFileViewer } from "@/components/file";
 import { ENTITY_BADGE_CONFIG } from "@/constants/badge-colors";
 import {
-  IconRefresh,
-  IconEdit,
   IconTrash,
   IconScissors,
   IconHistory,
@@ -103,7 +102,7 @@ export default function CuttingPlanDetailsScreen() {
       showToast({ message: "Você não tem permissão para editar", type: "error" });
       return;
     }
-    router.push(`/producao/recorte/plano-de-recorte/editar/${id}`);
+    router.push(routes.production.cutting.edit(id) as any);
   };
 
   // Handle delete
@@ -231,29 +230,27 @@ export default function CuttingPlanDetailsScreen() {
         <Card>
           <CardContent style={styles.headerContent}>
             <View style={styles.headerLeft}>
-              <ThemedText style={StyleSheet.flatten([styles.taskTitle, { color: colors.foreground }])} numberOfLines={2}>
+              <ThemedText style={StyleSheet.flatten([styles.taskTitle, { color: colors.foreground }])} numberOfLines={1} ellipsizeMode="tail">
                 {cut.file?.filename || "Plano de Recorte"}
               </ThemedText>
-              <Badge variant={getStatusBadgeVariant(cut.status as CUT_STATUS)} style={{ marginTop: spacing.xs, alignSelf: "flex-start" }}>
-                {CUT_STATUS_LABELS[cut.status as CUT_STATUS]}
-              </Badge>
             </View>
             <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={handleRefresh}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-                activeOpacity={0.7}
-                disabled={refreshing}
-              >
-                <IconRefresh size={18} color={colors.foreground} />
-              </TouchableOpacity>
-              {canEdit && (
+              {cut.status === CUT_STATUS.PENDING && canEdit && (
                 <TouchableOpacity
-                  onPress={handleEdit}
+                  onPress={() => handleStatusChange(CUT_STATUS.CUTTING)}
                   style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
                   activeOpacity={0.7}
                 >
-                  <IconEdit size={18} color={colors.primaryForeground} />
+                  <IconPlayerPlay size={18} color={colors.primaryForeground} />
+                </TouchableOpacity>
+              )}
+              {cut.status === CUT_STATUS.CUTTING && canEdit && (
+                <TouchableOpacity
+                  onPress={() => handleStatusChange(CUT_STATUS.COMPLETED)}
+                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.success }])}
+                  activeOpacity={0.7}
+                >
+                  <IconCheck size={18} color="#ffffff" />
                 </TouchableOpacity>
               )}
               {canDelete && (
@@ -276,38 +273,12 @@ export default function CuttingPlanDetailsScreen() {
             <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
           </View>
           <View style={styles.itemDetails}>
-            {/* Status with Actions */}
+            {/* Status */}
             <View style={styles.detailRow}>
               <ThemedText style={styles.detailLabel}>Status</ThemedText>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, flex: 1 }}>
-                <Badge variant={getStatusBadgeVariant(cut.status as CUT_STATUS)}>
-                  {CUT_STATUS_LABELS[cut.status as CUT_STATUS]}
-                </Badge>
-                {cut.status === CUT_STATUS.PENDING && canEdit && (
-                  <TouchableOpacity
-                    onPress={() => handleStatusChange(CUT_STATUS.CUTTING)}
-                    style={[styles.statusActionButton, { backgroundColor: colors.primary }]}
-                    activeOpacity={0.7}
-                  >
-                    <IconPlayerPlay size={14} color={colors.primaryForeground} />
-                    <ThemedText style={[styles.statusActionText, { color: colors.primaryForeground }]}>
-                      Iniciar
-                    </ThemedText>
-                  </TouchableOpacity>
-                )}
-                {cut.status === CUT_STATUS.CUTTING && canEdit && (
-                  <TouchableOpacity
-                    onPress={() => handleStatusChange(CUT_STATUS.COMPLETED)}
-                    style={[styles.statusActionButton, { backgroundColor: colors.success }]}
-                    activeOpacity={0.7}
-                  >
-                    <IconCheck size={14} color="#ffffff" />
-                    <ThemedText style={[styles.statusActionText, { color: "#ffffff" }]}>
-                      Finalizar
-                    </ThemedText>
-                  </TouchableOpacity>
-                )}
-              </View>
+              <Badge variant={getStatusBadgeVariant(cut.status as CUT_STATUS)}>
+                {CUT_STATUS_LABELS[cut.status as CUT_STATUS]}
+              </Badge>
             </View>
 
             {/* Origin */}
@@ -381,7 +352,7 @@ export default function CuttingPlanDetailsScreen() {
             </View>
             <TouchableOpacity
               style={styles.relatedCutItem}
-              onPress={() => router.push(`/producao/recorte/plano-de-recorte/detalhes/${cut.parentCut!.id}`)}
+              onPress={() => router.push(routes.production.cutting.details(cut.parentCut!.id) as any)}
               activeOpacity={0.7}
             >
               <View style={{ flex: 1 }}>
@@ -494,7 +465,7 @@ export default function CuttingPlanDetailsScreen() {
                 <TouchableOpacity
                   key={childCut.id}
                   style={styles.relatedCutItem}
-                  onPress={() => router.push(`/producao/recorte/plano-de-recorte/detalhes/${childCut.id}`)}
+                  onPress={() => router.push(routes.production.cutting.details(childCut.id) as any)}
                   activeOpacity={0.7}
                 >
                   <View style={{ flex: 1 }}>
@@ -647,18 +618,6 @@ const styles = StyleSheet.create({
     marginLeft: "auto",
   },
   viewDetailsText: {
-    fontSize: fontSize.xs,
-    fontWeight: "500",
-  },
-  statusActionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
-  },
-  statusActionText: {
     fontSize: fontSize.xs,
     fontWeight: "500",
   },

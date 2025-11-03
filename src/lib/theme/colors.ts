@@ -18,7 +18,7 @@ export const themeColors: Record<"light" | "dark", ThemeColors> = {
     accentForeground: "#ffffff", // white - matching web
     destructive: "#b91c1c", // red-700 - Tailwind red-700 for better visibility
     destructiveForeground: "#ffffff", // white - matching web
-    border: "#e3e3e3", // HSL: 0 0% 89% - matching web border
+    border: "#d4d4d4", // HSL: 0 0% 83% - matching web border (one tone darker)
     input: "#f5f5f5", // HSL: 0 0% 96% - slightly darker than white for better contrast
     ring: "#15803d", // HSL: 142 72% 29% - green-700 matching web
     // Additional semantic colors

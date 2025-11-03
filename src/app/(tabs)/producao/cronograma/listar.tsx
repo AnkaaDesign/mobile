@@ -5,8 +5,10 @@ import { FAB } from "@/components/ui/fab";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
-import { getDefaultVisibleColumns } from "@/components/production/task/list/column-visibility-manager";
-import { ColumnVisibilityDrawer } from "@/components/ui/column-visibility-drawer";
+import { getDefaultVisibleColumns } from "@/components/production/task/list/task-column-visibility-drawer";
+import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 import { IconButton } from "@/components/ui/icon-button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
@@ -17,7 +19,6 @@ import { spacing } from "@/constants/design-system";
 import { TASK_STATUS, SECTOR_PRIVILEGES, TASK_STATUS_LABELS } from '../../../../constants';
 import { hasPrivilege, groupTasksBySector } from '../../../../utils';
 import type { Task } from '../../../../types';
-import { useDebounce } from "@/hooks/use-debounce";
 import { showToast } from "@/components/ui/toast";
 import { Alert, ActivityIndicator } from "react-native";
 import { IconList } from "@tabler/icons-react-native";
@@ -32,16 +33,14 @@ export default function ScheduleListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { delete: deleteTask, update } = useTaskMutations();
+  const { openColumnDrawer } = useUtilityDrawer();
 
   // Filter states - simplified for schedule view (only search, no filter drawer)
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [displaySearchText, setDisplaySearchText] = useState("");
 
   // Column visibility state
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(Array.from(getDefaultVisibleColumns()));
-
-  // Debounced search
-  const debouncedSearch = useDebounce(searchQuery, 500);
 
   // Check user permissions
   const canCreate = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
@@ -78,8 +77,8 @@ export default function ScheduleListScreen() {
     });
 
     // Search filter
-    if (debouncedSearch) {
-      params.search = debouncedSearch;
+    if (searchText) {
+      params.searchingFor = searchText;
     }
 
     // Sector-based filtering for production users
@@ -97,7 +96,7 @@ export default function ScheduleListScreen() {
     }
 
     return params;
-  }, [debouncedSearch, isProduction, user?.sectorId]);
+  }, [searchText, isProduction, user?.sectorId]);
 
   // Fetch tasks
   const {
@@ -116,6 +115,15 @@ export default function ScheduleListScreen() {
     await refetch();
     showToast({ message: "Lista atualizada", type: "success" });
   };
+
+  // Handle search
+  const handleSearch = useCallback((text: string) => {
+    setSearchText(text);
+  }, []);
+
+  const handleDisplaySearchChange = useCallback((text: string) => {
+    setDisplaySearchText(text);
+  }, []);
 
   // Handle task actions
   const handleEditTask = (taskId: string) => {
@@ -153,6 +161,21 @@ export default function ScheduleListScreen() {
     );
   };
 
+  const handleSectorChange = async (taskId: string, sectorId: string) => {
+    if (!canEdit) {
+      showToast({ message: "Você não tem permissão para alterar o setor", type: "error" });
+      return;
+    }
+
+    try {
+      await update({ id: taskId, data: { sectorId } });
+      showToast({ message: "Setor alterado com sucesso", type: "success" });
+    } catch (error) {
+      showToast({ message: "Erro ao alterar setor", type: "error" });
+      throw error; // Re-throw to let the modal know there was an error
+    }
+  };
+
   const handleStatusChange = async (taskId: string, newStatus: TASK_STATUS) => {
     if (!canEdit) {
       showToast({ message: "Você não tem permissão para alterar o status", type: "error" });
@@ -173,6 +196,7 @@ export default function ScheduleListScreen() {
       showToast({ message: `Status alterado para ${TASK_STATUS_LABELS[newStatus as keyof typeof TASK_STATUS_LABELS]}`, type: "success" });
     } catch (error) {
       showToast({ message: "Erro ao alterar status", type: "error" });
+      throw error; // Re-throw to let the modal know there was an error
     }
   };
 
@@ -204,11 +228,21 @@ export default function ScheduleListScreen() {
       sectorsToShow = filtered;
     }
 
-    // Convert to array format for FlatList
-    return Object.entries(sectorsToShow).map(([sectorName, sectorTasks]): SectorGroup => ({
+    // Convert to array format for FlatList and sort
+    const sectorArray = Object.entries(sectorsToShow).map(([sectorName, sectorTasks]): SectorGroup => ({
       sectorName,
       tasks: sectorTasks,
     }));
+
+    // Sort sectors: "Sem setor" first, then alphabetically
+    return sectorArray.sort((a, b) => {
+      // "Sem setor" always comes first
+      if (a.sectorName === "Sem setor") return -1;
+      if (b.sectorName === "Sem setor") return 1;
+
+      // Sort other sectors alphabetically
+      return a.sectorName.localeCompare(b.sectorName);
+    });
   }, [tasks, isAdmin, user?.sector?.name]);
 
   // Get all column definitions
@@ -218,6 +252,18 @@ export default function ScheduleListScreen() {
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {
     setVisibleColumnKeys(Array.from(newColumns));
   }, []);
+
+  // Handle opening column drawer
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <ColumnVisibilityDrawerContent
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        defaultColumns={getDefaultVisibleColumns()}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumnKeys, handleColumnsChange]);
 
   if (error) {
     return (
@@ -234,24 +280,28 @@ export default function ScheduleListScreen() {
   }
 
   return (
-    <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
-      {/* Header */}
-      <View style={StyleSheet.flatten([styles.header, { backgroundColor: colors.background }])}>
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Buscar tarefas..."
-          style={styles.searchBar}
-        />
-        <View style={styles.headerActions}>
-          <ListActionButton
-            icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
-            badgeCount={visibleColumnKeys.length}
-            badgeVariant="primary"
+    <UtilityDrawerWrapper>
+      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
+        {/* Search and Filter */}
+        <View style={styles.searchContainer}>
+          <SearchBar
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar tarefas..."
+            style={styles.searchBar}
+            debounceMs={300}
+            loading={isRefetching && !isFetchingNextPage}
           />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumnKeys.length}
+              badgeVariant="primary"
+            />
+          </View>
         </View>
-      </View>
 
       {/* Sector notice for production users */}
       {isProduction && !hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) && (
@@ -280,6 +330,7 @@ export default function ScheduleListScreen() {
                 onTaskPress={handleTaskPress}
                 onTaskEdit={canEdit ? handleEditTask : undefined}
                 onTaskDelete={canDelete ? handleDeleteTask : undefined}
+                onTaskSectorChange={canEdit ? handleSectorChange : undefined}
                 onTaskStatusChange={canEdit ? handleStatusChange : undefined}
                 onEndReached={() => {
                   if (hasNextPage && !isFetchingNextPage) {
@@ -312,16 +363,8 @@ export default function ScheduleListScreen() {
           style={styles.fab}
         />
       )}
-
-      {/* Column Visibility Drawer */}
-      <ColumnVisibilityDrawer
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
-    </View>
+      </View>
+    </UtilityDrawerWrapper>
   );
 }
 
@@ -329,17 +372,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  searchContainer: {
     flexDirection: "row",
-    alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 8,
     gap: 8,
+    alignItems: "center",
   },
   searchBar: {
     flex: 1,
   },
-  headerActions: {
+  buttonContainer: {
     flexDirection: "row",
     gap: 8,
   },

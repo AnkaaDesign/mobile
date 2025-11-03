@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useServices, useServiceMutations } from "@/hooks";
+import { useServiceMutations } from "@/hooks";
+import { serviceService } from "@/api-client";
 import type { Service } from "@/types";
 
 interface ServiceSelectorProps {
@@ -24,66 +25,60 @@ export function ServiceSelector({
   error,
 }: ServiceSelectorProps) {
   const { colors } = useTheme();
-  const [searchText, setSearchText] = useState("");
-  const [page, setPage] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
-  const pageSize = 50;
 
   const { createAsync } = useServiceMutations();
 
-  // Fetch available services
-  const { data: servicesResponse, isLoading } = useServices({
-    searchingFor: searchText,
-    orderBy: { description: "asc" },
-    page,
-    take: pageSize,
-  });
+  // Memoize callbacks for service selector
+  const getOptionLabel = useCallback((service: Service) => service.description, []);
+  const getOptionValue = useCallback((service: Service) => service.description, []);
 
-  const availableServices = servicesResponse?.data || [];
-  const hasMore = servicesResponse?.meta?.hasNextPage || false;
+  // Get initial options from current services
+  const getInitialOptions = useCallback((index: number) => {
+    const currentService = services[index];
+    if (!currentService?.description) return [];
 
-  // Combine existing service descriptions with fetched services
-  const allServices = useMemo(() => {
-    const serviceList = [...availableServices];
+    return [{
+      id: `temp-${currentService.description}`,
+      description: currentService.description,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Service];
+  }, [services]);
 
-    // Add existing services that aren't in the fetched list
-    const existingDescriptions = services.map((s) => s.description).filter(Boolean);
-    existingDescriptions.forEach((description) => {
-      if (!serviceList.some((s) => s.description === description)) {
-        serviceList.unshift({
-          id: `temp-${description}`,
-          description,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as Service);
-      }
-    });
+  // Search function for services
+  const searchServices = async (
+    search: string,
+    page: number = 1,
+  ): Promise<{
+    data: Service[];
+    hasMore: boolean;
+  }> => {
+    const params: any = {
+      orderBy: { description: "asc" },
+      page: page,
+      take: 50,
+    };
 
-    return serviceList;
-  }, [availableServices, services]);
-
-  // Map to combobox options
-  const getOptions = useCallback((_index: number) => {
-    return allServices.map((service) => ({
-      value: service.description,
-      label: service.description,
-    }));
-  }, [allServices]);
-
-  // Handle load more - debounced to prevent multiple rapid calls
-  const handleEndReached = useCallback(() => {
-    if (!isLoading && hasMore) {
-      console.log("[ServiceSelector] Loading more services, current page:", page);
-      setPage((prev) => prev + 1);
+    // Only add search filter if there's a search term
+    if (search && search.trim()) {
+      params.searchingFor = search.trim();
     }
-  }, [isLoading, hasMore, page]);
 
-  // Handle search change - reset pagination
-  const handleSearchChange = useCallback((text: string) => {
-    console.log("[ServiceSelector] Search changed:", text);
-    setSearchText(text);
-    setPage(1);
-  }, []);
+    try {
+      const response = await serviceService.getServices(params);
+      const servicesList = response.data || [];
+      const hasMore = response.meta?.hasNextPage || false;
+
+      return {
+        data: servicesList,
+        hasMore: hasMore,
+      };
+    } catch (error) {
+      console.error('[ServiceSelector] Error fetching services:', error);
+      return { data: [], hasMore: false };
+    }
+  };
 
   // Handle creating a new service
   const handleCreateService = useCallback(async (description: string) => {
@@ -140,24 +135,31 @@ export function ServiceSelector({
           <View key={index} style={styles.serviceRow}>
             {/* Service Combobox */}
             <View style={styles.comboboxContainer}>
-              <Combobox
-                value={service.description}
-                onValueChange={(value) => handleServiceChange(index, value)}
-                options={getOptions(index)}
+              <Combobox<Service>
+                value={service.description || ""}
+                onValueChange={(value) => handleServiceChange(index, value as string | undefined)}
                 placeholder="Selecione ou crie um serviço"
                 searchPlaceholder="Pesquisar serviços..."
                 emptyText="Digite para criar um novo serviço"
                 disabled={disabled || isCreating}
-                loading={isLoading && page === 1}
-                onSearchChange={handleSearchChange}
-                onEndReached={handleEndReached}
+                async={true}
+                queryKey={["services", "search", index]}
+                queryFn={searchServices}
+                initialOptions={getInitialOptions(index)}
+                getOptionLabel={getOptionLabel}
+                getOptionValue={getOptionValue}
+                allowCreate={true}
                 onCreate={async (value) => {
                   const newDescription = await handleCreateService(value);
                   if (newDescription) {
                     handleServiceChange(index, newDescription);
                   }
                 }}
+                isCreating={isCreating}
                 clearable={false}
+                minSearchLength={0}
+                pageSize={50}
+                debounceMs={300}
               />
             </View>
 

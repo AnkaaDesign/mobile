@@ -18,6 +18,8 @@ export {
   createCustomApiClient,
   cancelAllRequests,
   clearApiCache,
+  setIsLoggingOut,
+  getIsLoggingOut,
   httpGet,
   httpPost,
   httpPut,

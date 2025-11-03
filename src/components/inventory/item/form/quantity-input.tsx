@@ -22,7 +22,7 @@ export function QuantityInput({ disabled, required }: QuantityInputProps) {
       render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
         <View style={{ gap: 8 }}>
           <Label nativeID="quantity" style={{ marginBottom: 4 }}>
-            Quantidade em Estoque {required && <ThemedText style={{ color: "#ef4444" }}>*</ThemedText>}
+            Quantidade em Estoque {required && <ThemedText variant="destructive">*</ThemedText>}
           </Label>
           <Input
             id="quantity"
@@ -36,7 +36,7 @@ export function QuantityInput({ disabled, required }: QuantityInputProps) {
             editable={!disabled}
             keyboardType="numeric"
           />
-          {error && <ThemedText style={{ fontSize: 14, color: "#ef4444", marginTop: 4 }}>{error.message}</ThemedText>}
+          {error && <ThemedText variant="destructive" style={{ fontSize: 14, marginTop: 4 }}>{error.message}</ThemedText>}
         </View>
       )}
     />

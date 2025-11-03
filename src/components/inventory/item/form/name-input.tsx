@@ -22,10 +22,10 @@ export function NameInput({ disabled, required }: NameInputProps) {
       render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
         <View style={{ gap: 8 }}>
           <Label nativeID="name" style={{ marginBottom: 4 }}>
-            Nome do Item {required && <ThemedText style={{ color: "#ef4444" }}>*</ThemedText>}
+            Nome do Item {required && <ThemedText variant="destructive">*</ThemedText>}
           </Label>
           <Input id="name" value={value} onChangeText={onChange} onBlur={onBlur} placeholder="Digite o nome do item" editable={!disabled} maxLength={255} autoCapitalize="words" />
-          {error && <ThemedText style={{ fontSize: 14, color: "#ef4444", marginTop: 4 }}>{error.message}</ThemedText>}
+          {error && <ThemedText variant="destructive" style={{ fontSize: 14, marginTop: 4 }}>{error.message}</ThemedText>}
         </View>
       )}
     />

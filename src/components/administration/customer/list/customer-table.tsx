@@ -60,7 +60,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
       <View style={styles.nameContainer}>
         {customer.logo?.id ? (
           <Image
-            source={{ uri: getFileUrl(customer.logo) }}
+            source={{ uri: getFileUrl(customer.logo!) }}
             style={[styles.logoImage, { borderColor: extendedColors.neutral[300] }]}
             onError={(_e) => {
               // On error, the fallback avatar will be shown via react-native's onError handling

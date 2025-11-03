@@ -8,6 +8,7 @@ import {
   StyleSheet,
   TouchableWithoutFeedback,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 const Text = RNText; // Use React Native's Text directly
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +24,7 @@ import {
   IconSettings,
   IconStar,
   IconStarFilled,
+  IconRefresh,
 } from "@tabler/icons-react-native";
 import { useRouter, usePathname } from "expo-router";
 import { MENU_ITEMS, routes, MenuItem, SECTOR_PRIVILEGES } from '@/constants';
@@ -54,7 +56,7 @@ const getIconComponentLocal = (
 };
 
 export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
-  const { user: authUser, logout } = useAuth();
+  const { user: authUser, logout, refreshUserData } = useAuth();
   const { theme, setTheme } = useTheme();
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
   const router = useRouter();
@@ -68,6 +70,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showFavorites, setShowFavorites] = useState(true);
   const [navigatingItemId, setNavigatingItemId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Animation refs
   const chevronAnimations = useRef(new Map<string, Animated.Value>());
@@ -705,6 +708,39 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                   <Icon name={isDarkMode ? "moon" : "sun"} size={22} variant={isDarkMode ? "muted" : "default"} />
                   <Text style={{ fontSize: 15, fontWeight: "500", marginLeft: 12, color: isDarkMode ? "#d4d4d4" : "#404040" }}>
                     {isDarkMode ? "Tema Escuro" : "Tema Claro"}
+                  </Text>
+                </View>
+              </Pressable>
+
+              <Pressable
+                onPress={async () => {
+                  if (isRefreshing) return;
+
+                  setIsRefreshing(true);
+                  try {
+                    await refreshUserData();
+                  } finally {
+                    setIsRefreshing(false);
+                  }
+                }}
+                disabled={isRefreshing}
+                style={({ pressed }) => [
+                  {
+                    backgroundColor: pressed && !isRefreshing
+                      ? (isDarkMode ? "rgba(34, 197, 94, 0.15)" : "rgba(34, 197, 94, 0.08)")
+                      : "transparent",
+                    opacity: isRefreshing ? 0.5 : 1,
+                  }
+                ]}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, minHeight: 44 }}>
+                  {isRefreshing ? (
+                    <ActivityIndicator size="small" color={isDarkMode ? "#22c55e" : "#16a34a"} />
+                  ) : (
+                    <IconRefresh size={22} color={isDarkMode ? "#22c55e" : "#16a34a"} />
+                  )}
+                  <Text style={{ fontSize: 15, fontWeight: "500", marginLeft: 12, color: isDarkMode ? "#22c55e" : "#16a34a" }}>
+                    {isRefreshing ? "Atualizando..." : "Atualizar Dados"}
                   </Text>
                 </View>
               </Pressable>

@@ -20,7 +20,6 @@ import { TruckMetadataCard } from "@/components/production/truck/detail/truck-me
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import {
   IconTruck,
-  IconRefresh,
   IconEdit,
   IconTrash,
   IconHistory,
@@ -145,8 +144,8 @@ export default function TruckDetailsScreen() {
     >
       <View style={styles.content}>
         {/* Header Card */}
-        <Card>
-          <CardContent style={styles.headerContent}>
+        <Card style={styles.headerCard}>
+          <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
               <IconTruck size={24} color={colors.primary} />
               <View style={styles.headerTextContainer}>
@@ -161,14 +160,6 @@ export default function TruckDetailsScreen() {
               </View>
             </View>
             <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={handleRefresh}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-                activeOpacity={0.7}
-                disabled={refreshing}
-              >
-                <IconRefresh size={18} color={colors.foreground} />
-              </TouchableOpacity>
               {canEdit && (
                 <TouchableOpacity
                   onPress={handleEdit}
@@ -188,7 +179,7 @@ export default function TruckDetailsScreen() {
                 </TouchableOpacity>
               )}
             </View>
-          </CardContent>
+          </View>
         </Card>
 
         {/* Basic Information */}
@@ -258,14 +249,18 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.xs,
   },
   headerLeft: {
     flex: 1,

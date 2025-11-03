@@ -41,7 +41,7 @@ export const TaskCustomerCard: React.FC<TaskCustomerCardProps> = ({ customer }) 
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <IconUser size={20} color={colors.primary} />
         <ThemedText style={styles.title}>Cliente</ThemedText>
       </View>
@@ -147,6 +147,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    // Note: borderBottomColor should be applied inline with theme colors
   },
   title: {
     fontSize: fontSize.lg,

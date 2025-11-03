@@ -1065,6 +1065,64 @@ export const NAVIGATION_MENU: MenuItem[] = [
         icon: "scissors",
         path: "/producao/recorte",
         requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
+        children: [
+          {
+            id: "plano-de-recorte",
+            title: "Plano de Recorte",
+            icon: "clipboard",
+            path: "/producao/recorte/plano-de-recorte/listar",
+            children: [
+              {
+                id: "plano-de-recorte-cadastrar",
+                title: "Cadastrar",
+                icon: "plus",
+                path: "/producao/recorte/plano-de-recorte/cadastrar",
+              },
+              {
+                id: "plano-de-recorte-detalhes",
+                title: "Detalhes",
+                icon: "eye",
+                path: "/producao/recorte/plano-de-recorte/detalhes/:id",
+                isDynamic: true,
+              },
+              {
+                id: "plano-de-recorte-editar",
+                title: "Editar",
+                icon: "edit",
+                path: "/producao/recorte/plano-de-recorte/editar/:id",
+                isDynamic: true,
+              },
+            ],
+          },
+          {
+            id: "requisicao-de-recorte",
+            title: "Requisição de Recorte",
+            icon: "clipboard",
+            path: "/producao/recorte/requisicao-de-recorte/listar",
+            children: [
+              {
+                id: "requisicao-de-recorte-cadastrar",
+                title: "Cadastrar",
+                icon: "plus",
+                path: "/producao/recorte/requisicao-de-recorte/cadastrar",
+              },
+              {
+                id: "requisicao-de-recorte-detalhes",
+                title: "Detalhes",
+                icon: "eye",
+                path: "/producao/recorte/requisicao-de-recorte/detalhes/:id",
+                isDynamic: true,
+              },
+              {
+                id: "requisicao-de-recorte-editar",
+                title: "Editar",
+                icon: "edit",
+                path: "/producao/recorte/requisicao-de-recorte/editar/:id",
+                isDynamic: true,
+              },
+            ],
+          },
+        ],
       },
     ],
   },
@@ -1107,6 +1165,64 @@ export const NAVIGATION_MENU: MenuItem[] = [
     icon: "scissors",
     path: "/producao/recorte",
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER],
+    children: [
+      {
+        id: "plano-de-recorte-direct",
+        title: "Plano de Recorte",
+        icon: "clipboard",
+        path: "/producao/recorte/plano-de-recorte/listar",
+        children: [
+          {
+            id: "plano-de-recorte-cadastrar-direct",
+            title: "Cadastrar",
+            icon: "plus",
+            path: "/producao/recorte/plano-de-recorte/cadastrar",
+          },
+          {
+            id: "plano-de-recorte-detalhes-direct",
+            title: "Detalhes",
+            icon: "eye",
+            path: "/producao/recorte/plano-de-recorte/detalhes/:id",
+            isDynamic: true,
+          },
+          {
+            id: "plano-de-recorte-editar-direct",
+            title: "Editar",
+            icon: "edit",
+            path: "/producao/recorte/plano-de-recorte/editar/:id",
+            isDynamic: true,
+          },
+        ],
+      },
+      {
+        id: "requisicao-de-recorte-direct",
+        title: "Requisição de Recorte",
+        icon: "clipboard",
+        path: "/producao/recorte/requisicao-de-recorte/listar",
+        children: [
+          {
+            id: "requisicao-de-recorte-cadastrar-direct",
+            title: "Cadastrar",
+            icon: "plus",
+            path: "/producao/recorte/requisicao-de-recorte/cadastrar",
+          },
+          {
+            id: "requisicao-de-recorte-detalhes-direct",
+            title: "Detalhes",
+            icon: "eye",
+            path: "/producao/recorte/requisicao-de-recorte/detalhes/:id",
+            isDynamic: true,
+          },
+          {
+            id: "requisicao-de-recorte-editar-direct",
+            title: "Editar",
+            icon: "edit",
+            path: "/producao/recorte/requisicao-de-recorte/editar/:id",
+            isDynamic: true,
+          },
+        ],
+      },
+    ],
   },
 
   // Garagens - Direct access for LOGISTIC only

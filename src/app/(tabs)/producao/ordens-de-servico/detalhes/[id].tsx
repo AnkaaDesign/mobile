@@ -9,7 +9,6 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import {
   IconClipboardList,
-  IconRefresh,
   IconEdit,
   IconHistory,
 } from "@tabler/icons-react-native";
@@ -113,7 +112,7 @@ export default function ServiceOrderDetailScreen() {
     >
       <View style={styles.container}>
         {/* Header Card */}
-        <Card style={styles.card}>
+        <Card style={styles.headerCard}>
           <View style={styles.headerContent}>
             <View style={[styles.headerLeft, { flex: 1 }]}>
               <IconClipboardList size={24} color={colors.primary} />
@@ -122,14 +121,6 @@ export default function ServiceOrderDetailScreen() {
               </ThemedText>
             </View>
             <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={handleRefresh}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-                activeOpacity={0.7}
-                disabled={refreshing}
-              >
-                <IconRefresh size={18} color={colors.foreground} />
-              </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleEdit}
                 style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
@@ -180,11 +171,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
   },
   card: {
     padding: spacing.md,
+  },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
   header: {
     flexDirection: "row",
@@ -210,7 +205,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.xs,
   },
   orderName: {
     fontSize: fontSize.xl,

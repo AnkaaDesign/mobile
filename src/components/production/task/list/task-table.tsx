@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector } from "@tabler/icons-react-native";
@@ -18,6 +18,8 @@ import { getTaskRowColor } from '../../../../utils/task';
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { TASK_STATUS, PRIORITY_TYPE } from '../../../../constants';
 import type { SortConfig } from "@/lib/sort-utils";
+import { TaskSectorModal } from "../modals/task-sector-modal";
+import { TaskStatusModal } from "../modals/task-status-modal";
 
 export interface TableColumn {
   key: string;
@@ -34,7 +36,8 @@ interface TaskTableProps {
   onTaskEdit?: (taskId: string) => void;
   onTaskDelete?: (taskId: string) => void;
   onTaskDuplicate?: (taskId: string) => void;
-  onTaskStatusChange?: (taskId: string, status: TASK_STATUS) => void;
+  onTaskSectorChange?: (taskId: string, sectorId: string) => Promise<void>;
+  onTaskStatusChange?: (taskId: string, status: TASK_STATUS) => Promise<void>;
   onRefresh?: () => Promise<void>;
   onEndReached?: () => void;
   refreshing?: boolean;
@@ -303,6 +306,7 @@ export const TaskTable = React.memo<TaskTableProps>(
     onTaskEdit,
     onTaskDelete,
     // onTaskDuplicate removed
+    onTaskSectorChange,
     onTaskStatusChange,
     onRefresh,
     onEndReached,
@@ -318,6 +322,17 @@ export const TaskTable = React.memo<TaskTableProps>(
     const { activeRowId, closeActiveRow } = useSwipeRow();
     // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
+
+    // Modal state
+    const [sectorModalVisible, setSectorModalVisible] = useState(false);
+    const [statusModalVisible, setStatusModalVisible] = useState(false);
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+    const [modalLoading, setModalLoading] = useState(false);
+
+    const selectedTask = useMemo(
+      () => tasks.find((task) => task.id === selectedTaskId),
+      [tasks, selectedTaskId]
+    );
 
     // Column visibility - use prop if provided, otherwise use default
     const visibleColumns = useMemo(() => {
@@ -386,6 +401,61 @@ export const TaskTable = React.memo<TaskTableProps>(
       return displayColumns.reduce((sum, col) => sum + col.width, 0);
     }, [displayColumns]);
 
+    // Modal handlers
+    const handleSetSector = useCallback((taskId: string) => {
+      setSelectedTaskId(taskId);
+      setSectorModalVisible(true);
+    }, []);
+
+    const handleSetStatus = useCallback((taskId: string) => {
+      setSelectedTaskId(taskId);
+      setStatusModalVisible(true);
+    }, []);
+
+    const handleSectorModalClose = useCallback(() => {
+      setSectorModalVisible(false);
+      setSelectedTaskId(null);
+      setModalLoading(false);
+    }, []);
+
+    const handleStatusModalClose = useCallback(() => {
+      setStatusModalVisible(false);
+      setSelectedTaskId(null);
+      setModalLoading(false);
+    }, []);
+
+    const handleSectorSelect = useCallback(
+      async (sectorId: string) => {
+        if (!selectedTaskId || !onTaskSectorChange) return;
+
+        try {
+          setModalLoading(true);
+          await onTaskSectorChange(selectedTaskId, sectorId);
+          handleSectorModalClose();
+        } catch (error) {
+          console.error("Failed to update task sector:", error);
+          setModalLoading(false);
+        }
+      },
+      [selectedTaskId, onTaskSectorChange, handleSectorModalClose]
+    );
+
+    const handleStatusSelect = useCallback(
+      async (status: TASK_STATUS) => {
+        if (!selectedTaskId || !onTaskStatusChange) return;
+
+        try {
+          setModalLoading(true);
+          await onTaskStatusChange(selectedTaskId, status);
+          handleStatusModalClose();
+        } catch (error) {
+          console.error("Failed to update task status:", error);
+          setModalLoading(false);
+        }
+      },
+      [selectedTaskId, onTaskStatusChange, handleStatusModalClose]
+    );
+
     // Sort handler - non-cumulative (only one sort at a time)
     const handleSort = useCallback(
       (columnKey: string) => {
@@ -430,7 +500,7 @@ export const TaskTable = React.memo<TaskTableProps>(
                 borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
               },
             ])}
-            contentContainerStyle={{}}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
               {displayColumns.map((column) => {
@@ -487,7 +557,7 @@ export const TaskTable = React.memo<TaskTableProps>(
         // Get row color based on task status and deadline (matches web version)
         const rowColor = getTaskRowColor(item, isDark);
 
-        if (enableSwipeActions && (onTaskEdit || onTaskDelete || onTaskStatusChange)) {
+        if (enableSwipeActions && (onTaskEdit || onTaskDelete || onTaskSectorChange || onTaskStatusChange)) {
           return (
             <TaskTableRowSwipe
               key={item.id}
@@ -496,7 +566,8 @@ export const TaskTable = React.memo<TaskTableProps>(
               taskStatus={item.status}
               onEdit={onTaskEdit}
               onDelete={onTaskDelete}
-              onStatusChange={onTaskStatusChange}
+              onSetSector={onTaskSectorChange ? handleSetSector : undefined}
+              onSetStatus={onTaskStatusChange ? handleSetStatus : undefined}
               disabled={false}
             >
               {() => (
@@ -511,7 +582,7 @@ export const TaskTable = React.memo<TaskTableProps>(
                       borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
                     },
                   ])}
-                  contentContainerStyle={{}}
+                  contentContainerStyle={{ paddingHorizontal: 16 }}
                 >
                   <Pressable
                     style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
@@ -546,7 +617,7 @@ export const TaskTable = React.memo<TaskTableProps>(
                 borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
               },
             ])}
-            contentContainerStyle={{}}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
               style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
@@ -574,7 +645,10 @@ export const TaskTable = React.memo<TaskTableProps>(
         enableSwipeActions,
         onTaskEdit,
         onTaskDelete,
+        onTaskSectorChange,
         onTaskStatusChange,
+        handleSetSector,
+        handleSetStatus,
         activeRowId,
         closeActiveRow,
         isDark,
@@ -617,7 +691,7 @@ export const TaskTable = React.memo<TaskTableProps>(
 
     return (
       <View style={styles.wrapper}>
-        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])} onPress={handleContainerPress}>
+        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background, borderColor: colors.border }])} onPress={handleContainerPress}>
           {renderHeader()}
           <FlatList
             ref={flatListRef}
@@ -646,6 +720,24 @@ export const TaskTable = React.memo<TaskTableProps>(
             contentContainerStyle={{ flexGrow: 1 }}
           />
         </Pressable>
+
+        {/* Sector Selection Modal */}
+        <TaskSectorModal
+          visible={sectorModalVisible}
+          onClose={handleSectorModalClose}
+          onSelectSector={handleSectorSelect}
+          currentSectorId={selectedTask?.sectorId}
+          loading={modalLoading}
+        />
+
+        {/* Status Selection Modal */}
+        <TaskStatusModal
+          visible={statusModalVisible}
+          onClose={handleStatusModalClose}
+          onSelectStatus={handleStatusSelect}
+          currentStatus={selectedTask?.status}
+          loading={modalLoading}
+        />
       </View>
     );
   },
@@ -654,12 +746,15 @@ export const TaskTable = React.memo<TaskTableProps>(
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
+    paddingHorizontal: 8,
+    paddingBottom: 16,
     backgroundColor: "transparent",
   },
   container: {
     flex: 1,
     backgroundColor: "white",
     borderRadius: 8,
+    borderWidth: 1,
     overflow: "hidden",
     elevation: 2,
     shadowColor: "#000",

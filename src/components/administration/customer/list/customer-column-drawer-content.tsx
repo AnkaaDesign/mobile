@@ -30,12 +30,8 @@ export function CustomerColumnDrawerContent({
   const insets = useSafeAreaInsets();
   const { closeColumnDrawer } = useUtilityDrawer();
   const [searchQuery, setSearchQuery] = useState("");
-  const [localVisible, setLocalVisible] = useState(visibleColumns);
-
-  React.useEffect(() => {
-    setLocalVisible(visibleColumns);
-    setSearchQuery("");
-  }, [visibleColumns]);
+  // Initialize localVisible with visibleColumns value immediately
+  const [localVisible, setLocalVisible] = useState(() => new Set(visibleColumns || []));
 
   const filteredColumns = useMemo(() => {
     if (!searchQuery.trim()) return columns;
@@ -55,11 +51,7 @@ export function CustomerColumnDrawerContent({
     });
   }, []);
 
-  const handleDeselectAll = useCallback(() => {
-    setLocalVisible(new Set());
-  }, []);
-
-  const handleReset = useCallback(() => {
+  const handleClear = useCallback(() => {
     setLocalVisible(new Set(["fantasyName", "document"]));
   }, []);
 
@@ -81,24 +73,20 @@ export function CustomerColumnDrawerContent({
       <View style={[styles.header, {
         backgroundColor: colors.background,
         borderBottomColor: colors.border,
-        paddingTop: insets.top + 8
+        paddingTop: 18
       }]}>
         <View style={styles.headerContent}>
           <IconColumns size={24} color={colors.foreground} />
           <ThemedText style={styles.title}>Gerenciar Colunas</ThemedText>
+          <View style={[styles.countBadge, { backgroundColor: colors.muted }]}>
+            <ThemedText style={styles.countText}>
+              {visibleCount}/{totalCount}
+            </ThemedText>
+          </View>
         </View>
         <TouchableOpacity onPress={closeColumnDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
-      </View>
-
-      {/* Count */}
-      <View style={styles.countBadgeWrapper}>
-        <View style={[styles.countBadge, { backgroundColor: colors.muted }]}>
-          <ThemedText style={styles.countText}>
-            {visibleCount} / {totalCount} selecionadas
-          </ThemedText>
-        </View>
       </View>
 
       {/* Search */}
@@ -120,24 +108,6 @@ export function CustomerColumnDrawerContent({
         </View>
       </View>
 
-      {/* Quick actions */}
-      <View style={styles.actionsWrapper}>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={handleDeselectAll}
-          activeOpacity={0.7}
-        >
-          <ThemedText style={styles.actionBtnText}>Nenhuma</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={handleReset}
-          activeOpacity={0.7}
-        >
-          <ThemedText style={styles.actionBtnText}>Restaurar</ThemedText>
-        </TouchableOpacity>
-      </View>
-
       {/* List */}
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 90 }]}
@@ -153,13 +123,7 @@ export function CustomerColumnDrawerContent({
             return (
               <View
                 key={column.key}
-                style={[
-                  styles.columnItem,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
-                  },
-                ]}
+                style={styles.columnItem}
               >
                 <TouchableOpacity
                   style={styles.columnTouchable}
@@ -190,10 +154,10 @@ export function CustomerColumnDrawerContent({
       }]}>
         <TouchableOpacity
           style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={closeColumnDrawer}
+          onPress={handleClear}
           activeOpacity={0.7}
         >
-          <ThemedText style={styles.footerBtnText}>Cancelar</ThemedText>
+          <ThemedText style={styles.footerBtnText}>Restaurar</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.footerBtn, { backgroundColor: colors.primary, borderColor: colors.primary }]}
@@ -215,8 +179,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
   headerContent: {
@@ -228,18 +192,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  countBadgeWrapper: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
   countBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: 8,
   },
   countText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
   },
   searchWrapper: {
@@ -260,26 +220,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingVertical: 4,
   },
-  actionsWrapper: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    gap: 12,
-    paddingBottom: 16,
-  },
-  actionBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
   scrollContent: {
+    paddingTop: 16,
     paddingHorizontal: 16,
   },
   columnItem: {
@@ -289,10 +231,7 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
     paddingRight: 16,
     paddingVertical: 14,
-    borderRadius: 8,
-    borderWidth: 1,
     minHeight: 60,
-    marginBottom: 10,
   },
   columnTouchable: {
     flex: 1,
@@ -311,7 +250,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 12,
     borderTopWidth: 1,
   },
   footerBtn: {

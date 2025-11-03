@@ -1,17 +1,12 @@
-import React, { useMemo } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { IconFilter, IconX, IconCheck } from '@tabler/icons-react-native';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { View, ScrollView, StyleSheet, TouchableOpacity, TextInput, Switch as RNSwitch } from 'react-native';
+import { IconFilter, IconX, IconBriefcase, IconMapPin, IconCalendarPlus, IconTags } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
-import { Text } from '@/components/ui/text';
+import { ThemedText } from '@/components/ui/themed-text';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { StringFilter, BooleanFilter } from '@/components/common/filters';
-import { FilterSection } from '@/components/common/filters/FilterSection';
 import { Input } from '@/components/ui/input';
 import { BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from '@/constants';
-import { spacing } from '@/constants/design-system';
 import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 
 interface CustomerFilterDrawerContentProps {
@@ -21,6 +16,9 @@ interface CustomerFilterDrawerContentProps {
     tags?: string[];
     hasCNPJ?: boolean;
     hasCPF?: boolean;
+    hasTasks?: boolean;
+    taskCount?: { min?: number; max?: number };
+    createdAt?: { gte?: Date; lte?: Date };
   };
   onFiltersChange: (filters: any) => void;
   onClear: () => void;
@@ -36,203 +34,475 @@ export function CustomerFilterDrawerContent({
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { closeFilterDrawer } = useUtilityDrawer();
+  // Initialize localFilters with filters value immediately
+  const [localFilters, setLocalFilters] = useState(() => filters || {});
+  const [customTags, setCustomTags] = useState("");
 
-  const setFilters = (updater: (prev: any) => any) => {
-    onFiltersChange(updater(filters));
-  };
+  const handleToggle = useCallback((key: string, value: boolean) => {
+    setLocalFilters(prev => ({
+      ...prev,
+      [key]: value || undefined
+    }));
+  }, []);
 
-  const handleClear = () => {
-    onClear();
-  };
+  const handleAddTag = useCallback(() => {
+    if (customTags.trim()) {
+      const newTags = customTags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+      setLocalFilters(prev => ({
+        ...prev,
+        tags: [...(prev.tags || []), ...newTags]
+      }));
+      setCustomTags("");
+    }
+  }, [customTags]);
 
-  const handleApply = () => {
+  const handleRemoveTag = useCallback((tagToRemove: string) => {
+    setLocalFilters(prev => ({
+      ...prev,
+      tags: prev.tags?.filter(tag => tag !== tagToRemove)
+    }));
+  }, []);
+
+  const handleApply = useCallback(() => {
+    onFiltersChange(localFilters);
     closeFilterDrawer();
-  };
+  }, [localFilters, onFiltersChange, closeFilterDrawer]);
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    header: {
-      paddingTop: Math.max(insets.top, spacing.lg),
-      paddingBottom: spacing.lg,
-      paddingHorizontal: spacing.lg,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    headerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
-      flex: 1,
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: colors.foreground,
-    },
-    description: {
-      fontSize: 14,
-      color: colors.mutedForeground,
-      marginTop: spacing.xs,
-    },
-    closeButton: {
-      padding: 4,
-    },
-    scrollContent: {
-      padding: spacing.lg,
-      paddingBottom: spacing.xl,
-    },
-    sectionGap: {
-      gap: spacing.md,
-    },
-    footer: {
-      paddingTop: spacing.md,
-      paddingBottom: Math.max(insets.bottom + spacing.sm, spacing.lg),
-      paddingHorizontal: spacing.lg,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      backgroundColor: colors.background,
-    },
-    actionRow: {
-      flexDirection: 'row',
-      gap: spacing.sm,
-    },
-    actionButton: {
-      flex: 1,
-    },
-  });
+  const handleClear = useCallback(() => {
+    setLocalFilters({});
+    setCustomTags("");
+    onClear();
+  }, [onClear]);
+
+  // Filter options list
+  const filterOptions = useMemo(() => {
+    const options = [
+      {
+        key: 'hasTasks',
+        label: 'Possui Tarefas',
+        icon: IconBriefcase,
+        type: 'boolean',
+        value: localFilters.hasTasks,
+        description: 'Clientes com tarefas associadas'
+      },
+      {
+        key: 'hasCNPJ',
+        label: 'Possui CNPJ',
+        type: 'boolean',
+        value: localFilters.hasCNPJ,
+        description: 'Clientes com CNPJ cadastrado'
+      },
+      {
+        key: 'hasCPF',
+        label: 'Possui CPF',
+        type: 'boolean',
+        value: localFilters.hasCPF,
+        description: 'Clientes com CPF cadastrado'
+      }
+    ];
+
+    return options;
+  }, [localFilters]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerLeft}>
-            <IconFilter size={24} color={colors.foreground} />
-            <Text style={styles.title}>Filtros de Clientes</Text>
-            {activeFiltersCount > 0 && (
-              <Badge variant="secondary">
-                <Text style={{ fontSize: 12, fontWeight: '600' }}>
-                  {activeFiltersCount}
-                </Text>
-              </Badge>
-            )}
-          </View>
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={closeFilterDrawer}
-            style={styles.closeButton}
-          >
-            <IconX size={20} color={colors.mutedForeground} />
-          </Button>
+      <View style={[styles.header, {
+        backgroundColor: colors.background,
+        borderBottomColor: colors.border,
+        paddingTop: 18
+      }]}>
+        <View style={styles.headerContent}>
+          <IconFilter size={24} color={colors.foreground} />
+          <ThemedText style={styles.title}>Filtros de Clientes</ThemedText>
+          {activeFiltersCount > 0 && (
+            <View style={[styles.countBadge, { backgroundColor: colors.destructive }]}>
+              <ThemedText style={[styles.countText, { color: colors.destructiveForeground }]}>
+                {activeFiltersCount}
+              </ThemedText>
+            </View>
+          )}
         </View>
-        <Text style={styles.description}>Configure os filtros para refinar sua busca</Text>
+        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <IconX size={24} color={colors.mutedForeground} />
+        </TouchableOpacity>
       </View>
 
-      {/* Content */}
+      {/* Scrollable Content */}
       <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 90 }]}
+        showsVerticalScrollIndicator={true}
       >
-        <View style={styles.sectionGap}>
-          <FilterSection
-            title="Localização"
-            defaultOpen={true}
-            badge={(filters.states?.length || 0) + (filters.city ? 1 : 0)}
-          >
-            <View style={{ gap: 8 }}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Estados</Text>
-              <Input
-                value={filters.states?.join(", ") || ""}
-                onChangeText={(value) => setFilters(prev => ({
-                  ...prev,
-                  states: value ? value.split(",").map(s => s.trim()).filter(Boolean) : undefined
-                }))}
-                placeholder="Ex: SP, RJ, MG"
+        {/* Boolean Filters */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconBriefcase size={18} color={colors.mutedForeground} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Filtros Gerais
+            </ThemedText>
+          </View>
+
+          {filterOptions.map((option) => (
+            <View key={option.key} style={[styles.filterItem, { borderBottomColor: colors.border }]}>
+              <TouchableOpacity
+                style={styles.filterTouchable}
+                onPress={() => handleToggle(option.key, !option.value)}
+                activeOpacity={0.7}
+              >
+                <View>
+                  <ThemedText style={styles.filterLabel}>{option.label}</ThemedText>
+                  <ThemedText style={[styles.filterDescription, { color: colors.mutedForeground }]}>
+                    {option.description}
+                  </ThemedText>
+                </View>
+              </TouchableOpacity>
+              <RNSwitch
+                value={!!option.value}
+                onValueChange={(value) => handleToggle(option.key, value)}
+                trackColor={{ false: colors.muted, true: colors.primary }}
+                thumbColor={option.value ? colors.primaryForeground : "#f4f3f4"}
+                ios_backgroundColor={colors.muted}
               />
             </View>
-            <StringFilter
-              label="Cidade"
-              value={filters.city}
-              onChange={(value) => setFilters(prev => ({ ...prev, city: value as string | undefined }))}
+          ))}
+        </View>
+
+        {/* Location Filters */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconMapPin size={18} color={colors.mutedForeground} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Localização
+            </ThemedText>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>Estados</ThemedText>
+            <TextInput
+              style={[styles.textInput, {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                color: colors.foreground
+              }]}
+              placeholder="Ex: SP, RJ, MG"
+              placeholderTextColor={colors.mutedForeground}
+              value={localFilters.states?.join(", ") || ""}
+              onChangeText={(value) => setLocalFilters(prev => ({
+                ...prev,
+                states: value ? value.split(",").map(s => s.trim()).filter(Boolean) : undefined
+              }))}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>Cidade</ThemedText>
+            <TextInput
+              style={[styles.textInput, {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                color: colors.foreground
+              }]}
               placeholder="Digite o nome da cidade"
+              placeholderTextColor={colors.mutedForeground}
+              value={localFilters.city || ""}
+              onChangeText={(value) => setLocalFilters(prev => ({
+                ...prev,
+                city: value || undefined
+              }))}
             />
-          </FilterSection>
+          </View>
+        </View>
 
-          <Separator />
+        {/* Tags */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconTags size={18} color={colors.mutedForeground} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Tags
+            </ThemedText>
+          </View>
 
-          <FilterSection
-            title="Documentos"
-            defaultOpen={false}
-            badge={(filters.hasCNPJ ? 1 : 0) + (filters.hasCPF ? 1 : 0)}
-          >
-            <BooleanFilter
-              label="Possui CNPJ"
-              description="Mostrar apenas clientes com CNPJ cadastrado"
-              value={!!filters.hasCNPJ}
-              onChange={(value) => setFilters(prev => ({ ...prev, hasCNPJ: value || undefined }))}
-            />
-            <BooleanFilter
-              label="Possui CPF"
-              description="Mostrar apenas clientes com CPF cadastrado"
-              value={!!filters.hasCPF}
-              onChange={(value) => setFilters(prev => ({ ...prev, hasCPF: value || undefined }))}
-            />
-          </FilterSection>
+          <View style={styles.inputGroup}>
+            <View style={styles.tagInputWrapper}>
+              <TextInput
+                style={[styles.textInput, styles.tagInput, {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  color: colors.foreground
+                }]}
+                placeholder="Digite tags separadas por vírgula..."
+                placeholderTextColor={colors.mutedForeground}
+                value={customTags}
+                onChangeText={setCustomTags}
+                onSubmitEditing={handleAddTag}
+              />
+              <TouchableOpacity
+                style={[styles.addButton, { backgroundColor: colors.primary }]}
+                onPress={handleAddTag}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={[styles.addButtonText, { color: colors.primaryForeground }]}>
+                  Adicionar
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
 
-          <Separator />
+            {localFilters.tags && localFilters.tags.length > 0 && (
+              <View style={styles.tagsContainer}>
+                {localFilters.tags.map((tag) => (
+                  <TouchableOpacity
+                    key={tag}
+                    style={[styles.tag, { backgroundColor: colors.muted }]}
+                    onPress={() => handleRemoveTag(tag)}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText style={[styles.tagText, { color: colors.foreground }]}>{tag}</ThemedText>
+                    <IconX size={14} color={colors.foreground} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        </View>
 
-          <FilterSection
-            title="Tags"
-            defaultOpen={false}
-            badge={filters.tags?.length || 0}
-          >
-            <View style={{ gap: 8 }}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>Tags</Text>
-              <Input
-                value={filters.tags?.join(", ") || ""}
-                onChangeText={(value) => setFilters(prev => ({
-                  ...prev,
-                  tags: value ? value.split(",").map(t => t.trim()).filter(Boolean) : undefined
-                }))}
-                placeholder="Ex: importante, vip, premium"
+        {/* Task Count Range */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconBriefcase size={18} color={colors.mutedForeground} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Quantidade de Tarefas
+            </ThemedText>
+          </View>
+
+          <View style={styles.rangeInputs}>
+            <View style={styles.rangeInput}>
+              <ThemedText style={[styles.inputLabel, { color: colors.mutedForeground }]}>Mínimo</ThemedText>
+              <TextInput
+                style={[styles.textInput, {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  color: colors.foreground
+                }]}
+                placeholder="0"
+                placeholderTextColor={colors.mutedForeground}
+                keyboardType="numeric"
+                value={localFilters.taskCount?.min?.toString() || ""}
+                onChangeText={(value) => {
+                  const min = value ? parseInt(value, 10) : undefined;
+                  if (min !== undefined && isNaN(min)) return;
+                  setLocalFilters(prev => ({
+                    ...prev,
+                    taskCount: {
+                      ...prev.taskCount,
+                      min
+                    }
+                  }));
+                }}
               />
             </View>
-          </FilterSection>
+
+            <View style={styles.rangeInput}>
+              <ThemedText style={[styles.inputLabel, { color: colors.mutedForeground }]}>Máximo</ThemedText>
+              <TextInput
+                style={[styles.textInput, {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  color: colors.foreground
+                }]}
+                placeholder="Sem limite"
+                placeholderTextColor={colors.mutedForeground}
+                keyboardType="numeric"
+                value={localFilters.taskCount?.max?.toString() || ""}
+                onChangeText={(value) => {
+                  const max = value ? parseInt(value, 10) : undefined;
+                  if (max !== undefined && isNaN(max)) return;
+                  setLocalFilters(prev => ({
+                    ...prev,
+                    taskCount: {
+                      ...prev.taskCount,
+                      max
+                    }
+                  }));
+                }}
+              />
+            </View>
+          </View>
         </View>
       </ScrollView>
 
       {/* Footer */}
-      <View style={styles.footer}>
-        <View style={styles.actionRow}>
-          <Button
-            variant="outline"
-            onPress={handleClear}
-            style={styles.actionButton}
-          >
-            <IconX size={18} color={colors.foreground} />
-            <Text style={{ marginLeft: spacing.xs }}>Limpar</Text>
-          </Button>
-          <Button
-            variant="default"
-            onPress={handleApply}
-            style={styles.actionButton}
-          >
-            <IconCheck size={18} color={colors.background} />
-            <Text style={{ marginLeft: spacing.xs, color: colors.background }}>
-              Aplicar
-            </Text>
-          </Button>
-        </View>
+      <View style={[styles.footer, {
+        backgroundColor: colors.background,
+        borderTopColor: colors.border,
+        paddingBottom: Math.max(insets.bottom, 16)
+      }]}>
+        <TouchableOpacity
+          style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={handleClear}
+          activeOpacity={0.7}
+        >
+          <ThemedText style={styles.footerBtnText}>Limpar</ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.footerBtn, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+          onPress={handleApply}
+          activeOpacity={0.7}
+        >
+          <ThemedText style={[styles.footerBtnText, { color: colors.primaryForeground }]}>Aplicar</ThemedText>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  countBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  countText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  scrollContent: {
+    paddingTop: 16,
+    paddingHorizontal: 16,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  filterItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  filterTouchable: {
+    flex: 1,
+    paddingRight: 16,
+  },
+  filterLabel: {
+    fontSize: 15,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  filterDescription: {
+    fontSize: 13,
+  },
+  inputGroup: {
+    marginBottom: 10,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  textInput: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    fontSize: 14,
+  },
+  tagInputWrapper: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  tagInput: {
+    flex: 1,
+  },
+  addButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    justifyContent: "center",
+  },
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+  tag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  tagText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  rangeInputs: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  rangeInput: {
+    flex: 1,
+  },
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  footerBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  footerBtnText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+});

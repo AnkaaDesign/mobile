@@ -11,12 +11,14 @@ import {
   formatCurrency,
   formatPercentage,
   formatNumberWithDecimals,
+  formatChassis,
   cleanCPF,
   cleanCNPJ,
   cleanPhone,
   cleanPIS,
   cleanCEP,
   cleanNumeric,
+  cleanChassis,
   parseCurrency,
 } from "@/utils";
 
@@ -191,7 +193,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
           case "plate":
             return strValue.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 8);
           case "chassis":
-            return strValue.toUpperCase().replace(/[^A-Z0-9 ]/g, "").slice(0, 20);
+            return formatChassis(strValue);
           case "rg":
             return strValue.replace(/[^0-9A-Za-z.-]/g, "").slice(0, 15);
           default:
@@ -251,7 +253,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
           case "plate":
             return val.toUpperCase().replace(/[^A-Z0-9-]/g, "");
           case "chassis":
-            return cleanNumeric(val.replace(/\s/g, ""));
+            return cleanChassis(val);
           case "rg":
             return val.replace(/[^0-9A-Za-z.-]/g, "");
           default:
@@ -674,7 +676,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
         case "plate":
           return "ABC1234";
         case "chassis":
-          return "9BD17205 1R 123456";
+          return "9BD 17205 1R 123456";
         case "rg":
           return "12.345.678-9";
         case "integer":

@@ -106,7 +106,7 @@ export default function EditServiceOrderScreen() {
     term: task.data.term ? new Date(task.data.term) : null,
     generalPaintingId: task.data.generalPainting?.id ?? null,
     // Fixed: paints doesn't exist, should use logoPaints instead
-    paintIds: task.data.logoPaints?.map((p: any /* TODO: Add proper type */) => p.id) || [],
+    paintIds: task.data.logoPaints?.filter((p: any) => p && p.id).map((p: any /* TODO: Add proper type */) => p.id) || [],
     services: task.data.services?.map((s) => ({
       description: s.description,
       status: s.status ?? undefined,

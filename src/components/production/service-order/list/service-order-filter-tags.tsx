@@ -1,10 +1,10 @@
-import React, { useMemo } from "react";
-import { View, ScrollView , StyleSheet} from "react-native";
-import { Chip } from "@/components/ui/chip";
-import { Button } from "@/components/ui/button";
-import { ThemedText } from "@/components/ui/themed-text";
-import { spacing, fontSize } from "@/constants/design-system";
+import { useMemo } from "react";
+import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
+import { ThemedText } from "@/components/ui/themed-text";
+import { Badge } from "@/components/ui/badge";
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatDate } from '../../../../utils';
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from '../../../../constants';
 import type { ServiceOrderGetManyFormData } from '../../../../schemas';
@@ -12,178 +12,225 @@ import type { ServiceOrderGetManyFormData } from '../../../../schemas';
 interface FilterTag {
   key: string;
   label: string;
-  value: string;
+  onRemove: () => void;
 }
 
 interface ServiceOrderFilterTagsProps {
   filters: Partial<ServiceOrderGetManyFormData>;
   searchText?: string;
+  onFilterChange: (filters: Partial<ServiceOrderGetManyFormData>) => void;
+  onSearchChange?: (text: string) => void;
   onClearAll: () => void;
-  onRemoveFilter: (key: string) => void;
-  onClearSearch: () => void;
 }
 
-export const ServiceOrderFilterTags: React.FC<ServiceOrderFilterTagsProps> = ({
+export function ServiceOrderFilterTags({
   filters,
   searchText,
+  onFilterChange,
+  onSearchChange,
   onClearAll,
-  onRemoveFilter,
-  onClearSearch,
-}) => {
+}: ServiceOrderFilterTagsProps) {
   const { colors } = useTheme();
 
-  const filterTags = useMemo(() => {
+  // Build array of active filter tags
+  const filterTags = useMemo((): FilterTag[] => {
     const tags: FilterTag[] = [];
+
+    // Search text
+    if (searchText) {
+      tags.push({
+        key: "search",
+        label: `Busca: "${searchText}"`,
+        onRemove: () => onSearchChange?.(""),
+      });
+    }
 
     // Status filter
     if (filters.where?.status) {
+      const statusLabel = SERVICE_ORDER_STATUS_LABELS[filters.where.status as SERVICE_ORDER_STATUS];
       tags.push({
         key: "status",
-        label: "Status",
-        value: SERVICE_ORDER_STATUS_LABELS[filters.where.status as SERVICE_ORDER_STATUS],
+        label: `Status: ${statusLabel}`,
+        onRemove: () => {
+          const newWhere = { ...filters.where };
+          delete newWhere.status;
+          onFilterChange({ ...filters, where: newWhere });
+        },
       });
     }
 
     // Created date filters
     if (filters.where?.createdAt?.gte) {
       tags.push({
-        key: "createdAt.gte",
-        label: "Criado após",
-        value: formatDate(new Date(filters.where.createdAt.gte)),
+        key: "created-start",
+        label: `Criado após: ${formatDate(new Date(filters.where.createdAt.gte))}`,
+        onRemove: () => {
+          const newWhere = { ...filters.where };
+          if (newWhere.createdAt) {
+            const { gte, ...rest } = newWhere.createdAt;
+            newWhere.createdAt = Object.keys(rest).length > 0 ? rest : undefined;
+          }
+          if (!newWhere.createdAt) delete newWhere.createdAt;
+          onFilterChange({ ...filters, where: newWhere });
+        },
       });
     }
 
     if (filters.where?.createdAt?.lte) {
       tags.push({
-        key: "createdAt.lte",
-        label: "Criado antes",
-        value: formatDate(new Date(filters.where.createdAt.lte)),
+        key: "created-end",
+        label: `Criado antes: ${formatDate(new Date(filters.where.createdAt.lte))}`,
+        onRemove: () => {
+          const newWhere = { ...filters.where };
+          if (newWhere.createdAt) {
+            const { lte, ...rest } = newWhere.createdAt;
+            newWhere.createdAt = Object.keys(rest).length > 0 ? rest : undefined;
+          }
+          if (!newWhere.createdAt) delete newWhere.createdAt;
+          onFilterChange({ ...filters, where: newWhere });
+        },
       });
     }
 
     // Started date filters
     if (filters.where?.startedAt?.gte) {
       tags.push({
-        key: "startedAt.gte",
-        label: "Iniciado após",
-        value: formatDate(new Date(filters.where.startedAt.gte)),
+        key: "started-start",
+        label: `Iniciado após: ${formatDate(new Date(filters.where.startedAt.gte))}`,
+        onRemove: () => {
+          const newWhere = { ...filters.where };
+          if (newWhere.startedAt) {
+            const { gte, ...rest } = newWhere.startedAt;
+            newWhere.startedAt = Object.keys(rest).length > 0 ? rest : undefined;
+          }
+          if (!newWhere.startedAt) delete newWhere.startedAt;
+          onFilterChange({ ...filters, where: newWhere });
+        },
       });
     }
 
     if (filters.where?.startedAt?.lte) {
       tags.push({
-        key: "startedAt.lte",
-        label: "Iniciado antes",
-        value: formatDate(new Date(filters.where.startedAt.lte)),
+        key: "started-end",
+        label: `Iniciado antes: ${formatDate(new Date(filters.where.startedAt.lte))}`,
+        onRemove: () => {
+          const newWhere = { ...filters.where };
+          if (newWhere.startedAt) {
+            const { lte, ...rest } = newWhere.startedAt;
+            newWhere.startedAt = Object.keys(rest).length > 0 ? rest : undefined;
+          }
+          if (!newWhere.startedAt) delete newWhere.startedAt;
+          onFilterChange({ ...filters, where: newWhere });
+        },
       });
     }
 
     // Finished date filters
     if (filters.where?.finishedAt?.gte) {
       tags.push({
-        key: "finishedAt.gte",
-        label: "Finalizado após",
-        value: formatDate(new Date(filters.where.finishedAt.gte)),
+        key: "finished-start",
+        label: `Finalizado após: ${formatDate(new Date(filters.where.finishedAt.gte))}`,
+        onRemove: () => {
+          const newWhere = { ...filters.where };
+          if (newWhere.finishedAt) {
+            const { gte, ...rest } = newWhere.finishedAt;
+            newWhere.finishedAt = Object.keys(rest).length > 0 ? rest : undefined;
+          }
+          if (!newWhere.finishedAt) delete newWhere.finishedAt;
+          onFilterChange({ ...filters, where: newWhere });
+        },
       });
     }
 
     if (filters.where?.finishedAt?.lte) {
       tags.push({
-        key: "finishedAt.lte",
-        label: "Finalizado antes",
-        value: formatDate(new Date(filters.where.finishedAt.lte)),
+        key: "finished-end",
+        label: `Finalizado antes: ${formatDate(new Date(filters.where.finishedAt.lte))}`,
+        onRemove: () => {
+          const newWhere = { ...filters.where };
+          if (newWhere.finishedAt) {
+            const { lte, ...rest } = newWhere.finishedAt;
+            newWhere.finishedAt = Object.keys(rest).length > 0 ? rest : undefined;
+          }
+          if (!newWhere.finishedAt) delete newWhere.finishedAt;
+          onFilterChange({ ...filters, where: newWhere });
+        },
       });
     }
 
     return tags;
-  }, [filters]);
+  }, [filters, searchText, onFilterChange, onSearchChange]);
 
-  const handleRemoveFilter = (key: string) => {
-    // Handle nested keys like "createdAt.gte"
-    if (key.includes(".")) {
-      const [parentKey, childKey] = key.split(".");
-      onRemoveFilter(`where.${parentKey}.${childKey}`);
-    } else {
-      onRemoveFilter(`where.${key}`);
-    }
-  };
-
-  const hasFilters = filterTags.length > 0 || !!searchText;
-
-  if (!hasFilters) {
+  // Don't render if no active filters
+  if (filterTags.length === 0) {
     return null;
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText style={styles.title}>Filtros ativos:</ThemedText>
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={onClearAll}
-          style={styles.clearButton}
-        >
-          <ThemedText style={StyleSheet.flatten([styles.clearText, { color: colors.destructive }])}>
-            Limpar todos
-          </ThemedText>
-        </Button>
-      </View>
-
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tagsContainer}
+        contentContainerStyle={styles.scrollContent}
       >
-        {/* Search tag */}
-        {searchText && (
-          <Chip
-            label={`Busca: "${searchText}"`}
-            onRemove={onClearSearch}
-            variant="secondary"
-          />
-        )}
-
-        {/* Filter tags */}
         {filterTags.map((tag) => (
-          <Chip
+          <Badge
             key={tag.key}
-            label={`${tag.label}: ${tag.value}`}
-            onRemove={() => handleRemoveFilter(tag.key)}
             variant="secondary"
-          />
+            style={StyleSheet.flatten([
+              styles.filterTag,
+              {
+                backgroundColor: colors.secondary,
+                borderColor: colors.border,
+              }
+            ])}
+          >
+            <ThemedText style={[styles.filterTagText, { color: colors.secondaryForeground }]}>
+              {tag.label}
+            </ThemedText>
+            <TouchableOpacity
+              onPress={tag.onRemove}
+              style={styles.removeButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              activeOpacity={0.7}
+            >
+              <IconX size={14} color={colors.secondaryForeground} />
+            </TouchableOpacity>
+          </Badge>
         ))}
       </ScrollView>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    minHeight: 44,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  scrollContent: {
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
     alignItems: "center",
-    marginBottom: spacing.xs,
   },
-  title: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
-  },
-  clearButton: {
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-    minHeight: 20,
-  },
-  clearText: {
-    fontSize: fontSize.xs,
-  },
-  tagsContainer: {
+  filterTag: {
     flexDirection: "row",
+    alignItems: "center",
     gap: spacing.xs,
-    paddingRight: spacing.md,
+    paddingLeft: spacing.sm,
+    paddingRight: spacing.xs,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    minHeight: 32,
+  },
+  filterTagText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  removeButton: {
+    padding: spacing.xs,
+    marginLeft: spacing.xxs,
+    borderRadius: borderRadius.sm,
   },
 });

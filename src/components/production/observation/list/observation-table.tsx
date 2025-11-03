@@ -50,7 +50,6 @@ export function getDefaultVisibleColumns(): Set<string> {
   return new Set([
     "task.name",
     "description",
-    "filesCount",
     "createdAt"
   ]);
 }

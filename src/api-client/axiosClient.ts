@@ -736,7 +736,9 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
 
       // Handle authentication errors (401/403) - trigger logout and redirect to login
       // Skip auth error handler for login endpoint itself to avoid infinite loops
+      // Also skip during logout to prevent recursive issues
       if (
+        !isLoggingOut &&
         (errorInfo.category === ErrorCategory.AUTHENTICATION || errorInfo.category === ErrorCategory.AUTHORIZATION) &&
         globalAuthErrorHandler &&
         (errorInfo._statusCode === 401 || errorInfo._statusCode === 403) &&
@@ -767,25 +769,32 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
 
       // Show error notification with detailed messages
       if (finalConfig.enableNotifications && metadata) {
-        // Skip notifications for batch operations - they'll be handled by the dialog
-        const isBatchOperation = config?.url?.includes("/batch");
-        // Skip notifications for file uploads - they should be handled by upload components
-        const isFileUpload = config?.url?.includes("/files/upload");
+        // Skip notifications during logout
+        if (isLoggingOut) {
+          if (finalConfig.enableLogging) {
+            console.log("[API CLIENT] Suppressing error toast during logout:", errorInfo.message);
+          }
+        } else {
+          // Skip notifications for batch operations - they'll be handled by the dialog
+          const isBatchOperation = config?.url?.includes("/batch");
+          // Skip notifications for file uploads - they should be handled by upload components
+          const isFileUpload = config?.url?.includes("/files/upload");
 
-        // Check if we should show this toast (deduplication check)
-        const shouldShow = retryTracker.shouldShowToast(metadata.url, metadata.method, errorInfo.message);
+          // Check if we should show this toast (deduplication check)
+          const shouldShow = retryTracker.shouldShowToast(metadata.url, metadata.method, errorInfo.message);
 
-        if (!isBatchOperation && !isFileUpload && shouldShow) {
-          // For rate limit errors, show specialized message
-          if (errorInfo.category === ErrorCategory.RATE_LIMIT) {
-            notify.error("Limite de Requisições", errorInfo.message, {
-              duration: 8000,
-            });
-          } else if (errorInfo.errors && errorInfo.errors.length > 1) {
-            // For multiple errors, show all details
-            notify.error(errorInfo.title, errorInfo.message, { duration: 10000 });
-          } else {
-            notify.error(errorInfo.title, errorInfo.message);
+          if (!isBatchOperation && !isFileUpload && shouldShow) {
+            // For rate limit errors, show specialized message
+            if (errorInfo.category === ErrorCategory.RATE_LIMIT) {
+              notify.error("Limite de Requisições", errorInfo.message, {
+                duration: 8000,
+              });
+            } else if (errorInfo.errors && errorInfo.errors.length > 1) {
+              // For multiple errors, show all details
+              notify.error(errorInfo.title, errorInfo.message, { duration: 10000 });
+            } else {
+              notify.error(errorInfo.title, errorInfo.message);
+            }
           }
         }
       }
@@ -1191,6 +1200,9 @@ let globalTokenProvider: (() => string | null | Promise<string | null>) | undefi
 // Global authentication error handler
 let globalAuthErrorHandler: ((error: { statusCode: number; message: string; category: ErrorCategory }) => void) | undefined;
 
+// Flag to indicate if we're in the process of logging out
+let isLoggingOut = false;
+
 export const setAuthToken = (token: string | null): void => {
   // Get the singleton instance (lazy initialization)
   const instance = getSingletonInstance();
@@ -1323,6 +1335,21 @@ export const cancelAllRequests = (): void => {
 
 export const clearApiCache = (): void => {
   apiClient.clearCache?.();
+};
+
+// Set the logging out flag
+export const setIsLoggingOut = (value: boolean): void => {
+  isLoggingOut = value;
+  if (value) {
+    console.log("[API CLIENT] Logout initiated - suppressing error notifications");
+  } else {
+    console.log("[API CLIENT] Logout completed - restoring error notifications");
+  }
+};
+
+// Get the current logging out state
+export const getIsLoggingOut = (): boolean => {
+  return isLoggingOut;
 };
 
 // =====================

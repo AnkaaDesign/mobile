@@ -1,137 +1,199 @@
-import { useState, useMemo } from "react";
-import { View, FlatList, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
+import { useState, useMemo, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SearchBar } from "@/components/ui/search-bar";
-import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
-import { getDefaultVisibleColumns } from "@/components/production/task/list/column-visibility-manager";
-import { ColumnVisibilityDrawer } from "@/components/ui/column-visibility-drawer";
-import { ThemedText } from "@/components/ui/themed-text";
+import { HistoryTable, createColumnDefinitions } from "@/components/production/task/history/history-table";
+import { getDefaultVisibleColumns } from "@/components/production/task/history/history-column-visibility-drawer";
+import { ThemedView } from "@/components/ui/themed-view";
+import { ListActionButton } from "@/components/ui/list-action-button";
+import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useTasksInfiniteMobile } from "@/hooks/use-tasks-infinite-mobile";
 import { useTaskMutations } from '../../../../hooks';
-import { spacing } from "@/constants/design-system";
-import { TASK_STATUS, SECTOR_PRIVILEGES } from '../../../../constants';
-import { hasPrivilege, groupTasksBySector } from '../../../../utils';
-import type { Task } from '../../../../types';
-import { useDebounce } from "@/hooks/use-debounce";
+import { TASK_STATUS, SECTOR_PRIVILEGES, TASK_STATUS_LABELS } from '../../../../constants';
+import { hasPrivilege } from '../../../../utils';
 import { showToast } from "@/components/ui/toast";
-import { ActivityIndicator } from "react-native";
-
-// Type for sector group data
-type SectorGroup = {
-  sectorName: string;
-  tasks: Task[];
-};
-
-// Tab types
-type HistoryTab = "completed" | "cancelled" | "all";
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { HistoryFilterDrawerContent } from "@/components/production/task/history/history-filter-drawer-content";
+import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
 
 export default function ProductionHistoryScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { deleteAsync: deleteTask } = useTaskMutations();
+  const { deleteAsync: deleteTask, update } = useTaskMutations();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<HistoryTab>("all");
+  // State
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [displaySearchText, setDisplaySearchText] = useState("");
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(getDefaultVisibleColumns());
 
-  // Filter states
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // Column visibility state
-  const [showColumnManager, setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<Set<string>>(getDefaultVisibleColumns());
-
-  // Debounced search
-  const debouncedSearch = useDebounce(searchQuery, 500);
+  // Filter state - Default to show Finalizado, Faturado, and Quitado
+  const [filters, setFilters] = useState<any>({
+    status: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED],
+  });
 
   // Check user permissions
+  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+  const canViewPrice = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) || hasPrivilege(user, SECTOR_PRIVILEGES.LEADER);
   const isProduction = user?.sector?.name === "Produção";
 
-  // Build query params based on active tab
-  const queryParams = useMemo(() => {
-    const params: any = {
-      include: {
-        customer: true,
-        sector: true,
-        generalPainting: true,
-        services: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-      orderBy: { updatedAt: "desc" }, // Show most recently updated first
+  // Build query params
+  const buildWhereClause = useCallback(() => {
+    const where: any = {};
+
+    // Always show completed and cancelled tasks (no tabs)
+    where.status = {
+      in: [TASK_STATUS.COMPLETED, TASK_STATUS.CANCELLED],
     };
 
-    const whereConditions: any[] = [];
-
-    // Status filter based on active tab
-    if (activeTab === "completed") {
-      whereConditions.push({
-        status: TASK_STATUS.COMPLETED,
-      });
-    } else if (activeTab === "cancelled") {
-      whereConditions.push({
-        status: TASK_STATUS.CANCELLED,
-      });
-    } else {
-      // "all" tab shows both completed and cancelled
-      whereConditions.push({
-        status: {
-          in: [TASK_STATUS.COMPLETED, TASK_STATUS.CANCELLED],
-        },
-      });
+    // Apply status filter if set
+    if (filters.status?.length) {
+      where.status = {
+        in: filters.status,
+      };
     }
 
-    // Search filter
-    if (debouncedSearch) {
-      params.search = debouncedSearch;
+    // Apply finished date range filter
+    if (filters.finishedDateRange) {
+      where.finishedAt = {};
+      if (filters.finishedDateRange.from) {
+        where.finishedAt.gte = filters.finishedDateRange.from;
+      }
+      if (filters.finishedDateRange.to) {
+        where.finishedAt.lte = filters.finishedDateRange.to;
+      }
+    }
+
+    // Apply sector filter
+    if (filters.sectorIds?.length) {
+      where.sectorId = {
+        in: filters.sectorIds,
+      };
+    }
+
+    // Apply customer filter
+    if (filters.customerIds?.length) {
+      where.customerId = {
+        in: filters.customerIds,
+      };
+    }
+
+    // Apply assignee filter (users who completed the task)
+    if (filters.assigneeIds?.length) {
+      where.updatedById = {
+        in: filters.assigneeIds,
+      };
+    }
+
+    // Apply price range filter
+    if (filters.priceRange) {
+      where.price = {};
+      if (filters.priceRange.from) {
+        where.price.gte = filters.priceRange.from;
+      }
+      if (filters.priceRange.to) {
+        where.price.lte = filters.priceRange.to;
+      }
     }
 
     // Sector-based filtering for production users
     if (isProduction && !hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN)) {
-      whereConditions.push({
-        OR: [
-          { sectorId: user?.sectorId }, // Tasks assigned to user's sector
-          { sectorId: null }, // Unassigned tasks
-        ],
-      });
+      where.OR = [
+        { sectorId: user?.sectorId },
+        { sectorId: null },
+      ];
     }
 
-    if (whereConditions.length > 0) {
-      params.where = whereConditions.length === 1 ? whereConditions[0] : { AND: whereConditions };
-    }
+    return where;
+  }, [filters, isProduction, user]);
 
-    return params;
-  }, [activeTab, debouncedSearch, isProduction, user?.sectorId]);
+  const queryParams = useMemo(() => ({
+    include: {
+      customer: true,
+      sector: true,
+      generalPainting: true,
+      updatedBy: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      services: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: { finishedAt: "desc" },
+    ...(searchText ? { searchingFor: searchText } : {}),
+    where: buildWhereClause(),
+  }), [searchText, buildWhereClause]);
 
   // Fetch tasks with infinite scroll
-  const { items, loadMore: fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error, refetch } = useTasksInfiniteMobile(queryParams);
-
-  // Flatten and group tasks by sector
-  const tasksBySector = useMemo(() => {
-    const grouped = groupTasksBySector(items);
-    return Object.entries(grouped).map(([sectorName, tasks]) => ({
-      sectorName,
-      tasks,
-    }));
-  }, [items]);
+  const {
+    items: tasks,
+    loadMore,
+    hasNextPage: canLoadMore,
+    isFetchingNextPage,
+    isLoading,
+    isRefetching,
+    refetch,
+    totalItemsLoaded,
+    totalCount,
+  } = useTasksInfiniteMobile(queryParams);
 
   // Column definitions
-  const columnDefinitions = useMemo(() => createColumnDefinitions(), []);
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.status?.length) count++;
+    if (filters.finishedDateRange) count++;
+    if (filters.sectorIds?.length) count++;
+    if (filters.customerIds?.length) count++;
+    if (filters.assigneeIds?.length) count++;
+    if (filters.priceRange) count++;
+    return count;
+  }, [filters]);
 
   // Handlers
-  const handleLoadMore = () => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
     }
-  };
+  }, [refetch]);
+
+  const handleSearch = useCallback((text: string) => {
+    setSearchText(text);
+  }, []);
+
+  const handleDisplaySearchChange = useCallback((text: string) => {
+    setDisplaySearchText(text);
+  }, []);
 
   const handleTaskPress = (taskId: string) => {
     router.push(`/producao/cronograma/detalhes/${taskId}` as any);
+  };
+
+  const handleEditTask = (taskId: string) => {
+    if (!canEdit) {
+      showToast({ message: "Você não tem permissão para editar tarefas", type: "error" });
+      return;
+    }
+    router.push(`/producao/cronograma/editar/${taskId}`);
   };
 
   const handleDeleteTask = async (taskId: string) => {
@@ -151,134 +213,142 @@ export default function ProductionHistoryScreen() {
     }
   };
 
-  // Render list header with tabs
-  const ListHeaderComponent = () => (
-    <View style={styles.header}>
-      <ThemedText size="2xl" weight="bold" style={styles.title}>
-        Histórico de Tarefas
-      </ThemedText>
-
-      {/* Tabs */}
-      <View style={[styles.tabContainer, { backgroundColor: isDark ? colors.background : "#f3f4f6" }]}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "all" && { backgroundColor: colors.primary }]}
-          onPress={() => setActiveTab("all")}
-        >
-          <ThemedText style={[styles.tabText, activeTab === "all" && styles.activeTabText]}>Todos</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "completed" && { backgroundColor: colors.primary }]}
-          onPress={() => setActiveTab("completed")}
-        >
-          <ThemedText style={[styles.tabText, activeTab === "completed" && styles.activeTabText]}>Finalizadas</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "cancelled" && { backgroundColor: colors.primary }]}
-          onPress={() => setActiveTab("cancelled")}
-        >
-          <ThemedText style={[styles.tabText, activeTab === "cancelled" && styles.activeTabText]}>Canceladas</ThemedText>
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Bar */}
-      <SearchBar
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        placeholder="Buscar por cliente, placa, chassi..."
-        style={styles.searchBar}
-      />
-
-      {/* Action Buttons */}
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: colors.background }]}
-          onPress={() => setShowColumnManager(true)}
-        >
-          <ThemedText style={styles.actionButtonText}>Colunas</ThemedText>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderSectorGroup = ({ item }: { item: SectorGroup }) => (
-    <View key={item.sectorName} style={styles.sectorGroup}>
-      <ThemedText size="lg" weight="semibold" style={styles.sectorTitle}>
-        {item.sectorName}
-      </ThemedText>
-      <TaskTable
-        tasks={item.tasks}
-        visibleColumnKeys={Array.from(visibleColumnKeys)}
-        onTaskPress={handleTaskPress}
-        onTaskDelete={canDelete ? handleDeleteTask : undefined}
-      />
-    </View>
-  );
-
-  const ListFooterComponent = () => {
-    if (isFetchingNextPage) {
-      return (
-        <View style={styles.loadingMore}>
-          <ActivityIndicator size="small" color={colors.primary} />
-        </View>
-      );
+  const handleSectorChange = async (taskId: string, sectorId: string) => {
+    if (!canEdit) {
+      showToast({ message: "Você não tem permissão para alterar o setor", type: "error" });
+      return;
     }
-    return null;
+
+    try {
+      await update({ id: taskId, data: { sectorId } });
+      showToast({ message: "Setor alterado com sucesso", type: "success" });
+    } catch (error) {
+      showToast({ message: "Erro ao alterar setor", type: "error" });
+      throw error; // Re-throw to let the modal know there was an error
+    }
   };
 
-  const ListEmptyComponent = () => {
-    if (isLoading) {
-      return (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={styles.emptyStateText}>Carregando histórico...</ThemedText>
-        </View>
-      );
+  const handleStatusChange = async (taskId: string, newStatus: TASK_STATUS) => {
+    if (!canEdit) {
+      showToast({ message: "Você não tem permissão para alterar o status", type: "error" });
+      return;
     }
 
-    if (isError) {
-      return (
-        <View style={styles.emptyState}>
-          <ThemedText style={styles.emptyStateText}>Erro ao carregar histórico</ThemedText>
-          <ThemedText style={styles.errorText}>{error?.message}</ThemedText>
-        </View>
-      );
-    }
+    try {
+      const updateData: any = { status: newStatus };
 
-    return (
-      <View style={styles.emptyState}>
-        <ThemedText style={styles.emptyStateText}>
-          {activeTab === "completed" && "Nenhuma tarefa finalizada encontrada"}
-          {activeTab === "cancelled" && "Nenhuma tarefa cancelada encontrada"}
-          {activeTab === "all" && "Nenhuma tarefa no histórico"}
-        </ThemedText>
-      </View>
-    );
+      // Add timestamps based on status
+      if (newStatus === TASK_STATUS.IN_PRODUCTION) {
+        updateData.startedAt = new Date();
+      } else if (newStatus === TASK_STATUS.COMPLETED) {
+        updateData.finishedAt = new Date();
+      }
+
+      await update({ id: taskId, data: updateData });
+      showToast({ message: `Status alterado para ${TASK_STATUS_LABELS[newStatus as keyof typeof TASK_STATUS_LABELS]}`, type: "success" });
+    } catch (error) {
+      showToast({ message: "Erro ao alterar status", type: "error" });
+      throw error; // Re-throw to let the modal know there was an error
+    }
   };
+
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumns(newColumns);
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters({
+      status: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED],
+    });
+  }, []);
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <HistoryFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+        canViewPrice={canViewPrice}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount, canViewPrice]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <ColumnVisibilityDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+        defaultColumns={getDefaultVisibleColumns()}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+
+  // Only show skeleton on initial load
+  const isInitialLoad = isLoading && tasks.length === 0;
+
+  const hasTasks = Array.isArray(tasks) && tasks.length > 0;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <FlatList
-        data={tasksBySector}
-        renderItem={renderSectorGroup}
-        keyExtractor={(item) => item.sectorName || "unknown-sector"}
-        ListHeaderComponent={ListHeaderComponent}
-        ListFooterComponent={ListFooterComponent}
-        ListEmptyComponent={ListEmptyComponent}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        refreshControl={<RefreshControl refreshing={isLoading && !isFetchingNextPage} onRefresh={refetch} colors={[colors.primary]} />}
-        contentContainerStyle={tasksBySector.length === 0 ? styles.emptyListContent : undefined}
+    <UtilityDrawerWrapper>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search and Action Buttons */}
+        <View style={styles.searchContainer}>
+          <SearchBar
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar por cliente, placa, chassi..."
+            style={styles.searchBar}
+            debounceMs={300}
+            loading={isRefetching && !isFetchingNextPage}
+          />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumns.size}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
+        </View>
+
+      {/* Table */}
+      <HistoryTable
+        tasks={tasks}
+        visibleColumnKeys={Array.from(visibleColumns)}
+        onTaskPress={handleTaskPress}
+        onTaskEdit={canEdit ? handleEditTask : undefined}
+        onTaskDelete={canDelete ? handleDeleteTask : undefined}
+        onTaskSectorChange={canEdit ? handleSectorChange : undefined}
+        onTaskStatusChange={canEdit ? handleStatusChange : undefined}
+        onRefresh={handleRefresh}
+        refreshing={refreshing || isRefetching}
+        loading={isInitialLoad}
+        loadingMore={isFetchingNextPage}
+        onEndReached={canLoadMore ? loadMore : undefined}
+        enableSwipeActions={canEdit || canDelete}
       />
 
-      {/* Column Visibility Manager */}
-      <ColumnVisibilityDrawer
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-        columns={columnDefinitions}
-        visibleColumns={visibleColumnKeys}
-        onVisibilityChange={setVisibleColumnKeys}
-      />
-    </View>
+      {/* Items count - Pagination display */}
+      {hasTasks && (
+        <ItemsCountDisplay
+          loadedCount={totalItemsLoaded}
+          totalCount={totalCount}
+          isLoading={isFetchingNextPage}
+        />
+      )}
+
+      </ThemedView>
+    </UtilityDrawerWrapper>
   );
 }
 
@@ -286,81 +356,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    padding: spacing.md,
-    gap: spacing.md,
-  },
-  title: {
-    marginBottom: spacing.sm,
-  },
-  tabContainer: {
+  searchContainer: {
     flexDirection: "row",
-    borderRadius: 8,
-    padding: 4,
-    gap: 4,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 8,
     alignItems: "center",
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  activeTabText: {
-    color: "#fff",
-    fontWeight: "600",
   },
   searchBar: {
-    marginTop: spacing.sm,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  actionButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  sectorGroup: {
-    marginBottom: spacing.lg,
-    paddingHorizontal: spacing.md,
-  },
-  sectorTitle: {
-    marginBottom: spacing.md,
-  },
-  loadingMore: {
-    paddingVertical: spacing.lg,
-    alignItems: "center",
-  },
-  emptyState: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: spacing.xl * 2,
   },
-  emptyStateText: {
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: spacing.md,
-  },
-  errorText: {
-    fontSize: 14,
-    textAlign: "center",
-    marginTop: spacing.sm,
-    opacity: 0.7,
-  },
-  emptyListContent: {
-    flexGrow: 1,
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 8,
   },
 });

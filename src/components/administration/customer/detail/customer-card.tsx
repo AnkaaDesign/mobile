@@ -32,7 +32,7 @@ export function CustomerCard({ customer }: CustomerCardProps) {
             <View style={styles.logoSection}>
               <View style={StyleSheet.flatten([styles.logoContainer, { borderColor: colors.muted, backgroundColor: colors.muted + "30" }])}>
                 <Image
-                  source={{ uri: getFileUrl(customer.logo) }}
+                  source={{ uri: getFileUrl(customer.logo!) }}
                   style={styles.logoImage}
                   resizeMode="contain"
                 />

@@ -1,103 +1,46 @@
-import React, { useState, useMemo } from "react";
-import { View, RefreshControl, ActivityIndicator, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import React, { useState, useMemo, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
-import { IconButton } from "@/components/ui/icon-button";
 import { FAB } from "@/components/ui/fab";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { ListActionButton } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useCutsInfiniteMobile } from "@/hooks/use-cuts-infinite-mobile";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES, CUT_STATUS, CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from '../../../../constants';
-import { hasPrivilege, formatDateTime } from '../../../../utils';
+import { spacing } from "@/constants/design-system";
+import { SECTOR_PRIVILEGES, CUT_STATUS, routes } from '@/constants';
+import { hasPrivilege } from '@/utils';
 import { showToast } from "@/components/ui/toast";
 import { useDebounce } from "@/hooks/use-debounce";
-import type { Cut } from '../../../../types';
-import { FilterModal, FilterTag } from "@/components/ui/filter-modal";
+import type { Cut } from '@/types';
 import { Icon } from "@/components/ui/icon";
-
-// Get badge variant for cut status
-const getCutStatusBadgeVariant = (status: CUT_STATUS): "default" | "secondary" | "success" | "warning" | "destructive" => {
-  switch (status) {
-    case CUT_STATUS.COMPLETED:
-      return "success";
-    // Fixed: IN_PROGRESS and CANCELLED don't exist, using CUTTING instead
-    case CUT_STATUS.CUTTING:
-      return "default";
-    case CUT_STATUS.PENDING:
-      return "warning";
-    default:
-      return "secondary";
-  }
-};
-
-interface CutCardProps {
-  cut: Cut;
-  onPress: () => void;
-}
-
-const CutCard: React.FC<CutCardProps> = ({ cut, onPress }) => {
-  const { colors } = useTheme();
-
-  return (
-    <TouchableOpacity onPress={onPress}>
-      <Card style={styles.cutCard}>
-        <View style={styles.cutHeader}>
-          <View style={styles.cutInfo}>
-            <ThemedText style={styles.cutTitle} numberOfLines={1}>
-              {(cut as any).file?.filename || "Arquivo de recorte"}
-            </ThemedText>
-            <ThemedText style={styles.cutSubtitle} numberOfLines={1}>
-              {(cut as any).task?.name || "Tarefa não informada"}
-            </ThemedText>
-          </View>
-          <Badge variant={getCutStatusBadgeVariant(cut.status as CUT_STATUS)}>
-            {CUT_STATUS_LABELS[cut.status as keyof typeof CUT_STATUS_LABELS]}
-          </Badge>
-        </View>
-
-        <View style={styles.cutDetails}>
-          <View style={styles.cutDetailItem}>
-            <Icon name="scissors" size="sm" color={colors.mutedForeground} />
-            <ThemedText style={styles.cutDetailText}>
-              {CUT_TYPE_LABELS[(cut as any).type as keyof typeof CUT_TYPE_LABELS]}
-            </ThemedText>
-          </View>
-          <View style={styles.cutDetailItem}>
-            <Icon name="map-pin" size="sm" color={colors.mutedForeground} />
-            <ThemedText style={styles.cutDetailText}>
-              {CUT_ORIGIN_LABELS[(cut as any).origin as keyof typeof CUT_ORIGIN_LABELS]}
-            </ThemedText>
-          </View>
-        </View>
-
-        {cut.createdAt && (
-          <View style={styles.cutFooter}>
-            <Icon name="clock" size="sm" color={colors.mutedForeground} />
-            <ThemedText style={styles.cutFooterText}>
-              Criado em {formatDateTime(cut.createdAt)}
-            </ThemedText>
-          </View>
-        )}
-      </Card>
-    </TouchableOpacity>
-  );
-};
+import { CutsTable, createColumnDefinitions } from "@/components/production/cuts/list/cuts-table";
+import { CutsFilterDrawerContent } from "@/components/production/cuts/list/cuts-filter-drawer-content";
+import { CutsColumnDrawerContent, getDefaultVisibleColumns } from "@/components/production/cuts/list/cuts-column-drawer-content";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import type { SortConfig } from "@/lib/sort-utils";
+import { applyMultiSort } from "@/lib/sort-utils";
 
 export default function CuttingListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const [_refreshing, setRefreshing] = useState(false);
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<CUT_STATUS[]>([
-    CUT_STATUS.PENDING,
-    // Fixed: IN_PROGRESS doesn't exist, using CUTTING instead
-    CUT_STATUS.CUTTING,
-  ]);
+  const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(() => getDefaultVisibleColumns());
+  const [filters, setFilters] = useState<{
+    status?: string[];
+    type?: string[];
+    origin?: string[];
+    taskId?: string;
+    dateRange?: { gte?: Date; lte?: Date };
+  }>({
+    status: [CUT_STATUS.PENDING, CUT_STATUS.CUTTING],
+  });
 
   // Debounced search
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -105,6 +48,19 @@ export default function CuttingListScreen() {
   // Check permissions
   const canCreate = hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) || hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   const canView = hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) || hasPrivilege(user, SECTOR_PRIVILEGES.LEADER) || hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) || hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+  const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.status && filters.status.length > 0) count++;
+    if (filters.type && filters.type.length > 0) count++;
+    if (filters.origin && filters.origin.length > 0) count++;
+    if (filters.taskId) count++;
+    if (filters.dateRange?.gte || filters.dateRange?.lte) count++;
+    return count;
+  }, [filters]);
 
   // Build query params
   const queryParams = useMemo(() => {
@@ -124,8 +80,33 @@ export default function CuttingListScreen() {
     const whereConditions: any[] = [];
 
     // Status filter
-    if (selectedStatus.length > 0) {
-      whereConditions.push({ status: { in: selectedStatus } });
+    if (filters.status && filters.status.length > 0) {
+      whereConditions.push({ status: { in: filters.status } });
+    }
+
+    // Type filter
+    if (filters.type && filters.type.length > 0) {
+      whereConditions.push({ type: { in: filters.type } });
+    }
+
+    // Origin filter
+    if (filters.origin && filters.origin.length > 0) {
+      whereConditions.push({ origin: { in: filters.origin } });
+    }
+
+    // Task filter
+    if (filters.taskId) {
+      whereConditions.push({ taskId: filters.taskId });
+    }
+
+    // Date range filter
+    if (filters.dateRange) {
+      const dateFilter: any = {};
+      if (filters.dateRange.gte) dateFilter.gte = filters.dateRange.gte;
+      if (filters.dateRange.lte) dateFilter.lte = filters.dateRange.lte;
+      if (Object.keys(dateFilter).length > 0) {
+        whereConditions.push({ createdAt: dateFilter });
+      }
     }
 
     // Search filter
@@ -143,7 +124,7 @@ export default function CuttingListScreen() {
     }
 
     return params;
-  }, [selectedStatus, debouncedSearch]);
+  }, [filters, debouncedSearch]);
 
   // Fetch cuts
   const {
@@ -157,168 +138,174 @@ export default function CuttingListScreen() {
     isRefetching,
   } = useCutsInfiniteMobile({ ...queryParams, enabled: canView });
 
+  // Apply client-side sorting
+  const sortedCuts = useMemo(() => {
+    if (sortConfigs.length === 0) return cuts;
+    return applyMultiSort(cuts, sortConfigs);
+  }, [cuts, sortConfigs]);
+
   // Handle refresh
   const handleRefresh = async () => {
-    setRefreshing(true);
     await refetch();
-    setRefreshing(false);
     showToast({ message: "Lista atualizada", type: "success" });
   };
 
   // Handle cut press
-  const handleCutPress = (cutId: string) => {
-    router.push(`/producao/recorte/detalhes/${cutId}` as any);
-  };
+  const handleCutPress = useCallback((cutId: string) => {
+    router.push(routes.production.cutting.details(cutId) as any);
+  }, []);
 
-  // Filter modal content
-  const renderFilterModal = () => (
-    <FilterModal
-      visible={showFilters}
-      onClose={() => setShowFilters(false)}
-      title="Filtrar Cortes"
-    >
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Status</ThemedText>
-        <View style={styles.filterOptions}>
-          {Object.values(CUT_STATUS).map((status) => (
-            <FilterTag
-              key={status}
-              label={CUT_STATUS_LABELS[status as keyof typeof CUT_STATUS_LABELS]}
-              selected={selectedStatus.includes(status)}
-              onPress={() => {
-                if (selectedStatus.includes(status)) {
-                  setSelectedStatus(selectedStatus.filter((s) => s !== status));
-                } else {
-                  setSelectedStatus([...selectedStatus, status]);
-                }
-              }}
-            />
-          ))}
-        </View>
-      </View>
-    </FilterModal>
-  );
+  // Handle cut edit
+  const handleCutEdit = useCallback((cutId: string) => {
+    router.push(routes.production.cutting.edit(cutId) as any);
+  }, []);
 
-  // Render empty state
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Icon name="scissors" size={64} color={colors.mutedForeground} />
-      <ThemedText style={styles.emptyTitle}>Nenhum corte encontrado</ThemedText>
-      <ThemedText style={styles.emptyMessage}>
-        {searchQuery ? "Tente ajustar seus filtros de busca" : "Não há cortes registrados"}
-      </ThemedText>
-    </View>
-  );
+  // Handle cut delete
+  const handleCutDelete = useCallback(async (cutId: string) => {
+    // TODO: Implement delete logic
+    showToast({ message: "Funcionalidade em desenvolvimento", type: "info" });
+  }, []);
 
-  // Render footer
-  const renderFooter = () => {
-    if (!isFetchingNextPage) return null;
-    return (
-      <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={colors.primary} />
-        <ThemedText style={styles.footerLoaderText}>Carregando mais...</ThemedText>
-      </View>
-    );
-  };
+  // Handle filter changes
+  const handleFiltersChange = useCallback((newFilters: any) => {
+    setFilters(newFilters);
+  }, []);
+
+  // Handle clear filters
+  const handleClearFilters = useCallback(() => {
+    setFilters({
+      status: [CUT_STATUS.PENDING, CUT_STATUS.CUTTING],
+    });
+  }, []);
+
+  // Handle sort change
+  const handleSortChange = useCallback((configs: SortConfig[]) => {
+    setSortConfigs(configs);
+  }, []);
+
+  // Handle column visibility change
+  const handleVisibilityChange = useCallback((columns: Set<string>) => {
+    setVisibleColumns(columns);
+  }, []);
+
+  // Open filter drawer
+  const handleOpenFilterDrawer = useCallback(() => {
+    openFilterDrawer(() => (
+      <CutsFilterDrawerContent
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [filters, handleFiltersChange, handleClearFilters, activeFiltersCount, openFilterDrawer]);
+
+  // Open column drawer
+  const handleOpenColumnDrawer = useCallback(() => {
+    const allColumns = createColumnDefinitions();
+    openColumnDrawer(() => (
+      <CutsColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleVisibilityChange}
+      />
+    ));
+  }, [visibleColumns, handleVisibilityChange, openColumnDrawer]);
 
   if (!canView) {
     return (
-      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
-        <View style={styles.centerContent}>
-          <Icon name="lock" size={48} color={colors.mutedForeground} />
-          <ThemedText style={styles.errorTitle}>Acesso Negado</ThemedText>
-          <ThemedText style={styles.errorMessage}>
-            Você não tem permissão para visualizar cortes.
-          </ThemedText>
+      <UtilityDrawerWrapper>
+        <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
+          <View style={styles.centerContent}>
+            <Icon name="lock" size={48} color={colors.mutedForeground} />
+            <ThemedText style={styles.errorTitle}>Acesso Negado</ThemedText>
+            <ThemedText style={styles.errorMessage}>
+              Você não tem permissão para visualizar cortes.
+            </ThemedText>
+          </View>
         </View>
-      </View>
+      </UtilityDrawerWrapper>
     );
   }
 
   if (error) {
     return (
-      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
-        <View style={styles.centerContent}>
-          <Icon name="alert-circle" size={48} color={colors.destructive} />
-          <ThemedText style={styles.errorTitle}>Erro ao carregar cortes</ThemedText>
-          <ThemedText style={styles.errorMessage}>{(error as Error).message}</ThemedText>
-          <IconButton
-            name="refresh-cw"
-            variant="default"
-            onPress={() => refetch()}
-            style={styles.retryButton}
-          />
+      <UtilityDrawerWrapper>
+        <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
+          <View style={styles.centerContent}>
+            <Icon name="alert-circle" size={48} color={colors.destructive} />
+            <ThemedText style={styles.errorTitle}>Erro ao carregar cortes</ThemedText>
+            <ThemedText style={styles.errorMessage}>{(error as Error).message}</ThemedText>
+          </View>
         </View>
-      </View>
+      </UtilityDrawerWrapper>
     );
   }
 
   return (
-    <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
-      {/* Header */}
-      <View style={StyleSheet.flatten([styles.header, { backgroundColor: colors.card }])}>
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Buscar cortes..."
-          style={styles.searchBar}
-        />
-        <View style={styles.headerActions}>
-          <IconButton
-            name="filter"
-            variant="default"
-            onPress={() => setShowFilters(true)}
+    <UtilityDrawerWrapper>
+      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
+        {/* Header */}
+        <View style={styles.header}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Buscar cortes..."
+            style={styles.searchBar}
           />
+          <View style={styles.headerActions}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumnDrawer}
+              badgeCount={visibleColumns.size}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilterDrawer}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
         </View>
-      </View>
 
-      {/* Content */}
-      {isLoading ? (
-        <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={styles.loadingText}>Carregando cortes...</ThemedText>
-        </View>
-      ) : (
-        <FlatList
-          data={cuts}
-          renderItem={({ item }) => (
-            <CutCard
-              cut={item}
-              onPress={() => handleCutPress(item.id)}
-            />
-          )}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={renderEmpty}
-          ListFooterComponent={renderFooter}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={handleRefresh}
-              tintColor={colors.primary}
-            />
-          }
+        {/* Table */}
+        <CutsTable
+          cuts={sortedCuts}
+          onCutPress={handleCutPress}
+          onCutEdit={canEdit ? handleCutEdit : undefined}
+          onCutDelete={canDelete ? handleCutDelete : undefined}
+          onRefresh={handleRefresh}
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) {
               fetchNextPage();
             }
           }}
-          onEndReachedThreshold={0.5}
+          onPrefetch={() => {
+            if (hasNextPage && !isFetchingNextPage) {
+              fetchNextPage();
+            }
+          }}
+          refreshing={isRefetching}
+          loading={isLoading}
+          loadingMore={isFetchingNextPage}
+          sortConfigs={sortConfigs}
+          onSort={handleSortChange}
+          visibleColumnKeys={Array.from(visibleColumns)}
+          enableSwipeActions={true}
         />
-      )}
 
-      {/* FAB */}
-      {canCreate && (
-        <FAB
-          icon="plus"
-          onPress={() => router.push("/producao/recorte/cadastrar" as any)}
-          style={styles.fab}
-        />
-      )}
-
-      {/* Filter modal */}
-      {renderFilterModal()}
-    </View>
+        {/* FAB */}
+        {canCreate && (
+          <FAB
+            icon="plus"
+            onPress={() => router.push(routes.production.cutting.create as any)}
+            style={styles.fab}
+          />
+        )}
+      </View>
+    </UtilityDrawerWrapper>
   );
 }
 
@@ -329,139 +316,33 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 8,
   },
   searchBar: {
     flex: 1,
-    marginRight: spacing.sm,
   },
   headerActions: {
     flexDirection: "row",
-    gap: spacing.xs,
-  },
-  listContent: {
-    padding: spacing.md,
-  },
-  cutCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  cutHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.sm,
-  },
-  cutInfo: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  cutTitle: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-    marginBottom: 2,
-  },
-  cutSubtitle: {
-    fontSize: fontSize.sm,
-    opacity: 0.6,
-  },
-  cutDetails: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  cutDetailItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  cutDetailText: {
-    fontSize: fontSize.sm,
-    opacity: 0.8,
-  },
-  cutFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.1)",
-  },
-  cutFooterText: {
-    fontSize: fontSize.xs,
-    opacity: 0.6,
+    gap: 8,
   },
   centerContent: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: spacing.xl,
-  },
-  loadingText: {
-    marginTop: spacing.md,
+    gap: spacing.md,
   },
   errorTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
+    fontSize: 20,
+    fontWeight: "700",
     textAlign: "center",
   },
   errorMessage: {
-    fontSize: fontSize.base,
+    fontSize: 14,
     opacity: 0.6,
     textAlign: "center",
-    marginBottom: spacing.md,
-  },
-  retryButton: {
-    marginTop: spacing.sm,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: spacing.xxl,
-  },
-  emptyTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
-  },
-  emptyMessage: {
-    fontSize: fontSize.base,
-    opacity: 0.6,
-    textAlign: "center",
-  },
-  footerLoader: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  footerLoaderText: {
-    fontSize: fontSize.sm,
-    opacity: 0.6,
-  },
-  filterSection: {
-    marginBottom: spacing.lg,
-  },
-  filterLabel: {
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.sm,
-  },
-  filterOptions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
   },
   fab: {
     position: "absolute",

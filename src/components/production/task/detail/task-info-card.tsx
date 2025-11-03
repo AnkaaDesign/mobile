@@ -9,6 +9,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 
 import type { Task } from '../../../../types';
 import { TaskStatusBadge } from "../list/task-status-badge";
+import { formatChassis } from "@/utils";
 
 import {
   IconHash,
@@ -106,7 +107,7 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
             <IconBarcode size={20} color={colors.mutedForeground} />
             <View style={styles.infoText}>
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Nº Chassi</ThemedText>
-              <ThemedText style={[styles.value, styles.monoValue, { color: colors.foreground }]}>{task.chassisNumber}</ThemedText>
+              <ThemedText style={[styles.value, styles.monoValue, { color: colors.foreground }]}>{formatChassis(task.chassisNumber)}</ThemedText>
             </View>
           </View>
         )}

@@ -149,9 +149,10 @@ export const ROUTE_PRIVILEGES: Record<
   // Cutting (Recorte)
   '/(tabs)/producao/recorte': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
   '/(tabs)/producao/recorte/listar': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
-  '/(tabs)/producao/recorte/cadastrar': ['PRODUCTION', 'WAREHOUSE'],
-  '/(tabs)/producao/recorte/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
-  '/(tabs)/producao/recorte/editar/[id]': ['PRODUCTION', 'WAREHOUSE'],
+  '/(tabs)/producao/recorte/plano-de-recorte/cadastrar': ['PRODUCTION', 'WAREHOUSE'],
+  '/(tabs)/producao/recorte/plano-de-recorte/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
+  '/(tabs)/producao/recorte/plano-de-recorte/editar/[id]': ['PRODUCTION', 'WAREHOUSE'],
+  '/(tabs)/producao/recorte/plano-de-recorte/listar': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
   
   // Garages
   '/(tabs)/producao/garagens': ['PRODUCTION', 'LOGISTIC', 'LEADER', 'ADMIN'],

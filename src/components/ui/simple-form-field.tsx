@@ -50,7 +50,7 @@ export function SimpleFormField({
       {children}
 
       {error && (
-        <ThemedText style={{ fontSize: 12, color: destructiveColor, marginTop: 4 }}>
+        <ThemedText variant="destructive" style={{ fontSize: 12, marginTop: 4 }}>
           {typeof error === "boolean" ? "Campo obrigatório" : error.message}
         </ThemedText>
       )}

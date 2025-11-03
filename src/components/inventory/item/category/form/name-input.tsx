@@ -19,7 +19,7 @@ export function NameInput({ disabled, required = false }: NameInputProps) {
   return (
     <View style={styles.container}>
       <Label nativeID="name" style={{ marginBottom: spacing.xs }}>
-        Nome da Categoria {required && <ThemedText style={{ color: "#ef4444" }}>*</ThemedText>}
+        Nome da Categoria {required && <ThemedText variant="destructive">*</ThemedText>}
       </Label>
       <Controller
         control={control}

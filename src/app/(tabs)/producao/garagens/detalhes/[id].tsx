@@ -15,8 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import {
-  
-  IconRefresh,
+
   IconEdit,
   IconTrash,
   IconRuler2,
@@ -157,22 +156,14 @@ export default function GarageDetailsScreen() {
     >
       <View style={styles.content}>
         {/* Garage Name Header Card */}
-        <Card>
-          <CardContent style={styles.headerContent}>
+        <Card style={styles.headerCard}>
+          <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
               <ThemedText style={StyleSheet.flatten([styles.garageTitle, { color: colors.foreground }])} numberOfLines={2}>
                 {garage.name}
               </ThemedText>
             </View>
             <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={handleRefresh}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-                activeOpacity={0.7}
-                disabled={refreshing}
-              >
-                <IconRefresh size={18} color={colors.foreground} />
-              </TouchableOpacity>
               {canEdit && (
                 <TouchableOpacity
                   onPress={handleEdit}
@@ -192,7 +183,7 @@ export default function GarageDetailsScreen() {
                 </TouchableOpacity>
               )}
             </View>
-          </CardContent>
+          </View>
         </Card>
 
         {/* Specifications Card */}
@@ -477,14 +468,18 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.xs,
   },
   headerLeft: {
     flex: 1,

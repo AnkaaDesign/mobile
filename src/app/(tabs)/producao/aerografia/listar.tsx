@@ -1,35 +1,45 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
-import { Stack, router } from "expo-router";
+import React, { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAirbrushingMutations } from '../../../../hooks';
+import { useAirbrushingsInfinite } from '../../../../hooks';
 import { useAuth } from "@/contexts/auth-context";
-import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
-import { ThemedView } from "@/components/ui/themed-view";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
-import { ErrorScreen } from "@/components/ui/error-screen";
-import { SearchBar } from "@/components/ui/search-bar";
-import { FAB } from "@/components/ui/fab";
-import { IconPlus, IconFilter } from "@tabler/icons-react-native";
-import { useAirbrushingsInfinite, useAirbrushingMutations } from '../../../../hooks';
 import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
-import type { AirbrushingGetManyFormData } from '../../../../schemas';
-import { AirbrushingTable } from "@/components/production/airbrushing/list/airbrushing-table";
-import { AirbrushingFilterModal } from "@/components/production/airbrushing/list/airbrushing-filter-modal";
+
+import { ThemedView, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
+import { AirbrushingTable, createColumnDefinitions } from "@/components/production/airbrushing/list/airbrushing-table";
+
 import { AirbrushingFilterTags } from "@/components/production/airbrushing/list/airbrushing-filter-tags";
+import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
+import { ItemsCountDisplay } from "@/components/ui/items-count-display";
+import { AirbrushingListSkeleton } from "@/components/production/airbrushing/skeleton/airbrushing-list-skeleton";
+import { useTheme } from "@/lib/theme";
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+
+// New hooks
+import { useTableSort } from "@/hooks/useTableSort";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+
+// Import drawer content components
+import { AirbrushingFilterDrawerContent } from "@/components/production/airbrushing/list/airbrushing-filter-drawer-content";
+import { AirbrushingColumnDrawerContent } from "@/components/production/airbrushing/list/airbrushing-column-drawer-content";
 
 export default function AirbrushingListScreen() {
+  const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const [searchText, setSearchText] = useState("");
-  const [debouncedSearchText, setDebouncedSearchText] = useState("");
-  const [filters, setFilters] = useState<Partial<AirbrushingGetManyFormData>>({});
-  const [showFilters, setShowFilters] = useState(false);
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
-  const { deleteAsync } = useAirbrushingMutations();
+  const [searchText, setSearchText] = useState("");
+  const [displaySearchText, setDisplaySearchText] = useState("");
+  const [selectedAirbrushings, setSelectedAirbrushings] = useState<Set<string>>(new Set());
+  const [showSelection, setShowSelection] = useState(false);
+  const searchInputRef = React.useRef<any>(null);
 
   // Permission check
   const canManageAirbrushing = useMemo(() => {
@@ -44,9 +54,88 @@ export default function AirbrushingListScreen() {
     return hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   }, [user]);
 
-  // Build query with filters and include task relationship
+  // Filter state
+  const [filters, setFilters] = useState<{
+    status?: string[];
+    taskId?: string;
+    customerId?: string;
+    hasPrice?: boolean;
+    priceRange?: { min?: number; max?: number };
+    dateRange?: { gte?: Date; lte?: Date };
+  }>({});
+
+  const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
+    [{ columnKey: "createdAt", direction: "desc", order: 0 }],
+    1, // Single column sort only
+    false
+  );
+
+  const {
+    visibleColumns,
+    setVisibleColumns,
+  } = useColumnVisibility(
+    "airbrushings",
+    ["task", "status", "price"],
+    ["task", "status", "price", "startDate", "finishDate", "createdAt"]
+  );
+
+  // Build API query
+  const buildWhereClause = useCallback(() => {
+    const where: any = {};
+
+    if (filters.status?.length) {
+      where.status = { in: filters.status };
+    }
+
+    if (filters.taskId) {
+      where.taskId = filters.taskId;
+    }
+
+    if (filters.customerId) {
+      where.task = { customerId: filters.customerId };
+    }
+
+    if (filters.hasPrice) {
+      where.price = { not: null };
+    }
+
+    if (filters.priceRange?.min !== undefined || filters.priceRange?.max !== undefined) {
+      where.price = {};
+      if (filters.priceRange.min !== undefined) {
+        where.price.gte = filters.priceRange.min;
+      }
+      if (filters.priceRange.max !== undefined) {
+        where.price.lte = filters.priceRange.max;
+      }
+    }
+
+    if (filters.dateRange?.gte || filters.dateRange?.lte) {
+      where.createdAt = {};
+      if (filters.dateRange.gte) {
+        where.createdAt.gte = filters.dateRange.gte;
+      }
+      if (filters.dateRange.lte) {
+        where.createdAt.lte = filters.dateRange.lte;
+      }
+    }
+
+    return Object.keys(where).length > 0 ? where : undefined;
+  }, [filters]);
+
   const queryParams = useMemo(() => ({
-    orderBy: { createdAt: "desc" },
+    orderBy: buildOrderBy(
+      {
+        task: "task.name",
+        status: "status",
+        price: "price",
+        startDate: "startDate",
+        finishDate: "finishDate",
+        createdAt: "createdAt",
+      },
+      { createdAt: "desc" }
+    ),
+    ...(searchText ? { searchingFor: searchText } : {}),
+    ...(buildWhereClause() ? { where: buildWhereClause() } : {}),
     include: {
       task: {
         include: {
@@ -55,12 +144,10 @@ export default function AirbrushingListScreen() {
         },
       },
     },
-    ...(debouncedSearchText ? { searchingFor: debouncedSearchText } : {}),
-    ...filters,
-  }), [debouncedSearchText, filters]);
+  }), [searchText, buildWhereClause, buildOrderBy]);
 
   const {
-    data: airbrushings,
+    data: airbrushingsResponse,
     isLoading,
     error,
     fetchNextPage,
@@ -69,191 +156,259 @@ export default function AirbrushingListScreen() {
     refetch,
   } = useAirbrushingsInfinite(queryParams);
 
+  const { delete: deleteAirbrushing } = useAirbrushingMutations();
+
   // Flatten paginated data
-  const items = useMemo(() => {
-    const pages = (airbrushings as any)?.pages || [];
+  const airbrushings = useMemo(() => {
+    const pages = (airbrushingsResponse as any)?.pages || [];
     return pages.flatMap((page: { data?: any[] }) => page.data || []);
-  }, [airbrushings]);
+  }, [airbrushingsResponse]);
 
-  const totalItemsLoaded = items.length;
+  const totalItemsLoaded = airbrushings.length;
+  const canLoadMore = hasNextPage;
 
-  // Handle pull to refresh
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
   }, [refetch]);
 
-  // Handle navigation to details
-  const handleAirbrushingPress = useCallback((airbrushingId: string) => {
+  const handleCreateAirbrushing = () => {
+    router.push("/producao/aerografia/cadastrar");
+  };
+
+  const handleAirbrushingPress = (airbrushingId: string) => {
     router.push(`/producao/aerografia/detalhes/${airbrushingId}`);
+  };
+
+  const handleEditAirbrushing = (airbrushingId: string) => {
+    router.push(`/producao/aerografia/editar/${airbrushingId}`);
+  };
+
+  const handleDeleteAirbrushing = useCallback(
+    async (airbrushingId: string) => {
+      await deleteAirbrushing(airbrushingId);
+      if (selectedAirbrushings.has(airbrushingId)) {
+        const newSelection = new Set(selectedAirbrushings);
+        newSelection.delete(airbrushingId);
+        setSelectedAirbrushings(newSelection);
+      }
+    },
+    [deleteAirbrushing, selectedAirbrushings],
+  );
+
+  const handleSelectionChange = useCallback((newSelection: Set<string>) => {
+    setSelectedAirbrushings(newSelection);
   }, []);
 
-  // Handle deletion
-  const handleDelete = useCallback(async (airbrushingId: string) => {
-    Alert.alert(
-      "Excluir Airbrushing",
-      "Tem certeza que deseja excluir este airbrushing? Esta ação é irreversível.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteAsync(airbrushingId);
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível excluir o airbrushing");
-            }
-          },
-        },
-      ]
-    );
-  }, [deleteAsync]);
+  const handleSearch = useCallback((text: string) => {
+    setSearchText(text);
+  }, []);
 
-  // Handle search with debounce
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchText(searchText);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchText]);
+  const handleDisplaySearchChange = useCallback((text: string) => {
+    setDisplaySearchText(text);
+  }, []);
 
-  // Clear all filters
   const handleClearFilters = useCallback(() => {
     setFilters({});
     setSearchText("");
-    setDebouncedSearchText("");
+    setDisplaySearchText("");
+    setSelectedAirbrushings(new Set());
+    setShowSelection(false);
   }, []);
 
-  // Check active filters
-  const hasActiveFilters = useMemo(() => {
-    return Object.keys(filters).length > 0 || !!debouncedSearchText;
-  }, [filters, debouncedSearchText]);
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumns(newColumns);
+  }, [setVisibleColumns]);
 
-  // Load more data
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.status?.length) count++;
+    if (filters.taskId) count++;
+    if (filters.customerId) count++;
+    if (filters.hasPrice) count++;
+    if (filters.priceRange?.min !== undefined || filters.priceRange?.max !== undefined) count++;
+    if (filters.dateRange?.gte || filters.dateRange?.lte) count++;
+    return count;
+  }, [filters]);
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <AirbrushingFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <AirbrushingColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+
   const handleLoadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
+    if (canLoadMore && !isFetchingNextPage) {
       fetchNextPage();
     }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [canLoadMore, isFetchingNextPage, fetchNextPage]);
+
+  // Only show skeleton on initial load, not on refetch/sort/search
+  const isInitialLoad = isLoading && airbrushings.length === 0;
 
   // Permission gate
   if (!canManageAirbrushing) {
     return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Airbrushing",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
+      <ThemedView style={styles.container}>
         <ErrorScreen
           message="Acesso negado"
           detail="Você não tem permissão para acessar esta funcionalidade. É necessário privilégio de Produção, Líder ou Administrador."
         />
-      </>
+      </ThemedView>
     );
   }
 
-  return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Airbrushing",
-          headerStyle: { backgroundColor: colors.card },
-          headerTintColor: colors.foreground,
-          headerRight: () => (
-            <View style={styles.headerActions}>
-              <Button
-                variant="ghost"
-                size="icon"
-                onPress={() => setShowFilters(true)}
-              >
-                <IconFilter size={20} color={colors.foreground} />
-              </Button>
-            </View>
-          ),
-        }}
-      />
+  if (isInitialLoad) {
+    return <AirbrushingListSkeleton />;
+  }
 
+  if (error && airbrushings.length === 0) {
+    return (
       <ThemedView style={styles.container}>
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
+        <ErrorScreen message="Erro ao carregar airbrushings" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
+  }
+
+  const hasAirbrushings = Array.isArray(airbrushings) && airbrushings.length > 0;
+
+  return (
+    <UtilityDrawerWrapper>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search and Filter */}
+        <View style={[styles.searchContainer]}>
           <SearchBar
-            value={searchText}
-            onChangeText={setSearchText}
+            ref={searchInputRef}
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
             placeholder="Buscar por tarefa, cliente ou veículo..."
+            style={styles.searchBar}
+            debounceMs={300}
+            loading={isLoading && !isFetchingNextPage}
           />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumns.size}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
         </View>
 
-        {/* Active Filters */}
-        {hasActiveFilters && (
-          <AirbrushingFilterTags
-            filters={filters}
-            searchText={debouncedSearchText}
-            onClearAll={handleClearFilters}
-            onRemoveFilter={(key) => {
-              const newFilters = { ...filters };
-              delete (newFilters as any)[key as string];
-              setFilters(newFilters);
-            }}
-            onClearSearch={() => {
-              setSearchText("");
-              setDebouncedSearchText("");
-            }}
-          />
-        )}
+        {/* Individual filter tags */}
+        <AirbrushingFilterTags
+          filters={{ where: buildWhereClause() }}
+          searchText={searchText}
+          onFilterChange={(newFilters) => {
+            const where = newFilters.where as any;
+            if (where) {
+              const extracted: typeof filters = {};
+              if (where.status?.in) extracted.status = where.status.in;
+              if (where.taskId) extracted.taskId = where.taskId;
+              if (where.task?.customerId) extracted.customerId = where.task.customerId;
+              if (where.price?.not === null) extracted.hasPrice = true;
+              if (where.price && typeof where.price === 'object' && !where.price.not) {
+                extracted.priceRange = {};
+                if (where.price.gte !== undefined) extracted.priceRange.min = where.price.gte;
+                if (where.price.lte !== undefined) extracted.priceRange.max = where.price.lte;
+              }
+              if (where.createdAt) {
+                extracted.dateRange = {};
+                if (where.createdAt.gte) extracted.dateRange.gte = where.createdAt.gte;
+                if (where.createdAt.lte) extracted.dateRange.lte = where.createdAt.lte;
+              }
+              setFilters(extracted);
+            } else {
+              setFilters({});
+            }
+          }}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
+        />
 
-        {/* Results Count */}
-        {totalItemsLoaded > 0 && (
-          <View style={styles.countContainer}>
-            <ThemedText style={styles.countText}>
-              {totalItemsLoaded} {totalItemsLoaded === 1 ? "airbrushing" : "airbrushings"}
-            </ThemedText>
+        {hasAirbrushings ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <AirbrushingTable
+              airbrushings={airbrushings}
+              onAirbrushingPress={handleAirbrushingPress}
+              onAirbrushingEdit={handleEditAirbrushing}
+              onAirbrushingDelete={isAdmin ? handleDeleteAirbrushing : undefined}
+              onRefresh={handleRefresh}
+              onEndReached={canLoadMore ? handleLoadMore : undefined}
+              refreshing={refreshing || isLoading}
+              loading={false}
+              loadingMore={isFetchingNextPage}
+              showSelection={showSelection}
+              selectedAirbrushings={selectedAirbrushings}
+              onSelectionChange={handleSelectionChange}
+              sortConfigs={sortConfigs}
+              onSort={(configs) => {
+                // Handle empty array (clear sort)
+                if (configs.length === 0) {
+                  handleSort("createdAt"); // Reset to default
+                } else {
+                  handleSort(configs[0].columnKey);
+                }
+              }}
+              visibleColumnKeys={Array.from(visibleColumns) as string[]}
+              enableSwipeActions={true}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "paint"}
+              title={searchText ? "Nenhum airbrushing encontrado" : "Nenhum airbrushing cadastrado"}
+              description={
+                searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando o primeiro airbrushing"
+              }
+              actionLabel={searchText ? undefined : "Cadastrar Airbrushing"}
+              onAction={searchText ? undefined : handleCreateAirbrushing}
+            />
           </View>
         )}
 
-        {/* Airbrushing Table */}
-        <AirbrushingTable
-          airbrushings={items}
-          isLoading={isLoading}
-          error={error}
-          onAirbrushingPress={handleAirbrushingPress}
-          onDelete={isAdmin ? handleDelete : undefined}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
-          onEndReach={handleLoadMore}
-          canLoadMore={hasNextPage}
-          loadingMore={isFetchingNextPage}
-        />
+        {/* Items count */}
+        {hasAirbrushings && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalItemsLoaded} isLoading={isFetchingNextPage} />}
 
-        {/* Create FAB */}
-        {canManageAirbrushing && (
-          <FAB
-            onPress={() => router.push("/producao/aerografia/cadastrar")}
-            style={{
-              bottom: insets.bottom + spacing.lg,
-              right: spacing.lg,
-            }}
-          >
-            <IconPlus size={24} color="white" />
-          </FAB>
-        )}
-
-        {/* Filter Modal */}
-        <AirbrushingFilterModal
-          visible={showFilters}
-          onClose={() => setShowFilters(false)}
-          onApply={(newFilters) => {
-            setFilters(newFilters);
-            setShowFilters(false);
-          }}
-          currentFilters={filters}
-        />
+        {hasAirbrushings && <FAB icon="plus" onPress={handleCreateAirbrushing} />}
       </ThemedView>
-    </>
+    </UtilityDrawerWrapper>
   );
 }
 
@@ -261,20 +416,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerActions: {
-    flexDirection: "row",
-    gap: spacing.xs,
-  },
   searchContainer: {
-    padding: spacing.md,
-    paddingBottom: 0,
+    flexDirection: "row",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 8,
+    alignItems: "center",
   },
-  countContainer: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xs,
+  searchBar: {
+    flex: 1,
   },
-  countText: {
-    fontSize: 14,
-    opacity: 0.7,
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

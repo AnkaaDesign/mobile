@@ -62,7 +62,7 @@ export function BrandSelector({ disabled, required }: BrandSelectorProps) {
       render={({ field: { onChange, value }, fieldState: { error } }) => (
         <View style={{ gap: 8 }}>
           <Label nativeID="brandId" style={{ marginBottom: 4 }}>
-            Marca {required && <ThemedText style={{ color: "#ef4444" }}>*</ThemedText>}
+            Marca {required && <ThemedText variant="destructive">*</ThemedText>}
           </Label>
           <Combobox
             value={value ?? undefined}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { View, ScrollView, Alert , StyleSheet} from "react-native";
+import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconTruck, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
@@ -26,11 +26,11 @@ import { LayoutSelector } from "@/components/production/layout/selector/layout-s
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 
 export default function TruckCreateScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const { duplicateFrom } = useLocalSearchParams<{ duplicateFrom?: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -135,24 +135,32 @@ export default function TruckCreateScreen() {
   }
 
   return (
-    <ThemedView style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.headerContent}>
-          <View style={styles.titleSection}>
-            <IconTruck size={24} color={colors.primary} />
-            <ThemedText style={styles.title}>
-              {duplicateFrom ? "Duplicar Caminhão" : "Novo Caminhão"}
-            </ThemedText>
-          </View>
-        </View>
-      </View>
-
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+    <ThemedView style={StyleSheet.flatten([styles.wrapper, { backgroundColor: colors.background }])}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.container}>
+            {/* Header Card */}
+            <Card style={styles.headerCard}>
+              <View style={styles.headerContent}>
+                <View style={[styles.headerLeft, { flex: 1 }]}>
+                  <IconTruck size={24} color={colors.primary} />
+                  <ThemedText style={StyleSheet.flatten([styles.truckName, { color: colors.foreground }])}>
+                    {duplicateFrom ? "Duplicar Caminhão" : "Cadastrar Caminhão"}
+                  </ThemedText>
+                </View>
+                <View style={styles.headerActions}>
+                  {/* Empty placeholder to match detail page structure */}
+                </View>
+              </View>
+            </Card>
         {/* Basic Information */}
         <Card style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Identificação</ThemedText>
@@ -368,92 +376,118 @@ export default function TruckCreateScreen() {
             />
           </SimpleFormField>
         </Card>
+
+        {/* Bottom spacing */}
+        <View style={{ height: spacing.md }} />
+      </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Action Buttons */}
-      <View style={[styles.actionBar, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: insets.bottom }]}>
-        <Button
-          variant="outline"
-          onPress={handleCancel}
-          disabled={isSubmitting}
-          style={styles.actionButton}
+      <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.card }}>
+        <View
+          style={[
+            styles.actionBar,
+            {
+              backgroundColor: colors.card,
+              borderTopColor: colors.border,
+              paddingBottom: spacing.xl,
+            },
+          ]}
         >
-          <IconX size={20} />
-          <ThemedText>Cancelar</ThemedText>
-        </Button>
+          <Button
+            variant="outline"
+            onPress={handleCancel}
+            disabled={isSubmitting}
+            style={{ flex: 1, minHeight: 40 }}
+          >
+            <>
+              <IconX size={20} color={colors.foreground} />
+              <ThemedText style={{ color: colors.foreground, marginLeft: 8 }}>Cancelar</ThemedText>
+            </>
+          </Button>
 
-        <Button
-          variant="default"
-          onPress={handleSubmit(onSubmit)}
-          disabled={!isValid || isSubmitting}
-          style={styles.actionButton}
-        >
-          <IconDeviceFloppy size={20} />
-          <ThemedText style={{ color: "white" }}>
-            {isSubmitting ? "Criando..." : "Criar Caminhão"}
-          </ThemedText>
-        </Button>
-      </View>
+          <Button
+            variant="default"
+            onPress={handleSubmit(onSubmit)}
+            disabled={!isValid || isSubmitting}
+            style={{ flex: 1, minHeight: 40 }}
+          >
+            <>
+              <IconDeviceFloppy size={20} color={colors.primaryForeground} />
+              <ThemedText style={{ color: colors.primaryForeground, marginLeft: 8 }}>
+                {isSubmitting ? "Salvando..." : "Salvar Caminhão"}
+              </ThemedText>
+            </>
+          </Button>
+        </View>
+      </SafeAreaView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+  },
   container: {
     flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  headerContent: {
-    gap: 4,
-  },
-  titleSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-  },
-  content: {
+  scrollView: {
     flex: 1,
   },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.xs,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    flex: 1,
+  },
+  truckName: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    flex: 1,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    minHeight: 36,
+  },
   section: {
-    margin: 16,
-    marginBottom: 0,
-    marginTop: 16,
+    padding: spacing.md,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 16,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    marginBottom: spacing.md,
   },
   row: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.md,
   },
   halfField: {
     flex: 1,
   },
   actionBar: {
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     borderTopWidth: 1,
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
+    gap: spacing.md,
   },
   skeletonRows: {
-    gap: 8,
+    gap: spacing.sm,
   },
 });

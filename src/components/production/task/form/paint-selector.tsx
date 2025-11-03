@@ -1,8 +1,7 @@
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
-import { MultiCombobox } from "@/components/ui/multi-combobox";
-import { usePaints, usePaint } from "@/hooks";
+import { getPaints } from "@/api-client";
 import { useTheme } from "@/lib/theme";
 import { fontSize, fontWeight, spacing } from "@/constants/design-system";
 import type { Paint } from "@/types";
@@ -96,7 +95,14 @@ function usePaintRenderOption() {
 
   return useCallback(
     (option: any, isSelected: boolean, _onPress?: () => void) => {
-      const paint = option.paint as Paint;
+      // The option IS the Paint object directly (not wrapped)
+      const paint = option as Paint;
+
+      // Guard against undefined paint
+      if (!paint) {
+        console.warn('[PaintSelector] Received undefined paint in renderOption');
+        return null;
+      }
 
       return (
         <View style={styles.optionContainer}>
@@ -114,7 +120,7 @@ function usePaintRenderOption() {
               ]}
               numberOfLines={1}
             >
-              {paint.name}
+              {paint?.name || ""}
             </Text>
 
             {/* Metadata (Secondary) */}
@@ -179,87 +185,71 @@ export function GeneralPaintingSelector({
   required = false,
   initialPaint,
 }: GeneralPaintingSelectorProps) {
-  const [searchText, setSearchText] = useState("");
-  const [page, setPage] = useState(1);
-  const pageSize = 50;
-
   const renderOption = usePaintRenderOption();
 
-  // Fetch the selected paint if value is provided but not in initialPaint
-  const shouldFetchSelectedPaint = value && (!initialPaint || initialPaint.id !== value);
-  const { data: selectedPaint } = usePaint(
-    value || "",
-    { include: { paintType: true, paintBrand: true }, enabled: !!shouldFetchSelectedPaint }
-  );
+  // Memoize initialOptions to prevent infinite loop
+  const initialOptions = useMemo(() => initialPaint ? [initialPaint] : [], [initialPaint?.id]);
 
-  // Fetch paints with pagination
-  const { data: paintsResponse, isLoading } = usePaints({
-    searchingFor: searchText,
-    orderBy: { name: "asc" },
-    page,
-    take: pageSize,
-    include: { paintType: true, paintBrand: true },
-  });
+  // Memoize callbacks to prevent infinite loop
+  const getOptionLabel = useCallback((paint: Paint) => paint?.name || "", []);
+  const getOptionValue = useCallback((paint: Paint) => paint?.id || "", []);
 
-  const paints = paintsResponse?.data || [];
-  const hasMore = paintsResponse?.meta?.hasNextPage || false;
+  // Search function for Combobox
+  const searchPaints = async (
+    search: string,
+    page: number = 1,
+  ): Promise<{
+    data: Paint[];
+    hasMore: boolean;
+  }> => {
+    const params: any = {
+      orderBy: { name: "asc" },
+      page: page,
+      take: 50,
+      include: { paintType: true, paintBrand: true },
+    };
 
-  // Combine initial paint with fetched paints
-  const allPaints = useMemo(() => {
-    const paintList = [...paints];
-
-    // Add selected paint if fetched and not in list
-    if (selectedPaint?.data && !paintList.some((p) => p.id === selectedPaint.data!.id)) {
-      paintList.unshift(selectedPaint.data);
+    // Only add search filter if there's a search term
+    if (search && search.trim()) {
+      params.searchingFor = search.trim();
     }
 
-    if (initialPaint && !paintList.some((p) => p.id === initialPaint.id)) {
-      paintList.unshift(initialPaint);
+    try {
+      const response = await getPaints(params);
+
+      return {
+        data: (response.data || []).filter(paint => paint && paint.id && paint.name),
+        hasMore: response.meta?.hasNextPage || false,
+      };
+    } catch (error) {
+      console.error('[GeneralPaintingSelector] Error fetching paints:', error);
+      return { data: [], hasMore: false };
     }
-
-    return paintList;
-  }, [paints, initialPaint, selectedPaint]);
-
-  // Map to combobox options
-  const options = useMemo(() => {
-    return allPaints.map((paint) => ({
-      value: paint.id,
-      label: paint.name,
-      paint, // Store full paint object for rendering
-    }));
-  }, [allPaints]);
-
-  // Handle load more
-  const handleEndReached = useCallback(() => {
-    if (!isLoading && hasMore) {
-      console.log("[GeneralPaintingSelector] Loading more paints, current page:", page);
-      setPage((prev) => prev + 1);
-    }
-  }, [isLoading, hasMore, page]);
-
-  // Handle search change
-  const handleSearchChange = useCallback((text: string) => {
-    console.log("[GeneralPaintingSelector] Search changed:", text);
-    setSearchText(text);
-    setPage(1);
-  }, []);
+  };
 
   return (
-    <Combobox
-      value={value}
-      onValueChange={onValueChange}
-      options={options}
+    <Combobox<Paint>
+      value={value || ""}
+      onValueChange={(newValue) => {
+        onValueChange?.(newValue as string | undefined);
+      }}
       placeholder={placeholder}
       label={required ? `${label} *` : label}
       searchPlaceholder="Buscar tinta..."
       emptyText="Nenhuma tinta encontrada"
       disabled={disabled}
       error={error}
-      loading={isLoading && page === 1}
-      onSearchChange={handleSearchChange}
-      onEndReached={handleEndReached}
+      async={true}
+      queryKey={["paints", "search"]}
+      queryFn={searchPaints}
+      initialOptions={initialOptions}
+      getOptionLabel={getOptionLabel}
+      getOptionValue={getOptionValue}
       renderOption={renderOption}
       clearable={!required}
+      minSearchLength={0}
+      pageSize={50}
+      debounceMs={300}
     />
   );
 }
@@ -274,80 +264,73 @@ export function LogoPaintsSelector({
   placeholder = "Selecione as tintas do logo",
   initialPaints = [],
 }: LogoPaintsSelectorProps) {
-  const [searchText, setSearchText] = useState("");
-  const [page, setPage] = useState(1);
-  const pageSize = 50;
-
   const renderOption = usePaintRenderOption();
 
-  // Fetch paints with pagination
-  const { data: paintsResponse, isLoading } = usePaints({
-    searchingFor: searchText,
-    orderBy: { name: "asc" },
-    page,
-    take: pageSize,
-    include: { paintType: true, paintBrand: true },
-  });
+  // Memoize initialOptions to prevent infinite loop
+  const initialOptions = useMemo(() => initialPaints || [], [initialPaints?.map(p => p.id).join(',')]);
 
-  const paints = paintsResponse?.data || [];
-  const hasMore = paintsResponse?.meta?.hasNextPage || false;
+  // Memoize callbacks to prevent infinite loop
+  const getOptionLabel = useCallback((paint: Paint) => paint?.name || "", []);
+  const getOptionValue = useCallback((paint: Paint) => paint?.id || "", []);
 
-  // Combine initial paints with fetched paints and selected paints
-  const allPaints = useMemo(() => {
-    const paintList = [...paints];
+  // Search function for Combobox
+  const searchPaints = async (
+    search: string,
+    page: number = 1,
+  ): Promise<{
+    data: Paint[];
+    hasMore: boolean;
+  }> => {
+    const params: any = {
+      orderBy: { name: "asc" },
+      page: page,
+      take: 50,
+      include: { paintType: true, paintBrand: true },
+    };
 
-    // Add initial paints not in fetched list
-    initialPaints.forEach((paint) => {
-      if (!paintList.some((p) => p.id === paint.id)) {
-        paintList.unshift(paint);
-      }
-    });
-
-    return paintList;
-  }, [paints, initialPaints]);
-
-  // Map to combobox options
-  const options = useMemo(() => {
-    return allPaints.map((paint) => ({
-      value: paint.id,
-      label: paint.name,
-      paint, // Store full paint object for rendering
-    }));
-  }, [allPaints]);
-
-  // Handle load more
-  const handleEndReached = useCallback(() => {
-    if (!isLoading && hasMore) {
-      console.log("[LogoPaintsSelector] Loading more paints, current page:", page);
-      setPage((prev) => prev + 1);
+    // Only add search filter if there's a search term
+    if (search && search.trim()) {
+      params.searchingFor = search.trim();
     }
-  }, [isLoading, hasMore, page]);
 
-  // Handle search change
-  const handleSearchChange = useCallback((text: string) => {
-    console.log("[LogoPaintsSelector] Search changed:", text);
-    setSearchText(text);
-    setPage(1);
-  }, []);
+    try {
+      const response = await getPaints(params);
+
+      return {
+        data: (response.data || []).filter(paint => paint && paint.id && paint.name),
+        hasMore: response.meta?.hasNextPage || false,
+      };
+    } catch (error) {
+      console.error('[LogoPaintsSelector] Error fetching paints:', error);
+      return { data: [], hasMore: false };
+    }
+  };
 
   return (
-    <MultiCombobox
-      selectedValues={selectedValues}
-      onValueChange={onValueChange}
-      options={options}
+    <Combobox<Paint>
+      mode="multiple"
+      value={selectedValues}
+      onValueChange={(newValues) => {
+        onValueChange?.(newValues as string[]);
+      }}
       placeholder={placeholder}
       label={label}
-      selectedText="tintas selecionadas"
       searchPlaceholder="Buscar tintas..."
       emptyText="Nenhuma tinta encontrada"
       disabled={disabled}
       error={error}
-      loading={isLoading && page === 1}
-      onSearchChange={handleSearchChange}
-      onEndReached={handleEndReached}
+      async={true}
+      queryKey={["paints", "search", "logo"]}
+      queryFn={searchPaints}
+      initialOptions={initialOptions}
+      getOptionLabel={getOptionLabel}
+      getOptionValue={getOptionValue}
       renderOption={renderOption}
-      showBadges={true}
-      badgeStyle="chip"
+      clearable={true}
+      minSearchLength={0}
+      pageSize={50}
+      debounceMs={300}
+      showCount={true}
     />
   );
 }

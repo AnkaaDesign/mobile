@@ -66,7 +66,7 @@ export function CategorySelector({ disabled, required, onCategoryChange }: Categ
       render={({ field: { onChange, value }, fieldState: { error } }) => (
         <View style={{ gap: 8 }}>
           <Label nativeID="categoryId" style={{ marginBottom: 4 }}>
-            Categoria {required && <ThemedText style={{ color: "#ef4444" }}>*</ThemedText>}
+            Categoria {required && <ThemedText variant="destructive">*</ThemedText>}
           </Label>
           <Combobox
             value={value || ""}

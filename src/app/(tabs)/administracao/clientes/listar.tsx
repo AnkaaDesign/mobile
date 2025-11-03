@@ -50,6 +50,9 @@ export default function CustomerListScreen() {
     tags?: string[];
     hasCNPJ?: boolean;
     hasCPF?: boolean;
+    hasTasks?: boolean;
+    taskCount?: { min?: number; max?: number };
+    createdAt?: { gte?: Date; lte?: Date };
   }>({});
 
   const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
@@ -89,6 +92,30 @@ export default function CustomerListScreen() {
 
     if (filters.hasCPF) {
       where.cpf = { not: null };
+    }
+
+    if (filters.hasTasks) {
+      where.tasks = { some: {} };
+    }
+
+    if (filters.taskCount?.min !== undefined || filters.taskCount?.max !== undefined) {
+      where._count = { tasks: {} };
+      if (filters.taskCount.min !== undefined) {
+        where._count.tasks.gte = filters.taskCount.min;
+      }
+      if (filters.taskCount.max !== undefined) {
+        where._count.tasks.lte = filters.taskCount.max;
+      }
+    }
+
+    if (filters.createdAt?.gte || filters.createdAt?.lte) {
+      where.createdAt = {};
+      if (filters.createdAt.gte) {
+        where.createdAt.gte = filters.createdAt.gte;
+      }
+      if (filters.createdAt.lte) {
+        where.createdAt.lte = filters.createdAt.lte;
+      }
     }
 
     return Object.keys(where).length > 0 ? where : undefined;
@@ -217,9 +244,18 @@ export default function CustomerListScreen() {
   const allColumns = useMemo(() => createColumnDefinitions(), []);
 
   // Count active filters
-  const activeFiltersCount = Object.values(filters).filter(
-    (value) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : value === true)
-  ).length;
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.states?.length) count++;
+    if (filters.city) count++;
+    if (filters.tags?.length) count++;
+    if (filters.hasCNPJ) count++;
+    if (filters.hasCPF) count++;
+    if (filters.hasTasks) count++;
+    if (filters.taskCount?.min !== undefined || filters.taskCount?.max !== undefined) count++;
+    if (filters.createdAt?.gte || filters.createdAt?.lte) count++;
+    return count;
+  }, [filters]);
 
   // Only show skeleton on initial load, not on refetch/sort/search
   // This prevents the entire page from remounting during search
@@ -284,6 +320,17 @@ export default function CustomerListScreen() {
             if (where.tags?.hasSome) extracted.tags = where.tags.hasSome;
             if (where.cnpj?.not === null) extracted.hasCNPJ = true;
             if (where.cpf?.not === null) extracted.hasCPF = true;
+            if (where.tasks?.some) extracted.hasTasks = true;
+            if (where._count?.tasks) {
+              extracted.taskCount = {};
+              if (where._count.tasks.gte !== undefined) extracted.taskCount.min = where._count.tasks.gte;
+              if (where._count.tasks.lte !== undefined) extracted.taskCount.max = where._count.tasks.lte;
+            }
+            if (where.createdAt) {
+              extracted.createdAt = {};
+              if (where.createdAt.gte) extracted.createdAt.gte = where.createdAt.gte;
+              if (where.createdAt.lte) extracted.createdAt.lte = where.createdAt.lte;
+            }
             setFilters(extracted);
           } else {
             setFilters({});

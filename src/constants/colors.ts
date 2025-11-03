@@ -38,7 +38,7 @@ export const Colors = {
     destructiveForeground: "#fafafa", // neutral-50 - web --destructive-foreground
 
     // Border colors - matching web
-    border: "#d4d4d4", // neutral-250 (HSL: 0 0% 83%) - web --border
+    border: "#c5c5c5", // neutral-300 (HSL: 0 0% 77%) - web --border (one tone darker)
 
     // Input colors - matching web
     input: "#ffffff", // white - web --input

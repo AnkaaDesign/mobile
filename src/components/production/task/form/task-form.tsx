@@ -1,30 +1,34 @@
 import { useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import { useEditForm } from "@/hooks/useEditForm";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import * as DocumentPicker from "expo-document-picker";
-import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { createFormDataWithContext, prepareFilesForUpload } from "@/utils/form-data-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
+import { ThemedView } from "@/components/ui/themed-view";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
+import { SimpleFormField } from "@/components/ui";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
-import { useSectors } from '../../../../hooks';
+import { spacing, fontSize, borderRadius, fontWeight } from "@/constants/design-system";
+import { useSectors, useLayoutMutations } from '../../../../hooks';
 import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS } from '../../../../constants';
-import { IconLoader, IconX } from "@tabler/icons-react-native";
+import { IconLoader, IconX, IconDeviceFloppy, IconClipboardList } from "@tabler/icons-react-native";
 import { CustomerSelector } from "./customer-selector";
 import { ServiceSelector } from "./service-selector";
 import { GeneralPaintingSelector, LogoPaintsSelector } from "./paint-selector";
+import { LayoutForm } from "@/components/production/layout/layout-form";
+import type { LayoutCreateFormData } from "@/schemas";
 
 // Enhanced Task Form Schema for Mobile with Cross-field Validation
 const taskFormSchema = z.object({
@@ -131,6 +135,19 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
   const [invoiceFiles, setInvoiceFiles] = useState<any[]>([]);
   const [receiptFiles, setReceiptFiles] = useState<any[]>([]);
 
+  // Layout state
+  const [selectedLayoutSide, setSelectedLayoutSide] = useState<"left" | "right" | "back">("left");
+  const [isLayoutOpen, setIsLayoutOpen] = useState(false);
+  const [layouts, setLayouts] = useState<{
+    left?: LayoutCreateFormData;
+    right?: LayoutCreateFormData;
+    back?: LayoutCreateFormData;
+  }>({
+    left: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+    right: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+    back: { height: 2.42, sections: [{ width: 2.42, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+  });
+
   // Use useEditForm for edit mode with change detection, regular useForm for create mode
   const defaultFormValues = {
     name: initialData?.name || "",
@@ -168,6 +185,9 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
         resolver: zodResolver(taskFormSchema),
         defaultValues: defaultFormValues,
       });
+
+  // Get errors from form state
+  const { errors } = form.formState;
 
   // Fetch sectors (production only)
   const { data: sectors, isLoading: isLoadingSectors } = useSectors({
@@ -294,6 +314,11 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
       if (data.finishedAt) formDataFields.finishedAt = data.finishedAt;
       if (data.paintIds && data.paintIds.length > 0) formDataFields.paintIds = data.paintIds;
 
+      // Add layouts if present
+      if (isLayoutOpen) {
+        formDataFields.layouts = layouts;
+      }
+
       // Create FormData with context for proper backend file organization
       const formData = createFormDataWithContext(
         formDataFields,
@@ -307,44 +332,71 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
       await onSubmit(formData as any);
     } else {
       // No files - submit as regular JSON with proper formatting
-      const cleanedData = {
+      const cleanedData: any = {
         ...data,
         serialNumber: data.serialNumber?.toUpperCase() || null,
         chassisNumber: data.chassisNumber?.replace(/\s/g, "").toUpperCase() || null,
         plate: data.plate?.toUpperCase() || null,
       };
 
+      // Add layouts if present
+      if (isLayoutOpen) {
+        cleanedData.layouts = layouts;
+      }
+
       await onSubmit(cleanedData);
     }
   };
 
   return (
-    <FormProvider {...form}>
-      <ThemedScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
-          {/* Basic Information */}
-          <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Informações Básicas</CardTitle>
-            </CardHeader>
-            <CardContent style={styles.cardContent}>
+    <ThemedView style={StyleSheet.flatten([styles.wrapper, { backgroundColor: colors.background }])}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.container}>
+            {/* Task Header Card */}
+            <Card style={styles.headerCard}>
+              <View style={styles.headerContent}>
+                <View style={[styles.headerLeft, { flex: 1 }]}>
+                  <Icon name="clipboard-list" size={24} color={colors.primary} />
+                  <ThemedText style={StyleSheet.flatten([styles.taskName, { color: colors.foreground }])}>
+                    {mode === "create" ? "Cadastrar Tarefa" : "Editar Tarefa"}
+                  </ThemedText>
+                </View>
+                <View style={styles.headerActions}>
+                  {/* Empty placeholder to match detail page structure */}
+                </View>
+              </View>
+            </Card>
+
+            {/* Basic Information */}
+            <Card style={styles.card}>
+              <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
+              <View style={styles.cardContent}>
               {/* Name */}
-              <Controller
-                control={form.control}
-                name="name"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View style={styles.fieldGroup}>
-                    <Label>Nome da Tarefa *</Label>
+              <SimpleFormField label="Nome da Tarefa" required error={errors.name}>
+                <Controller
+                  control={form.control}
+                  name="name"
+                  render={({ field: { onChange, onBlur, value } }) => (
                     <Input
                       value={value}
                       onChangeText={onChange}
+                      onBlur={onBlur}
                       placeholder="Ex: Pintura completa do caminhão"
-                      disabled={isSubmitting}
+                      maxLength={200}
+                      error={!!errors.name}
                     />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
+                  )}
+                />
+              </SimpleFormField>
 
               {/* Customer */}
               <Controller
@@ -362,70 +414,66 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
               />
 
               {/* Serial Number */}
-              <Controller
-                control={form.control}
-                name="serialNumber"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View style={styles.fieldGroup}>
-                    <Label>Número de Série</Label>
+              <SimpleFormField label="Número de Série" error={errors.serialNumber}>
+                <Controller
+                  control={form.control}
+                  name="serialNumber"
+                  render={({ field: { onChange, onBlur, value } }) => (
                     <Input
                       value={value || ""}
                       onChangeText={onChange}
+                      onBlur={onBlur}
                       placeholder="Ex: ABC-123456"
-                      disabled={isSubmitting}
                       autoCapitalize="characters"
+                      error={!!errors.serialNumber}
                     />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
+                  )}
+                />
+              </SimpleFormField>
 
               {/* Plate */}
-              <Controller
-                control={form.control}
-                name="plate"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View style={styles.fieldGroup}>
-                    <Label>Placa</Label>
+              <SimpleFormField label="Placa" error={errors.plate}>
+                <Controller
+                  control={form.control}
+                  name="plate"
+                  render={({ field: { onChange, onBlur, value } }) => (
                     <Input
                       value={value || ""}
                       onChangeText={onChange}
+                      onBlur={onBlur}
                       placeholder="Ex: ABC1234"
-                      disabled={isSubmitting}
                       autoCapitalize="characters"
+                      error={!!errors.plate}
                     />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
+                  )}
+                />
+              </SimpleFormField>
 
               {/* Chassis Number */}
-              <Controller
-                control={form.control}
-                name="chassisNumber"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View style={styles.fieldGroup}>
-                    <Label>Número do Chassi</Label>
+              <SimpleFormField label="Número do Chassi (17 caracteres)" error={errors.chassisNumber}>
+                <Controller
+                  control={form.control}
+                  name="chassisNumber"
+                  render={({ field: { onChange, onBlur, value } }) => (
                     <Input
+                      type="chassis"
                       value={value || ""}
                       onChangeText={onChange}
-                      placeholder="Ex: 9BWZZZ377VT004251"
-                      disabled={isSubmitting}
+                      onBlur={onBlur}
+                      placeholder="Ex: 9BW ZZZ37 7V T004251"
                       autoCapitalize="characters"
-                      maxLength={17}
+                      error={!!errors.chassisNumber}
                     />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
+                  )}
+                />
+              </SimpleFormField>
 
               {/* Sector */}
-              <Controller
-                control={form.control}
-                name="sectorId"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View style={styles.fieldGroup}>
-                    <Label>Setor</Label>
+              <SimpleFormField label="Setor" error={errors.sectorId}>
+                <Controller
+                  control={form.control}
+                  name="sectorId"
+                  render={({ field: { onChange, value } }) => (
                     <Combobox
                       value={value || ""}
                       onValueChange={(val) => onChange(val || null)}
@@ -434,21 +482,20 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                       searchPlaceholder="Buscar setor..."
                       emptyText="Nenhum setor encontrado"
                       onSearchChange={setSectorSearch}
-                      disabled={isSubmitting || isLoadingSectors}
                       loading={isLoadingSectors}
+                      searchable={true}
+                      clearable={true}
                     />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
+                  )}
+                />
+              </SimpleFormField>
 
               {/* Commission Status */}
-              <Controller
-                control={form.control}
-                name="commission"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View style={styles.fieldGroup}>
-                    <Label>Status de Comissão</Label>
+              <SimpleFormField label="Status de Comissão" error={errors.commission}>
+                <Controller
+                  control={form.control}
+                  name="commission"
+                  render={({ field: { onChange, value } }) => (
                     <Combobox
                       value={value || COMMISSION_STATUS.FULL_COMMISSION}
                       onValueChange={onChange}
@@ -457,63 +504,55 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                         label: COMMISSION_STATUS_LABELS[status],
                       }))}
                       placeholder="Selecione o status de comissão"
-                      disabled={isSubmitting}
                       searchable={false}
                     />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
+                  )}
+                />
+              </SimpleFormField>
 
               {/* Status (edit mode only) */}
               {mode === "edit" && (
-                <Controller
-                  control={form.control}
-                  name="status"
-                  render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <View style={styles.fieldGroup}>
-                      <Label>Status</Label>
+                <SimpleFormField label="Status" error={errors.status}>
+                  <Controller
+                    control={form.control}
+                    name="status"
+                    render={({ field: { onChange, value } }) => (
                       <Combobox
                         value={value || TASK_STATUS.PENDING}
                         onValueChange={onChange}
                         options={TASK_STATUS_OPTIONS}
                         placeholder="Selecione o status"
-                        disabled={isSubmitting}
                         searchable={false}
                       />
-                      {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                    </View>
-                  )}
-                />
+                    )}
+                  />
+                </SimpleFormField>
               )}
 
               {/* Details */}
-              <Controller
-                control={form.control}
-                name="details"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View style={styles.fieldGroup}>
-                    <Label>Detalhes</Label>
+              <SimpleFormField label="Detalhes" error={errors.details}>
+                <Controller
+                  control={form.control}
+                  name="details"
+                  render={({ field: { onChange, onBlur, value } }) => (
                     <Textarea
                       value={value || ""}
                       onChangeText={onChange}
+                      onBlur={onBlur}
                       placeholder="Detalhes adicionais sobre a tarefa..."
-                      disabled={isSubmitting}
                       numberOfLines={4}
+                      error={!!errors.details}
                     />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
-            </CardContent>
-          </Card>
+                  )}
+                />
+              </SimpleFormField>
+              </View>
+            </Card>
 
           {/* Dates */}
           <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Datas</CardTitle>
-            </CardHeader>
-            <CardContent style={styles.cardContent}>
+            <ThemedText style={styles.sectionTitle}>Datas</ThemedText>
+            <View style={styles.cardContent}>
               {/* Entry Date */}
               <Controller
                 control={form.control}
@@ -593,15 +632,13 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                   )}
                 />
               )}
-            </CardContent>
+            </View>
           </Card>
 
           {/* Financial */}
           <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Documentos Financeiros</CardTitle>
-            </CardHeader>
-            <CardContent style={styles.cardContent}>
+            <ThemedText style={styles.sectionTitle}>Documentos Financeiros</ThemedText>
+            <View style={styles.cardContent}>
               {/* File Uploads */}
               <View style={styles.fileUploadSection}>
                 <ThemedText style={styles.sectionNote}>
@@ -710,15 +747,13 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                   )}
                 </View>
               </View>
-            </CardContent>
+            </View>
           </Card>
 
           {/* Services */}
           <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Serviços</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <ThemedText style={styles.sectionTitle}>Serviços</ThemedText>
+            <View>
               <Controller
                 control={form.control}
                 name="services"
@@ -731,15 +766,13 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                   />
                 )}
               />
-            </CardContent>
+            </View>
           </Card>
 
           {/* Paints */}
           <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Tintas</CardTitle>
-            </CardHeader>
-            <CardContent style={styles.cardContent}>
+            <ThemedText style={styles.sectionTitle}>Tintas</ThemedText>
+            <View style={styles.cardContent}>
               {/* General Painting */}
               <Controller
                 control={form.control}
@@ -767,49 +800,216 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                   />
                 )}
               />
-            </CardContent>
+            </View>
           </Card>
 
-          {/* Actions */}
-          <View style={styles.actionsContainer}>
-            <View style={styles.actions}>
-              <Button variant="outline" onPress={onCancel} disabled={isSubmitting} style={styles.cancelButton}>
-                Cancelar
-              </Button>
-              <Button
-                onPress={(form as any).handleSubmit?.(handleSubmit) || handleSubmit}
-                disabled={isSubmitting}
-                style={styles.submitButton}
-              >
-                {isSubmitting ? (
-                  <>
-                    <IconLoader size={20} color={colors.primaryForeground} />
-                    <ThemedText style={{ color: colors.primaryForeground }}>Salvando...</ThemedText>
-                  </>
-                ) : (
-                  <ThemedText style={{ color: colors.primaryForeground }}>
-                    {mode === "create" ? "Criar Tarefa" : "Salvar Alterações"}
-                  </ThemedText>
+          {/* Truck Layout Section */}
+          <Card style={styles.card}>
+            <View style={[styles.cardHeaderRow, { justifyContent: 'space-between' }]}>
+              <ThemedText style={styles.sectionTitle}>Layout do Caminhão</ThemedText>
+              <View style={{ flexDirection: 'row', gap: spacing.xs, alignItems: 'center' }}>
+                {!isLayoutOpen && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onPress={() => setIsLayoutOpen(true)}
+                    disabled={isSubmitting}
+                  >
+                    <Icon name="plus" size={16} color={colors.foreground} />
+                    <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.sm }}>
+                      Adicionar
+                    </ThemedText>
+                  </Button>
                 )}
-              </Button>
+                {isLayoutOpen && (
+                  <TouchableOpacity
+                    style={{ padding: spacing.xs }}
+                    onPress={() => {
+                      setIsLayoutOpen(false);
+                      setLayouts({
+                        left: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+                        right: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+                        back: { height: 2.42, sections: [{ width: 2.42, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+                      });
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    <Icon name="trash-2" size={18} color={colors.destructive} />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          </View>
+
+            {isLayoutOpen && (
+              <View style={styles.cardContent}>
+                {/* Side Selector */}
+                <View style={styles.layoutSideSelector}>
+                  <Button
+                    variant={selectedLayoutSide === "left" ? "default" : "outline"}
+                    size="sm"
+                    onPress={() => setSelectedLayoutSide("left")}
+                    disabled={isSubmitting}
+                    style={{ flex: 1 }}
+                  >
+                    <ThemedText style={{
+                      fontSize: fontSize.sm,
+                      color: selectedLayoutSide === "left" ? colors.primaryForeground : colors.foreground
+                    }}>
+                      Motorista
+                    </ThemedText>
+                  </Button>
+                  <Button
+                    variant={selectedLayoutSide === "right" ? "default" : "outline"}
+                    size="sm"
+                    onPress={() => setSelectedLayoutSide("right")}
+                    disabled={isSubmitting}
+                    style={{ flex: 1 }}
+                  >
+                    <ThemedText style={{
+                      fontSize: fontSize.sm,
+                      color: selectedLayoutSide === "right" ? colors.primaryForeground : colors.foreground
+                    }}>
+                      Sapo
+                    </ThemedText>
+                  </Button>
+                  <Button
+                    variant={selectedLayoutSide === "back" ? "default" : "outline"}
+                    size="sm"
+                    onPress={() => setSelectedLayoutSide("back")}
+                    disabled={isSubmitting}
+                    style={{ flex: 1 }}
+                  >
+                    <ThemedText style={{
+                      fontSize: fontSize.sm,
+                      color: selectedLayoutSide === "back" ? colors.primaryForeground : colors.foreground
+                    }}>
+                      Traseira
+                    </ThemedText>
+                  </Button>
+                </View>
+
+                {/* Layout Form */}
+                <LayoutForm
+                  selectedSide={selectedLayoutSide}
+                  layouts={layouts}
+                  onChange={(side, layoutData) => {
+                    setLayouts((prev) => ({
+                      ...prev,
+                      [side]: layoutData,
+                    }));
+                  }}
+                  disabled={isSubmitting}
+                />
+              </View>
+            )}
+          </Card>
+
+          {/* Bottom spacing */}
+          <View style={{ height: spacing.md }} />
         </View>
-      </ThemedScrollView>
-    </FormProvider>
+      </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* Action Buttons */}
+      <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.card }}>
+        <View
+          style={[
+            styles.actionBar,
+            {
+              backgroundColor: colors.card,
+              borderTopColor: colors.border,
+              paddingBottom: spacing.xl,
+            },
+          ]}
+        >
+          <Button
+            variant="outline"
+            onPress={onCancel}
+            disabled={isSubmitting}
+            style={{ flex: 1, minHeight: 40 }}
+          >
+            <>
+              <IconX size={20} color={colors.foreground} />
+              <ThemedText style={{ color: colors.foreground, marginLeft: 8 }}>Cancelar</ThemedText>
+            </>
+          </Button>
+
+          <Button
+            variant="default"
+            onPress={(form as any).handleSubmit?.(handleSubmit) || handleSubmit}
+            disabled={isSubmitting}
+            style={{ flex: 1, minHeight: 40 }}
+          >
+            <>
+              {isSubmitting ? (
+                <>
+                  <IconLoader size={20} color={colors.primaryForeground} />
+                  <ThemedText style={{ color: colors.primaryForeground, marginLeft: 8 }}>
+                    Salvando...
+                  </ThemedText>
+                </>
+              ) : (
+                <>
+                  <IconDeviceFloppy size={20} color={colors.primaryForeground} />
+                  <ThemedText style={{ color: colors.primaryForeground, marginLeft: 8 }}>
+                    {mode === "create" ? "Salvar Tarefa" : "Salvar Alterações"}
+                  </ThemedText>
+                </>
+              )}
+            </>
+          </Button>
+        </View>
+      </SafeAreaView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
+  wrapper: {
+    flex: 1,
   },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xl * 2,
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.xs,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    flex: 1,
+  },
+  taskName: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    flex: 1,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    minHeight: 36,
   },
   card: {
-    marginBottom: spacing.lg,
+    padding: spacing.md,
+  },
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    marginBottom: spacing.md,
   },
   cardContent: {
     gap: spacing.md,
@@ -889,18 +1089,33 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
     minWidth: 0,
   },
-  actionsContainer: {
-    marginTop: spacing.lg,
-  },
-  actions: {
+  actionBar: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
     gap: spacing.md,
   },
-  cancelButton: {
-    minWidth: 100,
+  layoutSideSelector: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    marginBottom: spacing.md,
   },
-  submitButton: {
-    minWidth: 120,
+  totalLengthContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+  },
+  totalLengthLabel: {
+    fontSize: fontSize.sm,
+    opacity: 0.7,
+  },
+  totalLengthValue: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
   },
 });

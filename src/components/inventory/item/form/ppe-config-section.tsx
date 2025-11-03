@@ -64,7 +64,7 @@ export function PpeConfigSection({ disabled, required }: PpeConfigSectionProps) 
 
             return (
               <View style={StyleSheet.flatten([styles.field, styles.halfField])}>
-                <ThemedText style={styles.label}>Tipo de EPI {required && <ThemedText style={styles.required}>*</ThemedText>}</ThemedText>
+                <ThemedText style={styles.label}>Tipo de EPI {required && <ThemedText variant="destructive">*</ThemedText>}</ThemedText>
                 <Combobox
                   options={ppeTypeOptions}
                   value={value || ""}
@@ -97,7 +97,7 @@ export function PpeConfigSection({ disabled, required }: PpeConfigSectionProps) 
 
           return (
             <View style={styles.field}>
-              <ThemedText style={styles.label}>Modo de Entrega {required && <ThemedText style={styles.required}>*</ThemedText>}</ThemedText>
+              <ThemedText style={styles.label}>Modo de Entrega {required && <ThemedText variant="destructive">*</ThemedText>}</ThemedText>
               <Combobox
                 options={deliveryModeOptions}
                 value={value || ""}
@@ -119,7 +119,7 @@ export function PpeConfigSection({ disabled, required }: PpeConfigSectionProps) 
           name={"ppeStandardQuantity" as const}
           render={({ field: { onChange, value, onBlur }, fieldState: { error } }) => (
             <View style={StyleSheet.flatten([styles.field, styles.halfField])}>
-              <ThemedText style={styles.label}>Quantidade Padrão {required && <ThemedText style={styles.required}>*</ThemedText>}</ThemedText>
+              <ThemedText style={styles.label}>Quantidade Padrão {required && <ThemedText variant="destructive">*</ThemedText>}</ThemedText>
               <Input
                 value={value?.toString() || ""}
                 onChangeText={(text) => onChange(text ? parseInt(text) : undefined)}
@@ -139,7 +139,7 @@ export function PpeConfigSection({ disabled, required }: PpeConfigSectionProps) 
           name={"ppeAutoOrderMonths" as const}
           render={({ field: { onChange, value, onBlur }, fieldState: { error } }) => (
             <View style={StyleSheet.flatten([styles.field, styles.halfField])}>
-              <ThemedText style={styles.label}>Meses para Auto-pedido {required && <ThemedText style={styles.required}>*</ThemedText>}</ThemedText>
+              <ThemedText style={styles.label}>Meses para Auto-pedido {required && <ThemedText variant="destructive">*</ThemedText>}</ThemedText>
               <Input
                 value={value?.toString() || ""}
                 onChangeText={(text) => onChange(text ? parseInt(text) : undefined)}

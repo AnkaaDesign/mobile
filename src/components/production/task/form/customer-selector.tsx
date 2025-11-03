@@ -1,8 +1,8 @@
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
 import { CustomerLogoDisplay } from "@/components/ui/customer-logo-display";
-import { useCustomers, useCustomer } from "@/hooks";
+import { getCustomers } from "@/api-client";
 import { useTheme } from "@/lib/theme";
 import { fontSize, fontWeight, spacing } from "@/constants/design-system";
 import type { Customer } from "@/types";
@@ -43,79 +43,67 @@ export function CustomerSelector({
   initialCustomer,
 }: CustomerSelectorProps) {
   const { colors } = useTheme();
-  const [searchText, setSearchText] = useState("");
-  const [page, setPage] = useState(1);
-  const pageSize = 50;
 
-  // Fetch the selected customer if value is provided but not in initialCustomer
-  const shouldFetchSelectedCustomer = value && (!initialCustomer || initialCustomer.id !== value);
-  const { data: selectedCustomer } = useCustomer(
-    value || "",
-    { include: { logo: true }, enabled: !!shouldFetchSelectedCustomer }
-  );
+  // Memoize initialOptions to prevent infinite loop
+  const initialOptions = useMemo(() => initialCustomer ? [initialCustomer] : [], [initialCustomer?.id]);
 
-  // Fetch customers with pagination
-  const { data: customersResponse, isLoading } = useCustomers({
-    searchingFor: searchText,
-    orderBy: { fantasyName: "asc" },
-    page,
-    take: pageSize,
-    include: { logo: true },
-  });
+  // Memoize callbacks to prevent infinite loop
+  const getOptionLabel = useCallback((customer: Customer) => customer.fantasyName, []);
+  const getOptionValue = useCallback((customer: Customer) => customer.id, []);
 
-  const customers = customersResponse?.data || [];
-  const hasMore = customersResponse?.meta?.hasNextPage || false;
+  // Search function for Combobox
+  const searchCustomers = async (
+    search: string,
+    page: number = 1,
+  ): Promise<{
+    data: Customer[];
+    hasMore: boolean;
+  }> => {
+    const params: any = {
+      orderBy: { fantasyName: "asc" },
+      page: page,
+      take: 50,
+      include: { logo: true },
+    };
 
-  // Combine initial customer with fetched customers
-  const allCustomers = useMemo(() => {
-    const customerList = [...customers];
-
-    // Add selected customer if fetched and not in list
-    if (selectedCustomer?.data && !customerList.some(c => c.id === selectedCustomer.data!.id)) {
-      customerList.unshift(selectedCustomer.data);
+    // Only add search filter if there's a search term
+    if (search && search.trim()) {
+      params.searchingFor = search.trim();
     }
 
-    // Add initial customer if provided and not already in list
-    if (initialCustomer && !customerList.some(c => c.id === initialCustomer.id)) {
-      customerList.unshift(initialCustomer);
+    try {
+      const response = await getCustomers(params);
+      const customers = response.data || [];
+      const hasMore = response.meta?.hasNextPage || false;
+
+      return {
+        data: customers,
+        hasMore: hasMore,
+      };
+    } catch (error) {
+      console.error('[CustomerSelector] Error fetching customers:', error);
+      return { data: [], hasMore: false };
     }
-
-    return customerList;
-  }, [customers, initialCustomer, selectedCustomer]);
-
-  // Map to combobox options
-  const options = useMemo(() => {
-    return allCustomers.map((customer) => ({
-      value: customer.id,
-      label: customer.fantasyName,
-      customer, // Store full customer object for rendering
-    }));
-  }, [allCustomers]);
-
-  // Handle load more
-  const handleEndReached = useCallback(() => {
-    if (!isLoading && hasMore) {
-      setPage((prev) => prev + 1);
-    }
-  }, [isLoading, hasMore]);
-
-  // Handle search change - reset pagination
-  const handleSearchChange = useCallback((text: string) => {
-    setSearchText(text);
-    setPage(1);
-  }, []);
+  };
 
   // Custom render option with logo and metadata
   const renderOption = useCallback(
     (option: any, isSelected: boolean, _onPress: () => void) => {
-      const customer = option.customer as Customer;
+      // Defensive check: option is the Customer object directly
+      const customer = option as Customer;
+
+      // Additional safety check
+      if (!customer) {
+        console.warn('[CustomerSelector] Received undefined customer in renderOption');
+        return null;
+      }
 
       return (
         <View style={styles.optionContainer}>
           {/* Customer Logo - ensure it's always rendered */}
           <CustomerLogoDisplay
-            logo={customer.logo || null}
-            customerName={customer.fantasyName || ""}
+            logo={customer?.logo || null}
+            customerName={customer?.fantasyName || ""}
             size="sm"
             shape="rounded"
           />
@@ -131,12 +119,12 @@ export function CustomerSelector({
               ]}
               numberOfLines={1}
             >
-              {customer.fantasyName}
+              {customer?.fantasyName || ""}
             </Text>
 
             {/* Corporate Name & CNPJ/CPF (Secondary) */}
             <View style={styles.secondaryInfo}>
-              {customer.corporateName && (
+              {customer?.corporateName && (
                 <Text
                   style={[styles.secondaryText, { color: colors.mutedForeground }]}
                   numberOfLines={1}
@@ -145,9 +133,9 @@ export function CustomerSelector({
                 </Text>
               )}
 
-              {(customer.cnpj || customer.cpf) && (
+              {(customer?.cnpj || customer?.cpf) && (
                 <>
-                  {customer.corporateName && (
+                  {customer?.corporateName && (
                     <Text style={[styles.separator, { color: colors.mutedForeground }]}>
                       {" • "}
                     </Text>
@@ -170,21 +158,28 @@ export function CustomerSelector({
   );
 
   return (
-    <Combobox
-      value={value}
-      onValueChange={onValueChange}
-      options={options}
+    <Combobox<Customer>
+      value={value || ""}
+      onValueChange={(newValue) => {
+        onValueChange?.(newValue as string | undefined);
+      }}
       placeholder={placeholder}
       label={required ? `${label} *` : label}
       searchPlaceholder="Buscar cliente..."
       emptyText="Nenhum cliente encontrado"
       disabled={disabled}
       error={error}
-      loading={isLoading && page === 1}
-      onSearchChange={handleSearchChange}
-      onEndReached={handleEndReached}
+      async={true}
+      queryKey={["customers", "search"]}
+      queryFn={searchCustomers}
+      initialOptions={initialOptions}
+      getOptionLabel={getOptionLabel}
+      getOptionValue={getOptionValue}
       renderOption={renderOption}
       clearable={!required}
+      minSearchLength={0}
+      pageSize={50}
+      debounceMs={300}
     />
   );
 }

@@ -1,26 +1,29 @@
-
 import { Stack, useLocalSearchParams } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, StyleSheet, RefreshControl } from "react-native";
+import { useState, useCallback } from "react";
 import { usePaintProductionDetail } from '../../../../../hooks';
-import { MobileProductionCalculator } from "@/components/painting";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
-import { Text } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Icon } from "@/components/ui/icon";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import { measureUtils } from '../../../../../utils';
-import { MEASURE_UNIT } from '../../../../../constants';
+import { ThemedText } from "@/components/ui/themed-text";
+import { useTheme } from "@/lib/theme";
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { IconHistory } from "@tabler/icons-react-native";
+import { CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
+import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { ProductionInfoCard, PaintFormulaCard, ComponentsUsedCard } from "@/components/painting/production/detail";
+import { showToast } from "@/components/ui/toast";
 
 export default function ProductionDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors } = useTheme();
+  const [refreshing, setRefreshing] = useState(false);
 
   const {
     data: productionResponse,
     isLoading,
     error,
+    refetch,
   } = usePaintProductionDetail(id as string, {
     include: {
       formula: {
@@ -37,6 +40,20 @@ export default function ProductionDetailsScreen() {
   });
 
   const production = productionResponse?.data;
+  const paint = production?.formula?.paint;
+
+  const productionEntity = {
+    id: production?.id || "",
+    name: paint ? `Produção de ${paint.name}` : `Produção ${id?.slice(0, 8)}`,
+  };
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    refetch().finally(() => {
+      setRefreshing(false);
+      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+    });
+  }, [refetch]);
 
   if (isLoading) {
     return (
@@ -66,227 +83,90 @@ export default function ProductionDetailsScreen() {
     );
   }
 
-  // Calculate production metrics with enhanced measures
-  const calculateProductionMetrics = () => {
-    if (!production?.formula || !production.formula.components) {
-      return null;
-    }
-
-    const formula = production.formula;
-    let calculatedWeight = 0;
-    let calculatedVolume = 0;
-    let hasWeightData = false;
-    let hasVolumeData = false;
-
-    formula.components?.forEach((component) => {
-      if (component.ratio) {
-        calculatedWeight += component.ratio;
-        hasWeightData = true;
-      }
-      if (component.ratio) {
-        calculatedVolume += component.ratio;
-        hasVolumeData = true;
-      }
-    });
-
-    const actualDensity = formula.density; // Use formula density as we no longer have weight
-    const formulaDensity = formula.density;
-    const calculatedDensity = hasWeightData && hasVolumeData && calculatedVolume > 0 ? calculatedWeight / calculatedVolume : null;
-
-    return {
-      actualWeight: production.volumeLiters * 1000 * formula.density, // Calculate weight from volume
-      actualVolume: production.volumeLiters * 1000, // Convert to ml
-      calculatedWeight: hasWeightData ? calculatedWeight : null,
-      calculatedVolume: hasVolumeData ? calculatedVolume : null,
-      actualDensity,
-      formulaDensity,
-      calculatedDensity,
-      weightAccuracy: hasWeightData && calculatedWeight > 0 ? (1 - Math.abs(production.volumeLiters * 1000 * formula.density - calculatedWeight) / calculatedWeight) * 100 : null,
-      volumeAccuracy: hasVolumeData && calculatedVolume > 0 ? (1 - Math.abs(production.volumeLiters * 1000 - calculatedVolume) / calculatedVolume) * 100 : null,
-      densityVariation: actualDensity && formulaDensity ? (Math.abs(actualDensity - formulaDensity) / formulaDensity) * 100 : null,
-    };
-  };
-
-  const metrics = calculateProductionMetrics();
-
   return (
     <>
       <Stack.Screen
         options={{
-          title: `Produção #${id}`,
+          title: productionEntity.name,
           headerBackTitle: "Voltar",
         }}
       />
-      <ScrollView className="flex-1 bg-background">
-        <View className="p-4 space-y-4">
-          {/* Production Header */}
-          <Card className="p-4">
-            <View className="flex-row items-start justify-between mb-3">
-              <View className="flex-1">
-                <Text className="text-lg font-bold text-foreground mb-1">Produção de Tinta</Text>
-                <Text className="text-sm text-muted-foreground mb-2">{production?.formula?.paint?.name || "Tinta não especificada"}</Text>
-                <Badge variant="secondary">{production?.volumeLiters}L produzidos</Badge>
+      <ScrollView
+        style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.container}>
+          {/* Modular Components */}
+          <ProductionInfoCard production={production} />
+          <PaintFormulaCard production={production} />
+          <ComponentsUsedCard production={production} />
+
+          {/* Changelog Timeline */}
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconHistory size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
               </View>
-
-              <Icon name="beaker" size={24} className="text-primary" />
             </View>
-
-            {production?.formula?.description && <Text className="text-sm text-muted-foreground">Fórmula: {production.formula.description}</Text>}
+            <View style={styles.content}>
+              <ChangelogTimeline
+                entityType={CHANGE_LOG_ENTITY_TYPE.PAINT_PRODUCTION}
+                entityId={production.id}
+                entityName={productionEntity.name}
+                entityCreatedAt={production.createdAt}
+                maxHeight={400}
+              />
+            </View>
           </Card>
 
-          {/* Enhanced Production Metrics */}
-          {metrics && (
-            <Card className="p-4">
-              <View className="flex-row items-center gap-2 mb-3">
-                <Icon name="target" size={16} className="text-primary" />
-                <Text className="text-base font-medium text-foreground">Análise de Precisão</Text>
-              </View>
-
-              <View className="space-y-4">
-                {/* Actual vs Calculated */}
-                <View className="grid grid-cols-2 gap-4">
-                  <View className="bg-muted/30 rounded-lg p-3">
-                    <Text className="text-xs text-muted-foreground mb-1">Peso Real</Text>
-                    <Text className="text-sm font-medium">
-                      {measureUtils.formatMeasure({
-                        value: metrics.actualWeight,
-                        unit: MEASURE_UNIT.GRAM,
-                      })}
-                    </Text>
-                    {metrics.calculatedWeight && (
-                      <Text className="text-xs text-muted-foreground">
-                        Esperado:{" "}
-                        {measureUtils.formatMeasure({
-                          value: metrics.calculatedWeight,
-                          unit: MEASURE_UNIT.GRAM,
-                        })}
-                      </Text>
-                    )}
-                  </View>
-
-                  <View className="bg-muted/30 rounded-lg p-3">
-                    <Text className="text-xs text-muted-foreground mb-1">Volume Real</Text>
-                    <Text className="text-sm font-medium">
-                      {measureUtils.formatMeasure({
-                        value: metrics.actualVolume,
-                        unit: MEASURE_UNIT.MILLILITER,
-                      })}
-                    </Text>
-                    {metrics.calculatedVolume && (
-                      <Text className="text-xs text-muted-foreground">
-                        Esperado:{" "}
-                        {measureUtils.formatMeasure({
-                          value: metrics.calculatedVolume,
-                          unit: MEASURE_UNIT.MILLILITER,
-                        })}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-
-                {/* Accuracy Metrics */}
-                <View className="space-y-2">
-                  {metrics.weightAccuracy !== null && (
-                    <View className="flex-row items-center justify-between">
-                      <Text className="text-sm text-muted-foreground">Precisão do Peso:</Text>
-                      <Badge variant={metrics.weightAccuracy >= 95 ? "default" : metrics.weightAccuracy >= 90 ? "secondary" : "destructive"}>
-                        {metrics.weightAccuracy.toFixed(1)}%
-                      </Badge>
-                    </View>
-                  )}
-
-                  {metrics.volumeAccuracy !== null && (
-                    <View className="flex-row items-center justify-between">
-                      <Text className="text-sm text-muted-foreground">Precisão do Volume:</Text>
-                      <Badge variant={metrics.volumeAccuracy >= 95 ? "default" : metrics.volumeAccuracy >= 90 ? "secondary" : "destructive"}>
-                        {metrics.volumeAccuracy.toFixed(1)}%
-                      </Badge>
-                    </View>
-                  )}
-                </View>
-
-                {/* Density Analysis */}
-                <Separator />
-                <View className="space-y-2">
-                  <Text className="text-sm font-medium text-foreground">Análise de Densidade:</Text>
-
-                  <View className="grid grid-cols-3 gap-2 text-xs">
-                    {metrics.actualDensity && (
-                      <View className="text-center">
-                        <Text className="text-muted-foreground">Real</Text>
-                        <Text className="font-medium">{metrics.actualDensity.toFixed(4)} g/ml</Text>
-                      </View>
-                    )}
-
-                    {metrics.formulaDensity && (
-                      <View className="text-center">
-                        <Text className="text-muted-foreground">Fórmula</Text>
-                        <Text className="font-medium">{metrics.formulaDensity.toFixed(4)} g/ml</Text>
-                      </View>
-                    )}
-
-                    {metrics.calculatedDensity && (
-                      <View className="text-center">
-                        <Text className="text-muted-foreground">Calculada</Text>
-                        <Text className="font-medium">{metrics.calculatedDensity.toFixed(4)} g/ml</Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {metrics.densityVariation !== null && (
-                    <View className="flex-row items-center justify-between">
-                      <Text className="text-sm text-muted-foreground">Variação da Densidade:</Text>
-                      <Badge variant={metrics.densityVariation <= 5 ? "default" : metrics.densityVariation <= 10 ? "secondary" : "destructive"}>
-                        {metrics.densityVariation.toFixed(1)}%
-                      </Badge>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </Card>
-          )}
-
-          {/* Quality Alerts */}
-          {metrics && (
-            <>
-              {metrics.weightAccuracy !== null && metrics.weightAccuracy < 90 && (
-                <Alert variant="destructive">
-                  <Icon name="alert-triangle" size={16} />
-                  <AlertDescription>Baixa precisão no peso ({metrics.weightAccuracy.toFixed(1)}%). Verifique a balança e os procedimentos de pesagem.</AlertDescription>
-                </Alert>
-              )}
-
-              {metrics.densityVariation !== null && metrics.densityVariation > 10 && (
-                <Alert variant="destructive">
-                  <Icon name="alert-triangle" size={16} />
-                  <AlertDescription>
-                    Alta variação na densidade ({metrics.densityVariation.toFixed(1)}%). Pode indicar problema na mistura ou medição dos componentes.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </>
-          )}
-
-          {/* Production Calculator */}
-          {production?.formula && (
-            <>
-              <Separator />
-              <View>
-                <Text className="text-lg font-semibold text-foreground mb-3">Calculadora para Nova Produção</Text>
-                <MobileProductionCalculator formula={production.formula} targetQuantity={1} />
-              </View>
-            </>
-          )}
-
-          {/* Missing Formula Warning */}
-          {!production?.formula && (
-            <Alert>
-              <Icon name="info" size={16} />
-              <AlertDescription>Esta produção não possui fórmula associada. Não é possível realizar análises detalhadas de precisão.</AlertDescription>
-            </Alert>
-          )}
+          {/* Bottom spacing */}
+          <View style={{ height: spacing.md }} />
         </View>
       </ScrollView>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+});

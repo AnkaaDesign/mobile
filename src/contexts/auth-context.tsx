@@ -1,11 +1,12 @@
 import { createContext, useEffect, useState, useContext, ReactNode, useCallback, useRef } from "react";
-import { authService, setAuthToken, setTokenProvider, setAuthErrorHandler, removeAuthErrorHandler } from '../api-client';
+import { authService, setAuthToken, setTokenProvider, setAuthErrorHandler, removeAuthErrorHandler, cancelAllRequests, setIsLoggingOut } from '../api-client';
 import { storeToken, getStoredToken, removeStoredToken, storeUserData, getUserData, removeUserData } from "@/lib/storage";
 import { useRouter } from "expo-router";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Alert, View, Text, AppState, AppStateStatus } from "react-native";
 import { detectContactMethod } from '../utils';
 import { jwtDecode } from "jwt-decode";
+import { showToast } from "@/components/ui/toast";
 
 import type { SignUpFormData, PasswordResetRequestFormData, VerifyCodeFormData, SendVerificationFormData } from '../schemas';
 import type { User } from '../types';
@@ -108,6 +109,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (((error as any).statusCode) === 401 && isTokenError) {
         console.log("[MOBILE AUTH DEBUG] Triggering logout due to token authentication error");
 
+        // Set logout flag to suppress further error notifications
+        setIsLoggingOut(true);
+
+        // Cancel all pending API requests
+        cancelAllRequests();
+
         try {
           // Clear auth state immediately
           setUser(null);
@@ -119,6 +126,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
           // Clear React Query cache
           if (queryClient) {
+            queryClient.cancelQueries();
             queryClient.removeQueries({ queryKey: USER_QUERY_KEYS.all });
             queryClient.clear();
           }
@@ -139,6 +147,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             } catch (navError) {
               console.error("Navigation error during auth error logout:", navError);
             }
+
+            // Clear the logout flag after navigation
+            setTimeout(() => {
+              setIsLoggingOut(false);
+            }, 500);
           }, 100);
         } catch (cleanupError) {
           console.error("[MOBILE AUTH DEBUG] Error during auth error cleanup:", cleanupError);
@@ -223,6 +236,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         return null;
       }
 
+      // Check if privileges have changed
+      const oldPrivileges = user?.sector?.privileges;
+      const newPrivileges = data.sector?.privileges;
+      const privilegesChanged = oldPrivileges !== newPrivileges;
+
+      if (privilegesChanged) {
+        console.log("[AUTH DEBUG] User privileges changed from", oldPrivileges, "to", newPrivileges);
+        console.log("[AUTH DEBUG] Invalidating all React Query caches due to privilege change");
+
+        // Clear all React Query caches to force refetch with new privileges
+        try {
+          if (queryClient) {
+            await queryClient.cancelQueries();
+            await queryClient.invalidateQueries();
+            // Clear the entire cache to ensure fresh data
+            queryClient.clear();
+            console.log("[AUTH DEBUG] All caches invalidated due to privilege change");
+          }
+        } catch (cacheError) {
+          console.warn("[AUTH DEBUG] Failed to invalidate caches:", cacheError);
+        }
+      }
+
       console.log("[AUTH DEBUG] Setting user state and storing user data");
       setUser(data);
       await storeUserData(data);
@@ -297,7 +333,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       isFetchingUserRef.current = false;
       setIsFetchingUser(false);
     }
-  }, []); // No dependencies to avoid stale closures and circular dependencies
+  }, [user, queryClient]); // Include user and queryClient for privilege comparison
 
   const validateSession = useCallback(async () => {
     console.log("[AUTH DEBUG] validateSession function called");
@@ -450,6 +486,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       subscription.remove();
     };
   }, []); // Empty dependency array to avoid recreating the listener
+
+  // Add periodic user data refresh (every 5 minutes when app is active)
+  useEffect(() => {
+    if (!user || !accessToken) return;
+
+    const refreshInterval = setInterval(() => {
+      if (AppState.currentState === "active") {
+        console.log("[AUTH DEBUG] Periodic refresh - checking for user updates");
+        fetchAndUpdateUserData(accessToken, true).catch(error => {
+          console.error("[AUTH DEBUG] Periodic refresh failed:", error);
+        });
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(refreshInterval);
+  }, [user, accessToken, fetchAndUpdateUserData]);
 
   useEffect(() => {
     console.log(`[AUTH DEBUG] accessToken useEffect triggered - token: ${accessToken ? "exists" : "null"}`);
@@ -608,15 +660,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = async (showAlert = false, alertMessage = "") => {
     setLoading(true);
+
+    // Set the logout flag to suppress error notifications
+    setIsLoggingOut(true);
+
+    // Cancel all pending API requests
+    cancelAllRequests();
+
     try {
       setUser(null);
       setAccessToken(null);
       setCachedToken(null);
       await removeStoredToken();
       await removeUserData();
+      setAuthToken(null); // Clear token from axios client
+
       // Safely clear user from React Query cache
       try {
         if (queryClient) {
+          // Cancel all active queries before clearing
+          queryClient.cancelQueries();
           queryClient.removeQueries({ queryKey: USER_QUERY_KEYS.all });
           // Also clear the entire cache to prevent stale data issues
           queryClient.clear();
@@ -647,13 +710,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         } catch (navError) {
           console.error("Navigation error during logout:", navError);
         }
+
+        // Clear the logout flag after navigation (with a small delay to ensure all pending requests are handled)
+        setTimeout(() => {
+          setIsLoggingOut(false);
+        }, 500);
       }, 100);
     }
   };
   const refreshUserData = async () => {
+    console.log("[AUTH DEBUG] Manual refreshUserData called");
     if (accessToken) {
-      await fetchAndUpdateUserData(accessToken, true);
+      const updatedUser = await fetchAndUpdateUserData(accessToken, true);
+      if (updatedUser) {
+        showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      } else {
+        showToast({ message: "Erro ao atualizar dados", type: "error" });
+      }
+      return updatedUser;
     }
+    return null;
   };
 
   const recoverPassword = async (data: PasswordResetRequestFormData) => {

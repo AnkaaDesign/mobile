@@ -44,7 +44,7 @@ export function PpeSizeSelector<TFormData extends ItemCreateFormData | ItemUpdat
           <View style={styles.field}>
             <ThemedText style={styles.label}>
               Tamanho
-              {required && <ThemedText style={styles.required}> *</ThemedText>}
+              {required && <ThemedText variant="destructive"> *</ThemedText>}
             </ThemedText>
             <Combobox
               options={sizeOptions}
@@ -55,7 +55,7 @@ export function PpeSizeSelector<TFormData extends ItemCreateFormData | ItemUpdat
               searchable={false}
               clearable={!required}
             />
-            {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
+            {error && <ThemedText variant="destructive" style={{ fontSize: 12, marginTop: 4 }}>{error.message}</ThemedText>}
           </View>
         );
       }}

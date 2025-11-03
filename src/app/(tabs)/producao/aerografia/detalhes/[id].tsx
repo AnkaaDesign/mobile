@@ -1,79 +1,82 @@
-import React from "react";
-import { Stack, useLocalSearchParams, router } from "expo-router";
-import { ScrollView, View, Alert } from "react-native";
+import { useState, useCallback } from "react";
+import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
 import { useAirbrushingDetail, useAirbrushingMutations } from '../../../../../hooks';
-import { LoadingScreen } from "@/components/ui/loading-screen";
-import { ErrorScreen } from "@/components/ui/error-screen";
-import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-import { IconEdit, IconTrash, IconBrush, IconUser, IconCalendar, IconCurrencyDollar } from "@tabler/icons-react-native";
+import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
-import { formatCurrency, formatDate } from '../../../../../utils';
-import { AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from '../../../../../constants';
-import { getBadgeVariantFromStatus } from "@/components/ui/badge";
+import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { IconEdit, IconTrash } from "@tabler/icons-react-native";
+import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from '../../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../../constants';
+import { formatDate } from '../../../../../utils';
 
-export default function AirbrushingDetailsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+// Import modular components
+import {
+  AirbrushingTaskCard,
+  AirbrushingDatesCard,
+  AirbrushingFilesCard,
+} from "@/components/production/airbrushing/detail";
+import { AirbrushingDetailSkeleton } from "@/components/production/airbrushing/skeleton";
+
+export default function AirbrushingDetailScreen() {
+  const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { user } = useAuth();
   const { deleteAsync } = useAirbrushingMutations();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const id = params?.id || "";
 
   const {
-    data: airbrushingResponse,
+    data: response,
     isLoading,
     error,
-  } = useAirbrushingDetail(id as string, {
+    refetch,
+  } = useAirbrushingDetail(id, {
     include: {
       task: {
         include: {
-          customer: true,
-          truck: true,
-          services: true,
-          logoPaints: {
+          customer: {
             include: {
-              paint: true,
+              logo: true,
             },
           },
-          generalPainting: {
-            include: {
-              paint: true,
-            },
-          },
+          sector: true,
         },
       },
       receipts: true,
-      nfes: true,
+      invoices: true,
       artworks: true,
     },
+    enabled: !!id && id !== "",
   });
 
-  const airbrushing = airbrushingResponse?.data;
+  const airbrushing = response?.data;
 
   // Permission check
-  const canEdit = React.useMemo(() => {
+  const canEdit = useCallback(() => {
     if (!user) return false;
     return hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
            hasPrivilege(user, SECTOR_PRIVILEGES.LEADER) ||
            hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   }, [user]);
 
-  const canDelete = React.useMemo(() => {
+  const canDelete = useCallback(() => {
     if (!user) return false;
     return hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   }, [user]);
 
-  const handleEdit = React.useCallback(() => {
-    router.push(`/producao/aerografia/editar/${id}`);
-  }, [id]);
+  const handleEdit = () => {
+    if (airbrushing) {
+      router.push(`/producao/aerografia/editar/${airbrushing.id}`);
+    }
+  };
 
-  const handleDelete = React.useCallback(async () => {
+  const handleDelete = useCallback(async () => {
     Alert.alert(
       "Excluir Airbrushing",
       "Tem certeza que deseja excluir este airbrushing? Esta ação é irreversível.",
@@ -85,9 +88,10 @@ export default function AirbrushingDetailsScreen() {
           onPress: async () => {
             try {
               await deleteAsync(id as string);
+              showToast({ message: "Airbrushing excluído com sucesso", type: "success" });
               router.back();
             } catch (error) {
-              Alert.alert("Erro", "Não foi possível excluir o airbrushing");
+              showToast({ message: "Não foi possível excluir o airbrushing", type: "error" });
             }
           },
         },
@@ -95,316 +99,233 @@ export default function AirbrushingDetailsScreen() {
     );
   }, [deleteAsync, id]);
 
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    refetch().finally(() => {
+      setRefreshing(false);
+      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+    });
+  }, [refetch]);
+
   if (isLoading) {
     return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Carregando...",
-            headerBackTitle: "Voltar",
-          }}
-        />
-        <LoadingScreen />
-      </>
+      <View style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
+        <View style={styles.container}>
+          <AirbrushingDetailSkeleton />
+        </View>
+      </View>
     );
   }
 
-  if (error || !airbrushing) {
+  if (error || !airbrushing || !id || id === "") {
     return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Erro",
-            headerBackTitle: "Voltar",
-          }}
-        />
-        <ErrorScreen
-          title="Erro ao carregar airbrushing"
-          message={error?.message || "Airbrushing não encontrado"}
-        />
-      </>
+      <View style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
+        <View style={styles.container}>
+          <Card style={styles.card}>
+            <View style={styles.errorContent}>
+              <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
+                Airbrushing não encontrado
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
+                O airbrushing solicitado não foi encontrado ou pode ter sido removido.
+              </ThemedText>
+              <Button onPress={() => router.back()}>
+                <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
+              </Button>
+            </View>
+          </Card>
+        </View>
+      </View>
     );
   }
-
-  const statusBadgeVariant = getBadgeVariantFromStatus(airbrushing.status, "AIRBRUSHING_STATUS");
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Airbrushing",
-          headerBackTitle: "Voltar",
-          headerRight: () => (
-            <View style={{ flexDirection: "row", gap: spacing.xs }}>
-              {canEdit && (
-                <Button variant="ghost" size="icon" onPress={handleEdit}>
-                  <IconEdit size={20} color={colors.foreground} />
-                </Button>
-              )}
-              {canDelete && (
-                <Button variant="ghost" size="icon" onPress={handleDelete}>
-                  <IconTrash size={20} color={colors.destructive} />
-                </Button>
-              )}
-            </View>
-          ),
-        }}
-      />
-      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={{ padding: spacing.md }}>
-          {/* Status Header */}
-          <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm }}>
-              <IconBrush size={20} color={colors.primary} />
-              <ThemedText style={{ fontSize: 18, fontWeight: "600" }}>
-                Status do Airbrushing
+    <ScrollView
+      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.container}>
+        {/* Header Card with Task Name */}
+        <Card style={styles.headerCard}>
+          <View style={styles.headerContent}>
+            <View style={[styles.headerLeft, { flex: 1 }]}>
+              <ThemedText
+                style={StyleSheet.flatten([styles.headerTitle, { color: colors.foreground }])}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {airbrushing.task?.name || "Airbrushing"}
               </ThemedText>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <ThemedText style={{ fontSize: 16 }}>
-                {AIRBRUSHING_STATUS_LABELS[airbrushing.status as AIRBRUSHING_STATUS]}
-              </ThemedText>
-              <Badge variant={statusBadgeVariant}>
-                {AIRBRUSHING_STATUS_LABELS[airbrushing.status as AIRBRUSHING_STATUS]}
-              </Badge>
+            <View style={styles.headerActions}>
+              {canEdit() && (
+                <TouchableOpacity
+                  onPress={handleEdit}
+                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
+                  activeOpacity={0.7}
+                >
+                  <IconEdit size={18} color={colors.primaryForeground} />
+                </TouchableOpacity>
+              )}
+              {canDelete() && (
+                <TouchableOpacity
+                  onPress={handleDelete}
+                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.destructive }])}
+                  activeOpacity={0.7}
+                >
+                  <IconTrash size={18} color={colors.primaryForeground} />
+                </TouchableOpacity>
+              )}
             </View>
-          </Card>
+          </View>
+        </Card>
 
-          {/* Task Information */}
-          {airbrushing.task && (
-            <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md }}>
-                <IconUser size={20} color={colors.primary} />
-                <ThemedText style={{ fontSize: 18, fontWeight: "600" }}>
-                  Informações da Tarefa
+        {/* Modular Components */}
+        <AirbrushingTaskCard airbrushing={airbrushing} />
+        <AirbrushingDatesCard airbrushing={airbrushing} />
+        <AirbrushingFilesCard airbrushing={airbrushing} />
+
+        {/* Metadata Card */}
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <ThemedText style={styles.title}>Informações do Sistema</ThemedText>
+          </View>
+          <View style={styles.content}>
+            <View style={styles.metadataContainer}>
+              <View style={StyleSheet.flatten([styles.metadataRow, { backgroundColor: colors.muted + "50" }])}>
+                <ThemedText style={StyleSheet.flatten([styles.metadataLabel, { color: colors.mutedForeground }])}>
+                  Criado em
                 </ThemedText>
-              </View>
-
-              <View style={{ gap: spacing.sm }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <ThemedText style={{ color: colors.muted, fontSize: 14 }}>
-                    Nome da Tarefa:
-                  </ThemedText>
-                  <ThemedText style={{ fontWeight: "500", fontSize: 14 }}>
-                    {airbrushing.task.name}
-                  </ThemedText>
-                </View>
-
-                {airbrushing.task.customer && (
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <ThemedText style={{ color: colors.muted, fontSize: 14 }}>
-                      Cliente:
-                    </ThemedText>
-                    <ThemedText style={{ fontWeight: "500", fontSize: 14 }}>
-                      {airbrushing.task.customer.fantasyName}
-                    </ThemedText>
-                  </View>
-                )}
-
-                {airbrushing.task.truck && (
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <ThemedText style={{ color: colors.muted, fontSize: 14 }}>
-                      Veículo:
-                    </ThemedText>
-                    <ThemedText style={{ fontWeight: "500", fontSize: 14 }}>
-                      {airbrushing.task.truck.model} - {airbrushing.task.truck.plate}
-                    </ThemedText>
-                  </View>
-                )}
-              </View>
-            </Card>
-          )}
-
-          {/* Dates and Price */}
-          <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md }}>
-              <IconCalendar size={20} color={colors.primary} />
-              <ThemedText style={{ fontSize: 18, fontWeight: "600" }}>
-                Datas e Valores
-              </ThemedText>
-            </View>
-
-            <View style={{ gap: spacing.sm }}>
-              {airbrushing.startDate && (
-                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <ThemedText style={{ color: colors.muted, fontSize: 14 }}>
-                    Data de Início:
-                  </ThemedText>
-                  <ThemedText style={{ fontWeight: "500", fontSize: 14 }}>
-                    {formatDate(airbrushing.startDate)}
-                  </ThemedText>
-                </View>
-              )}
-
-              {airbrushing.finishDate && (
-                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <ThemedText style={{ color: colors.muted, fontSize: 14 }}>
-                    Data de Finalização:
-                  </ThemedText>
-                  <ThemedText style={{ fontWeight: "500", fontSize: 14 }}>
-                    {formatDate(airbrushing.finishDate)}
-                  </ThemedText>
-                </View>
-              )}
-
-              {airbrushing.price && (
-                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <ThemedText style={{ color: colors.muted, fontSize: 14 }}>
-                    Preço:
-                  </ThemedText>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
-                    <IconCurrencyDollar size={16} color={colors.success} />
-                    <ThemedText style={{ fontWeight: "600", fontSize: 14, color: colors.success }}>
-                      {formatCurrency(airbrushing.price)}
-                    </ThemedText>
-                  </View>
-                </View>
-              )}
-            </View>
-          </Card>
-
-          {/* Paints Information */}
-          {airbrushing.task?.logoPaints?.length || airbrushing.task?.generalPainting ? (
-            <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md }}>
-                <IconBrush size={20} color={colors.primary} />
-                <ThemedText style={{ fontSize: 18, fontWeight: "600" }}>
-                  Tintas Utilizadas
-                </ThemedText>
-              </View>
-
-              <View style={{ gap: spacing.md }}>
-                {(airbrushing.task.generalPainting as any)?.paint && (
-                  <View>
-                    <ThemedText style={{ fontWeight: "500", marginBottom: spacing.xs }}>
-                      Tinta Geral:
-                    </ThemedText>
-                    <Badge variant="secondary">
-                      {(airbrushing.task.generalPainting as any)?.paint?.name}
-                    </Badge>
-                  </View>
-                )}
-
-                {(airbrushing.task.logoPaints?.length ?? 0) > 0 && (
-                  <View>
-                    <ThemedText style={{ fontWeight: "500", marginBottom: spacing.xs }}>
-                      Tintas do Logo ({airbrushing.task.logoPaints?.length ?? 0}):
-                    </ThemedText>
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs }}>
-                      {airbrushing.task.logoPaints?.map((logoPaint) => (
-                        <Badge key={logoPaint.id} variant="outline">
-                          {(logoPaint as any)?.paint?.name || "Tinta sem nome"}
-                        </Badge>
-                      ))}
-                    </View>
-                  </View>
-                )}
-              </View>
-            </Card>
-          ) : null}
-
-          {/* Files */}
-          {((airbrushing.receipts?.length ?? 0) > 0 || (airbrushing.nfes?.length ?? 0) > 0 || (airbrushing.artworks?.length ?? 0) > 0) ? (
-            <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-              <ThemedText style={{ fontSize: 18, fontWeight: "600", marginBottom: spacing.md }}>
-                Arquivos
-              </ThemedText>
-
-              <View style={{ gap: spacing.md }}>
-                {(airbrushing.receipts?.length ?? 0) > 0 && (
-                  <View>
-                    <ThemedText style={{ fontWeight: "500", marginBottom: spacing.xs }}>
-                      Recibos ({airbrushing.receipts?.length ?? 0}):
-                    </ThemedText>
-                    {airbrushing.receipts?.map((file) => (
-                      <ThemedText key={file.id} style={{ fontSize: 14, color: colors.muted }}>
-                        • {file.filename}
-                      </ThemedText>
-                    ))}
-                  </View>
-                )}
-
-                {(airbrushing.nfes?.length ?? 0) > 0 && (
-                  <View>
-                    <ThemedText style={{ fontWeight: "500", marginBottom: spacing.xs }}>
-                      NFEs ({airbrushing.nfes?.length ?? 0}):
-                    </ThemedText>
-                    {airbrushing.nfes?.map((file) => (
-                      <ThemedText key={file.id} style={{ fontSize: 14, color: colors.muted }}>
-                        • {file.filename}
-                      </ThemedText>
-                    ))}
-                  </View>
-                )}
-
-                {(airbrushing.artworks?.length ?? 0) > 0 && (
-                  <View>
-                    <ThemedText style={{ fontWeight: "500", marginBottom: spacing.xs }}>
-                      Arte ({airbrushing.artworks?.length ?? 0}):
-                    </ThemedText>
-                    {airbrushing.artworks?.map((file) => (
-                      <ThemedText key={file.id} style={{ fontSize: 14, color: colors.muted }}>
-                        • {file.filename}
-                      </ThemedText>
-                    ))}
-                  </View>
-                )}
-              </View>
-            </Card>
-          ) : null}
-
-          {/* Services */}
-          {(airbrushing.task?.services?.length ?? 0) > 0 && (
-            <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-              <ThemedText style={{ fontSize: 18, fontWeight: "600", marginBottom: spacing.md }}>
-                Serviços ({airbrushing.task?.services?.length ?? 0})
-              </ThemedText>
-
-              <View style={{ gap: spacing.sm }}>
-                {airbrushing.task?.services?.map((service) => (
-                  <View key={service.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <ThemedText style={{ flex: 1, fontSize: 14 }}>
-                      {(service as any)?.name}
-                    </ThemedText>
-                    {(service as any)?.price && (
-                      <ThemedText style={{ fontSize: 14, color: colors.success, fontWeight: "500" }}>
-                        {formatCurrency((service as any)?.price)}
-                      </ThemedText>
-                    )}
-                  </View>
-                ))}
-              </View>
-            </Card>
-          )}
-
-          {/* Metadata */}
-          <Card style={{ padding: spacing.md }}>
-            <ThemedText style={{ fontSize: 18, fontWeight: "600", marginBottom: spacing.md }}>
-              Informações do Sistema
-            </ThemedText>
-
-            <View style={{ gap: spacing.sm }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <ThemedText style={{ color: colors.muted, fontSize: 14 }}>
-                  Criado em:
-                </ThemedText>
-                <ThemedText style={{ fontSize: 14 }}>
+                <ThemedText style={StyleSheet.flatten([styles.metadataValue, { color: colors.foreground }])}>
                   {formatDate(airbrushing.createdAt)}
                 </ThemedText>
               </View>
-
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <ThemedText style={{ color: colors.muted, fontSize: 14 }}>
-                  Atualizado em:
+              <View style={StyleSheet.flatten([styles.metadataRow, { backgroundColor: colors.muted + "50" }])}>
+                <ThemedText style={StyleSheet.flatten([styles.metadataLabel, { color: colors.mutedForeground }])}>
+                  Atualizado em
                 </ThemedText>
-                <ThemedText style={{ fontSize: 14 }}>
+                <ThemedText style={StyleSheet.flatten([styles.metadataValue, { color: colors.foreground }])}>
                   {formatDate(airbrushing.updatedAt)}
                 </ThemedText>
               </View>
             </View>
-          </Card>
-        </View>
-      </ScrollView>
-    </>
+          </View>
+        </Card>
+
+        {/* Bottom spacing */}
+        <View style={{ height: spacing.md }} />
+      </View>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
+  card: {
+    padding: spacing.md,
+  },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.xs,
+  },
+  headerTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  metadataContainer: {
+    gap: spacing.md,
+  },
+  metadataRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+  },
+  metadataLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  metadataValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  errorContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.xxl,
+  },
+  errorIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.lg,
+  },
+  errorTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.semibold,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  errorDescription: {
+    fontSize: fontSize.base,
+    textAlign: "center",
+    marginBottom: spacing.xl,
+  },
+});

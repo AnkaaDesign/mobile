@@ -13,7 +13,7 @@ import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
 import { showToast } from "@/components/ui/toast";
 import { TouchableOpacity } from "react-native";
-import { IconRefresh, IconEdit, IconTrash } from "@tabler/icons-react-native";
+import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import {
   ObservationInfoCard,
   ObservationFilesCard,
@@ -133,8 +133,8 @@ export default function ObservationDetailsScreen() {
     >
       <View style={styles.content}>
         {/* Page Header Card */}
-        <Card>
-          <CardContent style={styles.headerContent}>
+        <Card style={styles.headerCard}>
+          <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
               <ThemedText
                 style={StyleSheet.flatten([styles.pageTitle, { color: colors.foreground }])}
@@ -144,14 +144,6 @@ export default function ObservationDetailsScreen() {
               </ThemedText>
             </View>
             <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={handleRefresh}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-                activeOpacity={0.7}
-                disabled={refreshing}
-              >
-                <IconRefresh size={18} color={colors.foreground} />
-              </TouchableOpacity>
               {canEdit && (
                 <TouchableOpacity
                   onPress={handleEdit}
@@ -171,7 +163,7 @@ export default function ObservationDetailsScreen() {
                 </TouchableOpacity>
               )}
             </View>
-          </CardContent>
+          </View>
         </Card>
 
         {/* Observation Information Card */}
@@ -204,14 +196,18 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.xs,
   },
   headerLeft: {
     flex: 1,

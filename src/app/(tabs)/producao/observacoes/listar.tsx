@@ -19,31 +19,32 @@ import {
   createColumnDefinitions,
 } from "@/components/production/observation/list/observation-table";
 import type { SortConfig } from "@/components/production/observation/list/observation-table";
-import { ObservationFilterDrawer } from "@/components/production/observation/list/observation-filter-drawer";
 import { ObservationFilterTags } from "@/components/production/observation/list/observation-filter-tags";
-import { ObservationColumnVisibilityDrawer } from "@/components/production/observation/list/observation-column-visibility-drawer";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { ObservationListSkeleton } from "@/components/production/observation/skeleton/observation-list-skeleton";
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { ObservationFilterDrawerContent } from "@/components/production/observation/list/observation-filter-drawer-content";
+import { ObservationColumnDrawerContent } from "@/components/production/observation/list/observation-column-drawer-content";
 
 export default function ObservationListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<ObservationGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([
     { columnKey: "createdAt", direction: "desc" },
   ]);
   const [selectedObservations, setSelectedObservations] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>([
     "task.name",
     "description",
@@ -184,7 +185,6 @@ export default function ObservationListScreen() {
   const handleApplyFilters = useCallback(
     (newFilters: Partial<ObservationGetManyFormData>) => {
       setFilters(newFilters);
-      setShowFilters(false);
     },
     []
   );
@@ -200,6 +200,28 @@ export default function ObservationListScreen() {
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {
     setVisibleColumnKeys(Array.from(newColumns));
   }, []);
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <ObservationFilterDrawerContent
+        filters={filters}
+        onFiltersChange={handleApplyFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+        tasks={tasks}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleApplyFilters, handleClearFilters, activeFiltersCount, tasks]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <ObservationColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumnKeys, handleColumnsChange]);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -233,14 +255,15 @@ export default function ObservationListScreen() {
   const hasObservations = Array.isArray(observations) && observations.length > 0;
 
   return (
-    <ThemedView
-      style={[
-        styles.container,
-        { backgroundColor: colors.background, paddingBottom: insets.bottom },
-      ]}
-    >
-      {/* Search and Filter */}
-      <View style={styles.searchContainer}>
+    <UtilityDrawerWrapper>
+      <ThemedView
+        style={[
+          styles.container,
+          { backgroundColor: colors.background, paddingBottom: insets.bottom },
+        ]}
+      >
+        {/* Search and Filter */}
+        <View style={styles.searchContainer}>
         <SearchBar
           value={displaySearchText}
           onChangeText={handleDisplaySearchChange}
@@ -252,13 +275,13 @@ export default function ObservationListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -330,26 +353,8 @@ export default function ObservationListScreen() {
       )}
 
       {hasObservations && <FAB icon="plus" onPress={handleCreateObservation} />}
-
-      {/* Filter Drawer */}
-      <ObservationFilterDrawer
-        open={showFilters}
-        onOpenChange={setShowFilters}
-        currentFilters={filters}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-        tasks={tasks}
-      />
-
-      {/* Column Visibility Drawer */}
-      <ObservationColumnVisibilityDrawer
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
     </ThemedView>
+    </UtilityDrawerWrapper>
   );
 }
 

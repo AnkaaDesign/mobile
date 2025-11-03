@@ -16,6 +16,7 @@ import { TaskInfoCard } from "@/components/production/task/detail/task-info-card
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
 import { TaskServicesCard } from "@/components/production/task/detail/task-services-card";
 import { TaskCustomerCard } from "@/components/production/task/detail/task-customer-card";
+import { TruckLayoutPreview } from "@/components/production/layout/truck-layout-preview";
 
 import { TaskPaintCard } from "@/components/production/task/detail/task-paint-card";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,13 +25,12 @@ import { TouchableOpacity } from "react-native";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { FileItem, useFileViewer, type FileViewMode } from "@/components/file";
 import {
-  
-  
+
+
   IconFileText,
   IconCalendarEvent,
-  
-  
-  IconRefresh,
+
+
   IconEdit,
   IconTrash,
   IconCut,
@@ -231,22 +231,14 @@ export default function ScheduleDetailsScreen() {
       >
         <View style={styles.content}>
           {/* Task Name Header Card */}
-          <Card>
-            <CardContent style={styles.headerContent}>
+          <Card style={styles.headerCard}>
+            <View style={styles.headerContent}>
               <View style={styles.headerLeft}>
                 <ThemedText style={StyleSheet.flatten([styles.taskTitle, { color: colors.foreground }])} numberOfLines={2}>
                   {task.name}
                 </ThemedText>
               </View>
               <View style={styles.headerActions}>
-                <TouchableOpacity
-                  onPress={handleRefresh}
-                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-                  activeOpacity={0.7}
-                  disabled={refreshing}
-                >
-                  <IconRefresh size={18} color={colors.foreground} />
-                </TouchableOpacity>
                 {canEdit && (
                   <TouchableOpacity
                     onPress={handleEdit}
@@ -266,7 +258,7 @@ export default function ScheduleDetailsScreen() {
                   </TouchableOpacity>
                 )}
               </View>
-            </CardContent>
+            </View>
           </Card>
 
           {/* Overview Card - Informações Gerais */}
@@ -289,6 +281,41 @@ export default function ScheduleDetailsScreen() {
 
           {/* Customer Card */}
           {task.customer && <TaskCustomerCard customer={task.customer} />}
+
+          {/* Truck Layout */}
+          {(task as any)?.truck && (
+            <Card style={styles.card}>
+              <View style={[styles.sectionHeader, { justifyContent: 'space-between' }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <IconLayoutGrid size={20} color={colors.primary} />
+                  <ThemedText style={styles.sectionTitle}>Layout do Caminhão</ThemedText>
+                </View>
+                <TouchableOpacity
+                  style={{ padding: spacing.xs }}
+                  onPress={() => {
+                    Alert.alert(
+                      'Confirmar',
+                      'Tem certeza que deseja remover o layout?',
+                      [
+                        { text: 'Cancelar', style: 'cancel' },
+                        {
+                          text: 'Remover',
+                          style: 'destructive',
+                          onPress: () => {
+                            // TODO: Implement layout deletion
+                            showToast({ message: 'Layout removido', type: 'success' });
+                          }
+                        }
+                      ]
+                    );
+                  }}
+                >
+                  <IconTrash size={18} color={colors.destructive} />
+                </TouchableOpacity>
+              </View>
+              <TruckLayoutPreview truckId={(task as any).truck.id} taskName={task.name} />
+            </Card>
+          )}
 
           {/* Services */}
           {task.services && task.services.length > 0 && (
@@ -607,7 +634,7 @@ export default function ScheduleDetailsScreen() {
               </View>
               <View style={styles.itemDetails}>
                 {airbrushings.map((airbrushing: any, index: number) => (
-                  <View key={airbrushing.id} style={[styles.relatedTaskItem, { paddingVertical: spacing.md }]}>
+                  <View key={airbrushing.id} style={[styles.relatedTaskItem, { paddingVertical: spacing.md, borderBottomColor: colors.border }]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.sm }}>
                       <View style={{ flex: 1 }}>
                         <ThemedText style={styles.relatedTaskName}>
@@ -723,14 +750,18 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.xs,
   },
   headerLeft: {
     flex: 1,
@@ -758,8 +789,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   sectionTitle: {
     fontSize: fontSize.lg,

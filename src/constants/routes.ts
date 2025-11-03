@@ -526,10 +526,10 @@ export const routes = {
       root: "/producao/aerografia",
     },
     cutting: {
-      create: "/producao/recorte/cadastrar",
-      details: (id: string) => `/producao/recorte/detalhes/${id}`,
-      edit: (id: string) => `/producao/recorte/editar/${id}`,
-      list: "/producao/recorte",
+      create: "/producao/recorte/plano-de-recorte/cadastrar",
+      details: (id: string) => `/producao/recorte/plano-de-recorte/detalhes/${id}`,
+      edit: (id: string) => `/producao/recorte/plano-de-recorte/editar/${id}`,
+      list: "/producao/recorte/listar",
       root: "/producao/recorte",
     },
     garages: {

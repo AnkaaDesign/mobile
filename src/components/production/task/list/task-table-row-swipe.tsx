@@ -1,6 +1,6 @@
 import React, { useRef, useCallback, useEffect } from "react";
 import { View, StyleSheet, ViewStyle, Alert, StyleProp } from "react-native";
-import { IconEdit, IconTrash, IconPlayerPlay, IconPlayerPause, IconCheck, IconX } from "@tabler/icons-react-native";
+import { IconEdit, IconTrash, IconBuildingFactory2, IconProgressCheck } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/contexts/theme-context";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
@@ -16,7 +16,8 @@ interface TaskTableRowSwipeProps {
   taskStatus: TASK_STATUS;
   onEdit?: (taskId: string) => void;
   onDelete?: (taskId: string) => void;
-  onStatusChange?: (taskId: string, status: TASK_STATUS) => void;
+  onSetSector?: (taskId: string) => void;
+  onSetStatus?: (taskId: string) => void;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
 }
@@ -28,7 +29,8 @@ const TaskTableRowSwipeComponent = ({
   taskStatus,
   onEdit,
   onDelete,
-  onStatusChange,
+  onSetSector,
+  onSetStatus,
   style,
   disabled = false
 }: TaskTableRowSwipeProps) => {
@@ -84,66 +86,8 @@ const TaskTableRowSwipeComponent = ({
     ]);
   }, [taskId, taskName, onDelete]);
 
-  // Build actions array based on task status and available handlers
+  // Build actions array based on available handlers
   const rightActions: SwipeAction[] = [];
-
-  // Status change actions based on current status
-  if (onStatusChange) {
-    switch (taskStatus) {
-      case TASK_STATUS.PENDING:
-        rightActions.push({
-          key: "start",
-          label: "Iniciar",
-          icon: <IconPlayerPlay size={20} color="white" />,
-          backgroundColor: "#15803d", // green-700
-          onPress: () => onStatusChange(taskId, TASK_STATUS.IN_PRODUCTION),
-          closeOnPress: true,
-        });
-        break;
-      case TASK_STATUS.IN_PRODUCTION:
-        rightActions.push({
-          key: "pause",
-          label: "Pausar",
-          icon: <IconPlayerPause size={20} color="white" />,
-          backgroundColor: "#f59e0b", // amber-500
-          onPress: () => onStatusChange(taskId, TASK_STATUS.ON_HOLD),
-          closeOnPress: true,
-        });
-        rightActions.push({
-          key: "complete",
-          label: "Concluir",
-          icon: <IconCheck size={20} color="white" />,
-          backgroundColor: "#15803d", // green-700
-          onPress: () => onStatusChange(taskId, TASK_STATUS.COMPLETED),
-          closeOnPress: true,
-        });
-        break;
-      case TASK_STATUS.ON_HOLD:
-        rightActions.push({
-          key: "resume",
-          label: "Retomar",
-          icon: <IconPlayerPlay size={20} color="white" />,
-          backgroundColor: "#15803d", // green-700
-          onPress: () => onStatusChange(taskId, TASK_STATUS.IN_PRODUCTION),
-          closeOnPress: true,
-        });
-        break;
-      default:
-        break;
-    }
-
-    // Add cancel action for non-completed/cancelled tasks
-    if (taskStatus !== TASK_STATUS.COMPLETED && taskStatus !== TASK_STATUS.CANCELLED) {
-      rightActions.push({
-        key: "cancel",
-        label: "Cancelar",
-        icon: <IconX size={20} color="white" />,
-        backgroundColor: "#dc2626", // red-600
-        onPress: () => onStatusChange(taskId, TASK_STATUS.CANCELLED),
-        closeOnPress: true,
-      });
-    }
-  }
 
   // Edit action
   if (onEdit) {
@@ -166,6 +110,36 @@ const TaskTableRowSwipeComponent = ({
       backgroundColor: "#b91c1c", // red-700
       onPress: handleDeletePress,
       closeOnPress: false, // Don't close automatically for delete confirmation
+    });
+  }
+
+  // Set Sector action
+  if (onSetSector) {
+    rightActions.push({
+      key: "setSector",
+      label: "Setor",
+      icon: <IconBuildingFactory2 size={20} color="white" />,
+      backgroundColor: "#7c3aed", // purple-600
+      onPress: () => {
+        swipeableRef.current?.close();
+        setTimeout(() => onSetSector(taskId), 300);
+      },
+      closeOnPress: true,
+    });
+  }
+
+  // Set Status action
+  if (onSetStatus) {
+    rightActions.push({
+      key: "setStatus",
+      label: "Status",
+      icon: <IconProgressCheck size={20} color="white" />,
+      backgroundColor: "#059669", // emerald-600
+      onPress: () => {
+        swipeableRef.current?.close();
+        setTimeout(() => onSetStatus(taskId), 300);
+      },
+      closeOnPress: true,
     });
   }
 

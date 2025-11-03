@@ -8,10 +8,17 @@ import { useInfiniteErrorHandler } from "./use-infinite-error-handler";
  * Includes aggressive pre-fetching strategy for smooth scrolling experience
  */
 export function useInfiniteMobile<TError = Error>(infiniteQuery: UseInfiniteQueryResult<any, TError>) {
-  // Flatten pages data for FlatList consumption
+  // Flatten pages data for FlatList consumption with deduplication
   const items = useMemo(() => {
     const pages = (infiniteQuery.data as any)?.pages || [];
-    return pages.flatMap((page: any /* TODO: Add proper type */) => page?.data || []) || [];
+    const allItems = pages.flatMap((page: any /* TODO: Add proper type */) => page?.data || []) || [];
+
+    // Deduplicate by id to prevent duplicate key warnings in FlatList
+    const uniqueItems = Array.from(
+      new Map(allItems.map((item: any) => [item.id, item])).values()
+    );
+
+    return uniqueItems;
   }, [infiniteQuery.data]);
 
   // Extract total count from meta if available (API returns totalRecords)
