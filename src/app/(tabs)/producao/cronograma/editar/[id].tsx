@@ -1,3 +1,4 @@
+import React from "react";
 import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { showToast } from "@/components/ui/toast";
@@ -6,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { TaskForm } from "@/components/production/task/form/task-form";
 import { SkeletonCard } from "@/components/ui/loading";
-import { useTaskDetail, useTaskMutations } from '../../../../../hooks';
+import { useTaskDetail, useTaskMutations, useLayoutsByTruck } from '../../../../../hooks';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { routes } from '../../../../../constants';
 import { spacing } from "@/constants/design-system";
@@ -27,10 +28,15 @@ export default function EditScheduleScreen() {
       generalPainting: true,
       logoPaints: true,
       services: true,
+      truck: true, // ✅ Include truck to get truckId
     },
   });
 
   const task = response?.data;
+
+  // Fetch truck layouts if task has a truck
+  const truckId = task?.truck?.id || task?.truckId;
+  const { data: layoutsData } = useLayoutsByTruck(truckId || "", !!truckId);
 
   const handleSubmit = async (data: any) => {
     if (!id) return;
@@ -82,6 +88,59 @@ export default function EditScheduleScreen() {
     );
   }
 
+  // Transform layout data from backend format to LayoutCreateFormData format
+  const existingLayouts = React.useMemo(() => {
+    if (!layoutsData) return undefined;
+
+    const layouts: any = {};
+
+    // Transform left side layout
+    if (layoutsData.leftSideLayout?.layoutSections) {
+      layouts.left = {
+        height: layoutsData.leftSideLayout.height,
+        sections: layoutsData.leftSideLayout.layoutSections.map((s: any) => ({
+          width: s.width,
+          isDoor: s.isDoor,
+          doorOffset: s.doorOffset,
+          position: s.position,
+        })),
+        photoId: layoutsData.leftSideLayout.photoId,
+      };
+    }
+
+    // Transform right side layout
+    if (layoutsData.rightSideLayout?.layoutSections) {
+      layouts.right = {
+        height: layoutsData.rightSideLayout.height,
+        sections: layoutsData.rightSideLayout.layoutSections.map((s: any) => ({
+          width: s.width,
+          isDoor: s.isDoor,
+          doorOffset: s.doorOffset,
+          position: s.position,
+        })),
+        photoId: layoutsData.rightSideLayout.photoId,
+      };
+    }
+
+    // Transform back side layout
+    if (layoutsData.backSideLayout?.layoutSections) {
+      layouts.back = {
+        height: layoutsData.backSideLayout.height,
+        sections: layoutsData.backSideLayout.layoutSections.map((s: any) => ({
+          width: s.width,
+          isDoor: s.isDoor,
+          doorOffset: s.doorOffset,
+          position: s.position,
+        })),
+        photoId: layoutsData.backSideLayout.photoId,
+      };
+    }
+
+    return Object.keys(layouts).length > 0 ? layouts : undefined;
+  }, [layoutsData]);
+
+  console.log('[EditScheduleScreen] Existing layouts:', existingLayouts);
+
   return (
     <ThemedView className="flex-1">
       <TaskForm
@@ -107,6 +166,7 @@ export default function EditScheduleScreen() {
           startedAt: task.startedAt ? new Date(task.startedAt) : null,
           finishedAt: task.finishedAt ? new Date(task.finishedAt) : null,
         }}
+        existingLayouts={existingLayouts}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         isSubmitting={isLoading}

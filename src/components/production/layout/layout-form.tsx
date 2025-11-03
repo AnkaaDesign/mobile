@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, Text } from "react-native";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, Text, TextInput } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,108 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import type { LayoutCreateFormData } from "@/schemas";
 import { showToast } from "@/components/ui/toast";
+
+// MeasurementInput component with local state (like web version)
+const MeasurementInput = React.memo<{
+  value: number;
+  onChange: (value: number) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  min?: number;
+  max?: number;
+}>({
+  value,
+  onChange,
+  placeholder = "0,00",
+  disabled = false,
+  min,
+  max,
+}) => {
+  const { colors } = useTheme();
+  const [localValue, setLocalValue] = useState<string>("");
+  const [isFocused, setIsFocused] = useState(false);
+
+  // Format number for display (cm to m with comma)
+  const formatValue = (val: number): string => {
+    if (val === 0) return "";
+    const meters = val / 100;
+    return meters.toFixed(2).replace(".", ",");
+  };
+
+  // Parse display value to cm
+  const parseValue = (val: string): number => {
+    if (!val || val === "") return 0;
+    const normalized = val.replace(",", ".");
+    const parsed = parseFloat(normalized);
+    if (isNaN(parsed)) return 0;
+
+    // If value looks like whole number > 10, treat as cm
+    if (!val.includes(",") && !val.includes(".") && parsed > 10) {
+      return parsed;
+    }
+
+    return parsed * 100; // Convert meters to cm
+  };
+
+  // Update local value when external value changes (but not while focused)
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalValue(formatValue(value));
+    }
+  }, [value, isFocused]);
+
+  const handleChange = (text: string) => {
+    // Allow only numbers, comma, and dot
+    if (!/^[0-9.,]*$/.test(text)) return;
+
+    // Check for multiple separators
+    const commaCount = (text.match(/,/g) || []).length;
+    const dotCount = (text.match(/\./g) || []).length;
+    if (commaCount + dotCount > 1) return;
+
+    setLocalValue(text.replace(".", ","));
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+
+    let cmValue = parseValue(localValue);
+
+    // Apply min/max constraints
+    if (min !== undefined) cmValue = Math.max(min, cmValue);
+    if (max !== undefined) cmValue = Math.min(max, cmValue);
+
+    const newValue = Math.round(cmValue);
+    if (newValue !== value) {
+      onChange(newValue);
+    }
+    setLocalValue(formatValue(cmValue));
+  };
+
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  return (
+    <TextInput
+      value={localValue}
+      onChangeText={handleChange}
+      onBlur={handleBlur}
+      onFocus={handleFocus}
+      placeholder={placeholder}
+      keyboardType="decimal-pad"
+      editable={!disabled}
+      style={[
+        styles.rowInput,
+        {
+          color: colors.foreground,
+          borderColor: colors.border,
+          backgroundColor: disabled ? colors.muted : colors.background,
+        }
+      ]}
+    />
+  );
+});
 
 interface LayoutFormProps {
   selectedSide: 'left' | 'right' | 'back';
@@ -38,6 +140,22 @@ interface SideState {
 
 export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }: LayoutFormProps) {
   const { colors } = useTheme();
+
+  // Track if we're currently saving to prevent state reset during save
+  const isSavingRef = useRef(false);
+
+  // Track last user interaction timestamp to prevent unwanted resets
+  const lastUserInteractionRef = useRef<number>(Date.now());
+
+  // Track if there are pending changes that shouldn't be overwritten
+  const hasPendingChangesRef = useRef<boolean>(false);
+
+  // Track which sides have had their initial state emitted
+  const initialStateEmittedRef = useRef<Record<'left' | 'right' | 'back', boolean>>({
+    left: false,
+    right: false,
+    back: false,
+  });
 
   // Initialize side states from layouts prop
   const [sideStates, setSideStates] = useState<Record<'left' | 'right' | 'back', SideState>>(() => {
@@ -86,6 +204,129 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
   });
 
   const currentState = sideStates[selectedSide];
+
+  // CRITICAL: Sync state when layouts prop changes (e.g., when backend data arrives)
+  useEffect(() => {
+    if (!layouts) return;
+
+    // Don't sync if user has pending changes
+    if (hasPendingChangesRef.current) {
+      console.log('[LayoutForm Mobile] Skipping sync - user has pending changes');
+      return;
+    }
+
+    // Don't sync if currently saving
+    if (isSavingRef.current) {
+      console.log('[LayoutForm Mobile] Skipping sync - currently saving');
+      return;
+    }
+
+    console.log('[LayoutForm Mobile] Syncing state from layouts prop:', layouts);
+
+    setSideStates(prev => {
+      const newStates = { ...prev };
+      let hasChanges = false;
+
+      // Sync each side that has data in layouts prop
+      Object.keys(layouts).forEach((side) => {
+        const layoutData = layouts[side as 'left' | 'right' | 'back'];
+        if (layoutData?.sections && Array.isArray(layoutData.sections)) {
+          const state: SideState = {
+            height: (layoutData.height || 2.4) * 100,
+            totalWidth: 0,
+            doors: []
+          };
+
+          const sections = layoutData.sections;
+          const total = sections.reduce((sum, s) => sum + s.width * 100, 0);
+          state.totalWidth = total || (side === 'back' ? 242 : 800);
+
+          // Extract doors from sections
+          const extractedDoors: Door[] = [];
+          let currentPos = 0;
+
+          sections.forEach((section, idx) => {
+            if (section.isDoor) {
+              extractedDoors.push({
+                id: `door-${side}-${idx}-${Date.now()}-${Math.random()}`,
+                position: currentPos,
+                width: section.width * 100,
+                offsetTop: (section.doorOffset || 0.5) * 100
+              });
+            }
+            currentPos += section.width * 100;
+          });
+
+          state.doors = extractedDoors;
+          newStates[side as 'left' | 'right' | 'back'] = state;
+          hasChanges = true;
+
+          console.log(`[LayoutForm Mobile] Synced ${side} side:`, {
+            height: state.height,
+            totalWidth: state.totalWidth,
+            doorsCount: state.doors.length,
+          });
+        }
+      });
+
+      return hasChanges ? newStates : prev;
+    });
+  }, [layouts]);
+
+  // CRITICAL: Emit initial state to parent when selected side changes
+  // This ensures parent knows the default values
+  useEffect(() => {
+    console.log('[LayoutForm Mobile] Initial state emission check', {
+      selectedSide,
+      hasOnChange: !!onChange,
+      alreadyEmitted: initialStateEmittedRef.current[selectedSide],
+    });
+
+    // Skip if no onChange handler
+    if (!onChange) {
+      return;
+    }
+
+    // Skip if we've already emitted initial state for this side
+    if (initialStateEmittedRef.current[selectedSide]) {
+      return;
+    }
+
+    // Skip if we have a layout prop with sections (already synced)
+    const layoutData = layouts[selectedSide];
+    if (layoutData && layoutData.sections) {
+      initialStateEmittedRef.current[selectedSide] = true;
+      return;
+    }
+
+    const state = sideStates[selectedSide];
+    const segments = calculateSegments(state.doors, state.totalWidth);
+
+    const sections = segments.map((segment, index) => ({
+      width: segment.width / 100,
+      isDoor: segment.type === 'door',
+      doorOffset: segment.type === 'door' && segment.door ? segment.door.offsetTop / 100 : null,
+      position: index
+    }));
+
+    const layoutDataToEmit: LayoutCreateFormData = {
+      height: state.height / 100,
+      sections,
+      photoId: null,
+    };
+
+    console.log('[LayoutForm Mobile] ✅ Emitting initial state:', {
+      selectedSide,
+      sectionsCount: sections.length,
+      height: layoutDataToEmit.height,
+    });
+
+    // Mark this side as having emitted state
+    initialStateEmittedRef.current[selectedSide] = true;
+
+    // Emit to parent
+    onChange(selectedSide, layoutDataToEmit);
+  }, [selectedSide, onChange]);
 
   // Calculate segments (sections between doors)
   const calculateSegments = (doors: Door[], totalWidth: number) => {
@@ -142,6 +383,16 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
 
   // Update current side and emit changes
   const updateCurrentSide = useCallback((updates: Partial<SideState>) => {
+    console.log('[LayoutForm Mobile] User made a change:', {
+      selectedSide,
+      updates: Object.keys(updates),
+    });
+
+    // CRITICAL: Record timestamp of user interaction and mark as having pending changes
+    lastUserInteractionRef.current = Date.now();
+    hasPendingChangesRef.current = true;
+    console.log('[LayoutForm Mobile] Recorded user interaction');
+
     setSideStates(prev => {
       const newState = {
         ...prev,
@@ -167,26 +418,104 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
         photoId: null,
       };
 
+      console.log('[LayoutForm Mobile] ✅ Emitting changes:', {
+        selectedSide,
+        sectionsCount: sections.length,
+        totalWidth: sections.reduce((sum, s) => sum + s.width, 0),
+      });
+
+      // Set saving flag to prevent state reset during save
+      isSavingRef.current = true;
+
       onChange(selectedSide, layoutData);
+
+      // Reset flag after a delay
+      setTimeout(() => {
+        isSavingRef.current = false;
+      }, 500);
+
       return newState;
     });
   }, [selectedSide, onChange]);
 
-  // Add a new door
+  // Add a new door with smart positioning (matches web implementation)
   const addDoor = useCallback(() => {
     if (!currentState || selectedSide === 'back') return;
 
-    const doorWidth = 100;
-    const doorOffset = 50;
+    const doorWidth = 100; // Default door width in cm
+    const doorOffset = 50; // Default offset from top
 
+    let position: number;
+    const doors = currentState.doors;
+
+    if (doors.length === 0) {
+      // First door - center it
+      position = currentState.totalWidth / 2 - doorWidth / 2;
+    } else if (doors.length === 1) {
+      // Second door - distribute evenly
+      const spacing = Math.round(currentState.totalWidth / 3);
+      const firstDoorNewPosition = Math.round(spacing - doorWidth / 2);
+      position = Math.round((spacing * 2) - doorWidth / 2);
+
+      // Update both doors at once
+      const updatedDoors = [
+        {
+          ...doors[0],
+          position: Math.round(Math.max(0, firstDoorNewPosition))
+        },
+        {
+          id: `door-${selectedSide}-${Date.now()}-${Math.random()}`,
+          position: Math.round(Math.max(0, Math.min(position, currentState.totalWidth - doorWidth))),
+          width: Math.round(doorWidth),
+          offsetTop: Math.round(doorOffset)
+        }
+      ];
+
+      updateCurrentSide({ doors: updatedDoors });
+      return;
+    } else {
+      // Third+ door - find best empty space
+      const sortedDoors = [...doors].sort((a, b) => a.position - b.position);
+      let bestGap = 0;
+      let bestPosition = 0;
+
+      // Check gap at the beginning
+      if (sortedDoors[0].position > doorWidth + 50) {
+        bestGap = sortedDoors[0].position;
+        bestPosition = Math.round((sortedDoors[0].position - doorWidth) / 2);
+      }
+
+      // Check gaps between doors
+      for (let i = 0; i < sortedDoors.length - 1; i++) {
+        const gapStart = sortedDoors[i].position + sortedDoors[i].width;
+        const gapEnd = sortedDoors[i + 1].position;
+        const gapSize = gapEnd - gapStart;
+
+        if (gapSize > bestGap && gapSize >= doorWidth + 50) {
+          bestGap = gapSize;
+          bestPosition = Math.round(gapStart + (gapSize - doorWidth) / 2);
+        }
+      }
+
+      // Check gap at the end
+      const lastDoor = sortedDoors[sortedDoors.length - 1];
+      const endGap = currentState.totalWidth - (lastDoor.position + lastDoor.width);
+      if (endGap > bestGap && endGap >= doorWidth + 50) {
+        bestPosition = Math.round(lastDoor.position + lastDoor.width + (endGap - doorWidth) / 2);
+      }
+
+      position = bestPosition;
+    }
+
+    // Add the door
     const newDoor = {
-      id: `door-${selectedSide}-${Date.now()}`,
-      position: Math.max(0, (currentState.totalWidth - doorWidth) / 2),
-      width: doorWidth,
-      offsetTop: doorOffset
+      id: `door-${selectedSide}-${Date.now()}-${Math.random()}`,
+      position: Math.round(Math.max(0, Math.min(position, currentState.totalWidth - doorWidth))),
+      width: Math.round(doorWidth),
+      offsetTop: Math.round(doorOffset)
     };
 
-    updateCurrentSide({ doors: [...currentState.doors, newDoor] });
+    updateCurrentSide({ doors: [...doors, newDoor] });
   }, [currentState, selectedSide, updateCurrentSide]);
 
   // Remove door
@@ -195,42 +524,22 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
     updateCurrentSide({ doors: currentState.doors.filter(d => d.id !== doorId) });
   }, [currentState, updateCurrentSide]);
 
-  // Update door offset
-  const updateDoorOffset = useCallback((doorId: string, offsetText: string) => {
+  // Update door offset (direct value in cm)
+  const updateDoorOffset = useCallback((doorId: string, offsetCm: number) => {
     if (!currentState) return;
 
-    // Parse the value - handle commas and convert to cm
-    let offsetCm = 0;
-    if (offsetText && offsetText.trim() !== '') {
-      const normalizedText = offsetText.replace(',', '.');
-      const parsed = parseFloat(normalizedText);
-      if (!isNaN(parsed)) {
-        offsetCm = parsed * 100; // Convert meters to cm
-      }
-    }
-
-    offsetCm = Math.max(0, Math.min(currentState.height - 50, offsetCm));
+    const clampedOffset = Math.max(0, Math.min(currentState.height - 50, offsetCm));
 
     const updatedDoors = currentState.doors.map(d =>
-      d.id === doorId ? { ...d, offsetTop: offsetCm } : d
+      d.id === doorId ? { ...d, offsetTop: clampedOffset } : d
     );
     updateCurrentSide({ doors: updatedDoors });
   }, [currentState, updateCurrentSide]);
 
-  // Update section width (simplified - just user input with commas)
-  const updateSectionWidth = useCallback((index: number, widthText: string) => {
+  // Update segment width (direct value in cm)
+  const updateSegmentWidth = useCallback((index: number, widthCm: number) => {
     const segment = segments[index];
     if (!segment) return;
-
-    // Parse the value - handle commas and convert to cm
-    let widthCm = 0;
-    if (widthText && widthText.trim() !== '') {
-      const normalizedText = widthText.replace(',', '.');
-      const parsed = parseFloat(normalizedText);
-      if (!isNaN(parsed)) {
-        widthCm = parsed * 100; // Convert meters to cm
-      }
-    }
 
     widthCm = Math.max(50, widthCm); // Minimum 50cm
 
@@ -268,18 +577,8 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
     }
   }, [segments, currentState, updateCurrentSide]);
 
-  // Update height (simplified - just user input with commas)
-  const updateHeight = useCallback((heightText: string) => {
-    // Parse the value - handle commas and convert to cm
-    let heightCm = 240; // Default
-    if (heightText && heightText.trim() !== '') {
-      const normalizedText = heightText.replace(',', '.');
-      const parsed = parseFloat(normalizedText);
-      if (!isNaN(parsed)) {
-        heightCm = parsed * 100; // Convert meters to cm
-      }
-    }
-
+  // Update height (direct value in cm)
+  const updateHeight = useCallback((heightCm: number) => {
     heightCm = Math.max(100, Math.min(400, heightCm));
     updateCurrentSide({ height: heightCm });
   }, [updateCurrentSide]);
@@ -360,6 +659,56 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
     0.5
   );
 
+  // Copy from another side
+  const copyFromSide = useCallback((fromSide: 'left' | 'right' | 'back') => {
+    if (fromSide === selectedSide) return;
+
+    const sourceState = sideStates[fromSide];
+
+    // Deep copy the source state
+    const copiedState: SideState = {
+      height: sourceState.height,
+      totalWidth: sourceState.totalWidth,
+      doors: sourceState.doors.map(door => ({
+        ...door,
+        id: `door-${selectedSide}-${Date.now()}-${Math.random()}` // New IDs for copied doors
+      })),
+      photoUri: sourceState.photoUri,
+    };
+
+    updateCurrentSide(copiedState);
+    showToast({ message: `Layout copiado do lado ${getSideLabel(fromSide)}`, type: 'success' });
+  }, [selectedSide, sideStates, updateCurrentSide]);
+
+  // Mirror from another side
+  const mirrorFromSide = useCallback((fromSide: 'left' | 'right' | 'back') => {
+    if (fromSide === selectedSide) return;
+
+    const sourceState = sideStates[fromSide];
+
+    // Mirror the layout (flip door positions)
+    const mirroredDoors = sourceState.doors.map(door => {
+      // Mirror position: new position = total width - (original position + door width)
+      const mirroredPosition = sourceState.totalWidth - (door.position + door.width);
+
+      return {
+        ...door,
+        id: `door-${selectedSide}-${Date.now()}-${Math.random()}`,
+        position: Math.max(0, mirroredPosition)
+      };
+    });
+
+    const mirroredState: SideState = {
+      height: sourceState.height,
+      totalWidth: sourceState.totalWidth,
+      doors: mirroredDoors,
+      photoUri: sourceState.photoUri,
+    };
+
+    updateCurrentSide(mirroredState);
+    showToast({ message: `Layout espelhado do lado ${getSideLabel(fromSide)}`, type: 'success' });
+  }, [selectedSide, sideStates, updateCurrentSide]);
+
   const getSideLabel = (side: 'left' | 'right' | 'back') => {
     switch (side) {
       case 'left': return 'Motorista';
@@ -378,6 +727,16 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Total Width Display */}
+      <View style={[styles.totalWidthContainer, { backgroundColor: colors.primary + '20', borderRadius: borderRadius.md }]}>
+        <ThemedText style={[styles.totalWidthLabel, { color: colors.mutedForeground }]}>
+          Comprimento Total:
+        </ThemedText>
+        <ThemedText style={[styles.totalWidthValue, { color: colors.foreground }]}>
+          {(currentState.totalWidth / 100).toFixed(2).replace('.', ',')}m
+        </ThemedText>
+      </View>
+
       {/* Visual Layout Preview */}
       <View style={[styles.previewContainer, { borderColor: colors.border, backgroundColor: colors.muted }]}>
         <ThemedText style={styles.previewTitle}>{getSideLabel(selectedSide)}</ThemedText>
@@ -407,81 +766,115 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
             )}
 
             {/* Render doors (only for sides, not back) */}
-            {selectedSide !== 'back' && currentState.doors.map(door => (
-              <View key={door.id}>
-                {/* Door left vertical line */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    left: door.position * scale,
-                    top: door.offsetTop * scale,
-                    width: 2,
-                    height: (currentState.height - door.offsetTop) * scale,
-                    backgroundColor: colors.foreground,
-                  }}
-                />
+            {selectedSide !== 'back' && currentState.doors.map(door => {
+              // Clamp door offset to prevent extrapolation
+              const clampedOffset = Math.max(0, Math.min(door.offsetTop, currentState.height - 10));
+              const doorHeight = currentState.height - clampedOffset;
 
-                {/* Door right vertical line */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    left: (door.position + door.width) * scale - 2,
-                    top: door.offsetTop * scale,
-                    width: 2,
-                    height: (currentState.height - door.offsetTop) * scale,
-                    backgroundColor: colors.foreground,
-                  }}
-                />
+              return (
+                <View key={door.id}>
+                  {/* Door left vertical line */}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: door.position * scale,
+                      top: clampedOffset * scale,
+                      width: 2,
+                      height: doorHeight * scale,
+                      backgroundColor: colors.foreground,
+                    }}
+                  />
 
-                {/* Door top horizontal line */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    left: door.position * scale,
-                    top: door.offsetTop * scale,
-                    width: door.width * scale,
-                    height: 2,
-                    backgroundColor: colors.foreground,
-                  }}
-                />
+                  {/* Door right vertical line */}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: (door.position + door.width) * scale - 2,
+                      top: clampedOffset * scale,
+                      width: 2,
+                      height: doorHeight * scale,
+                      backgroundColor: colors.foreground,
+                    }}
+                  />
 
-                {/* Remove button */}
-                <TouchableOpacity
-                  style={[
-                    styles.removeDoorButton,
-                    {
-                      left: (door.position + door.width / 2) * scale - 12,
-                      top: (door.offsetTop + (currentState.height - door.offsetTop) / 2) * scale - 12,
-                      backgroundColor: colors.destructive,
-                    }
-                  ]}
-                  onPress={() => removeDoor(door.id)}
-                  disabled={disabled}
-                >
-                  <Icon name="x" size={16} color={colors.destructiveForeground} />
-                </TouchableOpacity>
-              </View>
-            ))}
+                  {/* Door top horizontal line */}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: door.position * scale,
+                      top: clampedOffset * scale,
+                      width: door.width * scale,
+                      height: 2,
+                      backgroundColor: colors.foreground,
+                    }}
+                  />
+
+                  {/* Remove button */}
+                  <TouchableOpacity
+                    style={[
+                      styles.removeDoorButton,
+                      {
+                        left: (door.position + door.width / 2) * scale - 12,
+                        top: (clampedOffset + doorHeight / 2) * scale - 12,
+                        backgroundColor: colors.destructive,
+                      }
+                    ]}
+                    onPress={() => removeDoor(door.id)}
+                    disabled={disabled}
+                  >
+                    <Icon name="x" size={16} color={colors.destructiveForeground} />
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
           </View>
         </View>
       </View>
 
+      {/* Copy and Mirror Buttons (only for left/right sides) */}
+      {selectedSide !== 'back' && (
+        <View style={styles.actionButtonsRow}>
+          <Button
+            variant="outline"
+            onPress={() => copyFromSide(selectedSide === 'left' ? 'right' : 'left')}
+            disabled={disabled}
+            style={styles.actionButton}
+          >
+            <Icon name="copy" size={14} color={colors.foreground} />
+            <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.xs }}>
+              Copiar {selectedSide === 'left' ? 'Sapo' : 'Motorista'}
+            </ThemedText>
+          </Button>
+          <Button
+            variant="outline"
+            onPress={() => mirrorFromSide(selectedSide === 'left' ? 'right' : 'left')}
+            disabled={disabled}
+            style={styles.actionButton}
+          >
+            <Icon name="flip-horizontal" size={14} color={colors.foreground} />
+            <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.xs }}>
+              Espelhar {selectedSide === 'left' ? 'Sapo' : 'Motorista'}
+            </ThemedText>
+          </Button>
+        </View>
+      )}
+
       {/* Height Input */}
       <Card style={styles.inputCard}>
         <View style={styles.fieldRow}>
-          <Text style={{ color: colors.foreground, fontSize: fontSize.sm, fontWeight: '500' }}>Altura</Text>
-          <Input
-            value={(currentState.height / 100).toFixed(2).replace('.', ',')}
-            onChangeText={updateHeight}
+          <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>Altura</ThemedText>
+          <MeasurementInput
+            value={currentState.height}
+            onChange={updateHeight}
             placeholder="2,40"
-            keyboardType="decimal-pad"
             disabled={disabled}
-            style={styles.rowInput}
+            min={100}
+            max={400}
           />
         </View>
       </Card>
 
-      {/* Sections/Doors Width Inputs - Simplified */}
+      {/* Sections/Doors Width Inputs */}
       {(() => {
         let sectionCounter = 0;
         let doorCounter = 0;
@@ -492,14 +885,15 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
             return (
               <Card key={`segment-${index}`} style={styles.inputCard}>
                 <View style={styles.fieldRow}>
-                  <Text style={{ color: colors.foreground, fontSize: fontSize.sm, fontWeight: '500' }}>Porta {doorCounter}</Text>
-                  <Input
-                    value={(segment.width / 100).toFixed(2).replace('.', ',')}
-                    onChangeText={(text) => updateSectionWidth(index, text)}
+                  <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
+                    Porta {doorCounter}
+                  </ThemedText>
+                  <MeasurementInput
+                    value={segment.width}
+                    onChange={(value) => updateSectionWidth(index, value)}
                     placeholder="1,00"
-                    keyboardType="decimal-pad"
                     disabled={disabled}
-                    style={styles.rowInput}
+                    min={50}
                   />
                 </View>
               </Card>
@@ -509,14 +903,15 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
             return (
               <Card key={`segment-${index}`} style={styles.inputCard}>
                 <View style={styles.fieldRow}>
-                  <Text style={{ color: colors.foreground, fontSize: fontSize.sm, fontWeight: '500' }}>Seção {sectionCounter}</Text>
-                  <Input
-                    value={(segment.width / 100).toFixed(2).replace('.', ',')}
-                    onChangeText={(text) => updateSectionWidth(index, text)}
+                  <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
+                    Seção {sectionCounter}
+                  </ThemedText>
+                  <MeasurementInput
+                    value={segment.width}
+                    onChange={(value) => updateSectionWidth(index, value)}
                     placeholder="1,00"
-                    keyboardType="decimal-pad"
                     disabled={disabled}
-                    style={styles.rowInput}
+                    min={50}
                   />
                 </View>
               </Card>
@@ -525,18 +920,20 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
         });
       })()}
 
-      {/* Altura Porta - Always last, only shown for doors */}
+      {/* Door Offset Inputs - Only shown for doors on sides */}
       {selectedSide !== 'back' && currentState.doors.map((door, index) => (
         <Card key={door.id} style={styles.inputCard}>
           <View style={styles.fieldRow}>
-            <Text style={{ color: colors.foreground, fontSize: fontSize.sm, fontWeight: '500' }}>Altura Porta {index + 1}</Text>
-            <Input
-              value={(door.offsetTop / 100).toFixed(2).replace('.', ',')}
-              onChangeText={(text) => updateDoorOffset(door.id, text)}
+            <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
+              Altura Porta {index + 1}
+            </ThemedText>
+            <MeasurementInput
+              value={door.offsetTop}
+              onChange={(value) => updateDoorOffset(door.id, value)}
               placeholder="0,50"
-              keyboardType="decimal-pad"
               disabled={disabled}
-              style={styles.rowInput}
+              min={0}
+              max={currentState.height - 50}
             />
           </View>
         </Card>
@@ -579,6 +976,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  totalWidthContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  totalWidthLabel: {
+    fontSize: fontSize.sm,
+  },
+  totalWidthValue: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+  },
   previewContainer: {
     borderWidth: 1,
     borderRadius: borderRadius.md,
@@ -607,8 +1019,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  actionButton: {
+    flex: 1,
+    paddingHorizontal: spacing.xs,
+  },
   inputCard: {
-    padding: spacing.sm,
+    padding: spacing.md,
     marginBottom: spacing.sm,
     elevation: 0,
     shadowOpacity: 0,
@@ -619,11 +1040,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  fieldLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    flex: 1,
   },
   rowInput: {
-    width: 80,
-    height: 32,
-    minHeight: 32,
+    width: 100,
+    height: 36,
+    minHeight: 36,
+    textAlign: 'right',
+    borderWidth: 1,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm,
+    fontSize: fontSize.sm,
   },
   addButton: {
     marginBottom: spacing.md,
