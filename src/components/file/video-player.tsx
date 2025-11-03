@@ -11,10 +11,10 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import {
   IconX,
@@ -47,6 +47,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onShare,
   baseUrl,
 }) => {
+  const insets = useSafeAreaInsets();
   const videoRef = useRef<Video>(null);
   const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -225,12 +226,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       presentationStyle="fullScreen"
       statusBarTranslucent
     >
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
 
         {/* Header */}
         {controlsVisible && (
-          <View style={styles.header}>
+          <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
             <Pressable onPress={handleClose} style={styles.iconButton}>
               <IconX size={24} color="#fff" />
             </Pressable>
@@ -321,7 +322,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             </Pressable>
 
             {/* Bottom Controls */}
-            <View style={styles.bottomControls}>
+            <View style={[styles.bottomControls, { paddingBottom: insets.bottom + 12 }]}>
               {/* Progress Bar */}
               {status.durationMillis && (
                 <View style={styles.progressContainer}>
@@ -371,7 +372,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             </View>
           </View>
         )}
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 };
@@ -386,7 +387,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
     position: 'absolute',
     top: 0,
@@ -437,7 +438,7 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 12,
   },
   progressContainer: {
     marginBottom: 12,

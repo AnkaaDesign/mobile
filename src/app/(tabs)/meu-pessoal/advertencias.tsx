@@ -10,18 +10,29 @@ import { Loading } from "@/components/ui/loading";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TeamWarningStatsCard } from "@/components/my-team/warning/team-warning-stats-card";
 import { TeamWarningTable } from "@/components/my-team/warning/team-warning-table";
-import { TeamWarningFilterModal, type TeamWarningFilters } from "@/components/my-team/warning/team-warning-filter-modal";
+import { TeamWarningFilterDrawerContent } from "@/components/my-team/warning/team-warning-filter-drawer-content";
 import { TeamWarningFilterTags } from "@/components/my-team/warning/team-warning-filter-tags";
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 import { useWarningsInfiniteMobile } from "@/hooks";
 import { useAuth } from '../../../contexts/auth-context';
 import { IconAlertTriangle, IconFilter } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import type { User } from '../../../types';
 
+type TeamWarningFilters = {
+  userIds?: string[];
+  categories?: string[];
+  severities?: string[];
+  isActive?: boolean;
+  startDate?: Date;
+  endDate?: Date;
+};
+
 export default function MyTeamWarningsScreen() {
   const { colors } = useTheme();
   const { user: currentUser, isLoading: isLoadingAuth } = useAuth();
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const { openFilterDrawer } = useUtilityDrawer();
   const [filters, setFilters] = useState<TeamWarningFilters>({});
 
   // Build query params for warnings
@@ -107,8 +118,18 @@ export default function MyTeamWarningsScreen() {
 
   const handleApplyFilters = useCallback((newFilters: TeamWarningFilters) => {
     setFilters(newFilters);
-    setFilterModalVisible(false);
   }, []);
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <TeamWarningFilterDrawerContent
+        filters={filters}
+        onFiltersChange={handleApplyFilters}
+        onClear={() => setFilters({})}
+        teamMembers={teamMembers}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleApplyFilters, teamMembers]);
 
   const handleRemoveFilter = useCallback((filterKey: keyof TeamWarningFilters, value?: string) => {
     setFilters((prev) => {
@@ -143,9 +164,11 @@ export default function MyTeamWarningsScreen() {
   if (isLoading && warnings.length === 0) {
     return (
       <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-        <ThemedView style={styles.container}>
-          <Loading />
-        </ThemedView>
+        <UtilityDrawerWrapper>
+          <ThemedView style={styles.container}>
+            <Loading />
+          </ThemedView>
+        </UtilityDrawerWrapper>
       </PrivilegeGuard>
     );
   }
@@ -153,9 +176,11 @@ export default function MyTeamWarningsScreen() {
   if (!currentUser?.sectorId) {
     return (
       <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-        <ThemedView style={styles.container}>
-          <EmptyState icon="alert-circle" title="Setor não encontrado" description="Você precisa estar associado a um setor para visualizar as advertências da equipe" />
-        </ThemedView>
+        <UtilityDrawerWrapper>
+          <ThemedView style={styles.container}>
+            <EmptyState icon="alert-circle" title="Setor não encontrado" description="Você precisa estar associado a um setor para visualizar as advertências da equipe" />
+          </ThemedView>
+        </UtilityDrawerWrapper>
       </PrivilegeGuard>
     );
   }
@@ -167,14 +192,15 @@ export default function MyTeamWarningsScreen() {
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-      <ThemedView style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <IconAlertTriangle size={24} color={colors.primary} />
-            <ThemedText style={styles.title}>Advertências da Equipe</ThemedText>
-          </View>
-          <Button variant="outline" size="sm" onPress={() => setFilterModalVisible(true)} style={styles.filterButton}>
+      <UtilityDrawerWrapper>
+        <ThemedView style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.headerContent}>
+              <IconAlertTriangle size={24} color={colors.primary} />
+              <ThemedText style={styles.title}>Advertências da Equipe</ThemedText>
+            </View>
+            <Button variant="outline" size="sm" onPress={handleOpenFilters} style={styles.filterButton}>
             <IconFilter size={18} color={colors.text} />
             {activeFilterCount > 0 && (
               <View style={[styles.filterBadge, { backgroundColor: colors.primary }]}>
@@ -210,10 +236,8 @@ export default function MyTeamWarningsScreen() {
             }
           />
         )}
-
-        {/* Filter Modal */}
-        <TeamWarningFilterModal visible={filterModalVisible} onClose={() => setFilterModalVisible(false)} onApply={handleApplyFilters} currentFilters={filters} teamMembers={teamMembers} />
-      </ThemedView>
+        </ThemedView>
+      </UtilityDrawerWrapper>
     </PrivilegeGuard>
   );
 }

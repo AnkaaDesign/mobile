@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { IconBrush, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -293,21 +293,15 @@ export default function AirbrushingEditScreen() {
               control={control}
               name="status"
               render={({ field }) => (
-                <Select
+                <Combobox
                   value={field.value}
                   onValueChange={field.onChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(AIRBRUSHING_STATUS).map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {AIRBRUSHING_STATUS_LABELS[status as keyof typeof AIRBRUSHING_STATUS_LABELS]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  options={Object.values(AIRBRUSHING_STATUS).map((status) => ({
+                    value: status,
+                    label: AIRBRUSHING_STATUS_LABELS[status as keyof typeof AIRBRUSHING_STATUS_LABELS],
+                  }))}
+                  placeholder="Selecione o status"
+                />
               )}
             />
           </Card>

@@ -1,38 +1,43 @@
-import { View, ViewStyle } from "react-native";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ThemedText } from "@/components/ui/themed-text";
+import { ViewStyle } from "react-native";
+import { Combobox } from "@/components/ui/combobox";
 
 interface TaskSelectorProps {
   value?: string;
-  onValueChange?: (value: string) => void;
+  onValueChange?: (value: string | undefined) => void;
   placeholder?: string;
   disabled?: boolean;
+  label?: string;
+  error?: string;
+  required?: boolean;
   style?: ViewStyle;
 }
 
 export function TaskSelector({
   value,
   onValueChange,
-  placeholder = "Selecione uma opção",
+  placeholder = "Selecione uma tarefa",
   disabled = false,
+  label = "Tarefa",
+  error,
+  required = false,
   style,
 }: TaskSelectorProps) {
+  // TODO: Implement actual task options when needed
+  const taskOptions: { value: string; label: string }[] = [];
 
   return (
-    <View style={style}>
-      <Select value={value || ""} onValueChange={onValueChange} disabled={disabled}>
-        <SelectTrigger>
-          <SelectValue placeholder={placeholder}>
-            <ThemedText>{value || placeholder}</ThemedText>
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          {/* Add select items here */}
-          <SelectItem value="option1">
-            <ThemedText>Opção 1</ThemedText>
-          </SelectItem>
-        </SelectContent>
-      </Select>
-    </View>
+    <Combobox
+      value={value || ""}
+      onValueChange={onValueChange}
+      options={taskOptions}
+      placeholder={placeholder}
+      label={required ? `${label} *` : label}
+      error={error}
+      disabled={disabled}
+      searchable={true}
+      clearable={!required}
+      emptyText="Nenhuma tarefa encontrada"
+      preferFullScreen={true}
+    />
   );
 }

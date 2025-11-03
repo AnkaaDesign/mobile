@@ -97,6 +97,7 @@ const Textarea = React.forwardRef<TextInput, TextareaProps>(({ style, containerS
       <Animated.View style={animatedShadowStyles}>
         <Animated.View style={StyleSheet.flatten([baseTextareaStyles, animatedStyles])}>
           <TextInput
+            {...props}
             ref={ref}
             style={baseInputStyles}
             placeholderTextColor={colors.mutedForeground}
@@ -111,7 +112,6 @@ const Textarea = React.forwardRef<TextInput, TextareaProps>(({ style, containerS
               setIsFocused(false);
               props.onBlur?.(e);
             }}
-            {...props}
           />
         </Animated.View>
       </Animated.View>

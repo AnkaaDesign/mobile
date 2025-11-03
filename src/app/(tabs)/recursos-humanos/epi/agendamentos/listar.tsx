@@ -10,7 +10,7 @@ import type { PpeDeliveryScheduleGetManyFormData } from '../../../../../schemas'
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton, Badge } from "@/components/ui";
 import { PpeScheduleTable } from "@/components/human-resources/ppe/schedule/list/ppe-schedule-table";
 import type { SortConfig } from "@/components/human-resources/ppe/schedule/list/ppe-schedule-table";
-import { PpeScheduleFilterModal } from "@/components/human-resources/ppe/schedule/list/ppe-schedule-filter-modal";
+
 import { PpeScheduleFilterTags } from "@/components/human-resources/ppe/schedule/list/ppe-schedule-filter-tags";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -19,14 +19,19 @@ import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { PpeScheduleFilterDrawerContent } from "@/components/human-resources/ppe/schedule/list/ppe-schedule-filter-drawer-content";
+
 export default function PpeScheduleListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<PpeDeliveryScheduleGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "nextRun", direction: "asc" }]);
   const [_visibleColumnKeys] = useState<string[]>(["nextRun", "frequency", "isActive"]);
@@ -130,6 +135,27 @@ export default function PpeScheduleListScreen() {
     ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <PpeScheduleFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+
   // Calculate overdue and upcoming counts
   const overdueCount = useMemo(() => {
     return schedules.filter((s) => s.isActive && s.nextRun && new Date(s.nextRun) < new Date()).length;
@@ -147,10 +173,14 @@ export default function PpeScheduleListScreen() {
 
   if (error) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Erro ao carregar agendamentos de EPI" detail={error.message} onRetry={handleRefresh} />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen message="Erro ao carregar agendamentos de EPI" detail={error.message} onRetry={handleRefresh} />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasSchedules = Array.isArray(schedules) && schedules.length > 0;
@@ -170,7 +200,7 @@ export default function PpeScheduleListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -236,9 +266,6 @@ export default function PpeScheduleListScreen() {
       {hasSchedules && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasSchedules && <FAB icon="plus" onPress={handleCreateSchedule} />}
-
-      {/* Filter Modal */}
-      <PpeScheduleFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
     </ThemedView>
   );
 }

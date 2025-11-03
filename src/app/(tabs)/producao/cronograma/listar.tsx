@@ -5,7 +5,7 @@ import { FAB } from "@/components/ui/fab";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
-import { getDefaultVisibleColumns } from "@/components/production/task/list/task-column-visibility-drawer";
+import { getDefaultVisibleColumns } from "@/components/production/task/list/column-visibility-manager";
 import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
 import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
 import { useUtilityDrawer } from "@/contexts/utility-drawer-context";

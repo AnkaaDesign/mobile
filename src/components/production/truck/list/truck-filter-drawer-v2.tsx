@@ -7,7 +7,7 @@ import { TRUCK_MANUFACTURER, TRUCK_MANUFACTURER_LABELS } from '../../../../const
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { MultiCombobox } from "@/components/ui/multi-combobox";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -199,7 +199,7 @@ export function TruckFilterDrawerV2({ visible, onClose, onApply, currentFilters 
       title: "Fabricantes",
       component: (
         <View style={styles.sectionContent}>
-          <MultiCombobox
+          <Combobox
             options={Object.entries(TRUCK_MANUFACTURER).map(([_key, value]) => ({
               label: TRUCK_MANUFACTURER_LABELS[value as keyof typeof TRUCK_MANUFACTURER_LABELS] || value,
               value: value,

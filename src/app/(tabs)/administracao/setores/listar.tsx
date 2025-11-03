@@ -14,23 +14,27 @@ import { SectorListSkeleton } from "@/components/administration/sector/skeleton/
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
+
 
 // New hooks and components
 import { useTableSort } from "@/hooks/useTableSort";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
-import { BaseFilterDrawer, BooleanFilter, MultiSelectFilter, DateRangeFilter } from "@/components/common/filters";
+
 import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from '../../../../constants';
+
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SectorFilterDrawerContent } from "@/components/administration/sector/list/sector-filter-drawer-content";
 
 export default function SectorListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -146,7 +150,7 @@ export default function SectorListScreen() {
   }, []);
 
   const handleApplyFilters = useCallback(() => {
-    setShowFilters(false);
+    // Filters are applied immediately through state
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -166,6 +170,27 @@ export default function SectorListScreen() {
   const activeFiltersCount = Object.values(filters).filter(
     (value) => {
       if (value === undefined || value === null) return false;
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <SectorFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
       if (Array.isArray(value)) return value.length > 0;
       if (typeof value === "object") {
         // Check date ranges
@@ -248,10 +273,14 @@ export default function SectorListScreen() {
 
   if (error && sectors.length === 0) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Erro ao carregar setores" detail={error.message} onRetry={handleRefresh} />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen message="Erro ao carregar setores" detail={error.message} onRetry={handleRefresh} />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasSectors = Array.isArray(sectors) && sectors.length > 0;
@@ -271,13 +300,13 @@ export default function SectorListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumns.size}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -348,33 +377,6 @@ export default function SectorListScreen() {
       {hasSectors && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasSectors && <FAB icon="plus" onPress={handleCreateSector} />}
-
-      {/* New BaseFilterDrawer */}
-      <BaseFilterDrawer
-        open={showFilters}
-        onOpenChange={setShowFilters}
-        sections={filterSections}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-        title="Filtros de Setores"
-        description="Configure os filtros para refinar sua busca"
-      />
-
-      {/* Column Visibility Drawer */}
-      <ColumnVisibilityDrawerV2
-        columns={allColumns.map(col => ({
-          key: col.key,
-          header: col.header,
-          accessor: col.accessor as (item: any) => React.ReactNode,
-          sortable: col.sortable,
-          align: col.align,
-        }))}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
     </ThemedView>
   );
 }

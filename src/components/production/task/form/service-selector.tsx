@@ -160,6 +160,8 @@ export function ServiceSelector({
                 minSearchLength={0}
                 pageSize={50}
                 debounceMs={300}
+                hideDescription={true}
+                preferFullScreen={true}
               />
             </View>
 

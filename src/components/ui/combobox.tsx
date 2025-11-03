@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { View, Text, TouchableOpacity, Modal, FlatList, TextInput, Keyboard, Platform, Dimensions, ActivityIndicator, Pressable, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, Modal, FlatList, TextInput, Keyboard, Platform, Dimensions, ActivityIndicator, Pressable, StyleSheet, KeyboardAvoidingView } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Icon } from "./icon";
 import { Badge } from "./badge";
@@ -83,6 +83,10 @@ interface ComboboxProps<TData = ComboboxOption> {
   singleMode?: boolean;
   showCount?: boolean;
   hideDefaultBadges?: boolean;
+
+  // UI behavior
+  hideDescription?: boolean;
+  preferFullScreen?: boolean;
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -130,6 +134,8 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   singleMode = false,
   showCount = true,
   hideDefaultBadges = false,
+  hideDescription = false,
+  preferFullScreen = false,
 }: ComboboxProps<TData>) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
@@ -385,7 +391,14 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
 
   // Calculate dropdown position
   const spaceBelow = SCREEN_HEIGHT - (inputLayout.y + inputLayout.height);
-  const shouldShowBelow = spaceBelow >= Math.min(LIST_MAX_HEIGHT, filteredOptions.length * 48 + 56);
+  const spaceAbove = inputLayout.y;
+  const requiredSpace = Math.min(LIST_MAX_HEIGHT, filteredOptions.length * 48 + 56);
+
+  // Use full screen mode if:
+  // 1. preferFullScreen is true, OR
+  // 2. There's not enough space below AND not enough space above
+  const useFullScreenMode = preferFullScreen || (spaceBelow < requiredSpace && spaceAbove < requiredSpace);
+  const shouldShowBelow = spaceBelow >= requiredSpace;
 
   const handleOpen = useCallback(() => {
     if (disabled) return;
@@ -528,7 +541,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
                 >
                   {formatOptionLabel(item)}
                 </Text>
-                {description && (
+                {!hideDescription && description && (
                   <Text
                     style={[
                       styles.optionDescription,
@@ -670,29 +683,44 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         onRequestClose={handleClose}
         statusBarTranslucent
       >
-        <Pressable style={styles.modalOverlay} onPress={handleClose}>
-          <Pressable
-            style={[
-              inputLayout.width > 0 ? styles.dropdownContent : styles.modalContent,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                ...(inputLayout.width > 0 && {
-                  position: "absolute",
-                  width: inputLayout.width,
-                  left: inputLayout.x,
-                  top: shouldShowBelow ? inputLayout.y + inputLayout.height + 4 : undefined,
-                  bottom: !shouldShowBelow ? SCREEN_HEIGHT - inputLayout.y + 4 : undefined,
-                  maxHeight: LIST_MAX_HEIGHT + 100,
-                }),
-                ...(inputLayout.width === 0 && {
-                  maxHeight: MAX_MODAL_HEIGHT,
-                }),
-              },
-            ]}
-            onPress={() => {}}
+        <Pressable
+          style={[
+            styles.modalOverlay,
+            (inputLayout.width === 0 || useFullScreenMode) && {
+              justifyContent: "flex-start",
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+            },
+            !(inputLayout.width === 0 || useFullScreenMode) && { justifyContent: "flex-end" }
+          ]}
+          onPress={handleClose}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={(inputLayout.width === 0 || useFullScreenMode) ? styles.keyboardAvoidingView : undefined}
+            keyboardVerticalOffset={0}
           >
-            {inputLayout.width === 0 && (
+            <Pressable
+              style={[
+                inputLayout.width > 0 && !useFullScreenMode ? styles.dropdownContent : styles.modalContent,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  ...(inputLayout.width > 0 && !useFullScreenMode && {
+                    position: "absolute",
+                    width: inputLayout.width,
+                    left: inputLayout.x,
+                    top: shouldShowBelow ? inputLayout.y + inputLayout.height + 4 : undefined,
+                    bottom: !shouldShowBelow ? SCREEN_HEIGHT - inputLayout.y + 4 : undefined,
+                    maxHeight: LIST_MAX_HEIGHT + 100,
+                  }),
+                  ...((inputLayout.width === 0 || useFullScreenMode) && {
+                    maxHeight: MAX_MODAL_HEIGHT,
+                  }),
+                },
+              ]}
+              onPress={() => {}}
+            >
+            {(inputLayout.width === 0 || useFullScreenMode) && (
               <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.modalTitle, { color: colors.foreground }]}>
                   {label || "Selecione uma opção"}
@@ -723,7 +751,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
                   placeholderTextColor={colors.mutedForeground}
                   value={search}
                   onChangeText={setSearch}
-                  autoFocus={inputLayout.width === 0}
+                  autoFocus={inputLayout.width === 0 || useFullScreenMode}
                   accessibilityLabel="Campo de pesquisa"
                 />
               </View>
@@ -754,7 +782,8 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
               renderItem={renderItem}
               keyExtractor={(item) => getOptionValue(item)}
               showsVerticalScrollIndicator={true}
-              keyboardShouldPersistTaps="handled"
+              keyboardShouldPersistTaps="always"
+              keyboardDismissMode="none"
               onEndReached={handleEndReached}
               onEndReachedThreshold={0.5}
               ListFooterComponent={renderFooter}
@@ -813,10 +842,10 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
                 )
               }
               style={{
-                maxHeight: inputLayout.width > 0 ? LIST_MAX_HEIGHT : undefined,
+                height: inputLayout.width > 0 && !useFullScreenMode ? LIST_MAX_HEIGHT : undefined,
               }}
               contentContainerStyle={{
-                flexGrow: 1,
+                flexGrow: inputLayout.width > 0 && !useFullScreenMode ? 0 : 1,
               }}
               initialNumToRender={15}
               maxToRenderPerBatch={15}
@@ -825,6 +854,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
               updateCellsBatchingPeriod={50}
             />
           </Pressable>
+          </KeyboardAvoidingView>
         </Pressable>
       </Modal>
     </View>
@@ -895,11 +925,14 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "transparent",
-    justifyContent: "flex-end",
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+    width: "100%",
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    flex: 1,
+    paddingTop: Platform.OS === "ios" ? 44 : spacing.sm,
     paddingBottom: Platform.OS === "ios" ? 34 : spacing.lg,
   },
   dropdownContent: {
@@ -991,7 +1024,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.medium,
   },
   optionDescription: {
-    fontSize: fontSize.xs,
+    fontSize: fontSize.xs - 1,
     marginTop: 2,
   },
   clearOption: {

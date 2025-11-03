@@ -9,7 +9,6 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
-import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
@@ -355,7 +354,7 @@ export function PaintForm({ mode, initialData, onSubmit, onCancel, isSubmitting 
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
                   <View>
                     <Label>Selecionar Tintas de Fundo</Label>
-                    <MultiSelectCombobox
+                    <Combobox mode="multiple"
                       options={groundPaintOptions}
                       selectedValues={Array.isArray(value) ? value : []}
                       onValueChange={onChange}

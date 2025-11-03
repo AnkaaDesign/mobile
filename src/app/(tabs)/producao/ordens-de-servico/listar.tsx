@@ -11,9 +11,9 @@ import { Button } from "@/components/ui/button";
 import { ListActionButton } from "@/components/ui/list-action-button";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { ServiceOrderTable, createColumnDefinitions, getDefaultVisibleColumns } from "@/components/production/service-order/list/service-order-table";
-import { ServiceOrderFilterModal } from "@/components/production/service-order/list/service-order-filter-modal";
+
 import { ServiceOrderFilterTags } from "@/components/production/service-order/list/service-order-filter-tags";
-import { ColumnVisibilityDrawer } from "@/components/ui/column-visibility-drawer";
+
 import { SearchBar } from "@/components/ui/search-bar";
 import { FAB } from "@/components/ui/fab";
 import { IconPlus, IconFilter, IconList } from "@tabler/icons-react-native";
@@ -23,15 +23,19 @@ import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 import type { ServiceOrderGetManyFormData } from '../../../../schemas';
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { ServiceOrderFilterDrawerContent } from "@/components/production/service-order/list/service-order-filter-drawer-content";
+
 export default function ServiceOrderListScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const { user } = useAuth();
   const [searchText, setSearchText] = useState("");
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [filters, setFilters] = useState<Partial<ServiceOrderGetManyFormData>>({});
-  const [showFilters, setShowFilters] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(Array.from(getDefaultVisibleColumns()));
   const [refreshing, setRefreshing] = useState(false);
   const { deleteAsync } = useServiceOrderMutations();
@@ -101,7 +105,11 @@ export default function ServiceOrderListScreen() {
     const timer = setTimeout(() => {
       setDebouncedSearchText(searchText);
     }, 300);
-    return () => clearTimeout(timer);
+    return (
+    <UtilityDrawerWrapper>
+    ) => clearTimeout(timer
+    </UtilityDrawerWrapper>
+  );
   }, [searchText]);
 
   // Clear all filters
@@ -128,6 +136,27 @@ export default function ServiceOrderListScreen() {
   const activeFiltersCount = Object.entries(filters).filter(
     ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <ServiceOrderFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
 
   // Permission gate
   if (!canManageServiceOrders) {
@@ -160,7 +189,7 @@ export default function ServiceOrderListScreen() {
               <Button
                 variant="ghost"
                 size="icon"
-                onPress={() => setShowFilters(true)}
+                onPress={handleOpenFilters}
               >
                 <IconFilter size={20} color={colors.foreground} />
               </Button>
@@ -181,13 +210,13 @@ export default function ServiceOrderListScreen() {
           <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -247,26 +276,6 @@ export default function ServiceOrderListScreen() {
             <IconPlus size={24} color="white" />
           </FAB>
         )}
-
-        {/* Filter Modal */}
-        <ServiceOrderFilterModal
-          visible={showFilters}
-          onClose={() => setShowFilters(false)}
-          onApply={(newFilters) => {
-            setFilters(newFilters);
-            setShowFilters(false);
-          }}
-          currentFilters={filters}
-        />
-
-        {/* Column Visibility Drawer */}
-        <ColumnVisibilityDrawer
-          columns={allColumns}
-          visibleColumns={new Set(visibleColumnKeys)}
-          onVisibilityChange={handleColumnsChange}
-          open={showColumnManager}
-          onOpenChange={setShowColumnManager}
-        />
       </ThemedView>
     </>
   );

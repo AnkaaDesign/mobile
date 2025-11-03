@@ -10,18 +10,29 @@ import { Loading } from "@/components/ui/loading";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TeamBorrowStatsCard } from "@/components/my-team/borrow/team-borrow-stats-card";
 import { TeamBorrowTable } from "@/components/my-team/borrow/team-borrow-table";
-import { TeamBorrowFilterModal, type TeamBorrowFilters } from "@/components/my-team/borrow/team-borrow-filter-modal";
 import { TeamBorrowFilterTags } from "@/components/my-team/borrow/team-borrow-filter-tags";
 import { useBorrowsInfiniteMobile } from "@/hooks";
 import { useAuth } from '../../../contexts/auth-context';
 import { IconPackage, IconFilter } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import type { User } from '../../../types';
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { TeamBorrowFilterDrawerContent } from "@/components/my-team/borrow/team-borrow-filter-drawer-content";
+
+export type TeamBorrowFilters = {
+  userIds?: string[];
+  statuses?: string[];
+  startDate?: Date;
+  endDate?: Date;
+  returnStartDate?: Date;
+  returnEndDate?: Date;
+};
 
 export default function MyTeamLoansScreen() {
   const { colors } = useTheme();
   const { user: currentUser, isLoading: isLoadingAuth } = useAuth();
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const { openFilterDrawer } = useUtilityDrawer();
   const [filters, setFilters] = useState<TeamBorrowFilters>({});
 
   // Build query params for borrows
@@ -113,7 +124,10 @@ export default function MyTeamLoansScreen() {
 
   const handleApplyFilters = useCallback((newFilters: TeamBorrowFilters) => {
     setFilters(newFilters);
-    setFilterModalVisible(false);
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters({});
   }, []);
 
   const handleRemoveFilter = useCallback((filterKey: keyof TeamBorrowFilters, value?: string) => {
@@ -173,16 +187,29 @@ export default function MyTeamLoansScreen() {
     return v !== undefined && v !== "";
   }).length;
 
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <TeamBorrowFilterDrawerContent
+        filters={filters}
+        onFiltersChange={handleApplyFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFilterCount}
+        teamMembers={teamMembers}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleApplyFilters, handleClearFilters, activeFilterCount, teamMembers]);
+
   return (
-    <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-      <ThemedView style={styles.container}>
+    <UtilityDrawerWrapper>
+      <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
+        <ThemedView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <IconPackage size={24} color={colors.primary} />
             <ThemedText style={styles.title}>Empréstimos da Equipe</ThemedText>
           </View>
-          <Button variant="outline" size="sm" onPress={() => setFilterModalVisible(true)} style={styles.filterButton}>
+          <Button variant="outline" size="sm" onPress={handleOpenFilters} style={styles.filterButton}>
             <IconFilter size={18} color={colors.text} />
             {activeFilterCount > 0 && (
               <View style={[styles.filterBadge, { backgroundColor: colors.primary }]}>
@@ -218,11 +245,9 @@ export default function MyTeamLoansScreen() {
             }
           />
         )}
-
-        {/* Filter Modal */}
-        <TeamBorrowFilterModal visible={filterModalVisible} onClose={() => setFilterModalVisible(false)} onApply={handleApplyFilters} currentFilters={filters} teamMembers={teamMembers} />
       </ThemedView>
     </PrivilegeGuard>
+    </UtilityDrawerWrapper>
   );
 }
 

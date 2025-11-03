@@ -8,7 +8,7 @@ import { usePpeDeliveriesInfiniteMobile } from "@/hooks";
 import type { PpeDeliveryGetManyFormData } from '../../../../../schemas';
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
 import { PpeDeliveryTable } from "@/components/human-resources/ppe/delivery/list/ppe-delivery-table";
-import { PpeDeliveryFilterModal } from "@/components/human-resources/ppe/delivery/list/ppe-delivery-filter-modal";
+
 import { PpeDeliveryFilterTags } from "@/components/human-resources/ppe/delivery/list/ppe-delivery-filter-tags";
 import { PpeDeliveryListSkeleton } from "@/components/human-resources/ppe/delivery/skeleton/ppe-delivery-list-skeleton";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
@@ -18,14 +18,19 @@ import { routes } from '../../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { PPE_DELIVERY_STATUS } from '../../../../../constants';
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { PpeDeliveryFilterDrawerContent } from "@/components/human-resources/ppe/delivery/list/ppe-delivery-filter-drawer-content";
+
 export default function PpeDeliveriesListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<PpeDeliveryGetManyFormData>>({});
 
   // Build query parameters
@@ -92,6 +97,27 @@ export default function PpeDeliveriesListScreen() {
   // Count active filters
   const activeFiltersCount = useMemo(() => {
     let count = 0;
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <PpeDeliveryFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
     if (filters.statuses?.length) count++;
     if (filters.userIds?.length) count++;
     if (filters.itemIds?.length) count++;
@@ -115,10 +141,14 @@ export default function PpeDeliveriesListScreen() {
 
   if (error) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Erro ao carregar entregas de EPI" detail={error.message} onRetry={handleRefresh} />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen message="Erro ao carregar entregas de EPI" detail={error.message} onRetry={handleRefresh} />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasDeliveries = Array.isArray(deliveries) && deliveries.length > 0;
@@ -130,7 +160,7 @@ export default function PpeDeliveriesListScreen() {
         <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar entregas..." style={styles.searchBar} debounceMs={300} />
         <Pressable
           style={({ pressed }) => [styles.filterButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }, pressed && styles.filterButtonPressed]}
-          onPress={() => setShowFilters(true)}
+          onPress={handleOpenFilters}
         >
           <IconFilter size={24} color={colors.foreground} />
           {activeFiltersCount > 0 && (
@@ -203,9 +233,6 @@ export default function PpeDeliveriesListScreen() {
       {hasDeliveries && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasDeliveries && <FAB icon="plus" onPress={handleCreateDelivery} />}
-
-      {/* Filter Modal */}
-      <PpeDeliveryFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
     </ThemedView>
   );
 }

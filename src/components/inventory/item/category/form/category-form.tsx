@@ -13,7 +13,7 @@ import { ITEM_CATEGORY_TYPE } from '../../../../../constants';
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useItems } from '../../../../../hooks';
-import { MultiSelectCombobox } from "@/components/ui/multi-select-combobox";
+import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 
 // Import form components
@@ -88,7 +88,7 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
                       control={form.control}
                       name={"itemIds" as any}
                       render={({ field }) => (
-                        <MultiSelectCombobox
+                        <Combobox mode="multiple"
                           options={itemOptions}
                           selectedValues={Array.isArray(field.value) ? field.value : []}
                           onValueChange={field.onChange}

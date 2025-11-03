@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { MultiCombobox } from "@/components/ui/multi-combobox";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -266,7 +266,7 @@ export function ItemFilterDrawerV2({ visible, onClose, onApply, currentFilters }
         <View style={styles.sectionContent}>
           <View style={styles.field}>
             <Label style={styles.fieldLabel}>Marcas</Label>
-            <MultiCombobox
+            <Combobox
               options={[
                 { label: "Sem marca", value: "null" },
                 ...brands.map((brand) => ({ label: brand.name, value: brand.id }))
@@ -280,7 +280,7 @@ export function ItemFilterDrawerV2({ visible, onClose, onApply, currentFilters }
           </View>
           <View style={styles.field}>
             <Label style={styles.fieldLabel}>Categorias</Label>
-            <MultiCombobox
+            <Combobox
               options={[
                 { label: "Sem categoria", value: "null" },
                 ...categories.map((cat) => ({
@@ -299,7 +299,7 @@ export function ItemFilterDrawerV2({ visible, onClose, onApply, currentFilters }
           </View>
           <View style={styles.field}>
             <Label style={styles.fieldLabel}>Fornecedores</Label>
-            <MultiCombobox
+            <Combobox
               options={[
                 { label: "Sem fornecedor", value: "null" },
                 ...suppliers.map((sup) => ({ label: sup.fantasyName, value: sup.id }))

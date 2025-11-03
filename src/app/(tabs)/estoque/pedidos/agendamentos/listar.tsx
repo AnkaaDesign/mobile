@@ -20,19 +20,24 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 // New hooks and components
 import { useTableSort } from "@/hooks/useTableSort";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
-import { BaseFilterDrawer, BooleanFilter } from "@/components/common/filters";
+
 import { } from '../../../../../constants';
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
+
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { OrderScheduleFilterDrawerContent } from "@/components/inventory/order/schedule/order-schedule-filter-drawer-content";
 
 export default function InventoryOrderSchedulesListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedSchedules, setSelectedSchedules] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
 
@@ -160,7 +165,7 @@ export default function InventoryOrderSchedulesListScreen() {
   }, []);
 
   const handleApplyFilters = useCallback(() => {
-    setShowFilters(false);
+    // Filters are applied immediately through state
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -177,6 +182,27 @@ export default function InventoryOrderSchedulesListScreen() {
   const activeFiltersCount = Object.values(filters).filter(
     (value) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : value === true)
   ).length;
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <OrderScheduleFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
 
   // Filter sections for BaseFilterDrawer
   const filterSections = useMemo(() => [
@@ -224,10 +250,14 @@ export default function InventoryOrderSchedulesListScreen() {
 
   if (error && schedules.length === 0) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Erro ao carregar agendamentos" detail={error.message} onRetry={handleRefresh} />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen message="Erro ao carregar agendamentos" detail={error.message} onRetry={handleRefresh} />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasSchedules = Array.isArray(schedules) && schedules.length > 0;
@@ -247,7 +277,7 @@ export default function InventoryOrderSchedulesListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -306,21 +336,6 @@ export default function InventoryOrderSchedulesListScreen() {
       {hasSchedules && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasSchedules && <FAB icon="plus" onPress={handleCreateSchedule} />}
-
-      {/* Filter Drawer */}
-      <BaseFilterDrawer
-        open={showFilters}
-        onOpenChange={setShowFilters}
-        sections={filterSections}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-        title="Filtros de Agendamentos"
-        description="Configure os filtros para refinar sua busca"
-      />
-
-      {/* Column Visibility Drawer - Simplified version without the full drawer */}
-      {/* TODO: Implement OrderScheduleColumnVisibilityDrawer if needed */}
     </ThemedView>
   );
 }

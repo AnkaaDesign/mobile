@@ -8,7 +8,7 @@ import type { OrderScheduleGetManyFormData } from '../../../../../schemas';
 import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { OrderScheduleTable } from "@/components/inventory/order/schedule/order-schedule-table";
 import type { SortConfig } from "@/components/inventory/order/schedule/order-schedule-table";
-import { OrderScheduleFilterModal } from "@/components/inventory/order/schedule/order-schedule-filter-modal";
+
 import { OrderScheduleFilterTags } from "@/components/inventory/order/schedule/order-schedule-filter-tags";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -20,15 +20,19 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from '../../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../../constants';
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+
 export default function AutomaticOrderListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<OrderScheduleGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "createdAt", direction: "desc" }]);
   const [selectedSchedules, setSelectedSchedules] = useState<Set<string>>(new Set());
@@ -218,20 +222,44 @@ export default function AutomaticOrderListScreen() {
     ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+
   if (isLoading && !isRefetching) {
     return <OrderScheduleListSkeleton />;
   }
 
   if (error) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen
-          message="Erro ao carregar agendamentos automáticos"
-          detail={error.message}
-          onRetry={handleRefresh}
-        />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen
+              message="Erro ao carregar agendamentos automáticos"
+              detail={error.message}
+              onRetry={handleRefresh}
+            />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasSchedules = Array.isArray(schedules) && schedules.length > 0;
@@ -251,7 +279,7 @@ export default function AutomaticOrderListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -317,14 +345,6 @@ export default function AutomaticOrderListScreen() {
       )}
 
       {hasSchedules && canCreate && <FAB icon="plus" onPress={handleCreateSchedule} />}
-
-      {/* Filter Modal */}
-      <OrderScheduleFilterModal
-        visible={showFilters}
-        onClose={() => setShowFilters(false)}
-        onApply={handleApplyFilters}
-        currentFilters={filters}
-      />
     </ThemedView>
   );
 }

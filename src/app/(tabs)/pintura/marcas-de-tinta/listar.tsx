@@ -14,13 +14,17 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 import { hasPrivilege } from '../../../../utils';
 import type { PaintBrand } from '../../../../types';
-import { FilterModal, FilterTag } from "@/components/ui/filter-modal";
+
 import { useDebounce } from "@/hooks/use-debounce";
 import { showToast } from "@/lib/toast/use-toast";
 import { Alert } from "react-native";
 import {
   IconTag,
 } from "@tabler/icons-react-native";
+
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 
 export default function PaintBrandListScreen() {
   const { colors } = useTheme();
@@ -29,7 +33,6 @@ export default function PaintBrandListScreen() {
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<"name" | "createdAt">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
@@ -119,6 +122,12 @@ export default function PaintBrandListScreen() {
     );
   };
 
+  // Open filter drawer
+  const handleOpenFilters = () => {
+    // TODO: Implement filter drawer for paint brands
+    showToast("Filtros em desenvolvimento", "info");
+  };
+
   // Render paint brand card
   const renderPaintBrandCard = ({ item: paintBrand }: { item: PaintBrand }) => (
     <TouchableOpacity onPress={() => router.push(`/pintura/marcas-de-tinta/detalhes/${paintBrand.id}`)}>
@@ -165,64 +174,25 @@ export default function PaintBrandListScreen() {
     </TouchableOpacity>
   );
 
-  // Filter modal content
-  const renderFilterModal = () => (
-    <FilterModal
-      visible={showFilters}
-      onClose={() => setShowFilters(false)}
-      title="Filtrar Marcas de Tinta"
-    >
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Ordenar por</ThemedText>
-        <View style={styles.filterOptions}>
-          <FilterTag
-            label="Nome"
-            selected={sortBy === "name"}
-            onPress={() => setSortBy("name")}
-          />
-          <FilterTag
-            label="Data de Criação"
-            selected={sortBy === "createdAt"}
-            onPress={() => setSortBy("createdAt")}
-          />
-        </View>
-      </View>
-
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Ordem</ThemedText>
-        <View style={styles.filterOptions}>
-          <FilterTag
-            label="Crescente"
-            selected={sortOrder === "asc"}
-            onPress={() => setSortOrder("asc")}
-          />
-          <FilterTag
-            label="Decrescente"
-            selected={sortOrder === "desc"}
-            onPress={() => setSortOrder("desc")}
-          />
-        </View>
-      </View>
-    </FilterModal>
-  );
-
 
   if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={styles.errorText}>Erro ao carregar marcas de tinta</ThemedText>
-        <IconButton
-          name="refresh-cw"
-          variant="default"
-          onPress={() => refetch()}
-          style={styles.retryButton}
-        />
-      </View>
+      <UtilityDrawerWrapper>
+        <View style={styles.centerContainer}>
+          <ThemedText style={styles.errorText}>Erro ao carregar marcas de tinta</ThemedText>
+          <IconButton
+            name="refresh-cw"
+            variant="default"
+            onPress={() => refetch()}
+            style={styles.retryButton}
+          />
+        </View>
+      </UtilityDrawerWrapper>
     );
   }
 
   return (
-    <>
+    <UtilityDrawerWrapper>
       <Stack.Screen
         options={{
           title: "Marcas de Tinta",
@@ -241,7 +211,7 @@ export default function PaintBrandListScreen() {
           <IconButton
             name="filter"
             variant="default"
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
           />
         </View>
 
@@ -297,11 +267,8 @@ export default function PaintBrandListScreen() {
             style={styles.fab}
           />
         )}
-
-        {/* Filter modal */}
-        {renderFilterModal()}
       </View>
-    </>
+    </UtilityDrawerWrapper>
   );
 }
 

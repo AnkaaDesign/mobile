@@ -14,8 +14,18 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PanGestureHandler, PinchGestureHandler, State, PanGestureHandlerGestureEvent, PinchGestureHandlerGestureEvent } from "react-native-gesture-handler";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS, interpolate, Extrapolate } from "react-native-reanimated";
+import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  runOnJS,
+  interpolate,
+  Extrapolate,
+  withDecay,
+  clamp
+} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import {
   IconX,
@@ -74,40 +84,6 @@ export function FilePreviewModal({
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
-  // Constants for padding calculations
-  const HEADER_BASE_PADDING = 16;
-  const FOOTER_BASE_PADDING = 16;
-  const STATUSBAR_HEIGHT = Platform.OS === 'ios' ? 44 : 24;
-
-  // State-based padding that recalculates when modal opens
-  const [safeTopPadding, setSafeTopPadding] = useState(STATUSBAR_HEIGHT + HEADER_BASE_PADDING);
-  const [safeBottomPadding, setSafeBottomPadding] = useState(FOOTER_BASE_PADDING);
-
-  // Recalculate safe padding when modal becomes visible or insets change
-  useEffect(() => {
-    if (visible) {
-      // Small delay to ensure SafeArea context is fully initialized
-      const timer = setTimeout(() => {
-        const topPadding = Math.max(insets.top || STATUSBAR_HEIGHT, STATUSBAR_HEIGHT) + HEADER_BASE_PADDING;
-        const bottomPadding = Math.max(insets.bottom || 0, 0) + FOOTER_BASE_PADDING;
-
-        setSafeTopPadding(topPadding);
-        setSafeBottomPadding(bottomPadding);
-
-        console.log('📐 [FilePreviewModal] SafeArea Recalculated:', {
-          insetsTop: insets.top,
-          insetsBottom: insets.bottom,
-          calculatedTopPadding: topPadding,
-          calculatedBottomPadding: bottomPadding,
-          platform: Platform.OS,
-          timestamp: new Date().toISOString()
-        });
-      }, 100); // 100ms delay to ensure context is ready
-
-      return () => clearTimeout(timer);
-    }
-  }, [visible, insets.top, insets.bottom]);
-
   // State management
   const [currentIndex, setCurrentIndex] = useState(initialFileIndex);
   const [imageLoading, setImageLoading] = useState(true);
@@ -115,16 +91,18 @@ export function FilePreviewModal({
   const [_rotation, _setRotation] = useState(0);
   const [isControlsVisible, setIsControlsVisible] = useState(true);
 
-  // Animated values
+  // Animated values for gestures
   const scale = useSharedValue(1);
-  const focalX = useSharedValue(0);
-  const focalY = useSharedValue(0);
+  const savedScale = useSharedValue(1);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
-  const baseTranslateX = useSharedValue(0);
-  const baseTranslateY = useSharedValue(0);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
+  const focalX = useSharedValue(0);
+  const focalY = useSharedValue(0);
   const swipeTranslateX = useSharedValue(0);
   const opacity = useSharedValue(1);
+  const isPinching = useSharedValue(false);
 
   // Refs
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -146,13 +124,15 @@ export function FilePreviewModal({
   // Reset states when file changes
   useEffect(() => {
     scale.value = 1;
+    savedScale.value = 1;
     translateX.value = 0;
     translateY.value = 0;
-    baseTranslateX.value = 0;
-    baseTranslateY.value = 0;
+    savedTranslateX.value = 0;
+    savedTranslateY.value = 0;
     focalX.value = 0;
     focalY.value = 0;
     swipeTranslateX.value = 0;
+    isPinching.value = false;
     _setRotation(0);
     setImageLoading(true);
     setImageError(false);
@@ -322,94 +302,160 @@ export function FilePreviewModal({
     await handleShare(); // Share sheet allows opening with appropriate apps
   }, [handleShare]);
 
-  // Pinch gesture handler - improved for smoother scaling
-  const pinchGestureHandler = (event: PinchGestureHandlerGestureEvent) => {
-    'worklet';
-    if (event.nativeEvent.state === State.BEGAN) {
-      focalX.value = event.nativeEvent.focalX;
-      focalY.value = event.nativeEvent.focalY;
-    } else if (event.nativeEvent.state === State.ACTIVE) {
-      if (!enablePinchZoom) return;
+  // Pinch gesture - Native-like zoom with focal point
+  const pinchGesture = Gesture.Pinch()
+    .enabled(enablePinchZoom)
+    .onStart((event) => {
+      'worklet';
+      isPinching.value = true;
+      focalX.value = event.focalX - SCREEN_WIDTH / 2;
+      focalY.value = event.focalY - SCREEN_HEIGHT / 2;
+      runOnJS(showControls)();
+    })
+    .onUpdate((event) => {
+      'worklet';
+      // Calculate new scale
+      const newScale = savedScale.value * event.scale;
+      const clampedScale = clamp(newScale, MIN_ZOOM, MAX_ZOOM);
+      scale.value = clampedScale;
 
-      // Clamp scale value for smooth zooming
-      const newScale = Math.max(MIN_ZOOM, Math.min(event.nativeEvent.scale, MAX_ZOOM));
-      scale.value = newScale; // Direct assignment for responsive feel
+      // Calculate translation to maintain focal point
+      const deltaScale = clampedScale - savedScale.value;
+      translateX.value = savedTranslateX.value + (focalX.value * deltaScale) / savedScale.value;
+      translateY.value = savedTranslateY.value + (focalY.value * deltaScale) / savedScale.value;
+    })
+    .onEnd(() => {
+      'worklet';
+      isPinching.value = false;
+      savedScale.value = scale.value;
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
 
-      // Handle focal point for zoom center
-      if (event.nativeEvent.scale > 1) {
-        const focal = {
-          x: event.nativeEvent.focalX - SCREEN_WIDTH / 2,
-          y: event.nativeEvent.focalY - SCREEN_HEIGHT / 2,
-        };
-
-        translateX.value = focal.x * (1 - 1 / event.nativeEvent.scale);
-        translateY.value = focal.y * (1 - 1 / event.nativeEvent.scale);
-      }
-    } else if (event.nativeEvent.state === State.END) {
-      // Snap to boundaries with smooth spring animation
+      // Reset to 1x if zoomed out too much
       if (scale.value < 1) {
-        scale.value = withSpring(1, { damping: 15, stiffness: 150 });
-        translateX.value = withSpring(0, { damping: 15, stiffness: 150 });
-        translateY.value = withSpring(0, { damping: 15, stiffness: 150 });
-      } else if (scale.value > MAX_ZOOM) {
-        scale.value = withSpring(MAX_ZOOM, { damping: 15, stiffness: 150 });
+        scale.value = withSpring(1, { damping: 20, stiffness: 150 });
+        translateX.value = withSpring(0, { damping: 20, stiffness: 150 });
+        translateY.value = withSpring(0, { damping: 20, stiffness: 150 });
+        savedScale.value = 1;
+        savedTranslateX.value = 0;
+        savedTranslateY.value = 0;
+      } else {
+        // Clamp to boundaries
+        const maxTranslateX = ((SCREEN_WIDTH * scale.value) - SCREEN_WIDTH) / 2;
+        const maxTranslateY = ((SCREEN_HEIGHT * scale.value) - SCREEN_HEIGHT) / 2;
+
+        const clampedX = clamp(translateX.value, -maxTranslateX, maxTranslateX);
+        const clampedY = clamp(translateY.value, -maxTranslateY, maxTranslateY);
+
+        if (clampedX !== translateX.value || clampedY !== translateY.value) {
+          translateX.value = withSpring(clampedX, { damping: 20, stiffness: 150 });
+          translateY.value = withSpring(clampedY, { damping: 20, stiffness: 150 });
+          savedTranslateX.value = clampedX;
+          savedTranslateY.value = clampedY;
+        }
       }
+    });
 
+  // Pan gesture - Smooth panning when zoomed, swipe navigation when not
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      'worklet';
       runOnJS(showControls)();
-    }
-  };
-
-  // Pan gesture handler for zoomed images - improved for smoothness
-  const panGestureHandler = (event: PanGestureHandlerGestureEvent) => {
-    'worklet';
-    if (event.nativeEvent.state === State.BEGAN) {
-      // Store current position as base for this gesture
-      baseTranslateX.value = translateX.value;
-      baseTranslateY.value = translateY.value;
-      runOnJS(showControls)();
-    } else if (event.nativeEvent.state === State.ACTIVE) {
-      if (scale.value > 1) {
-        // Pan when zoomed - add delta to base for smooth continuous panning
-        translateX.value = baseTranslateX.value + event.nativeEvent.translationX;
-        translateY.value = baseTranslateY.value + event.nativeEvent.translationY;
+    })
+    .onUpdate((event) => {
+      'worklet';
+      if (scale.value > 1 || isPinching.value) {
+        // Pan when zoomed
+        translateX.value = savedTranslateX.value + event.translationX;
+        translateY.value = savedTranslateY.value + event.translationY;
       } else if (enableSwipeNavigation) {
         // Swipe for navigation
-        swipeTranslateX.value = event.nativeEvent.translationX;
-        opacity.value = interpolate(Math.abs(event.nativeEvent.translationX), [0, SCREEN_WIDTH / 3], [1, 0.7], Extrapolate.CLAMP);
+        swipeTranslateX.value = event.translationX;
+        opacity.value = interpolate(
+          Math.abs(event.translationX),
+          [0, SCREEN_WIDTH / 3],
+          [1, 0.7],
+          Extrapolate.CLAMP
+        );
       }
-    } else if (event.nativeEvent.state === State.END) {
+    })
+    .onEnd((event) => {
+      'worklet';
       if (scale.value > 1) {
-        // Boundary check for panning with smooth spring animation
-        const maxTranslateX = (SCREEN_WIDTH * scale.value - SCREEN_WIDTH) / 2;
-        const maxTranslateY = (SCREEN_HEIGHT * scale.value - SCREEN_HEIGHT) / 2;
+        // Clamp to boundaries with decay for momentum
+        const maxTranslateX = ((SCREEN_WIDTH * scale.value) - SCREEN_WIDTH) / 2;
+        const maxTranslateY = ((SCREEN_HEIGHT * scale.value) - SCREEN_HEIGHT) / 2;
 
-        const clampedX = Math.max(-maxTranslateX, Math.min(maxTranslateX, translateX.value));
-        const clampedY = Math.max(-maxTranslateY, Math.min(maxTranslateY, translateY.value));
+        // Apply decay with boundaries
+        translateX.value = withDecay({
+          velocity: event.velocityX,
+          clamp: [-maxTranslateX, maxTranslateX],
+          deceleration: 0.998,
+        });
+        translateY.value = withDecay({
+          velocity: event.velocityY,
+          clamp: [-maxTranslateY, maxTranslateY],
+          deceleration: 0.998,
+        });
 
-        translateX.value = withSpring(clampedX, { damping: 15, stiffness: 150 });
-        translateY.value = withSpring(clampedY, { damping: 15, stiffness: 150 });
-
-        // Update base values for next gesture
-        baseTranslateX.value = clampedX;
-        baseTranslateY.value = clampedY;
+        // Update saved values after animation
+        savedTranslateX.value = translateX.value;
+        savedTranslateY.value = translateY.value;
       } else if (enableSwipeNavigation) {
         // Handle swipe navigation
-        const shouldNavigate = Math.abs(event.nativeEvent.translationX) > SWIPE_THRESHOLD;
+        const shouldNavigate = Math.abs(event.translationX) > SWIPE_THRESHOLD;
 
         if (shouldNavigate) {
-          if (event.nativeEvent.translationX > 0) {
+          if (event.translationX > 0) {
             runOnJS(handlePrevious)();
           } else {
             runOnJS(handleNext)();
           }
         }
 
-        // Reset swipe state with smooth animation
-        swipeTranslateX.value = withSpring(0, { damping: 15, stiffness: 150 });
-        opacity.value = withSpring(1, { damping: 15, stiffness: 150 });
+        // Reset swipe state
+        swipeTranslateX.value = withSpring(0, { damping: 20, stiffness: 150 });
+        opacity.value = withSpring(1, { damping: 20, stiffness: 150 });
       }
-    }
-  };
+    });
+
+  // Double tap to zoom
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .onEnd((event) => {
+      'worklet';
+      runOnJS(showControls)();
+
+      if (scale.value > 1) {
+        // Zoom out to 1x
+        scale.value = withSpring(1, { damping: 20, stiffness: 150 });
+        translateX.value = withSpring(0, { damping: 20, stiffness: 150 });
+        translateY.value = withSpring(0, { damping: 20, stiffness: 150 });
+        savedScale.value = 1;
+        savedTranslateX.value = 0;
+        savedTranslateY.value = 0;
+      } else {
+        // Zoom in to 2.5x at tap location
+        const targetScale = 2.5;
+        const tapX = event.x - SCREEN_WIDTH / 2;
+        const tapY = event.y - SCREEN_HEIGHT / 2;
+
+        scale.value = withSpring(targetScale, { damping: 20, stiffness: 150 });
+        translateX.value = withSpring(-tapX * (targetScale - 1), { damping: 20, stiffness: 150 });
+        translateY.value = withSpring(-tapY * (targetScale - 1), { damping: 20, stiffness: 150 });
+        savedScale.value = targetScale;
+        savedTranslateX.value = -tapX * (targetScale - 1);
+        savedTranslateY.value = -tapY * (targetScale - 1);
+
+        runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Medium);
+      }
+    });
+
+  // Compose all gestures
+  const composedGesture = Gesture.Simultaneous(
+    pinchGesture,
+    Gesture.Race(doubleTapGesture, panGesture)
+  );
 
   // Animated styles (pinch/pan zoom only, no rotation)
   const animatedImageStyle = useAnimatedStyle(() => {
@@ -526,11 +572,11 @@ export function FilePreviewModal({
         {/* Main Content */}
         <View style={styles.content}>
           {/* Header */}
-          <Animated.View style={StyleSheet.flatten([
+          <Animated.View style={[
             styles.header,
             animatedControlsStyle,
-            { paddingTop: safeTopPadding }
-          ])}>
+            { paddingTop: insets.top + 12 }
+          ]}>
             <View style={styles.headerLeft}>
               <View style={styles.fileInfo}>
                 <Text style={styles.fileName} numberOfLines={1}>
@@ -556,87 +602,81 @@ export function FilePreviewModal({
           <View style={styles.imageContainer}>
             {isCurrentFilePreviewable ? (
               <>
-                <PinchGestureHandler onHandlerStateChange={pinchGestureHandler}>
+                <GestureDetector gesture={composedGesture}>
                   <Animated.View style={styles.imageWrapper}>
-                    <PanGestureHandler onHandlerStateChange={panGestureHandler}>
-                      <Animated.View style={styles.imageWrapper}>
-                        <TouchableOpacity activeOpacity={1} onPress={showControls} style={styles.imageWrapper}>
-                          <Animated.View style={animatedImageStyle}>
-                            <Image
-                              key={`main-image-${currentFile.id}-${currentIndex}`}
-                              source={{
-                                uri: (() => {
-                                  const url = isEPS && currentFile.thumbnailUrl
-                                    ? getFileThumbnailUrl(currentFile, "large")
-                                    : getFileUrl(currentFile);
-                                  console.log('🖼️ [MainImage] About to load:', {
-                                    filename: currentFile.filename,
-                                    isEPS,
-                                    hasThumbnailUrl: !!currentFile.thumbnailUrl,
-                                    finalUrl: url,
-                                    imageLoading,
-                                    imageError
-                                  });
-                                  return url;
-                                })(),
-                                cache: 'reload'
-                              }}
-                              style={styles.image}
-                              resizeMode="contain"
-                              onLoadStart={() => {
-                                console.log('⏳ [MainImage] Load started:', currentFile.filename);
-                              }}
-                              onLoad={() => {
-                                console.log('✅ [MainImage] Loaded successfully:', currentFile.filename);
-                                handleImageLoad();
-                              }}
-                              onError={(error) => {
-                                console.error('❌ [MainImage] Failed to load:', {
-                                  filename: currentFile.filename,
-                                  url: isEPS && currentFile.thumbnailUrl
-                                    ? getFileThumbnailUrl(currentFile, "large")
-                                    : getFileUrl(currentFile),
-                                  error: error.nativeEvent
-                                });
-                                handleImageError();
-                              }}
-                              onLoadEnd={() => {
-                                console.log('🏁 [MainImage] Load ended (success or error):', currentFile.filename);
-                              }}
-                            />
-                          </Animated.View>
+                    <Animated.View style={animatedImageStyle}>
+                      <Image
+                        key={`main-image-${currentFile.id}-${currentIndex}`}
+                        source={{
+                          uri: (() => {
+                            const url = isEPS && currentFile.thumbnailUrl
+                              ? getFileThumbnailUrl(currentFile, "large")
+                              : getFileUrl(currentFile);
+                            console.log('🖼️ [MainImage] About to load:', {
+                              filename: currentFile.filename,
+                              isEPS,
+                              hasThumbnailUrl: !!currentFile.thumbnailUrl,
+                              finalUrl: url,
+                              imageLoading,
+                              imageError
+                            });
+                            return url;
+                          })(),
+                          cache: 'reload'
+                        }}
+                        style={styles.image}
+                        resizeMode="contain"
+                        onLoadStart={() => {
+                          console.log('⏳ [MainImage] Load started:', currentFile.filename);
+                        }}
+                        onLoad={() => {
+                          console.log('✅ [MainImage] Loaded successfully:', currentFile.filename);
+                          handleImageLoad();
+                        }}
+                        onError={(error) => {
+                          console.error('❌ [MainImage] Failed to load:', {
+                            filename: currentFile.filename,
+                            url: isEPS && currentFile.thumbnailUrl
+                              ? getFileThumbnailUrl(currentFile, "large")
+                              : getFileUrl(currentFile),
+                            error: error.nativeEvent
+                          });
+                          handleImageError();
+                        }}
+                        onLoadEnd={() => {
+                          console.log('🏁 [MainImage] Load ended (success or error):', currentFile.filename);
+                        }}
+                      />
+                    </Animated.View>
 
-                          {/* Loading Overlay */}
-                          {imageLoading && (
-                            <View style={styles.imageOverlay}>
-                              <ActivityIndicator size="large" color={colors.primary} />
-                              <Text style={styles.loadingText}>Carregando...</Text>
-                            </View>
-                          )}
+                    {/* Loading Overlay */}
+                    {imageLoading && (
+                      <View style={styles.imageOverlay}>
+                        <ActivityIndicator size="large" color={colors.primary} />
+                        <Text style={styles.loadingText}>Carregando...</Text>
+                      </View>
+                    )}
 
-                          {/* Error Overlay */}
-                          {imageError && (
-                            <View style={styles.imageOverlay}>
-                              <Text style={styles.errorIcon}>⚠️</Text>
-                              <Text style={styles.errorTitle}>Erro ao carregar</Text>
-                              <Text style={styles.errorText}>Não foi possível carregar a imagem</Text>
-                              <View style={styles.errorButtonRow}>
-                                <TouchableOpacity style={styles.errorButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                                  <IconExternalLink size={16} color={colors.background} />
-                                  <Text style={styles.errorButtonText}>Abrir</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.errorButton} onPress={handleDownload} activeOpacity={0.7}>
-                                  <IconDownload size={16} color={colors.background} />
-                                  <Text style={styles.errorButtonText}>Salvar</Text>
-                                </TouchableOpacity>
-                              </View>
-                            </View>
-                          )}
-                        </TouchableOpacity>
-                      </Animated.View>
-                    </PanGestureHandler>
+                    {/* Error Overlay */}
+                    {imageError && (
+                      <View style={styles.imageOverlay}>
+                        <Text style={styles.errorIcon}>⚠️</Text>
+                        <Text style={styles.errorTitle}>Erro ao carregar</Text>
+                        <Text style={styles.errorText}>Não foi possível carregar a imagem</Text>
+                        <View style={styles.errorButtonRow}>
+                          <TouchableOpacity style={styles.errorButton} onPress={handleOpenFile} activeOpacity={0.7}>
+                            <IconExternalLink size={16} color={colors.background} />
+                            <Text style={styles.errorButtonText}>Abrir</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity style={styles.errorButton} onPress={handleDownload} activeOpacity={0.7}>
+                            <IconDownload size={16} color={colors.background} />
+                            <Text style={styles.errorButtonText}>Salvar</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
                   </Animated.View>
-                </PinchGestureHandler>
+                </GestureDetector>
               </>
             ) : (
               // Non-previewable files
@@ -699,7 +739,11 @@ export function FilePreviewModal({
 
           {/* Bottom Controls */}
           {isCurrentFilePreviewable && (
-            <Animated.View style={StyleSheet.flatten([styles.bottomControls, animatedControlsStyle])}>
+            <Animated.View style={[
+              styles.bottomControls,
+              animatedControlsStyle,
+              { paddingBottom: insets.bottom + 12 }
+            ]}>
               <View style={styles.controlsRow}>
                 {/* Action Controls */}
                 <View style={styles.actionControls}>
@@ -717,11 +761,11 @@ export function FilePreviewModal({
 
           {/* Thumbnail Strip */}
           {isCurrentFilePreviewable && totalImages > 1 && showThumbnailStrip && (
-            <Animated.View style={StyleSheet.flatten([
+            <Animated.View style={[
               styles.thumbnailStrip,
               animatedControlsStyle,
-              { paddingBottom: safeBottomPadding }
-            ])}>
+              { paddingBottom: insets.bottom + 12 }
+            ]}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbnailScrollContent}>
                 {previewableFiles.map(({ file, originalIndex }, _index) => {
                   const isActive = originalIndex === currentIndex;
@@ -781,7 +825,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     backgroundColor: "rgba(0, 0, 0, 0.8)",
   },
   headerLeft: {
@@ -981,7 +1025,7 @@ const styles = StyleSheet.create({
   bottomControls: {
     backgroundColor: "rgba(0, 0, 0, 0.8)",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 12,
   },
   controlsRow: {
     flexDirection: "row",
@@ -1030,7 +1074,7 @@ const styles = StyleSheet.create({
   },
   thumbnailStrip: {
     backgroundColor: "rgba(0, 0, 0, 0.8)",
-    paddingVertical: 12,
+    paddingTop: 12,
   },
   thumbnailScrollContent: {
     paddingHorizontal: 16,

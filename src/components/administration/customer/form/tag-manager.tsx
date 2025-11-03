@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import { View, StyleSheet, TouchableOpacity, TextInput } from "react-native";
 import { IconPlus, IconX, IconTag } from "@tabler/icons-react-native";
 import { ThemedText, Input, Button } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
@@ -13,6 +13,17 @@ export function TagManager({ tags, onChange }: TagManagerProps) {
   const { colors } = useTheme();
   const [newTag, setNewTag] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+
+  // Focus input only when isAdding becomes true
+  useEffect(() => {
+    if (isAdding) {
+      // Small delay to ensure the input is rendered
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [isAdding]);
 
   const handleAddTag = () => {
     const trimmedTag = newTag.trim();
@@ -57,11 +68,11 @@ export function TagManager({ tags, onChange }: TagManagerProps) {
       {isAdding ? (
         <View style={styles.addTagContainer}>
           <Input
+            ref={inputRef}
             value={newTag}
             onChangeText={setNewTag}
             placeholder="Digite a tag"
             maxLength={50}
-            autoFocus
             autoCapitalize="characters"
             style={styles.tagInput}
             onSubmitEditing={handleAddTag}

@@ -250,6 +250,7 @@ export function GeneralPaintingSelector({
       minSearchLength={0}
       pageSize={50}
       debounceMs={300}
+      preferFullScreen={true}
     />
   );
 }
@@ -260,8 +261,8 @@ export function LogoPaintsSelector({
   onValueChange,
   disabled = false,
   error,
-  label = "Tintas do Logo",
-  placeholder = "Selecione as tintas do logo",
+  label = "Tintas da Logo",
+  placeholder = "Selecione as tintas da logo",
   initialPaints = [],
 }: LogoPaintsSelectorProps) {
   const renderOption = usePaintRenderOption();
@@ -331,6 +332,7 @@ export function LogoPaintsSelector({
       pageSize={50}
       debounceMs={300}
       showCount={true}
+      preferFullScreen={true}
     />
   );
 }

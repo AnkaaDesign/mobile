@@ -23,7 +23,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Badge } from "@/components/ui/badge";
 import { IconScissors, IconDeviceFloppy, IconX, IconFileText } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -299,18 +299,15 @@ export default function EditCuttingPlanScreen() {
               control={control}
               name="type"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(CUT_TYPE_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  options={Object.entries(CUT_TYPE_LABELS).map(([value, label]) => ({
+                    value,
+                    label,
+                  }))}
+                  placeholder="Selecione o tipo"
+                />
               )}
             />
             {errors.type && (
@@ -327,18 +324,15 @@ export default function EditCuttingPlanScreen() {
               control={control}
               name="origin"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a origem" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(CUT_ORIGIN_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  options={Object.entries(CUT_ORIGIN_LABELS).map(([value, label]) => ({
+                    value,
+                    label,
+                  }))}
+                  placeholder="Selecione a origem"
+                />
               )}
             />
             {errors.origin && (
@@ -356,18 +350,15 @@ export default function EditCuttingPlanScreen() {
                 control={control}
                 name="reason"
                 render={({ field }) => (
-                  <Select value={field.value || ""} onValueChange={(value) => field.onChange(value || null)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o motivo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(CUT_REQUEST_REASON_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    value={field.value || ""}
+                    onValueChange={(value) => field.onChange(value || null)}
+                    options={Object.entries(CUT_REQUEST_REASON_LABELS).map(([value, label]) => ({
+                      value,
+                      label,
+                    }))}
+                    placeholder="Selecione o motivo"
+                  />
                 )}
               />
               {errors.reason && (
@@ -385,18 +376,15 @@ export default function EditCuttingPlanScreen() {
               control={control}
               name="status"
               render={({ field }) => (
-                <Select value={field.value || CUT_STATUS.PENDING} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(CUT_STATUS).map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {CUT_STATUS_LABELS[status as keyof typeof CUT_STATUS_LABELS]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  value={field.value || CUT_STATUS.PENDING}
+                  onValueChange={field.onChange}
+                  options={Object.values(CUT_STATUS).map((status) => ({
+                    value: status,
+                    label: CUT_STATUS_LABELS[status as keyof typeof CUT_STATUS_LABELS],
+                  }))}
+                  placeholder="Selecione o status"
+                />
               )}
             />
             <ThemedText style={{ fontSize: 12, color: colors.muted, marginTop: spacing.xs }}>

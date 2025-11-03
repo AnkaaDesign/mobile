@@ -219,6 +219,7 @@ export function CurrencyInput({ value, onChange, onBlur, onFocus, placeholder = 
       <Animated.View style={StyleSheet.flatten([animatedShadowStyles])}>
         <Animated.View style={StyleSheet.flatten([baseInputContainerStyles, animatedStyles])}>
           <TextInput
+            {...props}
             ref={inputRef}
             style={baseInputTextStyles}
             value={displayValue}
@@ -229,7 +230,6 @@ export function CurrencyInput({ value, onChange, onBlur, onFocus, placeholder = 
             placeholderTextColor={colors.mutedForeground}
             keyboardType="number-pad"
             editable={editable}
-            {...props}
           />
         </Animated.View>
       </Animated.View>

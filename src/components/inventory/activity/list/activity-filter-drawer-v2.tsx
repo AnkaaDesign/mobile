@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { MultiCombobox } from "@/components/ui/multi-combobox";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -232,7 +232,7 @@ export function ActivityFilterDrawerV2({ visible, onClose, onApply, currentFilte
         <View style={styles.sectionContent}>
           <View style={styles.field}>
             <Label style={styles.fieldLabel}>Itens</Label>
-            <MultiCombobox
+            <Combobox
               options={items.map((item) => ({ label: `${item.name} (${item.uniCode})`, value: item.id }))}
               selectedValues={filters.itemIds || []}
               onValueChange={(value) => handleArrayChange("itemIds", value)}
@@ -243,7 +243,7 @@ export function ActivityFilterDrawerV2({ visible, onClose, onApply, currentFilte
           </View>
           <View style={styles.field}>
             <Label style={styles.fieldLabel}>Usuários</Label>
-            <MultiCombobox
+            <Combobox
               options={users.map((user) => ({ label: user.name, value: user.id }))}
               selectedValues={filters.userIds || []}
               onValueChange={(value) => handleArrayChange("userIds", value)}

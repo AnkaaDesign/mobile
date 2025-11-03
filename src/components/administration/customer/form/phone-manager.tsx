@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import { View, StyleSheet, TouchableOpacity, TextInput } from "react-native";
 import { IconPlus, IconX, IconPhone } from "@tabler/icons-react-native";
 import { ThemedText, Input, Button } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
@@ -14,6 +14,17 @@ export function PhoneManager({ phones, onChange }: PhoneManagerProps) {
   const { colors } = useTheme();
   const [newPhone, setNewPhone] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+
+  // Focus input only when isAdding becomes true
+  useEffect(() => {
+    if (isAdding) {
+      // Small delay to ensure the input is rendered
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [isAdding]);
 
   const handleAddPhone = () => {
     if (!newPhone.trim()) return;
@@ -60,12 +71,12 @@ export function PhoneManager({ phones, onChange }: PhoneManagerProps) {
       {isAdding ? (
         <View style={styles.addPhoneContainer}>
           <Input
+            ref={inputRef}
             value={newPhone ? formatBrazilianPhone(newPhone) : ""}
             onChangeText={(text) => setNewPhone(cleanPhone(text))}
             placeholder="(00) 00000-0000"
             keyboardType="phone-pad"
             maxLength={15}
-            autoFocus
             style={styles.phoneInput}
           />
           <View style={styles.addPhoneActions}>

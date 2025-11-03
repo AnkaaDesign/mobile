@@ -485,6 +485,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                       loading={isLoadingSectors}
                       searchable={true}
                       clearable={true}
+                      preferFullScreen={true}
                     />
                   )}
                 />
@@ -505,6 +506,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                       }))}
                       placeholder="Selecione o status de comissão"
                       searchable={false}
+                      preferFullScreen={true}
                     />
                   )}
                 />
@@ -523,6 +525,7 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
                         options={TASK_STATUS_OPTIONS}
                         placeholder="Selecione o status"
                         searchable={false}
+                        preferFullScreen={true}
                       />
                     )}
                   />

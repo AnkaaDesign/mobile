@@ -9,9 +9,9 @@ import type { OrderGetManyFormData } from '../../../../schemas';
 import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { OrderTable, createColumnDefinitions } from "@/components/inventory/order/list/order-table";
 import type { SortConfig } from "@/components/inventory/order/list/order-table";
-import { OrderFilterModal } from "@/components/inventory/order/list/order-filter-modal";
+
 import { OrderFilterTags } from "@/components/inventory/order/list/order-filter-tags";
-import { OrderColumnVisibilityDrawer } from "@/components/inventory/order/list/order-column-visibility-drawer";
+
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { OrderListSkeleton } from "@/components/inventory/order/skeleton/order-list-skeleton";
@@ -22,20 +22,24 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { OrderFilterDrawerContent } from "@/components/inventory/order/list/order-filter-drawer-content";
+
 export default function OrderListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<OrderGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "status", direction: "asc" }]);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["description", "status", "itemsCount"]);
 
   // Check permissions
@@ -207,7 +211,6 @@ export default function OrderListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<OrderGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -221,6 +224,9 @@ export default function OrderListScreen() {
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
 
+  // Convert visibleColumnKeys array to Set for GenericColumnDrawerContent
+  const visibleColumns = useMemo(() => new Set(visibleColumnKeys), [visibleColumnKeys]);
+
   // Handle columns change
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {
     setVisibleColumnKeys(Array.from(newColumns));
@@ -231,16 +237,41 @@ export default function OrderListScreen() {
     ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <OrderFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+
   if (isLoading && !isRefetching) {
     return <OrderListSkeleton />;
   }
 
   if (error) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Erro ao carregar pedidos" detail={error.message} onRetry={handleRefresh} />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen message="Erro ao carregar pedidos" detail={error.message} onRetry={handleRefresh} />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasOrders = Array.isArray(orders) && orders.length > 0;
@@ -260,13 +291,13 @@ export default function OrderListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -324,23 +355,6 @@ export default function OrderListScreen() {
       {hasOrders && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasOrders && canCreate && <FAB icon="plus" onPress={handleCreateOrder} />}
-
-      {/* Filter Modal */}
-      <OrderFilterModal
-        visible={showFilters}
-        onClose={() => setShowFilters(false)}
-        onApply={handleApplyFilters}
-        currentFilters={filters}
-      />
-
-      {/* Column Visibility Drawer */}
-      <OrderColumnVisibilityDrawer
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
     </ThemedView>
   );
 }

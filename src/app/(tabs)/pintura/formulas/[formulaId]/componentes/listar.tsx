@@ -14,7 +14,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from '../../../../../../constants';
 import { hasPrivilege } from '../../../../../../utils';
 import type { PaintFormulaComponent } from '../../../../../../types';
-import { FilterModal, FilterTag } from "@/components/ui/filter-modal";
+
 import { useDebounce } from "@/hooks/use-debounce";
 import { showToast } from "@/lib/toast/use-toast";
 import { Alert } from "react-native";
@@ -24,6 +24,10 @@ import {
   IconPercentage,
 } from "@tabler/icons-react-native";
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+
 export default function ComponentListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -32,7 +36,6 @@ export default function ComponentListScreen() {
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<"ratio" | "createdAt">("ratio");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
@@ -142,6 +145,12 @@ export default function ComponentListScreen() {
     );
   };
 
+  // Open filter drawer
+  const handleOpenFilters = () => {
+    // TODO: Implement filter drawer for components
+    showToast("Filtros em desenvolvimento", "info");
+  };
+
   // Render component card
   const renderComponentCard = ({ item: component }: { item: PaintFormulaComponent }) => (
     <TouchableOpacity onPress={() => router.push(`/pintura/formulas/${formulaId}/componentes/detalhes/${component.id}`)}>
@@ -212,64 +221,25 @@ export default function ComponentListScreen() {
     </TouchableOpacity>
   );
 
-  // Filter modal content
-  const renderFilterModal = () => (
-    <FilterModal
-      visible={showFilters}
-      onClose={() => setShowFilters(false)}
-      title="Filtrar Componentes"
-    >
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Ordenar por</ThemedText>
-        <View style={styles.filterOptions}>
-          <FilterTag
-            label="Proporção"
-            selected={sortBy === "ratio"}
-            onPress={() => setSortBy("ratio")}
-          />
-          <FilterTag
-            label="Data de Criação"
-            selected={sortBy === "createdAt"}
-            onPress={() => setSortBy("createdAt")}
-          />
-        </View>
-      </View>
-
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Ordem</ThemedText>
-        <View style={styles.filterOptions}>
-          <FilterTag
-            label="Crescente"
-            selected={sortOrder === "asc"}
-            onPress={() => setSortOrder("asc")}
-          />
-          <FilterTag
-            label="Decrescente"
-            selected={sortOrder === "desc"}
-            onPress={() => setSortOrder("desc")}
-          />
-        </View>
-      </View>
-    </FilterModal>
-  );
-
 
   if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={styles.errorText}>Erro ao carregar componentes</ThemedText>
-        <IconButton
-          name="refresh-cw"
-          variant="default"
-          onPress={() => refetch()}
-          style={styles.retryButton}
-        />
-      </View>
+      <UtilityDrawerWrapper>
+        <View style={styles.centerContainer}>
+          <ThemedText style={styles.errorText}>Erro ao carregar componentes</ThemedText>
+          <IconButton
+            name="refresh-cw"
+            variant="default"
+            onPress={() => refetch()}
+            style={styles.retryButton}
+          />
+        </View>
+      </UtilityDrawerWrapper>
     );
   }
 
   return (
-    <>
+    <UtilityDrawerWrapper>
       <Stack.Screen
         options={{
           title: "Componentes da Fórmula",
@@ -288,7 +258,7 @@ export default function ComponentListScreen() {
           <IconButton
             name="filter"
             variant="default"
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
           />
         </View>
 
@@ -344,11 +314,8 @@ export default function ComponentListScreen() {
             style={styles.fab}
           />
         )}
-
-        {/* Filter modal */}
-        {renderFilterModal()}
       </View>
-    </>
+    </UtilityDrawerWrapper>
   );
 }
 

@@ -5,7 +5,7 @@ import { Text } from "./text";
 import { Label } from "./label";
 import { Input } from "./input";
 import { Textarea } from "./textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
+import { Combobox } from "./combobox";
 import { Checkbox } from "./checkbox";
 import { RadioGroup, RadioGroupItem } from "./radio-group";
 import { DatePicker } from "./date-picker";
@@ -153,23 +153,16 @@ export function FormField<TFormData extends FieldValues>(props: FormFieldProps<T
 
       case "select":
         return (
-          <Select value={field.value} onValueChange={field.onChange}>
-            <SelectTrigger disabled={disabled}>
-              <SelectValue placeholder={props.placeholder || ""} />
-            </SelectTrigger>
-            <SelectContent>
-              {props.emptyOption && (
-                <SelectItem value="" label={props.emptyOption}>
-                  {props.emptyOption}
-                </SelectItem>
-              )}
-              {props.options.map((option) => (
-                <SelectItem key={option.value} value={option.value} label={option.label}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Combobox
+            value={field.value || ""}
+            onValueChange={field.onChange}
+            options={props.options}
+            placeholder={props.placeholder}
+            disabled={disabled}
+            searchable={false}
+            clearable={!!props.emptyOption}
+            preferFullScreen={true}
+          />
         );
 
       case "checkbox":

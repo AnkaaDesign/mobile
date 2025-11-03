@@ -1,29 +1,43 @@
-
-import { View, ViewStyle } from "react-native";
+import { useCallback, useMemo } from "react";
+import { View, ViewStyle, Text } from "react-native";
 import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from '../../../../constants';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ThemedText } from "@/components/ui/themed-text";
+import { Combobox } from "@/components/ui/combobox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { IconCalendar, IconCalendarEvent, IconCalendarWeek, IconCalendarMonth } from "@tabler/icons-react-native";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 
 interface FrequencySelectorProps {
   value?: SCHEDULE_FREQUENCY;
-  onValueChange?: (value: SCHEDULE_FREQUENCY) => void;
+  onValueChange?: (value: SCHEDULE_FREQUENCY | undefined) => void;
   disabled?: boolean;
+  label?: string;
+  placeholder?: string;
+  required?: boolean;
+  error?: string;
   style?: ViewStyle;
+}
+
+interface FrequencyOption {
+  value: SCHEDULE_FREQUENCY;
+  label: string;
+  description: string;
 }
 
 export function FrequencySelector({
   value,
   onValueChange,
   disabled = false,
+  label = "Frequência",
+  placeholder = "Selecione a frequência",
+  required = false,
+  error,
   style,
 }: FrequencySelectorProps) {
   const { colors } = useTheme();
 
-  const getFrequencyIcon = (frequency: SCHEDULE_FREQUENCY) => {
-    const iconProps = { size: 20, color: colors.mutedForeground };
+  const getFrequencyIcon = useCallback((frequency: SCHEDULE_FREQUENCY) => {
+    const iconProps = { size: 20, color: colors.foreground };
 
     switch (frequency) {
       case SCHEDULE_FREQUENCY.DAILY:
@@ -37,82 +51,83 @@ export function FrequencySelector({
       default:
         return null;
     }
-  };
+  }, [colors.foreground]);
 
-  const getFrequencyColor = (frequency: SCHEDULE_FREQUENCY) => {
+  const getFrequencyDescription = (frequency: SCHEDULE_FREQUENCY) => {
     switch (frequency) {
       case SCHEDULE_FREQUENCY.DAILY:
-        return "default";
+        return "Pedido criado todos os dias";
       case SCHEDULE_FREQUENCY.WEEKLY:
-        return "secondary";
+        return "Pedido criado em dias específicos da semana";
       case SCHEDULE_FREQUENCY.MONTHLY:
-        return "primary";
+        return "Pedido criado em dias específicos do mês";
       case SCHEDULE_FREQUENCY.CUSTOM:
-        return "outline";
+        return "Expressão cron personalizada";
       default:
-        return "default";
+        return "";
     }
   };
 
+  const frequencyOptions = useMemo<FrequencyOption[]>(() =>
+    Object.values(SCHEDULE_FREQUENCY).map((frequency) => ({
+      value: frequency,
+      label: SCHEDULE_FREQUENCY_LABELS[frequency],
+      description: getFrequencyDescription(frequency),
+    })),
+    []
+  );
+
+  const renderOption = useCallback(
+    (option: FrequencyOption, isSelected: boolean) => {
+      return (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, flex: 1 }}>
+          {getFrequencyIcon(option.value)}
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontSize: fontSize.base,
+                fontWeight: isSelected ? fontWeight.semibold : fontWeight.medium,
+                color: colors.foreground,
+              }}
+            >
+              {option.label}
+            </Text>
+            <Text
+              style={{
+                fontSize: fontSize.xs,
+                color: colors.mutedForeground,
+                marginTop: 2,
+              }}
+            >
+              {option.description}
+            </Text>
+          </View>
+          <Badge variant="outline">
+            <Text style={{ fontSize: fontSize.xs }}>{option.value}</Text>
+          </Badge>
+        </View>
+      );
+    },
+    [colors, getFrequencyIcon]
+  );
+
   return (
     <View style={style}>
-      <Select
+      <Combobox<FrequencyOption>
         value={value || ""}
-        onValueChange={(val) => onValueChange?.(val as SCHEDULE_FREQUENCY)}
+        onValueChange={(val) => onValueChange?.(val as SCHEDULE_FREQUENCY | undefined)}
+        options={frequencyOptions}
+        placeholder={placeholder}
+        label={required ? `${label} *` : label}
+        error={error}
         disabled={disabled}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Selecione a frequ�ncia">
-            {value ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                {getFrequencyIcon(value)}
-                <ThemedText weight="medium">
-                  {SCHEDULE_FREQUENCY_LABELS[value]}
-                </ThemedText>
-              </View>
-            ) : (
-              <ThemedText variant="muted">Selecione a frequ�ncia</ThemedText>
-            )}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          {Object.values(SCHEDULE_FREQUENCY).map((frequency) => (
-            <SelectItem key={frequency} value={frequency}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                {getFrequencyIcon(frequency)}
-                <View style={{ flex: 1 }}>
-                  <ThemedText weight="medium">
-                    {SCHEDULE_FREQUENCY_LABELS[frequency]}
-                  </ThemedText>
-                  {frequency === SCHEDULE_FREQUENCY.DAILY && (
-                    <ThemedText size="xs" variant="muted">
-                      Pedido criado todos os dias
-                    </ThemedText>
-                  )}
-                  {frequency === SCHEDULE_FREQUENCY.WEEKLY && (
-                    <ThemedText size="xs" variant="muted">
-                      Pedido criado em dias espec�ficos da semana
-                    </ThemedText>
-                  )}
-                  {frequency === SCHEDULE_FREQUENCY.MONTHLY && (
-                    <ThemedText size="xs" variant="muted">
-                      Pedido criado em dias espec�ficos do m�s
-                    </ThemedText>
-                  )}
-                  {frequency === SCHEDULE_FREQUENCY.CUSTOM && (
-                    <ThemedText size="xs" variant="muted">
-                      Express�o cron personalizada
-                    </ThemedText>
-                  )}
-                </View>
-                <Badge variant={getFrequencyColor(frequency) as any}>
-                  <ThemedText size="xs">{frequency}</ThemedText>
-                </Badge>
-              </View>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        searchable={false}
+        clearable={!required}
+        renderOption={renderOption}
+        getOptionValue={(option) => option.value}
+        getOptionLabel={(option) => option.label}
+        preferFullScreen={true}
+      />
     </View>
   );
 }

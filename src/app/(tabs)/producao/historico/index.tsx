@@ -5,7 +5,7 @@ import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SearchBar } from "@/components/ui/search-bar";
 import { HistoryTable, createColumnDefinitions } from "@/components/production/task/history/history-table";
-import { getDefaultVisibleColumns } from "@/components/production/task/history/history-column-visibility-drawer";
+import { getDefaultVisibleColumns } from "@/components/production/task/history/column-visibility-manager";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ListActionButton } from "@/components/ui/list-action-button";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";

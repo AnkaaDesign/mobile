@@ -8,7 +8,7 @@ import type { ItemGetManyFormData } from '../../../../schemas';
 import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { PpeTable } from "@/components/human-resources/ppe/list/ppe-table";
 import type { SortConfig } from "@/components/human-resources/ppe/list/ppe-table";
-import { PpeFilterModal } from "@/components/human-resources/ppe/list/ppe-filter-modal";
+
 import { PpeFilterTags } from "@/components/human-resources/ppe/list/ppe-filter-tags";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -17,6 +17,11 @@ import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { PpeFilterDrawerContent } from "@/components/human-resources/ppe/list/ppe-filter-drawer-content";
+
 export default function PpeListScreen() {
   const router = useRouter();
   const { colors, } = useTheme();
@@ -24,7 +29,6 @@ export default function PpeListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<ItemGetManyFormData>>({
     where: {
       ppeType: { not: null }, // Only show items that are PPE
@@ -168,6 +172,27 @@ export default function PpeListScreen() {
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
     if (key === "where") {
       const whereFilters = Object.entries(value || {}).filter(([k, v]) => k !== "ppeType" && v !== undefined && v !== null);
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <PpeFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
       return whereFilters.length > 0;
     }
     return value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true);
@@ -179,10 +204,14 @@ export default function PpeListScreen() {
 
   if (error) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Erro ao carregar EPIs" detail={error.message} onRetry={handleRefresh} />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen message="Erro ao carregar EPIs" detail={error.message} onRetry={handleRefresh} />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasPpes = Array.isArray(items) && items.length > 0;
@@ -195,13 +224,13 @@ export default function PpeListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -254,9 +283,6 @@ export default function PpeListScreen() {
       {hasPpes && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasPpes && <FAB icon="plus" onPress={handleCreatePpe} />}
-
-      {/* Filter Modal */}
-      <PpeFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
     </ThemedView>
   );
 }

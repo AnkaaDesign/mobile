@@ -8,7 +8,8 @@ import type { Customer } from '@/types';
 import { ThemedView, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
 import { CustomerTable, createColumnDefinitions } from "@/components/administration/customer/list/customer-table";
 import { CustomerFilterTags } from "@/components/administration/customer/list/customer-filter-tags";
-import { CustomerColumnVisibilityDrawer } from "@/components/administration/customer/list/customer-column-visibility-drawer";
+import { CustomerFilterDrawerContent } from "@/components/administration/customer/list/customer-filter-drawer-content";
+
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { CustomerListSkeleton } from "@/components/administration/customer/skeleton/customer-list-skeleton";
@@ -17,7 +18,7 @@ import { routes } from '@/constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useTableSort } from "@/hooks/useTableSort";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
-import { BaseFilterDrawer, BooleanFilter } from "@/components/common/filters";
+
 
 /**
  * Financial Customer List Screen
@@ -26,17 +27,20 @@ import { BaseFilterDrawer, BooleanFilter } from "@/components/common/filters";
  * focusing on invoices, payments, and financial metrics.
  * Reuses customer components but with financial-specific context.
  */
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+
 export default function FinancialCustomerListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -163,7 +167,7 @@ export default function FinancialCustomerListScreen() {
   }, []);
 
   const handleApplyFilters = useCallback(() => {
-    setShowFilters(false);
+    // Filters are applied immediately through state
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -185,6 +189,38 @@ export default function FinancialCustomerListScreen() {
   const activeFiltersCount = Object.values(filters).filter(
     (value) => value === true
   ).length;
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <CustomerFilterDrawerContent
+        filters={{ where: buildWhereClause() }}
+        onFiltersChange={(newFilters) => {
+          const where = newFilters.where as any;
+          if (where) {
+            const extracted: typeof filters = {};
+            if (where.cnpj?.not === null) extracted.hasCNPJ = true;
+            if (where.cpf?.not === null) extracted.hasCPF = true;
+            if (where.tasks?.some) extracted.hasInvoices = true;
+            setFilters(extracted);
+          } else {
+            setFilters({});
+          }
+        }}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, buildWhereClause, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
 
   // Filter sections for BaseFilterDrawer
   const filterSections = useMemo(() => [
@@ -235,10 +271,14 @@ export default function FinancialCustomerListScreen() {
 
   if (error && customers.length === 0) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Erro ao carregar clientes" detail={error.message} onRetry={handleRefresh} />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen message="Erro ao carregar clientes" detail={error.message} onRetry={handleRefresh} />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasCustomers = Array.isArray(customers) && customers.length > 0;
@@ -258,13 +298,13 @@ export default function FinancialCustomerListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumns.size}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -334,27 +374,6 @@ export default function FinancialCustomerListScreen() {
       {hasCustomers && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasCustomers && <FAB icon="plus" onPress={handleCreateCustomer} />}
-
-      {/* Filter Drawer */}
-      <BaseFilterDrawer
-        open={showFilters}
-        onOpenChange={setShowFilters}
-        sections={filterSections}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-        title="Filtros Financeiros"
-        description="Configure os filtros para refinar sua busca"
-      />
-
-      {/* Column Visibility Drawer */}
-      <CustomerColumnVisibilityDrawer
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
     </ThemedView>
   );
 }

@@ -11,7 +11,6 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { UserTableWithData } from "@/components/administration/user/list/user-table-with-data";
-import { UserColumnVisibilityDrawer } from "@/components/administration/user/list/user-column-visibility-drawer";
 import { Input } from "@/components/ui/input";
 import { useColumnVisibility } from "@/hooks";
 
@@ -22,7 +21,6 @@ interface RelatedUsersCardProps {
 export function RelatedUsersCard({ position }: RelatedUsersCardProps) {
   const { colors } = useTheme();
   const [searchText, setSearchText] = useState("");
-  const [columnDrawerOpen, setColumnDrawerOpen] = useState(false);
   const [_tableData, _setTableData] = useState<{ users: User[]; totalRecords: number }>({
     users: [],
     totalRecords: 0
@@ -76,25 +74,16 @@ export function RelatedUsersCard({ position }: RelatedUsersCardProps) {
             />
           </View>
 
-          <View style={styles.actionButtons}>
-            <UserColumnVisibilityDrawer
-              visibleColumns={visibleColumns}
-              onVisibilityChange={setVisibleColumns}
-              open={columnDrawerOpen}
-              onOpenChange={setColumnDrawerOpen}
-            />
-
-            <TouchableOpacity
-              onPress={handleViewAll}
-              style={[styles.viewAllButton, { backgroundColor: colors.muted, borderColor: colors.border }]}
-              activeOpacity={0.7}
-            >
-              <ThemedText style={[styles.viewAllText, { color: colors.foreground }]}>
-                Ver todos
-              </ThemedText>
-              <IconChevronRight size={16} color={colors.foreground} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={handleViewAll}
+            style={[styles.viewAllButton, { backgroundColor: colors.muted, borderColor: colors.border }]}
+            activeOpacity={0.7}
+          >
+            <ThemedText style={[styles.viewAllText, { color: colors.foreground }]}>
+              Ver todos
+            </ThemedText>
+            <IconChevronRight size={16} color={colors.foreground} />
+          </TouchableOpacity>
         </View>
 
         {/* User table */}
@@ -132,8 +121,10 @@ const styles = StyleSheet.create({
   },
   controls: {
     gap: spacing.sm,
+    flexDirection: "row",
   },
   searchContainer: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
@@ -147,10 +138,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     padding: 0,
   },
-  actionButtons: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
   viewAllButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -159,7 +146,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    flex: 1,
     justifyContent: "center",
   },
   viewAllText: {

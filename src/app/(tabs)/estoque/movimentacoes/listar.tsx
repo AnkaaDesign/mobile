@@ -9,9 +9,8 @@ import type { ActivityGetManyFormData } from '../../../../schemas';
 import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { ActivityTable, createColumnDefinitions } from "@/components/inventory/activity/list/activity-table";
 import type { SortConfig } from "@/components/inventory/activity/list/activity-table";
-import { ActivityFilterDrawerV2 } from "@/components/inventory/activity/list/activity-filter-drawer-v2";
 import { ActivityFilterTags } from "@/components/inventory/activity/list/activity-filter-tags";
-import { ColumnVisibilityDrawerV2 } from "@/components/inventory/activity/list/column-visibility-drawer-v2";
+
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { ActivityListSkeleton } from "@/components/inventory/activity/skeleton/activity-list-skeleton";
@@ -22,20 +21,24 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES, ACTIVITY_OPERATION, ACTIVITY_REASON } from '../../../../constants';
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { ActivityFilterDrawerContent } from "@/components/inventory/activity/list/activity-filter-drawer-content";
+
 export default function ActivityListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<ActivityGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "createdAt", direction: "desc" }]);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["operation", "item.name", "quantity"]);
 
   // Permission check
@@ -157,7 +160,6 @@ export default function ActivityListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<ActivityGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -200,19 +202,44 @@ export default function ActivityListScreen() {
     ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <ActivityFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+
   // Only show skeleton on initial load, not on refetch/sort
   const isInitialLoad = isLoading && !isRefetching && items.length === 0;
 
   // Permission gate
   if (!canManageWarehouse) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen
-          message="Acesso negado"
-          detail="Você não tem permissão para acessar esta funcionalidade. É necessário privilégio de Almoxarifado ou Administrador."
-        />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen
+              message="Acesso negado"
+              detail="Você não tem permissão para acessar esta funcionalidade. É necessário privilégio de Almoxarifado ou Administrador."
+            />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   if (isInitialLoad) {
@@ -244,13 +271,13 @@ export default function ActivityListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -307,18 +334,6 @@ export default function ActivityListScreen() {
       {hasActivities && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasActivities && hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) && <FAB icon="plus" onPress={handleCreateActivity} />}
-
-      {/* Filter Drawer */}
-      <ActivityFilterDrawerV2 visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
-
-      {/* Column Visibility Drawer */}
-      <ColumnVisibilityDrawerV2
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
     </ThemedView>
   );
 }

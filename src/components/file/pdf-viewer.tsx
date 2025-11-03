@@ -11,9 +11,9 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Pdf from 'react-native-pdf';
 import { IconX, IconChevronLeft, IconChevronRight, IconDownload, IconShare } from '@tabler/icons-react-native';
 import type { File as AnkaaFile } from '../../types';
@@ -37,6 +37,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   onShare,
   baseUrl,
 }) => {
+  const insets = useSafeAreaInsets();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -108,12 +109,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
       presentationStyle="fullScreen"
       statusBarTranslucent
     >
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
 
         {/* Header */}
         {controlsVisible && (
-          <View style={styles.header}>
+          <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
             <View style={styles.headerLeft}>
               <Pressable onPress={handleClose} style={styles.iconButton}>
                 <IconX size={24} color="#fff" />
@@ -201,7 +202,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
 
         {/* Footer Controls */}
         {controlsVisible && totalPages > 1 && !error && (
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
             <View style={styles.navigationControls}>
               <Pressable
                 onPress={() => {
@@ -269,7 +270,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
             <Text style={styles.loadingText}>Carregando PDF...</Text>
           </View>
         )}
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 };
@@ -284,7 +285,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
@@ -334,7 +335,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    paddingVertical: 12,
+    paddingTop: 12,
     paddingHorizontal: 16,
   },
   navigationControls: {

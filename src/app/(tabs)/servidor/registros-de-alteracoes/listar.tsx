@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ChangeLogGetManyFormData } from '../../../../schemas';
 import { ThemedView, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { ChangeLogTable } from "@/components/administration/change-log/list/change-log-table";
-import { ChangeLogFilterModal } from "@/components/administration/change-log/list/change-log-filter-modal";
+
 import { ChangeLogFilterTags } from "@/components/administration/change-log/list/change-log-filter-tags";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -16,6 +16,11 @@ import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useChangeLogsInfiniteMobile } from "@/hooks";
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { ChangeLogFilterDrawerContent } from "@/components/administration/change-log/list/change-log-filter-drawer-content";
+
 export default function AdministrationChangeLogsListScreen() {
   const router = useRouter();
   const { colors, } = useTheme();
@@ -23,7 +28,6 @@ export default function AdministrationChangeLogsListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<ChangeLogGetManyFormData>>({});
   const [_showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, ] = useState<string[]>(["action", "entity", "user", "createdAt"]);
@@ -88,6 +92,27 @@ export default function AdministrationChangeLogsListScreen() {
   const activeFiltersCount = Object.entries(filters).filter(
     ([_key, value]) => {
       if (value === undefined || value === null) return false;
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <ChangeLogFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
       if (Array.isArray(value)) return value.length > 0;
       if (typeof value === "object" && !Array.isArray(value)) {
         return Object.values(value).some(v => v !== undefined && v !== null);
@@ -102,10 +127,14 @@ export default function AdministrationChangeLogsListScreen() {
 
   if (error) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Erro ao carregar registros" detail={error.message} onRetry={handleRefresh} />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen message="Erro ao carregar registros" detail={error.message} onRetry={handleRefresh} />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasChangeLogs = Array.isArray(changeLogs) && changeLogs.length > 0;
@@ -125,13 +154,13 @@ export default function AdministrationChangeLogsListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -177,9 +206,6 @@ export default function AdministrationChangeLogsListScreen() {
 
       {/* Items count */}
       {hasChangeLogs && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
-
-      {/* Filter Modal */}
-      <ChangeLogFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
     </ThemedView>
   );
 }

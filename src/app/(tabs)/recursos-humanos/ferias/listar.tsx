@@ -8,7 +8,7 @@ import { useVacationsInfiniteMobile } from "@/hooks";
 import type { VacationGetManyFormData } from '../../../../schemas';
 import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { VacationTable } from "@/components/human-resources/vacation/list/vacation-table";
-import { VacationFilterModal } from "@/components/human-resources/vacation/list/vacation-filter-modal";
+
 import { VacationFilterTags } from "@/components/human-resources/vacation/list/vacation-filter-tags";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { VacationListSkeleton } from "@/components/human-resources/vacation/skeleton/vacation-list-skeleton";
@@ -16,14 +16,19 @@ import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { VacationFilterDrawerContent } from "@/components/human-resources/vacation/list/vacation-filter-drawer-content";
+
 export default function VacationListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<VacationGetManyFormData>>({});
 
   // Build query parameters
@@ -77,6 +82,27 @@ export default function VacationListScreen() {
   // Count active filters
   const activeFiltersCount = (() => {
     let count = 0;
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <VacationFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
     if (filters.statuses && filters.statuses.length > 0) count++;
     if (filters.types && filters.types.length > 0) count++;
     if (filters.userIds && filters.userIds.length > 0) count++;
@@ -91,10 +117,14 @@ export default function VacationListScreen() {
 
   if (error) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Erro ao carregar férias" detail={error.message} onRetry={handleRefresh} />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen message="Erro ao carregar férias" detail={error.message} onRetry={handleRefresh} />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasVacations = Array.isArray(vacations) && vacations.length > 0;
@@ -114,7 +144,7 @@ export default function VacationListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -162,9 +192,6 @@ export default function VacationListScreen() {
       )}
 
       {hasVacations && <FAB icon="plus" onPress={handleCreateVacation} />}
-
-      {/* Filter Modal */}
-      <VacationFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
     </ThemedView>
   );
 }

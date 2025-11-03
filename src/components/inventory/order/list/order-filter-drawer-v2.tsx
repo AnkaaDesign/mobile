@@ -8,7 +8,7 @@ import { ORDER_STATUS, ORDER_STATUS_LABELS } from '../../../../constants';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { MultiCombobox } from "@/components/ui/multi-combobox";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -209,7 +209,7 @@ export function OrderFilterDrawerV2({ visible, onClose, onApply, currentFilters 
         <View style={styles.sectionContent}>
           <View style={styles.field}>
             <Label style={styles.fieldLabel}>Fornecedores</Label>
-            <MultiCombobox
+            <Combobox
               options={[
                 { label: "Sem fornecedor", value: "null" },
                 ...suppliers.map((sup) => ({ label: sup.fantasyName, value: sup.id }))

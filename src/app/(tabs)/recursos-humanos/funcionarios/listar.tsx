@@ -11,13 +11,17 @@ import { EmployeeTable, createEmployeeColumnDefinitions } from "@/components/adm
 import type { SortConfig } from "@/components/administration/employee/list/employee-table";
 import { EmployeeFilterDrawer } from "@/components/administration/employee/list/employee-filter-drawer";
 import { EmployeeFilterTags } from "@/components/administration/employee/list/employee-filter-tags";
-import { EmployeeColumnVisibilityDrawer } from "@/components/administration/employee/list/employee-column-visibility-drawer";
+
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 
 import { EmployeeListSkeleton } from "@/components/administration/employee/skeleton/employee-list-skeleton";
 import { useTheme } from "@/lib/theme";
 import { routes, USER_STATUS } from '@/constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
+
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 
 export default function EmployeesListScreen() {
   const router = useRouter();
@@ -26,12 +30,10 @@ export default function EmployeesListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<UserGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "name", direction: "asc" }]);
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>([
     "name",
     "status",
@@ -201,10 +203,34 @@ export default function EmployeesListScreen() {
   // Get all column definitions
   const allColumns = useMemo(() => createEmployeeColumnDefinitions(), []);
 
+  // Convert visibleColumnKeys array to Set for GenericColumnDrawerContent
+  const visibleColumns = useMemo(() => new Set(visibleColumnKeys), [visibleColumnKeys]);
+
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
     ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <EmployeeFilterDrawer
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
 
   // Calculate status summary
   const statusSummary = useMemo(() => {
@@ -242,14 +268,18 @@ export default function EmployeesListScreen() {
 
   if (error) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen
-          message="Erro ao carregar funcionários"
-          detail={error.message}
-          onRetry={handleRefresh}
-        />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen
+              message="Erro ao carregar funcionários"
+              detail={error.message}
+              onRetry={handleRefresh}
+            />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasEmployees = Array.isArray(employees) && employees.length > 0;
@@ -269,13 +299,13 @@ export default function EmployeesListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -373,22 +403,6 @@ export default function EmployeesListScreen() {
         />
       )}
 
-      {/* Filter Drawer */}
-      <EmployeeFilterDrawer
-        visible={showFilters}
-        onClose={() => setShowFilters(false)}
-        onApply={handleApplyFilters}
-        currentFilters={filters}
-      />
-
-      {/* Column Visibility Drawer */}
-      <EmployeeColumnVisibilityDrawer
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
     </ThemedView>
   );
 }

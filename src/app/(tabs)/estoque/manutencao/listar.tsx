@@ -9,7 +9,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { MaintenanceTable } from "@/components/inventory/maintenance/list/maintenance-table";
-import { MaintenanceFilterModal } from "@/components/inventory/maintenance/list/maintenance-filter-modal";
+
 import { MaintenanceFilterTags } from "@/components/inventory/maintenance/list/maintenance-filter-tags";
 import { SearchBar } from "@/components/ui/search-bar";
 import { FAB } from "@/components/ui/fab";
@@ -19,6 +19,10 @@ import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 import type { MaintenanceGetManyFormData } from '../../../../schemas';
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+
 export default function InventoryMaintenanceListScreen() {
   const { colors } = useTheme();
 
@@ -26,7 +30,6 @@ export default function InventoryMaintenanceListScreen() {
   const [searchText, setSearchText] = useState("");
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [filters, setFilters] = useState<Partial<MaintenanceGetManyFormData>>({});
-  const [showFilters, setShowFilters] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   // Permission check - Maintenance management is available for maintenance and admin
@@ -70,7 +73,11 @@ export default function InventoryMaintenanceListScreen() {
     const timer = setTimeout(() => {
       setDebouncedSearchText(searchText);
     }, 300);
-    return () => clearTimeout(timer);
+    return (
+    <UtilityDrawerWrapper>
+    ) => clearTimeout(timer
+    </UtilityDrawerWrapper>
+  );
   }, [searchText]);
 
   // Clear all filters
@@ -116,7 +123,7 @@ export default function InventoryMaintenanceListScreen() {
               <Button
                 variant="ghost"
                 size="icon"
-                onPress={() => setShowFilters(true)}
+                onPress={handleOpenFilters}
               >
                 <IconFilter size={20} color={colors.foreground} />
               </Button>
@@ -175,18 +182,6 @@ export default function InventoryMaintenanceListScreen() {
             onPress={() => router.push("/estoque/manutencao/cadastrar")}
           />
         )}
-
-        {/* Filter Modal */}
-        <MaintenanceFilterModal
-          visible={showFilters}
-          onClose={() => setShowFilters(false)}
-          filters={filters}
-          onApplyFilters={(newFilters) => {
-            setFilters(newFilters);
-            setShowFilters(false);
-          }}
-          onClearFilters={handleClearFilters}
-        />
       </ThemedView>
     </>
   );

@@ -10,7 +10,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { PaintTable } from "@/components/production/paint/list/paint-table";
-import { PaintFilterModal } from "@/components/production/paint/list/paint-filter-modal";
+
 import { PaintFilterTags } from "@/components/production/paint/list/paint-filter-tags";
 import { SearchBar } from "@/components/ui/search-bar";
 import { FAB } from "@/components/ui/fab";
@@ -20,14 +20,19 @@ import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 import type { PaintGetManyFormData } from '../../../../schemas';
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { PaintFilterDrawerContent } from "@/components/production/paint/list/paint-filter-drawer-content";
+
 export default function PaintsListScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const { user } = useAuth();
   const [searchText, setSearchText] = useState("");
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [filters, setFilters] = useState<Partial<PaintGetManyFormData>>({});
-  const [showFilters, setShowFilters] = useState(false);
   const [_refreshing] = useState(false);
 
   // Permission check - Paint management is available for production and admin
@@ -105,6 +110,27 @@ export default function PaintsListScreen() {
     return Object.keys(filters).length > 0 || !!debouncedSearchText;
   }, [filters, debouncedSearchText]);
 
+  const activeFiltersCount = useMemo(() => {
+    return Object.keys(filters).filter(key => filters[key as keyof typeof filters] !== undefined).length;
+  }, [filters]);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters({});
+    setSearchText("");
+    setDebouncedSearchText("");
+  }, []);
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <PaintFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
   // Permission gate
   if (!canManagePaints) {
     return (
@@ -125,27 +151,28 @@ export default function PaintsListScreen() {
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Tintas",
-          headerStyle: { backgroundColor: colors.card },
-          headerTintColor: colors.foreground,
-          headerRight: () => (
-            <View style={styles.headerActions}>
-              <Button
-                variant="ghost"
-                size="icon"
-                onPress={() => setShowFilters(true)}
-              >
-                <IconFilter size={20} color={colors.foreground} />
-              </Button>
-            </View>
-          ),
-        }}
-      />
+    <UtilityDrawerWrapper>
+      <>
+        <Stack.Screen
+          options={{
+            title: "Tintas",
+            headerStyle: { backgroundColor: colors.card },
+            headerTintColor: colors.foreground,
+            headerRight: () => (
+              <View style={styles.headerActions}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onPress={handleOpenFilters}
+                >
+                  <IconFilter size={20} color={colors.foreground} />
+                </Button>
+              </View>
+            ),
+          }}
+        />
 
-      <ThemedView style={styles.container}>
+        <ThemedView style={styles.container}>
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <SearchBar
@@ -197,19 +224,9 @@ export default function PaintsListScreen() {
             <IconPlus size={24} color="white" />
           </FAB>
         )}
-
-        {/* Filter Modal */}
-        <PaintFilterModal
-          visible={showFilters}
-          onClose={() => setShowFilters(false)}
-          onApply={(newFilters) => {
-            setFilters(newFilters);
-            setShowFilters(false);
-          }}
-          filters={filters}
-        />
       </ThemedView>
-    </>
+      </>
+    </UtilityDrawerWrapper>
   );
 }
 

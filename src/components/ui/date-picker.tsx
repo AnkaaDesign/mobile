@@ -186,7 +186,7 @@ export function DatePicker({ value, onChange, label, type = "date", style, place
         disabled={disabled}
       >
         <Text style={styles.displayText}>{displayValue}</Text>
-        <IconCalendar size={20} />
+        <IconCalendar size={20} color={colors.mutedForeground} />
       </TouchableOpacity>
 
       {/* iOS Date Picker Modal */}

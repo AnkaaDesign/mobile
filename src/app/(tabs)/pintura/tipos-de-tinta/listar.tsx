@@ -11,7 +11,7 @@ import { PaintTypeTable, createColumnDefinitions } from "@/components/painting/p
 
 import { PaintTypeFilterTags } from "@/components/painting/paint-type/list/paint-type-filter-tags";
 import { PaintTypeFilterDrawer } from "@/components/painting/paint-type/list/paint-type-filter-drawer";
-import { PaintTypeColumnVisibilityDrawer } from "@/components/painting/paint-type/list/paint-type-column-visibility-drawer";
+
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { PaintTypeListSkeleton } from "@/components/painting/paint-type/skeleton/paint-type-list-skeleton";
@@ -21,17 +21,20 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 import { useTableSort } from "@/hooks/useTableSort";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+
 export default function PaintTypeListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedPaintTypes, setSelectedPaintTypes] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -149,7 +152,7 @@ export default function PaintTypeListScreen() {
   }, []);
 
   const handleApplyFilters = useCallback(() => {
-    setShowFilters(false);
+    // Filters are applied immediately through state
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -175,6 +178,27 @@ export default function PaintTypeListScreen() {
     (value) => value !== undefined && value !== null
   ).length;
 
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <PaintTypeFilterDrawer
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+
   // Only show skeleton on initial load, not on refetch/sort
   const isInitialLoad = isLoading && !isRefetching && paintTypes.length === 0;
 
@@ -184,14 +208,18 @@ export default function PaintTypeListScreen() {
 
   if (error && paintTypes.length === 0) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen
-          message="Erro ao carregar tipos de tinta"
-          detail={error.message}
-          onRetry={handleRefresh}
-        />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen
+              message="Erro ao carregar tipos de tinta"
+              detail={error.message}
+              onRetry={handleRefresh}
+            />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasPaintTypes = Array.isArray(paintTypes) && paintTypes.length > 0;
@@ -216,13 +244,13 @@ export default function PaintTypeListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumns.size}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -289,26 +317,6 @@ export default function PaintTypeListScreen() {
       )}
 
       {hasPaintTypes && <FAB icon="plus" onPress={handleCreatePaintType} />}
-
-      {/* Filter Drawer */}
-      <PaintTypeFilterDrawer
-        open={showFilters}
-        onOpenChange={setShowFilters}
-        filters={filters}
-        onFiltersChange={setFilters}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-
-      {/* Column Visibility Drawer */}
-      <PaintTypeColumnVisibilityDrawer
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
     </ThemedView>
   );
 }

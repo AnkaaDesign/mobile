@@ -15,7 +15,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES, PAINT_TYPE_ENUM, PAINT_TYPE_ENUM_LABELS, PAINT_FINISH_LABELS } from '../../../../constants';
 import { hasPrivilege } from '../../../../utils';
 import type { Paint } from '../../../../types';
-import { FilterModal } from "@/components/ui/filter-modal";
+
 import { Chip } from "@/components/ui/chip";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useToast } from "@/lib/toast/use-toast";
@@ -28,6 +28,10 @@ import {
   IconSparkles,
 } from "@tabler/icons-react-native";
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+
 export default function CatalogListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -37,7 +41,6 @@ export default function CatalogListScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<PAINT_TYPE_ENUM[]>([]);
   const [_selectedBrand, _setSelectedBrand] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<"name" | "code" | "createdAt">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
@@ -112,200 +115,135 @@ export default function CatalogListScreen() {
     toast({ title: "Catálogo atualizado", variant: "success" });
   };
 
+  // Open filter drawer
+  const handleOpenFilters = () => {
+    // TODO: Implement filter drawer for catalog
+    toast({ title: "Filtros em desenvolvimento", variant: "default" });
+  };
+
   // Render paint card
   const renderPaintCard = ({ item: paint }: { item: Paint }) => {
     const formulaCount = paint.formulas?.length || 0;
     const taskCount = (paint._count?.logoTasks || 0) + (paint._count?.generalPaintings || 0);
 
     return (
-      <TouchableOpacity onPress={() => router.push(`/pintura/catalogo/detalhes/${paint.id}`)}>
-        <Card style={styles.paintCard}>
-          {/* Color Preview */}
-          <View style={[styles.colorPreview, { backgroundColor: paint.hex || colors.muted }]}>
-            {/* Gradient overlay for finish effect */}
-            {paint.finish && (
-              <LinearGradient
-                colors={
-                  paint.finish === 'METALLIC'
-                    ? ['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)', 'rgba(0,0,0,0.1)']
-                    : paint.finish === 'MATTE'
-                    ? ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']
-                    : ['rgba(255,255,255,0.2)', 'rgba(255,255,255,0)', 'rgba(0,0,0,0.05)']
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.finishGradient}
-              />
-            )}
-            <View style={styles.hexOverlay}>
-              <ThemedText style={styles.hexText}>{paint.hex}</ThemedText>
-            </View>
-          </View>
-
-          {/* Card Content */}
-          <View style={styles.cardContent}>
-            {/* Paint Name */}
-            <ThemedText style={styles.paintName} numberOfLines={2}>
-              {paint.name}
-            </ThemedText>
-
-            {/* Badges */}
-            <View style={styles.badgeContainer}>
-              {paint.paintType?.name && (
-                <Badge variant="secondary" style={styles.badge}>
-                  <View style={styles.badgeContent}>
-                    <IconDroplet size={12} color={colors.foreground} />
-                    <ThemedText style={styles.badgeText}>{paint.paintType.name}</ThemedText>
-                  </View>
-                </Badge>
-              )}
-
-              {paint.finish && (
-                <Badge variant="secondary" style={styles.badge}>
-                  <View style={styles.badgeContent}>
-                    <IconSparkles size={12} color={colors.foreground} />
-                    <ThemedText style={styles.badgeText}>{PAINT_FINISH_LABELS[paint.finish] || paint.finish}</ThemedText>
-                  </View>
-                </Badge>
-              )}
-
-              {paint.paintBrand?.name && (
-                <Badge variant="outline" style={styles.badge}>
-                  <ThemedText style={styles.badgeText}>{paint.paintBrand.name}</ThemedText>
-                </Badge>
-              )}
-            </View>
-
-            {/* Tags */}
-            {paint.tags && paint.tags.length > 0 && (
-              <View style={styles.badgeContainer}>
-                {paint.tags.slice(0, 3).map((tag, index) => (
-                  <Badge key={index} variant="secondary" style={styles.badge}>
-                    <View style={styles.badgeContent}>
-                      <IconTag size={12} color={colors.foreground} />
-                      <ThemedText style={styles.badgeText}>{tag}</ThemedText>
-                    </View>
-                  </Badge>
-                ))}
-                {paint.tags.length > 3 && (
-                  <Badge variant="secondary" style={styles.badge}>
-                    <ThemedText style={styles.badgeText}>+{paint.tags.length - 3}</ThemedText>
-                  </Badge>
+          <TouchableOpacity onPress={() => router.push(`/pintura/catalogo/detalhes/${paint.id}`)}>
+            <Card style={styles.paintCard}>
+              {/* Color Preview */}
+              <View style={[styles.colorPreview, { backgroundColor: paint.hex || colors.muted }]}>
+                {/* Gradient overlay for finish effect */}
+                {paint.finish && (
+                  <LinearGradient
+                    colors={
+                      paint.finish === 'METALLIC'
+                        ? ['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)', 'rgba(0,0,0,0.1)']
+                        : paint.finish === 'MATTE'
+                        ? ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']
+                        : ['rgba(255,255,255,0.2)', 'rgba(255,255,255,0)', 'rgba(0,0,0,0.05)']
+                    }
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.finishGradient}
+                  />
                 )}
+                <View style={styles.hexOverlay}>
+                  <ThemedText style={styles.hexText}>{paint.hex}</ThemedText>
+                </View>
               </View>
-            )}
 
-            {/* Formula Count */}
-            <View style={styles.infoRow}>
-              <IconBarcode size={16} color={formulaCount > 0 ? "#16a34a" : "#dc2626"} />
-              <ThemedText style={[styles.infoText, formulaCount > 0 ? styles.infoTextActive : styles.infoTextMuted]}>
-                {formulaCount} fórmula{formulaCount !== 1 ? "s" : ""}
-              </ThemedText>
-            </View>
+              {/* Card Content */}
+              <View style={styles.cardContent}>
+                {/* Paint Name */}
+                <ThemedText style={styles.paintName} numberOfLines={2}>
+                  {paint.name}
+                </ThemedText>
 
-            {/* Task Count */}
-            <View style={styles.infoRow}>
-              <IconBuildingFactory size={16} color={taskCount > 0 ? "#2563eb" : colors.mutedForeground} />
-              <ThemedText style={[styles.infoText, taskCount > 0 ? styles.infoTextActive : styles.infoTextMuted]}>
-                {taskCount} tarefa{taskCount !== 1 ? "s" : ""}
-              </ThemedText>
-            </View>
-          </View>
-        </Card>
-      </TouchableOpacity>
-    );
-  };
+                {/* Badges */}
+                <View style={styles.badgeContainer}>
+                  {paint.paintType?.name && (
+                    <Badge variant="secondary" style={styles.badge}>
+                      <View style={styles.badgeContent}>
+                        <IconDroplet size={12} color={colors.foreground} />
+                        <ThemedText style={styles.badgeText}>{paint.paintType.name}</ThemedText>
+                      </View>
+                    </Badge>
+                  )}
 
-  // Filter modal content
-  const renderFilterModal = () => (
-    <FilterModal
-      visible={showFilters}
-      onClose={() => setShowFilters(false)}
-      title="Filtrar Tintas"
-    >
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Tipo de Tinta</ThemedText>
-        <View style={styles.filterOptions}>
-          {Object.values(PAINT_TYPE_ENUM).map((type) => (
-            <Chip
-              key={type}
-              label={PAINT_TYPE_ENUM_LABELS[type as keyof typeof PAINT_TYPE_ENUM_LABELS]}
-              onRemove={() => {
-                if (selectedTypes.includes(type)) {
-                  setSelectedTypes(selectedTypes.filter((t) => t !== type));
-                } else {
-                  setSelectedTypes([...selectedTypes, type]);
-                }
-              }}
-              variant={selectedTypes.includes(type) ? "primary" : "default"}
-              removable={selectedTypes.includes(type)}
-              style={{ marginBottom: 8, marginRight: 8 }}
-            />
-          ))}
-        </View>
-      </View>
+                  {paint.finish && (
+                    <Badge variant="secondary" style={styles.badge}>
+                      <View style={styles.badgeContent}>
+                        <IconSparkles size={12} color={colors.foreground} />
+                        <ThemedText style={styles.badgeText}>{PAINT_FINISH_LABELS[paint.finish] || paint.finish}</ThemedText>
+                      </View>
+                    </Badge>
+                  )}
 
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Ordenar por</ThemedText>
-        <View style={styles.filterOptions}>
-          <Chip
-            label="Nome"
-            variant={sortBy === "name" ? "primary" : "default"}
-            removable={false}
-            onRemove={() => setSortBy("name")}
-          />
-          <Chip
-            label="Código"
-            variant={sortBy === "code" ? "primary" : "default"}
-            removable={false}
-            onRemove={() => setSortBy("code")}
-          />
-          <Chip
-            label="Data de Criação"
-            variant={sortBy === "createdAt" ? "primary" : "default"}
-            removable={false}
-            onRemove={() => setSortBy("createdAt")}
-          />
-        </View>
-      </View>
+                  {paint.paintBrand?.name && (
+                    <Badge variant="outline" style={styles.badge}>
+                      <ThemedText style={styles.badgeText}>{paint.paintBrand.name}</ThemedText>
+                    </Badge>
+                  )}
+                </View>
 
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Ordem</ThemedText>
-        <View style={styles.filterOptions}>
-          <Chip
-            label="Crescente"
-            variant={sortOrder === "asc" ? "primary" : "default"}
-            removable={false}
-            onRemove={() => setSortOrder("asc")}
-          />
-          <Chip
-            label="Decrescente"
-            variant={sortOrder === "desc" ? "primary" : "default"}
-            removable={false}
-            onRemove={() => setSortOrder("desc")}
-          />
-        </View>
-      </View>
-    </FilterModal>
+                {/* Tags */}
+                {paint.tags && paint.tags.length > 0 && (
+                  <View style={styles.badgeContainer}>
+                    {paint.tags.slice(0, 3).map((tag, index) => (
+                      <Badge key={index} variant="secondary" style={styles.badge}>
+                        <View style={styles.badgeContent}>
+                          <IconTag size={12} color={colors.foreground} />
+                          <ThemedText style={styles.badgeText}>{tag}</ThemedText>
+                        </View>
+                      </Badge>
+                    ))}
+                    {paint.tags.length > 3 && (
+                      <Badge variant="secondary" style={styles.badge}>
+                        <ThemedText style={styles.badgeText}>+{paint.tags.length - 3}</ThemedText>
+                      </Badge>
+                    )}
+                  </View>
+                )}
+
+                {/* Formula Count */}
+                <View style={styles.infoRow}>
+                  <IconBarcode size={16} color={formulaCount > 0 ? "#16a34a" : "#dc2626"} />
+                  <ThemedText style={[styles.infoText, formulaCount > 0 ? styles.infoTextActive : styles.infoTextMuted]}>
+                    {formulaCount} fórmula{formulaCount !== 1 ? "s" : ""}
+                  </ThemedText>
+                </View>
+
+                {/* Task Count */}
+                <View style={styles.infoRow}>
+                  <IconBuildingFactory size={16} color={taskCount > 0 ? "#2563eb" : colors.mutedForeground} />
+                  <ThemedText style={[styles.infoText, taskCount > 0 ? styles.infoTextActive : styles.infoTextMuted]}>
+                    {taskCount} tarefa{taskCount !== 1 ? "s" : ""}
+                  </ThemedText>
+                </View>
+              </View>
+            </Card>
+          </TouchableOpacity>
   );
+  };
 
 
   if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={styles.errorText}>Erro ao carregar catálogo</ThemedText>
-        <IconButton
-          name="refresh-cw"
-          variant="default"
-          onPress={() => refetch()}
-          style={styles.retryButton}
-        />
-      </View>
+      <UtilityDrawerWrapper>
+        <View style={styles.centerContainer}>
+          <ThemedText style={styles.errorText}>Erro ao carregar catálogo</ThemedText>
+          <IconButton
+            name="refresh-cw"
+            variant="default"
+            onPress={() => refetch()}
+            style={styles.retryButton}
+          />
+        </View>
+      </UtilityDrawerWrapper>
     );
   }
 
   return (
-    <>
+    <UtilityDrawerWrapper>
       <Stack.Screen
         options={{
           title: "Catálogo de Tintas",
@@ -324,7 +262,7 @@ export default function CatalogListScreen() {
           <IconButton
             name="filter"
             variant="default"
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
           />
         </View>
 
@@ -377,11 +315,8 @@ export default function CatalogListScreen() {
             style={styles.fab}
           />
         )}
-
-        {/* Filter modal */}
-        {renderFilterModal()}
       </View>
-    </>
+    </UtilityDrawerWrapper>
   );
 }
 

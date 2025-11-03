@@ -263,6 +263,7 @@ export function NumberInput({
       <Animated.View style={animatedShadowStyles}>
         <Animated.View style={StyleSheet.flatten([baseInputContainerStyles, animatedStyles])}>
           <TextInput
+            {...props}
             ref={inputRef}
             style={baseInputStyles}
             value={internalValue}
@@ -273,7 +274,6 @@ export function NumberInput({
             placeholderTextColor={colors.mutedForeground}
             keyboardType="numeric"
             editable={editable}
-            {...props}
           />
         </Animated.View>
       </Animated.View>

@@ -8,28 +8,31 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { SupplierTable, createColumnDefinitions, type SortConfig } from "@/components/inventory/supplier/list/supplier-table";
-import { SupplierColumnVisibilityDrawerV2 } from "@/components/inventory/supplier/list/supplier-column-visibility-drawer-v2";
-import { SupplierFilterDrawerV2 } from "@/components/inventory/supplier/list/supplier-filter-drawer-v2";
 import { SupplierFilterTags } from "@/components/inventory/supplier/list/supplier-filter-tags";
 import { useSuppliersInfiniteMobile } from "@/hooks";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SupplierFilterDrawerContent } from "@/components/inventory/supplier/list/supplier-filter-drawer-content";
+
 export default function SuppliersListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
 
   // State
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<any>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "name", direction: "asc" }]);
   const [selectedSuppliers, setSelectedSuppliers] = useState<Set<string>>(new Set());
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["fantasyName", "city", "itemsCount"]);
+  const visibleColumns = useMemo(() => new Set(visibleColumnKeys), [visibleColumnKeys]);
 
   // Build orderBy from sort configs
   const buildOrderBy = () => {
@@ -58,13 +61,9 @@ export default function SuppliersListScreen() {
     ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
-  // Fetch suppliers with infinite scroll
-  const { items: suppliers, isLoading, error, refetch, refresh, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount } = useSuppliersInfiniteMobile(queryParams);
-
   // Handlers
   const handleApplyFilters = useCallback((newFilters: Partial<any>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -73,6 +72,37 @@ export default function SuppliersListScreen() {
     setDisplaySearchText("");
     setSelectedSuppliers(new Set());
   }, []);
+
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
+  }, []);
+
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <SupplierFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+
+  // Fetch suppliers with infinite scroll
+  const { items: suppliers, isLoading, error, refetch, refresh, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount } = useSuppliersInfiniteMobile(queryParams);
 
   const handleSupplierPress = useCallback(
     (supplierId: string) => {
@@ -113,51 +143,46 @@ export default function SuppliersListScreen() {
     setSearchText(text);
   }, []);
 
-  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
-    setVisibleColumnKeys(Array.from(newColumns));
-  }, []);
-
-  // Get all column definitions
-  const allColumns = useMemo(() => createColumnDefinitions(), []);
-
   if (error) {
     return <ErrorScreen error={error} message="Erro ao carregar fornecedores" detail="Não foi possível carregar os fornecedores. Tente novamente." onRetry={refetch} />;
   }
 
   return (
-    <ErrorBoundary>
-      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-        {/* Search and Column Manager */}
-        <View style={styles.searchContainer}>
-          <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar fornecedores..." style={styles.searchBar} />
-          <View style={styles.buttonContainer}>
-            <ListActionButton
-              icon={<IconList size={20} color={colors.foreground} />}
-              onPress={() => setShowColumnManager(true)}
-              badgeCount={visibleColumnKeys.length}
-              badgeVariant="primary"
-            />
-            <ListActionButton
-              icon={<IconFilter size={20} color={colors.foreground} />}
-              onPress={() => setShowFilters(true)}
-              badgeCount={activeFiltersCount}
-              badgeVariant="destructive"
-              showBadge={activeFiltersCount > 0}
-            />
-          </View>
-        </View>
+    <UtilityDrawerWrapper>
 
-        {/* Individual filter tags */}
-        <SupplierFilterTags
-          filters={filters}
-          searchText={searchText}
-          onFilterChange={handleApplyFilters}
-          onSearchChange={(text) => {
-            setSearchText(text);
-            setDisplaySearchText(text);
-          }}
-          onClearAll={handleClearFilters}
-        />
+        <ErrorBoundary>
+          <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+            {/* Search and Column Manager */}
+            <View style={styles.searchContainer}>
+              <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar fornecedores..." style={styles.searchBar} />
+              <View style={styles.buttonContainer}>
+                <ListActionButton
+                  icon={<IconList size={20} color={colors.foreground} />}
+                  onPress={handleOpenColumns}
+                  badgeCount={visibleColumnKeys.length}
+                  badgeVariant="primary"
+                />
+                <ListActionButton
+                  icon={<IconFilter size={20} color={colors.foreground} />}
+                  onPress={handleOpenFilters}
+                  badgeCount={activeFiltersCount}
+                  badgeVariant="destructive"
+                  showBadge={activeFiltersCount > 0}
+                />
+              </View>
+            </View>
+
+            {/* Individual filter tags */}
+            <SupplierFilterTags
+              filters={filters}
+              searchText={searchText}
+              onFilterChange={handleApplyFilters}
+              onSearchChange={(text) => {
+                setSearchText(text);
+                setDisplaySearchText(text);
+              }}
+              onClearAll={handleClearFilters}
+            />
 
         {/* Suppliers Table */}
         {suppliers.length > 0 ? (
@@ -196,25 +221,9 @@ export default function SuppliersListScreen() {
 
         {/* FAB */}
         <FAB icon="plus" onPress={handleCreateSupplier} />
-
-        {/* Filter Drawer */}
-        <SupplierFilterDrawerV2
-          visible={showFilters}
-          onClose={() => setShowFilters(false)}
-          onApply={handleApplyFilters}
-          currentFilters={filters}
-        />
-
-        {/* Column Visibility Drawer */}
-        <SupplierColumnVisibilityDrawerV2
-          columns={allColumns}
-          visibleColumns={new Set(visibleColumnKeys)}
-          onVisibilityChange={handleColumnsChange}
-          open={showColumnManager}
-          onOpenChange={setShowColumnManager}
-        />
       </ThemedView>
     </ErrorBoundary>
+    </UtilityDrawerWrapper>
   );
 }
 

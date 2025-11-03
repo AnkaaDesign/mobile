@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import type { ObservationGetManyFormData } from '@/schemas';
 import type { Task } from '@/types';
-import { MultiCombobox } from '@/components/ui/multi-combobox';
+import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
 
 interface ObservationFilterDrawerContentProps {
@@ -125,7 +125,7 @@ export function ObservationFilterDrawerContent({
             <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
               Selecionar Tarefas
             </ThemedText>
-            <MultiCombobox
+            <Combobox
               options={taskOptions}
               selectedValues={localFilters.taskIds || []}
               onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, taskIds: values }))}

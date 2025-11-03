@@ -3,11 +3,8 @@
  */
 export const getDefaultVisibleColumns = (): Set<string> => {
   return new Set([
-    "name",
-    "customer.fantasyName",
-    "generalPainting",
-    "sector.name",
-    "serialNumber",
-    "finishedAt",
+    "name",                    // NOME/LOGOMARCA
+    "sector.name",             // SETOR
+    "finishedAt",              // FINALIZADO EM
   ]);
 };

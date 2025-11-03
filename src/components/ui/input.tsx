@@ -792,6 +792,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
         <Animated.View style={animatedShadowStyles}>
           <Animated.View style={[baseContainerViewStyles, animatedStyles]}>
             <TextInput
+              {...props}
               ref={inputRef}
               style={baseInputStyles}
               value={internalValue}
@@ -807,7 +808,6 @@ const Input = React.forwardRef<TextInput, InputProps>(
                 props.onFocus?.(e);
               }}
               onBlur={handleBlur}
-              {...props}
             />
 
             {/* Loading indicator */}

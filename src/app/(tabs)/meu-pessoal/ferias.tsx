@@ -12,7 +12,9 @@ import { spacing } from "@/constants/design-system";
 import { useVacations, useCurrentUser, useUsers } from '../../../hooks';
 import { TeamVacationTable } from "@/components/my-team/vacation/team-vacation-table";
 import { TeamVacationCalendar } from "@/components/my-team/vacation/team-vacation-calendar";
-import { TeamVacationFilterModal } from "@/components/my-team/vacation/team-vacation-filter-modal";
+import { TeamVacationFilterDrawerContent } from "@/components/my-team/vacation/team-vacation-filter-drawer-content";
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 import type { VacationGetManyFormData } from '../../../schemas';
 
 type ViewMode = "list" | "calendar";
@@ -20,9 +22,9 @@ type ViewMode = "list" | "calendar";
 export default function MyTeamVacationsScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const { openFilterDrawer } = useUtilityDrawer();
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [filters, setFilters] = useState<Partial<VacationGetManyFormData>>({});
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
 
   // Get current user to determine their sector
   const { data: currentUser, isLoading: isLoadingUser } = useCurrentUser();
@@ -114,14 +116,25 @@ export default function MyTeamVacationsScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<VacationGetManyFormData>) => {
     setFilters(newFilters);
-    setFilterModalVisible(false);
   }, []);
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <TeamVacationFilterDrawerContent
+        filters={filters}
+        onFilterChange={handleApplyFilters}
+        onClear={() => setFilters({})}
+        teamMemberIds={teamMemberIds}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleApplyFilters, teamMemberIds]);
 
   const isLoading = isLoadingUser || isLoadingTeam || isLoadingVacations;
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-      <ThemedView style={styles.container}>
+      <UtilityDrawerWrapper>
+        <ThemedView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -200,7 +213,7 @@ export default function MyTeamVacationsScreen() {
             </TouchableOpacity>
           </View>
 
-          <Button variant="outline" onPress={() => setFilterModalVisible(true)} style={styles.filterButton}>
+          <Button variant="outline" onPress={handleOpenFilters} style={styles.filterButton}>
             <IconFilter size={20} color={colors.foreground} />
             <ThemedText>Filtros</ThemedText>
           </Button>
@@ -222,16 +235,8 @@ export default function MyTeamVacationsScreen() {
         ) : (
           <TeamVacationCalendar vacations={vacations} onVacationPress={handleVacationPress} />
         )}
-
-        {/* Filter Modal */}
-        <TeamVacationFilterModal
-          visible={filterModalVisible}
-          onClose={() => setFilterModalVisible(false)}
-          onApply={handleApplyFilters}
-          currentFilters={filters}
-          teamMemberIds={teamMemberIds}
-        />
-      </ThemedView>
+        </ThemedView>
+      </UtilityDrawerWrapper>
     </PrivilegeGuard>
   );
 }

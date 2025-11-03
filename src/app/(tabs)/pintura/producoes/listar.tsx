@@ -13,7 +13,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 import { hasPrivilege } from '../../../../utils';
 import type { PaintProduction } from '../../../../types';
-import { FilterModal, FilterTag } from "@/components/ui/filter-modal";
+
 import { useDebounce } from "@/hooks/use-debounce";
 import { showToast } from "@/lib/toast/use-toast";
 import {
@@ -22,13 +22,16 @@ import {
   IconScale,
 } from "@tabler/icons-react-native";
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+
 export default function ProductionsListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<"createdAt" | "producedAt" | "quantity">("producedAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
@@ -97,6 +100,12 @@ export default function ProductionsListScreen() {
     });
   };
 
+
+  // Open filter drawer
+  const handleOpenFilters = () => {
+    // TODO: Implement filter drawer for productions
+    showToast("Filtros em desenvolvimento", "info");
+  };
 
   // Render production card
   // FIXME: PaintProduction schema changed - properties like paint, producedAt, quantity, producer don't exist
@@ -173,79 +182,37 @@ export default function ProductionsListScreen() {
     </TouchableOpacity>
   );
 
-  // Filter modal content
-  const renderFilterModal = () => (
-    <FilterModal
-      visible={showFilters}
-      onClose={() => setShowFilters(false)}
-      title="Filtrar Produções"
-    >
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Ordenar por</ThemedText>
-        <View style={styles.filterOptions}>
-          <FilterTag
-            label="Data de Produção"
-            selected={sortBy === "producedAt"}
-            onPress={() => setSortBy("producedAt")}
-          />
-          <FilterTag
-            label="Quantidade"
-            selected={sortBy === "quantity"}
-            onPress={() => setSortBy("quantity")}
-          />
-          <FilterTag
-            label="Data de Criação"
-            selected={sortBy === "createdAt"}
-            onPress={() => setSortBy("createdAt")}
-          />
-        </View>
-      </View>
-
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Ordem</ThemedText>
-        <View style={styles.filterOptions}>
-          <FilterTag
-            label="Crescente"
-            selected={sortOrder === "asc"}
-            onPress={() => setSortOrder("asc")}
-          />
-          <FilterTag
-            label="Decrescente"
-            selected={sortOrder === "desc"}
-            onPress={() => setSortOrder("desc")}
-          />
-        </View>
-      </View>
-    </FilterModal>
-  );
-
 
   if (!canView) {
     return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={styles.errorText}>
-          Você não tem permissão para visualizar produções
-        </ThemedText>
-      </View>
+      <UtilityDrawerWrapper>
+        <View style={styles.centerContainer}>
+          <ThemedText style={styles.errorText}>
+            Você não tem permissão para visualizar produções
+          </ThemedText>
+        </View>
+      </UtilityDrawerWrapper>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={styles.errorText}>Erro ao carregar produções</ThemedText>
-        <IconButton
-          name="refresh-cw"
-          variant="default"
-          onPress={() => refetch()}
-          style={styles.retryButton}
-        />
-      </View>
+      <UtilityDrawerWrapper>
+        <View style={styles.centerContainer}>
+          <ThemedText style={styles.errorText}>Erro ao carregar produções</ThemedText>
+          <IconButton
+            name="refresh-cw"
+            variant="default"
+            onPress={() => refetch()}
+            style={styles.retryButton}
+          />
+        </View>
+      </UtilityDrawerWrapper>
     );
   }
 
   return (
-    <>
+    <UtilityDrawerWrapper>
       <Stack.Screen
         options={{
           title: "Produções de Tinta",
@@ -264,7 +231,7 @@ export default function ProductionsListScreen() {
           <IconButton
             name="filter"
             variant="default"
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
           />
         </View>
 
@@ -311,11 +278,8 @@ export default function ProductionsListScreen() {
             }
           />
         )}
-
-        {/* Filter modal */}
-        {renderFilterModal()}
       </View>
-    </>
+    </UtilityDrawerWrapper>
   );
 }
 

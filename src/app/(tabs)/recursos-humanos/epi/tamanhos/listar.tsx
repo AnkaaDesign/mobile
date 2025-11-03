@@ -8,7 +8,7 @@ import type { PpeSizeGetManyFormData } from '../../../../../schemas';
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { PpeSizeTable } from "@/components/human-resources/ppe/size/list/ppe-size-table";
 import type { SortConfig } from "@/components/human-resources/ppe/size/list/ppe-size-table";
-import { PpeSizeFilterModal } from "@/components/human-resources/ppe/size/list/ppe-size-filter-modal";
+
 import { PpeSizeFilterTags } from "@/components/human-resources/ppe/size/list/ppe-size-filter-tags";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -17,6 +17,11 @@ import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { PpeSizeFilterDrawerContent } from "@/components/human-resources/ppe/size/list/ppe-size-filter-drawer-content";
+
 export default function PpeSizeListScreen() {
   const router = useRouter();
   const { colors, } = useTheme();
@@ -24,7 +29,6 @@ export default function PpeSizeListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<PpeSizeGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "employee", direction: "asc" }]);
 
@@ -125,6 +129,27 @@ export default function PpeSizeListScreen() {
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
 
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <PpeSizeFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+
   // Calculate completion statistics
   const statistics = useMemo(() => {
     if (!ppeSizes || ppeSizes.length === 0) {
@@ -149,10 +174,14 @@ export default function PpeSizeListScreen() {
 
   if (error) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Erro ao carregar tamanhos de EPI" detail={error.message} onRetry={handleRefresh} />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen message="Erro ao carregar tamanhos de EPI" detail={error.message} onRetry={handleRefresh} />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasPpeSizes = Array.isArray(ppeSizes) && ppeSizes.length > 0;
@@ -165,7 +194,7 @@ export default function PpeSizeListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -235,9 +264,6 @@ export default function PpeSizeListScreen() {
       {hasPpeSizes && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasPpeSizes && <FAB icon="plus" onPress={handleCreatePpeSize} />}
-
-      {/* Filter Modal */}
-      <PpeSizeFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
     </ThemedView>
   );
 }

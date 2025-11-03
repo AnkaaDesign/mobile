@@ -4,7 +4,7 @@ import { IconFilter, IconX, IconBriefcase, IconCurrencyReal, IconCalendarPlus } 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from '@/constants';
 import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
@@ -145,27 +145,22 @@ export function AirbrushingFilterDrawerContent({
             </ThemedText>
           </View>
 
-          <Select
+          <Combobox
             value={localFilters.taskId}
             onValueChange={(value) => setLocalFilters(prev => ({
               ...prev,
               taskId: value || undefined
             }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione uma tarefa..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="" label="Todas as tarefas">
-                Todas as tarefas
-              </SelectItem>
-              {tasks.map((task: any) => (
-                <SelectItem key={task.id} value={task.id} label={task.name}>
-                  {task.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={[
+              { value: "", label: "Todas as tarefas" },
+              ...tasks.map((task: any) => ({
+                value: task.id,
+                label: task.name
+              }))
+            ]}
+            placeholder="Selecione uma tarefa..."
+            searchable={false}
+          />
         </View>
 
         {/* Price Range Filter */}

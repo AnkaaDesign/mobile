@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBar } from "@/components/ui/search-bar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Header } from "@/components/ui/header";
@@ -230,18 +230,13 @@ export default function TimeEntriesListScreen() {
       <View style={styles.filtersContainer}>
         <View style={styles.filterRow}>
           <View style={styles.userSelectContainer}>
-            <Select value={selectedUserId} onValueChange={setSelectedUserId} disabled={usersLoading}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecionar usuário" />
-              </SelectTrigger>
-              <SelectContent>
-                {userOptions.map((user) => (
-                  <SelectItem key={user.value} value={user.value}>
-                    {user.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              value={selectedUserId}
+              onValueChange={setSelectedUserId}
+              options={userOptions}
+              placeholder="Selecionar usuário"
+              disabled={usersLoading}
+            />
           </View>
           <View style={styles.datePickerContainer}>
             <DatePicker

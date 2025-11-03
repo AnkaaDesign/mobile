@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { IconTruck, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useCreateSupplier } from "@/hooks";
 import { supplierCreateSchema, type SupplierCreateFormData } from "@/schemas";
-import { ThemedView, ThemedText, Card, Input, Select, SelectItem, Button, SimpleFormField } from "@/components/ui";
+import { ThemedView, ThemedText, Card, Input, Combobox, Button, SimpleFormField } from "@/components/ui";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
@@ -364,12 +364,13 @@ export default function SupplierCreateScreen() {
                         control={control}
                         name="state"
                         render={({ field: { onChange, value } }) => (
-                          <Select value={value || ""} onValueChange={onChange}>
-                            <SelectItem label="Selecione" value="" />
-                            {stateOptions.map((option) => (
-                              <SelectItem key={option.value} label={option.label} value={option.value} />
-                            ))}
-                          </Select>
+                          <Combobox
+                            value={value || ""}
+                            onValueChange={onChange}
+                            options={stateOptions}
+                            placeholder="Selecione"
+                            searchable={false}
+                          />
                         )}
                       />
                     </SimpleFormField>

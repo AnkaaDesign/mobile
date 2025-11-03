@@ -1,6 +1,5 @@
-
 import { View, StyleSheet } from 'react-native';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { IconX } from '@tabler/icons-react-native';
@@ -11,6 +10,7 @@ export interface SelectOption<T = string> {
   value: T;
   label: string;
   disabled?: boolean;
+  description?: string;
 }
 
 export interface SelectFilterProps<T = string> {
@@ -102,34 +102,20 @@ export function SelectFilter<T extends string = string>({
         )}
       </View>
 
-      <Select
-        value={value}
-        onValueChange={(newValue) => {
-          if (newValue === '__clear__' && allowClear) {
-            onChange(undefined);
-          } else {
-            onChange(newValue as T);
-          }
-        }}
+      <Combobox
+        value={value as string || ""}
+        onValueChange={(newValue) => onChange(newValue as T | undefined)}
+        options={options as any[]}
+        placeholder={placeholder}
         disabled={disabled}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {allowClear && value && (
-            <SelectItem value="__clear__" label="Limpar seleção" />
-          )}
-          {options.map((option) => (
-            <SelectItem
-              key={String(option.value)}
-              value={String(option.value)}
-              label={option.label}
-              disabled={option.disabled}
-            />
-          ))}
-        </SelectContent>
-      </Select>
+        searchable={false}
+        clearable={allowClear}
+        getOptionValue={(option: SelectOption<T>) => String(option.value)}
+        getOptionLabel={(option: SelectOption<T>) => option.label}
+        getOptionDescription={(option: SelectOption<T>) => option.description}
+        isOptionDisabled={(option: SelectOption<T>) => option.disabled || false}
+        preferFullScreen={true}
+      />
     </View>
   );
 }
@@ -138,6 +124,7 @@ export interface MultiSelectOption<T = string> {
   value: T;
   label: string;
   disabled?: boolean;
+  description?: string;
 }
 
 export interface MultiSelectFilterProps<T = string> {
@@ -189,24 +176,11 @@ export function MultiSelectFilter<T extends string = string>({
 }: MultiSelectFilterProps<T>) {
   const { colors } = useTheme();
 
-  const handleToggle = (optionValue: T) => {
-    const isSelected = value.includes(optionValue);
-    if (isSelected) {
-      onChange(value.filter((v) => v !== optionValue));
-    } else {
-      onChange([...value, optionValue]);
-    }
-  };
-
   const handleClear = () => {
     onChange([]);
   };
 
   const hasValue = value.length > 0;
-
-  const displayValue = hasValue
-    ? `${value.length} selecionado${value.length > 1 ? 's' : ''}`
-    : placeholder;
 
   const styles = StyleSheet.create({
     container: {
@@ -238,27 +212,22 @@ export function MultiSelectFilter<T extends string = string>({
         )}
       </View>
 
-      {/* Note: This is a simplified version. For a full multi-select,
-          you might want to use MultiCombobox or create a custom modal */}
-      <Select
-        value={value[0]} // Show first selected item
-        onValueChange={(newValue) => handleToggle(newValue as T)}
+      <Combobox
+        mode="multiple"
+        value={value as string[]}
+        onValueChange={(newValues) => onChange((newValues as string[]) as T[])}
+        options={options as any[]}
+        placeholder={placeholder}
         disabled={disabled}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder={displayValue} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem
-              key={String(option.value)}
-              value={String(option.value)}
-              label={`${value.includes(option.value as T) ? '✓ ' : ''}${option.label}`}
-              disabled={option.disabled}
-            />
-          ))}
-        </SelectContent>
-      </Select>
+        searchable={false}
+        clearable={true}
+        showCount={true}
+        getOptionValue={(option: MultiSelectOption<T>) => String(option.value)}
+        getOptionLabel={(option: MultiSelectOption<T>) => option.label}
+        getOptionDescription={(option: MultiSelectOption<T>) => option.description}
+        isOptionDisabled={(option: MultiSelectOption<T>) => option.disabled || false}
+        preferFullScreen={true}
+      />
     </View>
   );
 }

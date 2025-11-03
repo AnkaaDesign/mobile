@@ -9,30 +9,31 @@ import type { WarningGetManyFormData } from '../../../../schemas';
 import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { WarningTable, createColumnDefinitions } from "@/components/human-resources/warning/list/warning-table";
 import type { SortConfig } from "@/components/human-resources/warning/list/warning-table";
-import { WarningFilterModal } from "@/components/human-resources/warning/list/warning-filter-modal";
 import { WarningFilterTags } from "@/components/human-resources/warning/list/warning-filter-tags";
-import { ColumnVisibilityDrawerV2 } from "@/components/human-resources/warning/list/column-visibility-drawer-v2";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { WarningListSkeleton } from "@/components/human-resources/warning/skeleton/warning-list-skeleton";
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { WarningFilterDrawerContent } from "@/components/human-resources/warning/list/warning-filter-drawer-content";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 
 export default function WarningListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<WarningGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "createdAt", direction: "desc" }]);
   const [selectedWarnings, setSelectedWarnings] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["collaborator.name", "severity", "createdAt"]);
-  const [showColumnManager, setShowColumnManager] = useState(false);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -141,7 +142,6 @@ export default function WarningListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<WarningGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -162,6 +162,27 @@ export default function WarningListScreen() {
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
 
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <WarningFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumnKeys, handleColumnsChange]);
+
   if (isLoading && !isRefetching) {
     return <WarningListSkeleton />;
   }
@@ -177,20 +198,21 @@ export default function WarningListScreen() {
   const hasWarnings = Array.isArray(warnings) && warnings.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Search, Filter and Sort */}
+    <UtilityDrawerWrapper>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search, Filter and Sort */}
       <View style={[styles.searchContainer]}>
         <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar advertências..." style={styles.searchBar} debounceMs={300} />
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -247,19 +269,8 @@ export default function WarningListScreen() {
       {hasWarnings && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasWarnings && <FAB icon="plus" onPress={handleCreateWarning} />}
-
-      {/* Filter Modal */}
-      <WarningFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
-
-      {/* Column Visibility Drawer */}
-      <ColumnVisibilityDrawerV2
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
     </ThemedView>
+    </UtilityDrawerWrapper>
   );
 }
 

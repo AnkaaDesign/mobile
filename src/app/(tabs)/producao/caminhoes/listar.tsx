@@ -10,29 +10,30 @@ import type { SortConfig } from "@/lib/sort-utils";
 import type { Truck } from '../../../../types';
 import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { TruckTable, createColumnDefinitions, getDefaultVisibleColumns } from "@/components/production/truck/list/truck-table";
-import { TruckFilterModal } from "@/components/production/truck/list/truck-filter-modal";
 import { TruckFilterTags } from "@/components/production/truck/list/truck-filter-tags";
-import { ColumnVisibilityDrawer } from "@/components/ui/column-visibility-drawer";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { TruckListSkeleton } from "@/components/production/truck/skeleton/truck-list-skeleton";
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { TruckFilterDrawerContent } from "@/components/production/truck/list/truck-filter-drawer-content";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 
 export default function TruckListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<TruckGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "plate", direction: "asc" }]);
   const [selectedTrucks, setSelectedTrucks] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(Array.from(getDefaultVisibleColumns()));
 
   // Build query parameters with sorting
@@ -158,7 +159,6 @@ export default function TruckListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<TruckGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -181,6 +181,27 @@ export default function TruckListScreen() {
     ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <TruckFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumnKeys, handleColumnsChange]);
+
   if (isLoading && !isRefetching) {
     return <TruckListSkeleton />;
   }
@@ -196,8 +217,9 @@ export default function TruckListScreen() {
   const hasTrucks = Array.isArray(trucks) && trucks.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Search, Filter and Sort */}
+    <UtilityDrawerWrapper>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search, Filter and Sort */}
       <View style={[styles.searchContainer]}>
         <SearchBar
           value={displaySearchText}
@@ -210,13 +232,13 @@ export default function TruckListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -274,19 +296,8 @@ export default function TruckListScreen() {
       {hasTrucks && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasTrucks && <FAB icon="plus" onPress={handleCreateTruck} />}
-
-      {/* Filter Modal */}
-      <TruckFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
-
-      {/* Column Visibility Drawer */}
-      <ColumnVisibilityDrawer
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
     </ThemedView>
+    </UtilityDrawerWrapper>
   );
 }
 

@@ -6,7 +6,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useObservationMutations, useTasks } from "@/hooks";
 import { observationCreateSchema, type ObservationCreateFormData } from "@/schemas";
-import { LoadingScreen, ErrorScreen, ThemedText, ThemedView, Card, Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SimpleFormField } from "@/components/ui";
+import { LoadingScreen, ErrorScreen, ThemedText, ThemedView, Card, Button, Input, Label, Combobox, SimpleFormField } from "@/components/ui";
 import { IconAlertCircle, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -171,27 +171,17 @@ export default function CreateObservationScreen() {
                   control={control}
                   name="taskId"
                   render={({ field: { onChange, value } }) => (
-                    <Select
+                    <Combobox
                       value={value}
                       onValueChange={onChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma tarefa" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tasks.length === 0 ? (
-                          <SelectItem value="" disabled>
-                            Nenhuma tarefa disponível
-                          </SelectItem>
-                        ) : (
-                          tasks.map((task) => (
-                            <SelectItem key={task.id} value={task.id}>
-                              {task.name} - {task.customer?.fantasyName || 'Sem cliente'} {task.truck?.plate ? `- ${task.truck.plate}` : ''}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                      options={tasks.length === 0 ? [] : tasks.map((task) => ({
+                        label: `${task.name} - ${task.customer?.fantasyName || 'Sem cliente'}${task.truck?.plate ? ` - ${task.truck.plate}` : ''}`,
+                        value: task.id,
+                      }))}
+                      placeholder="Selecione uma tarefa"
+                      emptyMessage="Nenhuma tarefa disponível"
+                      searchable={false}
+                    />
                   )}
                 />
               </SimpleFormField>

@@ -8,7 +8,7 @@ import { WARNING_CATEGORY, WARNING_SEVERITY, WARNING_CATEGORY_LABELS, WARNING_SE
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { MultiCombobox } from "@/components/ui/multi-combobox";
+import { Combobox } from "@/components/ui/combobox";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Drawer } from "@/components/ui/drawer";
@@ -188,7 +188,7 @@ export function WarningFilterDrawerV2({ visible, onClose, onApply, currentFilter
       component: (
         <View style={styles.sectionContent}>
           <View style={styles.field}>
-            <MultiCombobox
+            <Combobox
               options={Object.values(WARNING_CATEGORY).map((category) => ({
                 label: WARNING_CATEGORY_LABELS[category as keyof typeof WARNING_CATEGORY_LABELS] || category,
                 value: category,
@@ -208,7 +208,7 @@ export function WarningFilterDrawerV2({ visible, onClose, onApply, currentFilter
       component: (
         <View style={styles.sectionContent}>
           <View style={styles.field}>
-            <MultiCombobox
+            <Combobox
               options={Object.values(WARNING_SEVERITY).map((severity) => ({
                 label: WARNING_SEVERITY_LABELS[severity as keyof typeof WARNING_SEVERITY_LABELS] || severity,
                 value: severity,
@@ -229,7 +229,7 @@ export function WarningFilterDrawerV2({ visible, onClose, onApply, currentFilter
         <View style={styles.sectionContent}>
           <View style={styles.field}>
             <Label style={styles.fieldLabel}>Colaboradores</Label>
-            <MultiCombobox
+            <Combobox
               options={users.map((user) => ({ label: user.name, value: user.id }))}
               selectedValues={filters.collaboratorIds || []}
               onValueChange={(value) => handleArrayChange("collaboratorIds", value)}
@@ -240,7 +240,7 @@ export function WarningFilterDrawerV2({ visible, onClose, onApply, currentFilter
           </View>
           <View style={styles.field}>
             <Label style={styles.fieldLabel}>Supervisores</Label>
-            <MultiCombobox
+            <Combobox
               options={users.map((user) => ({ label: user.name, value: user.id }))}
               selectedValues={filters.supervisorIds || []}
               onValueChange={(value) => handleArrayChange("supervisorIds", value)}

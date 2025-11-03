@@ -10,9 +10,8 @@ import type { Item } from '../../../../types';
 import { ThemedView, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { ItemTable, createColumnDefinitions } from "@/components/inventory/item/list/item-table";
 import type { SortConfig } from "@/components/inventory/item/list/item-table";
-import { ItemFilterDrawerV2 } from "@/components/inventory/item/list/item-filter-drawer-v2";
 import { ItemFilterTags } from "@/components/inventory/item/list/item-filter-tags";
-import { ColumnVisibilityDrawerV2 } from "@/components/inventory/item/list/column-visibility-drawer-v2";
+
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { ItemListSkeleton } from "@/components/inventory/item/skeleton/item-list-skeleton";
@@ -20,19 +19,23 @@ import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { ItemFilterDrawerContent } from "@/components/inventory/item/list/item-filter-drawer-content";
+
 export default function ItemListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<ItemGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "name", direction: "asc" }]);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["uniCode", "name", "quantity"]);
 
   // Build query parameters with sorting
@@ -171,7 +174,6 @@ export default function ItemListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<ItemGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -182,17 +184,42 @@ export default function ItemListScreen() {
     setShowSelection(false);
   }, []);
 
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  // Convert visibleColumnKeys array to Set for GenericColumnDrawerContent
+  const visibleColumns = useMemo(() => new Set(visibleColumnKeys), [visibleColumnKeys]);
+
+  // Handle column visibility changes
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {
     setVisibleColumnKeys(Array.from(newColumns));
   }, []);
-
-  // Get all column definitions
-  const allColumns = useMemo(() => createColumnDefinitions(), []);
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
     ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <ItemFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
 
   // Only show skeleton on initial load, not on refetch/sort
   const isInitialLoad = isLoading && !isRefetching && items.length === 0;
@@ -203,10 +230,14 @@ export default function ItemListScreen() {
 
   if (error && items.length === 0) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Erro ao carregar produtos" detail={error.message} onRetry={handleRefresh} />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen message="Erro ao carregar produtos" detail={error.message} onRetry={handleRefresh} />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasProducts = Array.isArray(items) && items.length > 0;
@@ -226,13 +257,13 @@ export default function ItemListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />
           <ListActionButton
             icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
             badgeCount={activeFiltersCount}
             badgeVariant="destructive"
             showBadge={activeFiltersCount > 0}
@@ -290,18 +321,6 @@ export default function ItemListScreen() {
       {hasProducts && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasProducts && <FAB icon="plus" onPress={handleCreateProduct} />}
-
-      {/* Filter Drawer */}
-      <ItemFilterDrawerV2 visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
-
-      {/* Column Visibility Drawer */}
-      <ColumnVisibilityDrawerV2
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-      />
     </ThemedView>
   );
 }

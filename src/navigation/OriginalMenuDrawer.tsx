@@ -88,6 +88,13 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
     return chevronAnimations.current.get(itemId)!;
   }, [expandedMenus]);
 
+  // Helper function to reset all chevron animations
+  const resetAllChevronAnimations = useCallback(() => {
+    chevronAnimations.current.forEach((animation) => {
+      animation.setValue(0);
+    });
+  }, []);
+
   // Create user object for navigation
   const navUser = useMemo(() => {
     if (!authUser) return null;
@@ -249,18 +256,40 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
         props.navigation?.closeDrawer?.();
         // Close all expanded menus after navigation
         setExpandedMenus({});
+        // Reset all chevron animations to collapsed state
+        resetAllChevronAnimations();
+        // Close user dropdown menu if open
+        if (showUserMenu) {
+          setShowUserMenu(false);
+          Animated.timing(dropdownAnimation, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
+        }
       } catch (error) {
         console.warn("Navigation failed for route:", tabRoute, error);
         try {
           router.push('/(tabs)/home' as any);
           props.navigation?.closeDrawer?.();
           setExpandedMenus({});
+          // Reset all chevron animations to collapsed state
+          resetAllChevronAnimations();
+          // Close user dropdown menu if open
+          if (showUserMenu) {
+            setShowUserMenu(false);
+            Animated.timing(dropdownAnimation, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }).start();
+          }
         } catch (fallbackError) {
           console.error("Fallback navigation also failed:", fallbackError);
         }
       }
     },
-    [router, props.navigation],
+    [router, props.navigation, showUserMenu, dropdownAnimation, resetAllChevronAnimations],
   );
 
   // Get first submenu path for navigation

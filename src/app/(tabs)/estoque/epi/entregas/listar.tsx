@@ -7,7 +7,7 @@ import { usePpeDeliveriesInfiniteMobile } from "@/hooks";
 import type { PpeDeliveryGetManyFormData } from '../../../../../schemas';
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, Badge } from "@/components/ui";
 import { PpeDeliveryTable } from "@/components/human-resources/ppe/delivery/list/ppe-delivery-table";
-import { PpeDeliveryFilterModal } from "@/components/human-resources/ppe/delivery/list/ppe-delivery-filter-modal";
+
 import { PpeDeliveryFilterTags } from "@/components/human-resources/ppe/delivery/list/ppe-delivery-filter-tags";
 import { PpeDeliveryListSkeleton } from "@/components/human-resources/ppe/delivery/skeleton/ppe-delivery-list-skeleton";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
@@ -17,14 +17,19 @@ import { routes } from '../../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { PPE_DELIVERY_STATUS } from '../../../../../constants';
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { PpeDeliveryFilterDrawerContent } from "@/components/human-resources/ppe/delivery/list/ppe-delivery-filter-drawer-content";
+
 export default function PPEDeliveryListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Partial<PpeDeliveryGetManyFormData>>({});
 
   // Build query parameters
@@ -88,6 +93,17 @@ export default function PPEDeliveryListScreen() {
     setDisplaySearchText("");
   }, []);
 
+  // Get all column definitions - PPE Delivery doesn't have createColumnDefinitions, using empty array
+  const allColumns = useMemo(() => [], []);
+
+  // Convert visibleColumnKeys array to Set for GenericColumnDrawerContent
+  const visibleColumns = useMemo(() => new Set<string>([]), []);
+
+  // Handle column visibility changes
+  const handleColumnsChange = useCallback((_newColumns: Set<string>) => {
+    // PPE Delivery table doesn't support column visibility yet
+  }, []);
+
   // Count active filters
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -98,6 +114,27 @@ export default function PPEDeliveryListScreen() {
     if (filters.actualDeliveryDateRange?.gte || filters.actualDeliveryDateRange?.lte) count++;
     return count;
   }, [filters]);
+
+  const handleOpenFilters = useCallback(() => {
+    openFilterDrawer(() => (
+      <PpeDeliveryFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+    ));
+  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+
+  const handleOpenColumns = useCallback(() => {
+    openColumnDrawer(() => (
+      <GenericColumnDrawerContent
+        columns={allColumns}
+        visibleColumns={visibleColumns}
+        onVisibilityChange={handleColumnsChange}
+      />
+    ));
+  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
 
   // Calculate statistics
   const statistics = useMemo(() => {
@@ -114,10 +151,14 @@ export default function PPEDeliveryListScreen() {
 
   if (error) {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Erro ao carregar entregas de EPI" detail={error.message} onRetry={handleRefresh} />
-      </ThemedView>
-    );
+    <UtilityDrawerWrapper>
+
+          <ThemedView style={styles.container}>
+            <ErrorScreen message="Erro ao carregar entregas de EPI" detail={error.message} onRetry={handleRefresh} />
+          </ThemedView>
+    
+    </UtilityDrawerWrapper>
+  );
   }
 
   const hasDeliveries = Array.isArray(deliveries) && deliveries.length > 0;
@@ -129,7 +170,7 @@ export default function PPEDeliveryListScreen() {
         <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar entregas de EPI..." style={styles.searchBar} debounceMs={300} />
         <Pressable
           style={({ pressed }) => [styles.filterButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }, pressed && styles.filterButtonPressed]}
-          onPress={() => setShowFilters(true)}
+          onPress={handleOpenFilters}
         >
           <IconFilter size={24} color={colors.foreground} />
           {activeFiltersCount > 0 && (
@@ -202,9 +243,6 @@ export default function PPEDeliveryListScreen() {
       {hasDeliveries && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasDeliveries && <FAB icon="plus" onPress={handleCreateDelivery} />}
-
-      {/* Filter Modal */}
-      <PpeDeliveryFilterModal visible={showFilters} onClose={() => setShowFilters(false)} onApply={handleApplyFilters} currentFilters={filters} />
     </ThemedView>
   );
 }

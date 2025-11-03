@@ -13,7 +13,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 import { hasPrivilege } from '../../../../utils';
 import type { PaintFormula } from '../../../../types';
-import { FilterModal, FilterTag } from "@/components/ui/filter-modal";
+
 import { useDebounce } from "@/hooks/use-debounce";
 import { showToast } from "@/lib/toast/use-toast";
 import {
@@ -22,13 +22,16 @@ import {
   IconCurrencyReal,
 } from "@tabler/icons-react-native";
 
+import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+
 export default function FormulasListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<"createdAt" | "pricePerLiter" | "density">("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
@@ -171,51 +174,7 @@ export default function FormulasListScreen() {
     );
   };
 
-  // Filter modal content
-  const renderFilterModal = () => (
-    <FilterModal
-      visible={showFilters}
-      onClose={() => setShowFilters(false)}
-      title="Filtrar Fórmulas"
-    >
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Ordenar por</ThemedText>
-        <View style={styles.filterOptions}>
-          <FilterTag
-            label="Data de Criação"
-            selected={sortBy === "createdAt"}
-            onPress={() => setSortBy("createdAt")}
-          />
-          <FilterTag
-            label="Preço por Litro"
-            selected={sortBy === "pricePerLiter"}
-            onPress={() => setSortBy("pricePerLiter")}
-          />
-          <FilterTag
-            label="Densidade"
-            selected={sortBy === "density"}
-            onPress={() => setSortBy("density")}
-          />
-        </View>
-      </View>
-
-      <View style={styles.filterSection}>
-        <ThemedText style={styles.filterLabel}>Ordem</ThemedText>
-        <View style={styles.filterOptions}>
-          <FilterTag
-            label="Crescente"
-            selected={sortOrder === "asc"}
-            onPress={() => setSortOrder("asc")}
-          />
-          <FilterTag
-            label="Decrescente"
-            selected={sortOrder === "desc"}
-            onPress={() => setSortOrder("desc")}
-          />
-        </View>
-      </View>
-    </FilterModal>
-  );
+  // Filters are now handled by the drawer - removed old FilterModal code
 
 
   if (!canView) {
@@ -242,8 +201,13 @@ export default function FormulasListScreen() {
     );
   }
 
+  const handleOpenFilters = () => {
+    // TODO: Implement filter drawer for formulas
+    showToast("Filtros em desenvolvimento", "info");
+  };
+
   return (
-    <>
+    <UtilityDrawerWrapper>
       <Stack.Screen
         options={{
           title: "Fórmulas de Tinta",
@@ -262,7 +226,7 @@ export default function FormulasListScreen() {
           <IconButton
             name="filter"
             variant="default"
-            onPress={() => setShowFilters(true)}
+            onPress={handleOpenFilters}
           />
         </View>
 
@@ -309,11 +273,8 @@ export default function FormulasListScreen() {
             }
           />
         )}
-
-        {/* Filter modal */}
-        {renderFilterModal()}
       </View>
-    </>
+    </UtilityDrawerWrapper>
   );
 }
 

@@ -4,7 +4,7 @@ import { IconFilter, IconX, IconBriefcase, IconCalendarPlus, IconScissors, IconM
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { CUT_STATUS, CUT_STATUS_LABELS, CUT_TYPE, CUT_TYPE_LABELS, CUT_ORIGIN, CUT_ORIGIN_LABELS } from '@/constants';
 import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
@@ -248,27 +248,22 @@ export function CutsFilterDrawerContent({
             </ThemedText>
           </View>
 
-          <Select
+          <Combobox
             value={localFilters.taskId}
             onValueChange={(value) => setLocalFilters(prev => ({
               ...prev,
               taskId: value || undefined
             }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione uma tarefa..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="" label="Todas as tarefas">
-                Todas as tarefas
-              </SelectItem>
-              {tasks.map((task: any) => (
-                <SelectItem key={task.id} value={task.id} label={task.name}>
-                  {task.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={[
+              { value: "", label: "Todas as tarefas" },
+              ...tasks.map((task: any) => ({
+                value: task.id,
+                label: task.name
+              }))
+            ]}
+            placeholder="Selecione uma tarefa..."
+            searchable={false}
+          />
         </View>
 
         {/* Date Range Filter */}

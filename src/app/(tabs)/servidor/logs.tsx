@@ -8,14 +8,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { LoadingScreen } from '@/components/ui/loading-screen';
-import {
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { ErrorScreen } from '@/components/ui/error-screen';
-import { Select } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { SearchBar } from '@/components/ui/search-bar';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 
@@ -160,18 +154,13 @@ export default function ServerLogsScreen() {
         {/* Service Selection */}
         <ThemedView className="mb-3">
           <ThemedText className="text-sm font-medium mb-2">Serviço</ThemedText>
-          <Select value={selectedService} onValueChange={setSelectedService}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um serviço" />
-            </SelectTrigger>
-            <SelectContent>
-              {serviceOptions.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Combobox
+            value={selectedService}
+            onValueChange={setSelectedService}
+            options={serviceOptions}
+            placeholder="Selecione um serviço"
+            searchable={false}
+          />
         </ThemedView>
 
         {/* Filter Controls */}
@@ -184,36 +173,36 @@ export default function ServerLogsScreen() {
             />
           </ThemedView>
 
-          <Select value={levelFilter} onValueChange={setLevelFilter}>
-            <SelectTrigger style={{ width: 96 }}>
-              <SelectValue placeholder="Nível" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
-              {Object.keys(LOG_LEVELS).map(level => (
-                <SelectItem key={level} value={level}>
-                  {level}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Combobox
+            value={levelFilter}
+            onValueChange={setLevelFilter}
+            options={[
+              { value: "", label: "Todos" },
+              ...Object.keys(LOG_LEVELS).map(level => ({
+                value: level,
+                label: level
+              }))
+            ]}
+            placeholder="Nível"
+            searchable={false}
+            style={{ width: 96 }}
+          />
         </ThemedView>
 
         {/* Action Buttons */}
         <ThemedView className="flex-row justify-between items-center">
           <ThemedView className="flex-row gap-2">
-            <Select value={lineLimit.toString()} onValueChange={(value) => setLineLimit(parseInt(value))}>
-              <SelectTrigger style={{ width: 128 }}>
-                <SelectValue placeholder="Selecionar" />
-              </SelectTrigger>
-              <SelectContent>
-                {LINE_LIMITS.map(limit => (
-                  <SelectItem key={limit.value} value={limit.value.toString()}>
-                    {limit.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              value={lineLimit.toString()}
+              onValueChange={(value) => setLineLimit(parseInt(value))}
+              options={LINE_LIMITS.map(limit => ({
+                value: limit.value.toString(),
+                label: limit.label
+              }))}
+              placeholder="Selecionar"
+              searchable={false}
+              style={{ width: 128 }}
+            />
 
             <Button
               variant="outline"

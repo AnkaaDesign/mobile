@@ -2,7 +2,7 @@ import { View, StyleSheet } from 'react-native';
 import { TextInput } from '@/components/ui/text-input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { IconX } from '@tabler/icons-react-native';
 import { useTheme } from '@/lib/theme';
 import { spacing } from '@/constants/design-system';
@@ -163,20 +163,18 @@ export function StringFilter({
         </View>
 
         {showModeSelector && (
-          <Select
+          <Combobox
             value={currentMode}
             onValueChange={(v) => handleModeChange(v as StringFilterMode)}
             disabled={disabled}
-          >
-            <SelectTrigger style={styles.modeSelector}>
-              <SelectValue placeholder="Modo" />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.keys(MODE_LABELS) as StringFilterMode[]).map((mode) => (
-                <SelectItem key={mode} value={mode} label={MODE_LABELS[mode]} />
-              ))}
-            </SelectContent>
-          </Select>
+            options={(Object.keys(MODE_LABELS) as StringFilterMode[]).map((mode) => ({
+              value: mode,
+              label: MODE_LABELS[mode]
+            }))}
+            placeholder="Modo"
+            searchable={false}
+            style={styles.modeSelector}
+          />
         )}
       </View>
     </View>
