@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, Text } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -38,6 +38,22 @@ interface SideState {
 
 export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }: LayoutFormProps) {
   const { colors } = useTheme();
+
+  // Track if we're currently saving to prevent state reset during save
+  const isSavingRef = useRef(false);
+
+  // Track last user interaction timestamp to prevent unwanted resets
+  const lastUserInteractionRef = useRef<number>(Date.now());
+
+  // Track if there are pending changes that shouldn't be overwritten
+  const hasPendingChangesRef = useRef<boolean>(false);
+
+  // Track which sides have had their initial state emitted
+  const initialStateEmittedRef = useRef<Record<'left' | 'right' | 'back', boolean>>({
+    left: false,
+    right: false,
+    back: false,
+  });
 
   // Initialize side states from layouts prop
   const [sideStates, setSideStates] = useState<Record<'left' | 'right' | 'back', SideState>>(() => {
@@ -86,6 +102,61 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
   });
 
   const currentState = sideStates[selectedSide];
+
+  // CRITICAL: Emit initial state to parent when selected side changes
+  // This ensures parent knows the default values
+  useEffect(() => {
+    console.log('[LayoutForm Mobile] Initial state emission check', {
+      selectedSide,
+      hasOnChange: !!onChange,
+      alreadyEmitted: initialStateEmittedRef.current[selectedSide],
+    });
+
+    // Skip if no onChange handler
+    if (!onChange) {
+      return;
+    }
+
+    // Skip if we've already emitted initial state for this side
+    if (initialStateEmittedRef.current[selectedSide]) {
+      return;
+    }
+
+    // Skip if we have a layout prop with sections (already synced)
+    const layoutData = layouts[selectedSide];
+    if (layoutData && layoutData.sections) {
+      initialStateEmittedRef.current[selectedSide] = true;
+      return;
+    }
+
+    const state = sideStates[selectedSide];
+    const segments = calculateSegments(state.doors, state.totalWidth);
+
+    const sections = segments.map((segment, index) => ({
+      width: segment.width / 100,
+      isDoor: segment.type === 'door',
+      doorOffset: segment.type === 'door' && segment.door ? segment.door.offsetTop / 100 : null,
+      position: index
+    }));
+
+    const layoutDataToEmit: LayoutCreateFormData = {
+      height: state.height / 100,
+      sections,
+      photoId: null,
+    };
+
+    console.log('[LayoutForm Mobile] ✅ Emitting initial state:', {
+      selectedSide,
+      sectionsCount: sections.length,
+      height: layoutDataToEmit.height,
+    });
+
+    // Mark this side as having emitted state
+    initialStateEmittedRef.current[selectedSide] = true;
+
+    // Emit to parent
+    onChange(selectedSide, layoutDataToEmit);
+  }, [selectedSide, onChange]);
 
   // Calculate segments (sections between doors)
   const calculateSegments = (doors: Door[], totalWidth: number) => {
@@ -142,6 +213,16 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
 
   // Update current side and emit changes
   const updateCurrentSide = useCallback((updates: Partial<SideState>) => {
+    console.log('[LayoutForm Mobile] User made a change:', {
+      selectedSide,
+      updates: Object.keys(updates),
+    });
+
+    // CRITICAL: Record timestamp of user interaction and mark as having pending changes
+    lastUserInteractionRef.current = Date.now();
+    hasPendingChangesRef.current = true;
+    console.log('[LayoutForm Mobile] Recorded user interaction');
+
     setSideStates(prev => {
       const newState = {
         ...prev,
@@ -167,26 +248,104 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
         photoId: null,
       };
 
+      console.log('[LayoutForm Mobile] ✅ Emitting changes:', {
+        selectedSide,
+        sectionsCount: sections.length,
+        totalWidth: sections.reduce((sum, s) => sum + s.width, 0),
+      });
+
+      // Set saving flag to prevent state reset during save
+      isSavingRef.current = true;
+
       onChange(selectedSide, layoutData);
+
+      // Reset flag after a delay
+      setTimeout(() => {
+        isSavingRef.current = false;
+      }, 500);
+
       return newState;
     });
   }, [selectedSide, onChange]);
 
-  // Add a new door
+  // Add a new door with smart positioning (matches web implementation)
   const addDoor = useCallback(() => {
     if (!currentState || selectedSide === 'back') return;
 
-    const doorWidth = 100;
-    const doorOffset = 50;
+    const doorWidth = 100; // Default door width in cm
+    const doorOffset = 50; // Default offset from top
 
+    let position: number;
+    const doors = currentState.doors;
+
+    if (doors.length === 0) {
+      // First door - center it
+      position = currentState.totalWidth / 2 - doorWidth / 2;
+    } else if (doors.length === 1) {
+      // Second door - distribute evenly
+      const spacing = Math.round(currentState.totalWidth / 3);
+      const firstDoorNewPosition = Math.round(spacing - doorWidth / 2);
+      position = Math.round((spacing * 2) - doorWidth / 2);
+
+      // Update both doors at once
+      const updatedDoors = [
+        {
+          ...doors[0],
+          position: Math.round(Math.max(0, firstDoorNewPosition))
+        },
+        {
+          id: `door-${selectedSide}-${Date.now()}-${Math.random()}`,
+          position: Math.round(Math.max(0, Math.min(position, currentState.totalWidth - doorWidth))),
+          width: Math.round(doorWidth),
+          offsetTop: Math.round(doorOffset)
+        }
+      ];
+
+      updateCurrentSide({ doors: updatedDoors });
+      return;
+    } else {
+      // Third+ door - find best empty space
+      const sortedDoors = [...doors].sort((a, b) => a.position - b.position);
+      let bestGap = 0;
+      let bestPosition = 0;
+
+      // Check gap at the beginning
+      if (sortedDoors[0].position > doorWidth + 50) {
+        bestGap = sortedDoors[0].position;
+        bestPosition = Math.round((sortedDoors[0].position - doorWidth) / 2);
+      }
+
+      // Check gaps between doors
+      for (let i = 0; i < sortedDoors.length - 1; i++) {
+        const gapStart = sortedDoors[i].position + sortedDoors[i].width;
+        const gapEnd = sortedDoors[i + 1].position;
+        const gapSize = gapEnd - gapStart;
+
+        if (gapSize > bestGap && gapSize >= doorWidth + 50) {
+          bestGap = gapSize;
+          bestPosition = Math.round(gapStart + (gapSize - doorWidth) / 2);
+        }
+      }
+
+      // Check gap at the end
+      const lastDoor = sortedDoors[sortedDoors.length - 1];
+      const endGap = currentState.totalWidth - (lastDoor.position + lastDoor.width);
+      if (endGap > bestGap && endGap >= doorWidth + 50) {
+        bestPosition = Math.round(lastDoor.position + lastDoor.width + (endGap - doorWidth) / 2);
+      }
+
+      position = bestPosition;
+    }
+
+    // Add the door
     const newDoor = {
-      id: `door-${selectedSide}-${Date.now()}`,
-      position: Math.max(0, (currentState.totalWidth - doorWidth) / 2),
-      width: doorWidth,
-      offsetTop: doorOffset
+      id: `door-${selectedSide}-${Date.now()}-${Math.random()}`,
+      position: Math.round(Math.max(0, Math.min(position, currentState.totalWidth - doorWidth))),
+      width: Math.round(doorWidth),
+      offsetTop: Math.round(doorOffset)
     };
 
-    updateCurrentSide({ doors: [...currentState.doors, newDoor] });
+    updateCurrentSide({ doors: [...doors, newDoor] });
   }, [currentState, selectedSide, updateCurrentSide]);
 
   // Remove door
@@ -360,6 +519,56 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
     0.5
   );
 
+  // Copy from another side
+  const copyFromSide = useCallback((fromSide: 'left' | 'right' | 'back') => {
+    if (fromSide === selectedSide) return;
+
+    const sourceState = sideStates[fromSide];
+
+    // Deep copy the source state
+    const copiedState: SideState = {
+      height: sourceState.height,
+      totalWidth: sourceState.totalWidth,
+      doors: sourceState.doors.map(door => ({
+        ...door,
+        id: `door-${selectedSide}-${Date.now()}-${Math.random()}` // New IDs for copied doors
+      })),
+      photoUri: sourceState.photoUri,
+    };
+
+    updateCurrentSide(copiedState);
+    showToast({ message: `Layout copiado do lado ${getSideLabel(fromSide)}`, type: 'success' });
+  }, [selectedSide, sideStates, updateCurrentSide]);
+
+  // Mirror from another side
+  const mirrorFromSide = useCallback((fromSide: 'left' | 'right' | 'back') => {
+    if (fromSide === selectedSide) return;
+
+    const sourceState = sideStates[fromSide];
+
+    // Mirror the layout (flip door positions)
+    const mirroredDoors = sourceState.doors.map(door => {
+      // Mirror position: new position = total width - (original position + door width)
+      const mirroredPosition = sourceState.totalWidth - (door.position + door.width);
+
+      return {
+        ...door,
+        id: `door-${selectedSide}-${Date.now()}-${Math.random()}`,
+        position: Math.max(0, mirroredPosition)
+      };
+    });
+
+    const mirroredState: SideState = {
+      height: sourceState.height,
+      totalWidth: sourceState.totalWidth,
+      doors: mirroredDoors,
+      photoUri: sourceState.photoUri,
+    };
+
+    updateCurrentSide(mirroredState);
+    showToast({ message: `Layout espelhado do lado ${getSideLabel(fromSide)}`, type: 'success' });
+  }, [selectedSide, sideStates, updateCurrentSide]);
+
   const getSideLabel = (side: 'left' | 'right' | 'back') => {
     switch (side) {
       case 'left': return 'Motorista';
@@ -378,6 +587,16 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Total Width Display */}
+      <View style={[styles.totalWidthContainer, { backgroundColor: colors.primary + '20', borderRadius: borderRadius.md }]}>
+        <ThemedText style={[styles.totalWidthLabel, { color: colors.mutedForeground }]}>
+          Comprimento Total:
+        </ThemedText>
+        <ThemedText style={[styles.totalWidthValue, { color: colors.foreground }]}>
+          {(currentState.totalWidth / 100).toFixed(2).replace('.', ',')}m
+        </ThemedText>
+      </View>
+
       {/* Visual Layout Preview */}
       <View style={[styles.previewContainer, { borderColor: colors.border, backgroundColor: colors.muted }]}>
         <ThemedText style={styles.previewTitle}>{getSideLabel(selectedSide)}</ThemedText>
@@ -466,10 +685,38 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
         </View>
       </View>
 
+      {/* Copy and Mirror Buttons (only for left/right sides) */}
+      {selectedSide !== 'back' && (
+        <View style={styles.actionButtonsRow}>
+          <Button
+            variant="outline"
+            onPress={() => copyFromSide(selectedSide === 'left' ? 'right' : 'left')}
+            disabled={disabled}
+            style={styles.actionButton}
+          >
+            <Icon name="copy" size={14} color={colors.foreground} />
+            <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.xs }}>
+              Copiar {selectedSide === 'left' ? 'Sapo' : 'Motorista'}
+            </ThemedText>
+          </Button>
+          <Button
+            variant="outline"
+            onPress={() => mirrorFromSide(selectedSide === 'left' ? 'right' : 'left')}
+            disabled={disabled}
+            style={styles.actionButton}
+          >
+            <Icon name="flip-horizontal" size={14} color={colors.foreground} />
+            <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.xs }}>
+              Espelhar {selectedSide === 'left' ? 'Sapo' : 'Motorista'}
+            </ThemedText>
+          </Button>
+        </View>
+      )}
+
       {/* Height Input */}
       <Card style={styles.inputCard}>
         <View style={styles.fieldRow}>
-          <Text style={{ color: colors.foreground, fontSize: fontSize.sm, fontWeight: '500' }}>Altura</Text>
+          <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>Altura</ThemedText>
           <Input
             value={(currentState.height / 100).toFixed(2).replace('.', ',')}
             onChangeText={updateHeight}
@@ -481,7 +728,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
         </View>
       </Card>
 
-      {/* Sections/Doors Width Inputs - Simplified */}
+      {/* Sections/Doors Width Inputs */}
       {(() => {
         let sectionCounter = 0;
         let doorCounter = 0;
@@ -492,7 +739,9 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
             return (
               <Card key={`segment-${index}`} style={styles.inputCard}>
                 <View style={styles.fieldRow}>
-                  <Text style={{ color: colors.foreground, fontSize: fontSize.sm, fontWeight: '500' }}>Porta {doorCounter}</Text>
+                  <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
+                    Porta {doorCounter}
+                  </ThemedText>
                   <Input
                     value={(segment.width / 100).toFixed(2).replace('.', ',')}
                     onChangeText={(text) => updateSectionWidth(index, text)}
@@ -509,7 +758,9 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
             return (
               <Card key={`segment-${index}`} style={styles.inputCard}>
                 <View style={styles.fieldRow}>
-                  <Text style={{ color: colors.foreground, fontSize: fontSize.sm, fontWeight: '500' }}>Seção {sectionCounter}</Text>
+                  <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
+                    Seção {sectionCounter}
+                  </ThemedText>
                   <Input
                     value={(segment.width / 100).toFixed(2).replace('.', ',')}
                     onChangeText={(text) => updateSectionWidth(index, text)}
@@ -525,11 +776,13 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
         });
       })()}
 
-      {/* Altura Porta - Always last, only shown for doors */}
+      {/* Door Offset Inputs - Only shown for doors on sides */}
       {selectedSide !== 'back' && currentState.doors.map((door, index) => (
         <Card key={door.id} style={styles.inputCard}>
           <View style={styles.fieldRow}>
-            <Text style={{ color: colors.foreground, fontSize: fontSize.sm, fontWeight: '500' }}>Altura Porta {index + 1}</Text>
+            <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
+              Altura Porta {index + 1}
+            </ThemedText>
             <Input
               value={(door.offsetTop / 100).toFixed(2).replace('.', ',')}
               onChangeText={(text) => updateDoorOffset(door.id, text)}
@@ -579,6 +832,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  totalWidthContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  totalWidthLabel: {
+    fontSize: fontSize.sm,
+  },
+  totalWidthValue: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+  },
   previewContainer: {
     borderWidth: 1,
     borderRadius: borderRadius.md,
@@ -607,8 +875,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  actionButton: {
+    flex: 1,
+    paddingHorizontal: spacing.xs,
+  },
   inputCard: {
-    padding: spacing.sm,
+    padding: spacing.md,
     marginBottom: spacing.sm,
     elevation: 0,
     shadowOpacity: 0,
@@ -619,11 +896,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  fieldLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    flex: 1,
   },
   rowInput: {
-    width: 80,
-    height: 32,
-    minHeight: 32,
+    width: 100,
+    height: 36,
+    minHeight: 36,
+    textAlign: 'right',
   },
   addButton: {
     marginBottom: spacing.md,
