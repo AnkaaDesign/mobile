@@ -113,6 +113,11 @@ type TaskFormData = z.infer<typeof taskFormSchema>;
 interface TaskFormProps {
   mode: "create" | "edit";
   initialData?: Partial<TaskFormData>;
+  existingLayouts?: {
+    left?: LayoutCreateFormData;
+    right?: LayoutCreateFormData;
+    back?: LayoutCreateFormData;
+  };
   onSubmit: (data: TaskFormData) => Promise<void>;
   onCancel: () => void;
   isSubmitting?: boolean;
@@ -126,7 +131,7 @@ const TASK_STATUS_OPTIONS = [
   { value: TASK_STATUS.CANCELLED, label: "Cancelada" },
 ];
 
-export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }: TaskFormProps) {
+export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCancel, isSubmitting }: TaskFormProps) {
   const { colors } = useTheme();
   const [sectorSearch, setSectorSearch] = useState("");
 
@@ -135,17 +140,26 @@ export function TaskForm({ mode, initialData, onSubmit, onCancel, isSubmitting }
   const [invoiceFiles, setInvoiceFiles] = useState<any[]>([]);
   const [receiptFiles, setReceiptFiles] = useState<any[]>([]);
 
-  // Layout state
+  // Layout state - Initialize with existingLayouts if available (edit mode)
   const [selectedLayoutSide, setSelectedLayoutSide] = useState<"left" | "right" | "back">("left");
-  const [isLayoutOpen, setIsLayoutOpen] = useState(false);
+  const [isLayoutOpen, setIsLayoutOpen] = useState(!!existingLayouts); // Auto-open if layouts exist
   const [layouts, setLayouts] = useState<{
     left?: LayoutCreateFormData;
     right?: LayoutCreateFormData;
     back?: LayoutCreateFormData;
-  }>({
-    left: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
-    right: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
-    back: { height: 2.42, sections: [{ width: 2.42, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+  }>(() => {
+    // If we have existing layouts from backend, use them
+    if (existingLayouts) {
+      console.log('[TaskForm] Initializing with existing layouts:', existingLayouts);
+      return existingLayouts;
+    }
+
+    // Otherwise use defaults
+    return {
+      left: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+      right: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+      back: { height: 2.42, sections: [{ width: 2.42, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+    };
   });
 
   // Use useEditForm for edit mode with change detection, regular useForm for create mode

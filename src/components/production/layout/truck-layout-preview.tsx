@@ -60,7 +60,7 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
 
     svg += `
       <!-- Main container -->
-      <rect x="${margin}" y="${margin}" width="${totalWidth}" height="${height}" fill="none" stroke="#000" stroke-width="1"/>`;
+      <rect x="${margin}" y="${margin}" width="${totalWidth}" height="${height}" fill="none" stroke="#000" stroke-width="3"/>`;
 
     // Add section dividers (vertical lines between non-door sections)
     let currentPos = 0;
@@ -74,7 +74,7 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
           const lineX = margin + currentPos;
           svg += `
           <line x1="${lineX}" y1="${margin}" x2="${lineX}" y2="${margin + height}"
-                stroke="#333" stroke-width="0.5"/>`;
+                stroke="#333" stroke-width="2"/>`;
         }
       }
 
@@ -93,17 +93,17 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
         // Left vertical line of door
         svg += `
         <line x1="${doorX}" y1="${doorY}" x2="${doorX}" y2="${margin + height}"
-              stroke="#000" stroke-width="1"/>`;
+              stroke="#000" stroke-width="3"/>`;
 
         // Right vertical line of door
         svg += `
         <line x1="${doorX + doorWidth}" y1="${doorY}" x2="${doorX + doorWidth}" y2="${margin + height}"
-              stroke="#000" stroke-width="1"/>`;
+              stroke="#000" stroke-width="3"/>`;
 
         // Top horizontal line of door
         svg += `
         <line x1="${doorX}" y1="${doorY}" x2="${doorX + doorWidth}" y2="${doorY}"
-              stroke="#000" stroke-width="1"/>`;
+              stroke="#000" stroke-width="3"/>`;
       });
     } else if (layout.layoutSections) {
       // Handle both new LayoutSection entity format and old sections format
@@ -120,17 +120,17 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
           // Left vertical line of door
           svg += `
           <line x1="${sectionX}" y1="${doorY}" x2="${sectionX}" y2="${margin + height}"
-                stroke="#000" stroke-width="1"/>`;
+                stroke="#000" stroke-width="3"/>`;
 
           // Right vertical line of door
           svg += `
           <line x1="${sectionX + sectionWidth}" y1="${doorY}" x2="${sectionX + sectionWidth}" y2="${margin + height}"
-                stroke="#000" stroke-width="1"/>`;
+                stroke="#000" stroke-width="3"/>`;
 
           // Top horizontal line of door
           svg += `
           <line x1="${sectionX}" y1="${doorY}" x2="${sectionX + sectionWidth}" y2="${doorY}"
-                stroke="#000" stroke-width="1"/>`;
+                stroke="#000" stroke-width="3"/>`;
         }
 
         sectionPos += sectionWidth;
@@ -147,10 +147,10 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
       const dimY = margin + height + 20;
 
       svg += `
-      <line x1="${startX}" y1="${dimY}" x2="${endX}" y2="${dimY}" stroke="#0066cc" stroke-width="1"/>
+      <line x1="${startX}" y1="${dimY}" x2="${endX}" y2="${dimY}" stroke="#0066cc" stroke-width="2"/>
       <polygon points="${startX},${dimY} ${startX + 5},${dimY - 3} ${startX + 5},${dimY + 3}" fill="#0066cc"/>
       <polygon points="${endX},${dimY} ${endX - 5},${dimY - 3} ${endX - 5},${dimY + 3}" fill="#0066cc"/>
-      <text x="${centerX}" y="${dimY + 15}" text-anchor="middle" font-size="12" fill="#0066cc">${Math.round(sectionWidth)}</text>`;
+      <text x="${centerX}" y="${dimY + 18}" text-anchor="middle" font-size="16" font-weight="bold" fill="#0066cc">${Math.round(sectionWidth)}</text>`;
 
       currentPos += sectionWidth;
     });
@@ -158,10 +158,10 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
     // Height dimension
     const dimX = margin - 20;
     svg += `
-    <line x1="${dimX}" y1="${margin}" x2="${dimX}" y2="${margin + height}" stroke="#0066cc" stroke-width="1"/>
+    <line x1="${dimX}" y1="${margin}" x2="${dimX}" y2="${margin + height}" stroke="#0066cc" stroke-width="2"/>
     <polygon points="${dimX},${margin} ${dimX - 3},${margin + 5} ${dimX + 3},${margin + 5}" fill="#0066cc"/>
     <polygon points="${dimX},${margin + height} ${dimX - 3},${margin + height - 5} ${dimX + 3},${margin + height - 5}" fill="#0066cc"/>
-    <text x="${dimX - 10}" y="${margin + height / 2}" text-anchor="middle" font-size="12" fill="#0066cc" transform="rotate(-90, ${dimX - 10}, ${margin + height / 2})">${Math.round(height)}</text>
+    <text x="${dimX - 10}" y="${margin + height / 2}" text-anchor="middle" font-size="16" font-weight="bold" fill="#0066cc" transform="rotate(-90, ${dimX - 10}, ${margin + height / 2})">${Math.round(height)}</text>
     </svg>`;
 
     return svg;
@@ -268,18 +268,6 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
           </ThemedText>
         </Button>
       </View>
-
-      {/* Download button */}
-      <Button
-        variant="outline"
-        size="sm"
-        onPress={downloadSVG}
-        style={styles.downloadButton}
-      >
-        <ThemedText style={{ fontSize: fontSize.sm, color: colors.foreground }}>
-          Baixar SVG
-        </ThemedText>
-      </Button>
 
       {/* SVG Preview */}
       {svgContent && (

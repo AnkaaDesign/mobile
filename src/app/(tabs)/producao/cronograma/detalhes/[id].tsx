@@ -285,33 +285,9 @@ export default function ScheduleDetailsScreen() {
           {/* Truck Layout */}
           {(task as any)?.truck && (
             <Card style={styles.card}>
-              <View style={[styles.sectionHeader, { justifyContent: 'space-between' }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                  <IconLayoutGrid size={20} color={colors.primary} />
-                  <ThemedText style={styles.sectionTitle}>Layout do Caminhão</ThemedText>
-                </View>
-                <TouchableOpacity
-                  style={{ padding: spacing.xs }}
-                  onPress={() => {
-                    Alert.alert(
-                      'Confirmar',
-                      'Tem certeza que deseja remover o layout?',
-                      [
-                        { text: 'Cancelar', style: 'cancel' },
-                        {
-                          text: 'Remover',
-                          style: 'destructive',
-                          onPress: () => {
-                            // TODO: Implement layout deletion
-                            showToast({ message: 'Layout removido', type: 'success' });
-                          }
-                        }
-                      ]
-                    );
-                  }}
-                >
-                  <IconTrash size={18} color={colors.destructive} />
-                </TouchableOpacity>
+              <View style={styles.sectionHeader}>
+                <IconLayoutGrid size={20} color={colors.primary} />
+                <ThemedText style={styles.sectionTitle}>Layout do Caminhão</ThemedText>
               </View>
               <TruckLayoutPreview truckId={(task as any).truck.id} taskName={task.name} />
             </Card>

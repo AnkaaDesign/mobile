@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, Text } from "react-native";
+import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, Text, TextInput } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,108 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import type { LayoutCreateFormData } from "@/schemas";
 import { showToast } from "@/components/ui/toast";
+
+// MeasurementInput component with local state (like web version)
+const MeasurementInput = React.memo<{
+  value: number;
+  onChange: (value: number) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  min?: number;
+  max?: number;
+}>({
+  value,
+  onChange,
+  placeholder = "0,00",
+  disabled = false,
+  min,
+  max,
+}) => {
+  const { colors } = useTheme();
+  const [localValue, setLocalValue] = useState<string>("");
+  const [isFocused, setIsFocused] = useState(false);
+
+  // Format number for display (cm to m with comma)
+  const formatValue = (val: number): string => {
+    if (val === 0) return "";
+    const meters = val / 100;
+    return meters.toFixed(2).replace(".", ",");
+  };
+
+  // Parse display value to cm
+  const parseValue = (val: string): number => {
+    if (!val || val === "") return 0;
+    const normalized = val.replace(",", ".");
+    const parsed = parseFloat(normalized);
+    if (isNaN(parsed)) return 0;
+
+    // If value looks like whole number > 10, treat as cm
+    if (!val.includes(",") && !val.includes(".") && parsed > 10) {
+      return parsed;
+    }
+
+    return parsed * 100; // Convert meters to cm
+  };
+
+  // Update local value when external value changes (but not while focused)
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalValue(formatValue(value));
+    }
+  }, [value, isFocused]);
+
+  const handleChange = (text: string) => {
+    // Allow only numbers, comma, and dot
+    if (!/^[0-9.,]*$/.test(text)) return;
+
+    // Check for multiple separators
+    const commaCount = (text.match(/,/g) || []).length;
+    const dotCount = (text.match(/\./g) || []).length;
+    if (commaCount + dotCount > 1) return;
+
+    setLocalValue(text.replace(".", ","));
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+
+    let cmValue = parseValue(localValue);
+
+    // Apply min/max constraints
+    if (min !== undefined) cmValue = Math.max(min, cmValue);
+    if (max !== undefined) cmValue = Math.min(max, cmValue);
+
+    const newValue = Math.round(cmValue);
+    if (newValue !== value) {
+      onChange(newValue);
+    }
+    setLocalValue(formatValue(cmValue));
+  };
+
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  return (
+    <TextInput
+      value={localValue}
+      onChangeText={handleChange}
+      onBlur={handleBlur}
+      onFocus={handleFocus}
+      placeholder={placeholder}
+      keyboardType="decimal-pad"
+      editable={!disabled}
+      style={[
+        styles.rowInput,
+        {
+          color: colors.foreground,
+          borderColor: colors.border,
+          backgroundColor: disabled ? colors.muted : colors.background,
+        }
+      ]}
+    />
+  );
+});
 
 interface LayoutFormProps {
   selectedSide: 'left' | 'right' | 'back';
@@ -102,6 +204,74 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
   });
 
   const currentState = sideStates[selectedSide];
+
+  // CRITICAL: Sync state when layouts prop changes (e.g., when backend data arrives)
+  useEffect(() => {
+    if (!layouts) return;
+
+    // Don't sync if user has pending changes
+    if (hasPendingChangesRef.current) {
+      console.log('[LayoutForm Mobile] Skipping sync - user has pending changes');
+      return;
+    }
+
+    // Don't sync if currently saving
+    if (isSavingRef.current) {
+      console.log('[LayoutForm Mobile] Skipping sync - currently saving');
+      return;
+    }
+
+    console.log('[LayoutForm Mobile] Syncing state from layouts prop:', layouts);
+
+    setSideStates(prev => {
+      const newStates = { ...prev };
+      let hasChanges = false;
+
+      // Sync each side that has data in layouts prop
+      Object.keys(layouts).forEach((side) => {
+        const layoutData = layouts[side as 'left' | 'right' | 'back'];
+        if (layoutData?.sections && Array.isArray(layoutData.sections)) {
+          const state: SideState = {
+            height: (layoutData.height || 2.4) * 100,
+            totalWidth: 0,
+            doors: []
+          };
+
+          const sections = layoutData.sections;
+          const total = sections.reduce((sum, s) => sum + s.width * 100, 0);
+          state.totalWidth = total || (side === 'back' ? 242 : 800);
+
+          // Extract doors from sections
+          const extractedDoors: Door[] = [];
+          let currentPos = 0;
+
+          sections.forEach((section, idx) => {
+            if (section.isDoor) {
+              extractedDoors.push({
+                id: `door-${side}-${idx}-${Date.now()}-${Math.random()}`,
+                position: currentPos,
+                width: section.width * 100,
+                offsetTop: (section.doorOffset || 0.5) * 100
+              });
+            }
+            currentPos += section.width * 100;
+          });
+
+          state.doors = extractedDoors;
+          newStates[side as 'left' | 'right' | 'back'] = state;
+          hasChanges = true;
+
+          console.log(`[LayoutForm Mobile] Synced ${side} side:`, {
+            height: state.height,
+            totalWidth: state.totalWidth,
+            doorsCount: state.doors.length,
+          });
+        }
+      });
+
+      return hasChanges ? newStates : prev;
+    });
+  }, [layouts]);
 
   // CRITICAL: Emit initial state to parent when selected side changes
   // This ensures parent knows the default values
@@ -354,42 +524,22 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
     updateCurrentSide({ doors: currentState.doors.filter(d => d.id !== doorId) });
   }, [currentState, updateCurrentSide]);
 
-  // Update door offset
-  const updateDoorOffset = useCallback((doorId: string, offsetText: string) => {
+  // Update door offset (direct value in cm)
+  const updateDoorOffset = useCallback((doorId: string, offsetCm: number) => {
     if (!currentState) return;
 
-    // Parse the value - handle commas and convert to cm
-    let offsetCm = 0;
-    if (offsetText && offsetText.trim() !== '') {
-      const normalizedText = offsetText.replace(',', '.');
-      const parsed = parseFloat(normalizedText);
-      if (!isNaN(parsed)) {
-        offsetCm = parsed * 100; // Convert meters to cm
-      }
-    }
-
-    offsetCm = Math.max(0, Math.min(currentState.height - 50, offsetCm));
+    const clampedOffset = Math.max(0, Math.min(currentState.height - 50, offsetCm));
 
     const updatedDoors = currentState.doors.map(d =>
-      d.id === doorId ? { ...d, offsetTop: offsetCm } : d
+      d.id === doorId ? { ...d, offsetTop: clampedOffset } : d
     );
     updateCurrentSide({ doors: updatedDoors });
   }, [currentState, updateCurrentSide]);
 
-  // Update section width (simplified - just user input with commas)
-  const updateSectionWidth = useCallback((index: number, widthText: string) => {
+  // Update segment width (direct value in cm)
+  const updateSegmentWidth = useCallback((index: number, widthCm: number) => {
     const segment = segments[index];
     if (!segment) return;
-
-    // Parse the value - handle commas and convert to cm
-    let widthCm = 0;
-    if (widthText && widthText.trim() !== '') {
-      const normalizedText = widthText.replace(',', '.');
-      const parsed = parseFloat(normalizedText);
-      if (!isNaN(parsed)) {
-        widthCm = parsed * 100; // Convert meters to cm
-      }
-    }
 
     widthCm = Math.max(50, widthCm); // Minimum 50cm
 
@@ -427,18 +577,8 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
     }
   }, [segments, currentState, updateCurrentSide]);
 
-  // Update height (simplified - just user input with commas)
-  const updateHeight = useCallback((heightText: string) => {
-    // Parse the value - handle commas and convert to cm
-    let heightCm = 240; // Default
-    if (heightText && heightText.trim() !== '') {
-      const normalizedText = heightText.replace(',', '.');
-      const parsed = parseFloat(normalizedText);
-      if (!isNaN(parsed)) {
-        heightCm = parsed * 100; // Convert meters to cm
-      }
-    }
-
+  // Update height (direct value in cm)
+  const updateHeight = useCallback((heightCm: number) => {
     heightCm = Math.max(100, Math.min(400, heightCm));
     updateCurrentSide({ height: heightCm });
   }, [updateCurrentSide]);
@@ -626,61 +766,67 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
             )}
 
             {/* Render doors (only for sides, not back) */}
-            {selectedSide !== 'back' && currentState.doors.map(door => (
-              <View key={door.id}>
-                {/* Door left vertical line */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    left: door.position * scale,
-                    top: door.offsetTop * scale,
-                    width: 2,
-                    height: (currentState.height - door.offsetTop) * scale,
-                    backgroundColor: colors.foreground,
-                  }}
-                />
+            {selectedSide !== 'back' && currentState.doors.map(door => {
+              // Clamp door offset to prevent extrapolation
+              const clampedOffset = Math.max(0, Math.min(door.offsetTop, currentState.height - 10));
+              const doorHeight = currentState.height - clampedOffset;
 
-                {/* Door right vertical line */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    left: (door.position + door.width) * scale - 2,
-                    top: door.offsetTop * scale,
-                    width: 2,
-                    height: (currentState.height - door.offsetTop) * scale,
-                    backgroundColor: colors.foreground,
-                  }}
-                />
+              return (
+                <View key={door.id}>
+                  {/* Door left vertical line */}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: door.position * scale,
+                      top: clampedOffset * scale,
+                      width: 2,
+                      height: doorHeight * scale,
+                      backgroundColor: colors.foreground,
+                    }}
+                  />
 
-                {/* Door top horizontal line */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    left: door.position * scale,
-                    top: door.offsetTop * scale,
-                    width: door.width * scale,
-                    height: 2,
-                    backgroundColor: colors.foreground,
-                  }}
-                />
+                  {/* Door right vertical line */}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: (door.position + door.width) * scale - 2,
+                      top: clampedOffset * scale,
+                      width: 2,
+                      height: doorHeight * scale,
+                      backgroundColor: colors.foreground,
+                    }}
+                  />
 
-                {/* Remove button */}
-                <TouchableOpacity
-                  style={[
-                    styles.removeDoorButton,
-                    {
-                      left: (door.position + door.width / 2) * scale - 12,
-                      top: (door.offsetTop + (currentState.height - door.offsetTop) / 2) * scale - 12,
-                      backgroundColor: colors.destructive,
-                    }
-                  ]}
-                  onPress={() => removeDoor(door.id)}
-                  disabled={disabled}
-                >
-                  <Icon name="x" size={16} color={colors.destructiveForeground} />
-                </TouchableOpacity>
-              </View>
-            ))}
+                  {/* Door top horizontal line */}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: door.position * scale,
+                      top: clampedOffset * scale,
+                      width: door.width * scale,
+                      height: 2,
+                      backgroundColor: colors.foreground,
+                    }}
+                  />
+
+                  {/* Remove button */}
+                  <TouchableOpacity
+                    style={[
+                      styles.removeDoorButton,
+                      {
+                        left: (door.position + door.width / 2) * scale - 12,
+                        top: (clampedOffset + doorHeight / 2) * scale - 12,
+                        backgroundColor: colors.destructive,
+                      }
+                    ]}
+                    onPress={() => removeDoor(door.id)}
+                    disabled={disabled}
+                  >
+                    <Icon name="x" size={16} color={colors.destructiveForeground} />
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
           </View>
         </View>
       </View>
@@ -717,13 +863,13 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
       <Card style={styles.inputCard}>
         <View style={styles.fieldRow}>
           <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>Altura</ThemedText>
-          <Input
-            value={(currentState.height / 100).toFixed(2).replace('.', ',')}
-            onChangeText={updateHeight}
+          <MeasurementInput
+            value={currentState.height}
+            onChange={updateHeight}
             placeholder="2,40"
-            keyboardType="decimal-pad"
             disabled={disabled}
-            style={styles.rowInput}
+            min={100}
+            max={400}
           />
         </View>
       </Card>
@@ -742,13 +888,12 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
                   <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                     Porta {doorCounter}
                   </ThemedText>
-                  <Input
-                    value={(segment.width / 100).toFixed(2).replace('.', ',')}
-                    onChangeText={(text) => updateSectionWidth(index, text)}
+                  <MeasurementInput
+                    value={segment.width}
+                    onChange={(value) => updateSectionWidth(index, value)}
                     placeholder="1,00"
-                    keyboardType="decimal-pad"
                     disabled={disabled}
-                    style={styles.rowInput}
+                    min={50}
                   />
                 </View>
               </Card>
@@ -761,13 +906,12 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
                   <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                     Seção {sectionCounter}
                   </ThemedText>
-                  <Input
-                    value={(segment.width / 100).toFixed(2).replace('.', ',')}
-                    onChangeText={(text) => updateSectionWidth(index, text)}
+                  <MeasurementInput
+                    value={segment.width}
+                    onChange={(value) => updateSectionWidth(index, value)}
                     placeholder="1,00"
-                    keyboardType="decimal-pad"
                     disabled={disabled}
-                    style={styles.rowInput}
+                    min={50}
                   />
                 </View>
               </Card>
@@ -783,13 +927,13 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
             <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
               Altura Porta {index + 1}
             </ThemedText>
-            <Input
-              value={(door.offsetTop / 100).toFixed(2).replace('.', ',')}
-              onChangeText={(text) => updateDoorOffset(door.id, text)}
+            <MeasurementInput
+              value={door.offsetTop}
+              onChange={(value) => updateDoorOffset(door.id, value)}
               placeholder="0,50"
-              keyboardType="decimal-pad"
               disabled={disabled}
-              style={styles.rowInput}
+              min={0}
+              max={currentState.height - 50}
             />
           </View>
         </Card>
@@ -908,6 +1052,10 @@ const styles = StyleSheet.create({
     height: 36,
     minHeight: 36,
     textAlign: 'right',
+    borderWidth: 1,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm,
+    fontSize: fontSize.sm,
   },
   addButton: {
     marginBottom: spacing.md,
