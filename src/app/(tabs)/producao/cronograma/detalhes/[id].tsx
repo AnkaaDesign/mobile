@@ -142,7 +142,10 @@ export default function ScheduleDetailsScreen() {
   const airbrushings = (task as any)?.airbrushings || [];
 
   // Fetch layouts for truck dimensions
-  const { data: layouts } = useLayoutsByTruck((task as any)?.truck?.id || '', !!(task as any)?.truck?.id);
+  const { data: layouts } = useLayoutsByTruck((task as any)?.truck?.id || '', {
+    include: { layoutSections: true },
+    enabled: !!(task as any)?.truck?.id,
+  });
 
   // Calculate truck dimensions from any available layout
   const truckDimensions = useMemo(() => {

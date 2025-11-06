@@ -33,14 +33,22 @@ export const useLayoutDetail = (
 };
 
 // Get layouts by truck ID
-export const useLayoutsByTruck = (truckId: string, enabled = true) => {
+export const useLayoutsByTruck = (
+  truckId: string,
+  options?: {
+    include?: any;
+    enabled?: boolean;
+  }
+) => {
   return useQuery({
     queryKey: layoutQueryKeys.byTruck(truckId),
     queryFn: async () => {
-      const response = await layoutService.getByTruckId(truckId);
+      const response = await layoutService.getByTruckId(truckId, {
+        include: options?.include,
+      });
       return response.data.data;
     },
-    enabled: enabled && !!truckId,
+    enabled: (options?.enabled !== false) && !!truckId,
     staleTime: 5 * 60 * 1000,
   });
 };

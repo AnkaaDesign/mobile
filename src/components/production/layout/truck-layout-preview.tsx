@@ -17,7 +17,10 @@ interface TruckLayoutPreviewProps {
 
 export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProps) {
   const { colors } = useTheme();
-  const { data: layouts } = useLayoutsByTruck(truckId, !!truckId);
+  const { data: layouts } = useLayoutsByTruck(truckId, {
+    include: { layoutSections: true },
+    enabled: !!truckId,
+  });
   const [selectedSide, setSelectedSide] = useState<'left' | 'right' | 'back'>('left');
 
   // Check if any layouts exist

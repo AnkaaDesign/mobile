@@ -10,22 +10,23 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import type { LayoutCreateFormData } from "@/schemas";
 import { showToast } from "@/components/ui/toast";
+import { getApiBaseUrl } from "@/utils/file";
 
 // MeasurementInput component with local state (like web version)
-const MeasurementInput = React.memo<{
-  value: number;
-  onChange: (value: number) => void;
-  placeholder?: string;
-  disabled?: boolean;
-  min?: number;
-  max?: number;
-}>({
+const MeasurementInput = React.memo(({
   value,
   onChange,
   placeholder = "0,00",
   disabled = false,
   min,
   max,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  min?: number;
+  max?: number;
 }) => {
   const { colors } = useTheme();
   const [localValue, setLocalValue] = useState<string>("");
@@ -136,7 +137,15 @@ interface SideState {
   totalWidth: number;
   doors: Door[];
   photoUri?: string;
+  photoId?: string | null;
 }
+
+// Helper function to convert photoId to URL
+const getPhotoUrl = (photoId: string | null): string | undefined => {
+  if (!photoId) return undefined;
+  const apiUrl = getApiBaseUrl();
+  return `${apiUrl}/files/serve/${photoId}`;
+};
 
 export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }: LayoutFormProps) {
   const { colors } = useTheme();
@@ -172,7 +181,9 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
         const state: SideState = {
           height: (layoutData.height || 2.4) * 100,
           totalWidth: 0,
-          doors: []
+          doors: [],
+          photoId: layoutData.photoId || null,
+          photoUri: getPhotoUrl(layoutData.photoId || null)
         };
 
         const sections = layoutData.sections;
@@ -234,7 +245,9 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
           const state: SideState = {
             height: (layoutData.height || 2.4) * 100,
             totalWidth: 0,
-            doors: []
+            doors: [],
+            photoId: layoutData.photoId || null,
+            photoUri: getPhotoUrl(layoutData.photoId || null)
           };
 
           const sections = layoutData.sections;
@@ -265,6 +278,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
             height: state.height,
             totalWidth: state.totalWidth,
             doorsCount: state.doors.length,
+            photoId: state.photoId,
           });
         }
       });
@@ -312,7 +326,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
     const layoutDataToEmit: LayoutCreateFormData = {
       height: state.height / 100,
       sections,
-      photoId: null,
+      photoId: state.photoId || null,
     };
 
     console.log('[LayoutForm Mobile] ✅ Emitting initial state:', {
@@ -415,7 +429,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
       const layoutData: LayoutCreateFormData = {
         height: state.height / 100,
         sections,
-        photoId: null,
+        photoId: state.photoId || null,
       };
 
       console.log('[LayoutForm Mobile] ✅ Emitting changes:', {
@@ -769,7 +783,8 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
             {selectedSide !== 'back' && currentState.doors.map(door => {
               // Clamp door offset to prevent extrapolation
               const clampedOffset = Math.max(0, Math.min(door.offsetTop, currentState.height - 10));
-              const doorHeight = currentState.height - clampedOffset;
+              // Subtract 1cm (converted to pixels via scale) to prevent overflow from 2px border
+              const doorHeight = currentState.height - clampedOffset - 1;
 
               return (
                 <View key={door.id}>

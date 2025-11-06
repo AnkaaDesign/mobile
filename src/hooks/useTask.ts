@@ -26,6 +26,7 @@ import {
   garageKeys,
   changeLogKeys,
 } from "./queryKeys";
+import { layoutQueryKeys } from "./useLayout";
 
 // ===============================================
 // TASK HOOKS
@@ -237,6 +238,15 @@ export function useTaskMutations() {
       queryClient.invalidateQueries({
         queryKey: taskKeys.detail(variables.id),
       });
+
+      // Invalidate layout queries if truck exists (layouts are saved with task)
+      if (response.data?.truck?.id || response.data?.truckId) {
+        const truckId = response.data.truck?.id || response.data.truckId;
+        queryClient.invalidateQueries({
+          queryKey: layoutQueryKeys.byTruck(truckId),
+        });
+        console.log('[useTaskMutations] Invalidated layout queries for truck:', truckId);
+      }
 
       // Invalidate customer-specific queries
       if (response.data?.customerId) {

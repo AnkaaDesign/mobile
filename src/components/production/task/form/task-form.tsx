@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller, FormProvider } from "react-hook-form";
@@ -161,6 +161,18 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
       back: { height: 2.42, sections: [{ width: 2.42, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
     };
   });
+
+  // Track which sides were actually modified by the user (like web implementation)
+  const [modifiedLayoutSides, setModifiedLayoutSides] = useState<Set<"left" | "right" | "back">>(new Set());
+
+  // Update layouts when existingLayouts prop changes (important for when data loads asynchronously)
+  useEffect(() => {
+    if (existingLayouts) {
+      console.log('[TaskForm] Updating layouts from existingLayouts prop:', existingLayouts);
+      setLayouts(existingLayouts);
+      setIsLayoutOpen(true); // Auto-open the layout section when data loads
+    }
+  }, [existingLayouts]);
 
   // Use useEditForm for edit mode with change detection, regular useForm for create mode
   const defaultFormValues = {
@@ -328,9 +340,27 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
       if (data.finishedAt) formDataFields.finishedAt = data.finishedAt;
       if (data.paintIds && data.paintIds.length > 0) formDataFields.paintIds = data.paintIds;
 
-      // Add layouts if present
-      if (isLayoutOpen) {
-        formDataFields.layouts = layouts;
+      // Add layouts if present - only modified sides (following web implementation)
+      if (isLayoutOpen && modifiedLayoutSides.size > 0) {
+        const truckLayoutData: any = {};
+
+        for (const side of modifiedLayoutSides) {
+          const sideData = layouts[side];
+          if (sideData && sideData.sections && sideData.sections.length > 0) {
+            const sideName = side === 'left' ? 'leftSide' : side === 'right' ? 'rightSide' : 'backSide';
+            truckLayoutData[sideName] = {
+              height: sideData.height,
+              sections: sideData.sections,
+              photoId: sideData.photoId || null,
+            };
+            console.log(`[TaskForm] Added modified ${sideName} to payload`);
+          }
+        }
+
+        if (Object.keys(truckLayoutData).length > 0) {
+          formDataFields.truckLayoutData = truckLayoutData;
+          console.log('[TaskForm] truckLayoutData:', truckLayoutData);
+        }
       }
 
       // Create FormData with context for proper backend file organization
@@ -353,9 +383,27 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
         plate: data.plate?.toUpperCase() || null,
       };
 
-      // Add layouts if present
-      if (isLayoutOpen) {
-        cleanedData.layouts = layouts;
+      // Add layouts if present - only modified sides (following web implementation)
+      if (isLayoutOpen && modifiedLayoutSides.size > 0) {
+        const truckLayoutData: any = {};
+
+        for (const side of modifiedLayoutSides) {
+          const sideData = layouts[side];
+          if (sideData && sideData.sections && sideData.sections.length > 0) {
+            const sideName = side === 'left' ? 'leftSide' : side === 'right' ? 'rightSide' : 'backSide';
+            truckLayoutData[sideName] = {
+              height: sideData.height,
+              sections: sideData.sections,
+              photoId: sideData.photoId || null,
+            };
+            console.log(`[TaskForm] Added modified ${sideName} to payload (JSON)`);
+          }
+        }
+
+        if (Object.keys(truckLayoutData).length > 0) {
+          cleanedData.truckLayoutData = truckLayoutData;
+          console.log('[TaskForm] truckLayoutData (JSON):', truckLayoutData);
+        }
       }
 
       await onSubmit(cleanedData);
@@ -848,6 +896,9 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
                         right: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
                         back: { height: 2.42, sections: [{ width: 2.42, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
                       });
+                      // Clear modified sides when layout section is removed
+                      setModifiedLayoutSides(new Set());
+                      console.log('[TaskForm] Layout section closed - cleared modified sides');
                     }}
                     disabled={isSubmitting}
                   >
@@ -910,6 +961,17 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
                   selectedSide={selectedLayoutSide}
                   layouts={layouts}
                   onChange={(side, layoutData) => {
+                    console.log('[TaskForm] Layout onChange received:', { side, layoutData });
+
+                    // Mark this side as modified (following web implementation)
+                    setModifiedLayoutSides((prev) => {
+                      const newSet = new Set(prev);
+                      newSet.add(side);
+                      console.log('[TaskForm] Modified sides:', Array.from(newSet));
+                      return newSet;
+                    });
+
+                    // Update layout state
                     setLayouts((prev) => ({
                       ...prev,
                       [side]: layoutData,

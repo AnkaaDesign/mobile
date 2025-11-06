@@ -27,7 +27,7 @@ export const layoutService = {
   getById: (id: string, params?: { include?: any }) => apiClient.get<LayoutGetUniqueResponse>(`/layout/${id}`, { params }),
 
   // Get layouts by truck ID
-  getByTruckId: (truckId: string) => apiClient.get<LayoutsByTruckResponse>(`/layout/truck/${truckId}`),
+  getByTruckId: (truckId: string, params?: { include?: any }) => apiClient.get<LayoutsByTruckResponse>(`/layout/truck/${truckId}`, { params }),
 
   // Create layout
   create: (data: LayoutCreateFormData) => apiClient.post<LayoutCreateResponse>("/layout", data),

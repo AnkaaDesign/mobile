@@ -36,7 +36,62 @@ export default function EditScheduleScreen() {
 
   // Fetch truck layouts if task has a truck
   const truckId = task?.truck?.id || task?.truckId;
-  const { data: layoutsData } = useLayoutsByTruck(truckId || "", !!truckId);
+  const { data: layoutsData } = useLayoutsByTruck(truckId || "", {
+    include: { layoutSections: true },
+    enabled: !!truckId,
+  });
+
+  // Transform layout data from backend format to LayoutCreateFormData format
+  // Must be before conditional returns to maintain hook order
+  const existingLayouts = React.useMemo(() => {
+    if (!layoutsData) return undefined;
+
+    const layouts: any = {};
+
+    // Transform left side layout
+    if (layoutsData.leftSideLayout?.layoutSections) {
+      layouts.left = {
+        height: layoutsData.leftSideLayout.height,
+        sections: layoutsData.leftSideLayout.layoutSections.map((s: any) => ({
+          width: s.width,
+          isDoor: s.isDoor,
+          doorOffset: s.doorOffset,
+          position: s.position,
+        })),
+        photoId: layoutsData.leftSideLayout.photoId,
+      };
+    }
+
+    // Transform right side layout
+    if (layoutsData.rightSideLayout?.layoutSections) {
+      layouts.right = {
+        height: layoutsData.rightSideLayout.height,
+        sections: layoutsData.rightSideLayout.layoutSections.map((s: any) => ({
+          width: s.width,
+          isDoor: s.isDoor,
+          doorOffset: s.doorOffset,
+          position: s.position,
+        })),
+        photoId: layoutsData.rightSideLayout.photoId,
+      };
+    }
+
+    // Transform back side layout
+    if (layoutsData.backSideLayout?.layoutSections) {
+      layouts.back = {
+        height: layoutsData.backSideLayout.height,
+        sections: layoutsData.backSideLayout.layoutSections.map((s: any) => ({
+          width: s.width,
+          isDoor: s.isDoor,
+          doorOffset: s.doorOffset,
+          position: s.position,
+        })),
+        photoId: layoutsData.backSideLayout.photoId,
+      };
+    }
+
+    return Object.keys(layouts).length > 0 ? layouts : undefined;
+  }, [layoutsData]);
 
   const handleSubmit = async (data: any) => {
     if (!id) return;
@@ -87,57 +142,6 @@ export default function EditScheduleScreen() {
       </ThemedView>
     );
   }
-
-  // Transform layout data from backend format to LayoutCreateFormData format
-  const existingLayouts = React.useMemo(() => {
-    if (!layoutsData) return undefined;
-
-    const layouts: any = {};
-
-    // Transform left side layout
-    if (layoutsData.leftSideLayout?.layoutSections) {
-      layouts.left = {
-        height: layoutsData.leftSideLayout.height,
-        sections: layoutsData.leftSideLayout.layoutSections.map((s: any) => ({
-          width: s.width,
-          isDoor: s.isDoor,
-          doorOffset: s.doorOffset,
-          position: s.position,
-        })),
-        photoId: layoutsData.leftSideLayout.photoId,
-      };
-    }
-
-    // Transform right side layout
-    if (layoutsData.rightSideLayout?.layoutSections) {
-      layouts.right = {
-        height: layoutsData.rightSideLayout.height,
-        sections: layoutsData.rightSideLayout.layoutSections.map((s: any) => ({
-          width: s.width,
-          isDoor: s.isDoor,
-          doorOffset: s.doorOffset,
-          position: s.position,
-        })),
-        photoId: layoutsData.rightSideLayout.photoId,
-      };
-    }
-
-    // Transform back side layout
-    if (layoutsData.backSideLayout?.layoutSections) {
-      layouts.back = {
-        height: layoutsData.backSideLayout.height,
-        sections: layoutsData.backSideLayout.layoutSections.map((s: any) => ({
-          width: s.width,
-          isDoor: s.isDoor,
-          doorOffset: s.doorOffset,
-          position: s.position,
-        })),
-        photoId: layoutsData.backSideLayout.photoId,
-      };
-    }
-
-    return Object.keys(layouts).length > 0 ? layouts : undefined;
-  }, [layoutsData]);
 
   console.log('[EditScheduleScreen] Existing layouts:', existingLayouts);
 
