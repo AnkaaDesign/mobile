@@ -1,49 +1,135 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, FlatList, RefreshControl } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
+import { useRouter } from "expo-router";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { usePpeDeliveriesInfiniteMobile } from "@/hooks";
-import { ThemedView } from "@/components/ui/themed-view";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Card } from "@/components/ui/card";
-import { SearchBar } from "@/components/ui/search-bar";
-import { EmptyState } from "@/components/ui/empty-state";
-import { ErrorScreen } from "@/components/ui/error-screen";
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { deletePpeDelivery } from "@/api-client";
+import { showToast } from "@/components/ui/toast";
+
+import { ThemedView, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
+import { TeamPpeDeliveryTable, createColumnDefinitions } from "@/components/my-team/ppe-delivery/list/team-ppe-delivery-table";
+import { TeamPpeDeliveryFilterTags } from "@/components/my-team/ppe-delivery/list/team-ppe-delivery-filter-tags";
+import { TeamPpeDeliveryStatsCard } from "@/components/my-team/ppe-delivery/list/team-ppe-delivery-stats-card";
+import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { useTheme } from "@/lib/theme";
+import { Card } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
 import { spacing, fontSize } from "@/constants/design-system";
-import {
-  IconShieldCheck,
-  IconUser,
-  IconCalendar,
-  IconPackage,
-} from "@tabler/icons-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { formatDate } from "@/utils";
+import { IconShieldCheck } from "@tabler/icons-react-native";
+
+// Import hooks and components
+import { useTableSort } from "@/hooks/useTableSort";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+
+// Import slide panel components
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { TeamPpeDeliveryFilterDrawerContent } from "@/components/my-team/ppe-delivery/list/team-ppe-delivery-filter-drawer-content";
+import { TeamPpeDeliveryColumnDrawerContent } from "@/components/my-team/ppe-delivery/list/team-ppe-delivery-column-drawer-content";
 
 export default function TeamEPIsScreen() {
+  const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user: currentUser } = useAuth();
-
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
+  const searchInputRef = React.useRef<any>(null);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Check if user is a team leader
   const isTeamLeader = currentUser?.managedSectorId || false;
 
-  // Build query parameters for team PPE deliveries
+  // Filter state
+  const [filters, setFilters] = useState<{
+    status?: string[];
+    itemName?: string;
+    userName?: string;
+    deliveryDateStart?: Date;
+    deliveryDateEnd?: Date;
+    hasReviewer?: boolean;
+  }>({});
+
+  const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
+    [{ columnKey: "createdAt", direction: "desc", order: 0 }],
+    1, // Single column sort only
+    false
+  );
+
+  const {
+    visibleColumns,
+    setVisibleColumns,
+  } = useColumnVisibility(
+    "team-ppe-deliveries",
+    ["userName", "itemName", "quantity", "status", "deliveryDate"],
+    ["userName", "itemName", "quantity", "status", "deliveryDate", "scheduledDate", "reviewedBy", "createdAt"]
+  );
+
+  // Build API query with filters
+  const buildWhereClause = useCallback(() => {
+    const where: any = {
+      user: {
+        sectorId: currentUser?.managedSectorId,
+      },
+    };
+
+    if (filters.status?.length) {
+      where.status = { in: filters.status };
+    }
+
+    if (filters.itemName) {
+      where.item = { name: { contains: filters.itemName, mode: "insensitive" } };
+    }
+
+    if (filters.userName) {
+      where.user = {
+        ...where.user,
+        name: { contains: filters.userName, mode: "insensitive" },
+      };
+    }
+
+    if (filters.deliveryDateStart || filters.deliveryDateEnd) {
+      where.actualDeliveryDate = {};
+      if (filters.deliveryDateStart) {
+        where.actualDeliveryDate.gte = filters.deliveryDateStart;
+      }
+      if (filters.deliveryDateEnd) {
+        where.actualDeliveryDate.lte = filters.deliveryDateEnd;
+      }
+    }
+
+    if (filters.hasReviewer) {
+      where.reviewedBy = { not: null };
+    }
+
+    return where;
+  }, [filters, currentUser?.managedSectorId]);
+
   const queryParams = useMemo(() => {
     if (!isTeamLeader || !currentUser?.managedSectorId) return null;
 
-    const params: any = {
-      where: {
-        user: {
-          sectorId: currentUser.managedSectorId,
+    return {
+      orderBy: buildOrderBy(
+        {
+          userName: { user: { name: "asc" } },
+          itemName: { item: { name: "asc" } },
+          quantity: "quantity",
+          status: "status",
+          deliveryDate: "actualDeliveryDate",
+          scheduledDate: "scheduledDate",
+          reviewedBy: { reviewedByUser: { name: "asc" } },
+          createdAt: "createdAt",
         },
-      },
+        { createdAt: "desc" }
+      ),
+      ...(searchText ? { searchingFor: searchText } : {}),
+      where: buildWhereClause(),
       include: {
         user: {
           include: {
@@ -51,20 +137,13 @@ export default function TeamEPIsScreen() {
           },
         },
         item: true,
-        approvedBy: true,
+        reviewedByUser: true,
       },
-      orderBy: { createdAt: "desc" },
     };
-
-    if (searchText) {
-      params.searchingFor = searchText;
-    }
-
-    return params;
-  }, [isTeamLeader, currentUser?.managedSectorId, searchText]);
+  }, [isTeamLeader, currentUser?.managedSectorId, searchText, buildWhereClause, buildOrderBy]);
 
   const {
-    items: deliveries,
+    deliveries,
     isLoading,
     error,
     isRefetching,
@@ -74,9 +153,7 @@ export default function TeamEPIsScreen() {
     totalItemsLoaded,
     totalCount,
     refresh,
-  } = usePpeDeliveriesInfiniteMobile(queryParams || {}, {
-    enabled: !!queryParams,
-  });
+  } = usePpeDeliveriesInfiniteMobile(queryParams || {});
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -87,6 +164,48 @@ export default function TeamEPIsScreen() {
     }
   }, [refresh]);
 
+  const handleDeliveryPress = useCallback((deliveryId: string) => {
+    router.push(`/meu-pessoal/epis/detalhes/${deliveryId}` as any);
+  }, [router]);
+
+  const handleEditDelivery = useCallback((deliveryId: string) => {
+    // TODO: Navigate to edit page when implemented
+    showToast({ message: "Edição ainda não implementada", type: "info" });
+  }, []);
+
+  const handleDeleteDelivery = useCallback(
+    async (deliveryId: string) => {
+      const delivery = deliveries.find((d) => d.id === deliveryId);
+      if (!delivery) return;
+
+      Alert.alert(
+        "Excluir Entrega",
+        `Tem certeza que deseja excluir a entrega de ${delivery.item?.name || "item"} para ${delivery.user?.name || "usuário"}?`,
+        [
+          {
+            text: "Cancelar",
+            style: "cancel",
+          },
+          {
+            text: "Excluir",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await deletePpeDelivery(deliveryId);
+                showToast({ message: "Entrega excluída com sucesso", type: "success" });
+                refresh();
+              } catch (error) {
+                showToast({ message: "Erro ao excluir entrega", type: "error" });
+                console.error("Error deleting delivery:", error);
+              }
+            },
+          },
+        ]
+      );
+    },
+    [deliveries, refresh],
+  );
+
   const handleSearch = useCallback((text: string) => {
     setSearchText(text);
   }, []);
@@ -94,6 +213,49 @@ export default function TeamEPIsScreen() {
   const handleDisplaySearchChange = useCallback((text: string) => {
     setDisplaySearchText(text);
   }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters({});
+    setSearchText("");
+    setDisplaySearchText("");
+  }, []);
+
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumns(newColumns);
+  }, [setVisibleColumns]);
+
+  const handleOpenFilters = useCallback(() => {
+    setIsColumnPanelOpen(false);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
+
+  const handleOpenColumns = useCallback(() => {
+    setIsFilterPanelOpen(false);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
+
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.status?.length) count++;
+    if (filters.itemName) count++;
+    if (filters.userName) count++;
+    if (filters.deliveryDateStart) count++;
+    if (filters.deliveryDateEnd) count++;
+    if (filters.hasReviewer) count++;
+    return count;
+  }, [filters]);
 
   // Show access denied if not a team leader
   if (!isTeamLeader) {
@@ -114,106 +276,10 @@ export default function TeamEPIsScreen() {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "PENDING":
-        return colors.warning;
-      case "APPROVED":
-        return colors.success;
-      case "REJECTED":
-        return colors.destructive;
-      default:
-        return colors.mutedForeground;
-    }
-  };
+  // Only show skeleton on initial load
+  const isInitialLoad = isLoading && deliveries.length === 0;
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "PENDING":
-        return "Pendente";
-      case "APPROVED":
-        return "Aprovado";
-      case "REJECTED":
-        return "Rejeitado";
-      default:
-        return status;
-    }
-  };
-
-  const renderDeliveryItem = ({ item }: { item: any }) => (
-    <Card style={styles.deliveryCard}>
-      <View style={styles.deliveryHeader}>
-        <View style={styles.userInfo}>
-          <Avatar
-            source={item.user?.avatar?.url ? { uri: item.user.avatar.url } : undefined}
-            fallback={item.user?.name?.[0]?.toUpperCase() || "U"}
-            size={40}
-          />
-          <View style={styles.userDetails}>
-            <ThemedText style={[styles.userName, { color: colors.foreground }]}>
-              {item.user?.name || "Usuário"}
-            </ThemedText>
-            {item.user?.position && (
-              <ThemedText style={[styles.userPosition, { color: colors.mutedForeground }]}>
-                {item.user.position.name}
-              </ThemedText>
-            )}
-          </View>
-        </View>
-        <Badge
-          variant="secondary"
-          style={{ backgroundColor: getStatusColor(item.status) + "20" }}
-        >
-          <ThemedText style={[styles.badgeText, { color: getStatusColor(item.status) }]}>
-            {getStatusLabel(item.status)}
-          </ThemedText>
-        </Badge>
-      </View>
-
-      <View style={styles.deliveryContent}>
-        <View style={styles.itemInfo}>
-          <IconPackage size={16} color={colors.mutedForeground} />
-          <View style={styles.itemDetails}>
-            <ThemedText style={[styles.itemName, { color: colors.foreground }]}>
-              {item.item?.name || "EPI"}
-            </ThemedText>
-            <ThemedText style={[styles.itemQuantity, { color: colors.mutedForeground }]}>
-              Quantidade: {item.quantity || 1}
-            </ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.metaRow}>
-          <View style={styles.metaItem}>
-            <IconCalendar size={14} color={colors.mutedForeground} />
-            <ThemedText style={[styles.metaText, { color: colors.mutedForeground }]}>
-              {formatDate(item.deliveryDate || item.createdAt)}
-            </ThemedText>
-          </View>
-          {item.nextDeliveryDate && (
-            <View style={styles.metaItem}>
-              <ThemedText style={[styles.metaLabel, { color: colors.mutedForeground }]}>
-                Próxima:
-              </ThemedText>
-              <ThemedText style={[styles.metaText, { color: colors.mutedForeground }]}>
-                {formatDate(item.nextDeliveryDate)}
-              </ThemedText>
-            </View>
-          )}
-        </View>
-
-        {item.approvedBy && (
-          <View style={styles.approvalRow}>
-            <ThemedText style={[styles.approvalText, { color: colors.mutedForeground }]}>
-              Aprovado por: {item.approvedBy.name}
-            </ThemedText>
-          </View>
-        )}
-      </View>
-    </Card>
-  );
-
-  if (isLoading && deliveries.length === 0) {
+  if (isInitialLoad) {
     return (
       <ThemedView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -242,78 +308,113 @@ export default function TeamEPIsScreen() {
   const hasDeliveries = Array.isArray(deliveries) && deliveries.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { paddingBottom: insets.bottom }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <ThemedText style={[styles.title, { color: colors.foreground }]}>
-          EPIs da Equipe
-        </ThemedText>
-        <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          {currentUser?.sector?.name || "Setor"}
-        </ThemedText>
-      </View>
-
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <SearchBar
-          value={displaySearchText}
-          onChangeText={handleDisplaySearchChange}
-          onSearch={handleSearch}
-          placeholder="Buscar EPIs..."
-          style={styles.searchBar}
-          debounceMs={300}
-          loading={isRefetching && !isFetchingNextPage}
-        />
-      </View>
-
-      {hasDeliveries ? (
-        <>
-          <FlatList
-            data={deliveries}
-            renderItem={renderDeliveryItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing || isRefetching}
-                onRefresh={handleRefresh}
-                colors={[colors.primary]}
-                tintColor={colors.primary}
-              />
-            }
-            onEndReached={canLoadMore ? loadMore : undefined}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={
-              isFetchingNextPage ? (
-                <View style={styles.loadingMore}>
-                  <ThemedText style={{ color: colors.mutedForeground }}>
-                    Carregando mais...
-                  </ThemedText>
-                </View>
-              ) : null
-            }
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search and Filter */}
+        <View style={styles.searchContainer}>
+          <SearchBar
+            ref={searchInputRef}
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar entregas de EPIs..."
+            style={styles.searchBar}
+            debounceMs={300}
+            loading={isRefetching && !isFetchingNextPage}
           />
-          <ItemsCountDisplay
-            loadedCount={totalItemsLoaded}
-            totalCount={totalCount}
-            isLoading={isFetchingNextPage}
-          />
-        </>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "shield"}
-            title={searchText ? "Nenhum EPI encontrado" : "Sem entregas de EPIs"}
-            description={
-              searchText
-                ? `Nenhum resultado para "${searchText}"`
-                : "Não há entregas de EPIs registradas para a equipe"
-            }
-          />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumns.size}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
         </View>
-      )}
-    </ThemedView>
+
+        {/* Individual filter tags */}
+        <TeamPpeDeliveryFilterTags
+          filters={filters}
+          searchText={searchText}
+          onFilterChange={setFilters}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
+        />
+
+        {/* Statistics Card */}
+        {hasDeliveries && <TeamPpeDeliveryStatsCard deliveries={deliveries} />}
+
+        {hasDeliveries ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <TeamPpeDeliveryTable
+              deliveries={deliveries}
+              onDeliveryPress={handleDeliveryPress}
+              onDeliveryEdit={handleEditDelivery}
+              onDeliveryDelete={handleDeleteDelivery}
+              onRefresh={handleRefresh}
+              onEndReached={canLoadMore ? loadMore : undefined}
+              refreshing={refreshing || isRefetching}
+              loading={false}
+              loadingMore={isFetchingNextPage}
+              sortConfigs={sortConfigs}
+              onSort={(configs) => {
+                // Handle empty array (clear sort)
+                if (configs.length === 0) {
+                  handleSort("createdAt"); // Reset to default
+                } else {
+                  handleSort(configs[0].columnKey);
+                }
+              }}
+              visibleColumnKeys={Array.from(visibleColumns) as string[]}
+              enableSwipeActions={true}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "package"}
+              title={searchText ? "Nenhuma entrega encontrada" : "Sem entregas de EPIs"}
+              description={
+                searchText
+                  ? `Nenhum resultado para "${searchText}"`
+                  : "Não há entregas de EPIs registradas para a equipe"
+              }
+            />
+          </View>
+        )}
+
+        {/* Items count */}
+        {hasDeliveries && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
+      </ThemedView>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <TeamPpeDeliveryFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <TeamPpeDeliveryColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 
@@ -321,10 +422,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+  searchContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 8,
+    alignItems: "center",
+  },
+  searchBar: {
+    flex: 1,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 8,
   },
   title: {
     fontSize: fontSize.xl,
@@ -333,89 +443,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: fontSize.sm,
-  },
-  searchContainer: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  searchBar: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xl,
-  },
-  deliveryCard: {
-    marginBottom: spacing.sm,
-    padding: spacing.md,
-  },
-  deliveryHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  userDetails: {
-    marginLeft: spacing.sm,
-    flex: 1,
-  },
-  userName: {
-    fontSize: fontSize.base,
-    fontWeight: "600",
-  },
-  userPosition: {
-    fontSize: fontSize.xs,
-  },
-  badgeText: {
-    fontSize: fontSize.xs,
-    fontWeight: "500",
-  },
-  deliveryContent: {
-    gap: spacing.sm,
-  },
-  itemInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  itemDetails: {
-    marginLeft: spacing.sm,
-    flex: 1,
-  },
-  itemName: {
-    fontSize: fontSize.base,
-    fontWeight: "500",
-  },
-  itemQuantity: {
-    fontSize: fontSize.xs,
-    marginTop: 2,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  metaLabel: {
-    fontSize: fontSize.xs,
-  },
-  metaText: {
-    fontSize: fontSize.xs,
-  },
-  approvalRow: {
-    marginTop: spacing.xs,
-  },
-  approvalText: {
-    fontSize: fontSize.xs,
-    fontStyle: "italic",
   },
   loadingContainer: {
     flex: 1,
@@ -428,10 +455,6 @@ const styles = StyleSheet.create({
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingMore: {
-    paddingVertical: spacing.md,
     alignItems: "center",
   },
 });

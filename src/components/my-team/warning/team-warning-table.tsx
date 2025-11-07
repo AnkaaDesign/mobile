@@ -1,23 +1,48 @@
-import React, { useCallback} from "react";
-import { FlatList, View, Pressable, RefreshControl, ActivityIndicator, StyleSheet } from "react-native";
+import React, { useCallback, useMemo } from "react";
+import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { Warning } from '../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
+import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS, WARNING_SEVERITY } from '../../../constants';
+import { TeamWarningTableRowSwipe } from "./team-warning-table-row-swipe";
 import { formatDate } from '../../../utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS, WARNING_SEVERITY } from '../../../constants';
+
+export interface TableColumn {
+  key: string;
+  header: string;
+  accessor: (warning: Warning) => React.ReactNode;
+  width: number;
+  align?: "left" | "center" | "right";
+  sortable?: boolean;
+}
+
+import type { SortConfig } from '@/lib/sort-utils';
 
 interface TeamWarningTableProps {
   warnings: Warning[];
   onWarningPress?: (warningId: string) => void;
+  onWarningEdit?: (warningId: string) => void;
+  onWarningDelete?: (warningId: string) => void;
   onRefresh?: () => Promise<void>;
+  onEndReached?: () => void;
+  onPrefetch?: () => void;
   refreshing?: boolean;
   loading?: boolean;
+  loadingMore?: boolean;
+  sortConfigs?: SortConfig[];
+  onSort?: (configs: SortConfig[]) => void;
+  visibleColumnKeys?: string[];
+  enableSwipeActions?: boolean;
 }
+
+// Get screen width for responsive design
+const { width: screenWidth } = Dimensions.get("window");
+const availableWidth = screenWidth - 32; // Account for padding
 
 // Helper function to get severity colors
 const getSeverityColor = (severity: string) => {
@@ -27,7 +52,7 @@ const getSeverityColor = (severity: string) => {
     case WARNING_SEVERITY.WRITTEN:
       return { background: badgeColors.warning.background, text: badgeColors.warning.text };
     case WARNING_SEVERITY.SUSPENSION:
-      return { background: "rgba(255, 152, 0, 0.15)", text: "#ff9800" }; // orange-500
+      return { background: "rgba(255, 152, 0, 0.15)", text: "#ff9800" };
     case WARNING_SEVERITY.FINAL_WARNING:
       return { background: badgeColors.error.background, text: badgeColors.error.text };
     default:
@@ -35,196 +60,594 @@ const getSeverityColor = (severity: string) => {
   }
 };
 
-export const TeamWarningTable = React.memo<TeamWarningTableProps>(({ warnings, onWarningPress, onRefresh, refreshing = false, loading = false }) => {
-  const { colors, isDark } = useTheme();
-
-  // Row component
-  const renderRow = useCallback(
-    ({ item }: { item: Warning }) => {
-      const severityLabel = WARNING_SEVERITY_LABELS[item.severity as keyof typeof WARNING_SEVERITY_LABELS] || item.severity;
-      const categoryLabel = WARNING_CATEGORY_LABELS[item.category as keyof typeof WARNING_CATEGORY_LABELS] || item.category;
-      const severityColor = getSeverityColor(item.severity);
-
-      return (
-        <Pressable onPress={() => onWarningPress?.(item.id)} android_ripple={{ color: colors.primary + "20" }}>
-          <Card style={styles.warningCard}>
-            {/* Header: User and Severity */}
-            <View style={styles.cardHeader}>
-              <View style={styles.userSection}>
-                <View style={[styles.userAvatar, { backgroundColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200] }]}>
-                  <Icon name="user" size="sm" variant="muted" />
-                </View>
-                <View style={styles.userInfo}>
-                  <ThemedText style={styles.userName} numberOfLines={1}>
-                    {item.collaborator?.name || "Colaborador"}
-                  </ThemedText>
-                  <ThemedText style={styles.categoryLabel} numberOfLines={1}>
-                    {categoryLabel}
-                  </ThemedText>
-                </View>
-              </View>
-              <Badge
-                variant="secondary"
-                size="sm"
-                style={{
-                  backgroundColor: severityColor.background,
-                  borderWidth: 0,
-                }}
-              >
-                <ThemedText
-                  style={{
-                    color: severityColor.text,
-                    fontSize: fontSize.xs,
-                    fontWeight: fontWeight.medium,
-                  }}
-                >
-                  {severityLabel}
-                </ThemedText>
-              </Badge>
-            </View>
-
-            {/* Reason */}
-            <View style={styles.reasonSection}>
-              <ThemedText style={styles.reasonText} numberOfLines={2}>
-                {item.reason}
-              </ThemedText>
-            </View>
-
-            {/* Footer: Date and Status */}
-            <View style={styles.cardFooter}>
-              <View style={styles.dateSection}>
-                <Icon name="calendar" size="xs" variant="muted" />
-                <ThemedText style={styles.dateText}>{formatDate(item.createdAt)}</ThemedText>
-              </View>
-              <Badge
-                variant={item.isActive ? "default" : "secondary"}
-                size="sm"
-                style={{
-                  backgroundColor: item.isActive ? badgeColors.success.background : badgeColors.muted.background,
-                  borderWidth: 0,
-                }}
-              >
-                <ThemedText
-                  style={{
-                    color: item.isActive ? badgeColors.success.text : badgeColors.muted.text,
-                    fontSize: fontSize.xs,
-                    fontWeight: fontWeight.medium,
-                  }}
-                >
-                  {item.isActive ? "Ativa" : "Resolvida"}
-                </ThemedText>
-              </Badge>
-            </View>
-          </Card>
-        </Pressable>
-      );
-    },
-    [colors, isDark, onWarningPress],
-  );
-
-  // Empty state component
-  const renderEmpty = useCallback(
-    () => (
-      <View style={styles.emptyContainer}>
-        <Icon name="alert-circle" size="xl" variant="muted" />
-        <ThemedText style={styles.emptyTitle}>Nenhuma advertência encontrada</ThemedText>
-        <ThemedText style={styles.emptySubtitle}>As advertências da sua equipe aparecerão aqui</ThemedText>
+// Define all available columns with their renderers
+export const createWarningColumnDefinitions = (): TableColumn[] => [
+  {
+    key: "collaboratorName",
+    header: "Colaborador",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (warning: Warning) => (
+      <View style={styles.nameContainer}>
+        <View style={[styles.avatar, { backgroundColor: extendedColors.neutral[200] }]}>
+          <ThemedText style={[styles.avatarText, { color: extendedColors.neutral[600] }]}>
+            {warning.collaborator?.name?.charAt(0)?.toUpperCase() || "?"}
+          </ThemedText>
+        </View>
+        <ThemedText style={styles.nameText} numberOfLines={1}>
+          {warning.collaborator?.name || "Colaborador"}
+        </ThemedText>
       </View>
     ),
-    [],
-  );
+  },
+  {
+    key: "category",
+    header: "Categoria",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (warning: Warning) => {
+      const categoryLabel = WARNING_CATEGORY_LABELS[warning.category as keyof typeof WARNING_CATEGORY_LABELS] || warning.category;
+      return (
+        <Badge variant="default" size="sm" style={{ backgroundColor: badgeColors.info.background, borderWidth: 0 }}>
+          <ThemedText style={{ color: badgeColors.info.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
+            {categoryLabel}
+          </ThemedText>
+        </Badge>
+      );
+    },
+  },
+  {
+    key: "severity",
+    header: "Gravidade",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (warning: Warning) => {
+      const severityLabel = WARNING_SEVERITY_LABELS[warning.severity as keyof typeof WARNING_SEVERITY_LABELS] || warning.severity;
+      const severityColor = getSeverityColor(warning.severity);
+      return (
+        <Badge variant="secondary" size="sm" style={{ backgroundColor: severityColor.background, borderWidth: 0 }}>
+          <ThemedText style={{ color: severityColor.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
+            {severityLabel}
+          </ThemedText>
+        </Badge>
+      );
+    },
+  },
+  {
+    key: "reason",
+    header: "Motivo",
+    align: "left",
+    sortable: false,
+    width: 0,
+    accessor: (warning: Warning) => (
+      <ThemedText style={styles.cellText} numberOfLines={2}>
+        {warning.reason || "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "followUpDate",
+    header: "Data de Ocorrência",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (warning: Warning) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {warning.followUpDate ? formatDate(warning.followUpDate) : "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "isActive",
+    header: "Status",
+    align: "center",
+    sortable: false,
+    width: 0,
+    accessor: (warning: Warning) => (
+      <View style={styles.centerAlign}>
+        <Badge
+          variant={warning.isActive ? "default" : "secondary"}
+          size="sm"
+          style={{
+            backgroundColor: warning.isActive ? badgeColors.success.background : badgeColors.muted.background,
+            borderWidth: 0,
+          }}
+        >
+          <ThemedText
+            style={{
+              color: warning.isActive ? badgeColors.success.text : badgeColors.muted.text,
+              fontSize: fontSize.xs,
+              fontWeight: fontWeight.medium,
+            }}
+          >
+            {warning.isActive ? "Ativa" : "Resolvida"}
+          </ThemedText>
+        </Badge>
+      </View>
+    ),
+  },
+  {
+    key: "createdAt",
+    header: "Cadastrado Em",
+    align: "left",
+    sortable: true,
+    width: 0,
+    accessor: (warning: Warning) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {warning.createdAt ? formatDate(warning.createdAt) : "-"}
+      </ThemedText>
+    ),
+  },
+];
 
-  // Main loading state
-  if (loading && warnings.length === 0) {
+export const TeamWarningTable = React.memo<TeamWarningTableProps>(
+  ({
+    warnings,
+    onWarningPress,
+    onWarningEdit,
+    onWarningDelete,
+    onRefresh,
+    onEndReached,
+    onPrefetch,
+    refreshing = false,
+    loading = false,
+    loadingMore = false,
+    sortConfigs = [],
+    onSort,
+    visibleColumnKeys = ["collaboratorName", "category", "severity", "followUpDate"],
+    enableSwipeActions = true,
+  }) => {
+    const { colors, isDark } = useTheme();
+    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const prefetchTriggeredRef = React.useRef(false);
+
+    // Get all column definitions
+    const allColumns = useMemo(() => createWarningColumnDefinitions(), []);
+
+    // Build visible columns with dynamic widths
+    const displayColumns = useMemo(() => {
+      // Define width ratios for each column type
+      const columnWidthRatios: Record<string, number> = {
+        collaboratorName: 2.0,
+        category: 1.5,
+        severity: 1.5,
+        reason: 2.5,
+        followUpDate: 1.5,
+        isActive: 1.0,
+        createdAt: 1.5,
+      };
+
+      // Filter to visible columns
+      const visible = allColumns.filter((col) => visibleColumnKeys.includes(col.key));
+
+      // Calculate total ratio
+      const totalRatio = visible.reduce((sum, col) => sum + (columnWidthRatios[col.key] || 1.0), 0);
+
+      // Calculate actual widths
+      return visible.map((col) => {
+        const ratio = columnWidthRatios[col.key] || 1.0;
+        const width = Math.floor((availableWidth * ratio) / totalRatio);
+        return { ...col, width };
+      });
+    }, [allColumns, visibleColumnKeys]);
+
+    // Handle taps outside of active row to close swipe actions
+    const handleContainerPress = useCallback(() => {
+      if (activeRowId) {
+        closeActiveRow();
+      }
+    }, [activeRowId, closeActiveRow]);
+
+    // Handle scroll events to close active row
+    const handleScroll = useCallback(() => {
+      if (activeRowId) {
+        closeActiveRow();
+      }
+    }, [activeRowId, closeActiveRow]);
+
+    // Calculate total table width
+    const tableWidth = useMemo(() => {
+      return displayColumns.reduce((sum, col) => sum + col.width, 0);
+    }, [displayColumns]);
+
+    // Sort handler - Single column sorting only for mobile
+    const handleSort = useCallback(
+      (columnKey: string) => {
+        if (!onSort) return;
+
+        const currentSort = sortConfigs?.[0];
+
+        // If clicking the same column, toggle direction (asc -> desc -> no sort)
+        if (currentSort?.columnKey === columnKey) {
+          if (currentSort.direction === "asc") {
+            // Change to descending
+            onSort([{ columnKey, direction: "desc", order: 0 }]);
+          } else {
+            // Remove sort (back to default)
+            onSort([]);
+          }
+        } else {
+          // New column clicked, sort ascending
+          onSort([{ columnKey, direction: "asc", order: 0 }]);
+        }
+      },
+      [sortConfigs, onSort],
+    );
+
+    // Column renderer using accessor
+    const renderColumnValue = useCallback((warning: Warning, column: TableColumn) => {
+      return column.accessor(warning);
+    }, []);
+
+    // Viewability callback for aggressive prefetching
+    // Triggers prefetch when user scrolls to 70% of loaded items
+    const handleViewableItemsChanged = React.useMemo(
+      () => ({
+        onViewableItemsChanged: ({ viewableItems }: any) => {
+          if (!onPrefetch || prefetchTriggeredRef.current) return;
+
+          const lastViewableIndex = viewableItems[viewableItems.length - 1]?.index;
+          if (lastViewableIndex !== undefined && lastViewableIndex !== null) {
+            const totalItems = warnings.length;
+            const viewabilityThreshold = totalItems * 0.7;
+
+            if (lastViewableIndex >= viewabilityThreshold) {
+              prefetchTriggeredRef.current = true;
+              onPrefetch();
+            }
+          }
+        },
+      }),
+      [onPrefetch, warnings.length],
+    );
+
+    const viewabilityConfig = React.useMemo(
+      () => ({
+        itemVisiblePercentThreshold: 50,
+        minimumViewTime: 100,
+      }),
+      [],
+    );
+
+    // Reset prefetch flag when data changes (new page loaded)
+    React.useEffect(() => {
+      prefetchTriggeredRef.current = false;
+    }, [warnings.length]);
+
+    // Header component
+    const renderHeader = useCallback(
+      () => (
+        <View style={styles.headerWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={tableWidth > availableWidth}
+            style={StyleSheet.flatten([
+              styles.headerContainer,
+              {
+                backgroundColor: isDark ? extendedColors.neutral[800] : extendedColors.neutral[100],
+              },
+            ])}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+          >
+            <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
+              {displayColumns.map((column) => {
+                // Single column sort - check if this column is currently sorted
+                const sortConfig = sortConfigs?.[0]?.columnKey === column.key ? sortConfigs[0] : null;
+
+                return (
+                  <TouchableOpacity
+                    key={column.key}
+                    style={StyleSheet.flatten([styles.headerCell, { width: column.width }])}
+                    onPress={() => column.sortable && handleSort(column.key)}
+                    disabled={!column.sortable}
+                    activeOpacity={column.sortable ? 0.7 : 1}
+                  >
+                    <View style={styles.headerCellContent}>
+                      <ThemedText style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])} numberOfLines={1}>
+                        {column.header}
+                      </ThemedText>
+                      {column.sortable &&
+                        (sortConfig ? (
+                          sortConfig.direction === "asc" ? (
+                            <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                          ) : (
+                            <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                          )
+                        ) : (
+                          <Icon name="arrows-sort" size="sm" color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
+                        ))}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </View>
+      ),
+      [colors, isDark, tableWidth, displayColumns, sortConfigs, handleSort],
+    );
+
+    // Row component
+    const renderRow = useCallback(
+      ({ item, index }: { item: Warning; index: number }) => {
+        const isEven = index % 2 === 0;
+
+        if (enableSwipeActions && (onWarningEdit || onWarningDelete)) {
+          return (
+            <TeamWarningTableRowSwipe
+              key={item.id}
+              warningId={item.id}
+              warningLabel={`Advertência de ${item.collaborator?.name}`}
+              onEdit={onWarningEdit}
+              onDelete={onWarningDelete}
+              disabled={false}
+            >
+              {(_isActive) => (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  scrollEnabled={tableWidth > availableWidth}
+                  style={StyleSheet.flatten([
+                    styles.row,
+                    {
+                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                    },
+                  ])}
+                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                >
+                  <Pressable
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    onPress={() => onWarningPress?.(item.id)}
+                    android_ripple={{ color: colors.primary + "20" }}
+                  >
+                    {displayColumns.map((column) => (
+                      <View
+                        key={column.key}
+                        style={StyleSheet.flatten([
+                          styles.cell,
+                          { width: column.width },
+                          column.align === "center" && styles.centerAlign,
+                          column.align === "right" && styles.rightAlign,
+                        ])}
+                      >
+                        {renderColumnValue(item, column)}
+                      </View>
+                    ))}
+                  </Pressable>
+                </ScrollView>
+              )}
+            </TeamWarningTableRowSwipe>
+          );
+        }
+
+        // Non-swipeable version
+        return (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={tableWidth > availableWidth}
+            style={StyleSheet.flatten([
+              styles.row,
+              {
+                backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+              },
+            ])}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+          >
+            <Pressable
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              onPress={() => onWarningPress?.(item.id)}
+              android_ripple={{ color: colors.primary + "20" }}
+            >
+              {displayColumns.map((column) => (
+                <View
+                  key={column.key}
+                  style={StyleSheet.flatten([
+                    styles.cell,
+                    { width: column.width },
+                    column.align === "center" && styles.centerAlign,
+                    column.align === "right" && styles.rightAlign,
+                  ])}
+                >
+                  {renderColumnValue(item, column)}
+                </View>
+              ))}
+            </Pressable>
+          </ScrollView>
+        );
+      },
+      [
+        colors,
+        tableWidth,
+        displayColumns,
+        onWarningPress,
+        renderColumnValue,
+        enableSwipeActions,
+        onWarningEdit,
+        onWarningDelete,
+        isDark,
+      ],
+    );
+
+    // Loading footer component
+    const renderFooter = useCallback(() => {
+      if (!loadingMore) return null;
+
+      return (
+        <View style={styles.loadingFooter}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>Carregando mais...</ThemedText>
+        </View>
+      );
+    }, [loadingMore, colors.primary]);
+
+    // Empty state component
+    const renderEmpty = useCallback(
+      () => (
+        <View style={styles.emptyContainer}>
+          <Icon name="alert-triangle" size="xl" variant="muted" />
+          <ThemedText style={styles.emptyTitle}>Nenhuma advertência encontrada</ThemedText>
+          <ThemedText style={styles.emptySubtitle}>Tente ajustar os filtros ou adicionar novas advertências</ThemedText>
+        </View>
+      ),
+      [],
+    );
+
+    // Main loading state
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>Carregando advertências...</ThemedText>
+        </View>
+      );
+    }
+
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <ThemedText style={styles.loadingText}>Carregando advertências...</ThemedText>
+      <View style={styles.wrapper}>
+        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background, borderColor: colors.border }])} onPress={handleContainerPress}>
+          {renderHeader()}
+          <FlatList
+            data={warnings}
+            renderItem={renderRow}
+            keyExtractor={(warning) => warning.id}
+            refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} /> : undefined}
+            onEndReached={onEndReached}
+            onEndReachedThreshold={0.8}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            onViewableItemsChanged={handleViewableItemsChanged.onViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
+            ListFooterComponent={renderFooter}
+            ListEmptyComponent={renderEmpty}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={15}
+            windowSize={11}
+            initialNumToRender={15}
+            updateCellsBatchingPeriod={100}
+            style={styles.flatList}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ flexGrow: 1 }}
+          />
+        </Pressable>
       </View>
     );
-  }
-
-  return (
-    <FlatList
-      data={warnings}
-      renderItem={renderRow}
-      keyExtractor={(item) => item.id}
-      refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} /> : undefined}
-      ListEmptyComponent={renderEmpty}
-      contentContainerStyle={warnings.length === 0 ? styles.emptyListContent : styles.listContent}
-      showsVerticalScrollIndicator={false}
-    />
-  );
-});
+  },
+);
 
 const styles = StyleSheet.create({
-  warningCard: {
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+  wrapper: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingBottom: 16,
+    backgroundColor: "transparent",
   },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.sm,
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  userSection: {
+  headerWrapper: {
+    flexDirection: "column",
+  },
+  headerContainer: {
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1,
-    marginRight: spacing.sm,
+    minHeight: 40,
   },
-  userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  headerCell: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+    minHeight: 40,
+    justifyContent: "center",
+  },
+  headerText: {
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
+    textTransform: "uppercase",
+    lineHeight: 12,
+    color: "#000000",
+  },
+  headerCellContent: {
+    display: "flex",
+    alignItems: "flex-start",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  flatList: {
+    flex: 1,
+  },
+  row: {
+  },
+  rowContent: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    minHeight: 36,
+  },
+  cell: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 6,
+    justifyContent: "center",
+    minHeight: 36,
+  },
+  centerAlign: {
+    alignItems: "center",
+  },
+  rightAlign: {
+    alignItems: "flex-end",
+  },
+  cellText: {
+    fontSize: fontSize.xs,
+  },
+  nameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: spacing.sm,
   },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    marginBottom: 2,
-  },
-  categoryLabel: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
-  },
-  reasonSection: {
-    marginBottom: spacing.sm,
-  },
-  reasonText: {
-    fontSize: fontSize.sm,
-    lineHeight: 20,
-    opacity: 0.8,
-  },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0, 0, 0, 0.05)",
-  },
-  dateSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  dateText: {
+  avatarText: {
     fontSize: fontSize.xs,
-    opacity: 0.7,
+    fontWeight: fontWeight.semibold,
+  },
+  nameText: {
+    flex: 1,
+    fontWeight: fontWeight.medium,
+    fontSize: fontSize.xs,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     gap: spacing.md,
-    paddingVertical: spacing.xxl,
+  },
+  loadingFooter: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
   },
   loadingText: {
     fontSize: fontSize.sm,
@@ -240,19 +663,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
-    textAlign: "center",
   },
   emptySubtitle: {
     fontSize: fontSize.sm,
     opacity: 0.7,
     textAlign: "center",
     paddingHorizontal: spacing.xl,
-  },
-  emptyListContent: {
-    flexGrow: 1,
-  },
-  listContent: {
-    paddingBottom: spacing.md,
   },
 });
 

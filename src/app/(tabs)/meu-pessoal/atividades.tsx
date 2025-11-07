@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, FlatList, RefreshControl } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useAuth } from "@/contexts/auth-context";
 import { useActivitiesInfiniteMobile } from "@/hooks";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -8,19 +8,20 @@ import { Card } from "@/components/ui/card";
 import { SearchBar } from "@/components/ui/search-bar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorScreen } from "@/components/ui/error-screen";
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
+import { ListActionButton } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import {
-  IconClock,
-  IconUser,
-  IconClipboard,
-  IconCalendar,
-} from "@tabler/icons-react-native";
+import { IconFilter, IconList, IconClock } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { formatDateTime, formatDuration } from "@/utils";
+import { TeamActivityTable, createColumnDefinitions } from "@/components/my-team/activity/list/team-activity-table";
+import { TeamActivityFilterTags } from "@/components/my-team/activity/list/team-activity-filter-tags";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { TeamActivityFilterDrawerContent } from "@/components/my-team/activity/list/team-activity-filter-drawer-content";
+import { TeamActivityColumnDrawerContent } from "@/components/my-team/activity/list/team-activity-column-drawer-content";
+import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
+import { useTableSort } from "@/hooks/useTableSort";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
 
 export default function TeamActivitiesScreen() {
   const { colors } = useTheme();
@@ -30,20 +31,107 @@ export default function TeamActivitiesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
+  const searchInputRef = React.useRef<any>(null);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
+
+  // Filter state
+  const [filters, setFilters] = useState<{
+    operations?: string[];
+    reasons?: string[];
+    userIds?: string[];
+    itemIds?: string[];
+    quantityRange?: { min?: number; max?: number };
+    createdAt?: { gte?: Date; lte?: Date };
+  }>({});
 
   // Check if user is a team leader
   const isTeamLeader = currentUser?.managedSectorId || false;
 
-  // Build query parameters for team activities
+  const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
+    [{ columnKey: "createdAt", direction: "desc", order: 0 }],
+    1, // Single column sort only
+    false
+  );
+
+  const {
+    visibleColumns,
+    setVisibleColumns,
+  } = useColumnVisibility(
+    "team-activities",
+    ["itemCode", "itemName", "operation", "quantity", "userName"],
+    ["itemCode", "itemName", "operation", "quantity", "userName", "reason", "createdAt"]
+  );
+
+  // Build API query
+  const buildWhereClause = useCallback(() => {
+    if (!isTeamLeader || !currentUser?.managedSectorId) return undefined;
+
+    const where: any = {
+      user: {
+        sectorId: currentUser.managedSectorId,
+      },
+    };
+
+    if (filters.operations?.length) {
+      where.operation = { in: filters.operations };
+    }
+
+    if (filters.reasons?.length) {
+      where.reason = { in: filters.reasons };
+    }
+
+    if (filters.userIds?.length) {
+      where.userId = { in: filters.userIds };
+    }
+
+    if (filters.itemIds?.length) {
+      where.itemId = { in: filters.itemIds };
+    }
+
+    if (filters.quantityRange?.min !== undefined || filters.quantityRange?.max !== undefined) {
+      where.quantity = {};
+      if (filters.quantityRange.min !== undefined) {
+        where.quantity.gte = filters.quantityRange.min;
+      }
+      if (filters.quantityRange.max !== undefined) {
+        where.quantity.lte = filters.quantityRange.max;
+      }
+    }
+
+    if (filters.createdAt?.gte || filters.createdAt?.lte) {
+      where.createdAt = {};
+      if (filters.createdAt.gte) {
+        where.createdAt.gte = filters.createdAt.gte;
+      }
+      if (filters.createdAt.lte) {
+        where.createdAt.lte = filters.createdAt.lte;
+      }
+    }
+
+    return where;
+  }, [isTeamLeader, currentUser?.managedSectorId, filters]);
+
   const queryParams = useMemo(() => {
     if (!isTeamLeader || !currentUser?.managedSectorId) return null;
 
-    const params: any = {
-      where: {
-        user: {
-          sectorId: currentUser.managedSectorId,
+    return {
+      orderBy: buildOrderBy(
+        {
+          itemCode: "item.uniCode",
+          itemName: "item.name",
+          operation: "operation",
+          quantity: "quantity",
+          userName: "user.name",
+          reason: "reason",
+          createdAt: "createdAt",
         },
-      },
+        { createdAt: "desc" }
+      ),
+      ...(searchText ? { searchingFor: searchText } : {}),
+      where: buildWhereClause(),
       include: {
         user: {
           include: {
@@ -51,18 +139,9 @@ export default function TeamActivitiesScreen() {
           },
         },
         item: true,
-        order: true,
-        orderItem: true,
       },
-      orderBy: { createdAt: "desc" },
     };
-
-    if (searchText) {
-      params.searchingFor = searchText;
-    }
-
-    return params;
-  }, [isTeamLeader, currentUser?.managedSectorId, searchText]);
+  }, [isTeamLeader, currentUser?.managedSectorId, searchText, buildWhereClause, buildOrderBy]);
 
   const {
     items: activities,
@@ -75,6 +154,8 @@ export default function TeamActivitiesScreen() {
     totalItemsLoaded,
     totalCount,
     refresh,
+    prefetchNext,
+    shouldPrefetch,
   } = useActivitiesInfiniteMobile(queryParams || {}, {
     enabled: !!queryParams,
   });
@@ -96,6 +177,52 @@ export default function TeamActivitiesScreen() {
     setDisplaySearchText(text);
   }, []);
 
+  const handleClearFilters = useCallback(() => {
+    setFilters({});
+    setSearchText("");
+    setDisplaySearchText("");
+  }, []);
+
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumns(newColumns);
+  }, [setVisibleColumns]);
+
+  const handleOpenFilters = useCallback(() => {
+    setIsColumnPanelOpen(false);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
+
+  const handleOpenColumns = useCallback(() => {
+    setIsFilterPanelOpen(false);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
+
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.operations?.length) count++;
+    if (filters.reasons?.length) count++;
+    if (filters.userIds?.length) count++;
+    if (filters.itemIds?.length) count++;
+    if (filters.quantityRange?.min !== undefined || filters.quantityRange?.max !== undefined) count++;
+    if (filters.createdAt?.gte || filters.createdAt?.lte) count++;
+    return count;
+  }, [filters]);
+
+  // Only show skeleton on initial load
+  const isInitialLoad = isLoading && activities.length === 0;
+
   // Show access denied if not a team leader
   if (!isTeamLeader) {
     return (
@@ -115,75 +242,7 @@ export default function TeamActivitiesScreen() {
     );
   }
 
-  const renderActivityItem = ({ item }: { item: any }) => (
-    <Card style={styles.activityCard}>
-      <View style={styles.activityHeader}>
-        <View style={styles.userInfo}>
-          <Avatar
-            source={item.user?.avatar?.url ? { uri: item.user.avatar.url } : undefined}
-            fallback={item.user?.name?.[0]?.toUpperCase() || "U"}
-            size={40}
-          />
-          <View style={styles.userDetails}>
-            <ThemedText style={[styles.userName, { color: colors.foreground }]}>
-              {item.user?.name || "Usuário"}
-            </ThemedText>
-            {item.user?.position && (
-              <ThemedText style={[styles.userPosition, { color: colors.mutedForeground }]}>
-                {item.user.position.name}
-              </ThemedText>
-            )}
-          </View>
-        </View>
-        <Badge variant="secondary">
-          <ThemedText style={[styles.badgeText, { color: colors.mutedForeground }]}>
-            {item.type || "ATIVIDADE"}
-          </ThemedText>
-        </Badge>
-      </View>
-
-      <View style={styles.activityContent}>
-        {item.description && (
-          <View style={styles.descriptionRow}>
-            <IconClipboard size={16} color={colors.mutedForeground} />
-            <ThemedText style={[styles.description, { color: colors.foreground }]}>
-              {item.description}
-            </ThemedText>
-          </View>
-        )}
-
-        {item.item && (
-          <View style={styles.itemRow}>
-            <ThemedText style={[styles.itemLabel, { color: colors.mutedForeground }]}>
-              Item:
-            </ThemedText>
-            <ThemedText style={[styles.itemValue, { color: colors.foreground }]}>
-              {item.item.name}
-            </ThemedText>
-          </View>
-        )}
-
-        <View style={styles.metaRow}>
-          <View style={styles.metaItem}>
-            <IconCalendar size={14} color={colors.mutedForeground} />
-            <ThemedText style={[styles.metaText, { color: colors.mutedForeground }]}>
-              {formatDateTime(item.createdAt)}
-            </ThemedText>
-          </View>
-          {item.duration && (
-            <View style={styles.metaItem}>
-              <IconClock size={14} color={colors.mutedForeground} />
-              <ThemedText style={[styles.metaText, { color: colors.mutedForeground }]}>
-                {formatDuration(item.duration)}
-              </ThemedText>
-            </View>
-          )}
-        </View>
-      </View>
-    </Card>
-  );
-
-  if (isLoading && activities.length === 0) {
+  if (isInitialLoad) {
     return (
       <ThemedView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -212,78 +271,108 @@ export default function TeamActivitiesScreen() {
   const hasActivities = Array.isArray(activities) && activities.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { paddingBottom: insets.bottom }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <ThemedText style={[styles.title, { color: colors.foreground }]}>
-          Atividades da Equipe
-        </ThemedText>
-        <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          {currentUser?.sector?.name || "Setor"}
-        </ThemedText>
-      </View>
-
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <SearchBar
-          value={displaySearchText}
-          onChangeText={handleDisplaySearchChange}
-          onSearch={handleSearch}
-          placeholder="Buscar atividades..."
-          style={styles.searchBar}
-          debounceMs={300}
-          loading={isRefetching && !isFetchingNextPage}
-        />
-      </View>
-
-      {hasActivities ? (
-        <>
-          <FlatList
-            data={activities}
-            renderItem={renderActivityItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing || isRefetching}
-                onRefresh={handleRefresh}
-                colors={[colors.primary]}
-                tintColor={colors.primary}
-              />
-            }
-            onEndReached={canLoadMore ? loadMore : undefined}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={
-              isFetchingNextPage ? (
-                <View style={styles.loadingMore}>
-                  <ThemedText style={{ color: colors.mutedForeground }}>
-                    Carregando mais...
-                  </ThemedText>
-                </View>
-              ) : null
-            }
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search and Filter */}
+        <View style={[styles.searchContainer]}>
+          <SearchBar
+            ref={searchInputRef}
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar atividades..."
+            style={styles.searchBar}
+            debounceMs={300}
+            loading={isRefetching && !isFetchingNextPage}
           />
-          <ItemsCountDisplay
-            loadedCount={totalItemsLoaded}
-            totalCount={totalCount}
-            isLoading={isFetchingNextPage}
-          />
-        </>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "clock"}
-            title={searchText ? "Nenhuma atividade encontrada" : "Sem atividades"}
-            description={
-              searchText
-                ? `Nenhum resultado para "${searchText}"`
-                : "Não há atividades registradas para a equipe"
-            }
-          />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumns.size}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
         </View>
-      )}
-    </ThemedView>
+
+        {/* Individual filter tags */}
+        <TeamActivityFilterTags
+          filters={filters}
+          searchText={searchText}
+          onFilterChange={setFilters}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
+        />
+
+        {hasActivities ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <TeamActivityTable
+              activities={activities}
+              onRefresh={handleRefresh}
+              onEndReached={canLoadMore ? loadMore : undefined}
+              onPrefetch={shouldPrefetch ? prefetchNext : undefined}
+              refreshing={refreshing || isRefetching}
+              loading={false}
+              loadingMore={isFetchingNextPage}
+              sortConfigs={sortConfigs}
+              onSort={(configs) => {
+                // Handle empty array (clear sort)
+                if (configs.length === 0) {
+                  handleSort("createdAt"); // Reset to default
+                } else {
+                  handleSort(configs[0].columnKey);
+                }
+              }}
+              visibleColumnKeys={Array.from(visibleColumns) as string[]}
+              enableSwipeActions={false}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "clock"}
+              title={searchText ? "Nenhuma atividade encontrada" : "Sem atividades"}
+              description={
+                searchText
+                  ? `Nenhum resultado para "${searchText}"`
+                  : "Não há atividades registradas para a equipe"
+              }
+            />
+          </View>
+        )}
+
+        {/* Items count */}
+        {hasActivities && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
+      </ThemedView>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <TeamActivityFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <TeamActivityColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 
@@ -291,10 +380,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+  searchContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 8,
+    alignItems: "center",
+  },
+  searchBar: {
+    flex: 1,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 8,
   },
   title: {
     fontSize: fontSize.xl,
@@ -303,86 +401,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: fontSize.sm,
-  },
-  searchContainer: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  searchBar: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xl,
-  },
-  activityCard: {
-    marginBottom: spacing.sm,
-    padding: spacing.md,
-  },
-  activityHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  userDetails: {
-    marginLeft: spacing.sm,
-    flex: 1,
-  },
-  userName: {
-    fontSize: fontSize.base,
-    fontWeight: "600",
-  },
-  userPosition: {
-    fontSize: fontSize.xs,
-  },
-  badgeText: {
-    fontSize: fontSize.xs,
-  },
-  activityContent: {
-    gap: spacing.xs,
-  },
-  descriptionRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: spacing.xs,
-  },
-  description: {
-    fontSize: fontSize.sm,
-    marginLeft: spacing.xs,
-    flex: 1,
-  },
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.xs,
-  },
-  itemLabel: {
-    fontSize: fontSize.sm,
-    marginRight: spacing.xs,
-  },
-  itemValue: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    marginTop: spacing.xs,
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  metaText: {
-    fontSize: fontSize.xs,
   },
   loadingContainer: {
     flex: 1,
@@ -395,10 +413,6 @@ const styles = StyleSheet.create({
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingMore: {
-    paddingVertical: spacing.md,
     alignItems: "center",
   },
 });

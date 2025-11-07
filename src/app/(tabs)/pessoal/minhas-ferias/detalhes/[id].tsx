@@ -1,38 +1,60 @@
-
-import { View, ScrollView, StyleSheet, Alert } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { ThemedView } from "@/components/ui/themed-view";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
-import { LoadingScreen } from "@/components/ui/loading-screen";
-import { ErrorScreen } from "@/components/ui/error-screen";
-import { IconArrowLeft, IconTrash } from "@tabler/icons-react-native";
-import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
-import { useAuth } from "@/contexts/auth-context";
+import { useState, useCallback } from "react";
+import { View, ScrollView, RefreshControl, StyleSheet, Alert, TouchableOpacity } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
 import { useVacation, useVacationMutations } from '../../../../../hooks';
-import { VacationCard } from "@/components/human-resources/vacation/detail/vacation-card";
+import { routes, CHANGE_LOG_ENTITY_TYPE, VACATION_STATUS } from '../../../../../constants';
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ThemedText } from "@/components/ui/themed-text";
+import { useTheme } from "@/lib/theme";
+import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { IconBeach, IconTrash, IconX } from "@tabler/icons-react-native";
+import { routeToMobilePath } from "@/lib/route-mapper";
+import { showToast } from "@/components/ui/toast";
+import { useAuth } from "@/contexts/auth-context";
 import { canCancelVacation } from '../../../../../utils';
-import { VACATION_STATUS } from '../../../../../constants';
 
-export default function MyVacationDetailsScreen() {
+// Import modular components
+import {
+  VacationCard,
+  VacationDatesCard,
+  VacationStatusCard,
+  VacationTimelineCard,
+} from "@/components/personal/vacation/detail";
+import { VacationDetailSkeleton } from "@/components/personal/vacation/skeleton/vacation-detail-skeleton";
+
+export default function MyVacationDetailScreen() {
+  const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const router = useRouter();
   const { user } = useAuth();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const vacationId = Array.isArray(id) ? id[0] : id;
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch vacation details
-  const { data: vacationData, isLoading, error, refetch } = useVacation(vacationId, {
+  const id = params?.id || "";
+
+  const {
+    data: response,
+    isLoading,
+    error,
+    refetch,
+  } = useVacation(id, {
     include: {
       user: true,
     },
+    enabled: !!id && id !== "",
   });
+
+  const vacation = response?.data;
 
   // Vacation mutations
   const { updateAsync, deleteAsync, updateMutation, deleteMutation } = useVacationMutations();
 
-  const vacation = vacationData?.data;
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    refetch().finally(() => {
+      setRefreshing(false);
+      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+    });
+  }, [refetch]);
 
   const handleCancel = async () => {
     if (!vacation) return;
@@ -54,22 +76,17 @@ export default function MyVacationDetailsScreen() {
                 },
               });
 
-              Alert.alert(
-                "Férias Canceladas",
-                "Sua solicitação de férias foi cancelada com sucesso.",
-                [
-                  {
-                    text: "OK",
-                    onPress: () => router.back(),
-                  },
-                ]
-              );
+              showToast({
+                message: "Férias canceladas com sucesso",
+                type: "success",
+              });
+
+              refetch();
             } catch (error: any) {
-              Alert.alert(
-                "Erro",
-                error?.message || "Não foi possível cancelar as férias. Tente novamente.",
-                [{ text: "OK" }]
-              );
+              showToast({
+                message: error?.message || "Não foi possível cancelar as férias",
+                type: "error",
+              });
             }
           },
         },
@@ -92,22 +109,17 @@ export default function MyVacationDetailsScreen() {
             try {
               await deleteAsync(vacation.id);
 
-              Alert.alert(
-                "Férias Excluídas",
-                "Sua solicitação de férias foi excluída com sucesso.",
-                [
-                  {
-                    text: "OK",
-                    onPress: () => router.back(),
-                  },
-                ]
-              );
+              showToast({
+                message: "Férias excluídas com sucesso",
+                type: "success",
+              });
+
+              router.back();
             } catch (error: any) {
-              Alert.alert(
-                "Erro",
-                error?.message || "Não foi possível excluir as férias. Tente novamente.",
-                [{ text: "OK" }]
-              );
+              showToast({
+                message: error?.message || "Não foi possível excluir as férias",
+                type: "error",
+              });
             }
           },
         },
@@ -116,16 +128,37 @@ export default function MyVacationDetailsScreen() {
   };
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return (
+      <View style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
+        <View style={styles.container}>
+          <VacationDetailSkeleton />
+        </View>
+      </View>
+    );
   }
 
-  if (error || !vacation) {
+  if (error || !vacation || !id || id === "") {
     return (
-      <ErrorScreen
-        message="Erro ao carregar detalhes das férias"
-        detail={error?.message || "Férias não encontradas"}
-        onRetry={refetch}
-      />
+      <View style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
+        <View style={styles.container}>
+          <Card style={styles.card}>
+            <View style={styles.errorContent}>
+              <View style={StyleSheet.flatten([styles.errorIcon, { backgroundColor: colors.muted }])}>
+                <IconBeach size={32} color={colors.mutedForeground} />
+              </View>
+              <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
+                Férias não encontradas
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
+                As férias solicitadas não foram encontradas ou podem ter sido removidas.
+              </ThemedText>
+              <Button onPress={() => router.back()}>
+                <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
+              </Button>
+            </View>
+          </Card>
+        </View>
+      </View>
     );
   }
 
@@ -133,101 +166,165 @@ export default function MyVacationDetailsScreen() {
   const canCancel = isOwnVacation && canCancelVacation(vacation);
   const canDelete = isOwnVacation && vacation.status === VACATION_STATUS.PENDING;
 
+  // Format vacation name for timeline
+  const vacationName = `Férias de ${vacation.user?.name || 'Colaborador'}`;
+
   return (
-    <ThemedView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Button variant="ghost" size="sm" onPress={() => router.back()} style={styles.backButton}>
-          <IconArrowLeft size={20} color={colors.foreground} />
-          <ThemedText>Voltar</ThemedText>
-        </Button>
-      </View>
+    <ScrollView
+      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.container}>
+        {/* Vacation Name Header Card */}
+        <Card style={styles.headerCard}>
+          <View style={styles.headerContent}>
+            <View style={[styles.headerLeft, { flex: 1 }]}>
+              <IconBeach size={24} color={colors.primary} />
+              <ThemedText style={StyleSheet.flatten([styles.vacationName, { color: colors.foreground }])}>
+                Minhas Férias
+              </ThemedText>
+            </View>
+            {(canCancel || canDelete) && (
+              <View style={styles.headerActions}>
+                {canCancel && (
+                  <TouchableOpacity
+                    onPress={handleCancel}
+                    style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.destructive }])}
+                    activeOpacity={0.7}
+                    disabled={updateMutation.isPending}
+                  >
+                    <IconX size={18} color={colors.destructiveForeground} />
+                  </TouchableOpacity>
+                )}
+                {canDelete && (
+                  <TouchableOpacity
+                    onPress={handleDelete}
+                    style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.destructive }])}
+                    activeOpacity={0.7}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <IconTrash size={18} color={colors.destructiveForeground} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+          </View>
+        </Card>
 
-      {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Modular Components */}
         <VacationCard vacation={vacation} />
+        <VacationDatesCard vacation={vacation} />
+        <VacationStatusCard vacation={vacation} />
 
-        {/* Actions */}
-        {(canCancel || canDelete) && (
-          <View style={styles.actionsContainer}>
-            {canCancel && (
-              <Button
-                variant="outline"
-                onPress={handleCancel}
-                style={styles.actionButton}
-                disabled={updateMutation.isPending}
-              >
-                <ThemedText>{updateMutation.isPending ? "Cancelando..." : "Cancelar Férias"}</ThemedText>
-              </Button>
-            )}
-
-            {canDelete && (
-              <Button
-                variant="destructive"
-                onPress={handleDelete}
-                style={styles.actionButton}
-                disabled={deleteMutation.isPending}
-              >
-                <IconTrash size={18} color={colors.destructiveForeground} />
-                <ThemedText style={{ color: colors.destructiveForeground }}>
-                  {deleteMutation.isPending ? "Excluindo..." : "Excluir"}
-                </ThemedText>
-              </Button>
-            )}
-          </View>
-        )}
-
-        {/* Info for collective vacations */}
+        {/* Collective Vacation Info */}
         {vacation.isCollective && (
-          <View style={StyleSheet.flatten([styles.infoBox, { backgroundColor: colors.muted + "20", borderColor: colors.border }])}>
-            <ThemedText style={styles.infoText}>
-              Esta é uma férias coletiva que se aplica a todos os funcionários. Você não pode cancelar ou excluir férias coletivas.
-            </ThemedText>
-          </View>
+          <Card style={styles.card}>
+            <View style={StyleSheet.flatten([styles.infoBox, { backgroundColor: colors.muted + "20", borderColor: colors.border }])}>
+              <ThemedText style={StyleSheet.flatten([styles.infoText, { color: colors.foreground }])}>
+                Esta é uma férias coletiva que se aplica a todos os funcionários. Você não pode cancelar ou excluir férias coletivas.
+              </ThemedText>
+            </View>
+          </Card>
         )}
-      </ScrollView>
-    </ThemedView>
+
+        {/* Changelog Timeline */}
+        <VacationTimelineCard
+          vacationId={vacation.id}
+          vacationName={vacationName}
+          vacationCreatedAt={vacation.createdAt}
+          maxHeight={400}
+        />
+
+        {/* Bottom spacing */}
+        <View style={{ height: spacing.md }} />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-  },
-  header: {
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    alignSelf: "flex-start",
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-  },
-  actionsContainer: {
-    marginTop: spacing.lg,
+    paddingTop: spacing.sm,
     gap: spacing.md,
   },
-  actionButton: {
+  card: {
+    padding: spacing.md,
+  },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.xs,
+  },
+  vacationName: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    flex: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
     justifyContent: "center",
-    gap: spacing.xs,
+  },
+  errorContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.xxl,
+  },
+  errorIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.lg,
+  },
+  errorTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.semibold,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  errorDescription: {
+    fontSize: fontSize.base,
+    textAlign: "center",
+    marginBottom: spacing.xl,
   },
   infoBox: {
-    marginTop: spacing.lg,
     padding: spacing.md,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
   },
   infoText: {
-    fontSize: 14,
-    lineHeight: 20,
-    opacity: 0.8,
+    fontSize: fontSize.sm,
+    lineHeight: fontSize.sm * 1.5,
   },
 });

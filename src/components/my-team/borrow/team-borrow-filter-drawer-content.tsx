@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
-import { IconFilter, IconX, IconCalendarPlus, IconUsers, IconChecklist } from '@tabler/icons-react-native';
+import { IconFilter, IconX, IconCalendarPlus, IconUsers, IconChecklist, IconCategory, IconAlertTriangle } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
@@ -13,6 +13,8 @@ import type { User } from '@/types';
 export interface TeamBorrowFilters {
   userIds?: string[];
   statuses?: string[];
+  categoryIds?: string[];
+  isOverdue?: boolean;
   startDate?: Date;
   endDate?: Date;
   returnStartDate?: Date;
@@ -25,6 +27,7 @@ interface TeamBorrowFilterDrawerContentProps {
   onClear: () => void;
   activeFiltersCount: number;
   teamMembers: User[];
+  categories?: Array<{ id: string; name: string }>;
   onClose?: () => void;
 }
 
@@ -34,6 +37,7 @@ export function TeamBorrowFilterDrawerContent({
   onClear,
   activeFiltersCount,
   teamMembers,
+  categories = [],
   onClose,
 }: TeamBorrowFilterDrawerContentProps) {
   const { colors } = useTheme();
@@ -44,6 +48,8 @@ export function TeamBorrowFilterDrawerContent({
   const [localFilters, setLocalFilters] = useState<TeamBorrowFilters>(() => ({
     userIds: filters.userIds || [],
     statuses: filters.statuses || [],
+    categoryIds: filters.categoryIds || [],
+    isOverdue: filters.isOverdue,
     startDate: filters.startDate,
     endDate: filters.endDate,
     returnStartDate: filters.returnStartDate,
@@ -59,6 +65,14 @@ export function TeamBorrowFilterDrawerContent({
 
     if (localFilters.statuses && localFilters.statuses.length > 0) {
       newFilters.statuses = localFilters.statuses;
+    }
+
+    if (localFilters.categoryIds && localFilters.categoryIds.length > 0) {
+      newFilters.categoryIds = localFilters.categoryIds;
+    }
+
+    if (localFilters.isOverdue !== undefined) {
+      newFilters.isOverdue = localFilters.isOverdue;
     }
 
     if (localFilters.startDate) {
@@ -106,6 +120,16 @@ export function TeamBorrowFilterDrawerContent({
         label: member.name,
       })),
     [teamMembers]
+  );
+
+  // Prepare category options
+  const categoryOptions = useMemo(
+    () =>
+      categories.map((category) => ({
+        value: category.id,
+        label: category.name,
+      })),
+    [categories]
   );
 
   return (
@@ -163,6 +187,32 @@ export function TeamBorrowFilterDrawerContent({
           </View>
         )}
 
+        {/* Item Categories */}
+        {categories.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <IconCategory size={18} color={colors.mutedForeground} />
+              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+                Tipo de Item
+              </ThemedText>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
+                Selecionar Categorias
+              </ThemedText>
+              <Combobox
+                options={categoryOptions}
+                selectedValues={localFilters.categoryIds || []}
+                onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, categoryIds: values }))}
+                placeholder="Todas as categorias"
+                searchPlaceholder="Buscar categorias..."
+                emptyText="Nenhuma categoria encontrada"
+              />
+            </View>
+          </View>
+        )}
+
         {/* Status */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -194,6 +244,40 @@ export function TeamBorrowFilterDrawerContent({
               />
             </View>
           ))}
+        </View>
+
+        {/* Overdue Filter */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconAlertTriangle size={18} color={colors.mutedForeground} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Empréstimos Atrasados
+            </ThemedText>
+          </View>
+
+          <View style={[styles.filterItem, { borderBottomColor: colors.border }]}>
+            <TouchableOpacity
+              style={styles.filterTouchable}
+              onPress={() => setLocalFilters((prev) => ({ ...prev, isOverdue: !prev.isOverdue }))}
+              activeOpacity={0.7}
+            >
+              <View>
+                <ThemedText style={styles.filterLabel}>
+                  Apenas Atrasados
+                </ThemedText>
+                <ThemedText style={[styles.filterDescription, { color: colors.mutedForeground }]}>
+                  Mostrar apenas empréstimos com devolução vencida
+                </ThemedText>
+              </View>
+            </TouchableOpacity>
+            <RNSwitch
+              value={localFilters.isOverdue ?? false}
+              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, isOverdue: value }))}
+              trackColor={{ false: colors.muted, true: colors.primary }}
+              thumbColor={localFilters.isOverdue ? colors.primaryForeground : "#f4f3f4"}
+              ios_backgroundColor={colors.muted}
+            />
+          </View>
         </View>
 
         {/* Borrow Date Range */}
@@ -335,6 +419,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "500",
     marginBottom: 2,
+  },
+  filterDescription: {
+    fontSize: 13,
   },
   inputGroup: {
     marginBottom: 10,

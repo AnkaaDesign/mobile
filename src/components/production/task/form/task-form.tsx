@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useForm, Controller, FormProvider } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useEditForm } from "@/hooks/useEditForm";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import * as DocumentPicker from "expo-document-picker";
-import { createFormDataWithContext, prepareFilesForUpload } from "@/utils/form-data-context";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createFormDataWithContext } from "@/utils/form-data-context";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -15,19 +15,21 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
-import { SimpleFormField } from "@/components/ui";
+import { SimpleFormField, FileUploadField } from "@/components/ui";
+import type { FileWithPreview } from "@/components/ui/file-upload-field";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius, fontWeight } from "@/constants/design-system";
-import { useSectors, useLayoutMutations } from '../../../../hooks';
-import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS } from '../../../../constants';
-import { IconLoader, IconX, IconDeviceFloppy, IconClipboardList } from "@tabler/icons-react-native";
+import { useSectors } from '../../../../hooks';
+import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES } from '../../../../constants';
+import { IconLoader, IconX, IconDeviceFloppy, IconTrash } from "@tabler/icons-react-native";
 import { CustomerSelector } from "./customer-selector";
 import { ServiceSelector } from "./service-selector";
 import { GeneralPaintingSelector, LogoPaintsSelector } from "./paint-selector";
 import { LayoutForm } from "@/components/production/layout/layout-form";
+import { useAuth } from "@/hooks/useAuth";
 import type { LayoutCreateFormData } from "@/schemas";
 
 // Enhanced Task Form Schema for Mobile with Cross-field Validation
@@ -62,6 +64,11 @@ const taskFormSchema = z.object({
   term: z.date().nullable().optional(),
   generalPaintingId: z.string().uuid().nullable().optional(),
   paintIds: z.array(z.string().uuid()).optional(),
+  artworkIds: z.array(z.string().uuid()).optional(), // General artwork files
+  observation: z.object({
+    description: z.string().min(1, "Descrição é obrigatória"),
+    fileIds: z.array(z.string().min(1, "ID do arquivo inválido")).optional(),
+  }).nullable().optional(),
   services: z.array(z.object({
     description: z.string().min(3, "Mínimo de 3 caracteres").max(400, "Máximo de 400 caracteres"),
     status: z.enum(Object.values(SERVICE_ORDER_STATUS) as [string, ...string[]]).optional(),
@@ -133,12 +140,22 @@ const TASK_STATUS_OPTIONS = [
 
 export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCancel, isSubmitting }: TaskFormProps) {
   const { colors } = useTheme();
+  const { data: user } = useAuth();
   const [sectorSearch, setSectorSearch] = useState("");
 
-  // File upload state (for future implementation with expo-document-picker)
-  const [budgetFiles, setBudgetFiles] = useState<any[]>([]);
-  const [invoiceFiles, setInvoiceFiles] = useState<any[]>([]);
-  const [receiptFiles, setReceiptFiles] = useState<any[]>([]);
+  // Get user role/privileges for field restrictions
+  const userPrivilege = user?.sector?.privileges;
+  const isFinancialSector = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+  const isWarehouseSector = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
+  const isDesignerSector = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
+  const isLogisticSector = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+
+  // File upload state
+  const [artworkFiles, setArtworkFiles] = useState<FileWithPreview[]>([]);
+  const [observationFiles, setObservationFiles] = useState<FileWithPreview[]>([]);
+
+  // Observation section state
+  const [isObservationOpen, setIsObservationOpen] = useState(false);
 
   // Layout state - Initialize with existingLayouts if available (edit mode)
   const [selectedLayoutSide, setSelectedLayoutSide] = useState<"left" | "right" | "back">("left");
@@ -187,6 +204,8 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
     term: initialData?.term || null,
     generalPaintingId: initialData?.generalPaintingId || null,
     paintIds: initialData?.paintIds || [],
+    artworkIds: initialData?.artworkIds || [],
+    observation: initialData?.observation || null,
     services: initialData?.services || [{ description: "", status: SERVICE_ORDER_STATUS.PENDING }],
     status: initialData?.status || TASK_STATUS.PENDING,
     commission: initialData?.commission || COMMISSION_STATUS.FULL_COMMISSION,
@@ -226,8 +245,8 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
     label: sector.name,
   })) || [];
 
-  // File picking functions
-  const pickBudgetFiles = async () => {
+  // File picking functions for artwork
+  const pickArtworkFiles = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: "*/*",
@@ -236,20 +255,26 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
       });
 
       if (!result.canceled && result.assets) {
-        const newFiles = result.assets.map((asset) => ({
+        const newFiles: FileWithPreview[] = result.assets.map((asset) => ({
           uri: asset.uri,
           name: asset.name,
           type: asset.mimeType || "application/octet-stream",
+          size: asset.size || 0,
         }));
-        setBudgetFiles([...budgetFiles, ...newFiles]);
+        setArtworkFiles([...artworkFiles, ...newFiles]);
       }
     } catch (error) {
-      console.error("Error picking budget files:", error);
+      console.error("Error picking artwork files:", error);
       Alert.alert("Erro", "Não foi possível selecionar os arquivos");
     }
   };
 
-  const pickInvoiceFiles = async () => {
+  const removeArtworkFile = (index: number) => {
+    setArtworkFiles(artworkFiles.filter((_, i) => i !== index));
+  };
+
+  // File picking functions for observation
+  const pickObservationFiles = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: "*/*",
@@ -258,62 +283,48 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
       });
 
       if (!result.canceled && result.assets) {
-        const newFiles = result.assets.map((asset) => ({
+        const newFiles: FileWithPreview[] = result.assets.map((asset) => ({
           uri: asset.uri,
           name: asset.name,
           type: asset.mimeType || "application/octet-stream",
+          size: asset.size || 0,
         }));
-        setInvoiceFiles([...invoiceFiles, ...newFiles]);
+        setObservationFiles([...observationFiles, ...newFiles]);
       }
     } catch (error) {
-      console.error("Error picking invoice files:", error);
+      console.error("Error picking observation files:", error);
       Alert.alert("Erro", "Não foi possível selecionar os arquivos");
     }
   };
 
-  const pickReceiptFiles = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: "*/*",
-        multiple: true,
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.canceled && result.assets) {
-        const newFiles = result.assets.map((asset) => ({
-          uri: asset.uri,
-          name: asset.name,
-          type: asset.mimeType || "application/octet-stream",
-        }));
-        setReceiptFiles([...receiptFiles, ...newFiles]);
-      }
-    } catch (error) {
-      console.error("Error picking receipt files:", error);
-      Alert.alert("Erro", "Não foi possível selecionar os arquivos");
-    }
-  };
-
-  const removeBudgetFile = (index: number) => {
-    setBudgetFiles(budgetFiles.filter((_, i) => i !== index));
-  };
-
-  const removeInvoiceFile = (index: number) => {
-    setInvoiceFiles(invoiceFiles.filter((_, i) => i !== index));
-  };
-
-  const removeReceiptFile = (index: number) => {
-    setReceiptFiles(receiptFiles.filter((_, i) => i !== index));
+  const removeObservationFile = (index: number) => {
+    setObservationFiles(observationFiles.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (data: TaskFormData) => {
+    // Validate observation if section is open
+    if (isObservationOpen) {
+      if (!data.observation?.description || observationFiles.length === 0) {
+        Alert.alert(
+          "Observação Incompleta",
+          "Por favor, adicione uma descrição e pelo menos um arquivo para a observação."
+        );
+        return;
+      }
+    }
+
     // If we have files, convert to FormData with context for proper file organization
-    if (budgetFiles.length > 0 || invoiceFiles.length > 0 || receiptFiles.length > 0) {
+    if (artworkFiles.length > 0 || observationFiles.length > 0) {
       // Prepare files with proper structure
-      const files = prepareFilesForUpload({
-        budgets: budgetFiles,
-        invoices: invoiceFiles,
-        receipts: receiptFiles,
-      });
+      const files: Record<string, any[]> = {};
+
+      if (artworkFiles.length > 0) {
+        files.artworks = artworkFiles;
+      }
+
+      if (observationFiles.length > 0) {
+        files.observationFiles = observationFiles;
+      }
 
       // Prepare form data (excluding files)
       const formDataFields: Record<string, any> = {
@@ -339,6 +350,13 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
       if (data.startedAt) formDataFields.startedAt = data.startedAt;
       if (data.finishedAt) formDataFields.finishedAt = data.finishedAt;
       if (data.paintIds && data.paintIds.length > 0) formDataFields.paintIds = data.paintIds;
+
+      // Add observation if section is open
+      if (isObservationOpen && data.observation) {
+        formDataFields.observation = {
+          description: data.observation.description,
+        };
+      }
 
       // Add layouts if present - only modified sides (following web implementation)
       if (isLayoutOpen && modifiedLayoutSides.size > 0) {
@@ -382,6 +400,15 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
         chassisNumber: data.chassisNumber?.replace(/\s/g, "").toUpperCase() || null,
         plate: data.plate?.toUpperCase() || null,
       };
+
+      // Add observation if section is open (no files case)
+      if (isObservationOpen && data.observation) {
+        cleanedData.observation = {
+          description: data.observation.description,
+        };
+      } else {
+        delete cleanedData.observation;
+      }
 
       // Add layouts if present - only modified sides (following web implementation)
       if (isLayoutOpen && modifiedLayoutSides.size > 0) {
@@ -442,7 +469,7 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
             <Card style={styles.card}>
               <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
               <View style={styles.cardContent}>
-              {/* Name */}
+              {/* Name - Disabled for financial, warehouse, designer, logistic */}
               <SimpleFormField label="Nome da Tarefa" required error={errors.name}>
                 <Controller
                   control={form.control}
@@ -455,12 +482,13 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
                       placeholder="Ex: Pintura completa do caminhão"
                       maxLength={200}
                       error={!!errors.name}
+                      editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector && !isLogisticSector}
                     />
                   )}
                 />
               </SimpleFormField>
 
-              {/* Customer */}
+              {/* Customer - Disabled for financial, warehouse, designer */}
               <Controller
                 control={form.control}
                 name="customerId"
@@ -468,7 +496,7 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
                   <CustomerSelector
                     value={value}
                     onValueChange={onChange}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector}
                     error={error?.message}
                     required={true}
                   />
@@ -553,7 +581,7 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
                 />
               </SimpleFormField>
 
-              {/* Commission Status */}
+              {/* Commission Status - Disabled for financial sector */}
               <SimpleFormField label="Status de Comissão" error={errors.commission}>
                 <Controller
                   control={form.control}
@@ -569,6 +597,7 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
                       placeholder="Selecione o status de comissão"
                       searchable={false}
                       preferFullScreen={true}
+                      disabled={isSubmitting || isFinancialSector}
                     />
                   )}
                 />
@@ -700,120 +729,97 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
             </View>
           </Card>
 
-          {/* Financial */}
-          <Card style={styles.card}>
-            <ThemedText style={styles.sectionTitle}>Documentos Financeiros</ThemedText>
-            <View style={styles.cardContent}>
-              {/* File Uploads */}
-              <View style={styles.fileUploadSection}>
+          {/* Artworks - Hidden for warehouse, financial, logistic users */}
+          {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
+            <Card style={styles.card}>
+              <ThemedText style={styles.sectionTitle}>Artes</ThemedText>
+              <View style={styles.cardContent}>
                 <ThemedText style={styles.sectionNote}>
-                  Documentos Financeiros (Múltiplos Arquivos)
+                  Arquivos de arte gerais (Máximo 5 arquivos)
                 </ThemedText>
+                <FileUploadField
+                  files={artworkFiles}
+                  onRemove={removeArtworkFile}
+                  onAdd={pickArtworkFiles}
+                  maxFiles={5}
+                  label="Adicionar Artes"
+                  disabled={isSubmitting}
+                />
+              </View>
+            </Card>
+          )}
 
-                {/* Budget Files */}
-                <View style={styles.fileUploadItem}>
-                  <Label>Orçamentos ({budgetFiles.length})</Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onPress={pickBudgetFiles}
-                    disabled={isSubmitting}
-                  >
-                    <Icon name="upload" size={16} color={colors.foreground} />
-                    <ThemedText>Adicionar Orçamentos</ThemedText>
-                  </Button>
-                  {budgetFiles.length > 0 && (
-                    <View style={styles.fileList}>
-                      {budgetFiles.map((file, index) => (
-                        <View key={index} style={[styles.fileItem, { borderColor: colors.border }]}>
-                          <ThemedText style={styles.fileName} numberOfLines={1}>
-                            {file.name}
-                          </ThemedText>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onPress={() => removeBudgetFile(index)}
-                            disabled={isSubmitting}
-                            style={styles.removeFileButton}
-                          >
-                            <IconX size={16} color={colors.destructive} />
-                          </Button>
-                        </View>
-                      ))}
-                    </View>
+          {/* Observation Section - Hidden for warehouse, financial, designer, logistic users */}
+          {!isWarehouseSector && !isFinancialSector && !isDesignerSector && !isLogisticSector && (
+            <Card style={styles.card}>
+              <View style={[styles.cardHeaderRow, { justifyContent: 'space-between' }]}>
+                <ThemedText style={styles.sectionTitle}>Observação</ThemedText>
+                <View style={{ flexDirection: 'row', gap: spacing.xs, alignItems: 'center' }}>
+                  {!isObservationOpen && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onPress={() => setIsObservationOpen(true)}
+                      disabled={isSubmitting}
+                    >
+                      <Icon name="plus" size={16} color={colors.foreground} />
+                      <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.sm }}>
+                        Adicionar
+                      </ThemedText>
+                    </Button>
                   )}
-                </View>
-
-                {/* Invoice Files */}
-                <View style={styles.fileUploadItem}>
-                  <Label>Notas Fiscais ({invoiceFiles.length})</Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onPress={pickInvoiceFiles}
-                    disabled={isSubmitting}
-                  >
-                    <Icon name="upload" size={16} color={colors.foreground} />
-                    <ThemedText>Adicionar NFes</ThemedText>
-                  </Button>
-                  {invoiceFiles.length > 0 && (
-                    <View style={styles.fileList}>
-                      {invoiceFiles.map((file, index) => (
-                        <View key={index} style={[styles.fileItem, { borderColor: colors.border }]}>
-                          <ThemedText style={styles.fileName} numberOfLines={1}>
-                            {file.name}
-                          </ThemedText>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onPress={() => removeInvoiceFile(index)}
-                            disabled={isSubmitting}
-                            style={styles.removeFileButton}
-                          >
-                            <IconX size={16} color={colors.destructive} />
-                          </Button>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-
-                {/* Receipt Files */}
-                <View style={styles.fileUploadItem}>
-                  <Label>Recibos ({receiptFiles.length})</Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onPress={pickReceiptFiles}
-                    disabled={isSubmitting}
-                  >
-                    <Icon name="upload" size={16} color={colors.foreground} />
-                    <ThemedText>Adicionar Recibos</ThemedText>
-                  </Button>
-                  {receiptFiles.length > 0 && (
-                    <View style={styles.fileList}>
-                      {receiptFiles.map((file, index) => (
-                        <View key={index} style={[styles.fileItem, { borderColor: colors.border }]}>
-                          <ThemedText style={styles.fileName} numberOfLines={1}>
-                            {file.name}
-                          </ThemedText>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onPress={() => removeReceiptFile(index)}
-                            disabled={isSubmitting}
-                            style={styles.removeFileButton}
-                          >
-                            <IconX size={16} color={colors.destructive} />
-                          </Button>
-                        </View>
-                      ))}
-                    </View>
+                  {isObservationOpen && (
+                    <TouchableOpacity
+                      style={{ padding: spacing.xs }}
+                      onPress={() => {
+                        setIsObservationOpen(false);
+                        setObservationFiles([]);
+                        form.setValue('observation', null);
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      <IconTrash size={18} color={colors.destructive} />
+                    </TouchableOpacity>
                   )}
                 </View>
               </View>
-            </View>
-          </Card>
+
+              {isObservationOpen && (
+                <View style={styles.cardContent}>
+                  {/* Observation Description */}
+                  <SimpleFormField label="Descrição" required error={errors.observation?.description}>
+                    <Controller
+                      control={form.control}
+                      name="observation.description"
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <Textarea
+                          value={value || ""}
+                          onChangeText={onChange}
+                          onBlur={onBlur}
+                          placeholder="Descreva problemas ou observações sobre a tarefa..."
+                          numberOfLines={4}
+                          error={!!errors.observation?.description}
+                        />
+                      )}
+                    />
+                  </SimpleFormField>
+
+                  {/* Observation Files */}
+                  <View>
+                    <Label>Arquivos de Evidência (Máximo 10) *</Label>
+                    <FileUploadField
+                      files={observationFiles}
+                      onRemove={removeObservationFile}
+                      onAdd={pickObservationFiles}
+                      maxFiles={10}
+                      label="Adicionar Arquivos"
+                      disabled={isSubmitting}
+                    />
+                  </View>
+                </View>
+              )}
+            </Card>
+          )}
 
           {/* Services */}
           <Card style={styles.card}>
@@ -868,7 +874,8 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
             </View>
           </Card>
 
-          {/* Truck Layout Section */}
+          {/* Truck Layout Section - Hidden for financial and warehouse users */}
+          {!isFinancialSector && !isWarehouseSector && (
           <Card style={styles.card}>
             <View style={[styles.cardHeaderRow, { justifyContent: 'space-between' }]}>
               <ThemedText style={styles.sectionTitle}>Layout do Caminhão</ThemedText>
@@ -982,6 +989,7 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
               </View>
             )}
           </Card>
+          )}
 
           {/* Bottom spacing */}
           <View style={{ height: spacing.md }} />

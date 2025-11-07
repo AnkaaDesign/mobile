@@ -1,47 +1,142 @@
-import { useState, useMemo, useCallback } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from "react-native";
+import React, { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { ThemedView } from "@/components/ui/themed-view";
-import { ThemedText } from "@/components/ui/themed-text";
-import { SearchBar } from "@/components/ui/search-bar";
-import { LoadingScreen } from "@/components/ui/loading-screen";
-import { Badge } from "@/components/ui/badge";
-import { useTheme } from "@/lib/theme";
+import { IconFilter, IconList } from "@tabler/icons-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useWarningsInfiniteMobile } from '@/hooks/use-warnings-infinite-mobile';
 import { useAuth } from "@/contexts/auth-context";
-import { spacing } from "@/constants/design-system";
-import { useWarningsInfiniteMobile } from '../../../../hooks/use-warnings-infinite-mobile';
-import { WARNING_TYPE, WARNING_TYPE_LABELS } from '../../../../constants';
-import { formatDate } from '../../../../utils';
-import type { Warning } from '../../../../types';
+
+import { ThemedView, FAB, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
+import { MyWarningTable, createColumnDefinitions } from "@/components/personal/warning/list/my-warning-table";
+
+import { MyWarningFilterTags } from "@/components/personal/warning/list/my-warning-filter-tags";
+import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
+import { ItemsCountDisplay } from "@/components/ui/items-count-display";
+import { useTheme } from "@/lib/theme";
+
+// New hooks and components
+import { useTableSort } from "@/hooks/useTableSort";
+import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+
+// Import slide panel components
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { MyWarningFilterDrawerContent } from "@/components/personal/warning/list/my-warning-filter-drawer-content";
+import { MyWarningColumnDrawerContent } from "@/components/personal/warning/list/my-warning-column-drawer-content";
 
 export default function MyWarningsScreen() {
-  const { colors } = useTheme();
   const router = useRouter();
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
+  const [selectedWarnings, setSelectedWarnings] = useState<Set<string>>(new Set());
+  const [showSelection, setShowSelection] = useState(false);
+  const searchInputRef = React.useRef<any>(null);
 
-  // Build query params - only show current user's warnings
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
+
+  // Filter state
+  const [filters, setFilters] = useState<{
+    severity?: string[];
+    category?: string[];
+    isActive?: boolean;
+    followUpDate?: { gte?: Date; lte?: Date };
+    createdAt?: { gte?: Date; lte?: Date };
+  }>({});
+
+  const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
+    [{ columnKey: "createdAt", direction: "desc", order: 0 }],
+    1, // Single column sort only
+    false
+  );
+
+  const {
+    visibleColumns,
+    setVisibleColumns,
+  } = useColumnVisibility(
+    "my-warnings",
+    ["severity", "category", "reason"],
+    ["severity", "category", "reason", "description", "supervisor", "followUpDate", "isActive", "createdAt"]
+  );
+
+  // Build API query
+  const buildWhereClause = useCallback(() => {
+    const where: any = {
+      collaboratorId: user?.id, // Always filter by current user
+    };
+
+    if (filters.severity?.length) {
+      where.severity = { in: filters.severity };
+    }
+
+    if (filters.category?.length) {
+      where.category = { in: filters.category };
+    }
+
+    if (filters.isActive !== undefined) {
+      where.isActive = filters.isActive;
+    }
+
+    if (filters.followUpDate?.gte || filters.followUpDate?.lte) {
+      where.followUpDate = {};
+      if (filters.followUpDate.gte) {
+        where.followUpDate.gte = filters.followUpDate.gte;
+      }
+      if (filters.followUpDate.lte) {
+        where.followUpDate.lte = filters.followUpDate.lte;
+      }
+    }
+
+    if (filters.createdAt?.gte || filters.createdAt?.lte) {
+      where.createdAt = {};
+      if (filters.createdAt.gte) {
+        where.createdAt.gte = filters.createdAt.gte;
+      }
+      if (filters.createdAt.lte) {
+        where.createdAt.lte = filters.createdAt.lte;
+      }
+    }
+
+    return where;
+  }, [filters, user?.id]);
+
   const queryParams = useMemo(() => ({
-    where: {
-      userId: user?.id,
-    },
-    orderBy: { date: "desc" },
+    orderBy: buildOrderBy(
+      {
+        severity: "severity",
+        category: "category",
+        reason: "reason",
+        followUpDate: "followUpDate",
+        isActive: "isActive",
+        createdAt: "createdAt",
+      },
+      { createdAt: "desc" }
+    ),
     ...(searchText ? { searchingFor: searchText } : {}),
-  }), [user?.id, searchText]);
+    where: buildWhereClause(),
+    include: {
+      supervisor: true,
+      collaborator: true,
+    },
+  }), [searchText, buildWhereClause, buildOrderBy]);
 
-  // Fetch warnings with infinite scroll
   const {
     items: warnings,
+    isLoading,
+    error,
+    isRefetching,
     loadMore,
     hasNextPage,
     isFetchingNextPage,
-    isLoading,
-    isRefetching,
-    refetch,
     totalItemsLoaded,
     totalCount,
+    refetch,
+    prefetchNext,
+    shouldPrefetch,
   } = useWarningsInfiniteMobile(queryParams);
 
   const handleRefresh = useCallback(async () => {
@@ -53,6 +148,34 @@ export default function MyWarningsScreen() {
     }
   }, [refetch]);
 
+  const handleWarningPress = (warningId: string) => {
+    router.push(`/pessoal/minhas-advertencias/detalhes/${warningId}` as any);
+  };
+
+  const handleEditWarning = (warningId: string) => {
+    // Navigation to edit is typically not allowed for personal warnings
+    // But we keep the handler for future requirements
+    console.log("Edit warning:", warningId);
+  };
+
+  const handleDeleteWarning = useCallback(
+    async (warningId: string) => {
+      // Delete is typically not allowed for personal warnings
+      // But we keep the handler for future requirements
+      console.log("Delete warning:", warningId);
+      if (selectedWarnings.has(warningId)) {
+        const newSelection = new Set(selectedWarnings);
+        newSelection.delete(warningId);
+        setSelectedWarnings(newSelection);
+      }
+    },
+    [selectedWarnings],
+  );
+
+  const handleSelectionChange = useCallback((newSelection: Set<string>) => {
+    setSelectedWarnings(newSelection);
+  }, []);
+
   const handleSearch = useCallback((text: string) => {
     setSearchText(text);
   }, []);
@@ -61,91 +184,81 @@ export default function MyWarningsScreen() {
     setDisplaySearchText(text);
   }, []);
 
-  const handleWarningPress = (warningId: string) => {
-    router.push(`/pessoal/minhas-advertencias/detalhes/${warningId}` as any);
-  };
+  const handleClearFilters = useCallback(() => {
+    setFilters({});
+    setSearchText("");
+    setDisplaySearchText("");
+    setSelectedWarnings(new Set());
+    setShowSelection(false);
+  }, []);
 
-  const getTypeBadgeVariant = (type: string) => {
-    switch (type) {
-      case WARNING_TYPE.VERBAL:
-        return "default";
-      case WARNING_TYPE.WRITTEN:
-        return "secondary";
-      case WARNING_TYPE.SUSPENSION:
-        return "destructive";
-      default:
-        return "outline";
-    }
-  };
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumns(newColumns);
+  }, [setVisibleColumns]);
 
-  const renderWarningItem = ({ item }: { item: Warning }) => (
-    <TouchableOpacity
-      style={[styles.warningCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-      onPress={() => handleWarningPress(item.id)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.cardHeader}>
-        <View style={styles.cardHeaderLeft}>
-          <ThemedText style={styles.dateText}>
-            {formatDate(item.date)}
-          </ThemedText>
-          <Badge variant={getTypeBadgeVariant(item.type)} style={styles.typeBadge}>
-            {WARNING_TYPE_LABELS[item.type as keyof typeof WARNING_TYPE_LABELS]}
-          </Badge>
-        </View>
-      </View>
+  const handleOpenFilters = useCallback(() => {
+    setIsColumnPanelOpen(false); // Close column panel if open
+    setIsFilterPanelOpen(true);
+  }, []);
 
-      {item.reason && (
-        <ThemedText style={styles.reasonText} numberOfLines={2}>
-          {item.reason}
-        </ThemedText>
-      )}
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
-      {item.givenBy && (
-        <ThemedText style={styles.givenByText}>
-          Aplicada por: {typeof item.givenBy === 'string' ? item.givenBy : (item.givenBy as any).name}
-        </ThemedText>
-      )}
-    </TouchableOpacity>
-  );
+  const handleOpenColumns = useCallback(() => {
+    setIsFilterPanelOpen(false); // Close filter panel if open
+    setIsColumnPanelOpen(true);
+  }, []);
 
-  const renderFooter = () => {
-    if (!isFetchingNextPage) return null;
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
+
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.severity?.length) count++;
+    if (filters.category?.length) count++;
+    if (filters.isActive !== undefined) count++;
+    if (filters.followUpDate?.gte || filters.followUpDate?.lte) count++;
+    if (filters.createdAt?.gte || filters.createdAt?.lte) count++;
+    return count;
+  }, [filters]);
+
+  // Only show skeleton on initial load, not on refetch/sort/search
+  // This prevents the entire page from remounting during search
+  const isInitialLoad = isLoading && warnings.length === 0;
+
+  if (isInitialLoad) {
     return (
-      <View style={styles.footer}>
-        <ThemedText style={styles.footerText}>Carregando...</ThemedText>
-      </View>
+      <ThemedView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ThemedView style={styles.skeleton} />
+        </View>
+      </ThemedView>
     );
-  };
-
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <ThemedText style={styles.emptyText}>Nenhuma advertência encontrada</ThemedText>
-      <ThemedText style={[styles.emptySubtext, { color: colors.mutedForeground }]}>
-        Parabéns! Você não possui advertências registradas.
-      </ThemedText>
-    </View>
-  );
-
-  if (isLoading && warnings.length === 0) {
-    return <LoadingScreen />;
   }
 
-  return (
-    <ThemedView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <ThemedText style={styles.title}>Minhas Advertências</ThemedText>
-        {totalCount !== undefined && (
-          <ThemedText style={styles.subtitle}>
-            {totalItemsLoaded} de {totalCount} {totalCount === 1 ? 'registro' : 'registros'}
-          </ThemedText>
-        )}
-      </View>
+  if (error && warnings.length === 0) {
+    return (
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar advertências" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
+  }
 
-      {/* Search */}
-      <View style={styles.searchContainer}>
+  const hasWarnings = Array.isArray(warnings) && warnings.length > 0;
+
+  return (
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+      {/* Search and Filter */}
+      <View style={[styles.searchContainer]}>
         <SearchBar
+          ref={searchInputRef}
           value={displaySearchText}
           onChangeText={handleDisplaySearchChange}
           onSearch={handleSearch}
@@ -154,28 +267,98 @@ export default function MyWarningsScreen() {
           debounceMs={300}
           loading={isRefetching && !isFetchingNextPage}
         />
+        <View style={styles.buttonContainer}>
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={handleOpenColumns}
+            badgeCount={visibleColumns.size}
+            badgeVariant="primary"
+          />
+          <ListActionButton
+            icon={<IconFilter size={20} color={colors.foreground} />}
+            onPress={handleOpenFilters}
+            badgeCount={activeFiltersCount}
+            badgeVariant="destructive"
+            showBadge={activeFiltersCount > 0}
+          />
+        </View>
       </View>
 
-      {/* List */}
-      <FlatList
-        data={warnings}
-        renderItem={renderWarningItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
-          />
-        }
-        onEndReached={hasNextPage ? loadMore : undefined}
-        onEndReachedThreshold={0.2}
-        ListFooterComponent={renderFooter}
-        ListEmptyComponent={renderEmpty}
+      {/* Individual filter tags */}
+      <MyWarningFilterTags
+        filters={filters}
+        searchText={searchText}
+        onFilterChange={setFilters}
+        onSearchChange={(text) => {
+          setSearchText(text);
+          setDisplaySearchText(text);
+        }}
+        onClearAll={handleClearFilters}
       />
+
+      {hasWarnings ? (
+        <TableErrorBoundary onRetry={handleRefresh}>
+          <MyWarningTable
+            warnings={warnings}
+            onWarningPress={handleWarningPress}
+            onWarningEdit={undefined} // Disable edit for personal warnings
+            onWarningDelete={undefined} // Disable delete for personal warnings
+            onRefresh={handleRefresh}
+            onEndReached={hasNextPage ? loadMore : undefined}
+            onPrefetch={shouldPrefetch ? prefetchNext : undefined}
+            refreshing={refreshing || isRefetching}
+            loading={false}
+            loadingMore={isFetchingNextPage}
+            showSelection={showSelection}
+            selectedWarnings={selectedWarnings}
+            onSelectionChange={handleSelectionChange}
+            sortConfigs={sortConfigs}
+            onSort={(configs) => {
+              // Handle empty array (clear sort)
+              if (configs.length === 0) {
+                handleSort("createdAt"); // Reset to default
+              } else {
+                handleSort(configs[0].columnKey);
+              }
+            }}
+            visibleColumnKeys={Array.from(visibleColumns) as string[]}
+            enableSwipeActions={false} // Disable swipe actions for personal warnings
+          />
+        </TableErrorBoundary>
+      ) : (
+        <View style={styles.emptyContainer}>
+          <EmptyState
+            icon={searchText ? "search" : "alert-circle"}
+            title={searchText ? "Nenhuma advertência encontrada" : "Nenhuma advertência registrada"}
+            description={
+              searchText ? `Nenhum resultado para "${searchText}"` : "Parabéns! Você não possui advertências registradas."
+            }
+          />
+        </View>
+      )}
+
+      {/* Items count */}
+      {hasWarnings && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
     </ThemedView>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <MyWarningFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <MyWarningColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 
@@ -183,86 +366,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
   searchContainer: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    flexDirection: "row",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 8,
+    alignItems: "center",
   },
   searchBar: {
     flex: 1,
   },
-  listContent: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.lg,
-  },
-  warningCard: {
-    padding: spacing.md,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: spacing.md,
-  },
-  cardHeader: {
+  buttonContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.sm,
-  },
-  cardHeaderLeft: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  dateText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  typeBadge: {
-    marginLeft: spacing.xs,
-  },
-  reasonText: {
-    fontSize: 14,
-    opacity: 0.8,
-    marginTop: spacing.xs,
-  },
-  givenByText: {
-    fontSize: 12,
-    opacity: 0.6,
-    marginTop: spacing.sm,
-  },
-  footer: {
-    paddingVertical: spacing.md,
-    alignItems: "center",
-  },
-  footerText: {
-    fontSize: 14,
-    opacity: 0.7,
+    gap: 8,
   },
   emptyContainer: {
-    paddingVertical: spacing.xl * 2,
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: spacing.lg,
   },
-  emptyText: {
-    fontSize: 16,
-    opacity: 0.7,
-    marginBottom: spacing.sm,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
   },
-  emptySubtext: {
-    fontSize: 14,
-    textAlign: "center",
+  skeleton: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+    opacity: 0.3,
   },
 });

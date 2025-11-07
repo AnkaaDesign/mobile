@@ -51,12 +51,23 @@ export function MeasuresManager({ disabled }: MeasuresManagerProps) {
   const getUnitOptions = (measureType?: MEASURE_TYPE) => {
     if (!measureType) return [];
 
-    const units = Object.values(MEASURE_UNIT).filter((unit) => {
-      const category = getMeasureUnitCategory(unit);
-      return category.toLowerCase() === measureType.toLowerCase();
-    });
+    // Map measure types to their allowed units
+    const MEASURE_TYPE_UNITS: Record<MEASURE_TYPE, MEASURE_UNIT[]> = {
+      [MEASURE_TYPE.WEIGHT]: [MEASURE_UNIT.GRAM, MEASURE_UNIT.KILOGRAM],
+      [MEASURE_TYPE.VOLUME]: [MEASURE_UNIT.MILLILITER, MEASURE_UNIT.LITER, MEASURE_UNIT.CUBIC_CENTIMETER, MEASURE_UNIT.CUBIC_METER],
+      [MEASURE_TYPE.LENGTH]: [MEASURE_UNIT.MILLIMETER, MEASURE_UNIT.CENTIMETER, MEASURE_UNIT.METER, MEASURE_UNIT.INCHES],
+      [MEASURE_TYPE.WIDTH]: [MEASURE_UNIT.MILLIMETER, MEASURE_UNIT.CENTIMETER, MEASURE_UNIT.METER, MEASURE_UNIT.INCHES],
+      [MEASURE_TYPE.AREA]: [MEASURE_UNIT.SQUARE_CENTIMETER, MEASURE_UNIT.SQUARE_METER],
+      [MEASURE_TYPE.COUNT]: [MEASURE_UNIT.UNIT, MEASURE_UNIT.PAIR, MEASURE_UNIT.DOZEN, MEASURE_UNIT.HUNDRED, MEASURE_UNIT.THOUSAND, MEASURE_UNIT.PACKAGE, MEASURE_UNIT.BOX, MEASURE_UNIT.ROLL, MEASURE_UNIT.SHEET, MEASURE_UNIT.SET, MEASURE_UNIT.SACK],
+      [MEASURE_TYPE.DIAMETER]: [MEASURE_UNIT.MILLIMETER, MEASURE_UNIT.CENTIMETER, MEASURE_UNIT.METER, MEASURE_UNIT.INCHES],
+      [MEASURE_TYPE.THREAD]: [MEASURE_UNIT.THREAD_MM, MEASURE_UNIT.THREAD_TPI],
+      [MEASURE_TYPE.ELECTRICAL]: [MEASURE_UNIT.WATT, MEASURE_UNIT.VOLT, MEASURE_UNIT.AMPERE],
+      [MEASURE_TYPE.SIZE]: [MEASURE_UNIT.P, MEASURE_UNIT.M, MEASURE_UNIT.G, MEASURE_UNIT.GG, MEASURE_UNIT.XG],
+    };
 
-    return units.map((unit) => ({
+    const allowedUnits = MEASURE_TYPE_UNITS[measureType] || [];
+
+    return allowedUnits.map((unit) => ({
       value: unit,
       label: MEASURE_UNIT_LABELS[unit] || unit,
     }));
@@ -85,6 +96,8 @@ export function MeasuresManager({ disabled }: MeasuresManagerProps) {
       case MEASURE_TYPE.WEIGHT:
         return <IconScale {...iconProps} />;
       case MEASURE_TYPE.LENGTH:
+        return <IconRuler {...iconProps} />;
+      case MEASURE_TYPE.WIDTH:
         return <IconRuler {...iconProps} />;
       case MEASURE_TYPE.VOLUME:
         return <IconDroplet {...iconProps} />;

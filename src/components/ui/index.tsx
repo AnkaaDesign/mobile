@@ -116,3 +116,4 @@ export * from "./cnpj-input";
 export * from "./phone-input";
 export * from "./zipcode-input";
 export * from "./address-form";
+export * from "./file-upload-field";

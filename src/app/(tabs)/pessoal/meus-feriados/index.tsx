@@ -1,43 +1,68 @@
 import { useState, useMemo, useCallback } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
-import { LoadingScreen } from "@/components/ui/loading-screen";
-import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useAuth } from "@/contexts/auth-context";
 import { spacing } from "@/constants/design-system";
 import { useHolidaysInfiniteMobile } from '../../../../hooks/use-holidays-infinite-mobile';
-import { formatDate } from '../../../../utils';
-import type { Holiday } from '../../../../types';
+import { HolidayTable } from "@/components/personal/holiday";
+import { CustomerListSkeleton } from "@/components/administration/customer/skeleton/customer-list-skeleton";
+import { ErrorScreen } from "@/components/ui/error-screen";
+import { useTableSort } from "@/hooks/useTableSort";
+import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 
 export default function MyHolidaysScreen() {
-  const { colors } = useTheme();
   const router = useRouter();
-  const { user } = useAuth();
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
+  // Sort configuration
+  const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
+    [{ columnKey: "date", direction: "desc", order: 0 }],
+    1, // Single column sort only
+    false
+  );
+
+  // Visible columns configuration
+  const [visibleColumns] = useState<string[]>([
+    "name",
+    "date",
+    "dayOfWeek",
+    "type",
+    "status",
+  ]);
+
   // Build query params
   const queryParams = useMemo(() => ({
-    orderBy: { date: "desc" },
+    orderBy: buildOrderBy(
+      {
+        name: "name",
+        date: "date",
+        type: "type",
+        createdAt: "createdAt",
+        updatedAt: "updatedAt",
+      },
+      { date: "desc" }
+    ),
     ...(searchText ? { searchingFor: searchText } : {}),
-  }), [searchText]);
+  }), [searchText, buildOrderBy]);
 
   // Fetch holidays with infinite scroll
   const {
     items: holidays,
     loadMore,
-    hasNextPage,
+    canLoadMore,
     isFetchingNextPage,
     isLoading,
     isRefetching,
     refetch,
     totalItemsLoaded,
     totalCount,
+    prefetchNext,
+    error,
   } = useHolidaysInfiniteMobile(queryParams);
 
   const handleRefresh = useCallback(async () => {
@@ -57,65 +82,37 @@ export default function MyHolidaysScreen() {
     setDisplaySearchText(text);
   }, []);
 
-  const handleHolidayPress = (holidayId: string) => {
+  const handleHolidayPress = useCallback((holidayId: string) => {
     router.push(`/pessoal/meus-feriados/detalhes/${holidayId}` as any);
-  };
+  }, [router]);
 
-  const renderHolidayItem = ({ item }: { item: Holiday }) => (
-    <TouchableOpacity
-      style={[styles.holidayCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-      onPress={() => handleHolidayPress(item.id)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.cardHeader}>
-        <View style={styles.cardHeaderLeft}>
-          <ThemedText style={styles.nameText}>{item.name}</ThemedText>
-          <ThemedText style={styles.dateText}>{formatDate(item.date)}</ThemedText>
-        </View>
-        {item.isNational && (
-          <Badge variant="default">
-            Nacional
-          </Badge>
-        )}
-      </View>
-
-      {item.description && (
-        <ThemedText style={styles.descriptionText} numberOfLines={2}>
-          {item.description}
-        </ThemedText>
-      )}
-    </TouchableOpacity>
-  );
-
-  const renderFooter = () => {
-    if (!isFetchingNextPage) return null;
-    return (
-      <View style={styles.footer}>
-        <ThemedText style={styles.footerText}>Carregando...</ThemedText>
-      </View>
-    );
-  };
-
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <ThemedText style={styles.emptyText}>Nenhum feriado encontrado</ThemedText>
-    </View>
-  );
-
+  // Loading state
   if (isLoading && holidays.length === 0) {
-    return <LoadingScreen />;
+    return <CustomerListSkeleton />;
+  }
+
+  // Error state
+  if (error && holidays.length === 0) {
+    return (
+      <ErrorScreen
+        error={error}
+        onRetry={() => refetch()}
+        message="Erro ao carregar feriados"
+      />
+    );
   }
 
   return (
     <ThemedView style={styles.container}>
-      {/* Header */}
+      {/* Header with count */}
       <View style={styles.header}>
         <ThemedText style={styles.title}>Feriados</ThemedText>
-        {totalCount !== undefined && (
-          <ThemedText style={styles.subtitle}>
-            {totalItemsLoaded} de {totalCount} {totalCount === 1 ? 'registro' : 'registros'}
-          </ThemedText>
-        )}
+        <ItemsCountDisplay
+          loadedCount={totalItemsLoaded}
+          totalCount={totalCount}
+          itemType="feriado"
+          itemTypePlural="feriados"
+        />
       </View>
 
       {/* Search */}
@@ -131,25 +128,26 @@ export default function MyHolidaysScreen() {
         />
       </View>
 
-      {/* List */}
-      <FlatList
-        data={holidays}
-        renderItem={renderHolidayItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
-          />
-        }
-        onEndReached={hasNextPage ? loadMore : undefined}
-        onEndReachedThreshold={0.2}
-        ListFooterComponent={renderFooter}
-        ListEmptyComponent={renderEmpty}
-      />
+      {/* Table */}
+      <View style={styles.tableContainer}>
+        <HolidayTable
+          holidays={holidays as any[]}
+          onHolidayPress={handleHolidayPress}
+          onRefresh={handleRefresh}
+          onEndReached={canLoadMore ? loadMore : undefined}
+          onPrefetch={prefetchNext}
+          refreshing={refreshing}
+          loading={isLoading}
+          loadingMore={isFetchingNextPage}
+          sortConfigs={sortConfigs}
+          onSort={(configs) => {
+            if (configs.length > 0) {
+              handleSort(configs[0].columnKey);
+            }
+          }}
+          visibleColumnKeys={visibleColumns}
+        />
+      </View>
     </ThemedView>
   );
 }
@@ -168,10 +166,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: spacing.xs,
   },
-  subtitle: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
   searchContainer: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -179,53 +173,8 @@ const styles = StyleSheet.create({
   searchBar: {
     flex: 1,
   },
-  listContent: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.lg,
-  },
-  holidayCard: {
-    padding: spacing.md,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: spacing.md,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  cardHeaderLeft: {
+  tableContainer: {
     flex: 1,
-    marginRight: spacing.sm,
-  },
-  nameText: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: spacing.xs,
-  },
-  dateText: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  descriptionText: {
-    fontSize: 14,
-    opacity: 0.8,
-    marginTop: spacing.sm,
-  },
-  footer: {
-    paddingVertical: spacing.md,
-    alignItems: "center",
-  },
-  footerText: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  emptyContainer: {
-    paddingVertical: spacing.xl * 2,
-    alignItems: "center",
-  },
-  emptyText: {
-    fontSize: 16,
-    opacity: 0.7,
+    paddingHorizontal: spacing.md,
   },
 });
