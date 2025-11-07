@@ -7,7 +7,6 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from '@/constants';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 
 interface CustomerFilterDrawerContentProps {
   filters: {
@@ -35,9 +34,7 @@ export function CustomerFilterDrawerContent({
 }: CustomerFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
   // Initialize localFilters with filters value immediately
   const [localFilters, setLocalFilters] = useState(() => filters || {});
   const [customTags, setCustomTags] = useState("");

@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconUserCheck, IconBriefcase, IconBuildingStore } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { Combobox } from '@/components/ui/combobox';
 import { usePositions, useSectors } from '../../../../hooks';
 import { USER_STATUS, USER_STATUS_LABELS } from '../../../../constants';
@@ -33,9 +32,7 @@ export function EmployeeFilterDrawerContent({
 }: EmployeeFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   // Load filter options
   const { data: positionsData } = usePositions({ limit: 100, orderBy: { name: 'asc' } });

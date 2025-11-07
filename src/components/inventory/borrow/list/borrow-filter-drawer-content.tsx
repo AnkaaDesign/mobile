@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconPackage, IconUser, IconCalendar } from '@tabler/
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { useItems, useUsers } from '../../../../hooks';
 import { BORROW_STATUS, BORROW_STATUS_LABELS } from '../../../../constants';
 import { Combobox } from '@/components/ui/combobox';
@@ -38,8 +37,7 @@ export function BorrowFilterDrawerContent({
 }: BorrowFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   const { data: itemsData } = useItems({ limit: 100, where: { category: { type: "TOOL" } } });
   const { data: usersData } = useUsers({ limit: 100 });

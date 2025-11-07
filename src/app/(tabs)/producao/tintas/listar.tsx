@@ -19,9 +19,6 @@ import { usePaintsInfiniteMobile } from "@/hooks/use-paints-infinite-mobile";
 import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 import type { PaintGetManyFormData } from '../../../../schemas';
-
-// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 import { PaintFilterDrawerContent } from "@/components/production/paint/list/paint-filter-drawer-content";
@@ -29,7 +26,6 @@ import { PaintFilterDrawerContent } from "@/components/production/paint/list/pai
 export default function PaintsListScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const { user } = useAuth();
   const [searchText, setSearchText] = useState("");

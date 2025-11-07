@@ -8,7 +8,6 @@ import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BRAZILIAN_STATES } from '@/constants';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 
 interface FilterRange {
   min?: number;
@@ -45,8 +44,7 @@ export function SupplierFilterDrawerContent({
 }: SupplierFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   // Initialize localFilters with filters value immediately
   const [localFilters, setLocalFilters] = useState(() => filters || {});

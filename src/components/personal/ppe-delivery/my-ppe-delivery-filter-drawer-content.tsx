@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, PPE_TYPE, PPE_TYPE_LABELS } from "@/constants";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { DatePickerInput } from "@/components/ui/date-picker";
 
 interface MyPpeDeliveryFilterDrawerContentProps {
   filters: {

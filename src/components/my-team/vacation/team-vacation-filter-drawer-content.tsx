@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconAlertTriangle, IconBeach, IconCalendarPlus } fro
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateRangeFilter } from '@/components/common/filters';
 import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '../../../constants';
@@ -29,8 +28,6 @@ export function TeamVacationFilterDrawerContent({
 }: TeamVacationFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
   const [localFilters, setLocalFilters] = useState<Partial<VacationGetManyFormData>>(() => filters);
 
   const handleApply = useCallback(() => {
@@ -42,8 +39,8 @@ export function TeamVacationFilterDrawerContent({
       },
     };
     onFiltersChange(filtersWithTeam);
-    onClose ? onClose() : closeFilterDrawer();
-  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer, teamMemberIds]);
+    const handleClose = onClose || (() => {}); handleClose();
+  }, [localFilters, onFiltersChange, onClose, teamMemberIds]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -120,7 +117,7 @@ export function TeamVacationFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || (() => {})} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

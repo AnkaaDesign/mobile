@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconPackage, IconBuilding, IconCalendar } from '@tab
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { useSuppliers } from '../../../../hooks';
 import { ORDER_STATUS, ORDER_STATUS_LABELS } from '../../../../constants';
 import { Combobox } from '@/components/ui/combobox';
@@ -37,8 +36,7 @@ export function OrderFilterDrawerContent({
 }: OrderFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   const { data: suppliersResponse } = useSuppliers({ limit: 100 });
   const suppliers = suppliersResponse?.data || [];

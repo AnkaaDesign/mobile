@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconShieldCheck, IconCalendarPlus, IconUsers } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
 import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from '../../../../constants';
@@ -36,9 +35,7 @@ export function SectorFilterDrawerContent({
 }: SectorFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   // Initialize localFilters from current filters
   const [localFilters, setLocalFilters] = useState<FilterState>(() => {

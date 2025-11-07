@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconTool, IconCalendar } from '@tabler/icons-react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { MAINTENANCE_STATUS, MAINTENANCE_STATUS_LABELS } from '../../../../constants';
 import { DateRangeFilter } from '@/components/common/filters';
 import type { MaintenanceGetManyParams } from '../../../../types';
@@ -34,8 +33,7 @@ export function MaintenanceFilterDrawerContent({
 }: MaintenanceFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   const [localFilters, setLocalFilters] = useState<FilterState>(() => ({
     statusIds: ((filters.where?.status as any)?.in || []) as string[],

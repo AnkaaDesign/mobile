@@ -11,9 +11,7 @@ import { CuttingPlanTable, createColumnDefinitions } from "@/components/producti
 import type { SortConfig } from "@/components/production/cutting/list/cutting-plan-table";
 import { CuttingPlanFilterTags } from "@/components/production/cutting/list/cutting-plan-filter-tags";
 import { CuttingPlanFilterDrawerContent } from "@/components/production/cutting/list/cutting-plan-filter-drawer-content";
-import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
-// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -26,7 +24,6 @@ export default function CuttingPlanListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -335,7 +332,7 @@ export default function CuttingPlanListScreen() {
       </SlideInPanel>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
-        <ColumnVisibilityDrawerContent
+        <ColumnVisibilitySlidePanel
           columns={allColumns.map(col => ({
             key: col.key,
             header: col.label,

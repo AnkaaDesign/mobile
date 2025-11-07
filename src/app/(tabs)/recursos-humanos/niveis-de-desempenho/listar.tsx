@@ -14,7 +14,7 @@ import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { PerformanceLevelListSkeleton } from "@/components/human-resources/performance-level/skeleton/performance-level-list-skeleton";
 import { useTheme } from "@/lib/theme";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
-import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { PerformanceLevelFilterDrawerContent } from "@/components/human-resources/performance-level/list/performance-level-filter-drawer-content";
 
 export default function PerformanceLevelsListScreen() {
@@ -249,7 +249,7 @@ export default function PerformanceLevelsListScreen() {
       </SlideInPanel>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
-        <ColumnVisibilityDrawerContent
+        <ColumnVisibilitySlidePanel
           columns={allColumns}
           visibleColumns={new Set(visibleColumnKeys)}
           onVisibilityChange={handleColumnsChange}

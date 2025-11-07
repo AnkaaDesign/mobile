@@ -22,7 +22,7 @@ import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES, ACTIVITY_OPERATION, ACTIVITY_REASON } from '../../../../constants';
 
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
-import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { ActivityFilterDrawerContent } from "@/components/inventory/activity/list/activity-filter-drawer-content";
 
 export default function ActivityListScreen() {
@@ -341,7 +341,7 @@ export default function ActivityListScreen() {
     </SlideInPanel>
 
     <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
-      <ColumnVisibilityDrawerContent
+      <ColumnVisibilitySlidePanel
         columns={allColumns}
         visibleColumns={new Set(visibleColumnKeys)}
         onVisibilityChange={handleColumnsChange}

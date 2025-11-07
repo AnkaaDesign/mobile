@@ -18,7 +18,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 import { PPE_DELIVERY_STATUS } from '../../../../../constants';
 
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
-import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { PpeDeliveryFilterDrawerContent } from "@/components/human-resources/ppe/delivery/list/ppe-delivery-filter-drawer-content";
 
 export default function PPEDeliveryListScreen() {

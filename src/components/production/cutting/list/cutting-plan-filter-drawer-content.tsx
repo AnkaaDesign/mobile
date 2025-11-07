@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconCheck } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 import { spacing } from "@/constants/design-system";
 import { FilterSection } from "@/components/common/filters/FilterSection";
 import { SelectFilter, DateRangeFilter, type DateRange } from "@/components/common/filters";
@@ -30,8 +29,6 @@ export function CuttingPlanFilterDrawerContent({
 }: CuttingPlanFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
   // Initialize local filters with current filters
   const [localFilters, setLocalFilters] = useState(() => filters || {});
 
@@ -235,8 +232,8 @@ export function CuttingPlanFilterDrawerContent({
 
   const handleApply = useCallback(() => {
     onFilterChange(localFilters);
-    onClose ? onClose() : closeFilterDrawer();
-  }, [localFilters, onFilterChange, onClose, closeFilterDrawer]);
+    const handleClose = onClose || (() => {}); handleClose();
+  }, [localFilters, onFilterChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -267,7 +264,7 @@ export function CuttingPlanFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || (() => {})} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

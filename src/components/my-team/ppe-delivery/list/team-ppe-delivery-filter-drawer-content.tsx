@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '@/constants';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 
 interface TeamPpeDeliveryFilterDrawerContentProps {
   filters: {
@@ -31,9 +30,8 @@ export function TeamPpeDeliveryFilterDrawerContent({
 }: TeamPpeDeliveryFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
 
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
   const [localFilters, setLocalFilters] = useState(() => filters || {});
 
   const handleToggleStatus = useCallback((status: string) => {

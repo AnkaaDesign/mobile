@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconAlertTriangle, IconUsers, IconCalendarPlus } fro
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { useUsers } from '../../../../hooks';
 import { WARNING_CATEGORY, WARNING_SEVERITY, WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from '../../../../constants';
 import { Combobox } from '@/components/ui/combobox';
@@ -40,8 +39,6 @@ export function WarningFilterDrawerContent({
 }: WarningFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
   // Load filter options
   const { data: usersData } = useUsers({ limit: 100, orderBy: { name: "asc" } });
   const users = usersData?.data || [];
@@ -103,12 +100,8 @@ export function WarningFilterDrawerContent({
     }
 
     onFiltersChange(newFilters);
-    if (onClose) {
-      onClose();
-    } else {
-      closeFilterDrawer();
-    }
-  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer]);
+    const handleClose = onClose || (() => {}); handleClose();
+  }, [localFilters, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -161,7 +154,7 @@ export function WarningFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || (() => {})} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

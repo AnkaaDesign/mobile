@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconAlertTriangle, IconBriefcase } from '@tabler/ico
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { Checkbox } from '@/components/ui/checkbox';
 import { USER_STATUS } from '../../../constants';
 
@@ -39,8 +38,6 @@ export function TeamUserFilterDrawerContent({
 }: TeamUserFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
   const [localFilters, setLocalFilters] = useState<TeamUserFilters>(() => ({
     statuses: filters.statuses || [],
     positionIds: filters.positionIds || [],
@@ -48,8 +45,8 @@ export function TeamUserFilterDrawerContent({
 
   const handleApply = useCallback(() => {
     onFiltersChange(localFilters);
-    onClose ? onClose() : closeFilterDrawer();
-  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer]);
+    const handleClose = onClose || (() => {}); handleClose();
+  }, [localFilters, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -97,7 +94,7 @@ export function TeamUserFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || (() => {})} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

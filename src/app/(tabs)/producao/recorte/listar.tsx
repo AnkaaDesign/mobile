@@ -19,8 +19,6 @@ import { Icon } from "@/components/ui/icon";
 import { CutsTable, createColumnDefinitions } from "@/components/production/cuts/list/cuts-table";
 import { CutsFilterDrawerContent } from "@/components/production/cuts/list/cuts-filter-drawer-content";
 import { CutsColumnDrawerContent, getDefaultVisibleColumns } from "@/components/production/cuts/list/cuts-column-drawer-content";
-// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import type { SortConfig } from "@/lib/sort-utils";
 import { applyMultiSort } from "@/lib/sort-utils";
@@ -28,7 +26,6 @@ import { applyMultiSort } from "@/lib/sort-utils";
 export default function CuttingListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
-  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
 
   // Panel state
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
@@ -315,7 +312,7 @@ export default function CuttingListScreen() {
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumnDrawer}>
         <CutsColumnDrawerContent
-          allColumns={allColumns}
+          allColumns={createColumnDefinitions()}
           visibleColumnKeys={Array.from(visibleColumns)}
           onColumnsChange={handleVisibilityChange}
           onClose={handleCloseColumnDrawer}

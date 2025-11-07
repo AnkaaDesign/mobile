@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconSpray } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 
 interface PaintTypeFilterDrawerProps {
   filters: {
@@ -25,13 +24,12 @@ export function PaintTypeFilterDrawer({
 }: PaintTypeFilterDrawerProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
   const [localFilters, setLocalFilters] = useState(() => filters || {});
 
   const handleApply = useCallback(() => {
     onFiltersChange(localFilters);
-    onClose ? onClose() : closeFilterDrawer();
-  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer]);
+    const handleClose = onClose || (() => {}); handleClose();
+  }, [localFilters, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -57,7 +55,7 @@ export function PaintTypeFilterDrawer({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || (() => {})} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

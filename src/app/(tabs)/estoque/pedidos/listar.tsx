@@ -23,7 +23,7 @@ import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
-import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { OrderFilterDrawerContent } from "@/components/inventory/order/list/order-filter-drawer-content";
 
 export default function OrderListScreen() {
@@ -362,7 +362,7 @@ export default function OrderListScreen() {
     </SlideInPanel>
 
     <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
-      <ColumnVisibilityDrawerContent
+      <ColumnVisibilitySlidePanel
         columns={allColumns}
         visibleColumns={visibleColumns}
         onVisibilityChange={handleColumnsChange}

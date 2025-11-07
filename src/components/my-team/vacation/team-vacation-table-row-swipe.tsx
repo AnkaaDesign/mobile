@@ -1,10 +1,9 @@
 import React, { useCallback, useRef } from "react";
-import { View, StyleSheet, Animated, PanResponder, TouchableOpacity, Dimensions } from "react-native";
+import { View, StyleSheet, Animated, PanResponder, TouchableOpacity, Dimensions, Alert } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing } from "@/constants/design-system";
-import { showConfirmDialog } from "@/lib/confirm-dialog";
 
 interface TeamVacationTableRowSwipeProps {
   vacationId: string;
@@ -112,21 +111,27 @@ export const TeamVacationTableRowSwipe: React.FC<TeamVacationTableRowSwipeProps>
     }, 250);
   }, [closeRow, onEdit, vacationId]);
 
-  const handleDelete = useCallback(async () => {
-    const confirmed = await showConfirmDialog({
-      title: "Excluir Férias",
-      message: `Tem certeza que deseja excluir as férias de ${vacationUserName}?`,
-      confirmText: "Excluir",
-      cancelText: "Cancelar",
-      variant: "destructive",
-    });
-
-    if (confirmed) {
-      closeRow();
-      setTimeout(() => {
-        onDelete?.(vacationId);
-      }, 250);
-    }
+  const handleDelete = useCallback(() => {
+    Alert.alert(
+      "Excluir Férias",
+      `Tem certeza que deseja excluir as férias de ${vacationUserName}?`,
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: () => {
+            closeRow();
+            setTimeout(() => {
+              onDelete?.(vacationId);
+            }, 250);
+          },
+        },
+      ]
+    );
   }, [closeRow, onDelete, vacationId, vacationUserName]);
 
   return (

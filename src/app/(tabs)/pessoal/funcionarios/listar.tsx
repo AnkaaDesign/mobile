@@ -25,8 +25,6 @@ import {
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { USER_STATUS } from "@/constants";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
 
 // Helper function to get status label
 const getStatusLabel = (status: string) => {
@@ -54,7 +52,6 @@ export default function EmployeesListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer } = useUtilityDrawer();
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -259,8 +256,7 @@ export default function EmployeesListScreen() {
   const hasEmployees = Array.isArray(users) && users.length > 0;
 
   return (
-    <UtilityDrawerWrapper>
-      <ThemedView style={[styles.container, { paddingBottom: insets.bottom }]}>
+    <ThemedView style={[styles.container, { paddingBottom: insets.bottom }]}>
         {/* Search and Filter */}
         <View style={styles.searchContainer}>
           <SearchBar
@@ -348,8 +344,7 @@ export default function EmployeesListScreen() {
             />
           </View>
         )}
-      </ThemedView>
-    </UtilityDrawerWrapper>
+    </ThemedView>
   );
 }
 

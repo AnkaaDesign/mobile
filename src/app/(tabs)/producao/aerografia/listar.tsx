@@ -17,8 +17,6 @@ import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { AirbrushingListSkeleton } from "@/components/production/airbrushing/skeleton/airbrushing-list-skeleton";
 import { useTheme } from "@/lib/theme";
-// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 
 // New hooks
@@ -34,7 +32,6 @@ export default function AirbrushingListScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");

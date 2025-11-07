@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconAlertTriangle, IconPackage, IconCalendarPlus } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
@@ -41,7 +40,6 @@ export function PersonalPpeDeliveryFilterDrawerContent({
 }: PersonalPpeDeliveryFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
 
   const [localFilters, setLocalFilters] = useState<PersonalPpeDeliveryFilters>(() => filters);
 
@@ -55,8 +53,9 @@ export function PersonalPpeDeliveryFilterDrawerContent({
 
   const handleApply = useCallback(() => {
     onFiltersChange(localFilters);
-    onClose ? onClose() : closeFilterDrawer();
-  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer]);
+    const handleClose = onClose || (() => {});
+    handleClose();
+  }, [localFilters, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -93,7 +92,7 @@ export function PersonalPpeDeliveryFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || (() => {})} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

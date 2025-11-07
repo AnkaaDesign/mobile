@@ -19,7 +19,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { WarningFilterDrawerContent } from "@/components/human-resources/warning/list/warning-filter-drawer-content";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
-import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 
 export default function WarningListScreen() {
   const router = useRouter();
@@ -280,7 +280,7 @@ export default function WarningListScreen() {
       </SlideInPanel>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
-        <ColumnVisibilityDrawerContent
+        <ColumnVisibilitySlidePanel
           columns={allColumns}
           visibleColumns={new Set(visibleColumnKeys)}
           onVisibilityChange={handleColumnsChange}

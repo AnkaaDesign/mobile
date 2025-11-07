@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconCalendarPlus } from '@tabler/icons-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { DateRangeFilter } from '@/components/common/filters';
 import type { PpeDeliveryGetManyFormData } from '@/schemas';
 
@@ -25,8 +24,7 @@ export function PpeFilterDrawerContent({
 }: PpeFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
   const [localFilters, setLocalFilters] = useState<Partial<PpeDeliveryGetManyFormData>>(() => filters || {});
 
   useEffect(() => {

@@ -4,7 +4,6 @@ import { IconColumns, IconSearch, IconX } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 import type { TableColumn } from "./airbrushing-table";
 
 interface AirbrushingColumnDrawerContentProps {
@@ -26,7 +25,6 @@ export const AirbrushingColumnDrawerContent: React.FC<AirbrushingColumnDrawerCon
 }) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeColumnDrawer } = useUtilityDrawer();
   const [searchQuery, setSearchQuery] = useState("");
   const [localVisible, setLocalVisible] = useState(() => new Set(visibleColumns || []));
 
@@ -58,8 +56,8 @@ export const AirbrushingColumnDrawerContent: React.FC<AirbrushingColumnDrawerCon
 
   const handleApply = useCallback(() => {
     onVisibilityChange(localVisible);
-    onClose ? onClose() : closeColumnDrawer();
-  }, [localVisible, onVisibilityChange, onClose, closeColumnDrawer]);
+    const handleClose = onClose || (() => {}); handleClose();
+  }, [localVisible, onVisibilityChange, onClose]);
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery("");
@@ -85,7 +83,7 @@ export const AirbrushingColumnDrawerContent: React.FC<AirbrushingColumnDrawerCon
             </ThemedText>
           </View>
         </View>
-        <TouchableOpacity onPress={onClose || closeColumnDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || (() => {})} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>
@@ -196,7 +194,7 @@ export const AirbrushingColumnDrawerContent: React.FC<AirbrushingColumnDrawerCon
           style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={() => {
             Keyboard.dismiss();
-            onClose ? onClose() : closeColumnDrawer();
+            const handleClose = onClose || (() => {}); handleClose();
           }}
           activeOpacity={0.7}
         >

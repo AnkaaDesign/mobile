@@ -22,9 +22,6 @@ import { useServiceOrderMutations } from '../../../../hooks';
 import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 import type { ServiceOrderGetManyFormData } from '../../../../schemas';
-
-// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 import { ServiceOrderFilterDrawerContent } from "@/components/production/service-order/list/service-order-filter-drawer-content";
@@ -32,7 +29,6 @@ import { ServiceOrderFilterDrawerContent } from "@/components/production/service
 export default function ServiceOrderListScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
   const { user } = useAuth();

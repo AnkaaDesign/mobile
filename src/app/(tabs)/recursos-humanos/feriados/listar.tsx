@@ -15,7 +15,7 @@ import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
-import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { HolidayFilterDrawerContent } from "@/components/human-resources/holiday/list/holiday-filter-drawer-content";
 
 export default function HolidayListScreen() {
@@ -202,7 +202,7 @@ export default function HolidayListScreen() {
       </SlideInPanel>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
-        <ColumnVisibilityDrawerContent
+        <ColumnVisibilitySlidePanel
           columns={allColumns}
           visibleColumns={new Set(visibleColumnKeys)}
           onVisibilityChange={handleColumnsChange}

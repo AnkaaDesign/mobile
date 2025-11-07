@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconFileText, IconCalendarPlus, IconServer } from '@
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
 import { Badge } from '@/components/ui/badge';
@@ -52,9 +51,7 @@ export function LogFilterDrawerContent({
 }: LogFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   const [localFilters, setLocalFilters] = useState<FilterState>(() => ({
     levels: filters.levels || [],

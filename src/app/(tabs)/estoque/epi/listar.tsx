@@ -21,7 +21,7 @@ import { ITEM_CATEGORY_TYPE } from '../../../../constants';
 
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
-import { PpeFilterSlidePanel } from "@/components/inventory/ppe/list/ppe-filter-slide-panel";
+import { PpeFilterDrawerContent } from "@/components/inventory/ppe/list/ppe-filter-drawer-content";
 
 export default function PPEListScreen() {
   const router = useRouter();
@@ -358,7 +358,7 @@ export default function PPEListScreen() {
     </ThemedView>
 
     <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
-      <PpeFilterSlidePanel
+      <PpeFilterDrawerContent
         filters={filters}
         onFiltersChange={setFilters}
         onClear={handleClearFilters}

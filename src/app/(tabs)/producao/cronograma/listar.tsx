@@ -6,9 +6,7 @@ import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 import { getDefaultVisibleColumns } from "@/components/production/task/list/column-visibility-manager";
-import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
-// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { IconButton } from "@/components/ui/icon-button";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -34,7 +32,6 @@ export default function ScheduleListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { delete: deleteTask, update } = useTaskMutations();
-  // const { openColumnDrawer } = useUtilityDrawer();
 
   // Filter states - simplified for schedule view (only search, no filter drawer)
   const [searchText, setSearchText] = useState("");
@@ -372,7 +369,7 @@ export default function ScheduleListScreen() {
       </View>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
-        <ColumnVisibilityDrawerContent
+        <ColumnVisibilitySlidePanel
           columns={allColumns}
           visibleColumns={new Set(visibleColumnKeys)}
           onVisibilityChange={handleColumnsChange}

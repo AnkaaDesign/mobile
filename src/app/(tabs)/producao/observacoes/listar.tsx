@@ -26,8 +26,6 @@ import { ObservationListSkeleton } from "@/components/production/observation/ske
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
-// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ObservationFilterDrawerContent } from "@/components/production/observation/list/observation-filter-drawer-content";
 import { ObservationColumnDrawerContent } from "@/components/production/observation/list/observation-column-drawer-content";
@@ -36,7 +34,6 @@ export default function ObservationListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);

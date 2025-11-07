@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconShield, IconUsers, IconCalendarPlus, IconFileChe
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { useUsers, useItems } from '../../../../../hooks';
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '../../../../../constants';
 import { Combobox } from '@/components/ui/combobox';
@@ -37,8 +36,6 @@ export function PpeDeliveryFilterDrawerContent({
 }: PpeDeliveryFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
   // Fetch data for selectors
   const { data: usersData } = useUsers({ perPage: 100, orderBy: { name: "asc" } });
   const { data: itemsData } = useItems({
@@ -87,12 +84,8 @@ export function PpeDeliveryFilterDrawerContent({
     }
 
     onFiltersChange(newFilters);
-    if (onClose) {
-      onClose();
-    } else {
-      closeFilterDrawer();
-    }
-  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer]);
+    const handleClose = onClose || (() => {}); handleClose();
+  }, [localFilters, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -145,7 +138,7 @@ export function PpeDeliveryFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || (() => {})} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

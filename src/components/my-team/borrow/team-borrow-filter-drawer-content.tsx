@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconCalendarPlus, IconUsers, IconChecklist, IconCate
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
 import { BORROW_STATUS, BORROW_STATUS_LABELS } from '@/constants';
@@ -42,8 +41,6 @@ export function TeamBorrowFilterDrawerContent({
 }: TeamBorrowFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
   // Initialize localFilters with filters value immediately
   const [localFilters, setLocalFilters] = useState<TeamBorrowFilters>(() => ({
     userIds: filters.userIds || [],
@@ -92,8 +89,8 @@ export function TeamBorrowFilterDrawerContent({
     }
 
     onFiltersChange(newFilters);
-    onClose ? onClose() : closeFilterDrawer();
-  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer]);
+    const handleClose = onClose || (() => {}); handleClose();
+  }, [localFilters, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -151,7 +148,7 @@ export function TeamBorrowFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || (() => {})} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

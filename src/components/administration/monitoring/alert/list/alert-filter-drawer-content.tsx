@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconAlertTriangle, IconCalendarPlus, IconInfoCircle 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { NOTIFICATION_IMPORTANCE, NOTIFICATION_IMPORTANCE_LABELS, ALERT_TYPE, ALERT_TYPE_LABELS } from '../../../../../constants';
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
@@ -47,9 +46,7 @@ export function AlertFilterDrawerContent({
 }: AlertFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   const [localFilters, setLocalFilters] = useState<FilterState>(() => ({
     severities: filters.severities || [],

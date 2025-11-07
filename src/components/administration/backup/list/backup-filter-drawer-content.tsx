@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconDatabase, IconCalendarPlus, IconCircleCheck } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import type { BackupQueryParams } from '../../../../api-client';
 import { Badge } from '@/components/ui/badge';
 import { DateRangeFilter } from '@/components/common/filters';
@@ -46,9 +45,7 @@ export function BackupFilterDrawerContent({
 }: BackupFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   const [localFilters, setLocalFilters] = useState<FilterState>(() => ({
     type: filters.type,

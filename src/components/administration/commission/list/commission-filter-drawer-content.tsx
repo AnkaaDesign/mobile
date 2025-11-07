@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconCircleCheck, IconUsers, IconChecklist, IconCalen
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
 import { useUsers, useTasks } from '../../../../hooks';
@@ -36,9 +35,7 @@ export function CommissionFilterDrawerContent({
 }: CommissionFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   // Load filter options
   const { data: usersData } = useUsers({});

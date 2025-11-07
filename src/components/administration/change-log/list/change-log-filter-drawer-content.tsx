@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconUser, IconCalendarPlus, IconFileText } from '@ta
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { Combobox } from '@/components/ui/combobox';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateRangeFilter } from '@/components/common/filters';
@@ -42,9 +41,7 @@ export function ChangeLogFilterDrawerContent({
 }: ChangeLogFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   const { data: usersData } = useUsers({ limit: 100 });
   const users = usersData?.data || [];

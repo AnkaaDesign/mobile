@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconAlertTriangle, IconBriefcase, IconBuilding, Icon
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { USER_STATUS } from '../../../../constants';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -44,9 +43,7 @@ export function TeamMemberFilterDrawerContent({
 }: TeamMemberFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
   // Initialize localFilters with filters value immediately
   const [localFilters, setLocalFilters] = useState(() => filters || {});
 

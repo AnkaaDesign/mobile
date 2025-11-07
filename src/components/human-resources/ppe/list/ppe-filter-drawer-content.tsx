@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconShield, IconCategory } from '@tabler/icons-react
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { useItemCategories } from '../../../../hooks';
 import { PPE_TYPE, PPE_TYPE_LABELS } from '../../../../constants';
 import { Combobox } from '@/components/ui/combobox';
@@ -33,8 +32,6 @@ export function PpeFilterDrawerContent({
 }: PpeFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
   // Load categories for filtering
   const { data: categoriesResponse } = useItemCategories({
     perPage: 100,
@@ -80,12 +77,8 @@ export function PpeFilterDrawerContent({
     };
 
     onFiltersChange(newFilters);
-    if (onClose) {
-      onClose();
-    } else {
-      closeFilterDrawer();
-    }
-  }, [localFilters, filters, onFiltersChange, onClose, closeFilterDrawer]);
+    const handleClose = onClose || (() => {}); handleClose();
+  }, [localFilters, filters, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({
@@ -133,7 +126,7 @@ export function PpeFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || (() => {})} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

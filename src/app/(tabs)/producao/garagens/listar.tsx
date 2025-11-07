@@ -16,9 +16,6 @@ import { GarageListSkeleton } from "@/components/production/garage/skeleton/gara
 import { useTheme } from "@/lib/theme";
 import { routes } from "../../../../constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
-
-// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 import { GarageFilterDrawerContent } from "@/components/production/garage/list/garage-filter-drawer-content";
@@ -27,7 +24,6 @@ export default function GarageListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");

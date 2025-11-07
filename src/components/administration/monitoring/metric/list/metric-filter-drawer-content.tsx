@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconChartBar, IconClock } from '@tabler/icons-react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { Badge } from '@/components/ui/badge';
 
 export type MetricCategory = "cpu" | "memory" | "disk" | "network" | "system" | "temperature";
@@ -66,9 +65,7 @@ export function MetricFilterDrawerContent({
 }: MetricFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   const [localFilters, setLocalFilters] = useState<FilterState>(() => ({
     categories: filters.categories || [],

@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconActivity, IconPackage, IconUser, IconHash, IconC
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { useItems, useUsers } from '../../../../hooks';
 import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON, ACTIVITY_REASON_LABELS } from '../../../../constants';
 import { Combobox } from '@/components/ui/combobox';
@@ -39,8 +38,7 @@ export function ActivityFilterDrawerContent({
 }: ActivityFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
-  const handleClose = onClose || closeFilterDrawer;
+  const handleClose = onClose || (() => {});
 
   const { data: itemsData } = useItems({ limit: 100 });
   const { data: usersData } = useUsers({ limit: 100 });
