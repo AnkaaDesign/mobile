@@ -73,11 +73,7 @@ export default function InventoryMaintenanceListScreen() {
     const timer = setTimeout(() => {
       setDebouncedSearchText(searchText);
     }, 300);
-    return (
-    <UtilityDrawerWrapper>
-    ) => clearTimeout(timer
-    </UtilityDrawerWrapper>
-  );
+    return () => clearTimeout(timer);
   }, [searchText]);
 
   // Clear all filters

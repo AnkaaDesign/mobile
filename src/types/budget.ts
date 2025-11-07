@@ -9,12 +9,23 @@ import type { Task, TaskIncludes, TaskOrderBy } from "./task";
 // =====================
 
 export interface Budget extends BaseEntity {
-  referencia: string;
-  valor: number;
+  total: number;
+  expiresIn: Date;
   taskId: string;
 
   // Relations
   task?: Task;
+  items?: BudgetItem[];
+}
+
+// Budget Item (line items)
+export interface BudgetItem {
+  id: string;
+  description: string;
+  amount: number;
+  budgetId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // =====================
@@ -35,9 +46,9 @@ export interface BudgetIncludes {
 
 export interface BudgetOrderBy {
   id?: ORDER_BY_DIRECTION;
-  referencia?: ORDER_BY_DIRECTION;
-  valor?: ORDER_BY_DIRECTION;
   taskId?: ORDER_BY_DIRECTION;
+  expiresIn?: ORDER_BY_DIRECTION;
+  total?: ORDER_BY_DIRECTION;
   createdAt?: ORDER_BY_DIRECTION;
   updatedAt?: ORDER_BY_DIRECTION;
   task?: TaskOrderBy;

@@ -1117,11 +1117,10 @@ export const ppeDeliveryByScheduleSchema = z.object({
 // PPE configuration is now stored directly on the Item model.
 // Items with PPE configuration have the following fields:
 // - ppeType: PPE_TYPE enum
-// - ppeSize: PPE_SIZE enum
 // - ppeCA: string (Certificate of Approval)
 // - ppeDeliveryMode: PPE_DELIVERY_MODE enum
 // - ppeStandardQuantity: number
-// - ppeAutoOrderMonths: number
+// - PPE sizes are stored in the item's measures array with measureType: "SIZE"
 
 // =====================
 // PPE SCHEDULE SCHEMAS

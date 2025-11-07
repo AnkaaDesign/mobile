@@ -221,13 +221,22 @@ export const usePpeItemsByTypeAndSize = createSpecializedQueryHook<{ ppeType: st
   queryFn: ({ ppeType, ppeSize, filters }) =>
     getItems({
       ...filters,
+      include: {
+        measures: true,
+        ...filters?.include,
+      },
       where: {
         ...filters?.where,
         ppeType,
-        ppeSize,
         category: {
           type: {
             equals: ITEM_CATEGORY_TYPE.PPE,
+          },
+        },
+        measures: {
+          some: {
+            measureType: "SIZE",
+            unit: ppeSize,
           },
         },
       },

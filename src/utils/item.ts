@@ -231,15 +231,15 @@ export function filterPpeItemsByType(items: Item[], ppeType: PPE_TYPE): Item[] {
 /**
  * Filter PPE items by size
  */
-export function filterPpeItemsBySize(items: Item[], ppeSize: PPE_SIZE): Item[] {
-  return items.filter((item) => item.ppeSize === ppeSize);
+export function filterPpeItemsBySize(items: Item[], ppeSize: string): Item[] {
+  return items.filter((item) => getPpeSize(item) === ppeSize);
 }
 
 /**
  * Filter PPE items by type and size
  */
-export function filterPpeItemsByTypeAndSize(items: Item[], ppeType: PPE_TYPE, ppeSize: PPE_SIZE): Item[] {
-  return items.filter((item) => item.ppeType === ppeType && item.ppeSize === ppeSize);
+export function filterPpeItemsByTypeAndSize(items: Item[], ppeType: PPE_TYPE, ppeSize: string): Item[] {
+  return items.filter((item) => item.ppeType === ppeType && getPpeSize(item) === ppeSize);
 }
 
 /**
@@ -264,20 +264,21 @@ export function groupPpeItemsByType(items: Item[]): Record<PPE_TYPE, Item[]> {
 /**
  * Group PPE items by size
  */
-export function groupPpeItemsBySize(items: Item[]): Record<PPE_SIZE, Item[]> {
+export function groupPpeItemsBySize(items: Item[]): Record<string, Item[]> {
   const ppeItems = filterPpeItems(items);
-  const groups: Partial<Record<PPE_SIZE, Item[]>> = {};
+  const groups: Record<string, Item[]> = {};
 
   ppeItems.forEach((item) => {
-    if (item.ppeSize) {
-      if (!groups[item.ppeSize]) {
-        groups[item.ppeSize] = [];
+    const ppeSize = getPpeSize(item);
+    if (ppeSize) {
+      if (!groups[ppeSize]) {
+        groups[ppeSize] = [];
       }
-      groups[item.ppeSize]!.push(item);
+      groups[ppeSize].push(item);
     }
   });
 
-  return groups as Record<PPE_SIZE, Item[]>;
+  return groups;
 }
 
 /**
@@ -362,7 +363,7 @@ export function hasCA(item: Item): boolean {
  * Check if item is a PPE (Personal Protective Equipment)
  */
 export function isPpe(item: Item): boolean {
-  return item.ppeType !== null && item.ppeSize !== null;
+  return item.ppeType !== null;
 }
 
 /**
@@ -373,17 +374,19 @@ export function getPpeType(item: Item): PPE_TYPE | null {
 }
 
 /**
- * Get PPE size from item
+ * Get PPE size from item (extracted from measures array)
  */
-export function getPpeSize(item: Item): PPE_SIZE | null {
-  return item.ppeSize;
+export function getPpeSize(item: Item): string | null {
+  if (!item.measures || item.measures.length === 0) return null;
+  const sizeMeasure = item.measures.find(m => m.measureType === "SIZE");
+  return sizeMeasure?.unit || null;
 }
 
 /**
  * Check if item has PPE configuration
  */
 export function hasPpeConfiguration(item: Item): boolean {
-  return isPpe(item) && item.ppeDeliveryMode !== null && item.ppeStandardQuantity !== null && item.ppeAutoOrderMonths !== null;
+  return isPpe(item) && item.ppeDeliveryMode !== null && item.ppeStandardQuantity !== null;
 }
 
 /**

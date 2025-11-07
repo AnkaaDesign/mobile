@@ -88,7 +88,6 @@ export function ItemForm(props: ItemFormProps) {
     ppeCA: null,
     ppeDeliveryMode: null,
     ppeStandardQuantity: null,
-    ppeAutoOrderMonths: null,
     monthlyConsumptionTrendPercent: null,
     ...defaultValues,
   };

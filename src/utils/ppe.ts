@@ -549,7 +549,7 @@ export function getPpeSizeByType(ppeSize: PpeSize, ppeType: PPE_TYPE): string | 
  * Check if an item is a PPE
  */
 export function isItemPpe(item: Item): boolean {
-  return item.ppeType !== null && item.ppeSize !== null;
+  return item.ppeType !== null;
 }
 
 /**
@@ -559,7 +559,9 @@ export function formatPpeItemName(item: Item): string {
   if (!isItemPpe(item)) return item.name;
 
   const ppeType = item.ppeType ? getPpeTypeLabel(item.ppeType) : "";
-  const ppeSize = item.ppeSize ? getPpeSizeLabel(item.ppeSize) : "";
+  // Extract size from measures array
+  const sizeMeasure = item.measures?.find(m => m.measureType === "SIZE");
+  const ppeSize = sizeMeasure?.unit ? getPpeSizeLabel(sizeMeasure.unit as PPE_SIZE) : "";
 
   if (ppeType && ppeSize) {
     return `${item.name} - ${ppeType} ${ppeSize}`;
@@ -573,13 +575,6 @@ export function formatPpeItemName(item: Item): string {
  */
 export function getPpeStandardQuantity(item: Item): number {
   return item.ppeStandardQuantity || 1;
-}
-
-/**
- * Get PPE auto order months from item
- */
-export function getPpeAutoOrderMonths(item: Item): number {
-  return item.ppeAutoOrderMonths || 6;
 }
 
 /**

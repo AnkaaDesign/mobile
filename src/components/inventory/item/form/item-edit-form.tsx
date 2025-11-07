@@ -74,7 +74,6 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       ppeCA: apiData.ppeCA,
       ppeDeliveryMode: apiData.ppeDeliveryMode,
       ppeStandardQuantity: apiData.ppeStandardQuantity,
-      ppeAutoOrderMonths: apiData.ppeAutoOrderMonths,
     };
   }, []);
 

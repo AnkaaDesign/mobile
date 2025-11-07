@@ -162,7 +162,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (task: Task) => {
-      const totalValue = task.budget?.reduce((sum, item) => sum + item.valor, 0) || 0;
+      const totalValue = task.budget?.total || 0;
       return (
         <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
           {totalValue > 0 ? formatCurrency(totalValue) : "-"}

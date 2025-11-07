@@ -267,7 +267,12 @@ const ALL_ROUTES = [
   { name: "meu-pessoal/emprestimos", title: "Empréstimos" },
   { name: "meu-pessoal/ferias", title: "Férias" },
 
-  // Personal
+  // Minha Equipe (My Team - for team leaders only)
+  { name: "minha-equipe/index", title: "Minha Equipe" },
+  { name: "minha-equipe/membros/listar", title: "Membros da Equipe" },
+  { name: "minha-equipe/membros/detalhes/[id]", title: "Detalhes do Membro" },
+
+  // Personal (User's own information only)
   { name: "pessoal/meus-emprestimos/detalhes/[id]", title: "Detalhes do Empréstimo" },
   { name: "pessoal/meus-epis/request", title: "Solicitar EPI" },
   { name: "pessoal/meus-feriados/detalhes/[id]", title: "Detalhes do Feriado" },

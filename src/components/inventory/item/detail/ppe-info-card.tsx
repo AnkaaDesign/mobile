@@ -115,16 +115,6 @@ export function PpeInfoCard({ item }: PpeInfoCardProps) {
                   </View>
                   <ThemedText style={StyleSheet.flatten([styles.deliveryValueLarge, { color: colors.foreground }])}>{item.ppeStandardQuantity}</ThemedText>
                 </View>
-
-                <View style={styles.deliveryItem}>
-                  <View style={styles.labelContainer}>
-                    <IconCalendar size={16} color={colors.mutedForeground} />
-                    <ThemedText style={StyleSheet.flatten([styles.deliveryLabel, { color: colors.mutedForeground }])} numberOfLines={1}>
-                      Anteced. Pedido
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={StyleSheet.flatten([styles.deliveryValueLarge, { color: colors.foreground }])}>{item.ppeAutoOrderMonths} meses</ThemedText>
-                </View>
               </View>
             </View>
           </View>

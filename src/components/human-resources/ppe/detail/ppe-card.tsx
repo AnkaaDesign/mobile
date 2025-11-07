@@ -61,14 +61,6 @@ export function PpeCard({ item }: PpeCardProps) {
             value={`${item.ppeStandardQuantity} unidade${item.ppeStandardQuantity > 1 ? "s" : ""}`}
           />
         )}
-
-        {item.ppeAutoOrderMonths && (
-          <DetailRow
-            icon={IconCalendar as any}
-            label="Período de Pedido Automático"
-            value={`${item.ppeAutoOrderMonths} ${item.ppeAutoOrderMonths === 1 ? "mês" : "meses"}`}
-          />
-        )}
       </View>
     </Card>
   );

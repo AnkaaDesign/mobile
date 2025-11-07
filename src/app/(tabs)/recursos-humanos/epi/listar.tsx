@@ -52,8 +52,6 @@ export default function PpeListScreen() {
           return { ppeType: config.direction };
         case "ppeCA":
           return { ppeCA: config.direction };
-        case "ppeAutoOrderMonths":
-          return { ppeAutoOrderMonths: config.direction };
         case "quantity":
           return { quantity: config.direction };
         case "createdAt":
@@ -72,8 +70,6 @@ export default function PpeListScreen() {
           return { ppeType: config.direction };
         case "ppeCA":
           return { ppeCA: config.direction };
-        case "ppeAutoOrderMonths":
-          return { ppeAutoOrderMonths: config.direction };
         case "quantity":
           return { quantity: config.direction };
         case "createdAt":

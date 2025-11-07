@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { View, ScrollView } from "react-native";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,8 +12,9 @@ import { usePpeDeliveryMutations, useUsers, useItems } from '../../../hooks';
 import { ppeDeliveryCreateSchema } from '../../../schemas';
 import type { PpeDeliveryCreateFormData } from '../../../schemas';
 import type { User, Item } from '../../../types';
-import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, USER_STATUS } from '../../../constants';
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, USER_STATUS, PPE_TYPE } from '../../../constants';
 import { Controller } from "react-hook-form";
+import { getItemPpeSize } from '../../../utils/ppe-size-mapping';
 
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,7 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
   const { data: users } = useUsers({
     where: { status: { not: USER_STATUS.DISMISSED } },
     orderBy: { name: "asc" },
+    include: { ppeSize: true }, // Include user's PPE size configuration
   });
 
   const { data: items } = useItems({
@@ -39,6 +41,7 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
       isActive: true,
     },
     orderBy: { name: "asc" },
+    include: { measures: true }, // Include measures to get SIZE
   });
 
   const form = useForm<PpeDeliveryCreateFormData>({
@@ -106,17 +109,70 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
             control={form.control}
             name="itemId"
             render={({ field: { onChange, value }, fieldState: { error } }) => {
+              // Get selected user to filter items by size
+              const selectedUserId = form.watch("userId");
+              const selectedUser = users?.data?.find(u => u.id === selectedUserId);
+
+              // Filter items based on user's PPE size configuration
+              const filteredItems = useMemo(() => {
+                if (!items?.data) return [];
+
+                // If no user selected or user has no ppeSize config, show all items
+                if (!selectedUser?.ppeSize) return items.data;
+
+                return items.data.filter((item) => {
+                  // If item has no ppeType, include it (not a sized PPE)
+                  if (!item.ppeType) return true;
+
+                  // For OTHERS type, sizes are optional
+                  if (item.ppeType === PPE_TYPE.OTHERS) return true;
+
+                  // Get item size from measures
+                  const itemSize = getItemPpeSize(item);
+
+                  // If item has no size, include it (size is optional)
+                  if (!itemSize) return true;
+
+                  // Get user's size for this PPE type
+                  let userSize: string | null = null;
+                  if (item.ppeType === PPE_TYPE.SHIRT || item.ppeType === PPE_TYPE.SLEEVES) {
+                    userSize = selectedUser.ppeSize.shirts || selectedUser.ppeSize.sleeves;
+                  } else if (item.ppeType === PPE_TYPE.PANTS) {
+                    userSize = selectedUser.ppeSize.pants;
+                  } else if (item.ppeType === PPE_TYPE.BOOTS) {
+                    userSize = selectedUser.ppeSize.boots;
+                  } else if (item.ppeType === PPE_TYPE.GLOVES) {
+                    userSize = selectedUser.ppeSize.gloves;
+                  } else if (item.ppeType === PPE_TYPE.MASK) {
+                    userSize = selectedUser.ppeSize.mask;
+                  } else if (item.ppeType === PPE_TYPE.RAIN_BOOTS) {
+                    userSize = selectedUser.ppeSize.rainBoots;
+                  }
+
+                  // If user has no size configured for this type, include all items
+                  if (!userSize) return true;
+
+                  // Match item size with user size
+                  return itemSize === userSize;
+                });
+              }, [items?.data, selectedUser]);
+
               const itemOptions: ComboboxOption[] =
-                items?.data?.map((item) => ({
+                filteredItems.map((item) => ({
                   value: item.id,
                   label: item.name + (item.ppeCA ? ` - CA: ${item.ppeCA}` : ""),
-                })) || [];
+                }));
 
               return (
                 <View className="gap-2">
                   <Text className="text-sm font-medium text-foreground">
                     EPI <Text className="text-destructive">*</Text>
                   </Text>
+                  {selectedUser?.ppeSize && (
+                    <Text className="text-xs text-muted-foreground">
+                      Mostrando apenas EPIs compatíveis com o tamanho do colaborador
+                    </Text>
+                  )}
                   <Combobox
                     options={itemOptions}
                     value={value}

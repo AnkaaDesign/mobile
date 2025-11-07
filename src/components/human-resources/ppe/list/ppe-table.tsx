@@ -93,18 +93,6 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "ppeAutoOrderMonths",
-    header: "Validade",
-    align: "center",
-    sortable: true,
-    width: 0,
-    accessor: (item: Item) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
-        {item.ppeAutoOrderMonths ? `${item.ppeAutoOrderMonths} meses` : "-"}
-      </ThemedText>
-    ),
-  },
-  {
     key: "quantity",
     header: "Estoque",
     align: "center",
@@ -159,7 +147,6 @@ export const PpeTable = React.memo<PpeTableProps>(
         name: 2.0,
         ppeType: 1.0,
         ppeCA: 0.8,
-        ppeAutoOrderMonths: 1.0,
         quantity: 0.8,
         deliveries: 0.8,
       };

@@ -1,66 +1,110 @@
-import { PPE_SIZE } from '../constants';
+import type { Item, Measure } from '../types';
+import { PPE_SIZE, MEASURE_TYPE } from '../constants';
 
 /**
- * Maps PPE size enum values to numeric values for storage in measures table
- * This allows us to store categorical sizes as numeric values in the measures.value field
+ * Helper utilities for working with PPE sizes stored in the measures array.
+ * PPE sizes are now stored as measures with measureType: "SIZE" and unit: [PPE_SIZE_VALUE]
  */
-export const PPE_SIZE_TO_NUMERIC: Record<string, number> = {
-  // Shirt, Sleeves, Mask sizes
-  [PPE_SIZE.P]: 1,
-  [PPE_SIZE.M]: 2,
-  [PPE_SIZE.G]: 3,
-  [PPE_SIZE.GG]: 4,
-  [PPE_SIZE.XG]: 5,
-
-  // Boots and Pants sizes (numeric)
-  [PPE_SIZE.SIZE_36]: 36,
-  [PPE_SIZE.SIZE_38]: 38,
-  [PPE_SIZE.SIZE_40]: 40,
-  [PPE_SIZE.SIZE_42]: 42,
-  [PPE_SIZE.SIZE_44]: 44,
-  [PPE_SIZE.SIZE_46]: 46,
-  [PPE_SIZE.SIZE_48]: 48,
-};
 
 /**
- * Maps numeric values back to PPE size enum values
+ * Extract PPE size from item's measures array
+ * Returns the size value from the first SIZE measure found
  */
-export const NUMERIC_TO_PPE_SIZE: Record<number, string> = Object.fromEntries(Object.entries(PPE_SIZE_TO_NUMERIC).map(([size, value]) => [value, size]));
+export function getItemPpeSize(item: Item): string | null {
+  if (!item.measures || item.measures.length === 0) {
+    return null;
+  }
 
-/**
- * Convert PPE size string to numeric value for storage
- */
-export function ppeSizeToNumeric(size: string): number | null {
-  return PPE_SIZE_TO_NUMERIC[size] || null;
+  const sizeMeasure = item.measures.find(m => m.measureType === MEASURE_TYPE.SIZE);
+  return sizeMeasure?.unit || null;
 }
 
 /**
- * Convert numeric value back to PPE size string
+ * Check if item has specific PPE size
  */
-export function numericToPpeSize(value: number): string | null {
-  return NUMERIC_TO_PPE_SIZE[value] || null;
+export function itemHasPpeSize(item: Item, size: string): boolean {
+  const itemSize = getItemPpeSize(item);
+  return itemSize === size;
 }
 
 /**
- * Get PPE size from an item's measures
+ * Filter items by PPE size
  */
-export function getPpeSizeFromMeasures(measures: Array<{ measureType: string; value: number }>): string | null {
-  const sizeMeasure = measures.find((m) => m.measureType === "SIZE");
-  if (!sizeMeasure) return null;
-  return numericToPpeSize(sizeMeasure.value);
+export function filterItemsByPpeSize(items: Item[], size: string): Item[] {
+  return items.filter(item => itemHasPpeSize(item, size));
+}
+
+/**
+ * Get all items that have a PPE size (any SIZE measure)
+ */
+export function filterItemsWithPpeSize(items: Item[]): Item[] {
+  return items.filter(item => getItemPpeSize(item) !== null);
+}
+
+/**
+ * Group items by their PPE size
+ */
+export function groupItemsByPpeSize(items: Item[]): Record<string, Item[]> {
+  const groups: Record<string, Item[]> = {};
+
+  items.forEach(item => {
+    const size = getItemPpeSize(item);
+    if (size) {
+      if (!groups[size]) {
+        groups[size] = [];
+      }
+      groups[size].push(item);
+    }
+  });
+
+  return groups;
 }
 
 /**
  * Create a measure object for PPE size
+ * This can be used when creating or updating items
  */
-export function createPpeSizeMeasure(size: string, itemId: string) {
-  const numericValue = ppeSizeToNumeric(size);
-  if (!numericValue) return null;
-
+export function createPpeSizeMeasure(size: string): Omit<Measure, 'id' | 'itemId' | 'createdAt' | 'updatedAt'> {
   return {
-    measureType: "SIZE",
-    value: numericValue,
-    unit: "UNIT", // SIZE measures use UNIT as the unit
-    itemId,
+    measureType: MEASURE_TYPE.SIZE,
+    unit: size, // Size is stored in the unit field
+    value: null, // No numeric value for SIZE measures
   };
+}
+
+/**
+ * Update or add PPE size measure to an item's measures array
+ * Returns a new measures array with the size measure updated/added
+ */
+export function updateItemPpeSize(item: Item, newSize: string): Measure[] {
+  const currentMeasures = item.measures || [];
+  const nonSizeMeasures = currentMeasures.filter(m => m.measureType !== MEASURE_TYPE.SIZE);
+
+  return [
+    ...nonSizeMeasures,
+    createPpeSizeMeasure(newSize) as Measure,
+  ];
+}
+
+/**
+ * Remove PPE size measure from an item's measures array
+ * Returns a new measures array without the SIZE measure
+ */
+export function removeItemPpeSize(item: Item): Measure[] {
+  const currentMeasures = item.measures || [];
+  return currentMeasures.filter(m => m.measureType !== MEASURE_TYPE.SIZE);
+}
+
+/**
+ * Check if a measure is a PPE size measure
+ */
+export function isSizeMeasure(measure: Measure): boolean {
+  return measure.measureType === MEASURE_TYPE.SIZE;
+}
+
+/**
+ * Validate if a size value is a valid PPE size
+ */
+export function isValidPpeSize(size: string): boolean {
+  return Object.values(PPE_SIZE).includes(size as PPE_SIZE);
 }

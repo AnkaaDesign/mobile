@@ -77,7 +77,11 @@ export default function ScheduleDetailsScreen() {
       createdBy: true,
       services: true,
       artworks: true,
-      budget: true,
+      budget: {
+        include: {
+          items: true,
+        },
+      },
       budgets: true,
       invoices: true,
       receipts: true,

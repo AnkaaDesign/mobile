@@ -154,7 +154,8 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
   const isSavingRef = useRef(false);
 
   // Track last user interaction timestamp to prevent unwanted resets
-  const lastUserInteractionRef = useRef<number>(Date.now());
+  // Initialize to 0 to allow initial sync from backend
+  const lastUserInteractionRef = useRef<number>(0);
 
   // Track if there are pending changes that shouldn't be overwritten
   const hasPendingChangesRef = useRef<boolean>(false);

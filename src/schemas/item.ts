@@ -2110,14 +2110,9 @@ export const itemCreateSchemaBase = z.object({
 
   // PPE fields (when item is a PPE)
   ppeType: z.nativeEnum(PPE_TYPE).nullable().optional(),
-  ppeSize: z
-    .enum(Object.values(PPE_SIZE) as [string, ...string[]])
-    .nullable()
-    .optional(),
   ppeCA: z.string().nullable().optional(),
   ppeDeliveryMode: z.nativeEnum(PPE_DELIVERY_MODE).nullable().optional(),
   ppeStandardQuantity: z.number().int().positive().nullable().optional(),
-  ppeAutoOrderMonths: z.number().int().min(0).max(12).nullable().optional(),
 });
 
 export const itemUpdateSchemaBase = z.object({
@@ -2184,14 +2179,9 @@ export const itemUpdateSchemaBase = z.object({
 
   // PPE fields (when item is a PPE)
   ppeType: z.nativeEnum(PPE_TYPE).nullable().optional(),
-  ppeSize: z
-    .enum(Object.values(PPE_SIZE) as [string, ...string[]])
-    .nullable()
-    .optional(),
   ppeCA: z.string().nullable().optional(),
   ppeDeliveryMode: z.nativeEnum(PPE_DELIVERY_MODE).nullable().optional(),
   ppeStandardQuantity: z.number().int().positive().nullable().optional(),
-  ppeAutoOrderMonths: z.number().int().min(0).max(12).nullable().optional(),
 });
 
 // Apply transforms
@@ -2489,12 +2479,9 @@ export const mapItemToFormData = createMapToFormDataHelper<Item, ItemUpdateFormD
   xyzCategoryOrder: item.xyzCategoryOrder,
   // PPE fields
   ppeType: item.ppeType || undefined,
-  ppeSize: item.ppeSize || undefined,
-  ppeSizeOrder: item.ppeSizeOrder || undefined,
   ppeCA: item.ppeCA || undefined,
   ppeDeliveryMode: item.ppeDeliveryMode || undefined,
   ppeStandardQuantity: item.ppeStandardQuantity || undefined,
-  ppeAutoOrderMonths: item.ppeAutoOrderMonths || undefined,
 }));
 
 export const mapItemBrandToFormData = createMapToFormDataHelper<ItemBrand, ItemBrandUpdateFormData>((brand) => ({

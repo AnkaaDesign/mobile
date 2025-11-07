@@ -972,6 +972,7 @@ export enum PPE_TYPE {
   MASK = "MASK",
   GLOVES = "GLOVES",
   RAIN_BOOTS = "RAIN_BOOTS",
+  OTHERS = "OTHERS",
 }
 
 export enum PPE_SIZE_TYPE {

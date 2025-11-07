@@ -134,29 +134,10 @@ export function PpeConfigSection({ disabled, required }: PpeConfigSectionProps) 
           )}
         />
 
-        <Controller
-          control={control}
-          name={"ppeAutoOrderMonths" as const}
-          render={({ field: { onChange, value, onBlur }, fieldState: { error } }) => (
-            <View style={StyleSheet.flatten([styles.field, styles.halfField])}>
-              <ThemedText style={styles.label}>Meses para Auto-pedido {required && <ThemedText variant="destructive">*</ThemedText>}</ThemedText>
-              <Input
-                value={value?.toString() || ""}
-                onChangeText={(text) => onChange(text ? parseInt(text) : undefined)}
-                onBlur={onBlur}
-                placeholder="Ex: 2"
-                keyboardType="numeric"
-                editable={!disabled}
-                error={!!error}
-              />
-              {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-            </View>
-          )}
-        />
       </View>
 
       <View style={styles.infoBox}>
-        <ThemedText style={styles.infoText}>Configure as informações específicas para controle de EPI. O sistema gerenciará entregas e pedidos automaticamente.</ThemedText>
+        <ThemedText style={styles.infoText}>Configure as informações específicas para controle de EPI. O sistema gerenciará entregas automaticamente.</ThemedText>
       </View>
     </View>
   );

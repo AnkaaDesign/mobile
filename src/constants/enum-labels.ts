@@ -845,6 +845,7 @@ export const PPE_TYPE_LABELS: Record<PPE_TYPE, string> = {
   [PPE_TYPE.MASK]: "Máscara",
   [PPE_TYPE.GLOVES]: "Luvas",
   [PPE_TYPE.RAIN_BOOTS]: "Galocha",
+  [PPE_TYPE.OTHERS]: "Outros",
 };
 
 export const PPE_SIZE_TYPE_LABELS: Record<PPE_SIZE_TYPE, string> = {

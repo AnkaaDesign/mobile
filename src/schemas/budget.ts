@@ -46,9 +46,9 @@ export const budgetOrderBySchema = z
     z
       .object({
         id: orderByDirectionSchema.optional(),
-        referencia: orderByDirectionSchema.optional(),
-        valor: orderByDirectionSchema.optional(),
         taskId: orderByDirectionSchema.optional(),
+        expiresIn: orderByDirectionSchema.optional(),
+        total: orderByDirectionSchema.optional(),
         createdAt: orderByDirectionSchema.optional(),
         updatedAt: orderByDirectionSchema.optional(),
         task: z
@@ -72,9 +72,9 @@ export const budgetOrderBySchema = z
       z
         .object({
           id: orderByDirectionSchema.optional(),
-          referencia: orderByDirectionSchema.optional(),
-          valor: orderByDirectionSchema.optional(),
           taskId: orderByDirectionSchema.optional(),
+          expiresIn: orderByDirectionSchema.optional(),
+          total: orderByDirectionSchema.optional(),
           createdAt: orderByDirectionSchema.optional(),
           updatedAt: orderByDirectionSchema.optional(),
         })
@@ -106,7 +106,7 @@ export const budgetWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
-      referencia: z
+      taskId: z
         .union([
           z.string(),
           z.object({
@@ -114,15 +114,25 @@ export const budgetWhereSchema: z.ZodSchema = z.lazy(() =>
             not: z.string().optional(),
             in: z.array(z.string()).optional(),
             notIn: z.array(z.string()).optional(),
-            contains: z.string().optional(),
-            startsWith: z.string().optional(),
-            endsWith: z.string().optional(),
-            mode: z.enum(["default", "insensitive"]).optional(),
           }),
         ])
         .optional(),
 
-      valor: z
+      expiresIn: z
+        .union([
+          z.date(),
+          z.object({
+            equals: z.date().optional(),
+            not: z.date().optional(),
+            gt: z.coerce.date().optional(),
+            gte: z.coerce.date().optional(),
+            lt: z.coerce.date().optional(),
+            lte: z.coerce.date().optional(),
+          }),
+        ])
+        .optional(),
+
+      total: z
         .union([
           z.number(),
           z.object({
@@ -132,18 +142,6 @@ export const budgetWhereSchema: z.ZodSchema = z.lazy(() =>
             gte: z.number().optional(),
             lt: z.number().optional(),
             lte: z.number().optional(),
-          }),
-        ])
-        .optional(),
-
-      taskId: z
-        .union([
-          z.string(),
-          z.object({
-            equals: z.string().optional(),
-            not: z.string().optional(),
-            in: z.array(z.string()).optional(),
-            notIn: z.array(z.string()).optional(),
           }),
         ])
         .optional(),
@@ -187,7 +185,6 @@ const budgetFilters = {
   searchingFor: z.string().optional(),
   taskId: z.string().uuid("Tarefa inválida").optional(),
   hasTask: z.boolean().optional(),
-  referenciaContains: z.string().optional(),
 };
 
 // =====================
@@ -208,20 +205,10 @@ const budgetTransform = (data: any) => {
 
   const andConditions: any[] = [];
 
-  // Handle searchingFor - search in referencia
-  if (data.searchingFor && typeof data.searchingFor === "string" && data.searchingFor.trim()) {
-    andConditions.push({
-      referencia: { contains: data.searchingFor.trim(), mode: "insensitive" },
-    });
+  // Handle searchingFor - Note: Budget no longer has searchable text fields
+  // Budget items are in a separate BudgetItem entity
+  if (data.searchingFor) {
     delete data.searchingFor;
-  }
-
-  // Handle referenciaContains filter
-  if (data.referenciaContains && typeof data.referenciaContains === "string" && data.referenciaContains.trim()) {
-    andConditions.push({
-      referencia: { contains: data.referenciaContains.trim(), mode: "insensitive" },
-    });
-    delete data.referenciaContains;
   }
 
   // Handle taskId filter
@@ -307,9 +294,15 @@ export const budgetGetManySchema = z
 // Nested Schemas for Relations
 // =====================
 
+export const budgetItemCreateNestedSchema = z.object({
+  description: z.string().min(1, "Descrição é obrigatória").max(500, "Máximo de 500 caracteres atingido"),
+  amount: moneySchema,
+});
+
 export const budgetCreateNestedSchema = z.object({
-  referencia: z.string().min(1, "Referência é obrigatória").max(400, "Máximo de 400 caracteres atingido"),
-  valor: moneySchema,
+  total: moneySchema,
+  expiresIn: z.coerce.date({ required_error: "Data de validade é obrigatória" }),
+  items: z.array(budgetItemCreateNestedSchema).min(1, "Pelo menos um item é obrigatório"),
 });
 
 // =====================
@@ -317,15 +310,17 @@ export const budgetCreateNestedSchema = z.object({
 // =====================
 
 export const budgetCreateSchema = z.object({
-  referencia: z.string().min(1, "Referência é obrigatória").max(400, "Máximo de 400 caracteres atingido"),
-  valor: moneySchema,
+  total: moneySchema,
+  expiresIn: z.coerce.date({ required_error: "Data de validade é obrigatória" }),
   taskId: z.string().uuid("Tarefa inválida"),
+  items: z.array(budgetItemCreateNestedSchema).min(1, "Pelo menos um item é obrigatório"),
 });
 
 export const budgetUpdateSchema = z.object({
-  referencia: z.string().min(1, "Referência é obrigatória").max(400, "Máximo de 400 caracteres atingido").optional(),
-  valor: moneySchema.optional(),
+  total: moneySchema.optional(),
+  expiresIn: z.coerce.date({ required_error: "Data de validade é obrigatória" }).optional(),
   taskId: z.string().uuid("Tarefa inválida").optional(),
+  items: z.array(budgetItemCreateNestedSchema).optional(),
 });
 
 // =====================
@@ -399,7 +394,11 @@ export type BudgetCreateNestedFormData = z.infer<typeof budgetCreateNestedSchema
 // =====================
 
 export const mapBudgetToFormData = createMapToFormDataHelper<Budget, BudgetUpdateFormData>((budget) => ({
-  referencia: budget.referencia,
-  valor: budget.valor,
+  total: budget.total,
+  expiresIn: budget.expiresIn,
   taskId: budget.taskId,
+  items: budget.items?.map(item => ({
+    description: item.description,
+    amount: item.amount,
+  })),
 }));

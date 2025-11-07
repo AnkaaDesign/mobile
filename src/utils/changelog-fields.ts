@@ -274,6 +274,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "user.name": "Nome do Funcionário",
     "item.name": "Nome do Item",
     "item.ppeType": "Tipo de EPI",
+    // NOTE: item.ppeSize is now extracted from item.measures array with measureType="SIZE"
     "item.ppeSize": "Tamanho do EPI",
     "reviewedByUser.name": "Nome do Aprovador",
     "ppeSchedule.frequency": "Frequência do Agendamento",

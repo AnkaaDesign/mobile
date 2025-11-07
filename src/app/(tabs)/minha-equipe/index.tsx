@@ -9,11 +9,11 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import {
   IconUsers,
+  IconUserCheck,
   IconCalendar,
   IconAlertTriangle,
   IconPackage,
-  IconClock,
-  IconShieldCheck,
+  IconChartBar,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -26,44 +26,25 @@ interface TeamMenuItem {
   available: boolean;
 }
 
-export default function MeuPessoalScreen() {
+export default function MinhaEquipeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
-  // Check if user is a team leader (has managedSectorId)
-  const isTeamLeader = user?.managedSectorId || false;
-
   const teamMenuItems: TeamMenuItem[] = [
     {
-      id: "users",
-      title: "Usuários",
-      description: "Visualize os membros da sua equipe",
+      id: "members",
+      title: "Membros da Equipe",
+      description: "Visualize os colaboradores do seu setor",
       icon: <IconUsers size={24} color={colors.primary} />,
-      route: "/(tabs)/meu-pessoal/usuarios",
-      available: true,
-    },
-    {
-      id: "activities",
-      title: "Atividades",
-      description: "Acompanhe as atividades da equipe",
-      icon: <IconClock size={24} color={colors.primary} />,
-      route: "/(tabs)/meu-pessoal/atividades",
-      available: true,
-    },
-    {
-      id: "epis",
-      title: "EPIs",
-      description: "Gerencie os EPIs da sua equipe",
-      icon: <IconShieldCheck size={24} color={colors.primary} />,
-      route: "/(tabs)/meu-pessoal/epis",
+      route: "/(tabs)/minha-equipe/membros/listar",
       available: true,
     },
     {
       id: "vacations",
       title: "Férias",
-      description: "Visualize as férias da equipe",
+      description: "Visualize as férias da sua equipe",
       icon: <IconCalendar size={24} color={colors.primary} />,
       route: "/(tabs)/meu-pessoal/ferias",
       available: true,
@@ -71,7 +52,7 @@ export default function MeuPessoalScreen() {
     {
       id: "warnings",
       title: "Advertências",
-      description: "Advertências dos colaboradores",
+      description: "Visualize as advertências dos colaboradores",
       icon: <IconAlertTriangle size={24} color={colors.primary} />,
       route: "/(tabs)/meu-pessoal/advertencias",
       available: true,
@@ -79,10 +60,26 @@ export default function MeuPessoalScreen() {
     {
       id: "loans",
       title: "Empréstimos",
-      description: "Empréstimos de equipamentos",
+      description: "Visualize empréstimos de equipamentos",
       icon: <IconPackage size={24} color={colors.primary} />,
       route: "/(tabs)/meu-pessoal/emprestimos",
       available: true,
+    },
+    {
+      id: "performance",
+      title: "Desempenho",
+      description: "Visualize o desempenho da equipe",
+      icon: <IconChartBar size={24} color={colors.mutedForeground} />,
+      route: "/(tabs)/minha-equipe/desempenho",
+      available: false,
+    },
+    {
+      id: "attendance",
+      title: "Presenças",
+      description: "Visualize o registro de ponto da equipe",
+      icon: <IconUserCheck size={24} color={colors.mutedForeground} />,
+      route: "/(tabs)/minha-equipe/presencas",
+      available: false,
     },
   ];
 
@@ -91,6 +88,9 @@ export default function MeuPessoalScreen() {
       router.push(item.route as any);
     }
   };
+
+  // Check if user is a team leader (has managedSectorId or specific privilege)
+  const isTeamLeader = user?.managedSectorId || user?.sectorId;
 
   if (!isTeamLeader) {
     return (
@@ -104,23 +104,6 @@ export default function MeuPessoalScreen() {
             <ThemedText style={[styles.emptyDescription, { color: colors.mutedForeground }]}>
               Esta área é exclusiva para líderes de equipe.
             </ThemedText>
-            <ThemedText style={[styles.emptyInfo, { color: colors.mutedForeground }]}>
-              Como líder, você teria acesso a:
-            </ThemedText>
-            <View style={styles.featuresList}>
-              <ThemedText style={[styles.featureItem, { color: colors.mutedForeground }]}>
-                • Visualizar membros da equipe
-              </ThemedText>
-              <ThemedText style={[styles.featureItem, { color: colors.mutedForeground }]}>
-                • Acompanhar atividades
-              </ThemedText>
-              <ThemedText style={[styles.featureItem, { color: colors.mutedForeground }]}>
-                • Gerenciar EPIs
-              </ThemedText>
-              <ThemedText style={[styles.featureItem, { color: colors.mutedForeground }]}>
-                • Controlar férias e advertências
-              </ThemedText>
-            </View>
           </Card>
         </View>
       </ThemedView>
@@ -137,7 +120,7 @@ export default function MeuPessoalScreen() {
         {/* Header */}
         <View style={styles.header}>
           <ThemedText style={[styles.title, { color: colors.foreground }]}>
-            Meu Pessoal
+            Minha Equipe
           </ThemedText>
           <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
             Gerencie os colaboradores do seu setor
@@ -161,7 +144,12 @@ export default function MeuPessoalScreen() {
               disabled={!item.available}
               activeOpacity={item.available ? 0.7 : 1}
             >
-              <Card style={styles.menuCard}>
+              <Card
+                style={[
+                  styles.menuCard,
+                  !item.available && { opacity: 0.5 },
+                ]}
+              >
                 <View style={styles.menuIconContainer}>
                   {item.icon}
                 </View>
@@ -174,6 +162,13 @@ export default function MeuPessoalScreen() {
                 >
                   {item.description}
                 </ThemedText>
+                {!item.available && (
+                  <View style={[styles.comingSoonBadge, { backgroundColor: colors.muted }]}>
+                    <ThemedText style={[styles.comingSoonText, { color: colors.mutedForeground }]}>
+                      Em breve
+                    </ThemedText>
+                  </View>
+                )}
               </Card>
             </TouchableOpacity>
           ))}
@@ -182,19 +177,8 @@ export default function MeuPessoalScreen() {
         {/* Info Card */}
         <Card style={[styles.infoCard, { backgroundColor: colors.primary + "10" }]}>
           <ThemedText style={[styles.infoText, { color: colors.primary }]}>
-            Como líder de equipe, você pode visualizar informações e métricas dos colaboradores
-            do seu setor. Todas as informações são somente leitura.
-          </ThemedText>
-        </Card>
-
-        {/* Note about Minha Equipe */}
-        <Card style={[styles.noteCard, { backgroundColor: colors.muted }]}>
-          <ThemedText style={[styles.noteTitle, { color: colors.foreground }]}>
-            Nota
-          </ThemedText>
-          <ThemedText style={[styles.noteText, { color: colors.mutedForeground }]}>
-            Para uma visão mais detalhada dos membros da equipe, acesse também a seção
-            "Minha Equipe" no menu.
+            Como líder de equipe, você tem acesso a informações específicas dos colaboradores do seu setor.
+            Use estas ferramentas para acompanhar o desempenho e bem-estar da sua equipe.
           </ThemedText>
         </Card>
       </ScrollView>
@@ -265,23 +249,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: fontSize.xs * 1.4,
   },
+  comingSoonBadge: {
+    position: "absolute",
+    top: spacing.xs,
+    right: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  comingSoonText: {
+    fontSize: fontSize.xxs,
+    fontWeight: "500",
+  },
   infoCard: {
     padding: spacing.md,
-    marginBottom: spacing.md,
   },
   infoText: {
-    fontSize: fontSize.sm,
-    lineHeight: fontSize.sm * 1.5,
-  },
-  noteCard: {
-    padding: spacing.md,
-  },
-  noteTitle: {
-    fontSize: fontSize.base,
-    fontWeight: "600",
-    marginBottom: spacing.xs,
-  },
-  noteText: {
     fontSize: fontSize.sm,
     lineHeight: fontSize.sm * 1.5,
   },
@@ -305,19 +288,5 @@ const styles = StyleSheet.create({
   emptyDescription: {
     fontSize: fontSize.base,
     textAlign: "center",
-    marginBottom: spacing.lg,
-  },
-  emptyInfo: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
-    marginBottom: spacing.sm,
-  },
-  featuresList: {
-    alignSelf: "flex-start",
-    paddingHorizontal: spacing.lg,
-  },
-  featureItem: {
-    fontSize: fontSize.sm,
-    marginBottom: spacing.xs,
   },
 });

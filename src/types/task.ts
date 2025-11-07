@@ -46,8 +46,8 @@ export interface Task extends BaseEntity {
   sector?: Sector;
   customer?: Customer;
 
-  // Budget items (price information stored here)
-  budget?: Budget[];
+  // Budget (one-to-one: price and line items)
+  budget?: Budget;
 
   // Multiple file support (array relations matching database schema)
   budgets?: File[];

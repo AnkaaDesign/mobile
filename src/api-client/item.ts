@@ -414,12 +414,24 @@ export class ItemService {
   }
 
   async getItemsByPpeSize(ppeSize: PPE_SIZE, params?: Omit<ItemGetManyFormData, "where">): Promise<ItemGetManyResponse> {
+    // NOTE: PPE sizes are now stored in measures array with measureType: "SIZE"
+    // This requires filtering via the measures relation
     const response = await apiClient.get<ItemGetManyResponse>(this.itemBasePath, {
       params: {
         ...params,
+        include: {
+          measures: true,
+          ...params?.include,
+        },
         where: {
           ...params?.where,
-          ppeSize,
+          ppeType: { not: null }, // Filter to only PPE items
+          measures: {
+            some: {
+              measureType: "SIZE",
+              unit: ppeSize,
+            },
+          },
         },
       },
     });
@@ -427,13 +439,24 @@ export class ItemService {
   }
 
   async getItemsByPpeTypeAndSize(ppeType: PPE_TYPE, ppeSize: PPE_SIZE, params?: Omit<ItemGetManyFormData, "where">): Promise<ItemGetManyResponse> {
+    // NOTE: PPE sizes are now stored in measures array with measureType: "SIZE"
+    // This requires filtering via the measures relation
     const response = await apiClient.get<ItemGetManyResponse>(this.itemBasePath, {
       params: {
         ...params,
+        include: {
+          measures: true,
+          ...params?.include,
+        },
         where: {
           ...params?.where,
           ppeType,
-          ppeSize,
+          measures: {
+            some: {
+              measureType: "SIZE",
+              unit: ppeSize,
+            },
+          },
         },
       },
     });

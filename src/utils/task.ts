@@ -202,12 +202,11 @@ export function formatTaskSummary(task: Task): string {
 }
 
 /**
- * Format task price (from budget items)
+ * Format task price (from budget total)
  */
 export function formatTaskPrice(task: Task): string {
-  if (!task.budget || task.budget.length === 0) return "Sem valor";
-  const totalValue = task.budget.reduce((sum, item) => sum + item.valor, 0);
-  return numberUtils.formatCurrency(totalValue);
+  if (!task.budget || !task.budget.total) return "Sem valor";
+  return numberUtils.formatCurrency(task.budget.total);
 }
 
 
@@ -331,7 +330,7 @@ export function calculateTaskStats(tasks: Task[]) {
   const completionRate = total > 0 ? (completed / total) * 100 : 0;
 
   const totalValue = tasks.reduce((sum, task) => {
-    const taskValue = task.budget?.reduce((taskSum, item) => taskSum + item.valor, 0) || 0;
+    const taskValue = task.budget?.total || 0;
     return sum + taskValue;
   }, 0);
   const averagePrice = total > 0 ? totalValue / total : 0;
