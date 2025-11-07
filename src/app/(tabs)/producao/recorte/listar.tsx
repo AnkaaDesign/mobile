@@ -19,15 +19,20 @@ import { Icon } from "@/components/ui/icon";
 import { CutsTable, createColumnDefinitions } from "@/components/production/cuts/list/cuts-table";
 import { CutsFilterDrawerContent } from "@/components/production/cuts/list/cuts-filter-drawer-content";
 import { CutsColumnDrawerContent, getDefaultVisibleColumns } from "@/components/production/cuts/list/cuts-column-drawer-content";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import type { SortConfig } from "@/lib/sort-utils";
 import { applyMultiSort } from "@/lib/sort-utils";
 
 export default function CuttingListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
+  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
+
+  // Panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([]);
@@ -190,60 +195,52 @@ export default function CuttingListScreen() {
 
   // Open filter drawer
   const handleOpenFilterDrawer = useCallback(() => {
-    openFilterDrawer(() => (
-      <CutsFilterDrawerContent
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [filters, handleFiltersChange, handleClearFilters, activeFiltersCount, openFilterDrawer]);
+    setIsColumnPanelOpen(false); // Close column panel if open
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilterDrawer = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   // Open column drawer
   const handleOpenColumnDrawer = useCallback(() => {
-    const allColumns = createColumnDefinitions();
-    openColumnDrawer(() => (
-      <CutsColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleVisibilityChange}
-      />
-    ));
-  }, [visibleColumns, handleVisibilityChange, openColumnDrawer]);
+    setIsFilterPanelOpen(false); // Close filter panel if open
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumnDrawer = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   if (!canView) {
     return (
-      <UtilityDrawerWrapper>
-        <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
-          <View style={styles.centerContent}>
-            <Icon name="lock" size={48} color={colors.mutedForeground} />
-            <ThemedText style={styles.errorTitle}>Acesso Negado</ThemedText>
-            <ThemedText style={styles.errorMessage}>
-              Você não tem permissão para visualizar cortes.
-            </ThemedText>
-          </View>
+      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
+        <View style={styles.centerContent}>
+          <Icon name="lock" size={48} color={colors.mutedForeground} />
+          <ThemedText style={styles.errorTitle}>Acesso Negado</ThemedText>
+          <ThemedText style={styles.errorMessage}>
+            Você não tem permissão para visualizar cortes.
+          </ThemedText>
         </View>
-      </UtilityDrawerWrapper>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <UtilityDrawerWrapper>
-        <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
-          <View style={styles.centerContent}>
-            <Icon name="alert-circle" size={48} color={colors.destructive} />
-            <ThemedText style={styles.errorTitle}>Erro ao carregar cortes</ThemedText>
-            <ThemedText style={styles.errorMessage}>{(error as Error).message}</ThemedText>
-          </View>
+      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
+        <View style={styles.centerContent}>
+          <Icon name="alert-circle" size={48} color={colors.destructive} />
+          <ThemedText style={styles.errorTitle}>Erro ao carregar cortes</ThemedText>
+          <ThemedText style={styles.errorMessage}>{(error as Error).message}</ThemedText>
         </View>
-      </UtilityDrawerWrapper>
+      </View>
     );
   }
 
   return (
-    <UtilityDrawerWrapper>
+    <>
       <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
         {/* Header */}
         <View style={styles.header}>
@@ -305,7 +302,27 @@ export default function CuttingListScreen() {
           />
         )}
       </View>
-    </UtilityDrawerWrapper>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilterDrawer}>
+        <CutsFilterDrawerContent
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onClear={handleClearFilters}
+          onClose={handleCloseFilterDrawer}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumnDrawer}>
+        <CutsColumnDrawerContent
+          allColumns={allColumns}
+          visibleColumnKeys={Array.from(visibleColumns)}
+          onColumnsChange={handleVisibilityChange}
+          onClose={handleCloseColumnDrawer}
+          defaultColumns={getDefaultVisibleColumns()}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

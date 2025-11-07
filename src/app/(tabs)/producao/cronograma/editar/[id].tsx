@@ -1,5 +1,5 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -8,14 +8,41 @@ import { Button } from "@/components/ui/button";
 import { TaskForm } from "@/components/production/task/form/task-form";
 import { SkeletonCard } from "@/components/ui/loading";
 import { useTaskDetail, useTaskMutations, useLayoutsByTruck } from '../../../../../hooks';
+import { useAuth } from "@/contexts/auth-context";
+import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes } from '../../../../../constants';
+import { routes, SECTOR_PRIVILEGES } from '../../../../../constants';
 import { spacing } from "@/constants/design-system";
 
 export default function EditScheduleScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
+  const { colors } = useTheme();
   const { updateAsync, isLoading } = useTaskMutations();
+  const [checkingPermission, setCheckingPermission] = useState(true);
+
+  // Check permissions - Only ADMIN and FINANCIAL can edit tasks
+  const userPrivilege = user?.sector?.privileges;
+  const canEdit = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+                  userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+
+  useEffect(() => {
+    // Wait for user to load
+    if (user !== undefined) {
+      setCheckingPermission(false);
+
+      // Redirect if no permission
+      if (!canEdit) {
+        showToast({
+          title: "Acesso negado",
+          message: "Você não tem permissão para editar tarefas",
+          type: "error",
+        });
+        router.replace("/producao/cronograma");
+      }
+    }
+  }, [user, canEdit, router]);
 
   const {
     data: response,
@@ -114,6 +141,21 @@ export default function EditScheduleScreen() {
   const handleCancel = () => {
     router.replace(routeToMobilePath(routes.production.schedule.root) as any);
   };
+
+  // Show loading while checking permission
+  if (checkingPermission || !user) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <ThemedText style={{ marginTop: 16 }}>Verificando permissões...</ThemedText>
+      </View>
+    );
+  }
+
+  // If no permission, show nothing (redirect will happen)
+  if (!canEdit) {
+    return null;
+  }
 
   if (isLoadingTask) {
     return (

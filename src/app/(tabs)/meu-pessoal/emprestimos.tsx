@@ -16,8 +16,7 @@ import { useAuth } from '../../../contexts/auth-context';
 import { IconPackage, IconFilter } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import type { User } from '../../../types';
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { TeamBorrowFilterDrawerContent } from "@/components/my-team/borrow/team-borrow-filter-drawer-content";
 
 export type TeamBorrowFilters = {
@@ -32,8 +31,8 @@ export type TeamBorrowFilters = {
 export default function MyTeamLoansScreen() {
   const { colors } = useTheme();
   const { user: currentUser, isLoading: isLoadingAuth } = useAuth();
-  const { openFilterDrawer } = useUtilityDrawer();
   const [filters, setFilters] = useState<TeamBorrowFilters>({});
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Build query params for borrows
   const queryParams = useMemo(() => {
@@ -188,20 +187,16 @@ export default function MyTeamLoansScreen() {
   }).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <TeamBorrowFilterDrawerContent
-        filters={filters}
-        onFiltersChange={handleApplyFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFilterCount}
-        teamMembers={teamMembers}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleApplyFilters, handleClearFilters, activeFilterCount, teamMembers]);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   return (
-    <UtilityDrawerWrapper>
-      <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
+    <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
+      <>
         <ThemedView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -246,8 +241,18 @@ export default function MyTeamLoansScreen() {
           />
         )}
       </ThemedView>
+
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <TeamBorrowFilterDrawerContent
+          filters={filters}
+          onFiltersChange={handleApplyFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFilterCount}
+          teamMembers={teamMembers}
+        />
+      </SlideInPanel>
+      </>
     </PrivilegeGuard>
-    </UtilityDrawerWrapper>
   );
 }
 

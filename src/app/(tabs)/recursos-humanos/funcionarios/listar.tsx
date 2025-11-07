@@ -11,17 +11,13 @@ import { EmployeeTable, createEmployeeColumnDefinitions } from "@/components/adm
 import type { SortConfig } from "@/components/administration/employee/list/employee-table";
 import { EmployeeFilterDrawer } from "@/components/administration/employee/list/employee-filter-drawer";
 import { EmployeeFilterTags } from "@/components/administration/employee/list/employee-filter-tags";
-
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
-
 import { EmployeeListSkeleton } from "@/components/administration/employee/skeleton/employee-list-skeleton";
 import { useTheme } from "@/lib/theme";
 import { routes, USER_STATUS } from '@/constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
-
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
 
 export default function EmployeesListScreen() {
   const router = useRouter();
@@ -42,6 +38,10 @@ export default function EmployeesListScreen() {
     "email",
     "phone"
   ]);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -185,7 +185,6 @@ export default function EmployeesListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<UserGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -212,25 +211,20 @@ export default function EmployeesListScreen() {
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <EmployeeFilterDrawer
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Calculate status summary
   const statusSummary = useMemo(() => {
@@ -268,142 +262,158 @@ export default function EmployeesListScreen() {
 
   if (error) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen
-              message="Erro ao carregar funcionários"
-              detail={error.message}
-              onRetry={handleRefresh}
-            />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen
+          message="Erro ao carregar funcionários"
+          detail={error.message}
+          onRetry={handleRefresh}
+        />
+      </ThemedView>
+    );
   }
 
   const hasEmployees = Array.isArray(employees) && employees.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Search and Filter */}
-      <View style={[styles.searchContainer]}>
-        <SearchBar
-          value={displaySearchText}
-          onChangeText={handleDisplaySearchChange}
-          onSearch={handleSearch}
-          placeholder="Buscar funcionários..."
-          style={styles.searchBar}
-          debounceMs={300}
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search and Filter */}
+        <View style={[styles.searchContainer]}>
+          <SearchBar
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar funcionários..."
+            style={styles.searchBar}
+            debounceMs={300}
+          />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumnKeys.length}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
+        </View>
+
+        {/* Status Summary Bar */}
+        {hasEmployees && (
+          <View style={[styles.statusSummary, { backgroundColor: colors.muted }]}>
+            <View style={styles.statusItem}>
+              <ThemedText style={[styles.statusLabel, { color: colors.mutedForeground }]}>Total</ThemedText>
+              <ThemedText style={[styles.statusValue, { color: colors.foreground }]}>
+                {statusSummary.total}
+              </ThemedText>
+            </View>
+            <View style={styles.statusItem}>
+              <ThemedText style={[styles.statusLabel, { color: colors.mutedForeground }]}>Ativos</ThemedText>
+              <Badge variant="default" size="sm">
+                <ThemedText style={{ color: colors.primaryForeground }}>
+                  {statusSummary.active}
+                </ThemedText>
+              </Badge>
+            </View>
+            <View style={styles.statusItem}>
+              <ThemedText style={[styles.statusLabel, { color: colors.mutedForeground }]}>Experiência</ThemedText>
+              <Badge variant="secondary" size="sm">
+                <ThemedText>
+                  {statusSummary.exp1 + statusSummary.exp2}
+                </ThemedText>
+              </Badge>
+            </View>
+            <View style={styles.statusItem}>
+              <ThemedText style={[styles.statusLabel, { color: colors.mutedForeground }]}>Desligados</ThemedText>
+              <Badge variant="destructive" size="sm">
+                <ThemedText style={{ color: "white" }}>
+                  {statusSummary.dismissed}
+                </ThemedText>
+              </Badge>
+            </View>
+          </View>
+        )}
+
+        {/* Individual filter tags */}
+        <EmployeeFilterTags
+          filters={filters}
+          searchText={searchText}
+          onFilterChange={handleApplyFilters}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
         />
-        <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconList size={20} color={colors.foreground} />}
-            onPress={handleOpenColumns}
-            badgeCount={visibleColumnKeys.length}
-            badgeVariant="primary"
-          />
-          <ListActionButton
-            icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={handleOpenFilters}
-            badgeCount={activeFiltersCount}
-            badgeVariant="destructive"
-            showBadge={activeFiltersCount > 0}
-          />
-        </View>
-      </View>
 
-      {/* Status Summary Bar */}
-      {hasEmployees && (
-        <View style={[styles.statusSummary, { backgroundColor: colors.muted }]}>
-          <View style={styles.statusItem}>
-            <ThemedText style={[styles.statusLabel, { color: colors.mutedForeground }]}>Total</ThemedText>
-            <ThemedText style={[styles.statusValue, { color: colors.foreground }]}>
-              {statusSummary.total}
-            </ThemedText>
+        {hasEmployees ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <EmployeeTable
+              employees={employees}
+              onEmployeePress={handleEmployeePress}
+              onEmployeeEdit={handleEditEmployee}
+              onEmployeeDelete={handleDeleteEmployee}
+              onRefresh={handleRefresh}
+              onEndReached={canLoadMore ? loadMore : undefined}
+              refreshing={refreshing}
+              loading={isLoading && !isRefetching}
+              loadingMore={isFetchingNextPage}
+              showSelection={showSelection}
+              selectedEmployees={selectedEmployees}
+              onSelectionChange={handleSelectionChange}
+              sortConfigs={sortConfigs}
+              onSort={handleSort}
+              visibleColumnKeys={visibleColumnKeys}
+              enableSwipeActions={true}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "users"}
+              title={searchText ? "Nenhum funcionário encontrado" : "Nenhum funcionário cadastrado"}
+              description={
+                searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando o primeiro funcionário"
+              }
+              actionLabel={searchText ? undefined : "Cadastrar Funcionário"}
+              onAction={searchText ? undefined : handleCreateEmployee}
+            />
           </View>
-          <View style={styles.statusItem}>
-            <ThemedText style={[styles.statusLabel, { color: colors.mutedForeground }]}>Ativos</ThemedText>
-            <Badge variant="default" size="sm">
-              <ThemedText style={{ color: colors.primaryForeground }}>
-                {statusSummary.active}
-              </ThemedText>
-            </Badge>
-          </View>
-          <View style={styles.statusItem}>
-            <ThemedText style={[styles.statusLabel, { color: colors.mutedForeground }]}>Experiência</ThemedText>
-            <Badge variant="secondary" size="sm">
-              <ThemedText>
-                {statusSummary.exp1 + statusSummary.exp2}
-              </ThemedText>
-            </Badge>
-          </View>
-          <View style={styles.statusItem}>
-            <ThemedText style={[styles.statusLabel, { color: colors.mutedForeground }]}>Desligados</ThemedText>
-            <Badge variant="destructive" size="sm">
-              <ThemedText style={{ color: "white" }}>
-                {statusSummary.dismissed}
-              </ThemedText>
-            </Badge>
-          </View>
-        </View>
-      )}
+        )}
 
-      {/* Individual filter tags */}
-      <EmployeeFilterTags
-        filters={filters}
-        searchText={searchText}
-        onFilterChange={handleApplyFilters}
-        onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
-        }}
-        onClearAll={handleClearFilters}
-      />
-
-      {hasEmployees ? (
-        <TableErrorBoundary onRetry={handleRefresh}>
-          <EmployeeTable
-            employees={employees}
-            onEmployeePress={handleEmployeePress}
-            onEmployeeEdit={handleEditEmployee}
-            onEmployeeDelete={handleDeleteEmployee}
-            onRefresh={handleRefresh}
-            onEndReached={canLoadMore ? loadMore : undefined}
-            refreshing={refreshing}
-            loading={isLoading && !isRefetching}
-            loadingMore={isFetchingNextPage}
-            showSelection={showSelection}
-            selectedEmployees={selectedEmployees}
-            onSelectionChange={handleSelectionChange}
-            sortConfigs={sortConfigs}
-            onSort={handleSort}
-            visibleColumnKeys={visibleColumnKeys}
-            enableSwipeActions={true}
+        {hasEmployees && (
+          <FAB
+            icon="user-plus"
+            onPress={handleCreateEmployee}
           />
-        </TableErrorBoundary>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "users"}
-            title={searchText ? "Nenhum funcionário encontrado" : "Nenhum funcionário cadastrado"}
-            description={
-              searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando o primeiro funcionário"
-            }
-            actionLabel={searchText ? undefined : "Cadastrar Funcionário"}
-            onAction={searchText ? undefined : handleCreateEmployee}
-          />
-        </View>
-      )}
+        )}
+      </ThemedView>
 
-      {hasEmployees && (
-        <FAB
-          icon="user-plus"
-          onPress={handleCreateEmployee}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <EmployeeFilterDrawer
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
         />
-      )}
+      </SlideInPanel>
 
-    </ThemedView>
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <ColumnVisibilityDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+          onClose={handleCloseColumns}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

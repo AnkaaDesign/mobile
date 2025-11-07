@@ -4,7 +4,6 @@ import { IconFilter, IconX } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 
 /**
  * TODO: Implement full filter functionality matching web implementation
@@ -39,6 +38,7 @@ interface TruckFilterDrawerContentProps {
   onFiltersChange: (filters: any) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose: () => void;
 }
 
 export function TruckFilterDrawerContent({
@@ -46,16 +46,16 @@ export function TruckFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: TruckFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
   const [localFilters, setLocalFilters] = useState(() => filters || {});
 
   const handleApply = useCallback(() => {
     onFiltersChange(localFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    onClose();
+  }, [localFilters, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -81,7 +81,7 @@ export function TruckFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

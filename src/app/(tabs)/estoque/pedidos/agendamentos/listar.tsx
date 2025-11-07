@@ -25,8 +25,7 @@ import { } from '../../../../../constants';
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 import { OrderScheduleFilterDrawerContent } from "@/components/inventory/order/schedule/order-schedule-filter-drawer-content";
 
@@ -34,12 +33,15 @@ export default function InventoryOrderSchedulesListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [selectedSchedules, setSelectedSchedules] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -184,25 +186,22 @@ export default function InventoryOrderSchedulesListScreen() {
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <OrderScheduleFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsColumnPanelOpen(false);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsFilterPanelOpen(false);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Filter sections for BaseFilterDrawer
   const filterSections = useMemo(() => [
@@ -250,93 +249,109 @@ export default function InventoryOrderSchedulesListScreen() {
 
   if (error && schedules.length === 0) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar agendamentos" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar agendamentos" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasSchedules = Array.isArray(schedules) && schedules.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Search and Filter */}
-      <View style={[styles.searchContainer]}>
-        <SearchBar
-          value={displaySearchText}
-          onChangeText={handleDisplaySearchChange}
-          onSearch={handleSearch}
-          placeholder="Buscar agendamentos..."
-          style={styles.searchBar}
-          debounceMs={300}
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search and Filter */}
+        <View style={[styles.searchContainer]}>
+          <SearchBar
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar agendamentos..."
+            style={styles.searchBar}
+            debounceMs={300}
+          />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
+        </View>
+
+        {/* Individual filter tags */}
+        <OrderScheduleFilterTags
+          filters={filters}
+          searchText={searchText}
+          onFilterChange={setFilters}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
         />
-        <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={handleOpenFilters}
-            badgeCount={activeFiltersCount}
-            badgeVariant="destructive"
-            showBadge={activeFiltersCount > 0}
-          />
-        </View>
-      </View>
 
-      {/* Individual filter tags */}
-      <OrderScheduleFilterTags
-        filters={filters}
-        searchText={searchText}
-        onFilterChange={setFilters}
-        onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
-        }}
-        onClearAll={handleClearFilters}
-      />
+        {hasSchedules ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <OrderScheduleTable
+              schedules={schedules}
+              onSchedulePress={handleSchedulePress}
+              onScheduleEdit={handleEditSchedule}
+              onScheduleDelete={handleDeleteSchedule}
+              onRefresh={handleRefresh}
+              onEndReached={canLoadMore ? loadMore : undefined}
+              refreshing={refreshing || isRefetching}
+              loading={false}
+              loadingMore={isFetchingNextPage}
+              showSelection={showSelection}
+              selectedSchedules={selectedSchedules}
+              onSelectionChange={handleSelectionChange}
+              sortConfigs={sortConfigs}
+              onSort={(configs) => handleSort(configs[0]?.columnKey || "createdAt")}
+              visibleColumnKeys={Array.from(visibleColumns) as string[]}
+              enableSwipeActions={true}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "calendar"}
+              title={searchText ? "Nenhum agendamento encontrado" : "Nenhum agendamento cadastrado"}
+              description={
+                searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando o primeiro agendamento de pedido"
+              }
+              actionLabel={searchText ? undefined : "Cadastrar Agendamento"}
+              onAction={searchText ? undefined : handleCreateSchedule}
+            />
+          </View>
+        )}
 
-      {hasSchedules ? (
-        <TableErrorBoundary onRetry={handleRefresh}>
-          <OrderScheduleTable
-            schedules={schedules}
-            onSchedulePress={handleSchedulePress}
-            onScheduleEdit={handleEditSchedule}
-            onScheduleDelete={handleDeleteSchedule}
-            onRefresh={handleRefresh}
-            onEndReached={canLoadMore ? loadMore : undefined}
-            refreshing={refreshing || isRefetching}
-            loading={false}
-            loadingMore={isFetchingNextPage}
-            showSelection={showSelection}
-            selectedSchedules={selectedSchedules}
-            onSelectionChange={handleSelectionChange}
-            sortConfigs={sortConfigs}
-            onSort={(configs) => handleSort(configs[0]?.columnKey || "createdAt")}
-            visibleColumnKeys={Array.from(visibleColumns) as string[]}
-            enableSwipeActions={true}
-          />
-        </TableErrorBoundary>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "calendar"}
-            title={searchText ? "Nenhum agendamento encontrado" : "Nenhum agendamento cadastrado"}
-            description={
-              searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando o primeiro agendamento de pedido"
-            }
-            actionLabel={searchText ? undefined : "Cadastrar Agendamento"}
-            onAction={searchText ? undefined : handleCreateSchedule}
-          />
-        </View>
-      )}
+        {/* Items count */}
+        {hasSchedules && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
-      {/* Items count */}
-      {hasSchedules && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
+        {hasSchedules && <FAB icon="plus" onPress={handleCreateSchedule} />}
+      </ThemedView>
 
-      {hasSchedules && <FAB icon="plus" onPress={handleCreateSchedule} />}
-    </ThemedView>
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <OrderScheduleFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <GenericColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

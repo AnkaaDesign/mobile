@@ -387,7 +387,12 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
       return true;
     }
     if (userPrivileges.includes(SECTOR_PRIVILEGES.PRODUCTION) && path.startsWith('producao/')) {
-      return true;
+      // Production sector has limited access - exclude aerografia, em espera, and garagens
+      const restrictedPaths = ['producao/aerografia/', 'producao/em-espera', 'producao/garagens/'];
+      const isRestricted = restrictedPaths.some(restricted => path.startsWith(restricted) || path === restricted);
+      if (!isRestricted) {
+        return true;
+      }
     }
     if (userPrivileges.includes(SECTOR_PRIVILEGES.WAREHOUSE) && path.startsWith('estoque/')) {
       return true;

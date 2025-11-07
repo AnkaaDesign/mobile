@@ -19,8 +19,7 @@ import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 import { EmployeeFilterDrawerContent } from "@/components/administration/employee/list/employee-filter-drawer-content";
 
@@ -28,7 +27,6 @@ export default function AdministrationEmployeesListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
@@ -37,6 +35,10 @@ export default function AdministrationEmployeesListScreen() {
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(Array.from(getDefaultVisibleColumns()));
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -170,25 +172,25 @@ export default function AdministrationEmployeesListScreen() {
   const activeFiltersCount = Object.entries(filters).filter(([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <EmployeeFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsColumnPanelOpen(false); // Close column panel if open
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsFilterPanelOpen(false); // Close filter panel if open
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
+
+  // Get visibleColumns as Set for panel
+  const visibleColumns = useMemo(() => new Set(visibleColumnKeys), [visibleColumnKeys]);
 
   if (isLoading && !isRefetching) {
     return <EmployeeListSkeleton />;
@@ -196,19 +198,16 @@ export default function AdministrationEmployeesListScreen() {
 
   if (error) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar colaboradores" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar colaboradores" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasEmployees = Array.isArray(employees) && employees.length > 0;
 
   return (
+    <>
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Search and Filter */}
       <View style={[styles.searchContainer]}>
@@ -281,6 +280,25 @@ export default function AdministrationEmployeesListScreen() {
 
       {hasEmployees && <FAB icon="plus" onPress={handleCreateEmployee} />}
     </ThemedView>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <EmployeeFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <GenericColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

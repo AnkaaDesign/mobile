@@ -31,7 +31,7 @@ export const BorrowUserInfoCard: React.FC<BorrowUserInfoCardProps> = ({ borrow }
   if (!borrow.user) {
     return (
       <Card style={styles.card}>
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <View style={styles.headerLeft}>
             <IconUser size={20} color={colors.mutedForeground} />
             <ThemedText style={styles.title}>Informações do Usuário</ThemedText>
@@ -50,7 +50,7 @@ export const BorrowUserInfoCard: React.FC<BorrowUserInfoCardProps> = ({ borrow }
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
           <IconUser size={20} color={colors.mutedForeground} />
           <ThemedText style={styles.title}>Informações do Usuário</ThemedText>
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   headerLeft: {
     flexDirection: "row",

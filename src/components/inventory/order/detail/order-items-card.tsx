@@ -37,7 +37,7 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ items }) => {
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <ThemedText style={styles.title}>Itens do Pedido</ThemedText>
         <Badge size="sm">
           <ThemedText style={styles.countText}>{items.length} itens</ThemedText>
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: fontSize.lg,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   itemBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   itemHeader: {
     flexDirection: "row",

@@ -17,7 +17,7 @@ export function MetadataCard({ position }: MetadataCardProps) {
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
           <IconClock size={20} color={colors.mutedForeground} />
           <ThemedText style={styles.title}>Informações do Sistema</ThemedText>
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   headerLeft: {
     flexDirection: "row",

@@ -48,7 +48,7 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
           <IconClipboardList size={20} color={colors.mutedForeground} />
           <ThemedText style={styles.title}>Informações Gerais</ThemedText>
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   headerLeft: {
     flexDirection: "row",

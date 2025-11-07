@@ -20,15 +20,13 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from '../../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../../constants';
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 
 export default function AutomaticOrderListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -38,6 +36,10 @@ export default function AutomaticOrderListScreen() {
   const [selectedSchedules, setSelectedSchedules] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const [visibleColumnKeys, ] = useState<string[]>(["frequency", "isActive", "nextRun", "supplier"]);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Check permissions
   const canCreate = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
@@ -223,24 +225,22 @@ export default function AutomaticOrderListScreen() {
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsColumnPanelOpen(false);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsFilterPanelOpen(false);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   if (isLoading && !isRefetching) {
     return <OrderScheduleListSkeleton />;
@@ -248,104 +248,119 @@ export default function AutomaticOrderListScreen() {
 
   if (error) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen
-              message="Erro ao carregar agendamentos automáticos"
-              detail={error.message}
-              onRetry={handleRefresh}
-            />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen
+          message="Erro ao carregar agendamentos automáticos"
+          detail={error.message}
+          onRetry={handleRefresh}
+        />
+      </ThemedView>
+    );
   }
 
   const hasSchedules = Array.isArray(schedules) && schedules.length > 0;
 
   return (
-    <ThemedView style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }])}>
-      {/* Search, Filter and Sort */}
-      <View style={StyleSheet.flatten([styles.searchContainer])}>
-        <SearchBar
-          value={displaySearchText}
-          onChangeText={handleDisplaySearchChange}
-          onSearch={handleSearch}
-          placeholder="Buscar agendamentos automáticos..."
-          style={styles.searchBar}
-          debounceMs={300}
-        />
-        <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={handleOpenFilters}
-            badgeCount={activeFiltersCount}
-            badgeVariant="destructive"
-            showBadge={activeFiltersCount > 0}
+    <>
+      <ThemedView style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }])}>
+        {/* Search, Filter and Sort */}
+        <View style={StyleSheet.flatten([styles.searchContainer])}>
+          <SearchBar
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar agendamentos automáticos..."
+            style={styles.searchBar}
+            debounceMs={300}
           />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
         </View>
-      </View>
 
-      {/* Individual filter tags */}
-      <OrderScheduleFilterTags
-        filters={filters}
-        searchText={searchText}
-        onFilterChange={handleApplyFilters}
-        onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
-        }}
-        onClearAll={handleClearFilters}
-      />
-
-      {hasSchedules ? (
-        <TableErrorBoundary onRetry={handleRefresh}>
-          <OrderScheduleTable
-            schedules={schedules}
-            onSchedulePress={handleSchedulePress}
-            onScheduleEdit={handleEditSchedule}
-            onScheduleDelete={handleDeleteSchedule}
-            onScheduleToggleActive={handleToggleActive}
-            onRefresh={handleRefresh}
-            refreshing={refreshing}
-            loading={isLoading && !isRefetching}
-            showSelection={showSelection}
-            selectedSchedules={selectedSchedules}
-            onSelectionChange={handleSelectionChange}
-            sortConfigs={sortConfigs}
-            onSort={handleSort}
-            visibleColumnKeys={visibleColumnKeys}
-            enableSwipeActions={true}
-          />
-        </TableErrorBoundary>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "clock"}
-            title={searchText ? "Nenhum agendamento encontrado" : "Nenhum agendamento automático"}
-            description={
-              searchText
-                ? `Nenhum resultado para "${searchText}"`
-                : "Automatize seus pedidos configurando agendamentos"
-            }
-            actionLabel={searchText || !canCreate ? undefined : "Criar Agendamento"}
-            onAction={searchText || !canCreate ? undefined : handleCreateSchedule}
-          />
-        </View>
-      )}
-
-      {/* Items count */}
-      {hasSchedules && (
-        <ItemsCountDisplay
-          loadedCount={schedules.length}
-          totalCount={orderSchedulesData?.meta?.totalRecords}
-          isLoading={false}
+        {/* Individual filter tags */}
+        <OrderScheduleFilterTags
+          filters={filters}
+          searchText={searchText}
+          onFilterChange={handleApplyFilters}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
         />
-      )}
 
-      {hasSchedules && canCreate && <FAB icon="plus" onPress={handleCreateSchedule} />}
-    </ThemedView>
+        {hasSchedules ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <OrderScheduleTable
+              schedules={schedules}
+              onSchedulePress={handleSchedulePress}
+              onScheduleEdit={handleEditSchedule}
+              onScheduleDelete={handleDeleteSchedule}
+              onScheduleToggleActive={handleToggleActive}
+              onRefresh={handleRefresh}
+              refreshing={refreshing}
+              loading={isLoading && !isRefetching}
+              showSelection={showSelection}
+              selectedSchedules={selectedSchedules}
+              onSelectionChange={handleSelectionChange}
+              sortConfigs={sortConfigs}
+              onSort={handleSort}
+              visibleColumnKeys={visibleColumnKeys}
+              enableSwipeActions={true}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "clock"}
+              title={searchText ? "Nenhum agendamento encontrado" : "Nenhum agendamento automático"}
+              description={
+                searchText
+                  ? `Nenhum resultado para "${searchText}"`
+                  : "Automatize seus pedidos configurando agendamentos"
+              }
+              actionLabel={searchText || !canCreate ? undefined : "Criar Agendamento"}
+              onAction={searchText || !canCreate ? undefined : handleCreateSchedule}
+            />
+          </View>
+        )}
+
+        {/* Items count */}
+        {hasSchedules && (
+          <ItemsCountDisplay
+            loadedCount={schedules.length}
+            totalCount={orderSchedulesData?.meta?.totalRecords}
+            isLoading={false}
+          />
+        )}
+
+        {hasSchedules && canCreate && <FAB icon="plus" onPress={handleCreateSchedule} />}
+      </ThemedView>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <GenericColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <GenericColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

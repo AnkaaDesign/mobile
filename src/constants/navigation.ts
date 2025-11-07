@@ -867,6 +867,44 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
+  // PESSOAL - Personal section (items accessible to all users)
+  {
+    id: "pessoal",
+    title: "Pessoal",
+    icon: "userCircle",
+    path: "/pessoal",
+    // No requiredPrivilege - available to all users
+    children: [
+      {
+        id: "meus-feriados",
+        title: "Feriados",
+        icon: "calendar",
+        path: "/pessoal/meus-feriados",
+        // Public holidays - available to all
+      },
+      {
+        id: "meus-epis",
+        title: "Meus EPIs",
+        icon: "shield",
+        path: "/pessoal/meus-epis",
+        // Available to all users
+      },
+      {
+        id: "minhas-notificacoes",
+        title: "Notificações",
+        icon: "bell",
+        path: "/pessoal/minhas-notificacoes",
+        // Available to all users
+      },
+      {
+        id: "preferencias",
+        title: "Preferências",
+        icon: "settings",
+        path: "/pessoal/preferencias",
+        // Available to all users
+      },
+    ],
+  },
 
   // PINTURA
   {
@@ -874,7 +912,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Pintura",
     icon: "palette",
     path: "/pintura",
-    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
+    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
     children: [
       {
         id: "catalogo",
@@ -933,7 +971,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Aerografia",
         icon: "paintBrush",
         path: "/producao/aerografia",
-        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN],
+        requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN],
         children: [
           {
             id: "aerografia-cadastrar",
@@ -990,7 +1028,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Em Espera",
         icon: "pause",
         path: "/producao/em-espera",
-        // No requiredPrivilege - inherits from parent (Production menu)
+        requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
       },
 
       {
@@ -998,7 +1036,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Garagens",
         icon: "warehouse",
         path: "/producao/garagens",
-        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
+        requiredPrivilege: [SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
         children: [
           {
             id: "garagens-cadastrar",

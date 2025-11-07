@@ -15,6 +15,7 @@ interface SectorFilterDrawerContentProps {
   onFiltersChange: (filters: Partial<SectorGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 interface FilterState {
@@ -31,10 +32,13 @@ export function SectorFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: SectorFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { closeFilterDrawer } = useUtilityDrawer();
+
+  const handleClose = onClose || closeFilterDrawer;
 
   // Initialize localFilters from current filters
   const [localFilters, setLocalFilters] = useState<FilterState>(() => {
@@ -86,8 +90,8 @@ export function SectorFilterDrawerContent({
     }
 
     onFiltersChange(newFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    handleClose();
+  }, [localFilters, onFiltersChange, handleClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -122,7 +126,7 @@ export function SectorFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

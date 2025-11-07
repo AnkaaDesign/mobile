@@ -22,6 +22,7 @@ interface ChangeLogFilterDrawerContentProps {
   onFiltersChange: (filters: Partial<ChangeLogGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 interface FilterState {
@@ -37,10 +38,13 @@ export function ChangeLogFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: ChangeLogFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { closeFilterDrawer } = useUtilityDrawer();
+
+  const handleClose = onClose || closeFilterDrawer;
 
   const { data: usersData } = useUsers({ limit: 100 });
   const users = usersData?.data || [];
@@ -79,8 +83,8 @@ export function ChangeLogFilterDrawerContent({
     }
 
     onFiltersChange(newFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    handleClose();
+  }, [localFilters, onFiltersChange, handleClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -129,7 +133,7 @@ export function ChangeLogFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

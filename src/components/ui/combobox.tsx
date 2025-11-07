@@ -341,6 +341,8 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   const options = async ? allAsyncOptions : propOptions || [];
   const loading = async ? isLoadingOptions && currentPage === 1 : externalLoading;
 
+  console.log('[Combobox] Options:', { async, optionsCount: options.length, propOptionsCount: propOptions?.length, loading });
+
   // Filter options - only filter locally for non-async mode
   const filteredOptions = useMemo(() => {
     if (async) return options;
@@ -354,6 +356,8 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
       return label.includes(searchLower) || description.includes(searchLower);
     });
   }, [async, options, search, searchable, getOptionLabel, getOptionDescription]);
+
+  console.log('[Combobox] Filtered options count:', filteredOptions.length);
 
   // Get selected option(s)
   const selectedOptions = useMemo(() => {
@@ -385,6 +389,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   // Measure input position for precise dropdown positioning
   const measureSelect = useCallback(() => {
     selectRef.current?.measureInWindow((x, y, width, height) => {
+      console.log('[Combobox] Measured input layout:', { x, y, width, height });
       setInputLayout({ x, y, width, height });
     });
   }, []);
@@ -394,20 +399,33 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   const spaceAbove = inputLayout.y;
   const requiredSpace = Math.min(LIST_MAX_HEIGHT, filteredOptions.length * 48 + 56);
 
+  console.log('[Combobox] Space calculation:', {
+    spaceBelow,
+    spaceAbove,
+    requiredSpace,
+    SCREEN_HEIGHT,
+    inputLayoutY: inputLayout.y,
+    inputLayoutHeight: inputLayout.height
+  });
+
   // Use full screen mode if:
   // 1. preferFullScreen is true, OR
   // 2. There's not enough space below AND not enough space above
   const useFullScreenMode = preferFullScreen || (spaceBelow < requiredSpace && spaceAbove < requiredSpace);
   const shouldShowBelow = spaceBelow >= requiredSpace;
 
+  console.log('[Combobox] Mode decision:', { useFullScreenMode, shouldShowBelow, preferFullScreen });
+
   const handleOpen = useCallback(() => {
+    console.log('[Combobox] handleOpen called', { disabled, optionsCount: options.length });
     if (disabled) return;
     measureSelect();
     setTimeout(() => {
+      console.log('[Combobox] Setting open to true');
       setOpen(true);
     }, 0);
     setSearch("");
-  }, [disabled, measureSelect]);
+  }, [disabled, measureSelect, options]);
 
   const handleClose = useCallback(() => {
     setOpen(false);
@@ -682,6 +700,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         animationType="fade"
         onRequestClose={handleClose}
         statusBarTranslucent
+        onShow={() => console.log('[Combobox] Modal shown', { filteredOptionsCount: filteredOptions.length, useFullScreenMode })}
       >
         <Pressable
           style={[
@@ -690,7 +709,6 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
               justifyContent: "flex-start",
               backgroundColor: "rgba(0, 0, 0, 0.5)",
             },
-            !(inputLayout.width === 0 || useFullScreenMode) && { justifyContent: "flex-end" }
           ]}
           onPress={handleClose}
         >
@@ -842,7 +860,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
                 )
               }
               style={{
-                height: inputLayout.width > 0 && !useFullScreenMode ? LIST_MAX_HEIGHT : undefined,
+                maxHeight: inputLayout.width > 0 && !useFullScreenMode ? LIST_MAX_HEIGHT : undefined,
               }}
               contentContainerStyle={{
                 flexGrow: inputLayout.width > 0 && !useFullScreenMode ? 0 : 1,

@@ -17,9 +17,7 @@ import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { PpeFilterDrawerContent } from "@/components/human-resources/ppe/list/ppe-filter-drawer-content";
 
 export default function PpeListScreen() {
@@ -37,6 +35,9 @@ export default function PpeListScreen() {
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "name", direction: "asc" }]);
   const [_showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, ] = useState<string[]>(["name", "ppeType", "ppeCA", "quantity"]);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -151,7 +152,6 @@ export default function PpeListScreen() {
         ppeType: { not: null }, // Ensure PPE filter is always applied
       },
     });
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -168,31 +168,18 @@ export default function PpeListScreen() {
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
     if (key === "where") {
       const whereFilters = Object.entries(value || {}).filter(([k, v]) => k !== "ppeType" && v !== undefined && v !== null);
-
-  const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <PpeFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
-
-  const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
       return whereFilters.length > 0;
     }
     return value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true);
   }).length;
+
+  const handleOpenFilters = useCallback(() => {
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   if (isLoading && !isRefetching) {
     return <PpeListSkeleton />;
@@ -200,20 +187,17 @@ export default function PpeListScreen() {
 
   if (error) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar EPIs" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar EPIs" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasPpes = Array.isArray(items) && items.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Search and Filter */}
       <View style={styles.searchContainer}>
         <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar EPIs..." style={styles.searchBar} debounceMs={300} />
@@ -279,7 +263,19 @@ export default function PpeListScreen() {
       {hasPpes && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasPpes && <FAB icon="plus" onPress={handleCreatePpe} />}
-    </ThemedView>
+      </ThemedView>
+
+      {/* Slide-in panel */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <PpeFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

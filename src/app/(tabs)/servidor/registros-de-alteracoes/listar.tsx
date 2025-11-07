@@ -16,8 +16,7 @@ import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useChangeLogsInfiniteMobile } from "@/hooks";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 import { ChangeLogFilterDrawerContent } from "@/components/administration/change-log/list/change-log-filter-drawer-content";
 
@@ -29,8 +28,9 @@ export default function AdministrationChangeLogsListScreen() {
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [filters, setFilters] = useState<Partial<ChangeLogGetManyFormData>>({});
-  const [_showColumnManager, setShowColumnManager] = useState(false);
   const [visibleColumnKeys, ] = useState<string[]>(["action", "entity", "user", "createdAt"]);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Build query parameters
   const queryParams = {
@@ -79,7 +79,6 @@ export default function AdministrationChangeLogsListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<ChangeLogGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -92,27 +91,6 @@ export default function AdministrationChangeLogsListScreen() {
   const activeFiltersCount = Object.entries(filters).filter(
     ([_key, value]) => {
       if (value === undefined || value === null) return false;
-
-  const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <ChangeLogFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
-
-  const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
       if (Array.isArray(value)) return value.length > 0;
       if (typeof value === "object" && !Array.isArray(value)) {
         return Object.values(value).some(v => v !== undefined && v !== null);
@@ -121,92 +99,125 @@ export default function AdministrationChangeLogsListScreen() {
     }
   ).length;
 
+  const handleOpenFilters = useCallback(() => {
+    setIsColumnPanelOpen(false);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
+
+  const handleOpenColumns = useCallback(() => {
+    setIsFilterPanelOpen(false);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
+
   if (isLoading && !isRefetching) {
     return <ChangeLogListSkeleton />;
   }
 
   if (error) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar registros" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar registros" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasChangeLogs = Array.isArray(changeLogs) && changeLogs.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Search and Filter */}
-      <View style={styles.searchContainer}>
-        <SearchBar
-          value={displaySearchText}
-          onChangeText={handleDisplaySearchChange}
-          onSearch={handleSearch}
-          placeholder="Buscar registros..."
-          style={styles.searchBar}
-          debounceMs={300}
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search and Filter */}
+        <View style={styles.searchContainer}>
+          <SearchBar
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar registros..."
+            style={styles.searchBar}
+            debounceMs={300}
+          />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumnKeys.length}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
+        </View>
+
+        {/* Filter Tags */}
+        <ChangeLogFilterTags
+          filters={filters}
+          searchText={searchText}
+          onFilterChange={handleApplyFilters}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
         />
-        <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconList size={20} color={colors.foreground} />}
-            onPress={handleOpenColumns}
-            badgeCount={visibleColumnKeys.length}
-            badgeVariant="primary"
-          />
-          <ListActionButton
-            icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={handleOpenFilters}
-            badgeCount={activeFiltersCount}
-            badgeVariant="destructive"
-            showBadge={activeFiltersCount > 0}
-          />
-        </View>
-      </View>
 
-      {/* Filter Tags */}
-      <ChangeLogFilterTags
-        filters={filters}
-        searchText={searchText}
-        onFilterChange={handleApplyFilters}
-        onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
-        }}
-        onClearAll={handleClearFilters}
-      />
+        {hasChangeLogs ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <ChangeLogTable
+              changeLogs={changeLogs}
+              onChangeLogPress={handleChangeLogPress}
+              onRefresh={handleRefresh}
+              onEndReach={canLoadMore ? loadMore : () => {}}
+              refreshing={refreshing}
+              isLoading={isLoading && !isRefetching}
+              loadingMore={isFetchingNextPage}
+              canLoadMore={canLoadMore}
+              error={error}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "history"}
+              title={searchText ? "Nenhum registro encontrado" : "Nenhum registro de alteração"}
+              description={searchText ? `Nenhum resultado para "${searchText}"` : "Registros de alterações do sistema aparecerão aqui"}
+            />
+          </View>
+        )}
 
-      {hasChangeLogs ? (
-        <TableErrorBoundary onRetry={handleRefresh}>
-          <ChangeLogTable
-            changeLogs={changeLogs}
-            onChangeLogPress={handleChangeLogPress}
-            onRefresh={handleRefresh}
-            onEndReach={canLoadMore ? loadMore : () => {}}
-            refreshing={refreshing}
-            isLoading={isLoading && !isRefetching}
-            loadingMore={isFetchingNextPage}
-            canLoadMore={canLoadMore}
-            error={error}
-          />
-        </TableErrorBoundary>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "history"}
-            title={searchText ? "Nenhum registro encontrado" : "Nenhum registro de alteração"}
-            description={searchText ? `Nenhum resultado para "${searchText}"` : "Registros de alterações do sistema aparecerão aqui"}
-          />
-        </View>
-      )}
+        {/* Items count */}
+        {hasChangeLogs && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
+      </ThemedView>
 
-      {/* Items count */}
-      {hasChangeLogs && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
-    </ThemedView>
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <ChangeLogFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <GenericColumnDrawerContent
+          columns={[]}
+          visibleColumns={new Set(visibleColumnKeys)}
+          onVisibilityChange={() => {}}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

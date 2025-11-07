@@ -33,6 +33,7 @@ interface SupplierFilterDrawerContentProps {
   onFiltersChange: (filters: FilterState) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 export function SupplierFilterDrawerContent({
@@ -40,10 +41,12 @@ export function SupplierFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: SupplierFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { closeFilterDrawer } = useUtilityDrawer();
+  const handleClose = onClose || closeFilterDrawer;
 
   // Initialize localFilters with filters value immediately
   const [localFilters, setLocalFilters] = useState(() => filters || {});
@@ -70,8 +73,8 @@ export function SupplierFilterDrawerContent({
     }, {} as any);
 
     onFiltersChange(cleanFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    handleClose();
+  }, [localFilters, onFiltersChange, handleClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -122,7 +125,7 @@ export function SupplierFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

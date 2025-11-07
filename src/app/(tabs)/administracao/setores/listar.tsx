@@ -22,8 +22,7 @@ import { useColumnVisibility } from "@/hooks/useColumnVisibility";
 
 import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from '../../../../constants';
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 import { SectorFilterDrawerContent } from "@/components/administration/sector/list/sector-filter-drawer-content";
 
@@ -31,10 +30,13 @@ export default function SectorListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -170,27 +172,6 @@ export default function SectorListScreen() {
   const activeFiltersCount = Object.values(filters).filter(
     (value) => {
       if (value === undefined || value === null) return false;
-
-  const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <SectorFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
-
-  const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
       if (Array.isArray(value)) return value.length > 0;
       if (typeof value === "object") {
         // Check date ranges
@@ -200,69 +181,23 @@ export default function SectorListScreen() {
     }
   ).length;
 
-  // Privilege options for multi-select
-  const privilegeOptions = useMemo(() =>
-    Object.values(SECTOR_PRIVILEGES).map((privilege) => ({
-      value: privilege,
-      label: SECTOR_PRIVILEGES_LABELS[privilege],
-    })),
-    []
-  );
+  const handleOpenFilters = useCallback(() => {
+    setIsColumnPanelOpen(false); // Close column panel if open
+    setIsFilterPanelOpen(true);
+  }, []);
 
-  // Filter sections for BaseFilterDrawer
-  const filterSections = useMemo(() => [
-    {
-      id: "privileges",
-      title: "Nível de Privilégio",
-      defaultOpen: true,
-      badge: filters.privileges?.length || 0,
-      content: (
-        <MultiSelectFilter
-          label="Níveis de Privilégio"
-          value={filters.privileges || []}
-          onChange={(value) => setFilters(prev => ({ ...prev, privileges: value.length > 0 ? value : undefined }))}
-          options={privilegeOptions}
-          placeholder="Selecione os níveis..."
-        />
-      ),
-    },
-    {
-      id: "status",
-      title: "Status",
-      defaultOpen: false,
-      badge: filters.hasUsers !== undefined ? 1 : 0,
-      content: (
-        <BooleanFilter
-          label="Apenas com funcionários"
-          description="Filtrar por setores que possuem funcionários"
-          value={!!filters.hasUsers}
-          onChange={(value) => setFilters(prev => ({ ...prev, hasUsers: value || undefined }))}
-        />
-      ),
-    },
-    {
-      id: "dates",
-      title: "Datas",
-      defaultOpen: false,
-      badge: (filters.createdDateRange?.from || filters.createdDateRange?.to ? 1 : 0) + (filters.updatedDateRange?.from || filters.updatedDateRange?.to ? 1 : 0),
-      content: (
-        <>
-          <DateRangeFilter
-            label="Data de Criação"
-            value={filters.createdDateRange}
-            onChange={(range) => setFilters(prev => ({ ...prev, createdDateRange: range }))}
-            showPresets={true}
-          />
-          <DateRangeFilter
-            label="Data de Atualização"
-            value={filters.updatedDateRange}
-            onChange={(range) => setFilters(prev => ({ ...prev, updatedDateRange: range }))}
-            showPresets={true}
-          />
-        </>
-      ),
-    },
-  ], [filters, privilegeOptions]);
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
+
+  const handleOpenColumns = useCallback(() => {
+    setIsFilterPanelOpen(false); // Close filter panel if open
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Only show skeleton on initial load, not on refetch/sort
   const isInitialLoad = isLoading && !isRefetching && sectors.length === 0;
@@ -273,20 +208,17 @@ export default function SectorListScreen() {
 
   if (error && sectors.length === 0) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar setores" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar setores" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasSectors = Array.isArray(sectors) && sectors.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Search and Filter */}
       <View style={styles.searchContainer}>
         <SearchBar
@@ -378,6 +310,25 @@ export default function SectorListScreen() {
 
       {hasSectors && <FAB icon="plus" onPress={handleCreateSector} />}
     </ThemedView>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <SectorFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <GenericColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

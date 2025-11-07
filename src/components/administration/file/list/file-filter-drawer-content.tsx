@@ -13,6 +13,7 @@ interface FileFilterDrawerContentProps {
   onFiltersChange: (filters: Partial<FileGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 interface FilterRange {
@@ -42,10 +43,13 @@ export function FileFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: FileFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { closeFilterDrawer } = useUtilityDrawer();
+
+  const handleClose = onClose || closeFilterDrawer;
 
   const [localFilters, setLocalFilters] = useState<FilterState>(() => filters || {});
   const [selectedMimeTypes, setSelectedMimeTypes] = useState<string[]>([]);
@@ -109,8 +113,8 @@ export function FileFilterDrawerContent({
     }
 
     onFiltersChange(appliedFilters);
-    closeFilterDrawer();
-  }, [localFilters, selectedMimeTypes, filters, onFiltersChange, closeFilterDrawer]);
+    handleClose();
+  }, [localFilters, selectedMimeTypes, filters, onFiltersChange, handleClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -137,7 +141,7 @@ export function FileFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

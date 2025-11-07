@@ -109,7 +109,7 @@ export const TaskTimelineCard: React.FC<TaskTimelineCardProps> = ({ task, activi
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <ThemedText style={styles.title}>Histórico</ThemedText>
       </View>
 
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: fontSize.lg,

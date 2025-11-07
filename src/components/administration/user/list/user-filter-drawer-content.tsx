@@ -15,6 +15,7 @@ interface UserFilterDrawerContentProps {
   onFiltersChange: (filters: Partial<UserGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 interface FilterState {
@@ -31,10 +32,13 @@ export function UserFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: UserFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { closeFilterDrawer } = useUtilityDrawer();
+
+  const handleClose = onClose || closeFilterDrawer;
 
   // Load filter options
   const { data: positionsData } = usePositions({ limit: 100, orderBy: { name: 'asc' } });
@@ -89,8 +93,8 @@ export function UserFilterDrawerContent({
     }
 
     onFiltersChange(newFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    handleClose();
+  }, [localFilters, onFiltersChange, handleClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -143,7 +147,7 @@ export function UserFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

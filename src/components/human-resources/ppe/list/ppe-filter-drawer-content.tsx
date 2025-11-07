@@ -15,6 +15,7 @@ interface PpeFilterDrawerContentProps {
   onFiltersChange: (filters: Partial<ItemGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 interface FilterState {
@@ -28,6 +29,7 @@ export function PpeFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: PpeFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -78,8 +80,12 @@ export function PpeFilterDrawerContent({
     };
 
     onFiltersChange(newFilters);
-    closeFilterDrawer();
-  }, [localFilters, filters, onFiltersChange, closeFilterDrawer]);
+    if (onClose) {
+      onClose();
+    } else {
+      closeFilterDrawer();
+    }
+  }, [localFilters, filters, onFiltersChange, onClose, closeFilterDrawer]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({
@@ -127,7 +133,7 @@ export function PpeFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

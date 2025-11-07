@@ -6,7 +6,6 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Combobox } from '@/components/ui/combobox';
 import { CustomerLogoDisplay } from '@/components/ui/customer-logo-display';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { TASK_STATUS, TASK_STATUS_LABELS } from '@/constants';
 import { useSectors, useCustomers, useUsers } from '@/hooks';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -14,24 +13,30 @@ import { formatCurrency } from '@/utils';
 import { spacing, fontSize, fontWeight } from '@/constants/design-system';
 import type { Customer } from '@/types';
 
-interface HistoryFilterDrawerContentProps {
+interface HistoryFilterSlidePanelProps {
   filters: any;
   onFiltersChange: (filters: any) => void;
   onClear: () => void;
+  onClose: () => void;
   activeFiltersCount: number;
   canViewPrice?: boolean;
+  canViewStatusFilter?: boolean;
 }
 
-export function HistoryFilterDrawerContent({
+// Move default status values outside component to prevent re-creation on every render
+const DEFAULT_STATUS_VALUES = [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED];
+
+export function HistoryFilterSlidePanel({
   filters,
   onFiltersChange,
   onClear,
+  onClose,
   activeFiltersCount,
   canViewPrice = false,
-}: HistoryFilterDrawerContentProps) {
+  canViewStatusFilter = true,
+}: HistoryFilterSlidePanelProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
 
   // Load data for selectors
   const { data: sectorsData } = useSectors({ orderBy: { name: "asc" } });
@@ -47,13 +52,10 @@ export function HistoryFilterDrawerContent({
     },
   });
 
-  // Default status selections: Finalizado, Faturado, Quitado
-  const defaultStatusValues = [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED];
-
   // Initialize localFilters with filters value or defaults
   const [localFilters, setLocalFilters] = useState(() => ({
     ...filters,
-    status: filters?.status || defaultStatusValues,
+    status: filters?.status || DEFAULT_STATUS_VALUES,
   }));
 
   // Price range state
@@ -64,11 +66,11 @@ export function HistoryFilterDrawerContent({
   useEffect(() => {
     setLocalFilters({
       ...filters,
-      status: filters?.status || defaultStatusValues,
+      status: filters?.status || DEFAULT_STATUS_VALUES,
     });
     setPriceMin(filters.priceRange?.from?.toString() || "");
     setPriceMax(filters.priceRange?.to?.toString() || "");
-  }, [filters, defaultStatusValues]);
+  }, [filters]);
 
   const handleStatusChange = useCallback((value: string | string[] | null | undefined) => {
     const statusValues = Array.isArray(value) ? value : [];
@@ -135,17 +137,17 @@ export function HistoryFilterDrawerContent({
     }
 
     onFiltersChange(updatedFilters);
-    closeFilterDrawer();
-  }, [localFilters, priceMin, priceMax, onFiltersChange, closeFilterDrawer]);
+    onClose();
+  }, [localFilters, priceMin, priceMax, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({
-      status: defaultStatusValues,
+      status: DEFAULT_STATUS_VALUES,
     });
     setPriceMin("");
     setPriceMax("");
     onClear();
-  }, [onClear, defaultStatusValues]);
+  }, [onClear]);
 
   // Status filter options
   const statusOptions = useMemo(() =>
@@ -230,7 +232,7 @@ export function HistoryFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>
@@ -240,24 +242,26 @@ export function HistoryFilterDrawerContent({
         contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 90 }]}
         showsVerticalScrollIndicator={true}
       >
-        {/* Status Filters */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconChecklist size={18} color={colors.mutedForeground} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Status das Tarefas
-            </ThemedText>
+        {/* Status Filters - Only for Admin and Financial */}
+        {canViewStatusFilter && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <IconChecklist size={18} color={colors.mutedForeground} />
+              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+                Status das Tarefas
+              </ThemedText>
+            </View>
+            <Combobox
+              mode="multiple"
+              options={statusOptions}
+              value={localFilters.status || []}
+              onValueChange={handleStatusChange}
+              placeholder="Selecione os status"
+              emptyText="Nenhum status encontrado"
+              searchable
+            />
           </View>
-          <Combobox
-            mode="multiple"
-            options={statusOptions}
-            value={localFilters.status || []}
-            onValueChange={handleStatusChange}
-            placeholder="Selecione os status"
-            emptyText="Nenhum status encontrado"
-            searchable
-          />
-        </View>
+        )}
 
         {/* Finished Date Range Filter */}
         <View style={styles.section}>

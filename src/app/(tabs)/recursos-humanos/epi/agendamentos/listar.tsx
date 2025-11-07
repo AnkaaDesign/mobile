@@ -10,7 +10,6 @@ import type { PpeDeliveryScheduleGetManyFormData } from '../../../../../schemas'
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton, Badge } from "@/components/ui";
 import { PpeScheduleTable } from "@/components/human-resources/ppe/schedule/list/ppe-schedule-table";
 import type { SortConfig } from "@/components/human-resources/ppe/schedule/list/ppe-schedule-table";
-
 import { PpeScheduleFilterTags } from "@/components/human-resources/ppe/schedule/list/ppe-schedule-filter-tags";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -18,23 +17,22 @@ import { PpeScheduleListSkeleton } from "@/components/human-resources/ppe/schedu
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
-
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { PpeScheduleFilterDrawerContent } from "@/components/human-resources/ppe/schedule/list/ppe-schedule-filter-drawer-content";
 
 export default function PpeScheduleListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [filters, setFilters] = useState<Partial<PpeDeliveryScheduleGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "nextRun", direction: "asc" }]);
   const [_visibleColumnKeys] = useState<string[]>(["nextRun", "frequency", "isActive"]);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -121,7 +119,6 @@ export default function PpeScheduleListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<PpeDeliveryScheduleGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -136,25 +133,12 @@ export default function PpeScheduleListScreen() {
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <PpeScheduleFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsFilterPanelOpen(true);
+  }, []);
 
-  const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   // Calculate overdue and upcoming counts
   const overdueCount = useMemo(() => {
@@ -173,100 +157,108 @@ export default function PpeScheduleListScreen() {
 
   if (error) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar agendamentos de EPI" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar agendamentos de EPI" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasSchedules = Array.isArray(schedules) && schedules.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Search and Filter */}
-      <View style={styles.searchContainer}>
-        <SearchBar
-          value={displaySearchText}
-          onChangeText={handleDisplaySearchChange}
-          onSearch={handleSearch}
-          placeholder="Buscar agendamentos..."
-          style={styles.searchBar}
-          debounceMs={300}
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search and Filter */}
+        <View style={styles.searchContainer}>
+          <SearchBar
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar agendamentos..."
+            style={styles.searchBar}
+            debounceMs={300}
+          />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
+        </View>
+
+        {/* Summary badges */}
+        {hasSchedules && (
+          <View style={styles.summaryContainer}>
+            {overdueCount > 0 && (
+              <Badge variant="destructive" size="sm">
+                <ThemedText style={styles.summaryText}>{overdueCount} Atrasado(s)</ThemedText>
+              </Badge>
+            )}
+            {upcomingCount > 0 && (
+              <Badge variant="default" size="sm" style={{ backgroundColor: "#eab308" }}>
+                <ThemedText style={StyleSheet.flatten([styles.summaryText, { color: "#000" }])}>{upcomingCount} Em Breve</ThemedText>
+              </Badge>
+            )}
+          </View>
+        )}
+
+        {/* Individual filter tags */}
+        <PpeScheduleFilterTags
+          filters={filters}
+          searchText={searchText}
+          onFilterChange={handleApplyFilters}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
         />
-        <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={handleOpenFilters}
-            badgeCount={activeFiltersCount}
-            badgeVariant="destructive"
-            showBadge={activeFiltersCount > 0}
-          />
-        </View>
-      </View>
 
-      {/* Summary badges */}
-      {hasSchedules && (
-        <View style={styles.summaryContainer}>
-          {overdueCount > 0 && (
-            <Badge variant="destructive" size="sm">
-              <ThemedText style={styles.summaryText}>{overdueCount} Atrasado(s)</ThemedText>
-            </Badge>
-          )}
-          {upcomingCount > 0 && (
-            <Badge variant="default" size="sm" style={{ backgroundColor: "#eab308" }}>
-              <ThemedText style={StyleSheet.flatten([styles.summaryText, { color: "#000" }])}>{upcomingCount} Em Breve</ThemedText>
-            </Badge>
-          )}
-        </View>
-      )}
+        {hasSchedules ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <PpeScheduleTable
+              schedules={schedules}
+              onSchedulePress={handleSchedulePress}
+              onRefresh={handleRefresh}
+              onEndReached={canLoadMore ? loadMore : undefined}
+              refreshing={refreshing}
+              loading={isLoading && !isRefetching}
+              loadingMore={isFetchingNextPage}
+              sortConfigs={sortConfigs}
+              onSort={handleSort}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "calendar"}
+              title={searchText ? "Nenhum agendamento encontrado" : "Nenhum agendamento cadastrado"}
+              description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando o primeiro agendamento de entrega de EPI"}
+              actionLabel={searchText ? undefined : "Cadastrar Agendamento"}
+              onAction={searchText ? undefined : handleCreateSchedule}
+            />
+          </View>
+        )}
 
-      {/* Individual filter tags */}
-      <PpeScheduleFilterTags
-        filters={filters}
-        searchText={searchText}
-        onFilterChange={handleApplyFilters}
-        onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
-        }}
-        onClearAll={handleClearFilters}
-      />
+        {/* Items count */}
+        {hasSchedules && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
-      {hasSchedules ? (
-        <TableErrorBoundary onRetry={handleRefresh}>
-          <PpeScheduleTable
-            schedules={schedules}
-            onSchedulePress={handleSchedulePress}
-            onRefresh={handleRefresh}
-            onEndReached={canLoadMore ? loadMore : undefined}
-            refreshing={refreshing}
-            loading={isLoading && !isRefetching}
-            loadingMore={isFetchingNextPage}
-            sortConfigs={sortConfigs}
-            onSort={handleSort}
-          />
-        </TableErrorBoundary>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "calendar"}
-            title={searchText ? "Nenhum agendamento encontrado" : "Nenhum agendamento cadastrado"}
-            description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando o primeiro agendamento de entrega de EPI"}
-            actionLabel={searchText ? undefined : "Cadastrar Agendamento"}
-            onAction={searchText ? undefined : handleCreateSchedule}
-          />
-        </View>
-      )}
+        {hasSchedules && <FAB icon="plus" onPress={handleCreateSchedule} />}
+      </ThemedView>
 
-      {/* Items count */}
-      {hasSchedules && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
-
-      {hasSchedules && <FAB icon="plus" onPress={handleCreateSchedule} />}
-    </ThemedView>
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <PpeScheduleFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

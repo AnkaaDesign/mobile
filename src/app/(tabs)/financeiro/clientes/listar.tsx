@@ -27,20 +27,22 @@ import { useColumnVisibility } from "@/hooks/useColumnVisibility";
  * focusing on invoices, payments, and financial metrics.
  * Reuses customer components but with financial-specific context.
  */
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 
 export default function FinancialCustomerListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -166,10 +168,6 @@ export default function FinancialCustomerListScreen() {
     setDisplaySearchText(text);
   }, []);
 
-  const handleApplyFilters = useCallback(() => {
-    // Filters are applied immediately through state
-  }, []);
-
   const handleClearFilters = useCallback(() => {
     setFilters({});
     setSearchText("");
@@ -191,76 +189,22 @@ export default function FinancialCustomerListScreen() {
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <CustomerFilterDrawerContent
-        filters={{ where: buildWhereClause() }}
-        onFiltersChange={(newFilters) => {
-          const where = newFilters.where as any;
-          if (where) {
-            const extracted: typeof filters = {};
-            if (where.cnpj?.not === null) extracted.hasCNPJ = true;
-            if (where.cpf?.not === null) extracted.hasCPF = true;
-            if (where.tasks?.some) extracted.hasInvoices = true;
-            setFilters(extracted);
-          } else {
-            setFilters({});
-          }
-        }}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, buildWhereClause, handleClearFilters, activeFiltersCount]);
+    setIsColumnPanelOpen(false); // Close column panel if open
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsFilterPanelOpen(false); // Close filter panel if open
+    setIsColumnPanelOpen(true);
+  }, []);
 
-  // Filter sections for BaseFilterDrawer
-  const filterSections = useMemo(() => [
-    {
-      id: "documents",
-      title: "Documentos Fiscais",
-      defaultOpen: true,
-      badge: (filters.hasCNPJ ? 1 : 0) + (filters.hasCPF ? 1 : 0),
-      content: (
-        <>
-          <BooleanFilter
-            label="Possui CNPJ"
-            description="Mostrar apenas clientes com CNPJ cadastrado"
-            value={!!filters.hasCNPJ}
-            onChange={(value) => setFilters(prev => ({ ...prev, hasCNPJ: value || undefined }))}
-          />
-          <BooleanFilter
-            label="Possui CPF"
-            description="Mostrar apenas clientes com CPF cadastrado"
-            value={!!filters.hasCPF}
-            onChange={(value) => setFilters(prev => ({ ...prev, hasCPF: value || undefined }))}
-          />
-        </>
-      ),
-    },
-    {
-      id: "financial",
-      title: "Dados Financeiros",
-      defaultOpen: true,
-      badge: filters.hasInvoices ? 1 : 0,
-      content: (
-        <BooleanFilter
-          label="Possui Notas Fiscais"
-          description="Mostrar apenas clientes com notas fiscais emitidas"
-          value={!!filters.hasInvoices}
-          onChange={(value) => setFilters(prev => ({ ...prev, hasInvoices: value || undefined }))}
-        />
-      ),
-    },
-  ], [filters, colors]);
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Only show skeleton on initial load
   const isInitialLoad = isLoading && !isRefetching && customers.length === 0;
@@ -271,20 +215,17 @@ export default function FinancialCustomerListScreen() {
 
   if (error && customers.length === 0) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar clientes" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar clientes" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasCustomers = Array.isArray(customers) && customers.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Search and Filter */}
       <View style={styles.searchContainer}>
         <SearchBar
@@ -375,6 +316,36 @@ export default function FinancialCustomerListScreen() {
 
       {hasCustomers && <FAB icon="plus" onPress={handleCreateCustomer} />}
     </ThemedView>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <CustomerFilterDrawerContent
+          filters={{ where: buildWhereClause() }}
+          onFiltersChange={(newFilters) => {
+            const where = newFilters.where as any;
+            if (where) {
+              const extracted: typeof filters = {};
+              if (where.cnpj?.not === null) extracted.hasCNPJ = true;
+              if (where.cpf?.not === null) extracted.hasCPF = true;
+              if (where.tasks?.some) extracted.hasInvoices = true;
+              setFilters(extracted);
+            } else {
+              setFilters({});
+            }
+          }}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <GenericColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

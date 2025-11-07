@@ -22,13 +22,14 @@ import {
   IconCurrencyReal,
 } from "@tabler/icons-react-native";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 
 export default function FormulasListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -202,12 +203,15 @@ export default function FormulasListScreen() {
   }
 
   const handleOpenFilters = () => {
-    // TODO: Implement filter drawer for formulas
-    showToast("Filtros em desenvolvimento", "info");
+    setIsFilterPanelOpen(true);
+  };
+
+  const handleCloseFilters = () => {
+    setIsFilterPanelOpen(false);
   };
 
   return (
-    <UtilityDrawerWrapper>
+    <>
       <Stack.Screen
         options={{
           title: "Fórmulas de Tinta",
@@ -274,7 +278,14 @@ export default function FormulasListScreen() {
           />
         )}
       </View>
-    </UtilityDrawerWrapper>
+
+      {/* Slide-in panel */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <View style={styles.filterPlaceholder}>
+          <ThemedText>Filtros em desenvolvimento</ThemedText>
+        </View>
+      </SlideInPanel>
+    </>
   );
 }
 
@@ -404,5 +415,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
+  },
+  filterPlaceholder: {
+    padding: spacing.xl,
+    alignItems: "center",
   },
 });

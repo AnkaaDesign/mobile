@@ -22,7 +22,7 @@ export const TruckMetadataCard: React.FC<TruckMetadataCardProps> = ({ truck }) =
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <IconClock size={20} color={colors.mutedForeground} />
         <ThemedText style={styles.title}>Registro</ThemedText>
       </View>
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: fontSize.lg,

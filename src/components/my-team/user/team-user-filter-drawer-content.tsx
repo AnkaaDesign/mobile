@@ -19,6 +19,7 @@ interface TeamUserFilterDrawerContentProps {
   onClear: () => void;
   activeFiltersCount: number;
   positions: Array<{ id: string; name: string }>;
+  onClose?: () => void;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -34,6 +35,7 @@ export function TeamUserFilterDrawerContent({
   onClear,
   activeFiltersCount,
   positions,
+  onClose,
 }: TeamUserFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -46,8 +48,8 @@ export function TeamUserFilterDrawerContent({
 
   const handleApply = useCallback(() => {
     onFiltersChange(localFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    onClose ? onClose() : closeFilterDrawer();
+  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -95,7 +97,7 @@ export function TeamUserFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

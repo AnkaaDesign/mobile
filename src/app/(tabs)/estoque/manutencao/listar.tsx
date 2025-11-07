@@ -19,8 +19,7 @@ import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 import type { MaintenanceGetManyFormData } from '../../../../schemas';
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 
 export default function InventoryMaintenanceListScreen() {
@@ -31,6 +30,10 @@ export default function InventoryMaintenanceListScreen() {
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [filters, setFilters] = useState<Partial<MaintenanceGetManyFormData>>({});
   const [refreshing, setRefreshing] = useState(false);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Permission check - Maintenance management is available for maintenance and admin
   const canManageMaintenance = useMemo(() => {
@@ -87,6 +90,25 @@ export default function InventoryMaintenanceListScreen() {
   const hasActiveFilters = useMemo(() => {
     return Object.keys(filters).length > 0 || !!debouncedSearchText;
   }, [filters, debouncedSearchText]);
+
+  // Handlers for slide panels
+  const handleOpenFilters = useCallback(() => {
+    setIsColumnPanelOpen(false);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
+
+  const handleOpenColumns = useCallback(() => {
+    setIsFilterPanelOpen(false);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Permission gate
   if (!canManageMaintenance) {
@@ -179,6 +201,23 @@ export default function InventoryMaintenanceListScreen() {
           />
         )}
       </ThemedView>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <GenericColumnDrawerContent
+          columns={[]}
+          visibleColumns={new Set()}
+          onVisibilityChange={() => {}}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <GenericColumnDrawerContent
+          columns={[]}
+          visibleColumns={new Set()}
+          onVisibilityChange={() => {}}
+        />
+      </SlideInPanel>
     </>
   );
 }

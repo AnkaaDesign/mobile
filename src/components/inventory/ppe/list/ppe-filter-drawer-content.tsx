@@ -13,6 +13,7 @@ interface PpeFilterDrawerContentProps {
   onFiltersChange: (filters: Partial<PpeDeliveryGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 export function PpeFilterDrawerContent({
@@ -20,10 +21,12 @@ export function PpeFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: PpeFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { closeFilterDrawer } = useUtilityDrawer();
+  const handleClose = onClose || closeFilterDrawer;
   const [localFilters, setLocalFilters] = useState<Partial<PpeDeliveryGetManyFormData>>(() => filters || {});
 
   useEffect(() => {
@@ -41,8 +44,8 @@ export function PpeFilterDrawerContent({
     }, {} as Partial<any>);
 
     onFiltersChange(cleanedFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    handleClose();
+  }, [localFilters, onFiltersChange, handleClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -68,7 +71,7 @@ export function PpeFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

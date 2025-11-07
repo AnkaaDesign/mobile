@@ -32,7 +32,7 @@ export const OrderSupplierCard: React.FC<OrderSupplierCardProps> = ({ supplier }
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <IconBuilding size={20} color={colors.primary} />
         <ThemedText style={styles.title}>Fornecedor</ThemedText>
       </View>
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: fontSize.lg,

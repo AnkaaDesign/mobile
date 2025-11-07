@@ -26,6 +26,7 @@ interface ItemFilterDrawerContentProps {
   onFiltersChange: (filters: Partial<ItemGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 interface FilterState {
@@ -73,10 +74,12 @@ export function ItemFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: ItemFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { closeFilterDrawer } = useUtilityDrawer();
+  const handleClose = onClose || closeFilterDrawer;
 
   const { data: brandsData } = useItemBrands({ limit: 100, orderBy: { name: "asc" } });
   const { data: categoriesData } = useItemCategories({ limit: 100, orderBy: { name: "asc" } });
@@ -172,8 +175,8 @@ export function ItemFilterDrawerContent({
     }
 
     onFiltersChange(newFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    handleClose();
+  }, [localFilters, onFiltersChange, handleClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -244,7 +247,7 @@ export function ItemFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

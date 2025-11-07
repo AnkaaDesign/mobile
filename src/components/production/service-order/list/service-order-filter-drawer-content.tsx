@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconCalendarPlus, IconChecklist } from '@tabler/icon
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from '@/constants';
@@ -15,6 +14,7 @@ interface ServiceOrderFilterDrawerContentProps {
   onFiltersChange: (filters: Partial<ServiceOrderGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose: () => void;
 }
 
 interface FilterState {
@@ -32,10 +32,10 @@ export function ServiceOrderFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: ServiceOrderFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
 
   // Initialize localFilters with filters value immediately
   const [localFilters, setLocalFilters] = useState<FilterState>(() => ({
@@ -86,8 +86,8 @@ export function ServiceOrderFilterDrawerContent({
     }
 
     onFiltersChange(newFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    onClose();
+  }, [localFilters, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -121,7 +121,7 @@ export function ServiceOrderFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

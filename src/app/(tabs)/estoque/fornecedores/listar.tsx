@@ -13,8 +13,7 @@ import { useSuppliersInfiniteMobile } from "@/hooks";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 import { SupplierFilterDrawerContent } from "@/components/inventory/supplier/list/supplier-filter-drawer-content";
 
@@ -22,7 +21,6 @@ export default function SuppliersListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
 
   // State
   const [refreshing, setRefreshing] = useState(false);
@@ -33,6 +31,10 @@ export default function SuppliersListScreen() {
   const [selectedSuppliers, setSelectedSuppliers] = useState<Set<string>>(new Set());
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["fantasyName", "city", "itemsCount"]);
   const visibleColumns = useMemo(() => new Set(visibleColumnKeys), [visibleColumnKeys]);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Build orderBy from sort configs
   const buildOrderBy = () => {
@@ -81,25 +83,22 @@ export default function SuppliersListScreen() {
   const allColumns = useMemo(() => createColumnDefinitions(), []);
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <SupplierFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsColumnPanelOpen(false);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsFilterPanelOpen(false);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Fetch suppliers with infinite scroll
   const { items: suppliers, isLoading, error, refetch, refresh, loadMore, canLoadMore, isFetchingNextPage, totalItemsLoaded, totalCount } = useSuppliersInfiniteMobile(queryParams);
@@ -148,82 +147,99 @@ export default function SuppliersListScreen() {
   }
 
   return (
-    <UtilityDrawerWrapper>
-
-        <ErrorBoundary>
-          <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-            {/* Search and Column Manager */}
-            <View style={styles.searchContainer}>
-              <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar fornecedores..." style={styles.searchBar} />
-              <View style={styles.buttonContainer}>
-                <ListActionButton
-                  icon={<IconList size={20} color={colors.foreground} />}
-                  onPress={handleOpenColumns}
-                  badgeCount={visibleColumnKeys.length}
-                  badgeVariant="primary"
-                />
-                <ListActionButton
-                  icon={<IconFilter size={20} color={colors.foreground} />}
-                  onPress={handleOpenFilters}
-                  badgeCount={activeFiltersCount}
-                  badgeVariant="destructive"
-                  showBadge={activeFiltersCount > 0}
-                />
-              </View>
+    <>
+      <ErrorBoundary>
+        <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+          {/* Search and Column Manager */}
+          <View style={styles.searchContainer}>
+            <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar fornecedores..." style={styles.searchBar} />
+            <View style={styles.buttonContainer}>
+              <ListActionButton
+                icon={<IconList size={20} color={colors.foreground} />}
+                onPress={handleOpenColumns}
+                badgeCount={visibleColumnKeys.length}
+                badgeVariant="primary"
+              />
+              <ListActionButton
+                icon={<IconFilter size={20} color={colors.foreground} />}
+                onPress={handleOpenFilters}
+                badgeCount={activeFiltersCount}
+                badgeVariant="destructive"
+                showBadge={activeFiltersCount > 0}
+              />
             </View>
-
-            {/* Individual filter tags */}
-            <SupplierFilterTags
-              filters={filters}
-              searchText={searchText}
-              onFilterChange={handleApplyFilters}
-              onSearchChange={(text) => {
-                setSearchText(text);
-                setDisplaySearchText(text);
-              }}
-              onClearAll={handleClearFilters}
-            />
-
-        {/* Suppliers Table */}
-        {suppliers.length > 0 ? (
-          <SupplierTable
-            suppliers={suppliers}
-            onSupplierPress={handleSupplierPress}
-            onSupplierEdit={handleSupplierEdit}
-            onSupplierDelete={handleSupplierDelete}
-            onRefresh={handleRefresh}
-            onEndReached={canLoadMore ? loadMore : undefined}
-            refreshing={refreshing}
-            loading={isLoading}
-            loadingMore={isFetchingNextPage}
-            sortConfigs={sortConfigs}
-            onSort={setSortConfigs}
-            selectedSuppliers={selectedSuppliers}
-            onSelectionChange={setSelectedSuppliers}
-            showSelection={false}
-            enableSwipeActions={true}
-            visibleColumnKeys={visibleColumnKeys}
-          />
-        ) : (
-          <View style={styles.emptyContainer}>
-            <EmptyState
-              icon={searchText ? "search" : "building-store"}
-              title={searchText ? "Nenhum fornecedor encontrado" : "Nenhum fornecedor cadastrado"}
-              description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando seu primeiro fornecedor"}
-              actionLabel={searchText ? undefined : "Cadastrar Fornecedor"}
-              onAction={searchText ? undefined : handleCreateSupplier}
-            />
           </View>
-        )}
 
-        {/* Suppliers count */}
-        {suppliers.length > 0 && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} itemType="fornecedor" itemTypePlural="fornecedores" />}
+          {/* Individual filter tags */}
+          <SupplierFilterTags
+            filters={filters}
+            searchText={searchText}
+            onFilterChange={handleApplyFilters}
+            onSearchChange={(text) => {
+              setSearchText(text);
+              setDisplaySearchText(text);
+            }}
+            onClearAll={handleClearFilters}
+          />
 
-        {/* FAB */}
-        <FAB icon="plus" onPress={handleCreateSupplier} />
-      </ThemedView>
-    </ErrorBoundary>
-    </UtilityDrawerWrapper>
+          {/* Suppliers Table */}
+          {suppliers.length > 0 ? (
+            <SupplierTable
+              suppliers={suppliers}
+              onSupplierPress={handleSupplierPress}
+              onSupplierEdit={handleSupplierEdit}
+              onSupplierDelete={handleSupplierDelete}
+              onRefresh={handleRefresh}
+              onEndReached={canLoadMore ? loadMore : undefined}
+              refreshing={refreshing}
+              loading={isLoading}
+              loadingMore={isFetchingNextPage}
+              sortConfigs={sortConfigs}
+              onSort={setSortConfigs}
+              selectedSuppliers={selectedSuppliers}
+              onSelectionChange={setSelectedSuppliers}
+              showSelection={false}
+              enableSwipeActions={true}
+              visibleColumnKeys={visibleColumnKeys}
+            />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <EmptyState
+                icon={searchText ? "search" : "building-store"}
+                title={searchText ? "Nenhum fornecedor encontrado" : "Nenhum fornecedor cadastrado"}
+                description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando seu primeiro fornecedor"}
+                actionLabel={searchText ? undefined : "Cadastrar Fornecedor"}
+                onAction={searchText ? undefined : handleCreateSupplier}
+              />
+            </View>
+          )}
+
+          {/* Suppliers count */}
+          {suppliers.length > 0 && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} itemType="fornecedor" itemTypePlural="fornecedores" />}
+
+          {/* FAB */}
+          <FAB icon="plus" onPress={handleCreateSupplier} />
+        </ThemedView>
+      </ErrorBoundary>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <SupplierFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <GenericColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

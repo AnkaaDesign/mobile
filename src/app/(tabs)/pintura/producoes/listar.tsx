@@ -22,13 +22,14 @@ import {
   IconScale,
 } from "@tabler/icons-react-native";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 
 export default function ProductionsListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,8 +104,11 @@ export default function ProductionsListScreen() {
 
   // Open filter drawer
   const handleOpenFilters = () => {
-    // TODO: Implement filter drawer for productions
-    showToast("Filtros em desenvolvimento", "info");
+    setIsFilterPanelOpen(true);
+  };
+
+  const handleCloseFilters = () => {
+    setIsFilterPanelOpen(false);
   };
 
   // Render production card
@@ -185,34 +189,30 @@ export default function ProductionsListScreen() {
 
   if (!canView) {
     return (
-      <UtilityDrawerWrapper>
-        <View style={styles.centerContainer}>
-          <ThemedText style={styles.errorText}>
-            Você não tem permissão para visualizar produções
-          </ThemedText>
-        </View>
-      </UtilityDrawerWrapper>
+      <View style={styles.centerContainer}>
+        <ThemedText style={styles.errorText}>
+          Você não tem permissão para visualizar produções
+        </ThemedText>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <UtilityDrawerWrapper>
-        <View style={styles.centerContainer}>
-          <ThemedText style={styles.errorText}>Erro ao carregar produções</ThemedText>
-          <IconButton
-            name="refresh-cw"
-            variant="default"
-            onPress={() => refetch()}
-            style={styles.retryButton}
-          />
-        </View>
-      </UtilityDrawerWrapper>
+      <View style={styles.centerContainer}>
+        <ThemedText style={styles.errorText}>Erro ao carregar produções</ThemedText>
+        <IconButton
+          name="refresh-cw"
+          variant="default"
+          onPress={() => refetch()}
+          style={styles.retryButton}
+        />
+      </View>
     );
   }
 
   return (
-    <UtilityDrawerWrapper>
+    <>
       <Stack.Screen
         options={{
           title: "Produções de Tinta",
@@ -279,7 +279,14 @@ export default function ProductionsListScreen() {
           />
         )}
       </View>
-    </UtilityDrawerWrapper>
+
+      {/* Slide-in panel */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <View style={styles.filterPlaceholder}>
+          <ThemedText>Filtros em desenvolvimento</ThemedText>
+        </View>
+      </SlideInPanel>
+    </>
   );
 }
 
@@ -408,5 +415,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
+  },
+  filterPlaceholder: {
+    padding: spacing.xl,
+    alignItems: "center",
   },
 });

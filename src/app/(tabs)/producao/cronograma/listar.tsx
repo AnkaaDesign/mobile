@@ -7,8 +7,9 @@ import { ListActionButton } from "@/components/ui/list-action-button";
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 import { getDefaultVisibleColumns } from "@/components/production/task/list/column-visibility-manager";
 import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { IconButton } from "@/components/ui/icon-button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
@@ -33,7 +34,7 @@ export default function ScheduleListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { delete: deleteTask, update } = useTaskMutations();
-  const { openColumnDrawer } = useUtilityDrawer();
+  // const { openColumnDrawer } = useUtilityDrawer();
 
   // Filter states - simplified for schedule view (only search, no filter drawer)
   const [searchText, setSearchText] = useState("");
@@ -42,12 +43,20 @@ export default function ScheduleListScreen() {
   // Column visibility state
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(Array.from(getDefaultVisibleColumns()));
 
-  // Check user permissions
-  const canCreate = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
-  const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-  const isProduction = user?.sector?.name === "Produção";
-  const isAdmin = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+  // Panel state
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
+
+  // Check user permissions - Use exact privilege checks for task management
+  // Only ADMIN and FINANCIAL can create/edit/manage tasks
+  // Other sectors (PRODUCTION, WAREHOUSE, LEADER) can only VIEW tasks
+  const userPrivilege = user?.sector?.privileges;
+  const canCreate = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+                    userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+  const canEdit = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+                  userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+  const canDelete = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
+  const isProduction = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION;
+  const isAdmin = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
 
   // Build query params with sector filtering
   // Schedule view shows: PENDING, IN_PRODUCTION, ON_HOLD tasks by default, sorted by deadline (term)
@@ -255,15 +264,12 @@ export default function ScheduleListScreen() {
 
   // Handle opening column drawer
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <ColumnVisibilityDrawerContent
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        defaultColumns={getDefaultVisibleColumns()}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumnKeys, handleColumnsChange]);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   if (error) {
     return (
@@ -280,7 +286,7 @@ export default function ScheduleListScreen() {
   }
 
   return (
-    <UtilityDrawerWrapper>
+    <>
       <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
         {/* Search and Filter */}
         <View style={styles.searchContainer}>
@@ -338,7 +344,7 @@ export default function ScheduleListScreen() {
                   }
                 }}
                 loadingMore={isFetchingNextPage}
-                enableSwipeActions={true}
+                enableSwipeActions={canEdit || canDelete}
                 visibleColumnKeys={visibleColumnKeys}
               />
             </View>
@@ -364,7 +370,17 @@ export default function ScheduleListScreen() {
         />
       )}
       </View>
-    </UtilityDrawerWrapper>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <ColumnVisibilityDrawerContent
+          columns={allColumns}
+          visibleColumns={new Set(visibleColumnKeys)}
+          onVisibilityChange={handleColumnsChange}
+          defaultColumns={getDefaultVisibleColumns()}
+          onClose={handleCloseColumns}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

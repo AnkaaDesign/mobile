@@ -16,6 +16,7 @@ interface PerformanceLevelFilterDrawerContentProps {
   onFiltersChange: (filters: Partial<UserGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 interface FilterRange {
@@ -36,6 +37,7 @@ export function PerformanceLevelFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: PerformanceLevelFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -93,8 +95,12 @@ export function PerformanceLevelFilterDrawerContent({
     }
 
     onFiltersChange(newFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    if (onClose) {
+      onClose();
+    } else {
+      closeFilterDrawer();
+    }
+  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -138,7 +144,7 @@ export function PerformanceLevelFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

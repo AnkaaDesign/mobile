@@ -11,6 +11,7 @@ interface OrderScheduleFilterDrawerContentProps {
   onFiltersChange: (filters: any) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 export function OrderScheduleFilterDrawerContent({
@@ -18,16 +19,18 @@ export function OrderScheduleFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: OrderScheduleFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { closeFilterDrawer } = useUtilityDrawer();
+  const handleClose = onClose || closeFilterDrawer;
   const [localFilters, setLocalFilters] = useState(() => filters || {});
 
   const handleApply = useCallback(() => {
     onFiltersChange(localFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    handleClose();
+  }, [localFilters, onFiltersChange, handleClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -53,7 +56,7 @@ export function OrderScheduleFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

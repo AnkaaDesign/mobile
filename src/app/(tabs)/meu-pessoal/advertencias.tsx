@@ -12,8 +12,7 @@ import { TeamWarningStatsCard } from "@/components/my-team/warning/team-warning-
 import { TeamWarningTable } from "@/components/my-team/warning/team-warning-table";
 import { TeamWarningFilterDrawerContent } from "@/components/my-team/warning/team-warning-filter-drawer-content";
 import { TeamWarningFilterTags } from "@/components/my-team/warning/team-warning-filter-tags";
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { useWarningsInfiniteMobile } from "@/hooks";
 import { useAuth } from '../../../contexts/auth-context';
 import { IconAlertTriangle, IconFilter } from "@tabler/icons-react-native";
@@ -32,8 +31,8 @@ type TeamWarningFilters = {
 export default function MyTeamWarningsScreen() {
   const { colors } = useTheme();
   const { user: currentUser, isLoading: isLoadingAuth } = useAuth();
-  const { openFilterDrawer } = useUtilityDrawer();
   const [filters, setFilters] = useState<TeamWarningFilters>({});
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Build query params for warnings
   const queryParams = useMemo(() => {
@@ -121,15 +120,12 @@ export default function MyTeamWarningsScreen() {
   }, []);
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <TeamWarningFilterDrawerContent
-        filters={filters}
-        onFiltersChange={handleApplyFilters}
-        onClear={() => setFilters({})}
-        teamMembers={teamMembers}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleApplyFilters, teamMembers]);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleRemoveFilter = useCallback((filterKey: keyof TeamWarningFilters, value?: string) => {
     setFilters((prev) => {
@@ -164,11 +160,9 @@ export default function MyTeamWarningsScreen() {
   if (isLoading && warnings.length === 0) {
     return (
       <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-        <UtilityDrawerWrapper>
-          <ThemedView style={styles.container}>
-            <Loading />
-          </ThemedView>
-        </UtilityDrawerWrapper>
+        <ThemedView style={styles.container}>
+          <Loading />
+        </ThemedView>
       </PrivilegeGuard>
     );
   }
@@ -176,11 +170,9 @@ export default function MyTeamWarningsScreen() {
   if (!currentUser?.sectorId) {
     return (
       <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-        <UtilityDrawerWrapper>
-          <ThemedView style={styles.container}>
-            <EmptyState icon="alert-circle" title="Setor não encontrado" description="Você precisa estar associado a um setor para visualizar as advertências da equipe" />
-          </ThemedView>
-        </UtilityDrawerWrapper>
+        <ThemedView style={styles.container}>
+          <EmptyState icon="alert-circle" title="Setor não encontrado" description="Você precisa estar associado a um setor para visualizar as advertências da equipe" />
+        </ThemedView>
       </PrivilegeGuard>
     );
   }
@@ -192,7 +184,7 @@ export default function MyTeamWarningsScreen() {
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-      <UtilityDrawerWrapper>
+      <>
         <ThemedView style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
@@ -237,7 +229,16 @@ export default function MyTeamWarningsScreen() {
           />
         )}
         </ThemedView>
-      </UtilityDrawerWrapper>
+
+        <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+          <TeamWarningFilterDrawerContent
+            filters={filters}
+            onFiltersChange={handleApplyFilters}
+            onClear={() => setFilters({})}
+            teamMembers={teamMembers}
+          />
+        </SlideInPanel>
+      </>
     </PrivilegeGuard>
   );
 }

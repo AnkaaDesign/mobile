@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   titleRow: {
     flexDirection: "row",

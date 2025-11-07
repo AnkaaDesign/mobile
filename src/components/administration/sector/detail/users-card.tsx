@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   },
   userItem: {
     paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   userInfo: {
     gap: spacing.xs,

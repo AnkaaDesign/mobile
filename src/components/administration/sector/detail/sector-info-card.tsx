@@ -29,7 +29,7 @@ export function SectorInfoCard({ sector }: SectorInfoCardProps) {
 
   return (
     <Card style={styles.card}>
-      <View style={styles.sectionHeader}>
+      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
         <IconInfoCircle size={20} color={colors.primary} />
         <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
       </View>
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   sectionTitle: {
     fontSize: fontSize.lg,

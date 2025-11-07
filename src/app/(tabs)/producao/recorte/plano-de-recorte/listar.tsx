@@ -12,8 +12,9 @@ import type { SortConfig } from "@/components/production/cutting/list/cutting-pl
 import { CuttingPlanFilterTags } from "@/components/production/cutting/list/cutting-plan-filter-tags";
 import { CuttingPlanFilterDrawerContent } from "@/components/production/cutting/list/cutting-plan-filter-drawer-content";
 import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { CuttingPlanListSkeleton } from "@/components/production/cutting/skeleton/cutting-plan-list-skeleton";
@@ -25,7 +26,9 @@ export default function CuttingPlanListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
+  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
@@ -203,33 +206,23 @@ export default function CuttingPlanListScreen() {
     return count;
   }, [filters]);
 
-  // Open filter drawer
+  // Open filter panel
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <CuttingPlanFilterDrawerContent
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleFilterChange, handleClearFilters, activeFiltersCount]);
+    setIsFilterPanelOpen(true);
+  }, []);
 
-  // Open column drawer
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
+
+  // Open column panel
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <ColumnVisibilityDrawerContent
-        columns={allColumns.map(col => ({
-          key: col.key,
-          header: col.label,
-          sortable: col.sortable,
-        }))}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        defaultColumns={new Set(["status", "type", "task"])}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumnKeys, handleColumnsChange]);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Only show skeleton on initial load, not on refetch/sort
   const isInitialLoad = isLoading && !isRefetching && cuts.length === 0;
@@ -249,7 +242,7 @@ export default function CuttingPlanListScreen() {
   const hasCuts = Array.isArray(cuts) && cuts.length > 0;
 
   return (
-    <UtilityDrawerWrapper>
+    <>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
         {/* Search and Filter */}
         <View style={styles.searchContainer}>
@@ -330,7 +323,31 @@ export default function CuttingPlanListScreen() {
 
       {hasCuts && <FAB icon="plus" onPress={handleCreateCut} />}
       </ThemedView>
-    </UtilityDrawerWrapper>
+
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <CuttingPlanFilterDrawerContent
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <ColumnVisibilityDrawerContent
+          columns={allColumns.map(col => ({
+            key: col.key,
+            header: col.label,
+            sortable: col.sortable,
+          }))}
+          visibleColumns={new Set(visibleColumnKeys)}
+          onVisibilityChange={handleColumnsChange}
+          defaultColumns={new Set(["status", "type", "task"])}
+          onClose={handleCloseColumns}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

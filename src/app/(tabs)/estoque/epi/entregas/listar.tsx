@@ -17,20 +17,21 @@ import { routes } from '../../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { PPE_DELIVERY_STATUS } from '../../../../../constants';
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
 import { PpeDeliveryFilterDrawerContent } from "@/components/human-resources/ppe/delivery/list/ppe-delivery-filter-drawer-content";
 
 export default function PPEDeliveryListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [filters, setFilters] = useState<Partial<PpeDeliveryGetManyFormData>>({});
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Build query parameters
   const queryParams = useMemo(() => {
@@ -84,7 +85,6 @@ export default function PPEDeliveryListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<PpeDeliveryGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -116,25 +116,12 @@ export default function PPEDeliveryListScreen() {
   }, [filters]);
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <PpeDeliveryFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsFilterPanelOpen(true);
+  }, []);
 
-  const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   // Calculate statistics
   const statistics = useMemo(() => {
@@ -151,99 +138,107 @@ export default function PPEDeliveryListScreen() {
 
   if (error) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar entregas de EPI" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar entregas de EPI" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasDeliveries = Array.isArray(deliveries) && deliveries.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Search and Filter */}
-      <View style={styles.searchContainer}>
-        <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar entregas de EPI..." style={styles.searchBar} debounceMs={300} />
-        <Pressable
-          style={({ pressed }) => [styles.filterButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }, pressed && styles.filterButtonPressed]}
-          onPress={handleOpenFilters}
-        >
-          <IconFilter size={24} color={colors.foreground} />
-          {activeFiltersCount > 0 && (
-            <Badge style={styles.filterBadge} variant="destructive" size="sm">
-              <ThemedText style={StyleSheet.flatten([styles.filterBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
-            </Badge>
-          )}
-        </Pressable>
-      </View>
-
-      {/* Individual filter tags */}
-      <PpeDeliveryFilterTags
-        filters={filters}
-        searchText={searchText}
-        onFilterChange={handleApplyFilters}
-        onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
-        }}
-        onClearAll={handleClearFilters}
-      />
-
-      {/* Statistics */}
-      {hasDeliveries && (
-        <View style={[styles.statisticsContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.statItem}>
-            <ThemedText style={styles.statValue}>{statistics.total}</ThemedText>
-            <ThemedText style={styles.statLabel}>Total</ThemedText>
-          </View>
-          <View style={[styles.statSeparator, { backgroundColor: colors.border }]} />
-          <View style={styles.statItem}>
-            <ThemedText style={[styles.statValue, { color: "#10b981" }]}>{statistics.delivered}</ThemedText>
-            <ThemedText style={styles.statLabel}>Entregues</ThemedText>
-          </View>
-          <View style={[styles.statSeparator, { backgroundColor: colors.border }]} />
-          <View style={styles.statItem}>
-            <ThemedText style={[styles.statValue, { color: "#f59e0b" }]}>{statistics.pending}</ThemedText>
-            <ThemedText style={styles.statLabel}>Pendentes</ThemedText>
-          </View>
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search and Filter */}
+        <View style={styles.searchContainer}>
+          <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar entregas de EPI..." style={styles.searchBar} debounceMs={300} />
+          <Pressable
+            style={({ pressed }) => [styles.filterButton, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }, pressed && styles.filterButtonPressed]}
+            onPress={handleOpenFilters}
+          >
+            <IconFilter size={24} color={colors.foreground} />
+            {activeFiltersCount > 0 && (
+              <Badge style={styles.filterBadge} variant="destructive" size="sm">
+                <ThemedText style={StyleSheet.flatten([styles.filterBadgeText, { color: "white" }])}>{activeFiltersCount}</ThemedText>
+              </Badge>
+            )}
+          </Pressable>
         </View>
-      )}
 
-      {hasDeliveries ? (
-        <TableErrorBoundary onRetry={handleRefresh}>
-          <PpeDeliveryTable
-            deliveries={deliveries}
-            onDeliveryPress={handleDeliveryPress}
-            onRefresh={handleRefresh}
-            refreshing={refreshing}
-            isLoading={isLoading && !isRefetching}
-            error={error}
-            onEndReached={canLoadMore ? loadMore : () => {}}
-            canLoadMore={canLoadMore}
-            loadingMore={isFetchingNextPage}
-          />
-        </TableErrorBoundary>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon="package"
-            title={searchText ? "Nenhuma entrega encontrada" : "Nenhuma entrega registrada"}
-            description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece registrando a primeira entrega de EPI"}
-            actionLabel={searchText ? undefined : "Registrar Entrega"}
-            onAction={searchText ? undefined : handleCreateDelivery}
-          />
-        </View>
-      )}
+        {/* Individual filter tags */}
+        <PpeDeliveryFilterTags
+          filters={filters}
+          searchText={searchText}
+          onFilterChange={handleApplyFilters}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
+        />
 
-      {/* Items count */}
-      {hasDeliveries && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
+        {/* Statistics */}
+        {hasDeliveries && (
+          <View style={[styles.statisticsContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.statItem}>
+              <ThemedText style={styles.statValue}>{statistics.total}</ThemedText>
+              <ThemedText style={styles.statLabel}>Total</ThemedText>
+            </View>
+            <View style={[styles.statSeparator, { backgroundColor: colors.border }]} />
+            <View style={styles.statItem}>
+              <ThemedText style={[styles.statValue, { color: "#10b981" }]}>{statistics.delivered}</ThemedText>
+              <ThemedText style={styles.statLabel}>Entregues</ThemedText>
+            </View>
+            <View style={[styles.statSeparator, { backgroundColor: colors.border }]} />
+            <View style={styles.statItem}>
+              <ThemedText style={[styles.statValue, { color: "#f59e0b" }]}>{statistics.pending}</ThemedText>
+              <ThemedText style={styles.statLabel}>Pendentes</ThemedText>
+            </View>
+          </View>
+        )}
 
-      {hasDeliveries && <FAB icon="plus" onPress={handleCreateDelivery} />}
-    </ThemedView>
+        {hasDeliveries ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <PpeDeliveryTable
+              deliveries={deliveries}
+              onDeliveryPress={handleDeliveryPress}
+              onRefresh={handleRefresh}
+              refreshing={refreshing}
+              isLoading={isLoading && !isRefetching}
+              error={error}
+              onEndReached={canLoadMore ? loadMore : () => {}}
+              canLoadMore={canLoadMore}
+              loadingMore={isFetchingNextPage}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon="package"
+              title={searchText ? "Nenhuma entrega encontrada" : "Nenhuma entrega registrada"}
+              description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece registrando a primeira entrega de EPI"}
+              actionLabel={searchText ? undefined : "Registrar Entrega"}
+              onAction={searchText ? undefined : handleCreateDelivery}
+            />
+          </View>
+        )}
+
+        {/* Items count */}
+        {hasDeliveries && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
+
+        {hasDeliveries && <FAB icon="plus" onPress={handleCreateDelivery} />}
+      </ThemedView>
+
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <PpeDeliveryFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

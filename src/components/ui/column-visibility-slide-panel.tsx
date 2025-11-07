@@ -4,7 +4,6 @@ import { IconColumns, IconSearch, IconX } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 
 // Generic column interface
 export interface ColumnDefinition {
@@ -16,22 +15,23 @@ export interface ColumnDefinition {
   align?: "left" | "center" | "right";
 }
 
-interface ColumnVisibilityDrawerContentProps {
+interface ColumnVisibilitySlidePanelProps {
   columns: ColumnDefinition[];
   visibleColumns: Set<string>;
   onVisibilityChange: (columns: Set<string>) => void;
+  onClose: () => void;
   defaultColumns?: Set<string>;
 }
 
-export function ColumnVisibilityDrawerContent({
+export function ColumnVisibilitySlidePanel({
   columns,
   visibleColumns,
   onVisibilityChange,
+  onClose,
   defaultColumns,
-}: ColumnVisibilityDrawerContentProps) {
+}: ColumnVisibilitySlidePanelProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeColumnDrawer } = useUtilityDrawer();
   const [searchQuery, setSearchQuery] = useState("");
   // Initialize localVisible with visibleColumns value immediately
   const [localVisible, setLocalVisible] = useState(() => new Set(visibleColumns || []));
@@ -64,8 +64,8 @@ export function ColumnVisibilityDrawerContent({
 
   const handleApply = useCallback(() => {
     onVisibilityChange(localVisible);
-    closeColumnDrawer();
-  }, [localVisible, onVisibilityChange, closeColumnDrawer]);
+    onClose();
+  }, [localVisible, onVisibilityChange, onClose]);
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery("");
@@ -91,7 +91,7 @@ export function ColumnVisibilityDrawerContent({
             </ThemedText>
           </View>
         </View>
-        <TouchableOpacity onPress={closeColumnDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>
@@ -281,6 +281,3 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 });
-
-// Export alias for backward compatibility
-export { ColumnVisibilityDrawerContent as ColumnVisibilityDrawer };

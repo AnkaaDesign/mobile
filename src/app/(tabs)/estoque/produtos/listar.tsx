@@ -19,16 +19,14 @@ import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
 import { ItemFilterDrawerContent } from "@/components/inventory/item/list/item-filter-drawer-content";
 
 export default function ItemListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
@@ -37,6 +35,10 @@ export default function ItemListScreen() {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["uniCode", "name", "quantity"]);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -201,25 +203,20 @@ export default function ItemListScreen() {
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <ItemFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Only show skeleton on initial load, not on refetch/sort
   const isInitialLoad = isLoading && !isRefetching && items.length === 0;
@@ -230,98 +227,115 @@ export default function ItemListScreen() {
 
   if (error && items.length === 0) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar produtos" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar produtos" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasProducts = Array.isArray(items) && items.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Search, Filter and Sort */}
-      <View style={[styles.searchContainer]}>
-        <SearchBar
-          value={displaySearchText}
-          onChangeText={handleDisplaySearchChange}
-          onSearch={handleSearch}
-          placeholder="Buscar produtos..."
-          style={styles.searchBar}
-          debounceMs={300}
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search, Filter and Sort */}
+        <View style={[styles.searchContainer]}>
+          <SearchBar
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar produtos..."
+            style={styles.searchBar}
+            debounceMs={300}
+          />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumnKeys.length}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
+        </View>
+
+        {/* Individual filter tags */}
+        <ItemFilterTags
+          filters={filters}
+          searchText={searchText}
+          onFilterChange={handleApplyFilters}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
         />
-        <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconList size={20} color={colors.foreground} />}
-            onPress={handleOpenColumns}
-            badgeCount={visibleColumnKeys.length}
-            badgeVariant="primary"
-          />
-          <ListActionButton
-            icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={handleOpenFilters}
-            badgeCount={activeFiltersCount}
-            badgeVariant="destructive"
-            showBadge={activeFiltersCount > 0}
-          />
-        </View>
-      </View>
 
-      {/* Individual filter tags */}
-      <ItemFilterTags
-        filters={filters}
-        searchText={searchText}
-        onFilterChange={handleApplyFilters}
-        onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
-        }}
-        onClearAll={handleClearFilters}
-      />
+        {hasProducts ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <ItemTable
+              items={items}
+              onItemPress={handleProductPress}
+              onItemEdit={handleEditProduct}
+              onItemDelete={handleDeleteProduct}
+              onItemDuplicate={handleDuplicateProduct}
+              onRefresh={handleRefresh}
+              onEndReached={canLoadMore ? loadMore : undefined}
+              refreshing={refreshing || isRefetching}
+              loading={false}
+              loadingMore={isFetchingNextPage}
+              showSelection={showSelection}
+              selectedItems={selectedItems}
+              onSelectionChange={handleSelectionChange}
+              sortConfigs={sortConfigs}
+              onSort={handleSort}
+              visibleColumnKeys={visibleColumnKeys}
+              enableSwipeActions={true}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "package"}
+              title={searchText ? "Nenhum produto encontrado" : "Nenhum produto cadastrado"}
+              description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando seu primeiro produto no estoque"}
+              actionLabel={searchText ? undefined : "Cadastrar Produto"}
+              onAction={searchText ? undefined : handleCreateProduct}
+            />
+          </View>
+        )}
 
-      {hasProducts ? (
-        <TableErrorBoundary onRetry={handleRefresh}>
-          <ItemTable
-            items={items}
-            onItemPress={handleProductPress}
-            onItemEdit={handleEditProduct}
-            onItemDelete={handleDeleteProduct}
-            onItemDuplicate={handleDuplicateProduct}
-            onRefresh={handleRefresh}
-            onEndReached={canLoadMore ? loadMore : undefined}
-            refreshing={refreshing || isRefetching}
-            loading={false}
-            loadingMore={isFetchingNextPage}
-            showSelection={showSelection}
-            selectedItems={selectedItems}
-            onSelectionChange={handleSelectionChange}
-            sortConfigs={sortConfigs}
-            onSort={handleSort}
-            visibleColumnKeys={visibleColumnKeys}
-            enableSwipeActions={true}
-          />
-        </TableErrorBoundary>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "package"}
-            title={searchText ? "Nenhum produto encontrado" : "Nenhum produto cadastrado"}
-            description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando seu primeiro produto no estoque"}
-            actionLabel={searchText ? undefined : "Cadastrar Produto"}
-            onAction={searchText ? undefined : handleCreateProduct}
-          />
-        </View>
-      )}
+        {/* Items count */}
+        {hasProducts && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
-      {/* Items count */}
-      {hasProducts && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
+        {hasProducts && <FAB icon="plus" onPress={handleCreateProduct} />}
+      </ThemedView>
 
-      {hasProducts && <FAB icon="plus" onPress={handleCreateProduct} />}
-    </ThemedView>
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <ItemFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <ColumnVisibilityDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+          onClose={handleCloseColumns}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

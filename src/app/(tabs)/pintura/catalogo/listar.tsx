@@ -28,14 +28,15 @@ import {
   IconSparkles,
 } from "@tabler/icons-react-native";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 
 export default function CatalogListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -117,8 +118,11 @@ export default function CatalogListScreen() {
 
   // Open filter drawer
   const handleOpenFilters = () => {
-    // TODO: Implement filter drawer for catalog
-    toast({ title: "Filtros em desenvolvimento", variant: "default" });
+    setIsFilterPanelOpen(true);
+  };
+
+  const handleCloseFilters = () => {
+    setIsFilterPanelOpen(false);
   };
 
   // Render paint card
@@ -228,22 +232,20 @@ export default function CatalogListScreen() {
 
   if (error) {
     return (
-      <UtilityDrawerWrapper>
-        <View style={styles.centerContainer}>
-          <ThemedText style={styles.errorText}>Erro ao carregar catálogo</ThemedText>
-          <IconButton
-            name="refresh-cw"
-            variant="default"
-            onPress={() => refetch()}
-            style={styles.retryButton}
-          />
-        </View>
-      </UtilityDrawerWrapper>
+      <View style={styles.centerContainer}>
+        <ThemedText style={styles.errorText}>Erro ao carregar catálogo</ThemedText>
+        <IconButton
+          name="refresh-cw"
+          variant="default"
+          onPress={() => refetch()}
+          style={styles.retryButton}
+        />
+      </View>
     );
   }
 
   return (
-    <UtilityDrawerWrapper>
+    <>
       <Stack.Screen
         options={{
           title: "Catálogo de Tintas",
@@ -316,7 +318,14 @@ export default function CatalogListScreen() {
           />
         )}
       </View>
-    </UtilityDrawerWrapper>
+
+      {/* Slide-in panel */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <View style={styles.filterPlaceholder}>
+          <ThemedText>Filtros em desenvolvimento</ThemedText>
+        </View>
+      </SlideInPanel>
+    </>
   );
 }
 
@@ -458,5 +467,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: spacing.md,
     bottom: spacing.xl,
+  },
+  filterPlaceholder: {
+    padding: spacing.xl,
+    alignItems: "center",
   },
 });

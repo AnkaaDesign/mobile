@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { } from "expo-router";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
@@ -6,18 +6,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUsersInfiniteMobile } from "@/hooks";
 import type { UserGetManyFormData } from '../../../../schemas';
 import { ThemedView, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
-import { PerformanceLevelTable } from "@/components/human-resources/performance-level/list/performance-level-table";
+import { PerformanceLevelTable, createColumnDefinitions } from "@/components/human-resources/performance-level/list/performance-level-table";
 import type { SortConfig } from "@/components/human-resources/performance-level/list/performance-level-table";
-
 import { PerformanceLevelFilterTags } from "@/components/human-resources/performance-level/list/performance-level-filter-tags";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { PerformanceLevelListSkeleton } from "@/components/human-resources/performance-level/skeleton/performance-level-list-skeleton";
 import { useTheme } from "@/lib/theme";
-
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
 import { PerformanceLevelFilterDrawerContent } from "@/components/human-resources/performance-level/list/performance-level-filter-drawer-content";
 
 export default function PerformanceLevelsListScreen() {
@@ -29,8 +26,11 @@ export default function PerformanceLevelsListScreen() {
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [filters, setFilters] = useState<Partial<UserGetManyFormData>>({});
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "name", direction: "asc" }]);
-  const [_showColumnManager, setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, ] = useState<string[]>(["name", "position", "performanceLevel"]);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["name", "position", "performanceLevel"]);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -118,7 +118,6 @@ export default function PerformanceLevelsListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<UserGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -127,31 +126,33 @@ export default function PerformanceLevelsListScreen() {
     setDisplaySearchText("");
   }, []);
 
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
+  }, []);
+
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
     ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <PerformanceLevelFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   if (isLoading && !isRefetching) {
     return <PerformanceLevelListSkeleton />;
@@ -159,86 +160,103 @@ export default function PerformanceLevelsListScreen() {
 
   if (error) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar níveis de performance" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar níveis de performance" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasUsers = Array.isArray(users) && users.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Search, Filter and Sort */}
-      <View style={styles.searchContainer}>
-        <SearchBar
-          value={displaySearchText}
-          onChangeText={handleDisplaySearchChange}
-          onSearch={handleSearch}
-          placeholder="Buscar funcionários..."
-          style={styles.searchBar}
-          debounceMs={300}
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search, Filter and Sort */}
+        <View style={styles.searchContainer}>
+          <SearchBar
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar funcionários..."
+            style={styles.searchBar}
+            debounceMs={300}
+          />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumnKeys.length}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
+        </View>
+
+        {/* Individual filter tags */}
+        <PerformanceLevelFilterTags
+          filters={filters}
+          searchText={searchText}
+          onFilterChange={handleApplyFilters}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
         />
-        <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconList size={20} color={colors.foreground} />}
-            onPress={handleOpenColumns}
-            badgeCount={visibleColumnKeys.length}
-            badgeVariant="primary"
-          />
-          <ListActionButton
-            icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={handleOpenFilters}
-            badgeCount={activeFiltersCount}
-            badgeVariant="destructive"
-            showBadge={activeFiltersCount > 0}
-          />
-        </View>
-      </View>
 
-      {/* Individual filter tags */}
-      <PerformanceLevelFilterTags
-        filters={filters}
-        searchText={searchText}
-        onFilterChange={handleApplyFilters}
-        onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
-        }}
-        onClearAll={handleClearFilters}
-      />
+        {hasUsers ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <PerformanceLevelTable
+              users={users}
+              onUserPress={handleUserPress}
+              onRefresh={handleRefresh}
+              onEndReached={canLoadMore ? loadMore : undefined}
+              refreshing={refreshing}
+              loading={isLoading && !isRefetching}
+              loadingMore={isFetchingNextPage}
+              sortConfigs={sortConfigs}
+              onSort={handleSort}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "users"}
+              title={searchText ? "Nenhum funcionário encontrado" : "Nenhum funcionário cadastrado"}
+              description={searchText ? `Nenhum resultado para "${searchText}"` : "Não há funcionários ativos cadastrados no sistema"}
+            />
+          </View>
+        )}
 
-      {hasUsers ? (
-        <TableErrorBoundary onRetry={handleRefresh}>
-          <PerformanceLevelTable
-            users={users}
-            onUserPress={handleUserPress}
-            onRefresh={handleRefresh}
-            onEndReached={canLoadMore ? loadMore : undefined}
-            refreshing={refreshing}
-            loading={isLoading && !isRefetching}
-            loadingMore={isFetchingNextPage}
-            sortConfigs={sortConfigs}
-            onSort={handleSort}
-          />
-        </TableErrorBoundary>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "users"}
-            title={searchText ? "Nenhum funcionário encontrado" : "Nenhum funcionário cadastrado"}
-            description={searchText ? `Nenhum resultado para "${searchText}"` : "Não há funcionários ativos cadastrados no sistema"}
-          />
-        </View>
-      )}
+        {/* Items count */}
+        {hasUsers && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
+      </ThemedView>
 
-      {/* Items count */}
-      {hasUsers && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
-    </ThemedView>
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <PerformanceLevelFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <ColumnVisibilityDrawerContent
+          columns={allColumns}
+          visibleColumns={new Set(visibleColumnKeys)}
+          onVisibilityChange={handleColumnsChange}
+          onClose={handleCloseColumns}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

@@ -21,20 +21,22 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 import { useTableSort } from "@/hooks/useTableSort";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 
 export default function PaintTypeListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [selectedPaintTypes, setSelectedPaintTypes] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -179,25 +181,22 @@ export default function PaintTypeListScreen() {
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <PaintTypeFilterDrawer
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsColumnPanelOpen(false); // Close column panel if open
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsFilterPanelOpen(false); // Close filter panel if open
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Only show skeleton on initial load, not on refetch/sort
   const isInitialLoad = isLoading && !isRefetching && paintTypes.length === 0;
@@ -208,29 +207,26 @@ export default function PaintTypeListScreen() {
 
   if (error && paintTypes.length === 0) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen
-              message="Erro ao carregar tipos de tinta"
-              detail={error.message}
-              onRetry={handleRefresh}
-            />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen
+          message="Erro ao carregar tipos de tinta"
+          detail={error.message}
+          onRetry={handleRefresh}
+        />
+      </ThemedView>
+    );
   }
 
   const hasPaintTypes = Array.isArray(paintTypes) && paintTypes.length > 0;
 
   return (
-    <ThemedView
-      style={[
-        styles.container,
-        { backgroundColor: colors.background, paddingBottom: insets.bottom },
-      ]}
-    >
+    <>
+      <ThemedView
+        style={[
+          styles.container,
+          { backgroundColor: colors.background, paddingBottom: insets.bottom },
+        ]}
+      >
       {/* Search and Filter */}
       <View style={styles.searchContainer}>
         <SearchBar
@@ -317,7 +313,26 @@ export default function PaintTypeListScreen() {
       )}
 
       {hasPaintTypes && <FAB icon="plus" onPress={handleCreatePaintType} />}
-    </ThemedView>
+      </ThemedView>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <PaintTypeFilterDrawer
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <GenericColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

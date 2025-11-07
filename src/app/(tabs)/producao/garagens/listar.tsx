@@ -17,8 +17,9 @@ import { useTheme } from "@/lib/theme";
 import { routes } from "../../../../constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 import { GarageFilterDrawerContent } from "@/components/production/garage/list/garage-filter-drawer-content";
 
@@ -26,13 +27,17 @@ export default function GarageListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
+  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [selectedGarages, setSelectedGarages] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["name", "dimensions", "createdAt"]);
+
+  // Panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<Partial<GarageGetManyFormData>>({});
@@ -210,45 +215,38 @@ export default function GarageListScreen() {
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <GarageFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsColumnPanelOpen(false);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsFilterPanelOpen(false);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Only show skeleton on initial load, not on refetch/sort
   const isInitialLoad = isLoading && !isRefetching && garages.length === 0;
 
   if (isInitialLoad) {
     return (
-    <UtilityDrawerWrapper>
-
-          <>
-            <Stack.Screen
-              options={{
-                title: "Lista de Garagens",
-                headerShown: true,
-              }}
-            />
-            <GarageListSkeleton />
-          </>
-    
-    </UtilityDrawerWrapper>
-  );
+      <>
+        <Stack.Screen
+          options={{
+            title: "Lista de Garagens",
+            headerShown: true,
+          }}
+        />
+        <GarageListSkeleton />
+      </>
+    );
   }
 
   if (error && garages.length === 0) {
@@ -359,6 +357,25 @@ export default function GarageListScreen() {
 
         {hasGarages && <FAB icon="plus" onPress={handleCreateGarage} />}
       </ThemedView>
+
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <GarageFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <GenericColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+          onClose={handleCloseColumns}
+        />
+      </SlideInPanel>
     </>
   );
 }

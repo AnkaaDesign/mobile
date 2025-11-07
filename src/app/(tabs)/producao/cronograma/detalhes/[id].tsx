@@ -59,15 +59,28 @@ export default function ScheduleDetailsScreen() {
   // Get file viewer context
   const fileViewer = useFileViewer();
 
-  // Check permissions
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
-  const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+  // Check permissions - Use exact privilege checks
+  const userPrivilege = user?.sector?.privileges;
+
+  // Only ADMIN and FINANCIAL can edit tasks
+  const canEdit = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+                  userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+  const canDelete = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
+
+  // Check if user can view documents (admin/financial only)
+  const canViewDocuments = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+                           userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+
+  // Check if user can view truck layout (admin/logistic/leader only)
+  const canViewTruckLayout = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+                              userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
+                              userPrivilege === SECTOR_PRIVILEGES.LEADER;
 
   // Check if user is from Financial sector
-  const isFinancialSector = user ? hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL) && user.sector?.privileges === SECTOR_PRIVILEGES.FINANCIAL : false;
+  const isFinancialSector = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
 
-  // Check if user is from Warehouse sector (should hide documents, budgets, and changelog)
-  const isWarehouseSector = user?.sector?.privileges === SECTOR_PRIVILEGES.WAREHOUSE;
+  // Check if user is from Warehouse sector (should hide changelog)
+  const isWarehouseSector = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
 
   // Fetch task details - optimized query to match web pattern
   const { data: response, isLoading, error, refetch } = useTaskDetail(id as string, {
@@ -286,13 +299,10 @@ export default function ScheduleDetailsScreen() {
             createdBy: task.createdBy,
           }} />
 
-          {/* Customer Card */}
-          {task.customer && <TaskCustomerCard customer={task.customer} />}
-
-          {/* Truck Layout */}
-          {(task as any)?.truck && (
+          {/* Truck Layout - Only for Admin, Logistic, and Leader */}
+          {canViewTruckLayout && (task as any)?.truck && (
             <Card style={styles.card}>
-              <View style={styles.sectionHeader}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <IconLayoutGrid size={20} color={colors.primary} />
                 <ThemedText style={styles.sectionTitle}>Layout do Caminhão</ThemedText>
               </View>
@@ -320,7 +330,7 @@ export default function ScheduleDetailsScreen() {
           {/* Artworks Section */}
           {(task as any)?.artworks && (task as any).artworks.length > 0 && (
             <Card style={styles.card}>
-              <View style={styles.sectionHeader}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <IconFiles size={20} color={colors.primary} />
                 <ThemedText style={styles.sectionTitle}>Artes</ThemedText>
                 <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
@@ -388,10 +398,10 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Documents Section - Hidden for Warehouse sector users */}
-          {!isWarehouseSector && ((task as any)?.budgets || (task as any)?.invoices || (task as any)?.receipts) && (
+          {/* Documents Section - Only for Admin and Financial */}
+          {canViewDocuments && ((task as any)?.budgets || (task as any)?.invoices || (task as any)?.receipts) && (
             <Card style={styles.card}>
-              <View style={styles.sectionHeader}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <IconFileText size={20} color={colors.primary} />
                 <ThemedText style={styles.sectionTitle}>Documentos</ThemedText>
                 <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
@@ -488,10 +498,10 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Financial summary - Hidden for Warehouse sector users */}
-          {!isWarehouseSector && task.price && (
+          {/* Financial summary - Only for Admin and Financial */}
+          {canViewDocuments && task.price && (
             <Card style={styles.card}>
-              <View style={styles.sectionHeader}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <ThemedText style={styles.sectionTitle}>Valor Total</ThemedText>
               </View>
               <ThemedText style={StyleSheet.flatten([styles.summaryValue, { color: colors.primary }])}>
@@ -503,7 +513,7 @@ export default function ScheduleDetailsScreen() {
           {/* Cuts Card - Hidden for Financial sector users */}
           {!isFinancialSector && cuts.length > 0 && (
             <Card style={styles.card}>
-              <View style={styles.sectionHeader}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <IconCut size={20} color={colors.primary} />
                 <ThemedText style={styles.sectionTitle}>Recortes</ThemedText>
                 <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
@@ -561,7 +571,7 @@ export default function ScheduleDetailsScreen() {
           {/* Observation Card */}
           {(task as any)?.observation && (
             <Card style={styles.card}>
-              <View style={styles.sectionHeader}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <IconAlertCircle size={20} color="#f59e0b" />
                 <ThemedText style={styles.sectionTitle}>Observação</ThemedText>
                 {(task as any).observation.files && (task as any).observation.files.length > 0 && (
@@ -608,7 +618,7 @@ export default function ScheduleDetailsScreen() {
           {/* Airbrushings Card - Only show if task has airbrushings */}
           {airbrushings.length > 0 && (
             <Card style={styles.card}>
-              <View style={styles.sectionHeader}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <IconSpray size={20} color={colors.primary} />
                 <ThemedText style={styles.sectionTitle}>Aerografias</ThemedText>
                 <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
@@ -695,10 +705,10 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Changelog History - Hidden for Financial and Warehouse sector users */}
-          {!isFinancialSector && !isWarehouseSector && (
+          {/* Changelog History - Only for Admin/Financial (all changes) or Leader (sector changes) */}
+          {(canViewDocuments || hasPrivilege(user, SECTOR_PRIVILEGES.LEADER)) && (
             <Card style={styles.card}>
-              <View style={styles.sectionHeader}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <IconHistory size={20} color={colors.primary} />
                 <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
               </View>
@@ -772,6 +782,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
   sectionTitle: {
     fontSize: fontSize.lg,

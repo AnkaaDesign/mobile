@@ -8,7 +8,6 @@ import type { PpeSizeGetManyFormData } from '../../../../../schemas';
 import { ThemedView, ThemedText, FAB, ErrorScreen, EmptyState, SearchBar, ListActionButton } from "@/components/ui";
 import { PpeSizeTable } from "@/components/human-resources/ppe/size/list/ppe-size-table";
 import type { SortConfig } from "@/components/human-resources/ppe/size/list/ppe-size-table";
-
 import { PpeSizeFilterTags } from "@/components/human-resources/ppe/size/list/ppe-size-filter-tags";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
@@ -16,10 +15,7 @@ import { PpeSizeListSkeleton } from "@/components/human-resources/ppe/size/skele
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
-
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { PpeSizeFilterDrawerContent } from "@/components/human-resources/ppe/size/list/ppe-size-filter-drawer-content";
 
 export default function PpeSizeListScreen() {
@@ -117,7 +113,6 @@ export default function PpeSizeListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<PpeSizeGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -130,25 +125,12 @@ export default function PpeSizeListScreen() {
   const activeFiltersCount = Object.entries(filters).filter(([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <PpeSizeFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsFilterPanelOpen(true);
+  }, []);
 
-  const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   // Calculate completion statistics
   const statistics = useMemo(() => {
@@ -174,97 +156,105 @@ export default function PpeSizeListScreen() {
 
   if (error) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar tamanhos de EPI" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar tamanhos de EPI" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasPpeSizes = Array.isArray(ppeSizes) && ppeSizes.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Search and Filter */}
-      <View style={[styles.searchContainer]}>
-        <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar por funcionário..." style={styles.searchBar} debounceMs={300} />
-        <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={handleOpenFilters}
-            badgeCount={activeFiltersCount}
-            badgeVariant="destructive"
-            showBadge={activeFiltersCount > 0}
-          />
-        </View>
-      </View>
-
-      {/* Individual filter tags */}
-      <PpeSizeFilterTags
-        filters={filters}
-        searchText={searchText}
-        onFilterChange={handleApplyFilters}
-        onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
-        }}
-        onClearAll={handleClearFilters}
-      />
-
-      {/* Statistics */}
-      {hasPpeSizes && !searchText && Object.keys(filters).length === 0 && (
-        <View style={[styles.statisticsContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.statisticsRow}>
-            <View style={styles.statisticItem}>
-              <ThemedText style={styles.statisticValue}>{statistics.complete}</ThemedText>
-              <ThemedText style={styles.statisticLabel}>Completos</ThemedText>
-            </View>
-            <View style={[styles.statisticItem, styles.statisticItemCenter]}>
-              <ThemedText style={[styles.statisticValue, { color: statistics.incomplete > 0 ? colors.destructive : colors.foreground }]}>{statistics.incomplete}</ThemedText>
-              <ThemedText style={styles.statisticLabel}>Incompletos</ThemedText>
-            </View>
-            <View style={styles.statisticItem}>
-              <ThemedText style={styles.statisticValue}>{statistics.percentage}%</ThemedText>
-              <ThemedText style={styles.statisticLabel}>Completude</ThemedText>
-            </View>
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search and Filter */}
+        <View style={[styles.searchContainer]}>
+          <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar por funcionário..." style={styles.searchBar} debounceMs={300} />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
           </View>
         </View>
-      )}
 
-      {hasPpeSizes ? (
-        <TableErrorBoundary onRetry={handleRefresh}>
-          <PpeSizeTable
-            ppeSizes={ppeSizes}
-            onSizePress={handlePpeSizePress}
-            onRefresh={handleRefresh}
-            onEndReached={canLoadMore ? loadMore : undefined}
-            refreshing={refreshing}
-            loading={isLoading && !isRefetching}
-            loadingMore={isFetchingNextPage}
-            sortConfigs={sortConfigs}
-            onSort={handleSort}
-          />
-        </TableErrorBoundary>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "ruler"}
-            title={searchText ? "Nenhum tamanho encontrado" : "Nenhum tamanho cadastrado"}
-            description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando tamanhos de EPI para os funcionários"}
-            actionLabel={searchText ? undefined : "Cadastrar Tamanho"}
-            onAction={searchText ? undefined : handleCreatePpeSize}
-          />
-        </View>
-      )}
+        {/* Individual filter tags */}
+        <PpeSizeFilterTags
+          filters={filters}
+          searchText={searchText}
+          onFilterChange={handleApplyFilters}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
+        />
 
-      {/* Items count */}
-      {hasPpeSizes && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
+        {/* Statistics */}
+        {hasPpeSizes && !searchText && Object.keys(filters).length === 0 && (
+          <View style={[styles.statisticsContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.statisticsRow}>
+              <View style={styles.statisticItem}>
+                <ThemedText style={styles.statisticValue}>{statistics.complete}</ThemedText>
+                <ThemedText style={styles.statisticLabel}>Completos</ThemedText>
+              </View>
+              <View style={[styles.statisticItem, styles.statisticItemCenter]}>
+                <ThemedText style={[styles.statisticValue, { color: statistics.incomplete > 0 ? colors.destructive : colors.foreground }]}>{statistics.incomplete}</ThemedText>
+                <ThemedText style={styles.statisticLabel}>Incompletos</ThemedText>
+              </View>
+              <View style={styles.statisticItem}>
+                <ThemedText style={styles.statisticValue}>{statistics.percentage}%</ThemedText>
+                <ThemedText style={styles.statisticLabel}>Completude</ThemedText>
+              </View>
+            </View>
+          </View>
+        )}
 
-      {hasPpeSizes && <FAB icon="plus" onPress={handleCreatePpeSize} />}
-    </ThemedView>
+        {hasPpeSizes ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <PpeSizeTable
+              ppeSizes={ppeSizes}
+              onSizePress={handlePpeSizePress}
+              onRefresh={handleRefresh}
+              onEndReached={canLoadMore ? loadMore : undefined}
+              refreshing={refreshing}
+              loading={isLoading && !isRefetching}
+              loadingMore={isFetchingNextPage}
+              sortConfigs={sortConfigs}
+              onSort={handleSort}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "ruler"}
+              title={searchText ? "Nenhum tamanho encontrado" : "Nenhum tamanho cadastrado"}
+              description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando tamanhos de EPI para os funcionários"}
+              actionLabel={searchText ? undefined : "Cadastrar Tamanho"}
+              onAction={searchText ? undefined : handleCreatePpeSize}
+            />
+          </View>
+        )}
+
+        {/* Items count */}
+        {hasPpeSizes && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
+
+        {hasPpeSizes && <FAB icon="plus" onPress={handleCreatePpeSize} />}
+      </ThemedView>
+
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <PpeSizeFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

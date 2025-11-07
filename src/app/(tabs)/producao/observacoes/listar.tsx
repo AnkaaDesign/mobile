@@ -26,8 +26,9 @@ import { ObservationListSkeleton } from "@/components/production/observation/ske
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ObservationFilterDrawerContent } from "@/components/production/observation/list/observation-filter-drawer-content";
 import { ObservationColumnDrawerContent } from "@/components/production/observation/list/observation-column-drawer-content";
 
@@ -35,7 +36,9 @@ export default function ObservationListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
+  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
@@ -202,26 +205,20 @@ export default function ObservationListScreen() {
   }, []);
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <ObservationFilterDrawerContent
-        filters={filters}
-        onFiltersChange={handleApplyFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-        tasks={tasks}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleApplyFilters, handleClearFilters, activeFiltersCount, tasks]);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <ObservationColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumnKeys, handleColumnsChange]);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -255,7 +252,7 @@ export default function ObservationListScreen() {
   const hasObservations = Array.isArray(observations) && observations.length > 0;
 
   return (
-    <UtilityDrawerWrapper>
+    <>
       <ThemedView
         style={[
           styles.container,
@@ -354,7 +351,27 @@ export default function ObservationListScreen() {
 
       {hasObservations && <FAB icon="plus" onPress={handleCreateObservation} />}
     </ThemedView>
-    </UtilityDrawerWrapper>
+
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <ObservationFilterDrawerContent
+          filters={filters}
+          onFiltersChange={handleApplyFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          tasks={tasks}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <ObservationColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={new Set(visibleColumnKeys)}
+          onVisibilityChange={handleColumnsChange}
+          onClose={handleCloseColumns}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

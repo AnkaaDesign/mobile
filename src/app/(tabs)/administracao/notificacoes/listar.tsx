@@ -18,16 +18,15 @@ import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 import { NotificationFilterDrawerContent } from "@/components/administration/notification/list/notification-filter-drawer-content";
+import { createColumnDefinitions } from "@/components/administration/notification/list/notification-table";
 
 export default function NotificationListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
@@ -35,8 +34,11 @@ export default function NotificationListScreen() {
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ columnKey: "sentAt", direction: "desc" }]);
   const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
-  const [_showColumnManager, _setShowColumnManager] = useState(false);
-  const [visibleColumnKeys, _setVisibleColumnKeys] = useState<string[]>(["title", "importance", "type", "sentAt"]);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["title", "importance", "type", "sentAt"]);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -144,7 +146,6 @@ export default function NotificationListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<NotificationGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -155,31 +156,38 @@ export default function NotificationListScreen() {
     setShowSelection(false);
   }, []);
 
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
+  }, []);
+
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
+
+  // Get visibleColumns as Set for panel
+  const visibleColumns = useMemo(() => new Set(visibleColumnKeys), [visibleColumnKeys]);
+
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(
     ([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true),
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <NotificationFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsColumnPanelOpen(false); // Close column panel if open
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsFilterPanelOpen(false); // Close filter panel if open
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   if (isLoading && !isRefetching) {
     return <NotificationListSkeleton />;
@@ -187,20 +195,17 @@ export default function NotificationListScreen() {
 
   if (error) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar notificações" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar notificações" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasNotifications = Array.isArray(notifications) && notifications.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Search, Filter and Sort */}
       <View style={[styles.searchContainer]}>
         <SearchBar
@@ -214,7 +219,7 @@ export default function NotificationListScreen() {
         <View style={styles.buttonContainer}>
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => _setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />
@@ -277,6 +282,25 @@ export default function NotificationListScreen() {
 
       {hasNotifications && <FAB icon="plus" onPress={handleCreateNotification} />}
     </ThemedView>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <NotificationFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <GenericColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

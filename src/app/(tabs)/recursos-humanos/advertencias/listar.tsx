@@ -16,16 +16,15 @@ import { WarningListSkeleton } from "@/components/human-resources/warning/skelet
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { WarningFilterDrawerContent } from "@/components/human-resources/warning/list/warning-filter-drawer-content";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
 
 export default function WarningListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
@@ -34,6 +33,10 @@ export default function WarningListScreen() {
   const [selectedWarnings, setSelectedWarnings] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["collaborator.name", "severity", "createdAt"]);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -163,25 +166,20 @@ export default function WarningListScreen() {
   const activeFiltersCount = Object.entries(filters).filter(([_key, value]) => value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <WarningFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumnKeys, handleColumnsChange]);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   if (isLoading && !isRefetching) {
     return <WarningListSkeleton />;
@@ -198,79 +196,98 @@ export default function WarningListScreen() {
   const hasWarnings = Array.isArray(warnings) && warnings.length > 0;
 
   return (
-    <UtilityDrawerWrapper>
+    <>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
         {/* Search, Filter and Sort */}
-      <View style={[styles.searchContainer]}>
-        <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar advertências..." style={styles.searchBar} debounceMs={300} />
-        <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconList size={20} color={colors.foreground} />}
-            onPress={handleOpenColumns}
-            badgeCount={visibleColumnKeys.length}
-            badgeVariant="primary"
-          />
-          <ListActionButton
-            icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={handleOpenFilters}
-            badgeCount={activeFiltersCount}
-            badgeVariant="destructive"
-            showBadge={activeFiltersCount > 0}
-          />
+        <View style={[styles.searchContainer]}>
+          <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar advertências..." style={styles.searchBar} debounceMs={300} />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumnKeys.length}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
         </View>
-      </View>
 
-      {/* Individual filter tags */}
-      <WarningFilterTags
-        filters={filters}
-        searchText={searchText}
-        onFilterChange={handleApplyFilters}
-        onSearchChange={(text) => {
-          setSearchText(text);
-          setDisplaySearchText(text);
-        }}
-        onClearAll={handleClearFilters}
-      />
+        {/* Individual filter tags */}
+        <WarningFilterTags
+          filters={filters}
+          searchText={searchText}
+          onFilterChange={handleApplyFilters}
+          onSearchChange={(text) => {
+            setSearchText(text);
+            setDisplaySearchText(text);
+          }}
+          onClearAll={handleClearFilters}
+        />
 
-      {hasWarnings ? (
-        <TableErrorBoundary onRetry={handleRefresh}>
-          <WarningTable
-            warnings={warnings}
-            onWarningPress={handleWarningPress}
-            onWarningEdit={handleEditWarning}
-            onWarningDelete={handleDeleteWarning}
-            onRefresh={handleRefresh}
-            onEndReached={canLoadMore ? loadMore : undefined}
-            refreshing={refreshing}
-            loading={isLoading && !isRefetching}
-            loadingMore={isFetchingNextPage}
-            showSelection={showSelection}
-            selectedWarnings={selectedWarnings}
-            onSelectionChange={handleSelectionChange}
-            sortConfigs={sortConfigs}
-            onSort={handleSort}
-            visibleColumnKeys={visibleColumnKeys}
-            enableSwipeActions={true}
-          />
-        </TableErrorBoundary>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "alert-circle"}
-            title={searchText ? "Nenhuma advertência encontrada" : "Nenhuma advertência cadastrada"}
-            description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando a primeira advertência"}
-            actionLabel={searchText ? undefined : "Cadastrar Advertência"}
-            onAction={searchText ? undefined : handleCreateWarning}
-          />
-        </View>
-      )}
+        {hasWarnings ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <WarningTable
+              warnings={warnings}
+              onWarningPress={handleWarningPress}
+              onWarningEdit={handleEditWarning}
+              onWarningDelete={handleDeleteWarning}
+              onRefresh={handleRefresh}
+              onEndReached={canLoadMore ? loadMore : undefined}
+              refreshing={refreshing}
+              loading={isLoading && !isRefetching}
+              loadingMore={isFetchingNextPage}
+              showSelection={showSelection}
+              selectedWarnings={selectedWarnings}
+              onSelectionChange={handleSelectionChange}
+              sortConfigs={sortConfigs}
+              onSort={handleSort}
+              visibleColumnKeys={visibleColumnKeys}
+              enableSwipeActions={true}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "alert-circle"}
+              title={searchText ? "Nenhuma advertência encontrada" : "Nenhuma advertência cadastrada"}
+              description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando a primeira advertência"}
+              actionLabel={searchText ? undefined : "Cadastrar Advertência"}
+              onAction={searchText ? undefined : handleCreateWarning}
+            />
+          </View>
+        )}
 
-      {/* Items count */}
-      {hasWarnings && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
+        {/* Items count */}
+        {hasWarnings && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
-      {hasWarnings && <FAB icon="plus" onPress={handleCreateWarning} />}
-    </ThemedView>
-    </UtilityDrawerWrapper>
+        {hasWarnings && <FAB icon="plus" onPress={handleCreateWarning} />}
+      </ThemedView>
+
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <WarningFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <ColumnVisibilityDrawerContent
+          columns={allColumns}
+          visibleColumns={new Set(visibleColumnKeys)}
+          onVisibilityChange={handleColumnsChange}
+          onClose={handleCloseColumns}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

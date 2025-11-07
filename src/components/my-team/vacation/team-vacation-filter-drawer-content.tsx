@@ -16,6 +16,7 @@ interface TeamVacationFilterDrawerContentProps {
   onClear: () => void;
   activeFiltersCount: number;
   teamMemberIds: string[];
+  onClose?: () => void;
 }
 
 export function TeamVacationFilterDrawerContent({
@@ -24,6 +25,7 @@ export function TeamVacationFilterDrawerContent({
   onClear,
   activeFiltersCount,
   teamMemberIds,
+  onClose,
 }: TeamVacationFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -40,8 +42,8 @@ export function TeamVacationFilterDrawerContent({
       },
     };
     onFiltersChange(filtersWithTeam);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer, teamMemberIds]);
+    onClose ? onClose() : closeFilterDrawer();
+  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer, teamMemberIds]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -118,7 +120,7 @@ export function TeamVacationFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

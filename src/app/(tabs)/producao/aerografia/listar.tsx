@@ -17,8 +17,9 @@ import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { AirbrushingListSkeleton } from "@/components/production/airbrushing/skeleton/airbrushing-list-skeleton";
 import { useTheme } from "@/lib/theme";
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 
 // New hooks
 import { useTableSort } from "@/hooks/useTableSort";
@@ -33,13 +34,17 @@ export default function AirbrushingListScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
+  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [selectedAirbrushings, setSelectedAirbrushings] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const searchInputRef = React.useRef<any>(null);
+
+  // Panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Permission check
   const canManageAirbrushing = useMemo(() => {
@@ -240,25 +245,22 @@ export default function AirbrushingListScreen() {
   }, [filters]);
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <AirbrushingFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsColumnPanelOpen(false);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <AirbrushingColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsFilterPanelOpen(false);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   const handleLoadMore = useCallback(() => {
     if (canLoadMore && !isFetchingNextPage) {
@@ -296,7 +298,7 @@ export default function AirbrushingListScreen() {
   const hasAirbrushings = Array.isArray(airbrushings) && airbrushings.length > 0;
 
   return (
-    <UtilityDrawerWrapper>
+    <>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
         {/* Search and Filter */}
         <View style={[styles.searchContainer]}>
@@ -408,7 +410,26 @@ export default function AirbrushingListScreen() {
 
         {hasAirbrushings && <FAB icon="plus" onPress={handleCreateAirbrushing} />}
       </ThemedView>
-    </UtilityDrawerWrapper>
+
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <AirbrushingFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <AirbrushingColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+          onClose={handleCloseColumns}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

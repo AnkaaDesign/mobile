@@ -18,20 +18,20 @@ import { routes } from '../../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { PPE_DELIVERY_STATUS } from '../../../../../constants';
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { PpeDeliveryFilterDrawerContent } from "@/components/human-resources/ppe/delivery/list/ppe-delivery-filter-drawer-content";
 
 export default function PpeDeliveriesListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [filters, setFilters] = useState<Partial<PpeDeliveryGetManyFormData>>({});
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Build query parameters
   const queryParams = useMemo(() => {
@@ -85,7 +85,6 @@ export default function PpeDeliveriesListScreen() {
 
   const handleApplyFilters = useCallback((newFilters: Partial<PpeDeliveryGetManyFormData>) => {
     setFilters(newFilters);
-    setShowFilters(false);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -97,27 +96,6 @@ export default function PpeDeliveriesListScreen() {
   // Count active filters
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-
-  const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <PpeDeliveryFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
-
-  const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
     if (filters.statuses?.length) count++;
     if (filters.userIds?.length) count++;
     if (filters.itemIds?.length) count++;
@@ -125,6 +103,14 @@ export default function PpeDeliveriesListScreen() {
     if (filters.isSigned !== undefined) count++;
     return count;
   }, [filters]);
+
+  const handleOpenFilters = useCallback(() => {
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   // Calculate statistics
   const statistics = useMemo(() => {
@@ -141,20 +127,17 @@ export default function PpeDeliveriesListScreen() {
 
   if (error) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen message="Erro ao carregar entregas de EPI" detail={error.message} onRetry={handleRefresh} />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar entregas de EPI" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
+    );
   }
 
   const hasDeliveries = Array.isArray(deliveries) && deliveries.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Search and Filter */}
       <View style={styles.searchContainer}>
         <SearchBar value={displaySearchText} onChangeText={handleDisplaySearchChange} onSearch={handleSearch} placeholder="Buscar entregas..." style={styles.searchBar} debounceMs={300} />
@@ -233,7 +216,19 @@ export default function PpeDeliveriesListScreen() {
       {hasDeliveries && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
       {hasDeliveries && <FAB icon="plus" onPress={handleCreateDelivery} />}
-    </ThemedView>
+      </ThemedView>
+
+      {/* Slide-in panel */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <PpeDeliveryFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

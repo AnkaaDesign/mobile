@@ -45,7 +45,7 @@ export const TaskCommissionsCard: React.FC<TaskCommissionsCardProps> = ({ commis
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <IconCoin size={20} color={colors.primary} />
         <ThemedText style={styles.title}>Comissões</ThemedText>
         <Badge variant="secondary" style={styles.countBadge}>
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: fontSize.lg,
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   commissionItemBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   commissionInfo: {
     flex: 1,

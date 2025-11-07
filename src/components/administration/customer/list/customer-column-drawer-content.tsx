@@ -19,12 +19,14 @@ interface CustomerColumnDrawerContentProps {
   columns: CustomerColumn[];
   visibleColumns: Set<string>;
   onVisibilityChange: (columns: Set<string>) => void;
+  onClose?: () => void;
 }
 
 export function CustomerColumnDrawerContent({
   columns,
   visibleColumns,
   onVisibilityChange,
+  onClose,
 }: CustomerColumnDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -57,8 +59,8 @@ export function CustomerColumnDrawerContent({
 
   const handleApply = useCallback(() => {
     onVisibilityChange(localVisible);
-    closeColumnDrawer();
-  }, [localVisible, onVisibilityChange, closeColumnDrawer]);
+    onClose ? onClose() : closeColumnDrawer();
+  }, [localVisible, onVisibilityChange, onClose, closeColumnDrawer]);
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery("");
@@ -84,7 +86,7 @@ export function CustomerColumnDrawerContent({
             </ThemedText>
           </View>
         </View>
-        <TouchableOpacity onPress={closeColumnDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || closeColumnDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

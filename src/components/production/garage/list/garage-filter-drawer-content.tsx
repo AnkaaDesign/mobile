@@ -6,7 +6,6 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import type { GarageGetManyFormData } from '../../../../schemas';
 
 interface FilterRange {
@@ -27,6 +26,7 @@ interface GarageFilterDrawerContentProps {
   onFiltersChange: (filters: Partial<GarageGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose: () => void;
 }
 
 export function GarageFilterDrawerContent({
@@ -34,10 +34,10 @@ export function GarageFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: GarageFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
 
   // Initialize localFilters with filters value immediately
   const [localFilters, setLocalFilters] = useState<FilterState>(() => ({
@@ -77,8 +77,8 @@ export function GarageFilterDrawerContent({
     }
 
     onFiltersChange(newFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    onClose();
+  }, [localFilters, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -129,7 +129,7 @@ export function GarageFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

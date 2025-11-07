@@ -17,7 +17,7 @@ export const ServiceInfoCard: React.FC<ServiceInfoCardProps> = ({ service }) => 
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <ThemedText style={styles.title}>Informações do Serviço</ThemedText>
       </View>
 
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: fontSize.lg,
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   descriptionContainer: {
     marginBottom: spacing.sm,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   descriptionLabel: {
     fontSize: fontSize.sm,

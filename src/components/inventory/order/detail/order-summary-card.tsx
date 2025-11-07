@@ -21,7 +21,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <IconReceipt size={20} color={colors.primary} />
         <ThemedText style={styles.title}>Resumo Financeiro</ThemedText>
       </View>
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: fontSize.lg,

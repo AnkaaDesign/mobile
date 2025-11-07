@@ -4,7 +4,6 @@ import { IconFilter, IconX, IconEye, IconCalendarPlus, IconChecklist } from '@ta
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUtilityDrawer } from '@/contexts/utility-drawer-context';
 import type { ObservationGetManyFormData } from '@/schemas';
 import type { Task } from '@/types';
 import { Combobox } from '@/components/ui/combobox';
@@ -16,6 +15,7 @@ interface ObservationFilterDrawerContentProps {
   onClear: () => void;
   activeFiltersCount: number;
   tasks: Task[];
+  onClose: () => void;
 }
 
 interface FilterState {
@@ -31,10 +31,10 @@ export function ObservationFilterDrawerContent({
   onClear,
   activeFiltersCount,
   tasks,
+  onClose,
 }: ObservationFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeFilterDrawer } = useUtilityDrawer();
 
   // Initialize localFilters with filters value immediately
   const [localFilters, setLocalFilters] = useState<FilterState>(() => ({
@@ -66,8 +66,8 @@ export function ObservationFilterDrawerContent({
     }
 
     onFiltersChange(newFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    onClose();
+  }, [localFilters, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -102,7 +102,7 @@ export function ObservationFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

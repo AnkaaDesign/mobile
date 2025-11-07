@@ -19,16 +19,14 @@ import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { BORROW_STATUS } from '../../../../constants';
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
 import { BorrowFilterDrawerContent } from "@/components/inventory/borrow/list/borrow-filter-drawer-content";
 
 export default function BorrowListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
@@ -40,6 +38,10 @@ export default function BorrowListScreen() {
   const [selectedBorrows, setSelectedBorrows] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["item.name", "user.name", "status"]);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Build query parameters with sorting
   const buildOrderBy = () => {
@@ -244,42 +246,33 @@ export default function BorrowListScreen() {
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <BorrowFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Only show skeleton on initial load, not on refetch/sort
   const isInitialLoad = isLoading && !isRefetching && items.length === 0;
 
   if (isInitialLoad) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <ThemedText style={styles.loadingText}>Carregando empréstimos...</ThemedText>
-            </View>
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>Carregando empréstimos...</ThemedText>
+        </View>
+      </ThemedView>
+    );
   }
 
   if (error && items.length === 0) {
@@ -293,90 +286,111 @@ export default function BorrowListScreen() {
   const hasBorrows = Array.isArray(items) && items.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Search, Filter and Sort */}
-      <View style={[styles.searchContainer]}>
-        <SearchBar
-          value={displaySearchText}
-          onChangeText={handleDisplaySearchChange}
-          onSearch={handleSearch}
-          placeholder="Buscar por item ou usuário..."
-          style={styles.searchBar}
-          debounceMs={300}
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Search, Filter and Sort */}
+        <View style={[styles.searchContainer]}>
+          <SearchBar
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar por item ou usuário..."
+            style={styles.searchBar}
+            debounceMs={300}
+          />
+          <View style={styles.buttonContainer}>
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumnKeys.length}
+              badgeVariant="primary"
+            />
+            <ListActionButton
+              icon={<IconFilter size={20} color={colors.foreground} />}
+              onPress={handleOpenFilters}
+              badgeCount={activeFiltersCount}
+              badgeVariant="destructive"
+              showBadge={activeFiltersCount > 0}
+            />
+          </View>
+        </View>
+
+        {/* Individual filter tags */}
+        <BorrowFilterTags
+          filters={filters}
+          searchText={searchText}
+          onClearAll={handleClearFilters}
+          onRemoveFilter={(key: string) => {
+            const newFilters = { ...filters };
+            delete (newFilters as any)[key];
+            setFilters(newFilters);
+          }}
+          onClearSearch={() => {
+            setSearchText("");
+            setDisplaySearchText("");
+          }}
         />
-        <View style={styles.buttonContainer}>
-          <ListActionButton
-            icon={<IconList size={20} color={colors.foreground} />}
-            onPress={handleOpenColumns}
-            badgeCount={visibleColumnKeys.length}
-            badgeVariant="primary"
-          />
-          <ListActionButton
-            icon={<IconFilter size={20} color={colors.foreground} />}
-            onPress={handleOpenFilters}
-            badgeCount={activeFiltersCount}
-            badgeVariant="destructive"
-            showBadge={activeFiltersCount > 0}
-          />
-        </View>
-      </View>
 
-      {/* Individual filter tags */}
-      <BorrowFilterTags
-        filters={filters}
-        searchText={searchText}
-        onClearAll={handleClearFilters}
-        onRemoveFilter={(key: string) => {
-          const newFilters = { ...filters };
-          delete (newFilters as any)[key];
-          setFilters(newFilters);
-        }}
-        onClearSearch={() => {
-          setSearchText("");
-          setDisplaySearchText("");
-        }}
-      />
+        {hasBorrows ? (
+          <TableErrorBoundary onRetry={handleRefresh}>
+            <BorrowTable
+              borrows={items}
+              onBorrowPress={handleBorrowPress}
+              onBorrowEdit={handleEditBorrow}
+              onBorrowDelete={handleDeleteBorrow}
+              onReturn={handleReturnBorrow}
+              onMarkAsLost={handleMarkAsLost}
+              onRefresh={handleRefresh}
+              onEndReached={canLoadMore ? loadMore : undefined}
+              refreshing={refreshing || isRefetching}
+              loading={false}
+              loadingMore={isFetchingNextPage}
+              showSelection={showSelection}
+              selectedBorrows={selectedBorrows}
+              onSelectionChange={handleSelectionChange}
+              sortConfigs={sortConfigs}
+              onSort={handleSort}
+              visibleColumnKeys={visibleColumnKeys}
+              enableSwipeActions={true}
+            />
+          </TableErrorBoundary>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "package"}
+              title={searchText ? "Nenhum empréstimo encontrado" : "Nenhum empréstimo cadastrado"}
+              description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando seu primeiro empréstimo"}
+              actionLabel={searchText ? undefined : "Cadastrar Empréstimo"}
+              onAction={searchText ? undefined : handleCreateBorrow}
+            />
+          </View>
+        )}
 
-      {hasBorrows ? (
-        <TableErrorBoundary onRetry={handleRefresh}>
-          <BorrowTable
-            borrows={items}
-            onBorrowPress={handleBorrowPress}
-            onBorrowEdit={handleEditBorrow}
-            onBorrowDelete={handleDeleteBorrow}
-            onReturn={handleReturnBorrow}
-            onMarkAsLost={handleMarkAsLost}
-            onRefresh={handleRefresh}
-            onEndReached={canLoadMore ? loadMore : undefined}
-            refreshing={refreshing || isRefetching}
-            loading={false}
-            loadingMore={isFetchingNextPage}
-            showSelection={showSelection}
-            selectedBorrows={selectedBorrows}
-            onSelectionChange={handleSelectionChange}
-            sortConfigs={sortConfigs}
-            onSort={handleSort}
-            visibleColumnKeys={visibleColumnKeys}
-            enableSwipeActions={true}
-          />
-        </TableErrorBoundary>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "package"}
-            title={searchText ? "Nenhum empréstimo encontrado" : "Nenhum empréstimo cadastrado"}
-            description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando seu primeiro empréstimo"}
-            actionLabel={searchText ? undefined : "Cadastrar Empréstimo"}
-            onAction={searchText ? undefined : handleCreateBorrow}
-          />
-        </View>
-      )}
+        {/* Items count */}
+        {hasBorrows && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
 
-      {/* Items count */}
-      {hasBorrows && <ItemsCountDisplay loadedCount={totalItemsLoaded} totalCount={totalCount} isLoading={isFetchingNextPage} />}
+        {hasBorrows && <FAB icon="plus" onPress={handleCreateBorrow} />}
+      </ThemedView>
 
-      {hasBorrows && <FAB icon="plus" onPress={handleCreateBorrow} />}
-    </ThemedView>
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <BorrowFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <ColumnVisibilityDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+          onClose={handleCloseColumns}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

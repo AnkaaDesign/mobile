@@ -4,7 +4,6 @@ import { IconColumns, IconSearch, IconX } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 import type { ObservationColumn } from "./observation-table";
 import { getDefaultVisibleColumns } from "./observation-table";
 
@@ -12,16 +11,17 @@ interface ObservationColumnDrawerContentProps {
   columns: ObservationColumn[];
   visibleColumns: Set<string>;
   onVisibilityChange: (columns: Set<string>) => void;
+  onClose: () => void;
 }
 
 export function ObservationColumnDrawerContent({
   columns,
   visibleColumns,
   onVisibilityChange,
+  onClose,
 }: ObservationColumnDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { closeColumnDrawer } = useUtilityDrawer();
   const [searchQuery, setSearchQuery] = useState("");
   // Initialize localVisible with visibleColumns value immediately
   const [localVisible, setLocalVisible] = useState(() => new Set(visibleColumns || []));
@@ -50,8 +50,8 @@ export function ObservationColumnDrawerContent({
 
   const handleApply = useCallback(() => {
     onVisibilityChange(localVisible);
-    closeColumnDrawer();
-  }, [localVisible, onVisibilityChange, closeColumnDrawer]);
+    onClose();
+  }, [localVisible, onVisibilityChange, onClose]);
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery("");
@@ -77,7 +77,7 @@ export function ObservationColumnDrawerContent({
             </ThemedText>
           </View>
         </View>
-        <TouchableOpacity onPress={closeColumnDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

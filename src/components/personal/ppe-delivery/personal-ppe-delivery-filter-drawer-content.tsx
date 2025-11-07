@@ -29,6 +29,7 @@ interface PersonalPpeDeliveryFilterDrawerContentProps {
   onFiltersChange: (filters: PersonalPpeDeliveryFilters) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 export function PersonalPpeDeliveryFilterDrawerContent({
@@ -36,6 +37,7 @@ export function PersonalPpeDeliveryFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: PersonalPpeDeliveryFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -53,8 +55,8 @@ export function PersonalPpeDeliveryFilterDrawerContent({
 
   const handleApply = useCallback(() => {
     onFiltersChange(localFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    onClose ? onClose() : closeFilterDrawer();
+  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -91,7 +93,7 @@ export function PersonalPpeDeliveryFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

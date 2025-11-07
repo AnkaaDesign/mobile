@@ -53,7 +53,7 @@ export const BorrowStatusCard: React.FC<BorrowStatusCardProps> = ({ borrow }) =>
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
           <IconInfoCircle size={20} color={colors.mutedForeground} />
           <ThemedText style={styles.title}>Status</ThemedText>
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   headerLeft: {
     flexDirection: "row",

@@ -54,9 +54,9 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
     const height = layout.height * 100; // Convert to cm
     const sections = layout.layoutSections || [];
     const totalWidth = sections.reduce((sum: number, s: any) => sum + s.width * 100, 0);
-    const margin = 50;
-    const extraSpace = 50;
-    const svgWidth = totalWidth + margin * 2 + extraSpace;
+    const margin = 60; // Increased margin to accommodate dimension labels
+    const extraSpace = 40;
+    const svgWidth = totalWidth + margin * 2;
     const svgHeight = height + margin * 2 + extraSpace;
 
     let svg = `<svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
@@ -159,7 +159,7 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
     });
 
     // Height dimension
-    const dimX = margin - 20;
+    const dimX = margin - 30;
     svg += `
     <line x1="${dimX}" y1="${margin}" x2="${dimX}" y2="${margin + height}" stroke="#0066cc" stroke-width="2"/>
     <polygon points="${dimX},${margin} ${dimX - 3},${margin + 5} ${dimX + 3},${margin + 5}" fill="#0066cc"/>
@@ -280,6 +280,7 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
             width="100%"
             height={300}
             preserveAspectRatio="xMidYMid meet"
+            style={{ maxWidth: '100%' }}
           />
         </View>
       )}
@@ -305,5 +306,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 300,
+    overflow: 'hidden',
   },
 });

@@ -19,16 +19,14 @@ import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { ITEM_CATEGORY_TYPE } from '../../../../constants';
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
-import { PpeFilterDrawerContent } from "@/components/inventory/ppe/list/ppe-filter-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
+import { PpeFilterSlidePanel } from "@/components/inventory/ppe/list/ppe-filter-slide-panel";
 
 export default function PPEListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
@@ -37,6 +35,10 @@ export default function PPEListScreen() {
   const [selectedPpes, setSelectedPpes] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["name", "ppeType", "ppeSize"]);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Build query parameters with sorting - filter for PPE items only
   const buildOrderBy = () => {
@@ -235,42 +237,33 @@ export default function PPEListScreen() {
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <PpeFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Only show skeleton on initial load, not on refetch/sort
   const isInitialLoad = isLoading && !isRefetching && items.length === 0;
 
   if (isInitialLoad) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <ThemedText style={styles.loadingText}>Carregando EPIs...</ThemedText>
-            </View>
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>Carregando EPIs...</ThemedText>
+        </View>
+      </ThemedView>
+    );
   }
 
   if (error && items.length === 0) {
@@ -284,7 +277,8 @@ export default function PPEListScreen() {
   const hasPpes = Array.isArray(items) && items.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Search, Filter and Sort */}
       <View style={[styles.searchContainer]}>
         <SearchBar
@@ -362,6 +356,26 @@ export default function PPEListScreen() {
 
       {hasPpes && <FAB icon="plus" onPress={handleCreatePpe} />}
     </ThemedView>
+
+    <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+      <PpeFilterSlidePanel
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+        onClose={handleCloseFilters}
+      />
+    </SlideInPanel>
+
+    <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+      <ColumnVisibilitySlidePanel
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        onClose={handleCloseColumns}
+      />
+    </SlideInPanel>
+  </>
   );
 }
 

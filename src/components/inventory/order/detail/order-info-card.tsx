@@ -17,7 +17,7 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <ThemedText style={styles.title}>Informações do Pedido</ThemedText>
         <OrderStatusBadge status={order.status} size="md" />
       </View>
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: fontSize.lg,

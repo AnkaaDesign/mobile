@@ -24,15 +24,16 @@ import {
   IconPercentage,
 } from "@tabler/icons-react-native";
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 
 export default function ComponentListScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { formulaId } = useLocalSearchParams<{ formulaId: string }>();
   const { delete: deleteComponent } = usePaintFormulaComponentMutations();
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -147,8 +148,11 @@ export default function ComponentListScreen() {
 
   // Open filter drawer
   const handleOpenFilters = () => {
-    // TODO: Implement filter drawer for components
-    showToast("Filtros em desenvolvimento", "info");
+    setIsFilterPanelOpen(true);
+  };
+
+  const handleCloseFilters = () => {
+    setIsFilterPanelOpen(false);
   };
 
   // Render component card
@@ -224,22 +228,20 @@ export default function ComponentListScreen() {
 
   if (error) {
     return (
-      <UtilityDrawerWrapper>
-        <View style={styles.centerContainer}>
-          <ThemedText style={styles.errorText}>Erro ao carregar componentes</ThemedText>
-          <IconButton
-            name="refresh-cw"
-            variant="default"
-            onPress={() => refetch()}
-            style={styles.retryButton}
-          />
-        </View>
-      </UtilityDrawerWrapper>
+      <View style={styles.centerContainer}>
+        <ThemedText style={styles.errorText}>Erro ao carregar componentes</ThemedText>
+        <IconButton
+          name="refresh-cw"
+          variant="default"
+          onPress={() => refetch()}
+          style={styles.retryButton}
+        />
+      </View>
     );
   }
 
   return (
-    <UtilityDrawerWrapper>
+    <>
       <Stack.Screen
         options={{
           title: "Componentes da Fórmula",
@@ -315,7 +317,14 @@ export default function ComponentListScreen() {
           />
         )}
       </View>
-    </UtilityDrawerWrapper>
+
+      {/* Slide-in panel */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <View style={styles.filterPlaceholder}>
+          <ThemedText>Filtros em desenvolvimento</ThemedText>
+        </View>
+      </SlideInPanel>
+    </>
   );
 }
 
@@ -474,5 +483,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: spacing.md,
     bottom: spacing.xl,
+  },
+  filterPlaceholder: {
+    padding: spacing.xl,
+    alignItems: "center",
   },
 });

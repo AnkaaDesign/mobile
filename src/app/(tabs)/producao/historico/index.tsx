@@ -16,23 +16,33 @@ import { useTaskMutations } from '../../../../hooks';
 import { TASK_STATUS, SECTOR_PRIVILEGES, TASK_STATUS_LABELS } from '../../../../constants';
 import { hasPrivilege } from '../../../../utils';
 import { showToast } from "@/components/ui/toast";
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { HistoryFilterDrawerContent } from "@/components/production/task/history/history-filter-drawer-content";
-import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
+// Old drawer implementation (kept for reference)
+// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+// import { HistoryFilterDrawerContent } from "@/components/production/task/history/history-filter-drawer-content";
+// import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
+// New slide-in panel implementation
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { HistoryFilterSlidePanel } from "@/components/production/task/history/history-filter-slide-panel";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 
 export default function ProductionHistoryScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { deleteAsync: deleteTask, update } = useTaskMutations();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
+  // Old drawer context (kept for reference)
+  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
 
   // State
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(getDefaultVisibleColumns());
+
+  // New slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Filter state - Default to show Finalizado, Faturado, and Quitado
   const [filters, setFilters] = useState<any>({
@@ -43,6 +53,7 @@ export default function ProductionHistoryScreen() {
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   const canViewPrice = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) || hasPrivilege(user, SECTOR_PRIVILEGES.LEADER);
+  const canViewStatusFilter = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) || hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL);
   const isProduction = user?.sector?.name === "Produção";
 
   // Build query params
@@ -262,28 +273,49 @@ export default function ProductionHistoryScreen() {
     });
   }, []);
 
+  // Old drawer handlers (kept for reference)
+  // const handleOpenFilters = useCallback(() => {
+  //   openFilterDrawer(() => (
+  //     <HistoryFilterDrawerContent
+  //       filters={filters}
+  //       onFiltersChange={setFilters}
+  //       onClear={handleClearFilters}
+  //       activeFiltersCount={activeFiltersCount}
+  //       canViewPrice={canViewPrice}
+  //       canViewStatusFilter={canViewStatusFilter}
+  //     />
+  //   ));
+  // }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount, canViewPrice, canViewStatusFilter]);
+  //
+  // const handleOpenColumns = useCallback(() => {
+  //   openColumnDrawer(() => (
+  //     <ColumnVisibilityDrawerContent
+  //       columns={allColumns}
+  //       visibleColumns={visibleColumns}
+  //       onVisibilityChange={handleColumnsChange}
+  //       defaultColumns={getDefaultVisibleColumns()}
+  //     />
+  //   ));
+  // }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+
+  // New slide panel handlers
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <HistoryFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-        canViewPrice={canViewPrice}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount, canViewPrice]);
+    setIsColumnPanelOpen(false); // Close column panel if open
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <ColumnVisibilityDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-        defaultColumns={getDefaultVisibleColumns()}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsFilterPanelOpen(false); // Close filter panel if open
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Only show skeleton on initial load
   const isInitialLoad = isLoading && tasks.length === 0;
@@ -291,7 +323,9 @@ export default function ProductionHistoryScreen() {
   const hasTasks = Array.isArray(tasks) && tasks.length > 0;
 
   return (
-    <UtilityDrawerWrapper>
+    // Old drawer wrapper (kept for reference)
+    // <UtilityDrawerWrapper>
+    <>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
         {/* Search and Action Buttons */}
         <View style={styles.searchContainer}>
@@ -348,7 +382,31 @@ export default function ProductionHistoryScreen() {
       )}
 
       </ThemedView>
-    </UtilityDrawerWrapper>
+
+      {/* New slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <HistoryFilterSlidePanel
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          onClose={handleCloseFilters}
+          activeFiltersCount={activeFiltersCount}
+          canViewPrice={canViewPrice}
+          canViewStatusFilter={canViewStatusFilter}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <ColumnVisibilitySlidePanel
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+          onClose={handleCloseColumns}
+          defaultColumns={getDefaultVisibleColumns()}
+        />
+      </SlideInPanel>
+    </>
+    // </UtilityDrawerWrapper>
   );
 }
 

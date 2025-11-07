@@ -40,7 +40,7 @@ export const TruckTaskInfoCard: React.FC<TruckTaskInfoCardProps> = ({ task }) =>
 
   return (
     <Card style={styles.card}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <IconClipboardList size={20} color={colors.mutedForeground} />
         <ThemedText style={styles.title}>Tarefa / Ordem de Serviço</ThemedText>
       </View>
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: fontSize.lg,

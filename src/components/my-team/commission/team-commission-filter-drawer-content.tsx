@@ -24,6 +24,7 @@ interface TeamCommissionFilterDrawerContentProps {
   onClear: () => void;
   activeFiltersCount: number;
   teamMembers: User[];
+  onClose?: () => void;
 }
 
 export function TeamCommissionFilterDrawerContent({
@@ -32,6 +33,7 @@ export function TeamCommissionFilterDrawerContent({
   onClear,
   activeFiltersCount,
   teamMembers,
+  onClose,
 }: TeamCommissionFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -70,8 +72,8 @@ export function TeamCommissionFilterDrawerContent({
     }
 
     onFiltersChange(newFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    onClose ? onClose() : closeFilterDrawer();
+  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -124,7 +126,7 @@ export function TeamCommissionFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

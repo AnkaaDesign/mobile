@@ -13,8 +13,7 @@ import { useVacations, useCurrentUser, useUsers } from '../../../hooks';
 import { TeamVacationTable } from "@/components/my-team/vacation/team-vacation-table";
 import { TeamVacationCalendar } from "@/components/my-team/vacation/team-vacation-calendar";
 import { TeamVacationFilterDrawerContent } from "@/components/my-team/vacation/team-vacation-filter-drawer-content";
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import type { VacationGetManyFormData } from '../../../schemas';
 
 type ViewMode = "list" | "calendar";
@@ -22,9 +21,9 @@ type ViewMode = "list" | "calendar";
 export default function MyTeamVacationsScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { openFilterDrawer } = useUtilityDrawer();
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [filters, setFilters] = useState<Partial<VacationGetManyFormData>>({});
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Get current user to determine their sector
   const { data: currentUser, isLoading: isLoadingUser } = useCurrentUser();
@@ -119,21 +118,18 @@ export default function MyTeamVacationsScreen() {
   }, []);
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <TeamVacationFilterDrawerContent
-        filters={filters}
-        onFilterChange={handleApplyFilters}
-        onClear={() => setFilters({})}
-        teamMemberIds={teamMemberIds}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleApplyFilters, teamMemberIds]);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const isLoading = isLoadingUser || isLoadingTeam || isLoadingVacations;
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-      <UtilityDrawerWrapper>
+      <>
         <ThemedView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -236,7 +232,16 @@ export default function MyTeamVacationsScreen() {
           <TeamVacationCalendar vacations={vacations} onVacationPress={handleVacationPress} />
         )}
         </ThemedView>
-      </UtilityDrawerWrapper>
+
+        <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+          <TeamVacationFilterDrawerContent
+            filters={filters}
+            onFilterChange={handleApplyFilters}
+            onClear={() => setFilters({})}
+            teamMemberIds={teamMemberIds}
+          />
+        </SlideInPanel>
+      </>
     </PrivilegeGuard>
   );
 }

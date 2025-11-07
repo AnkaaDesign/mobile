@@ -18,6 +18,7 @@ interface CuttingPlanFilterDrawerContentProps {
   onFilterChange: (filters: Partial<CutGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 export function CuttingPlanFilterDrawerContent({
@@ -25,6 +26,7 @@ export function CuttingPlanFilterDrawerContent({
   onFilterChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: CuttingPlanFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -233,8 +235,8 @@ export function CuttingPlanFilterDrawerContent({
 
   const handleApply = useCallback(() => {
     onFilterChange(localFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFilterChange, closeFilterDrawer]);
+    onClose ? onClose() : closeFilterDrawer();
+  }, [localFilters, onFilterChange, onClose, closeFilterDrawer]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -265,7 +267,7 @@ export function CuttingPlanFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

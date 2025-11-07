@@ -15,6 +15,7 @@ interface PpeScheduleFilterDrawerContentProps {
   onFiltersChange: (filters: Partial<PpeDeliveryScheduleGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
+  onClose?: () => void;
 }
 
 interface FilterState {
@@ -31,6 +32,7 @@ export function PpeScheduleFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
+  onClose,
 }: PpeScheduleFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -105,8 +107,12 @@ export function PpeScheduleFilterDrawerContent({
     }
 
     onFiltersChange(queryFilters);
-    closeFilterDrawer();
-  }, [localFilters, onFiltersChange, closeFilterDrawer]);
+    if (onClose) {
+      onClose();
+    } else {
+      closeFilterDrawer();
+    }
+  }, [localFilters, onFiltersChange, onClose, closeFilterDrawer]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({});
@@ -168,7 +174,7 @@ export function PpeScheduleFilterDrawerContent({
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose || closeFilterDrawer} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>

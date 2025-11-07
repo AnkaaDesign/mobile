@@ -21,16 +21,14 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES, ACTIVITY_OPERATION, ACTIVITY_REASON } from '../../../../constants';
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
-import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { ColumnVisibilityDrawerContent } from "@/components/ui/column-visibility-drawer";
 import { ActivityFilterDrawerContent } from "@/components/inventory/activity/list/activity-filter-drawer-content";
 
 export default function ActivityListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -40,6 +38,10 @@ export default function ActivityListScreen() {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(["operation", "item.name", "quantity"]);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Permission check
   const canManageWarehouse = useMemo(() => {
@@ -203,25 +205,20 @@ export default function ActivityListScreen() {
   ).length;
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <ActivityFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <GenericColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Only show skeleton on initial load, not on refetch/sort
   const isInitialLoad = isLoading && !isRefetching && items.length === 0;
@@ -229,17 +226,13 @@ export default function ActivityListScreen() {
   // Permission gate
   if (!canManageWarehouse) {
     return (
-    <UtilityDrawerWrapper>
-
-          <ThemedView style={styles.container}>
-            <ErrorScreen
-              message="Acesso negado"
-              detail="Você não tem permissão para acessar esta funcionalidade. É necessário privilégio de Almoxarifado ou Administrador."
-            />
-          </ThemedView>
-    
-    </UtilityDrawerWrapper>
-  );
+      <ThemedView style={styles.container}>
+        <ErrorScreen
+          message="Acesso negado"
+          detail="Você não tem permissão para acessar esta funcionalidade. É necessário privilégio de Almoxarifado ou Administrador."
+        />
+      </ThemedView>
+    );
   }
 
   if (isInitialLoad) {
@@ -257,7 +250,8 @@ export default function ActivityListScreen() {
   const hasActivities = Array.isArray(items) && items.length > 0;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Search, Filter and Sort */}
       <View style={[styles.searchContainer]}>
         <SearchBar
@@ -335,6 +329,26 @@ export default function ActivityListScreen() {
 
       {hasActivities && hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) && <FAB icon="plus" onPress={handleCreateActivity} />}
     </ThemedView>
+
+    <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+      <ActivityFilterDrawerContent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClear={handleClearFilters}
+        activeFiltersCount={activeFiltersCount}
+        onClose={handleCloseFilters}
+      />
+    </SlideInPanel>
+
+    <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+      <ColumnVisibilityDrawerContent
+        columns={allColumns}
+        visibleColumns={new Set(visibleColumnKeys)}
+        onVisibilityChange={handleColumnsChange}
+        onClose={handleCloseColumns}
+      />
+    </SlideInPanel>
+  </>
   );
 }
 

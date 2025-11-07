@@ -16,8 +16,6 @@ import { CustomerListSkeleton } from "@/components/administration/customer/skele
 import { useTheme } from "@/lib/theme";
 import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
 
 // New hooks and components
 import { useTableSort } from "@/hooks/useTableSort";
@@ -27,7 +25,8 @@ import { BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from '../../../../constants';
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 
-// Import drawer content components
+// Import slide panel components
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { CustomerFilterDrawerContent } from "@/components/administration/customer/list/customer-filter-drawer-content";
 import { CustomerColumnDrawerContent } from "@/components/administration/customer/list/customer-column-drawer-content";
 
@@ -35,13 +34,16 @@ export default function CustomerListScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
   const [showSelection, setShowSelection] = useState(false);
   const searchInputRef = React.useRef<any>(null);
+
+  // Slide panel state
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -220,25 +222,22 @@ export default function CustomerListScreen() {
   }, [setVisibleColumns]);
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <CustomerFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsColumnPanelOpen(false); // Close column panel if open
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   const handleOpenColumns = useCallback(() => {
-    openColumnDrawer(() => (
-      <CustomerColumnDrawerContent
-        columns={allColumns}
-        visibleColumns={visibleColumns}
-        onVisibilityChange={handleColumnsChange}
-      />
-    ));
-  }, [openColumnDrawer, allColumns, visibleColumns, handleColumnsChange]);
+    setIsFilterPanelOpen(false); // Close filter panel if open
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -276,7 +275,7 @@ export default function CustomerListScreen() {
   const hasCustomers = Array.isArray(customers) && customers.length > 0;
 
   return (
-    <UtilityDrawerWrapper>
+    <>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       {/* Search and Filter */}
       <View style={[styles.searchContainer]}>
@@ -391,7 +390,25 @@ export default function CustomerListScreen() {
 
       {hasCustomers && <FAB icon="plus" onPress={handleCreateCustomer} />}
     </ThemedView>
-    </UtilityDrawerWrapper>
+
+      {/* Slide-in panels */}
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <CustomerFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+      </SlideInPanel>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <CustomerColumnDrawerContent
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

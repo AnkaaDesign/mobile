@@ -20,15 +20,17 @@ import { hasPrivilege } from '../../../../utils';
 import { SECTOR_PRIVILEGES } from '../../../../constants';
 import type { PaintGetManyFormData } from '../../../../schemas';
 
-import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
-import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+// import { UtilityDrawerWrapper } from "@/components/ui/utility-drawer";
+// import { useUtilityDrawer } from "@/contexts/utility-drawer-context";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { GenericColumnDrawerContent } from "@/components/ui/generic-column-drawer-content";
 import { PaintFilterDrawerContent } from "@/components/production/paint/list/paint-filter-drawer-content";
 
 export default function PaintsListScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
+  // const { openFilterDrawer, openColumnDrawer } = useUtilityDrawer();
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const { user } = useAuth();
   const [searchText, setSearchText] = useState("");
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
@@ -121,15 +123,12 @@ export default function PaintsListScreen() {
   }, []);
 
   const handleOpenFilters = useCallback(() => {
-    openFilterDrawer(() => (
-      <PaintFilterDrawerContent
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClear={handleClearFilters}
-        activeFiltersCount={activeFiltersCount}
-      />
-    ));
-  }, [openFilterDrawer, filters, handleClearFilters, activeFiltersCount]);
+    setIsFilterPanelOpen(true);
+  }, []);
+
+  const handleCloseFilters = useCallback(() => {
+    setIsFilterPanelOpen(false);
+  }, []);
 
   // Permission gate
   if (!canManagePaints) {
@@ -151,28 +150,27 @@ export default function PaintsListScreen() {
   }
 
   return (
-    <UtilityDrawerWrapper>
-      <>
-        <Stack.Screen
-          options={{
-            title: "Tintas",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-            headerRight: () => (
-              <View style={styles.headerActions}>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onPress={handleOpenFilters}
-                >
-                  <IconFilter size={20} color={colors.foreground} />
-                </Button>
-              </View>
-            ),
-          }}
-        />
+    <>
+      <Stack.Screen
+        options={{
+          title: "Tintas",
+          headerStyle: { backgroundColor: colors.card },
+          headerTintColor: colors.foreground,
+          headerRight: () => (
+            <View style={styles.headerActions}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onPress={handleOpenFilters}
+              >
+                <IconFilter size={20} color={colors.foreground} />
+              </Button>
+            </View>
+          ),
+        }}
+      />
 
-        <ThemedView style={styles.container}>
+      <ThemedView style={styles.container}>
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <SearchBar
@@ -225,8 +223,17 @@ export default function PaintsListScreen() {
           </FAB>
         )}
       </ThemedView>
-      </>
-    </UtilityDrawerWrapper>
+
+      <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
+        <PaintFilterDrawerContent
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClear={handleClearFilters}
+          activeFiltersCount={activeFiltersCount}
+          onClose={handleCloseFilters}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 

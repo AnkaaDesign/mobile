@@ -13,7 +13,8 @@ import { routes } from '../../../../constants';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 
-import { ColumnVisibilityDrawer } from "@/components/ui/column-visibility-drawer";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useTasks } from "@/hooks";
 
@@ -25,6 +26,9 @@ interface TasksTableProps {
 export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
   const { colors } = useTheme();
 
+  // Column panel state
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
+
   // Use only name and serialNumber columns for customer detail view
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
     return ["name", "serialNumber"];
@@ -33,9 +37,6 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
-
-  // Column visibility drawer state
-  const [showColumnManager, setShowColumnManager] = useState(false);
 
   // Fetch tasks for this specific customer
   const queryParams = {
@@ -84,6 +85,20 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
     // Note: In React Native, we would use AsyncStorage to persist preferences
   }, []);
 
+  // Get default visible columns (for the customer detail view)
+  const getDefaultVisibleColumns = useCallback(() => {
+    return ["name", "serialNumber"];
+  }, []);
+
+  // Handle opening column panel
+  const handleOpenColumns = useCallback(() => {
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
+
   const handleTaskPress = (taskId: string) => {
     router.push(routeToMobilePath(routes.production.schedule.details(taskId)) as any);
   };
@@ -92,27 +107,40 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
   // Instead, check if we're still loading or have actual data
   if (!isLoading && tasks.length === 0 && !searchQuery) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconClipboardList size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>Tarefas Relacionadas</ThemedText>
+      <>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconClipboardList size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Tarefas Relacionadas</ThemedText>
+            </View>
           </View>
-        </View>
-        <View style={styles.content}>
-          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
-            <IconAlertCircle size={48} color={colors.mutedForeground} />
-            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-              Nenhuma tarefa associada a este cliente.
-            </ThemedText>
+          <View style={styles.content}>
+            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+              <IconAlertCircle size={48} color={colors.mutedForeground} />
+              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+                Nenhuma tarefa associada a este cliente.
+              </ThemedText>
+            </View>
           </View>
-        </View>
-      </Card>
+        </Card>
+
+        <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+          <ColumnVisibilitySlidePanel
+            columns={allColumns}
+            visibleColumns={new Set(visibleColumnKeys)}
+            onVisibilityChange={handleColumnsChange}
+            onClose={handleCloseColumns}
+            defaultColumns={new Set(getDefaultVisibleColumns())}
+          />
+        </SlideInPanel>
+      </>
     );
   }
 
   return (
-    <Card style={styles.card}>
+    <>
+      <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
           <IconClipboardList size={20} color={colors.mutedForeground} />
@@ -133,7 +161,7 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
           />
           <ListActionButton
             icon={<IconList size={20} color={colors.foreground} />}
-            onPress={() => setShowColumnManager(true)}
+            onPress={handleOpenColumns}
             badgeCount={visibleColumnKeys.length}
             badgeVariant="primary"
           />
@@ -172,16 +200,18 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
           </View>
         )}
       </View>
+    </Card>
 
-      {/* Column Visibility Drawer */}
-      <ColumnVisibilityDrawer
+    <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+      <ColumnVisibilitySlidePanel
         columns={allColumns}
         visibleColumns={new Set(visibleColumnKeys)}
         onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
+        onClose={handleCloseColumns}
+        defaultColumns={new Set(getDefaultVisibleColumns())}
       />
-    </Card>
+    </SlideInPanel>
+  </>
   );
 }
 
@@ -220,9 +250,10 @@ const styles = StyleSheet.create({
   tableContainer: {
     flex: 1,
     overflow: 'hidden',
+    marginHorizontal: -8,
   },
   loadingContainer: {
-    padding: spacing.xxl,
+    paddingVertical: spacing.xxl,
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.md,
@@ -232,7 +263,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   emptyState: {
-    padding: spacing.xl,
+    paddingVertical: spacing.xl,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
