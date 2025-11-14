@@ -6,7 +6,7 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
-import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from '../../../../constants';
+import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from "@/constants";
 import type { SectorGetManyFormData } from '../../../../types';
 
 interface SectorFilterDrawerContentProps {

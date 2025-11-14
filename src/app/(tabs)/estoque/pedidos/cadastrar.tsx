@@ -1,6 +1,16 @@
-
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { Stack } from 'expo-router';
+import { OrderCreateForm } from '@/components/inventory/order/form/order-create-form';
 
 export default function EstoquePedidosCadastrarScreen() {
-  return <UnderConstruction title="Cadastrar Pedido" description="Crie novos pedidos de compra com fornecedor, itens, quantidades e prazo de entrega." icon="cart-plus" />;
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          title: 'Cadastrar Pedido',
+          headerShown: true,
+        }}
+      />
+      <OrderCreateForm />
+    </>
+  );
 }

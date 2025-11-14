@@ -4,8 +4,8 @@ import { IconFilter, IconX, IconActivity, IconPackage, IconUser, IconHash, IconC
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useItems, useUsers } from '../../../../hooks';
-import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON, ACTIVITY_REASON_LABELS } from '../../../../constants';
+import { useItems, useUsers } from "@/hooks";
+import {_LABELS,_LABELS } from "@/constants";
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { DateRangeFilter } from '@/components/common/filters';
@@ -24,6 +24,8 @@ interface FilterState {
   reasons?: string[];
   itemIds?: string[];
   userIds?: string[];
+  showPaintProduction?: boolean;
+  hasUser?: 'both' | 'with' | 'without';
   quantityRange?: { min?: number; max?: number };
   createdAfter?: Date;
   createdBefore?: Date;
@@ -64,6 +66,8 @@ export function ActivityFilterDrawerContent({
     reasons: filters.reasons || [],
     itemIds: filters.itemIds || [],
     userIds: filters.userIds || [],
+    showPaintProduction: filters.showPaintProduction !== undefined ? filters.showPaintProduction : true,
+    hasUser: filters.hasUser || 'both',
     quantityRange: filters.quantityRange,
     createdAfter: filters.createdAt?.gte,
     createdBefore: filters.createdAt?.lte,
@@ -86,6 +90,14 @@ export function ActivityFilterDrawerContent({
 
     if (localFilters.userIds && localFilters.userIds.length > 0) {
       newFilters.userIds = localFilters.userIds;
+    }
+
+    if (localFilters.showPaintProduction !== undefined) {
+      newFilters.showPaintProduction = localFilters.showPaintProduction;
+    }
+
+    if (localFilters.hasUser && localFilters.hasUser !== 'both') {
+      newFilters.hasUser = localFilters.hasUser as any;
     }
 
     if (localFilters.quantityRange?.min !== undefined || localFilters.quantityRange?.max !== undefined) {
@@ -253,6 +265,102 @@ export function ActivityFilterDrawerContent({
               emptyText="Nenhum usuário encontrado"
               showBadges={false}
             />
+          </View>
+        </View>
+
+        {/* Paint Production Filter */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconActivity size={18} color={colors.mutedForeground} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Produção de Tinta
+            </ThemedText>
+          </View>
+
+          <View style={[styles.switchRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <ThemedText style={[styles.switchLabel, { color: colors.foreground }]}>
+              Mostrar produções de tinta
+            </ThemedText>
+            <RNSwitch
+              value={localFilters.showPaintProduction ?? true}
+              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, showPaintProduction: value }))}
+              trackColor={{ false: colors.muted, true: colors.primary }}
+              thumbColor={colors.background}
+            />
+          </View>
+        </View>
+
+        {/* Attribution Filter */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconUser size={18} color={colors.mutedForeground} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Atribuição
+            </ThemedText>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
+              Filtrar por usuário atribuído
+            </ThemedText>
+            <View style={styles.radioGroup}>
+              <TouchableOpacity
+                style={[
+                  styles.radioOption,
+                  {
+                    backgroundColor: localFilters.hasUser === 'both' ? colors.primary : colors.card,
+                    borderColor: localFilters.hasUser === 'both' ? colors.primary : colors.border
+                  }
+                ]}
+                onPress={() => setLocalFilters((prev) => ({ ...prev, hasUser: 'both' }))}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={[
+                  styles.radioText,
+                  { color: localFilters.hasUser === 'both' ? colors.primaryForeground : colors.foreground }
+                ]}>
+                  Ambos
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.radioOption,
+                  {
+                    backgroundColor: localFilters.hasUser === 'with' ? colors.primary : colors.card,
+                    borderColor: localFilters.hasUser === 'with' ? colors.primary : colors.border
+                  }
+                ]}
+                onPress={() => setLocalFilters((prev) => ({ ...prev, hasUser: 'with' }))}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={[
+                  styles.radioText,
+                  { color: localFilters.hasUser === 'with' ? colors.primaryForeground : colors.foreground }
+                ]}>
+                  Com usuário
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.radioOption,
+                  {
+                    backgroundColor: localFilters.hasUser === 'without' ? colors.primary : colors.card,
+                    borderColor: localFilters.hasUser === 'without' ? colors.primary : colors.border
+                  }
+                ]}
+                onPress={() => setLocalFilters((prev) => ({ ...prev, hasUser: 'without' }))}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={[
+                  styles.radioText,
+                  { color: localFilters.hasUser === 'without' ? colors.primaryForeground : colors.foreground }
+                ]}>
+                  Sem usuário
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -429,6 +537,35 @@ const styles = StyleSheet.create({
   },
   rangeSeparator: {
     fontSize: 14,
+  },
+  switchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  switchLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    flex: 1,
+  },
+  radioGroup: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  radioOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  radioText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
   footer: {
     position: "absolute",

@@ -14,7 +14,7 @@ import {
   IconRefresh,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderSchedule, useOrderScheduleMutations, useOrders } from '../../../../../../hooks';
+import { useOrderSchedule, useOrderScheduleMutations, useOrders } from "@/hooks";
 import type { OrderScheduleInclude } from '../../../../../../schemas';
 import {
   ThemedView,
@@ -25,18 +25,18 @@ import {
   ErrorScreen,
   LoadingScreen,
 } from "@/components/ui";
-import { ActionSheet, type ActionSheetItem } from "@/components/ui/action-sheet";
+import { ActionSheet} from "@/components/ui/action-sheet";
 
 import { InfoRow } from "@/components/ui/info-row";
 import { FrequencyBadge } from "@/components/inventory/order/schedule/frequency-badge";
 import { ScheduleInfoCard } from "@/components/inventory/order/schedule/schedule-info-card";
 import { ScheduleHistory } from "@/components/inventory/order/schedule/schedule-history";
 import { useTheme } from "@/lib/theme";
-import { routes } from '../../../../../../constants';
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege, formatDateTime, formatDate } from '../../../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../../../constants';
+import { hasPrivilege, formatDateTime, formatDate } from "@/utils";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
 export default function OrderScheduleDetailsScreen() {
@@ -411,10 +411,6 @@ export default function OrderScheduleDetailsScreen() {
               <InfoRow label="Última Execução" value={formatDateTime(schedule.lastRun)} />
             )}
 
-            {schedule.rescheduleCount > 0 && (
-              <InfoRow label="Reagendamentos" value={schedule.rescheduleCount.toString()} />
-            )}
-
             {schedule.finishedAt && (
               <InfoRow
                 label="Finalizado em"
@@ -423,29 +419,6 @@ export default function OrderScheduleDetailsScreen() {
             )}
           </View>
         </Card>
-
-        {/* Reschedule Information (if applicable) */}
-        {(schedule.originalDate || schedule.lastRescheduleDate || schedule.rescheduleReason) && (
-          <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconHistory size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Histórico de Reagendamentos</ThemedText>
-            </View>
-            <View style={styles.cardContent}>
-              {schedule.originalDate && (
-                <InfoRow label="Data Original" value={formatDate(schedule.originalDate)} />
-              )}
-
-              {schedule.lastRescheduleDate && (
-                <InfoRow label="Último Reagendamento" value={formatDateTime(schedule.lastRescheduleDate)} />
-              )}
-
-              {schedule.rescheduleReason && (
-                <InfoRow label="Motivo do Reagendamento" value={schedule.rescheduleReason} />
-              )}
-            </View>
-          </Card>
-        )}
 
         {/* Last Order Information (if exists) */}
         {schedule.order && (

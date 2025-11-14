@@ -1,15 +1,15 @@
 import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, StyleSheet, RefreshControl } from "react-native";
 import { useState, useCallback } from "react";
-import { usePaintProductionDetail } from '../../../../../hooks';
+import { usePaintProductionDetail } from "@/hooks";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { IconHistory } from "@tabler/icons-react-native";
-import { CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
+import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { ProductionInfoCard, PaintFormulaCard, ComponentsUsedCard } from "@/components/painting/production/detail";
 import { showToast } from "@/components/ui/toast";

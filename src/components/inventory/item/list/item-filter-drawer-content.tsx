@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
-import { IconFilter, IconX, IconPackage, IconTags, IconBuilding, IconRuler, IconCoins, IconCalendar } from '@tabler/icons-react-native';
+import { IconFilter, IconX, IconPackage, IconTags, IconRuler, IconCoins, IconCalendar } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useItemBrands, useItemCategories, useSuppliers } from '../../../../hooks';
+import { useItemBrands, useItemCategories, useSuppliers } from "@/hooks";
 import {
   MEASURE_UNIT,
   MEASURE_TYPE,
@@ -14,7 +14,7 @@ import {
   MEASURE_TYPE_LABELS,
   ITEM_CATEGORY_TYPE,
   ITEM_CATEGORY_TYPE_LABELS,
-} from '../../../../constants';
+} from "@/constants";
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { DateRangeFilter } from '@/components/common/filters';

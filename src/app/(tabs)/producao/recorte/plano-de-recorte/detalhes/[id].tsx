@@ -96,15 +96,6 @@ export default function CuttingPlanDetailsScreen() {
     showToast({ message: "Detalhes atualizados", type: "success" });
   };
 
-  // Handle edit
-  const handleEdit = () => {
-    if (!canEdit) {
-      showToast({ message: "Você não tem permissão para editar", type: "error" });
-      return;
-    }
-    router.push(routes.production.cutting.edit(id) as any);
-  };
-
   // Handle delete
   const handleDelete = () => {
     if (!canDelete) {

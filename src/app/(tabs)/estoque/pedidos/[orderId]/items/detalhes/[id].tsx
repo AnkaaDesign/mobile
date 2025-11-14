@@ -3,15 +3,15 @@ import { View, ScrollView, Alert, Pressable , StyleSheet} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { IconEdit, IconTrash, IconPackage, IconCalendar, IconCurrency } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderItem, useOrderItemMutations } from '../../../../../../../hooks';
+import { useOrderItem, useOrderItemMutations } from "@/hooks";
 import { ThemedView, ThemedText, ErrorScreen, LoadingScreen, FAB } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 
 import { useTheme } from "@/lib/theme";
-import { formatCurrency, formatDate } from '../../../../../../../utils';
+import { formatCurrency, formatDate } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from '../../../../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../../../../constants';
+import { hasPrivilege } from "@/utils";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function OrderItemDetailScreen() {
   const router = useRouter();

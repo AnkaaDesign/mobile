@@ -9,8 +9,8 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { badgeColors } from "@/lib/theme/extended-colors";
-import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS, PPE_TYPE_LABELS } from '../../../../../constants';
-import { formatDate } from '../../../../../utils';
+import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS, PPE_TYPE_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
 
 import type { PpeDeliverySchedule } from '../../../../../types';
 import { differenceInDays } from "date-fns";

@@ -1,17 +1,17 @@
-import React, { useState } from "react";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useObservationMutations, useTasks } from "@/hooks";
-import { observationCreateSchema, type ObservationCreateFormData } from "@/schemas";
-import { LoadingScreen, ErrorScreen, ThemedText, ThemedView, Card, Button, Input, Label, Combobox, SimpleFormField } from "@/components/ui";
+import { observationCreateSchema} from "@/schemas";
+import { LoadingScreen, ErrorScreen, ThemedText, ThemedView, Card, Button, Input, Combobox, SimpleFormField } from "@/components/ui";
 import { IconAlertCircle, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege, formatCurrency } from "@/utils";
+import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES, routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 
@@ -179,7 +179,7 @@ export default function CreateObservationScreen() {
                         value: task.id,
                       }))}
                       placeholder="Selecione uma tarefa"
-                      emptyMessage="Nenhuma tarefa disponível"
+                      emptyText="Nenhuma tarefa disponível"
                       searchable={false}
                     />
                   )}

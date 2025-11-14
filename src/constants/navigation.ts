@@ -517,32 +517,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
     children: [{ id: "catalogo-detalhes", title: "Detalhes", icon: "eye", path: "/pintura/catalogo-basico/detalhes/:id", isDynamic: true }],
   },
 
-  // ESTATÍSTICAS
-  {
-    id: "estatisticas",
-    title: "Estatísticas",
-    icon: "barChart",
-    path: "/estatisticas",
-    requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-    children: [
-      { id: "stats-administracao", title: "Administração", icon: "cog", path: "/estatisticas/administracao" },
-      {
-        id: "stats-estoque",
-        title: "Estoque",
-        icon: "box",
-        path: "/estatisticas/estoque",
-        children: [
-          { id: "stats-estoque-consumo", title: "Análise de Consumo", icon: "trendingDown", path: "/estatisticas/estoque/consumo" },
-          { id: "stats-estoque-movimentacao", title: "Movimentação", icon: "movement", path: "/estatisticas/estoque/movimentacao" },
-          { id: "stats-estoque-tendencias", title: "Tendências", icon: "trendingUp", path: "/estatisticas/estoque/tendencias" },
-          { id: "stats-estoque-top-itens", title: "Top Itens", icon: "trophy", path: "/estatisticas/estoque/top-itens" },
-        ],
-      },
-      { id: "stats-producao", title: "Produção", icon: "building", path: "/estatisticas/producao" },
-      { id: "stats-recursos-humanos", title: "Recursos Humanos", icon: "users", path: "/estatisticas/recursos-humanos" },
-    ],
-  },
-
   // ESTOQUE
   {
     id: "estoque",
@@ -775,52 +749,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // INTEGRAÇÕES
-  {
-    id: "integracoes",
-    title: "Integrações",
-    icon: "api", // Will need to be mapped to a valid icon
-    path: "/integracoes",
-    requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
-    children: [
-      {
-        id: "integracoes-secullum",
-        title: "Secullum",
-        icon: "database",
-        path: "/integracoes/secullum",
-        children: [
-          {
-            id: "integracoes-secullum-calculos",
-            title: "Cálculos de Ponto",
-            icon: "calculator",
-            path: "/integracoes/secullum/calculos",
-          },
-          {
-            id: "integracoes-secullum-registros-ponto",
-            title: "Registros de Ponto",
-            icon: "clock",
-            path: "/integracoes/secullum/registros-ponto",
-            children: [
-              {
-                id: "integracoes-secullum-registros-ponto-detalhes",
-                title: "Detalhes",
-                icon: "eye",
-                path: "/integracoes/secullum/registros-ponto/detalhes/:id",
-                isDynamic: true,
-              },
-            ],
-          },
-          {
-            id: "integracoes-secullum-status-sincronizacao",
-            title: "Status de Sincronização",
-            icon: "refresh",
-            path: "/integracoes/secullum/status-sincronizacao",
-          },
-        ],
-      },
-    ],
-  },
-
   // MANUTENÇÃO
   {
     id: "manutencao",
@@ -1031,37 +959,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
         requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
       },
 
-      {
-        id: "garagens",
-        title: "Garagens",
-        icon: "warehouse",
-        path: "/producao/garagens",
-        requiredPrivilege: [SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
-        children: [
-          {
-            id: "garagens-cadastrar",
-            title: "Cadastrar",
-            icon: "plus",
-            path: "/producao/garagens/cadastrar",
-            requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
-          },
-          {
-            id: "garagens-detalhes",
-            title: "Detalhes",
-            icon: "eye",
-            path: "/producao/garagens/detalhes/:id",
-            isDynamic: true,
-          },
-          {
-            id: "garagens-editar",
-            title: "Editar",
-            icon: "edit",
-            path: "/producao/garagens/editar/:id",
-            isDynamic: true,
-            requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
-          },
-        ],
-      },
 
       {
         id: "historico",
@@ -1263,14 +1160,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // Garagens - Direct access for LOGISTIC only
-  {
-    id: "garagens-direct",
-    title: "Garagens",
-    icon: "warehouse",
-    path: "/producao/garagens",
-    requiredPrivilege: [SECTOR_PRIVILEGES.LOGISTIC],
-  },
 
   // Aerografia - Direct access for FINANCIAL only
   {
@@ -1311,18 +1200,12 @@ export const NAVIGATION_MENU: MenuItem[] = [
         id: "warnings",
         title: "Advertências",
         icon: "announcement",
-        path: "/recursos-humanos/avisos",
+        path: "/recursos-humanos/advertencias",
         children: [
-          { id: "warnings-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/avisos/cadastrar" },
-          { id: "warnings-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/avisos/detalhes/:id", isDynamic: true },
-          { id: "warnings-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/avisos/editar/:id", isDynamic: true },
+          { id: "warnings-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/advertencias/cadastrar" },
+          { id: "warnings-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/advertencias/detalhes/:id", isDynamic: true },
+          { id: "warnings-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/advertencias/editar/:id", isDynamic: true },
         ],
-      },
-      {
-        id: "calculos",
-        title: "Cálculos",
-        icon: "dollarSign",
-        path: "/recursos-humanos/calculos",
       },
       {
         id: "cargos",
@@ -1335,13 +1218,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "cargos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/cargos/editar/:id", isDynamic: true },
         ],
       },
-      {
-        id: "controle-ponto",
-        title: "Controle de Ponto",
-        icon: "clock",
-        path: "/recursos-humanos/controle-ponto",
-      },
-
       {
         id: "epi-rh",
         title: "EPI",
@@ -1390,22 +1266,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
               { id: "epi-rh-entregas-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/entregas/editar/:id", isDynamic: true },
             ],
           },
-
-          {
-            id: "epi-rh-tamanhos",
-            title: "Tamanhos",
-            icon: "sizes",
-            path: "/recursos-humanos/epi/tamanhos",
-            children: [
-              {
-                id: "epi-rh-tamanhos-cadastrar",
-                title: "Cadastrar",
-                icon: "plus",
-                path: "/recursos-humanos/epi/tamanhos/cadastrar",
-              },
-              { id: "epi-rh-tamanhos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/tamanhos/editar/:id", isDynamic: true },
-            ],
-          },
         ],
       },
 
@@ -1444,16 +1304,43 @@ export const NAVIGATION_MENU: MenuItem[] = [
         path: "/recursos-humanos/niveis-desempenho",
       },
       {
-        id: "requisicoes",
-        title: "Requisições",
-        icon: "clipboardList",
-        path: "/recursos-humanos/requisicoes",
-      },
-      {
         id: "simulacao-bonus",
         title: "Simulação de Bônus",
         icon: "calculator",
         path: "/recursos-humanos/simulacao-bonus",
+      },
+      {
+        id: "recursos-humanos-calculos-ponto",
+        title: "Cálculos de Ponto",
+        icon: "calculator",
+        path: "/recursos-humanos/calculos-ponto",
+      },
+      {
+        id: "recursos-humanos-registros-ponto",
+        title: "Registros de Ponto",
+        icon: "clock",
+        path: "/recursos-humanos/registros-ponto",
+        children: [
+          {
+            id: "recursos-humanos-registros-ponto-detalhes",
+            title: "Detalhes",
+            icon: "eye",
+            path: "/recursos-humanos/registros-ponto/detalhes/:id",
+            isDynamic: true,
+          },
+        ],
+      },
+      {
+        id: "recursos-humanos-requisicoes-ponto",
+        title: "Requisições de Ponto",
+        icon: "clipboardList",
+        path: "/recursos-humanos/requisicoes-ponto",
+      },
+      {
+        id: "recursos-humanos-status-sincronizacao-ponto",
+        title: "Status de Sincronização",
+        icon: "refresh",
+        path: "/recursos-humanos/status-sincronizacao-ponto",
       },
     ],
   },

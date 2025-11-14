@@ -4,10 +4,10 @@ import { showToast } from "@/components/ui/toast";
 
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { ItemCategoryForm } from "@/components/inventory/item/category/form/category-form";
-import { useItemCategoryMutations } from '../../../../../hooks';
-import { itemCategoryCreateSchema, type ItemCategoryCreateFormData } from '../../../../../schemas';
+import { useItemCategoryMutations } from "@/hooks";
+import { itemCategoryCreateSchema} from '../../../../../schemas';
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes } from '../../../../../constants';
+import { routes } from "@/constants";
 import { spacing } from "@/constants/design-system";
 
 export default function CategoryCreateScreen() {

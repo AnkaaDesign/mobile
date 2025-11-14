@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet} from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { ThemedText } from "@/components/ui/themed-text";
-import { PRIORITY_TYPE } from '../../../../constants';
+import { PRIORITY_TYPE } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { fontSize } from "@/constants/design-system";
 

@@ -1,17 +1,16 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { usePpeDelivery, usePpeDeliveryMutations } from '@/hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from '@/constants';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconShieldCheck, IconEdit, IconTrash } from "@tabler/icons-react-native";
-import { routeToMobilePath } from "@/lib/route-mapper";
 import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
+import { CHANGE_LOG_ENTITY_TYPE } from "@/constants/enums";
 
 // Import modular components
 import {
@@ -24,6 +23,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function TeamPpeDeliveryDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { colors } = useTheme();
   const { user: currentUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);

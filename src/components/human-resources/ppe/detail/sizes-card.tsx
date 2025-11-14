@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconRuler, IconShirt, IconShoe } from "@tabler/icons-react-native";
-import { PPE_TYPE, SHIRT_SIZE_LABELS, PANTS_SIZE_LABELS, BOOT_SIZE_LABELS } from '../../../../constants';
+import { PPE_TYPE, SHIRT_SIZE_LABELS, PANTS_SIZE_LABELS, BOOT_SIZE_LABELS } from "@/constants";
 import type { Item, PpeSize } from '../../../../types';
 
 interface SizesCardProps {

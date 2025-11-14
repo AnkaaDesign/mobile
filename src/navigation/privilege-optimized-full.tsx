@@ -57,10 +57,6 @@ const ALL_ROUTES = [
   { name: "administracao/setores/detalhes/[id]", title: "Detalhes do Setor" },
   { name: "administracao/setores/editar/[id]", title: "Editar Setor" },
 
-  // Statistics
-  { name: "estatisticas/index", title: "Estatísticas" },
-  { name: "estatisticas/estoque/index", title: "Estatísticas de Estoque" },
-
   // Inventory/Stock
   { name: "estoque/index", title: "Estoque" },
   { name: "estoque/produtos/index", title: "Produtos" },

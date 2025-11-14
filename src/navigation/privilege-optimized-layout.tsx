@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Icon } from "@/components/ui/icon";
-import { useRouter, usePathname } from "expo-router";
+import { usePathname } from "expo-router";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { SECTOR_PRIVILEGES } from '@/constants/enums';
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
@@ -67,7 +67,6 @@ const PRIVILEGED_ROUTES: Record<string, RouteConfig[]> = {
     { name: "servidor/index", title: "Servidor", module: "server" },
     { name: "servidor/backups/listar", title: "Backups", module: "server" },
     { name: "servidor/logs", title: "Logs", module: "server" },
-    { name: "estatisticas/index", title: "Estatísticas", module: "statistics" },
   ],
 
   // HUMAN_RESOURCES routes
@@ -109,7 +108,6 @@ const PRIVILEGED_ROUTES: Record<string, RouteConfig[]> = {
   [SECTOR_PRIVILEGES.FINANCIAL]: [
     { name: "financeiro/index", title: "Financeiro", module: "financial" },
     { name: "financeiro/clientes/listar", title: "Clientes", module: "financial" },
-    { name: "estatisticas/estoque/index", title: "Estatísticas Estoque", module: "statistics" },
   ],
 
   // LEADER routes (inherits from multiple)

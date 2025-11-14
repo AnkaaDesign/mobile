@@ -6,8 +6,8 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
-import { usePositions, useSectors } from '../../../../hooks';
-import { USER_STATUS, USER_STATUS_LABELS } from '../../../../constants';
+import { usePositions, useSectors } from "@/hooks";
+import { USER_STATUS, USER_STATUS_LABELS } from "@/constants";
 import type { UserGetManyFormData } from '../../../../schemas';
 
 interface PerformanceLevelFilterDrawerContentProps {

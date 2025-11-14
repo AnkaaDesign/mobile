@@ -14,6 +14,7 @@ import {
   SelectItem,
   Button,
   SimpleFormField,
+  DateTimePicker,
 } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
@@ -25,6 +26,9 @@ const borrowSimpleSchema = z.object({
   itemId: z.string().uuid("Item é obrigatório").min(1, "Item é obrigatório"),
   quantity: z.number().positive("Quantidade deve ser positiva").int("Quantidade deve ser um número inteiro"),
   returnedAt: z.date().nullable().optional(),
+  reason: z.string().optional(),
+  notes: z.string().optional(),
+  conditionNotes: z.string().optional(),
 });
 
 type BorrowSimpleFormData = z.infer<typeof borrowSimpleSchema>;
@@ -47,6 +51,9 @@ export function BorrowSimpleForm({ onSubmit, onCancel, isSubmitting }: BorrowSim
       itemId: "",
       quantity: 1,
       returnedAt: null,
+      reason: "",
+      notes: "",
+      conditionNotes: "",
     },
     mode: "onChange",
   });
@@ -148,6 +155,58 @@ export function BorrowSimpleForm({ onSubmit, onCancel, isSubmitting }: BorrowSim
                       keyboardType="numeric"
                       editable={!isSubmitting}
                       error={!!form.formState.errors.quantity}
+                    />
+                  )}
+                />
+              </SimpleFormField>
+
+              <SimpleFormField label="Motivo" error={form.formState.errors.reason}>
+                <Controller
+                  control={form.control}
+                  name="reason"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      value={value || ""}
+                      onChangeText={onChange}
+                      placeholder="Motivo do empréstimo (opcional)"
+                      editable={!isSubmitting}
+                      error={!!form.formState.errors.reason}
+                    />
+                  )}
+                />
+              </SimpleFormField>
+
+              <SimpleFormField label="Observações" error={form.formState.errors.notes}>
+                <Controller
+                  control={form.control}
+                  name="notes"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      value={value || ""}
+                      onChangeText={onChange}
+                      placeholder="Observações gerais (opcional)"
+                      multiline
+                      numberOfLines={3}
+                      editable={!isSubmitting}
+                      error={!!form.formState.errors.notes}
+                    />
+                  )}
+                />
+              </SimpleFormField>
+
+              <SimpleFormField label="Condição do Item" error={form.formState.errors.conditionNotes}>
+                <Controller
+                  control={form.control}
+                  name="conditionNotes"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      value={value || ""}
+                      onChangeText={onChange}
+                      placeholder="Estado do item (opcional)"
+                      multiline
+                      numberOfLines={2}
+                      editable={!isSubmitting}
+                      error={!!form.formState.errors.conditionNotes}
                     />
                   )}
                 />

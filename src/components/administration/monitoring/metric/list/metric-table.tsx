@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { formatRelativeTime } from '../../../../../utils';
+import { formatRelativeTime } from "@/utils";
 import type { SortConfig } from "@/lib/sort-utils";
 import {
   IconCpu,

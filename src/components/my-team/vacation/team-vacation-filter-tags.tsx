@@ -4,8 +4,8 @@ import { IconX } from '@tabler/icons-react-native';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Badge } from '@/components/ui/badge';
-import { formatDate } from '../../../utils';
-import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '../../../constants';
+import { formatDate } from "@/utils";
+import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from "@/constants";
 
 interface TeamVacationFilterTagsProps {
   filters: {

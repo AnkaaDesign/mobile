@@ -7,10 +7,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintFormulaComponent, usePaintFormulaComponentMutations } from '../../../../../../../hooks';
+import { usePaintFormulaComponent, usePaintFormulaComponentMutations } from "@/hooks";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from '../../../../../../../constants';
-import { hasPrivilege, formatDateTime } from '../../../../../../../utils';
+import { SECTOR_PRIVILEGES } from "@/constants";
+import { hasPrivilege, formatDateTime } from "@/utils";
 import { showToast } from "@/lib/toast/use-toast";
 import { Alert } from "react-native";
 import {

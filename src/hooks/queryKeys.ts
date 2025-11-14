@@ -11,9 +11,6 @@ import type {
   ExternalWithdrawalGetManyFormData,
   ExternalWithdrawalItemGetManyFormData,
   FileGetManyFormData,
-  GarageGetManyFormData,
-  GarageLaneGetManyFormData,
-  ParkingSpotGetManyFormData,
   ItemGetManyFormData,
   ItemBrandGetManyFormData,
   ItemCategoryGetManyFormData,
@@ -40,7 +37,6 @@ import type {
   ServiceGetManyFormData,
   SupplierGetManyFormData,
   TaskGetManyFormData,
-  TruckGetManyFormData,
   UserGetManyFormData,
   VacationGetManyFormData,
   NotificationGetManyFormData,
@@ -337,14 +333,6 @@ export const fileKeys = {
 
 // Alias for artworks (task files are now called artworks)
 export const artworkKeys = fileKeys;
-
-// =====================================================
-// Garage Query Keys
-// =====================================================
-
-export const garageKeys = createQueryKeyStore<GarageGetManyFormData>("garages");
-export const garageLaneKeys = createQueryKeyStore<GarageLaneGetManyFormData>("garageLanes");
-export const parkingSpotKeys = createQueryKeyStore<ParkingSpotGetManyFormData>("parkingSpots");
 
 // =====================================================
 // Item Query Keys
@@ -701,12 +689,6 @@ export const taskKeys = {
   // Analytics
   statistics: () => ["tasks", "statistics"] as const,
 };
-
-// =====================================================
-// Truck Query Keys
-// =====================================================
-
-export const truckKeys = createQueryKeyStore<TruckGetManyFormData>("trucks");
 
 // =====================================================
 // User Query Keys

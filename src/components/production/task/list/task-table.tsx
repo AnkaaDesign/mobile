@@ -13,10 +13,10 @@ import { TaskStatusBadge } from "./task-status-badge";
 import { TaskPriorityIndicator } from "./task-priority-indicator";
 import { DeadlineCountdown } from "./deadline-countdown";
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
-import { formatDate, formatCurrency } from '../../../../utils';
-import { getTaskRowColor } from '../../../../utils/task';
+import { formatDate, formatCurrency } from "@/utils";
+import { getTaskRowColor } from "@/utils/task";
 import { extendedColors } from "@/lib/theme/extended-colors";
-import { TASK_STATUS, PRIORITY_TYPE } from '../../../../constants';
+import { TASK_STATUS, PRIORITY_TYPE } from "@/constants";
 import type { SortConfig } from "@/lib/sort-utils";
 import { TaskSectorModal } from "../modals/task-sector-modal";
 import { TaskStatusModal } from "../modals/task-status-modal";
@@ -233,7 +233,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (task: Task) => (
       <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText])} numberOfLines={1}>
-        {task.plate ? task.plate.toUpperCase() : "-"}
+        {task.truck?.plate ? task.truck.plate.toUpperCase() : "-"}
       </ThemedText>
     ),
   },

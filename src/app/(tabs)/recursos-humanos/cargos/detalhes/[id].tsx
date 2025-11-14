@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { usePosition, usePositionMutations } from '../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from '../../../../../constants';
+import { usePosition, usePositionMutations } from "@/hooks/usePosition";
+import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -13,7 +13,7 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconRefresh, IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { showToast } from "@/components/ui/toast";
-import { hasPrivilege } from '../../../../../utils';
+import { hasPrivilege } from "@/utils";
 
 // Import modular components
 import { SpecificationsCard, RemunerationHistoryCard, RelatedUsersCard } from "@/components/human-resources/position/detail";

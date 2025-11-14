@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { BORROW_STATUS } from '../../../constants';
+import { BORROW_STATUS } from "@/constants";
 import type { Borrow } from '../../../types';
 import { extendedColors } from "@/lib/theme/extended-colors";
 

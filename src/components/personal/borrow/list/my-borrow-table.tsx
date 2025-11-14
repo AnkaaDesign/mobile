@@ -9,9 +9,9 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { MyBorrowTableRowSwipe } from "./my-borrow-table-row-swipe";
-import { formatDate, formatDateTime } from '../../../../utils';
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { BORROW_STATUS, BORROW_STATUS_LABELS } from '../../../../constants';
+import { formatDate} from "@/utils";
+import { extendedColors} from "@/lib/theme/extended-colors";
+import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
 
 export interface TableColumn {
   key: string;
@@ -62,14 +62,9 @@ const getStatusBadgeVariant = (status: string) => {
   }
 };
 
-// Helper to check if borrow is overdue
+// Helper to check if borrow is overdue (no longer used as expectedReturnDate field doesn't exist)
 const isOverdue = (borrow: Borrow): boolean => {
-  if (borrow.status !== BORROW_STATUS.ACTIVE) return false;
-  if (!borrow.expectedReturnDate) return false;
-
-  const now = new Date();
-  const returnDate = new Date(borrow.expectedReturnDate);
-  return now > returnDate;
+  return false;
 };
 
 // Define all available columns with their renderers
@@ -135,24 +130,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
     accessor: (borrow: Borrow) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
         {borrow.createdAt ? formatDate(new Date(borrow.createdAt)) : "-"}
-      </ThemedText>
-    ),
-  },
-  {
-    key: "expectedReturnDate",
-    header: "Prev. Devolução",
-    align: "left",
-    sortable: true,
-    width: 0,
-    accessor: (borrow: Borrow) => (
-      <ThemedText
-        style={[
-          styles.cellText,
-          isOverdue(borrow) && styles.overdueDate
-        ]}
-        numberOfLines={1}
-      >
-        {borrow.expectedReturnDate ? formatDate(new Date(borrow.expectedReturnDate)) : "-"}
       </ThemedText>
     ),
   },
@@ -229,7 +206,6 @@ export const MyBorrowTable = React.memo<MyBorrowTableProps>(
         quantity: 0.8,
         status: 1.2,
         createdAt: 1.5,
-        expectedReturnDate: 1.5,
         returnedAt: 1.5,
         user: 1.5,
         category: 1.3,

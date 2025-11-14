@@ -7,8 +7,8 @@ import { IconCalendarEvent, IconUser } from "@tabler/icons-react-native";
 import { VacationListSkeleton } from "../skeleton/vacation-list-skeleton";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { spacing } from "@/constants/design-system";
-import { VACATION_STATUS, VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '../../../../constants';
-import { formatDate, getDifferenceInDays } from '../../../../utils';
+import { VACATION_STATUS, VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from "@/constants";
+import { formatDate, getDifferenceInDays } from "@/utils";
 
 import type { Vacation } from '../../../../types';
 

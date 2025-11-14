@@ -4,8 +4,8 @@ import { Card } from "@/components/ui/card";
 import { InfoRow } from "@/components/ui/info-row";
 import { FrequencyBadge } from "./frequency-badge";
 import type { OrderSchedule } from '../../../../types';
-import { SCHEDULE_FREQUENCY } from '../../../../constants';
-import { formatDate } from '../../../../utils';
+import { SCHEDULE_FREQUENCY } from "@/constants";
+import { formatDate } from "@/utils";
 
 interface ScheduleInfoCardProps {
   schedule: OrderSchedule;

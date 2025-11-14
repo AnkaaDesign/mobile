@@ -1,12 +1,12 @@
 
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
-import { formatDate, getAge } from '../../../../utils';
+import { formatDate} from "@/utils";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconBriefcase, IconBuilding, IconCalendar, IconUserCog, IconCake, IconHash } from "@tabler/icons-react-native";
+import { IconBriefcase, IconBuilding, IconUserCog, IconCalendarTime, IconCalendarShare, IconCalendarCheck, IconCalendarCancel } from "@tabler/icons-react-native";
 
 interface ProfessionalInfoCardProps {
   employee: User;
@@ -23,46 +23,12 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
             <IconBriefcase size={18} color={colors.primary} />
           </View>
           <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
-            Informações Profissionais
+            Dados Profissionais
           </ThemedText>
         </View>
       </View>
       <View style={styles.content}>
-        {/* Dados Pessoais Section */}
-        <ThemedText style={[styles.subsectionTitle, { color: colors.foreground }]}>
-          Dados Pessoais
-        </ThemedText>
-
-        {employee.birth && (
-          <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
-            <View style={styles.labelWithIcon}>
-              <IconCake size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                Data de Nascimento
-              </ThemedText>
-            </View>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
-              {formatDate(employee.birth)} ({getAge(employee.birth)} anos)
-            </ThemedText>
-          </View>
-        )}
-
-        {employee.payrollNumber && (
-          <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
-            <View style={styles.labelWithIcon}>
-              <IconHash size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                Número da Folha
-              </ThemedText>
-            </View>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
-              {employee.payrollNumber}
-            </ThemedText>
-          </View>
-        )}
-
         {/* Dados Funcionais Section */}
-        <View style={[styles.separator, { backgroundColor: colors.border }]} />
         <ThemedText style={[styles.subsectionTitle, { color: colors.foreground }]}>
           Dados Funcionais
         </ThemedText>
@@ -112,7 +78,7 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
         {employee.exp1StartAt && (
           <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
             <View style={styles.labelWithIcon}>
-              <IconCalendar size={16} color={colors.mutedForeground} />
+              <IconCalendarTime size={16} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                 Início Experiência 1
               </ThemedText>
@@ -126,7 +92,7 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
         {employee.exp1EndAt && (
           <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
             <View style={styles.labelWithIcon}>
-              <IconCalendar size={16} color={colors.mutedForeground} />
+              <IconCalendarShare size={16} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                 Fim Experiência 1
               </ThemedText>
@@ -140,7 +106,7 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
         {employee.exp2StartAt && (
           <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
             <View style={styles.labelWithIcon}>
-              <IconCalendar size={16} color={colors.mutedForeground} />
+              <IconCalendarTime size={16} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                 Início Experiência 2
               </ThemedText>
@@ -154,7 +120,7 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
         {employee.exp2EndAt && (
           <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
             <View style={styles.labelWithIcon}>
-              <IconCalendar size={16} color={colors.mutedForeground} />
+              <IconCalendarShare size={16} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                 Fim Experiência 2
               </ThemedText>
@@ -165,16 +131,17 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
           </View>
         )}
 
-        {employee.contractedAt && (
+
+        {employee.effectedAt && (
           <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
             <View style={styles.labelWithIcon}>
-              <IconCalendar size={16} color={colors.mutedForeground} />
+              <IconCalendarCheck size={16} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                Data de Contratação
+                Data de Efetivação
               </ThemedText>
             </View>
             <ThemedText style={[styles.value, { color: colors.foreground }]}>
-              {formatDate(employee.contractedAt)}
+              {formatDate(employee.effectedAt)}
             </ThemedText>
           </View>
         )}
@@ -182,7 +149,7 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
         {employee.dismissedAt && (
           <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
             <View style={styles.labelWithIcon}>
-              <IconCalendar size={16} color={colors.mutedForeground} />
+              <IconCalendarCancel size={16} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                 Data de Demissão
               </ThemedText>

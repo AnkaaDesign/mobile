@@ -11,7 +11,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { CutsTableRowSwipe } from "./cuts-table-row-swipe";
 import { formatDate } from '@/utils';
 import { CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from '@/constants';
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { extendedColors} from "@/lib/theme/extended-colors";
 import { getBadgeVariantFromStatus } from "@/components/ui/badge";
 
 export interface TableColumn {

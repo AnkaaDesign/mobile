@@ -1,18 +1,17 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useVacation, useVacationMutations } from '../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE, VACATION_STATUS } from '../../../../../constants';
+import { useVacation, useVacationMutations } from "@/hooks";
+import { VACATION_STATUS } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconBeach, IconTrash, IconX } from "@tabler/icons-react-native";
-import { routeToMobilePath } from "@/lib/route-mapper";
 import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
-import { canCancelVacation } from '../../../../../utils';
+import { canCancelVacation } from "@/utils";
 
 // Import modular components
 import {

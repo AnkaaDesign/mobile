@@ -5,31 +5,17 @@ import { getFileTypeInfo, getFileTypeCategory, FileCategory, getCategoryLabel, t
 
 // Tabler Icons React Native imports
 import {
-  // Documents
-  IconFileTypePdf,
   IconFileText,
   IconFileTypeDoc,
   IconFileTypeXls,
   IconFileTypePpt,
-
-  // Images
-  IconPhoto,
   IconVectorBezier,
   IconIcons,
   IconCamera,
-
-  // Video
-  IconVideo,
   IconDeviceTv,
   IconBrandYoutube,
-
-  // Audio
-  IconMusic,
   IconMicrophone,
   IconWaveSquare,
-
-  // Code
-  IconBrandJavascript,
   IconBrandTypescript,
   IconBrandHtml5,
   IconBrandCss3,
@@ -38,19 +24,10 @@ import {
   IconBraces,
   IconCode,
   IconFileCode,
-
-  // Archives
-  IconFileZip,
   IconArchive,
   IconPackage,
-
-  // CAD & 3D
-  IconRuler2,
   IconBox,
   IconDimensions,
-
-  // Special
-  IconTypography,
   IconDatabase,
   IconBinary,
   IconFile,

@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconCalendar, IconCalendarCheck, IconCalendarDue } from "@tabler/icons-react-native";
+import { IconCalendar, IconCalendarCheck} from "@tabler/icons-react-native";
 import type { Borrow } from "@/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -35,26 +35,6 @@ export function BorrowDatesCard({ borrow }: BorrowDatesCardProps) {
     }
   };
 
-  const calculateDaysOverdue = () => {
-    if (!borrow.expectedReturnDate || borrow.status !== "ACTIVE") return null;
-    const expected = new Date(borrow.expectedReturnDate);
-    const today = new Date();
-    const diffTime = today.getTime() - expected.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : null;
-  };
-
-  const calculateDaysUntilReturn = () => {
-    if (!borrow.expectedReturnDate || borrow.status !== "ACTIVE") return null;
-    const expected = new Date(borrow.expectedReturnDate);
-    const today = new Date();
-    const diffTime = expected.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : null;
-  };
-
-  const daysOverdue = calculateDaysOverdue();
-  const daysUntilReturn = calculateDaysUntilReturn();
 
   return (
     <Card style={styles.card}>
@@ -77,37 +57,6 @@ export function BorrowDatesCard({ borrow }: BorrowDatesCardProps) {
             {formatDate(borrow.createdAt)}
           </ThemedText>
         </View>
-
-        {/* Expected Return Date */}
-        {borrow.expectedReturnDate && (
-          <View style={styles.dateItem}>
-            <View style={styles.dateHeader}>
-              <IconCalendarDue size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.dateLabel, { color: colors.mutedForeground }]}>
-                Devolução Prevista
-              </ThemedText>
-            </View>
-            <View style={styles.dateValueContainer}>
-              <ThemedText style={[styles.dateValue, { color: colors.foreground }]}>
-                {formatDateOnly(borrow.expectedReturnDate)}
-              </ThemedText>
-              {daysOverdue !== null && (
-                <View style={styles.overdueChip}>
-                  <ThemedText style={styles.overdueChipText}>
-                    {daysOverdue} {daysOverdue === 1 ? "dia" : "dias"} de atraso
-                  </ThemedText>
-                </View>
-              )}
-              {daysUntilReturn !== null && (
-                <View style={[styles.overdueChip, { backgroundColor: "#dbeafe" }]}>
-                  <ThemedText style={[styles.overdueChipText, { color: "#1e40af" }]}>
-                    {daysUntilReturn} {daysUntilReturn === 1 ? "dia" : "dias"} restantes
-                  </ThemedText>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
 
         {/* Actual Return Date */}
         {borrow.returnedAt && (

@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconLoader } from "@tabler/icons-react-native";
-import { itemBrandCreateSchema, itemBrandUpdateSchema, type ItemBrandCreateFormData, type ItemBrandUpdateFormData } from '../../../../../schemas';
+import { itemBrandCreateSchema, itemBrandUpdateSchema,} from '../../../../../schemas';
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useItems } from '../../../../../hooks';
+import { useItems } from "@/hooks";
 import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 

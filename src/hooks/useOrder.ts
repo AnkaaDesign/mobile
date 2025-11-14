@@ -2,8 +2,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  // Order functions
-  getOrders,
   getOrder,
   createOrder,
   updateOrder,
@@ -13,8 +11,6 @@ import {
   batchDeleteOrders,
 } from '@/api-client';
 import type {
-  // Order types
-  OrderGetManyFormData,
   OrderCreateFormData,
   OrderUpdateFormData,
   OrderBatchCreateFormData,

@@ -8,9 +8,9 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TeamPpeDeliveryTableRowSwipe } from "./team-ppe-delivery-table-row-swipe";
-import { formatDate } from '../../../../utils';
+import { formatDate } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { PPE_DELIVERY_STATUS_LABELS } from '../../../../constants';
+import { PPE_DELIVERY_STATUS_LABELS } from "@/constants";
 
 export interface TableColumn {
   key: string;

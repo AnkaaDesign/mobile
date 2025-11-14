@@ -1,7 +1,7 @@
 // packages/hooks/src/use-stable-query.ts
 
 import { useRef, useMemo, useCallback, useEffect } from "react";
-import { useQuery, useQueryClient, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query";
+import { useQuery, useQueryClient,} from "@tanstack/react-query";
 
 /**
  * A wrapper around useQuery that provides stable query key management

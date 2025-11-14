@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderItemMutations, useItems, useOrder } from '../../../../../../hooks';
+import { useOrderItemMutations, useItems, useOrder } from "@/hooks";
 import { orderItemCreateSchema } from '../../../../../../schemas';
 import type { OrderItemCreateFormData } from '../../../../../../schemas';
 import { ThemedView, ThemedText, ErrorScreen, LoadingScreen, Button } from "@/components/ui";
@@ -14,10 +14,10 @@ import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/ui/combobox";
 import type { ComboboxOption } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
-import { formatCurrency } from '../../../../../../utils';
+import { formatCurrency } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from '../../../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../../../constants';
+import { hasPrivilege } from "@/utils";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function AddOrderItemScreen() {
   const router = useRouter();
@@ -25,10 +25,8 @@ export default function AddOrderItemScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const [itemSearchText, setItemSearchText] = useState("");
-
   // Check permissions
-  const canCreate = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
+  const canCreate = user && hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
 
   if (!canCreate) {
     return (
@@ -39,7 +37,7 @@ export default function AddOrderItemScreen() {
   }
 
   // Get order details
-  const { data: order, isLoading: orderLoading, error: orderError } = useOrder(orderId!, {
+  const { data: order, isLoading: orderLoading, error: orderError } = useOrder(orderId || '', {
     include: {
       supplier: { select: { id: true, name: true } },
     },
@@ -50,9 +48,7 @@ export default function AddOrderItemScreen() {
   const {
     data: itemsResponse,
     isLoading: itemsLoading,
-    // // error: itemsError, (unused) (unused)
   } = useItems({
-    ...(itemSearchText ? { searchingFor: itemSearchText } : {}),
     include: {
       brand: { select: { id: true, name: true } },
       category: { select: { id: true, name: true } },
@@ -74,7 +70,7 @@ export default function AddOrderItemScreen() {
   } = useForm<OrderItemCreateFormData>({
     resolver: zodResolver(orderItemCreateSchema),
     defaultValues: {
-      orderId: orderId!,
+      orderId: orderId || '',
       orderedQuantity: 1,
       price: 0,
       icms: 0,
@@ -98,10 +94,6 @@ export default function AddOrderItemScreen() {
       router.back();
     },
   });
-
-  const handleItemSearch = useCallback((text: string) => {
-    setItemSearchText(text);
-  }, []);
 
   const handleItemSelect = useCallback(
     (itemId?: string) => {
@@ -181,7 +173,7 @@ export default function AddOrderItemScreen() {
           {/* Order Context */}
           <Card style={styles.card}>
             <View style={styles.orderHeader}>
-              <ThemedText style={styles.orderTitle}>{order?.data?.description || `Pedido #${orderId}`}</ThemedText>
+              <ThemedText style={styles.orderTitle}>{order?.data?.description || `Pedido #${order?.data?.id}`}</ThemedText>
               <ThemedText style={styles.orderSupplier}>{order?.data?.supplier?.name || order?.data?.supplier?.fantasyName}</ThemedText>
             </View>
           </Card>
@@ -206,17 +198,15 @@ export default function AddOrderItemScreen() {
                       onChange(itemId || "");
                       handleItemSelect(itemId || "");
                     }}
-                    onSearchChange={handleItemSearch}
                     loading={itemsLoading}
                     error={errors.itemId?.message}
                     searchable
                     clearable
                     emptyText="Nenhum item encontrado"
-                    renderOption={(option, isSelected, onPress) => (
+                    renderOption={(option, isSelected) => (
                       <ItemOption
                         option={option}
                         isSelected={isSelected}
-                        onPress={onPress}
                       />
                     )}
                   />
@@ -431,10 +421,9 @@ export default function AddOrderItemScreen() {
 interface ItemOptionProps {
   option: ComboboxOption;
   isSelected: boolean;
-  onPress: () => void;
 }
 
-const ItemOption: React.FC<ItemOptionProps> = ({ option, isSelected, }) => {
+const ItemOption: React.FC<ItemOptionProps> = ({ option, isSelected }) => {
   const { colors } = useTheme();
   const item = option.item;
 

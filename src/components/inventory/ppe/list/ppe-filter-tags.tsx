@@ -5,7 +5,7 @@ import { spacing } from "@/constants/design-system";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconX } from "@tabler/icons-react-native";
-import { formatDate } from '../../../../utils';
+import { formatDate } from "@/utils";
 import type { PpeDeliveryGetManyFormData } from '../../../../schemas';
 
 interface PpeFilterTagsProps {

@@ -11,7 +11,7 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { OrderTableRowSwipe } from "./order-table-row-swipe";
 import { OrderStatusBadge } from "./order-status-badge";
-import { formatCurrency, formatDate } from '../../../../utils';
+import { formatCurrency, formatDate } from "@/utils";
 import { extendedColors } from "@/lib/theme/extended-colors";
 
 // Import default visible columns function

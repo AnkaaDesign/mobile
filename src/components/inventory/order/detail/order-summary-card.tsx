@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatCurrency } from '../../../../utils';
+import { formatCurrency } from "@/utils";
 import type { Order } from '../../../../types';
 import { IconReceipt, IconCoin } from "@tabler/icons-react-native";
 

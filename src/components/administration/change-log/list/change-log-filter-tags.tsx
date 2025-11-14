@@ -10,8 +10,8 @@ import {
   CHANGE_LOG_ENTITY_TYPE,
   CHANGE_LOG_ACTION_LABELS,
   CHANGE_LOG_ENTITY_TYPE_LABELS,
-} from '../../../../constants';
-import { formatDate } from '../../../../utils';
+} from "@/constants";
+import { formatDate } from "@/utils";
 import type { ChangeLogGetManyFormData } from '../../../../schemas';
 
 interface ChangeLogFilterTagsProps {

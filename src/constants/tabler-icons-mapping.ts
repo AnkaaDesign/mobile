@@ -60,7 +60,6 @@ export const TABLER_ICONS = {
   // Production Tools
   scissors: "IconScissors",
   cutting: "IconScissors",
-  garage: "IconBuildingWarehouse", // Garage facility
   truck: "IconTruck",
   tool: "IconTool", // Single tool icon (for favorites)
   tools: "IconTools", // Multiple tools icon (for favorites)

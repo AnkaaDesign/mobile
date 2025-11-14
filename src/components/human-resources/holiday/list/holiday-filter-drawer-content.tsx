@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { NumberInput } from '@/components/ui/number-input';
-import { HOLIDAY_TYPE, HOLIDAY_TYPE_LABELS } from '../../../../constants';
+import { HOLIDAY_TYPE, HOLIDAY_TYPE_LABELS } from "@/constants";
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface HolidayFilterDrawerContentProps {

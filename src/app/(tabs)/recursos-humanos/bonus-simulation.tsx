@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
-
+import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
+import { IconFileExport } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, EmptyState } from "@/components/ui";
+import { exportToPDF } from "@/lib/pdf-export";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +57,7 @@ export default function BonusSimulationScreen() {
   // Fetch contracted users
   const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useUsers({
     where: {
-      status: USER_STATUS.CONTRACTED,
+      status: USER_STATUS.EFFECTED,
     },
     include: {
       position: true,
@@ -124,6 +125,33 @@ export default function BonusSimulationScreen() {
       setRefreshing(false);
     }
   }, [refetchTasks, refetchUsers]);
+
+  const handleExportPDF = useCallback(async () => {
+    if (simulatedUsers.length === 0) return;
+
+    const headers = [
+      { key: 'name', label: 'Colaborador' },
+      { key: 'position', label: 'Cargo' },
+      { key: 'sectorName', label: 'Setor' },
+      { key: 'performanceLevel', label: 'Nível de Desempenho' },
+      { key: 'bonusAmount', label: 'Valor do Bônus (R$)' },
+    ];
+
+    const exportData = simulatedUsers.map((user) => ({
+      name: user.name,
+      position: user.position,
+      sectorName: user.sectorName ?? '-',
+      performanceLevel: user.performanceLevel,
+      bonusAmount: user.bonusAmount.toFixed(2),
+    }));
+
+    await exportToPDF(
+      exportData,
+      headers,
+      `simulacao_bonus_${new Date().toISOString().split('T')[0]}`,
+      'Simulação de Bônus'
+    );
+  }, [simulatedUsers]);
 
   const isLoading = tasksLoading || usersLoading;
 
@@ -202,7 +230,13 @@ export default function BonusSimulationScreen() {
 
         {/* Users List */}
         <View style={styles.usersContainer}>
-          <ThemedText style={styles.sectionTitle}>Colaboradores ({simulatedUsers.length})</ThemedText>
+          <View style={styles.sectionHeader}>
+            <ThemedText style={styles.sectionTitle}>Colaboradores ({simulatedUsers.length})</ThemedText>
+            <TouchableOpacity onPress={handleExportPDF} style={[styles.exportButton, { backgroundColor: colors.primary }]} disabled={simulatedUsers.length === 0}>
+              <IconFileExport size={20} color="#fff" />
+              <ThemedText style={styles.exportButtonText}>Exportar</ThemedText>
+            </TouchableOpacity>
+          </View>
 
           {simulatedUsers.map((user, ) => (
             <Card
@@ -301,10 +335,28 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     gap: 12,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 4,
+  },
+  exportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  exportButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
   userCard: {
     padding: 16,

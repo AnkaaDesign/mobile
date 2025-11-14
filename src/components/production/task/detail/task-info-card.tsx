@@ -50,7 +50,9 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
-          <IconClipboardList size={20} color={colors.mutedForeground} />
+          <View style={[styles.iconWrapper, { backgroundColor: colors.primary + "10" }]}>
+            <IconClipboardList size={18} color={colors.primary} />
+          </View>
           <ThemedText style={styles.title}>Informações Gerais</ThemedText>
         </View>
         <TaskStatusBadge status={task.status} size="md" />
@@ -91,23 +93,23 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
         )}
 
         {/* Plate */}
-        {task.plate && (
+        {task.truck?.plate && (
           <View style={styles.infoItem}>
             <IconCar size={20} color={colors.mutedForeground} />
             <View style={styles.infoText}>
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Placa</ThemedText>
-              <ThemedText style={[styles.value, styles.monoValue, { color: colors.foreground }]}>{task.plate.toUpperCase()}</ThemedText>
+              <ThemedText style={[styles.value, styles.monoValue, { color: colors.foreground }]}>{task.truck.plate.toUpperCase()}</ThemedText>
             </View>
           </View>
         )}
 
         {/* Chassis Number */}
-        {task.chassisNumber && (
+        {task.truck?.chassisNumber && (
           <View style={styles.infoItem}>
             <IconBarcode size={20} color={colors.mutedForeground} />
             <View style={styles.infoText}>
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Nº Chassi</ThemedText>
-              <ThemedText style={[styles.value, styles.monoValue, { color: colors.foreground }]}>{formatChassis(task.chassisNumber)}</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>{formatChassis(task.truck.chassisNumber)}</ThemedText>
             </View>
           </View>
         )}
@@ -160,7 +162,14 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: spacing.md,
+  },
+  iconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: fontSize.lg,

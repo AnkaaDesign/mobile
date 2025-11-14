@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { usePpeSize } from '../../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../../constants';
-import { formatDate } from '../../../../../../utils';
+import { usePpeSize } from "@/hooks/usePpe";
+import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { formatDate } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Header } from "@/components/ui/header";

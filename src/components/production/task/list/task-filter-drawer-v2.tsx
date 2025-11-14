@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Drawer } from "@/components/ui/drawer";
-import { TASK_STATUS, TASK_STATUS_LABELS } from '../../../../constants';
+import { TASK_STATUS, TASK_STATUS_LABELS } from "@/constants";
 
 interface TaskFilterDrawerV2Props {
   visible: boolean;

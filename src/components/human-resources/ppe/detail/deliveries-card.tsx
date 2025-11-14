@@ -9,9 +9,9 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconTruck, IconCalendar, IconUser, IconPlus, IconPackage } from "@tabler/icons-react-native";
-import { PPE_DELIVERY_STATUS_LABELS } from '../../../../constants';
-import { formatDate } from '../../../../utils';
-import { routes } from '../../../../constants';
+import { PPE_DELIVERY_STATUS_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import type { Item, PpeDelivery } from '../../../../types';
 

@@ -6,24 +6,24 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { useTaskDetail, useTaskMutations, useLayoutsByTruck, useCutsByTask } from '../../../../../hooks';
+import { useTaskDetail, useTaskMutations, useLayoutsByTruck, useCutsByTask } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE, AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from '../../../../../constants';
-import { hasPrivilege, formatCurrency, formatDate } from '../../../../../utils';
+import { SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE, AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from "@/constants";
+import { hasPrivilege, formatCurrency, formatDate } from "@/utils";
 import { useMemo } from "react";
 import { showToast } from "@/components/ui/toast";
 import { TaskInfoCard } from "@/components/production/task/detail/task-info-card";
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
 import { TaskServicesCard } from "@/components/production/task/detail/task-services-card";
-import { TaskCustomerCard } from "@/components/production/task/detail/task-customer-card";
 import { TruckLayoutPreview } from "@/components/production/layout/truck-layout-preview";
 
 import { TaskPaintCard } from "@/components/production/task/detail/task-paint-card";
-import { Card, CardContent } from "@/components/ui/card";
+import { TaskGroundPaintsCard } from "@/components/production/task/detail/task-ground-paints-card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TouchableOpacity } from "react-native";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
-import { FileItem, useFileViewer, type FileViewMode } from "@/components/file";
+import { FileItem, useFileViewer} from "@/components/file";
 import {
 
 
@@ -327,6 +327,16 @@ export default function ScheduleDetailsScreen() {
             />
           )}
 
+          {/* Ground Paints - Fundos Recomendados */}
+          {(task as any)?.generalPainting?.paintGrounds &&
+           (task as any).generalPainting.paintGrounds.length > 0 && (
+            <TaskGroundPaintsCard
+              groundPaints={(task as any).generalPainting.paintGrounds.map(
+                (pg: any) => pg.groundPaint
+              )}
+            />
+          )}
+
           {/* Artworks Section */}
           {(task as any)?.artworks && (task as any).artworks.length > 0 && (
             <Card style={styles.card}>
@@ -495,6 +505,75 @@ export default function ScheduleDetailsScreen() {
                   </View>
                 </View>
               )}
+            </Card>
+          )}
+
+          {/* Budget Table - Only for Admin and Financial */}
+          {canViewDocuments && (task as any)?.budget && (task as any).budget.items && (task as any).budget.items.length > 0 && (
+            <Card style={styles.card}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <IconCurrencyReal size={20} color={colors.primary} />
+                <ThemedText style={styles.sectionTitle}>Orçamento Detalhado</ThemedText>
+              </View>
+
+              {/* Budget Expiry Date */}
+              {(task as any).budget.expiresIn && (
+                <View style={[styles.budgetExpiryContainer, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+                  <IconCalendarEvent size={16} color={colors.mutedForeground} />
+                  <View style={styles.budgetExpiryContent}>
+                    <ThemedText style={[styles.budgetExpiryLabel, { color: colors.mutedForeground }]}>
+                      Validade do Orçamento
+                    </ThemedText>
+                    <ThemedText style={[styles.budgetExpiryDate, { color: colors.foreground }]}>
+                      {formatDate((task as any).budget.expiresIn)}
+                    </ThemedText>
+                  </View>
+                </View>
+              )}
+
+              {/* Budget Table */}
+              <View style={styles.budgetTableContainer}>
+                {/* Table Header */}
+                <View style={[styles.budgetTableHeader, { backgroundColor: colors.muted, borderBottomColor: colors.border }]}>
+                  <ThemedText style={[styles.budgetTableHeaderText, styles.budgetTableDescriptionColumn, { color: colors.foreground }]}>
+                    Descrição
+                  </ThemedText>
+                  <ThemedText style={[styles.budgetTableHeaderText, styles.budgetTableAmountColumn, { color: colors.foreground }]}>
+                    Valor
+                  </ThemedText>
+                </View>
+
+                {/* Table Body */}
+                <View style={styles.budgetTableBody}>
+                  {(task as any).budget.items.map((item: any, index: number) => (
+                    <View
+                      key={item.id}
+                      style={[
+                        styles.budgetTableRow,
+                        { borderBottomColor: colors.border },
+                        index === (task as any).budget.items.length - 1 && styles.budgetTableRowLast
+                      ]}
+                    >
+                      <ThemedText style={[styles.budgetTableCell, styles.budgetTableDescriptionColumn, { color: colors.foreground }]}>
+                        {item.description}
+                      </ThemedText>
+                      <ThemedText style={[styles.budgetTableCell, styles.budgetTableAmountColumn, { color: colors.foreground }]}>
+                        {formatCurrency(item.amount)}
+                      </ThemedText>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Total Row */}
+                <View style={[styles.budgetTotalRow, { backgroundColor: colors.primary + '10', borderTopColor: colors.primary }]}>
+                  <ThemedText style={[styles.budgetTotalLabel, { color: colors.foreground }]}>
+                    TOTAL
+                  </ThemedText>
+                  <ThemedText style={[styles.budgetTotalValue, { color: colors.primary }]}>
+                    {formatCurrency((task as any).budget.total)}
+                  </ThemedText>
+                </View>
+              </View>
             </Card>
           )}
 
@@ -908,5 +987,84 @@ const styles = StyleSheet.create({
   },
   observationContent: {
     marginTop: spacing.sm,
+  },
+  budgetExpiryContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    marginBottom: spacing.md,
+  },
+  budgetExpiryContent: {
+    flex: 1,
+  },
+  budgetExpiryLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+    marginBottom: spacing.xxs,
+  },
+  budgetExpiryDate: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  budgetTableContainer: {
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: "transparent",
+    overflow: "hidden",
+  },
+  budgetTableHeader: {
+    flexDirection: "row",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: 2,
+  },
+  budgetTableHeaderText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    textTransform: "uppercase",
+  },
+  budgetTableDescriptionColumn: {
+    flex: 1,
+    textAlign: "left",
+  },
+  budgetTableAmountColumn: {
+    width: 120,
+    textAlign: "right",
+  },
+  budgetTableBody: {
+    backgroundColor: "transparent",
+  },
+  budgetTableRow: {
+    flexDirection: "row",
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  budgetTableRowLast: {
+    borderBottomWidth: 0,
+  },
+  budgetTableCell: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.normal,
+  },
+  budgetTotalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderTopWidth: 2,
+  },
+  budgetTotalLabel: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 1,
+  },
+  budgetTotalValue: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
   },
 });

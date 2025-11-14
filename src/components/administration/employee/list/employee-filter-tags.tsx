@@ -2,8 +2,8 @@
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX, IconSearch, IconUserCheck, IconBriefcase, IconBuilding } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { usePositions, useSectors } from '../../../../hooks';
-import { USER_STATUS_LABELS } from '../../../../constants';
+import { usePositions, useSectors } from "@/hooks";
+import { USER_STATUS_LABELS } from "@/constants";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";

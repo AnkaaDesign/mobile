@@ -5,8 +5,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatCurrency } from '../../../../utils';
-import { COMMISSION_STATUS, COMMISSION_STATUS_LABELS } from '../../../../constants';
+import { formatCurrency } from "@/utils";
+import { COMMISSION_STATUS, COMMISSION_STATUS_LABELS } from "@/constants";
 // Local type definition
 interface Commission {
   id: string;

@@ -141,7 +141,8 @@ export const useActiveBorrows = createSpecializedQueryHook<Partial<BorrowGetMany
   staleTime: 1000 * 60 * 3, // 3 minutes - active borrows are important
 });
 
-// Late borrows (overdue)
+// Late borrows (overdue) - Note: expectedReturnAt field no longer exists in database
+// This hook is kept for backwards compatibility but will always return empty results
 export const useLateBorrows = createSpecializedQueryHook<Partial<BorrowGetManyFormData>, BorrowGetManyResponse>({
   queryKeyFn: (filters) => borrowKeys.late(filters),
   queryFn: (filters) =>
@@ -150,12 +151,10 @@ export const useLateBorrows = createSpecializedQueryHook<Partial<BorrowGetManyFo
       where: {
         ...filters?.where,
         status: BORROW_STATUS.ACTIVE,
-        expectedReturnAt: {
-          lt: new Date().toISOString(),
-        },
+        // expectedReturnAt field removed - this will not filter by overdue status anymore
       },
     }),
-  staleTime: 1000 * 60 * 3, // 3 minutes - late borrows need attention
+  staleTime: 1000 * 60 * 3, // 3 minutes
 });
 
 // Borrows by item

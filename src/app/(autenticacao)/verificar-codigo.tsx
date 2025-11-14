@@ -12,7 +12,7 @@ import { Logo } from "@/components/ui/logo";
 import { VerificationCodeForm } from "@/components/auth/verification-code-form";
 import { shadow, spacing } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
-import { maskPhone } from '../../utils';
+import { maskPhone } from "@/utils";
 
 export default function VerificationCodeScreen() {
   const router = useRouter();

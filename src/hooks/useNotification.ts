@@ -2,8 +2,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  // Notification functions
-  getNotifications,
   getNotificationById,
   createNotification,
   updateNotification,
@@ -16,8 +14,6 @@ import {
   markAsRead,
   markAllAsRead,
   sendNotification,
-  // SeenNotification functions
-  getSeenNotifications,
   getSeenNotificationById,
   createSeenNotification,
   updateSeenNotification,
@@ -29,16 +25,12 @@ import {
   getSeenNotificationsByNotification,
 } from '@/api-client';
 import type {
-  // Notification types
-  NotificationGetManyFormData,
   NotificationCreateFormData,
   NotificationUpdateFormData,
   NotificationBatchCreateFormData,
   NotificationBatchUpdateFormData,
   NotificationBatchDeleteFormData,
   NotificationInclude,
-  // SeenNotification types
-  SeenNotificationGetManyFormData,
   SeenNotificationCreateFormData,
   SeenNotificationUpdateFormData,
   SeenNotificationBatchCreateFormData,
@@ -47,11 +39,7 @@ import type {
   SeenNotificationInclude,
 } from '@/schemas';
 import type {
-  // Entity types
-  Notification,
   SeenNotification,
-  // Notification response types
-  NotificationGetManyResponse,
   NotificationGetUniqueResponse,
   NotificationCreateResponse,
   NotificationUpdateResponse,
@@ -59,8 +47,6 @@ import type {
   NotificationBatchCreateResponse,
   NotificationBatchUpdateResponse,
   NotificationBatchDeleteResponse,
-  // SeenNotification response types
-  SeenNotificationGetManyResponse,
   SeenNotificationGetUniqueResponse,
   SeenNotificationCreateResponse,
   SeenNotificationUpdateResponse,

@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconCurrencyDollar } from "@tabler/icons-react-native";
 import type { Position } from '../../../../types';
-import { formatCurrency } from '../../../../utils';
+import { formatCurrency } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";

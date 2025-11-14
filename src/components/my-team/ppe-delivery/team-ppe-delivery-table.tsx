@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { PPE_DELIVERY_STATUS } from '../../../constants';
-import { formatDate } from '../../../utils';
+import { PPE_DELIVERY_STATUS } from "@/constants";
+import { formatDate } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
 interface TeamPpeDeliveryTableProps {

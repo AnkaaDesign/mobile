@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useSector, useSectorMutations } from '../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from '../../../../../constants';
+import { useSector, useSectorMutations } from "@/hooks";
+import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
 
 import { ThemedText } from "@/components/ui/themed-text";
@@ -19,7 +19,7 @@ import { TouchableOpacity } from "react-native";
 import { showToast } from "@/components/ui/toast";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
-import { hasPrivilege } from "../../../../../utils";
+import { hasPrivilege } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
 
 // Import modular components

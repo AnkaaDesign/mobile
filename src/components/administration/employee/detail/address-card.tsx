@@ -1,12 +1,12 @@
 
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
-import { formatZipCode } from '../../../../utils';
+import { formatZipCode, formatDate, getAge } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconMapPin, IconHome, IconBuildingCommunity, IconMap, IconMailbox } from "@tabler/icons-react-native";
+import { IconHome, IconBuildingCommunity, IconMap, IconMailbox, IconUser, IconCake, IconHash } from "@tabler/icons-react-native";
 
 interface AddressCardProps {
   employee: User;
@@ -16,24 +16,65 @@ export function AddressCard({ employee }: AddressCardProps) {
   const { colors } = useTheme();
 
   const hasAddress = employee.address || employee.neighborhood || employee.city || employee.state || employee.zipCode;
+  const hasPersonalInfo = employee.birth || employee.payrollNumber;
 
   return (
     <Card style={styles.card}>
       <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
         <View style={styles.titleRow}>
           <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-            <IconMapPin size={18} color={colors.primary} />
+            <IconUser size={18} color={colors.primary} />
           </View>
           <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
-            Endereço
+            Informações Pessoais
           </ThemedText>
         </View>
       </View>
       <View style={styles.content}>
+        {/* Dados Pessoais Section */}
+        {hasPersonalInfo && (
+          <>
+            <ThemedText style={[styles.subsectionTitle, { color: colors.foreground }]}>
+              Dados Pessoais
+            </ThemedText>
+
+            {employee.birth && (
+              <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
+                <View style={styles.labelWithIcon}>
+                  <IconCake size={16} color={colors.mutedForeground} />
+                  <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
+                    Data de Nascimento
+                  </ThemedText>
+                </View>
+                <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                  {formatDate(employee.birth)} ({getAge(employee.birth)} anos)
+                </ThemedText>
+              </View>
+            )}
+
+            {employee.payrollNumber && (
+              <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
+                <View style={styles.labelWithIcon}>
+                  <IconHash size={16} color={colors.mutedForeground} />
+                  <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
+                    Número da Folha
+                  </ThemedText>
+                </View>
+                <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                  {employee.payrollNumber}
+                </ThemedText>
+              </View>
+            )}
+
+            {hasAddress && <View style={[styles.separator, { backgroundColor: colors.border }]} />}
+          </>
+        )}
+
+        {/* Address Section */}
         {hasAddress ? (
           <>
             <ThemedText style={[styles.subsectionTitle, { color: colors.foreground }]}>
-              Localização
+              Endereço
             </ThemedText>
 
             {employee.address && (
@@ -102,16 +143,16 @@ export function AddressCard({ employee }: AddressCardProps) {
               </View>
             )}
           </>
-        ) : (
+        ) : hasPersonalInfo ? null : (
           <View style={styles.emptyState}>
             <View style={[styles.emptyIcon, { backgroundColor: colors.muted + "30" }]}>
-              <IconMapPin size={32} color={colors.mutedForeground} />
+              <IconUser size={32} color={colors.mutedForeground} />
             </View>
             <ThemedText style={[styles.emptyTitle, { color: colors.foreground }]}>
-              Nenhum endereço cadastrado
+              Nenhuma informação pessoal cadastrada
             </ThemedText>
             <ThemedText style={[styles.emptyDescription, { color: colors.mutedForeground }]}>
-              Este usuário não possui endereço registrado.
+              Este usuário não possui informações pessoais registradas.
             </ThemedText>
           </View>
         )}
@@ -154,6 +195,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: fontWeight.semibold,
     marginBottom: spacing.xs,
+  },
+  separator: {
+    height: 1,
+    marginVertical: spacing.xs,
   },
   infoRow: {
     flexDirection: "row",

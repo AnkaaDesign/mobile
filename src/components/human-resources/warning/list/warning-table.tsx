@@ -11,8 +11,8 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { WarningTableRowSwipe } from "./warning-table-row-swipe";
 import { getDefaultVisibleColumns } from "./column-visibility-drawer-v2";
-import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from '../../../../constants';
-import { formatDate } from '../../../../utils';
+import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 

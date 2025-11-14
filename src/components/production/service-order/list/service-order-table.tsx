@@ -10,8 +10,8 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { ServiceOrderTableRowSwipe } from "./service-order-table-row-swipe";
-import { formatDate, formatDateTime } from '../../../../utils';
-import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from '../../../../constants';
+import { formatDate, formatDateTime } from "@/utils";
+import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from "@/constants";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 

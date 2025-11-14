@@ -7,7 +7,7 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { HOLIDAY_TYPE, HOLIDAY_TYPE_LABELS } from '../../../../constants';
+import { HOLIDAY_TYPE, HOLIDAY_TYPE_LABELS } from "@/constants";
 import { format, isSameYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 

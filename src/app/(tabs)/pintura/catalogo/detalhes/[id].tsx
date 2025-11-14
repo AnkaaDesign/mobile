@@ -1,10 +1,11 @@
 import React from "react";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, RefreshControl, StyleSheet } from "react-native";
-import { usePaintDetail } from '../../../../../hooks';
+import { usePaintDetail } from "@/hooks";
 import { PaintCatalogCard } from "@/components/painting";
 import { PaintFormulasCard } from "@/components/painting/catalog/detail/paint-formulas-card";
 import { PaintTasksCard } from "@/components/painting/catalog/detail/paint-tasks-card";
+import { PaintRelatedPaintsCard } from "@/components/painting/catalog/detail/paint-related-paints-card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Text } from "@/components/ui/text";
@@ -180,6 +181,9 @@ export default function CatalogDetailsScreen() {
 
           {/* Tasks Table Card - NEW */}
           <PaintTasksCard paint={paint!} maxHeight={500} />
+
+          {/* Related Paints Card */}
+          <PaintRelatedPaintsCard paint={paint!} />
 
           {/* Metrics Card */}
           {metrics && (

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Alert as _RNAlert, StyleSheet, Text, TextStyle,
+import { StyleSheet, Text, TextStyle,
   View, ViewStyle } from "react-native";
 
 export interface AlertProps {

@@ -4,7 +4,7 @@ import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconX, IconSearch } from "@tabler/icons-react-native";
 import { spacing } from "@/constants/design-system";
-import { BORROW_STATUS, BORROW_STATUS_LABELS } from '../../../../constants';
+import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
 import type { BorrowGetManyFormData } from '../../../../schemas';
 
 interface BorrowFilterTagsProps {

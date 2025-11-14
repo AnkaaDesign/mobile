@@ -3,10 +3,10 @@ import { Stack, router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAirbrushingDetail, useAirbrushingMutations } from '../../../../../hooks';
-import { useTasks } from '../../../../../hooks';
-import { airbrushingUpdateSchema, type AirbrushingUpdateFormData, mapAirbrushingToFormData } from '../../../../../schemas';
-import { AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from '../../../../../constants';
+import { useAirbrushingDetail, useAirbrushingMutations } from "@/hooks";
+import { useTasks } from "@/hooks";
+import { airbrushingUpdateSchema, mapAirbrushingToFormData } from '../../../../../schemas';
+import { AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from "@/constants";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -20,9 +20,9 @@ import { IconBrush, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from '../../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../../constants';
-import { formatCurrency } from '../../../../../utils';
+import { hasPrivilege } from "@/utils";
+import { SECTOR_PRIVILEGES } from "@/constants";
+import { formatCurrency } from "@/utils";
 
 export default function AirbrushingEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

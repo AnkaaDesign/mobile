@@ -2,10 +2,10 @@ import { useRouter } from "expo-router";
 import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ItemBrandForm } from "@/components/inventory/item/brand/form/brand-form";
-import { useItemBrandMutations } from '../../../../../hooks';
-import { itemBrandCreateSchema, type ItemBrandCreateFormData } from '../../../../../schemas';
+import { useItemBrandMutations } from "@/hooks";
+import { itemBrandCreateSchema} from '../../../../../schemas';
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes } from '../../../../../constants';
+import { routes } from "@/constants";
 
 export default function BrandCreateScreen() {
   const router = useRouter();

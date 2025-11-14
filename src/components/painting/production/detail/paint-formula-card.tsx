@@ -8,7 +8,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconPaint } from "@tabler/icons-react-native";
 import type { PaintProduction } from '../../../../types';
-import { PAINT_FINISH_LABELS, routes } from "../../../../constants";
+import { PAINT_FINISH_LABELS, routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 
 interface PaintFormulaCardProps {

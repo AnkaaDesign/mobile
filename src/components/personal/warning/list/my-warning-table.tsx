@@ -9,9 +9,9 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { MyWarningTableRowSwipe } from "./my-warning-table-row-swipe";
-import { formatDateTime } from '../../../../utils';
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { WARNING_SEVERITY_LABELS, WARNING_CATEGORY_LABELS } from '../../../../constants';
+import { formatDateTime } from "@/utils";
+import { extendedColors} from "@/lib/theme/extended-colors";
+import { WARNING_SEVERITY_LABELS, WARNING_CATEGORY_LABELS } from "@/constants";
 
 export interface TableColumn {
   key: string;

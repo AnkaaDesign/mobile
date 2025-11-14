@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, Pressable } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { ReanimatedSwipeableRow, type SwipeAction } from "@/components/ui/reanimated-swipeable-row";
+import { ReanimatedSwipeableRow} from "@/components/ui/reanimated-swipeable-row";
 
 interface OrderScheduleTableRowSwipeProps {
   scheduleId: string;

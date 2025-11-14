@@ -3,8 +3,8 @@ import { View, StyleSheet } from "react-native";
 import type { Task } from '../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
-import { COMMISSION_STATUS } from '../../../constants';
-import { formatCurrency } from '../../../utils';
+import { COMMISSION_STATUS } from "@/constants";
+import { formatCurrency } from "@/utils";
 import { IconCurrencyDollar, IconUsers } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 

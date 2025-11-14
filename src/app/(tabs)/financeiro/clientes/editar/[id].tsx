@@ -6,7 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconReceipt2, IconDeviceFloppy, IconX, IconSearch } from "@tabler/icons-react-native";
 import { useCustomer, useCustomerMutations, useCnpjLookup, useCepLookup } from "@/hooks";
-import { customerUpdateSchema, type CustomerUpdateFormData } from "@/schemas";
+import { customerUpdateSchema} from "@/schemas";
 import {
   ThemedView,
   ThemedText,
@@ -394,8 +394,8 @@ export default function FinancialCustomerEditScreen() {
                   <>
                     <View style={styles.inputWithIcon}>
                       <Input
-                        value={value ? formatCNPJ(value) : ""}
-                        onChangeText={(text) => onChange(cleanCNPJ(text))}
+                        value={value ? formatCNPJ(String(value || '')) : ""}
+                        onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
                         onBlur={() => {
                           onBlur();
                           handleCnpjBlur(value);
@@ -434,8 +434,8 @@ export default function FinancialCustomerEditScreen() {
                 name="cpf"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    value={value ? formatCPF(value) : ""}
-                    onChangeText={(text) => onChange(cleanCPF(text))}
+                    value={value ? formatCPF(String(value || '')) : ""}
+                    onChangeText={(text) => onChange(cleanCPF(text) || "")}
                     onBlur={onBlur}
                     placeholder="000.000.000-00"
                     keyboardType="numeric"
@@ -466,8 +466,8 @@ export default function FinancialCustomerEditScreen() {
                 <>
                   <View style={styles.inputWithIcon}>
                     <Input
-                      value={value ? formatCEP(value) : ""}
-                      onChangeText={(text) => onChange(cleanCEP(text))}
+                      value={value ? formatCEP(String(value || '')) : ""}
+                      onChangeText={(text) => onChange(cleanCEP(text) || "")}
                       onBlur={() => {
                         onBlur();
                         handleCepBlur(value);

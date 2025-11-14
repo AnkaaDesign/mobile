@@ -4,8 +4,8 @@ import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconX, IconSearch } from "@tabler/icons-react-native";
 import { spacing } from "@/constants/design-system";
-import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '../../../../constants';
-import { formatDate } from '../../../../utils';
+import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
 import type { VacationGetManyFormData } from '../../../../schemas';
 
 interface VacationFilterTagsProps {

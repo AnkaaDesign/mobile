@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { OrderStatusBadge } from "../list/order-status-badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatDate, formatDateTime } from '../../../../utils';
+import { formatDate, formatDateTime } from "@/utils";
 import type { Order } from '../../../../types';
 
 interface OrderInfoCardProps {

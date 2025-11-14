@@ -3,7 +3,7 @@ import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboar
 import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { passwordRecoverySchema, type PasswordRecoveryFormData } from '../../schemas';
+import { passwordRecoverySchema} from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
 
 import { ThemedView } from "@/components/ui/themed-view";

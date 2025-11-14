@@ -4,8 +4,8 @@ import type { Commission } from '../../../../types';
 import { ThemedText } from "@/components/ui";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { COMMISSION_STATUS_LABELS } from '../../../../constants';
-import { formatDate } from '../../../../utils';
+import { COMMISSION_STATUS_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
 import { CommissionTableRowSwipe } from "./commission-table-row-swipe";
 
 interface CommissionTableProps {

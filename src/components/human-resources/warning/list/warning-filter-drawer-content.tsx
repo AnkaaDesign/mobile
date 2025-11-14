@@ -4,8 +4,8 @@ import { IconFilter, IconX, IconAlertTriangle, IconUsers, IconCalendarPlus } fro
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUsers } from '../../../../hooks';
-import { WARNING_CATEGORY, WARNING_SEVERITY, WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from '../../../../constants';
+import { useUsers } from "@/hooks";
+import { WARNING_CATEGORY, WARNING_SEVERITY, WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from "@/constants";
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
 import type { WarningGetManyFormData } from '../../../../schemas';

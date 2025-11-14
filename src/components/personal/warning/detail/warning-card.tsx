@@ -5,9 +5,9 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconAlertTriangle, IconUser } from "@tabler/icons-react-native";
+import { IconAlertTriangle} from "@tabler/icons-react-native";
 import type { Warning } from '../../../../types';
-import { WARNING_SEVERITY_LABELS } from '../../../../constants';
+import { WARNING_SEVERITY_LABELS } from "@/constants";
 import { extendedColors } from "@/lib/theme/extended-colors";
 
 interface WarningCardProps {

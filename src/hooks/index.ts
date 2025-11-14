@@ -96,6 +96,7 @@ export * from "./useMaintenance";
 // Common Module Hooks
 // =====================================================
 export * from "./useFile";
+export * from "./use-files-infinite-mobile";
 export * from "./useNotification";
 export * from "./usePreferences";
 export * from "./useChangelog";
@@ -106,10 +107,9 @@ export * from "./use-entity-details";
 // Other Module Hooks
 // =====================================================
 export * from "./useCustomer";
-export * from "./useTruck";
+// export * from "./useTruck"; // Disabled - file removed
 export * from "./useLayout";
 export * from "./useLayoutSection";
-export * from "./useGarage";
 
 // =====================================================
 // Server Management Hooks
@@ -143,7 +143,9 @@ export * from "./use-items-infinite-mobile";
 export * from "./use-maintenance-infinite-mobile";
 export * from "./use-notifications-infinite-mobile";
 export * from "./use-orders-infinite-mobile";
+export * from "./use-order-items-infinite-mobile";
 export * from "./use-paints-infinite-mobile";
+export * from "./use-paint-formulas-infinite-mobile";
 export * from "./use-paint-types-infinite-mobile";
 export * from "./use-positions-infinite-mobile";
 export * from "./use-ppe-deliveries-infinite-mobile";
@@ -156,12 +158,16 @@ export * from "./use-service-orders-infinite-mobile";
 export * from "./use-services-infinite-mobile";
 export * from "./use-suppliers-infinite-mobile";
 export * from "./use-tasks-infinite-mobile";
-export * from "./use-trucks-infinite-mobile";
 export * from "./use-users-infinite-mobile";
 export * from "./use-vacations-infinite-mobile";
 export * from "./use-warnings-infinite-mobile";
 export * from "./use-order-schedules-infinite-mobile";
 export * from "./use-cuts-infinite-mobile";
+export * from "./use-airbrushings-infinite-mobile";
+export * from "./use-observations-infinite-mobile";
+export * from "./use-paint-brands-infinite-mobile";
+export * from "./use-deployments-infinite-mobile";
+export * from "./use-paint-productions-infinite-mobile";
 
 // =====================================================
 // UI State Management Hooks

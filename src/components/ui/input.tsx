@@ -1,5 +1,5 @@
 import * as React from "react";
-import { TextInput, View, ViewStyle, TextStyle, TextInputProps, Animated, StyleSheet, ActivityIndicator, Platform } from "react-native";
+import { TextInput, View, ViewStyle, TextStyle, TextInputProps, Animated, StyleSheet, ActivityIndicator} from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, fontSize, transitions } from "@/constants/design-system";
 import {

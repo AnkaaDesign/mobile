@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useItem } from '../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
+import { useItem } from "@/hooks/useItem";
+import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Header } from "@/components/ui/header";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";

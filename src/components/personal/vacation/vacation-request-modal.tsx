@@ -5,8 +5,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { IconX, IconCalendar, IconInfoCircle } from "@tabler/icons-react-native";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { VACATION_TYPE, VACATION_TYPE_LABELS } from '../../../constants';
-import { getDifferenceInDays } from '../../../utils';
+import { VACATION_TYPE, VACATION_TYPE_LABELS } from "@/constants";
+import { getDifferenceInDays } from "@/utils";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 interface VacationRequestModalProps {

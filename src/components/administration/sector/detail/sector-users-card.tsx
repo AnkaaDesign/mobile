@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { IconUsers, IconChevronRight } from "@tabler/icons-react-native";
 import { router } from "expo-router";
 import type { Sector } from '../../../../types';
-import { routes, USER_STATUS } from '../../../../constants';
+import { routes, USER_STATUS } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";

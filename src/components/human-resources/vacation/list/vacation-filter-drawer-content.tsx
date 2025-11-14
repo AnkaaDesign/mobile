@@ -4,8 +4,8 @@ import { IconFilter, IconX, IconBeach, IconUsers, IconCalendarPlus } from '@tabl
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUsers } from '../../../../hooks';
-import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '../../../../constants';
+import { useUsers } from "@/hooks";
+import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from "@/constants";
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
 import type { VacationGetManyFormData } from '../../../../schemas';

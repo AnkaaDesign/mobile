@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '../../../constants';
-import { formatDate } from '../../../utils';
+import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
 interface TeamActivityTableProps {

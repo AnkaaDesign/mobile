@@ -1,8 +1,8 @@
 
 import { View, StyleSheet, ScrollView } from "react-native";
 import { Chip, ThemedText } from "@/components/ui";
-import { COMMISSION_STATUS_LABELS } from '../../../../constants';
-import { formatDate } from '../../../../utils';
+import { COMMISSION_STATUS_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
 import type { CommissionGetManyFormData } from '../../../../schemas';
 
 interface CommissionFilterTagsProps {

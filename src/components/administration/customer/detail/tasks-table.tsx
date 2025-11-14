@@ -9,7 +9,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconClipboardList, IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
-import { routes } from '../../../../constants';
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 

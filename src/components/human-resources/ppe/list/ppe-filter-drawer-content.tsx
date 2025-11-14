@@ -4,8 +4,8 @@ import { IconFilter, IconX, IconShield, IconCategory } from '@tabler/icons-react
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useItemCategories } from '../../../../hooks';
-import { PPE_TYPE, PPE_TYPE_LABELS } from '../../../../constants';
+import { useItemCategories } from "@/hooks";
+import { PPE_TYPE, PPE_TYPE_LABELS } from "@/constants";
 import { Combobox } from '@/components/ui/combobox';
 import type { ItemGetManyFormData } from '../../../../schemas';
 

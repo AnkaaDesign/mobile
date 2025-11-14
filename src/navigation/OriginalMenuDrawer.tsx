@@ -27,7 +27,7 @@ import {
   IconRefresh,
 } from "@tabler/icons-react-native";
 import { useRouter, usePathname } from "expo-router";
-import { MENU_ITEMS, routes, MenuItem, SECTOR_PRIVILEGES } from '@/constants';
+import { MENU_ITEMS, routes, MenuItem} from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
 import { routeToMobilePath, normalizePath } from "@/lib/route-mapper";
 import { maskPhone } from '@/utils';

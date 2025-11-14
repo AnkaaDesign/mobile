@@ -29,9 +29,6 @@ const ROUTE_PRIVILEGES: Record<string, string[]> = {
 
   // Server/Admin routes
   'servidor': [SECTOR_PRIVILEGES.ADMINISTRATOR],
-
-  // Statistics routes
-  'estatisticas': [SECTOR_PRIVILEGES.ADMINISTRATOR, SECTOR_PRIVILEGES.INVENTORY],
 };
 
 /**

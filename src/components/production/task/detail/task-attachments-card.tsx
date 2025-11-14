@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatDateTime } from '../../../../utils';
+import { formatDateTime } from "@/utils";
 
 // Local utility function
 const formatBytes = (bytes: number) => {

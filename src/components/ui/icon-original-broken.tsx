@@ -1,8 +1,8 @@
 import React from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { getTablerIcon } from '../../utils/navigation';
+import { getTablerIcon } from "@/utils/navigation";
 import { useTheme } from "@/lib/theme";
-import { getIconSize, type IconSize } from "@/constants/icon-sizes";
+import { getIconSize} from "@/constants/icon-sizes";
 import { getIconColor } from "@/constants/icon-colors";
 
 // Type-safe wrapper for icon props
@@ -70,7 +70,6 @@ import {
   IconArrowsUpDown,
   IconHelmet,
   IconFlask,
-  // IconFlask2 doesn't exist, using IconFlask
   IconDroplet,
   IconColorSwatch,
   IconColorPicker,
@@ -96,7 +95,6 @@ import {
   IconRuler2,
   IconArrowLeft,
   IconArrowRight,
-  // IconArrowBack doesn't exist, using IconArrowLeft
   IconLogout,
   IconLogin,
   IconKey,
@@ -144,7 +142,6 @@ import {
   IconPlayerPlay,
   IconPlayerStop,
   IconClockPlay,
-  // IconWrench doesn't exist, using IconTool
   IconClipboardCheck,
   IconHelpCircle,
   IconArrowsLeftRight,
@@ -157,7 +154,6 @@ import {
   IconAward,
   IconFile,
   IconBuildingFactory2 as IconTractor,
-  // IconFileDocument doesn't exist, using IconFileText
   IconNotebook,
   IconBuildingFactory2,
 } from "@tabler/icons-react-native";
@@ -498,7 +494,6 @@ const TABLER_ICON_MAPPINGS = {
   clipboardList: "IconClipboardList",
   note: "IconNote",
   history: "IconHistory",
-  garage: "IconBuildingWarehouse",
   truck: "IconTruck",
   serviceWrench: "IconTool",
   maintenance: "IconTools",
@@ -669,7 +664,6 @@ const FALLBACK_ICON_MAP: Record<string, string> = {
   history: "history",
   scissors: "content-cut",
   clipboard: "clipboard-outline",
-  garage: "garage",
   truck: "truck",
   serviceWrench: "wrench",
   note: "note-text",

@@ -4,8 +4,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '../../../constants';
-import { formatDate } from '../../../utils';
+import { ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
 import type { User } from '../../../types';
 import type { TeamActivityFilters } from './team-activity-filter-modal';
 

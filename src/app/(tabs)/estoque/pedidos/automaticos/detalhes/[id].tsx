@@ -13,7 +13,7 @@ import {
   IconHistory,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderSchedule, useOrderScheduleMutations, useOrders } from '../../../../../../hooks';
+import { useOrderSchedule, useOrderScheduleMutations, useOrders } from "@/hooks";
 import type { OrderScheduleInclude } from '../../../../../../schemas';
 import {
   ThemedView,
@@ -25,7 +25,7 @@ import {
   LoadingScreen,
 } from "@/components/ui";
 
-import { ActionSheet, type ActionSheetItem } from "@/components/ui/action-sheet";
+import { ActionSheet} from "@/components/ui/action-sheet";
 import { Header } from "@/components/ui/header";
 import { InfoRow } from "@/components/ui/info-row";
 import { FrequencyBadge } from "@/components/inventory/order/schedule/frequency-badge";
@@ -33,11 +33,11 @@ import { ScheduleInfoCard } from "@/components/inventory/order/schedule/schedule
 
 import { ScheduleHistory } from "@/components/inventory/order/schedule/schedule-history";
 import { useTheme } from "@/lib/theme";
-import { routes } from '../../../../../../constants';
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege, formatDateTime, formatDate } from '../../../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../../../constants';
+import { hasPrivilege, formatDateTime, formatDate } from "@/utils";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function AutomaticOrderDetailScreen() {
   const router = useRouter();
@@ -347,10 +347,6 @@ export default function AutomaticOrderDetailScreen() {
 
           <InfoRow label="Contagem de Frequência" value={schedule.frequencyCount.toString()} />
 
-          {schedule.rescheduleCount > 0 && (
-            <InfoRow label="Reagendamentos" value={schedule.rescheduleCount.toString()} />
-          )}
-
           {schedule.finishedAt && (
             <InfoRow label="Finalizado em" value={formatDateTime(schedule.finishedAt)} />
           )}
@@ -382,28 +378,6 @@ export default function AutomaticOrderDetailScreen() {
 
             {schedule.customMonths && schedule.customMonths.length > 0 && (
               <InfoRow label="Meses Personalizados" value={schedule.customMonths.join(", ")} />
-            )}
-          </Card>
-        )}
-
-        {/* Reschedule Information (if applicable) */}
-        {(schedule.originalDate || schedule.lastRescheduleDate || schedule.rescheduleReason) && (
-          <Card style={styles.card}>
-            <View style={styles.cardHeader}>
-              <IconHistory size={20} color={colors.foreground} />
-              <ThemedText style={styles.sectionTitle}>Histórico de Reagendamentos</ThemedText>
-            </View>
-
-            {schedule.originalDate && (
-              <InfoRow label="Data Original" value={formatDate(schedule.originalDate)} />
-            )}
-
-            {schedule.lastRescheduleDate && (
-              <InfoRow label="Último Reagendamento" value={formatDateTime(schedule.lastRescheduleDate)} />
-            )}
-
-            {schedule.rescheduleReason && (
-              <InfoRow label="Motivo do Reagendamento" value={schedule.rescheduleReason} />
             )}
           </Card>
         )}

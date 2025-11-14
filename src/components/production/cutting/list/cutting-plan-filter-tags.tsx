@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { View } from "react-native";
 import type { CutGetManyFormData } from "../../../../schemas";
-import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN, CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from "../../../../constants";
+import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN, CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from "@/constants";
 import { FilterTag } from "@/components/ui/filter-tag";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";

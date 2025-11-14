@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 
 import { IconX, IconSearch } from "@tabler/icons-react-native";
 import { spacing } from "@/constants/design-system";
-import { ACTIVITY_OPERATION, ACTIVITY_REASON, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '../../../../constants';
+import { ACTIVITY_OPERATION, ACTIVITY_REASON, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from "@/constants";
 import type { ActivityGetManyFormData } from '../../../../schemas';
 
 interface ActivityFilterTagsProps {

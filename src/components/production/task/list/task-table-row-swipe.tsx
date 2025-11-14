@@ -4,8 +4,8 @@ import { IconEdit, IconTrash, IconBuildingFactory2, IconProgressCheck } from "@t
 
 import { useTheme } from "@/contexts/theme-context";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
-import { ReanimatedSwipeableRow, type SwipeAction, type Swipeable } from "@/components/ui/reanimated-swipeable-row";
-import { TASK_STATUS } from '../../../../constants';
+import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
+import { TASK_STATUS } from "@/constants";
 
 const ACTION_WIDTH = 80;
 

@@ -19,6 +19,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { IconEye, IconEyeOff } from "@tabler/icons-react-native";
 import { Logo } from "@/components/ui/logo";
 import { shadow, spacing } from "@/constants/design-system";
+import { useTheme } from "@/lib/theme";
 
 // Create a schema that matches the form structure
 const registerFormSchema = z
@@ -37,6 +38,7 @@ type RegisterFormData = z.infer<typeof registerFormSchema>;
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { register: registerUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

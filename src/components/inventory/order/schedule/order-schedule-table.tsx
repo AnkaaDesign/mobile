@@ -9,8 +9,8 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { OrderScheduleTableRowSwipe } from "./order-schedule-table-row-swipe";
-import { formatDateTime } from '../../../../utils';
-import { SCHEDULE_FREQUENCY_LABELS } from '../../../../constants';
+import { formatDateTime } from "@/utils";
+import { SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {

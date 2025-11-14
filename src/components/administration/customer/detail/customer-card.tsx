@@ -5,9 +5,9 @@ import { ThemedText } from "@/components/ui/themed-text";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconBuilding, IconCertificate, IconUser, IconFileDescription } from "@tabler/icons-react-native";
+import { IconBuilding, IconCertificate, IconUser} from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
-import { formatCNPJ, formatCPF } from '../../../../utils';
+import { formatCNPJ, formatCPF } from "@/utils";
 import { getFileUrl } from '@/utils/file';
 
 interface CustomerCardProps {
@@ -103,7 +103,7 @@ export function CustomerCard({ customer }: CustomerCardProps) {
               )}
 
               {/* Situação Cadastral */}
-              {customer.situacaoCadastral && (
+              {customer.registrationStatus && (
                 <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
                   <View style={styles.fieldLabelWithIcon}>
                     <IconCertificate size={16} color={colors.mutedForeground} />
@@ -112,7 +112,7 @@ export function CustomerCard({ customer }: CustomerCardProps) {
                     </ThemedText>
                   </View>
                   <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
-                    {customer.situacaoCadastral}
+                    {customer.registrationStatus}
                   </ThemedText>
                 </View>
               )}

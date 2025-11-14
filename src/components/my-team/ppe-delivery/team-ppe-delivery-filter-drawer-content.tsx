@@ -6,7 +6,7 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateRangeFilter } from '@/components/common/filters';
-import { PPE_DELIVERY_STATUS } from '../../../constants';
+import { PPE_DELIVERY_STATUS } from "@/constants";
 import type { User } from '../../../types';
 
 export interface TeamPpeDeliveryFilters {

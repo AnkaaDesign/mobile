@@ -12,7 +12,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { ItemTableRowSwipe } from "./item-table-row-swipe";
 import { StockStatusIndicator } from "./stock-status-indicator";
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
-import { formatCurrency } from '../../../../utils';
+import { formatCurrency } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 
@@ -211,54 +211,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "abcxyz",
-    header: "ABC/XYZ",
-    align: "center",
-    sortable: false,
-    width: 0,
-    accessor: (item: Item) => (
-      <View style={styles.abcXyzContainer}>
-        <Badge
-          variant="secondary"
-          size="sm"
-          style={{
-            backgroundColor: item.abcCategory === "A" ? badgeColors.error.background : item.abcCategory === "B" ? badgeColors.warning.background : badgeColors.success.background,
-            borderWidth: 0,
-          }}
-        >
-          <ThemedText
-            style={{
-              color: item.abcCategory === "A" ? badgeColors.error.text : item.abcCategory === "B" ? badgeColors.warning.text : badgeColors.success.text,
-              fontSize: fontSize.xs,
-              fontWeight: fontWeight.medium,
-            }}
-          >
-            {item.abcCategory || "C"}
-          </ThemedText>
-        </Badge>
-        <Badge
-          variant="secondary"
-          size="sm"
-          style={{
-            backgroundColor:
-              item.xyzCategory === "X" ? badgeColors.info.background : item.xyzCategory === "Y" ? "rgba(156, 163, 175, 0.15)" : badgeColors.warning.background,
-            borderWidth: 0,
-          }}
-        >
-          <ThemedText
-            style={{
-              color: item.xyzCategory === "X" ? badgeColors.info.text : item.xyzCategory === "Y" ? "#6b7280" : badgeColors.warning.text,
-              fontSize: fontSize.xs,
-              fontWeight: fontWeight.medium,
-            }}
-          >
-            {item.xyzCategory || "Z"}
-          </ThemedText>
-        </Badge>
-      </View>
-    ),
-  },
-  {
     key: "CA",
     header: "CA",
     align: "left",
@@ -310,38 +262,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
           ? item.reorderPoint % 1 === 0
             ? item.reorderPoint.toLocaleString("pt-BR")
             : item.reorderPoint.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-          : "-"}
-      </ThemedText>
-    ),
-  },
-  {
-    key: "reorderQuantity",
-    header: "QTD. DE REPOSIÇÃO",
-    align: "center",
-    sortable: true,
-    width: 0,
-    accessor: (item: Item) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
-        {item.reorderQuantity !== null && item.reorderQuantity !== undefined
-          ? item.reorderQuantity % 1 === 0
-            ? item.reorderQuantity.toLocaleString("pt-BR")
-            : item.reorderQuantity.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-          : "-"}
-      </ThemedText>
-    ),
-  },
-  {
-    key: "boxQuantity",
-    header: "QTD. POR CAIXA",
-    align: "center",
-    sortable: true,
-    width: 0,
-    accessor: (item: Item) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
-        {item.boxQuantity !== null && item.boxQuantity !== undefined
-          ? item.boxQuantity % 1 === 0
-            ? item.boxQuantity.toLocaleString("pt-BR")
-            : item.boxQuantity.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           : "-"}
       </ThemedText>
     ),
@@ -416,29 +336,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
         <Badge variant="outline" size="sm">
           <ThemedText style={{ fontSize: fontSize.xs }}>
             {ppeTypeLabels[item.ppeType] || item.ppeType}
-          </ThemedText>
-        </Badge>
-      );
-    },
-  },
-  {
-    key: "ppeSize",
-    header: "TAMANHO EPI",
-    align: "left",
-    sortable: false,
-    width: 0,
-    accessor: (item: Item) => {
-      if (!item.ppeSize) {
-        return (
-          <ThemedText style={styles.cellText} numberOfLines={1}>
-            -
-          </ThemedText>
-        );
-      }
-      return (
-        <Badge variant="outline" size="sm">
-          <ThemedText style={{ fontSize: fontSize.xs }}>
-            {item.ppeSize.replace("SIZE_", "")}
           </ThemedText>
         </Badge>
       );
@@ -531,38 +428,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "borrowsCount",
-    header: "EMPRÉSTIMOS",
-    align: "center",
-    sortable: false,
-    width: 0,
-    accessor: (item: Item) => (
-      <View style={styles.centerAlign}>
-        <Badge variant="outline" size="sm">
-          <ThemedText style={{ fontSize: fontSize.xs, fontFamily: 'monospace' }}>
-            {(item as any)._count?.borrows || 0}
-          </ThemedText>
-        </Badge>
-      </View>
-    ),
-  },
-  {
-    key: "pricesCount",
-    header: "HISTÓRICO PREÇOS",
-    align: "center",
-    sortable: false,
-    width: 0,
-    accessor: (item: Item) => (
-      <View style={styles.centerAlign}>
-        <Badge variant="outline" size="sm">
-          <ThemedText style={{ fontSize: fontSize.xs, fontFamily: 'monospace' }}>
-            {(item as any)._count?.prices || 0}
-          </ThemedText>
-        </Badge>
-      </View>
-    ),
-  },
-  {
     key: "createdAt",
     header: "CRIADO EM",
     align: "left",
@@ -571,18 +436,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
     accessor: (item: Item) => (
       <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
         {new Date(item.createdAt).toLocaleDateString("pt-BR")}
-      </ThemedText>
-    ),
-  },
-  {
-    key: "updatedAt",
-    header: "ATUALIZADO EM",
-    align: "left",
-    sortable: true,
-    width: 0,
-    accessor: (item: Item) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
-        {new Date(item.updatedAt).toLocaleDateString("pt-BR")}
       </ThemedText>
     ),
   },
@@ -637,26 +490,19 @@ export const ItemTable = React.memo<ItemTableProps>(
         monthlyConsumption: 1.5,
         price: 1.0,
         totalPrice: 1.2,
-        abcxyz: 1.0,
         CA: 1.0,
         barcodes: 1.6,
         maxQuantity: 1.0,
         reorderPoint: 1.2,
-        reorderQuantity: 1.2,
-        boxQuantity: 1.0,
         icms: 0.8,
         ipi: 0.8,
         "supplier.fantasyName": 1.4,
         ppeType: 1.2,
-        ppeSize: 1.0,
         shouldAssignToUser: 1.4,
         estimatedLeadTime: 1.2,
         isActive: 0.9,
         activitiesCount: 1.0,
-        borrowsCount: 1.0,
-        pricesCount: 1.2,
         createdAt: 1.2,
-        updatedAt: 1.2,
       };
 
       // Filter to visible columns
@@ -1182,12 +1028,6 @@ const styles = StyleSheet.create({
   trendText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
-  },
-  abcXyzContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
   },
 });
 

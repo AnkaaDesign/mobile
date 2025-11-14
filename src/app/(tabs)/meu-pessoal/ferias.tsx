@@ -2,13 +2,13 @@ import React, { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { PrivilegeGuard } from "@/components/privilege-guard";
-import { SECTOR_PRIVILEGES } from '../../../constants';
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
-import { IconCalendar, IconFilter, IconLayoutGrid, IconList, IconUsers } from "@tabler/icons-react-native";
+import { IconFilter, IconLayoutGrid, IconList, IconUsers } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
-import { useVacationsInfiniteMobile, useCurrentUser, useUsers } from '../../../hooks';
+import { useVacationsInfiniteMobile, useCurrentUser, useUsers } from "@/hooks";
 import { TeamVacationTable } from "@/components/my-team/vacation/team-vacation-table";
 import { TeamVacationCalendar } from "@/components/my-team/vacation/team-vacation-calendar";
 import { TeamVacationFilterDrawerContent } from "@/components/my-team/vacation/team-vacation-filter-drawer-content";
@@ -23,7 +23,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTableSort } from "@/hooks/useTableSort";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
-import type { VacationGetManyFormData } from '../../../schemas';
 
 type ViewMode = "list" | "calendar";
 
@@ -50,10 +49,10 @@ export default function MyTeamVacationsScreen() {
   }>({});
 
   // Get current user to determine their sector
-  const { data: currentUser, isLoading: isLoadingUser } = useCurrentUser();
+  const { data: currentUser } = useCurrentUser();
 
   // Get team members (users in the same sector)
-  const { data: teamData, isLoading: isLoadingTeam } = useUsers({
+  const { data: teamData } = useUsers({
     where: {
       sectorId: currentUser?.sectorId,
     },
@@ -140,7 +139,7 @@ export default function MyTeamVacationsScreen() {
 
   // Fetch vacations for team members with infinite scroll
   const {
-    vacations,
+    items,
     isLoading,
     error,
     isRefetching,
@@ -157,10 +156,13 @@ export default function MyTeamVacationsScreen() {
     enabled: teamMemberIds.length > 0,
   });
 
+  // Type alias for vacations
+  const vacations = items;
+
   // Calculate team coverage metrics
   const coverageMetrics = useMemo(() => {
     const now = new Date();
-    const currentlyOnVacation = vacations.filter((v) => {
+    const currentlyOnVacation = vacations.filter((v: any) => {
       const start = new Date(v.startAt);
       const end = new Date(v.endAt);
       return now >= start && now <= end;

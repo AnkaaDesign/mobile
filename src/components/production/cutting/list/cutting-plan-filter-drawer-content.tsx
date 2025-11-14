@@ -1,14 +1,14 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import { IconFilter, IconX, IconCheck } from "@tabler/icons-react-native";
+import { IconFilter, IconX} from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { spacing } from "@/constants/design-system";
 import { FilterSection } from "@/components/common/filters/FilterSection";
-import { SelectFilter, DateRangeFilter, type DateRange } from "@/components/common/filters";
-import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from "../../../../constants";
-import { CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from "../../../../constants";
+import { SelectFilter, DateRangeFilter} from "@/components/common/filters";
+import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from "@/constants";
+import { CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from "@/constants";
 import type { CutGetManyFormData } from "../../../../schemas";
 import { Separator } from "@/components/ui/separator";
 

@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { StyleSheet, ScrollView } from "react-native";
 import { Chip } from "@/components/ui/chip";
 import { spacing } from "@/constants/design-system";
-import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from '../../../constants';
-import { formatDate } from '../../../utils';
+import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
 import type { User } from '../../../types';
 import type { TeamWarningFilters } from "./team-warning-filter-modal";
 

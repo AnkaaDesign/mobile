@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { formatDate } from '../../../../utils';
+import { formatDate } from "@/utils";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import type { SortConfig } from "@/lib/sort-utils";

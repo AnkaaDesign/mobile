@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatCNPJ } from '../../../../utils';
+import { formatCNPJ } from "@/utils";
 import type { Supplier } from '../../../../types';
 import { IconPhone, IconMail, IconMapPin, IconBuilding } from "@tabler/icons-react-native";
 

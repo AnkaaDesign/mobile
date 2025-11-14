@@ -11,9 +11,9 @@ import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { usePpeDelivery, usePpeDeliveryMutations } from '../../../../../hooks';
-import { hasPrivilege, formatDate, formatDateTime } from '../../../../../utils';
-import { SECTOR_PRIVILEGES, PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '../../../../../constants';
+import { usePpeDelivery, usePpeDeliveryMutations } from "@/hooks";
+import { hasPrivilege, formatDate, formatDateTime } from "@/utils";
+import { SECTOR_PRIVILEGES, PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from "@/constants";
 import { IconRefresh, IconAlertTriangle } from "@tabler/icons-react-native";
 import { PpeDetailSkeleton } from "@/components/inventory/ppe/skeleton/ppe-detail-skeleton";
 

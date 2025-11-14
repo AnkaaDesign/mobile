@@ -11,11 +11,11 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { EmployeeTableRowSwipe } from "./employee-table-row-swipe";
-import { formatCPF, formatBrazilianPhone, formatDate, formatDateTime } from '../../../../utils';
+import { formatCPF, formatBrazilianPhone, formatDate, formatDateTime } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
-import { USER_STATUS } from '../../../../constants';
-import { getUserStatusBadgeText } from '../../../../utils/user';
+import { USER_STATUS } from "@/constants";
+import { getUserStatusBadgeText } from "@/utils/user";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -54,7 +54,7 @@ const availableWidth = screenWidth - 32; // Account for padding
 // Status badge color helper
 const getStatusBadgeColors = (status: USER_STATUS) => {
   switch (status) {
-    case USER_STATUS.CONTRACTED:
+    case USER_STATUS.EFFECTED:
       return { background: badgeColors.success.background, text: badgeColors.success.text }; // green-700
     case USER_STATUS.EXPERIENCE_PERIOD_1:
       return { background: badgeColors.pending.background, text: badgeColors.pending.text }; // amber-600
@@ -217,18 +217,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
           </ThemedText>
         </Badge>
       </View>
-    ),
-  },
-  {
-    key: "contractedAt",
-    header: "Data de Contratação",
-    align: "left",
-    sortable: true,
-    width: 0,
-    accessor: (employee: User) => (
-      <ThemedText style={styles.cellText} numberOfLines={1}>
-        {employee.contractedAt ? formatDate(new Date(employee.contractedAt)) : "-"}
-      </ThemedText>
     ),
   },
   {

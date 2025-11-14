@@ -113,7 +113,7 @@ export default function StockBalancePage() {
     }
 
     const changedItems = Array.from(adjustments.entries()).map(([id, quantity]) => {
-      const item = items.find((i: any /* TODO: Add proper type */) => i.id === id);
+      const item = items.find((i: Item) => i.id === id) as Item | undefined;
       return {
         id,
         currentQuantity: item?.quantity || 0,
@@ -333,8 +333,8 @@ export default function StockBalancePage() {
 
       {/* Items List */}
       {hasItems ? (
-        <FlatList
-          data={items}
+        <FlatList<Item>
+          data={items as Item[]}
           renderItem={renderItemCard}
           keyExtractor={(item) => item.id}
           onRefresh={handleRefresh}

@@ -7,7 +7,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { IconFileText, IconExternalLink } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
-import { formatDate, formatCurrency } from '../../../../utils';
+import { formatDate, formatCurrency } from "@/utils";
 
 interface CustomerInvoicesCardProps {
   customer: Customer;

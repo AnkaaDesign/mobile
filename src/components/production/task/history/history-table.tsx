@@ -8,9 +8,9 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { HistoryTableRowSwipe } from "./history-table-row-swipe";
-import { formatDate, formatChassis } from '../../../../utils';
+import { formatDate, formatChassis } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { TASK_STATUS, TASK_STATUS_LABELS } from '../../../../constants';
+import { TASK_STATUS, TASK_STATUS_LABELS } from "@/constants";
 import type { SortConfig } from '@/lib/sort-utils';
 import { TaskSectorModal, TaskStatusModal } from "../modals";
 
@@ -160,7 +160,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (task: Task) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {task.plate ? task.plate.toUpperCase() : "-"}
+        {task.truck?.plate ? task.truck.plate.toUpperCase() : "-"}
       </ThemedText>
     ),
   },
@@ -172,7 +172,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (task: Task) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {task.chassisNumber ? formatChassis(task.chassisNumber) : "-"}
+        {task.truck?.chassisNumber ? formatChassis(task.truck.chassisNumber) : "-"}
       </ThemedText>
     ),
   },

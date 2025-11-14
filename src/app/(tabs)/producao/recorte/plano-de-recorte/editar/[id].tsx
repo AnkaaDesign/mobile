@@ -1,22 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { Stack, router, useLocalSearchParams } from "expo-router";
-import { ScrollView, View, Alert, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
+import { useState, useEffect } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { ScrollView, View, Alert, KeyboardAvoidingView, Platform} from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCut, useCutMutations } from "@/hooks";
-import { cutUpdateSchema, type CutUpdateFormData } from "@/schemas";
+import { cutUpdateSchema} from "@/schemas";
 import {
   CUT_STATUS,
   CUT_TYPE,
   CUT_ORIGIN,
-  CUT_REQUEST_REASON,
   CUT_STATUS_LABELS,
   CUT_TYPE_LABELS,
   CUT_ORIGIN_LABELS,
-  CUT_REQUEST_REASON_LABELS,
   SECTOR_PRIVILEGES,
 } from "@/constants";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";

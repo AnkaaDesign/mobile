@@ -2,8 +2,8 @@
 import { View, Text, FlatList , StyleSheet} from "react-native";
 import { Card } from "@/components/ui/card";
 import type { Order } from '../../../../types';
-import { ORDER_STATUS_LABELS } from '../../../../constants';
-import { formatDateTime } from '../../../../utils';
+import { ORDER_STATUS_LABELS } from "@/constants";
+import { formatDateTime } from "@/utils";
 
 interface ScheduleHistoryProps {
   orders: Order[];

@@ -1,5 +1,5 @@
 
-import { View, ScrollView, StyleSheet, Dimensions } from "react-native";
+import { View, ScrollView, Dimensions } from "react-native";
 import { SkeletonCard, SkeletonText } from "@/components/ui/loading";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";

@@ -1,12 +1,12 @@
 import React, { useCallback, useMemo } from "react";
 import { FlatList, View, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
-import { Icon, type IconProps } from "@/components/ui/icon";
+import { Icon} from "@/components/ui/icon";
 import type { Holiday } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { formatDate } from '../../../../utils';
+import { formatDate } from "@/utils";
 import { HOLIDAY_TYPE_LABELS } from '@/constants/enum-labels';
 import { HOLIDAY_TYPE } from '@/constants/enums';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";

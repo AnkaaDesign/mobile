@@ -28,7 +28,7 @@ const getStatusLabel = (status: string) => {
   const statusLabels: Record<string, string> = {
     [USER_STATUS.EXPERIENCE_PERIOD_1]: "Experiência 1",
     [USER_STATUS.EXPERIENCE_PERIOD_2]: "Experiência 2",
-    [USER_STATUS.CONTRACTED]: "Contratado",
+    [USER_STATUS.EFFECTED]: "Efetivo",
     [USER_STATUS.DISMISSED]: "Demitido",
   };
   return statusLabels[status] || status;
@@ -39,7 +39,7 @@ const getStatusColor = (status: string, colors: any) => {
   const statusColors: Record<string, string> = {
     [USER_STATUS.EXPERIENCE_PERIOD_1]: colors.warning,
     [USER_STATUS.EXPERIENCE_PERIOD_2]: colors.warning,
-    [USER_STATUS.CONTRACTED]: colors.success,
+    [USER_STATUS.EFFECTED]: colors.success,
     [USER_STATUS.DISMISSED]: colors.destructive,
   };
   return statusColors[status] || colors.mutedForeground;

@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { USER_STATUS } from '../../../constants';
-import { formatDate } from '../../../utils';
+import { USER_STATUS } from "@/constants";
+import { formatDate } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
 interface TeamUserTableProps {
@@ -26,7 +26,7 @@ const getStatusColor = (status: string) => {
       return { background: badgeColors.warning.background, text: badgeColors.warning.text };
     case USER_STATUS.EXPERIENCE_PERIOD_2:
       return { background: badgeColors.warning.background, text: badgeColors.warning.text };
-    case USER_STATUS.CONTRACTED:
+    case USER_STATUS.EFFECTED:
       return { background: badgeColors.success.background, text: badgeColors.success.text };
     case USER_STATUS.DISMISSED:
       return { background: badgeColors.error.background, text: badgeColors.error.text };
@@ -42,8 +42,8 @@ const getStatusLabel = (status: string) => {
       return "Experiência 1/2";
     case USER_STATUS.EXPERIENCE_PERIOD_2:
       return "Experiência 2/2";
-    case USER_STATUS.CONTRACTED:
-      return "Contratado";
+    case USER_STATUS.EFFECTED:
+      return "Efetivado";
     case USER_STATUS.DISMISSED:
       return "Desligado";
     default:

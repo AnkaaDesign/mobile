@@ -22,8 +22,8 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius, fontWeight } from "@/constants/design-system";
-import { useSectors } from '../../../../hooks';
-import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES } from '../../../../constants';
+import { useSectors } from "@/hooks";
+import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES } from "@/constants";
 import { IconLoader, IconX, IconDeviceFloppy, IconTrash } from "@tabler/icons-react-native";
 import { CustomerSelector } from "./customer-selector";
 import { ServiceSelector } from "./service-selector";
@@ -43,22 +43,24 @@ const taskFormSchema = z.object({
     .refine((val) => !val || /^[A-Z0-9-]+$/.test(val), {
       message: "Número de série deve conter apenas letras maiúsculas, números e hífens",
     }),
-  chassisNumber: z.string()
-    .nullable()
-    .optional()
-    .refine((val) => {
-      if (!val) return true;
-      const cleaned = val.replace(/\s/g, "").toUpperCase();
-      return /^[A-Z0-9]{17}$/.test(cleaned);
-    }, {
-      message: "Número do chassi deve ter exatamente 17 caracteres alfanuméricos",
-    }),
-  plate: z.string()
-    .nullable()
-    .optional()
-    .refine((val) => !val || /^[A-Z0-9-]+$/.test(val), {
-      message: "Placa deve conter apenas letras maiúsculas, números e hífens",
-    }),
+  truck: z.object({
+    plate: z.string()
+      .nullable()
+      .optional()
+      .refine((val) => !val || /^[A-Z0-9-]+$/.test(val), {
+        message: "Placa deve conter apenas letras maiúsculas, números e hífens",
+      }),
+    chassisNumber: z.string()
+      .nullable()
+      .optional()
+      .refine((val) => {
+        if (!val) return true;
+        const cleaned = val.replace(/\s/g, "").toUpperCase();
+        return /^[A-Z0-9]{17}$/.test(cleaned);
+      }, {
+        message: "Número do chassi deve ter exatamente 17 caracteres alfanuméricos",
+      }),
+  }).nullable().optional(),
   details: z.string().max(1000, "Detalhes muito longos (máx. 1000 caracteres)").nullable().optional(),
   entryDate: z.date().nullable().optional(),
   term: z.date().nullable().optional(),
@@ -197,8 +199,13 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
     customerId: initialData?.customerId || "",
     sectorId: initialData?.sectorId || null,
     serialNumber: initialData?.serialNumber || null,
-    chassisNumber: initialData?.chassisNumber || null,
-    plate: initialData?.plate || null,
+    truck: initialData?.truck ? {
+      plate: initialData.truck.plate || null,
+      chassisNumber: initialData.truck.chassisNumber || null,
+    } : {
+      plate: null,
+      chassisNumber: null,
+    },
     details: initialData?.details || null,
     entryDate: initialData?.entryDate || null,
     term: initialData?.term || null,
@@ -336,11 +343,22 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
       // Add optional fields
       if (data.sectorId) formDataFields.sectorId = data.sectorId;
       if (data.serialNumber) formDataFields.serialNumber = data.serialNumber.toUpperCase();
-      if (data.chassisNumber) {
-        // Clean and uppercase chassis number
-        formDataFields.chassisNumber = data.chassisNumber.replace(/\s/g, "").toUpperCase();
+
+      // Handle truck object structure
+      if (data.truck) {
+        const truckData: any = {};
+        if (data.truck.plate) {
+          truckData.plate = data.truck.plate.toUpperCase();
+        }
+        if (data.truck.chassisNumber) {
+          // Clean and uppercase chassis number
+          truckData.chassisNumber = data.truck.chassisNumber.replace(/\s/g, "").toUpperCase();
+        }
+        if (Object.keys(truckData).length > 0) {
+          formDataFields.truck = truckData;
+        }
       }
-      if (data.plate) formDataFields.plate = data.plate.toUpperCase();
+
       if (data.details) formDataFields.details = data.details;
       if (data.entryDate) formDataFields.entryDate = data.entryDate;
       if (data.term) formDataFields.term = data.term;
@@ -397,9 +415,15 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
       const cleanedData: any = {
         ...data,
         serialNumber: data.serialNumber?.toUpperCase() || null,
-        chassisNumber: data.chassisNumber?.replace(/\s/g, "").toUpperCase() || null,
-        plate: data.plate?.toUpperCase() || null,
       };
+
+      // Handle truck object structure
+      if (data.truck) {
+        cleanedData.truck = {
+          plate: data.truck.plate?.toUpperCase() || null,
+          chassisNumber: data.truck.chassisNumber?.replace(/\s/g, "").toUpperCase() || null,
+        };
+      }
 
       // Add observation if section is open (no files case)
       if (isObservationOpen && data.observation) {
@@ -521,11 +545,11 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
                 />
               </SimpleFormField>
 
-              {/* Plate */}
-              <SimpleFormField label="Placa" error={errors.plate}>
+              {/* Truck - Plate */}
+              <SimpleFormField label="Placa" error={errors.truck?.plate}>
                 <Controller
                   control={form.control}
-                  name="plate"
+                  name="truck.plate"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
                       value={value || ""}
@@ -533,17 +557,17 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
                       onBlur={onBlur}
                       placeholder="Ex: ABC1234"
                       autoCapitalize="characters"
-                      error={!!errors.plate}
+                      error={!!errors.truck?.plate}
                     />
                   )}
                 />
               </SimpleFormField>
 
-              {/* Chassis Number */}
-              <SimpleFormField label="Número do Chassi (17 caracteres)" error={errors.chassisNumber}>
+              {/* Truck - Chassis Number */}
+              <SimpleFormField label="Número do Chassi (17 caracteres)" error={errors.truck?.chassisNumber}>
                 <Controller
                   control={form.control}
-                  name="chassisNumber"
+                  name="truck.chassisNumber"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
                       type="chassis"
@@ -552,7 +576,7 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
                       onBlur={onBlur}
                       placeholder="Ex: 9BW ZZZ37 7V T004251"
                       autoCapitalize="characters"
-                      error={!!errors.chassisNumber}
+                      error={!!errors.truck?.chassisNumber}
                     />
                   )}
                 />

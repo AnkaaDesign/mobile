@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconCalendar, IconClock } from "@tabler/icons-react-native";
 import type { Vacation } from '../../../../types';
-import { formatDate, formatRelativeTime } from '../../../../utils';
+import { formatDate, formatRelativeTime } from "@/utils";
 import { extendedColors } from "@/lib/theme/extended-colors";
 
 interface VacationDatesCardProps {

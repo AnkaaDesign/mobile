@@ -3,7 +3,7 @@ import { View, ScrollView, Alert, RefreshControl , StyleSheet} from "react-nativ
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { IconArrowLeft, IconEdit, IconTrash, IconRefresh, IconCheck, IconX } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrder, useOrderMutations } from '../../../../../hooks';
+import { useOrder, useOrderMutations } from "@/hooks";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,13 @@ import { OrderItemsCard } from "@/components/inventory/order/detail/order-items-
 import { OrderSupplierCard } from "@/components/inventory/order/detail/order-supplier-card";
 import { OrderTimelineCard } from "@/components/inventory/order/detail/order-timeline-card";
 import { OrderSummaryCard } from "@/components/inventory/order/detail/order-summary-card";
+import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
-import { routes, ORDER_STATUS, SECTOR_PRIVILEGES } from '../../../../../constants';
+import { routes, ORDER_STATUS, SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from '../../../../../utils';
+import { hasPrivilege } from "@/utils";
 import { spacing } from "@/constants/design-system";
 
 export default function OrderDetailScreen() {
@@ -259,6 +261,22 @@ export default function OrderDetailScreen() {
 
           {/* Timeline */}
           <OrderTimelineCard order={order} activities={order?.activities || []} />
+
+          {/* Changelog */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico de Alterações</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChangelogTimeline
+                entityType={CHANGE_LOG_ENTITY_TYPE.ORDER}
+                entityId={order.id}
+                entityName={order.description}
+                entityCreatedAt={order.createdAt}
+                maxHeight={400}
+              />
+            </CardContent>
+          </Card>
 
           {/* Action Buttons */}
           {(showMarkAsReceived || showCancel) && (

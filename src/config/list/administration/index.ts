@@ -1,0 +1,8 @@
+export { customersListConfig } from './customers'
+export { sectorsListConfig } from './sectors'
+export { notificationsListConfig } from './notifications'
+export { collaboratorsListConfig } from './collaborators'
+export { changeLogsListConfig } from './change-logs'
+export { filesListConfig } from './files'
+export { deploymentsListConfig } from './deployments'
+export { backupsListConfig } from './backups'

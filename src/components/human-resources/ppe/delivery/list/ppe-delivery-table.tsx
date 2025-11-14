@@ -7,8 +7,8 @@ import { IconUser, IconPackage, IconCircleCheck, IconClock, IconAlertCircle, Ico
 import { PpeDeliveryListSkeleton } from "../skeleton/ppe-delivery-list-skeleton";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { spacing } from "@/constants/design-system";
-import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '../../../../../constants';
-import { formatDate } from '../../../../../utils';
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
 import type { PpeDelivery } from '../../../../../types';
 
 interface PpeDeliveryTableProps {

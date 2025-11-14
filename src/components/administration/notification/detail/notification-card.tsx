@@ -1,8 +1,8 @@
 
 import { View, StyleSheet } from "react-native";
 import type { Notification } from '../../../../types';
-import { NOTIFICATION_TYPE_LABELS, NOTIFICATION_IMPORTANCE_LABELS } from '../../../../constants';
-import { formatDateTime } from '../../../../utils';
+import { NOTIFICATION_TYPE_LABELS, NOTIFICATION_IMPORTANCE_LABELS } from "@/constants";
+import { formatDateTime } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";

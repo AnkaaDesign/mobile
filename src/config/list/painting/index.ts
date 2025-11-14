@@ -1,0 +1,6 @@
+export { catalogListConfig } from './catalog'
+export { paintTypesListConfig } from './paint-types'
+export { formulasListConfig } from './formulas'
+export { createFormulaComponentsListConfig } from './formula-components'
+export { paintBrandsListConfig } from './paint-brands'
+export { productionsListConfig } from './productions'

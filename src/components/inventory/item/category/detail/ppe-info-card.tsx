@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconInfoCircle, IconAlertTriangle, IconClipboardList, IconUsers, IconPackage } from "@tabler/icons-react-native";
 import type { ItemCategory } from '../../../../../types';
-import { ITEM_CATEGORY_TYPE } from '../../../../../constants';
+import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";

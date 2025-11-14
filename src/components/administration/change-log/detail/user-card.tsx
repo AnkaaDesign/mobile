@@ -6,7 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { routes } from '../../../../constants';
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import type { ChangeLog } from '../../../../types';
 import { IconUser, IconChevronRight } from "@tabler/icons-react-native";

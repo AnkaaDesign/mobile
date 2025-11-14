@@ -11,13 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintFormulaComponent, usePaintFormulaComponentMutations } from '../../../../../../../hooks';
-import { useItems } from '../../../../../../../hooks';
+import { usePaintFormulaComponent, usePaintFormulaComponentMutations } from "@/hooks";
+import { useItems } from "@/hooks";
 import { paintFormulaComponentUpdateSchema } from '../../../../../../../schemas';
 import type { PaintFormulaComponentUpdateFormData } from '../../../../../../../schemas';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from '../../../../../../../constants';
-import { hasPrivilege } from '../../../../../../../utils';
+import { SECTOR_PRIVILEGES } from "@/constants";
+import { hasPrivilege } from "@/utils";
 import { showToast } from "@/lib/toast/use-toast";
 import {
   IconFlask,

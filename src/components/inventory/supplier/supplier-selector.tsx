@@ -3,7 +3,7 @@ import { View, ViewStyle, Text } from "react-native";
 import { getSuppliers } from '../../../api-client';
 import { Combobox } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
-import { fontSize, fontWeight, spacing } from "@/constants/design-system";
+import { fontSize, fontWeight} from "@/constants/design-system";
 import type { Supplier } from '../../../types';
 
 interface SupplierSelectorProps {

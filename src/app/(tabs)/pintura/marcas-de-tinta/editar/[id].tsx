@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintBrand, usePaintBrandMutations } from '../../../../../hooks';
+import { usePaintBrand, usePaintBrandMutations } from "@/hooks";
 import { paintBrandUpdateSchema } from '../../../../../schemas';
 import type { PaintBrandUpdateFormData } from '../../../../../schemas';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from '../../../../../constants';
-import { hasPrivilege } from '../../../../../utils';
+import { SECTOR_PRIVILEGES } from "@/constants";
+import { hasPrivilege } from "@/utils";
 import { showToast } from "@/lib/toast/use-toast";
 import {
   IconTag,

@@ -1,8 +1,8 @@
 import React, { useState} from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator, NativeSyntheticEvent, ImageErrorEventData } from "react-native";
 import type { File as AnkaaFile } from "../../types";
-import { formatFileSize, isImageFile } from "../../utils/file";
-import { formatRelativeTime } from "../../utils";
+import { formatFileSize, isImageFile } from "@/utils/file";
+import { formatRelativeTime } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { FileTypeIcon } from "@/components/ui/file-type-icon";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";

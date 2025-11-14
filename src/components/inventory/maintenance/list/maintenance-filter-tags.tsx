@@ -5,8 +5,8 @@ import { Icon } from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
 import {
   MAINTENANCE_STATUS_LABELS
-} from '../../../../constants';
-import { formatDate } from '../../../../utils';
+} from "@/constants";
+import { formatDate } from "@/utils";
 import type { MaintenanceGetManyParams } from '../../../../types';
 
 interface MaintenanceFilterTagsProps {

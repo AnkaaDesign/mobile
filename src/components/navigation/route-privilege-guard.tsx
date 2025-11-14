@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 import { useSegments } from "expo-router";
-import { SECTOR_PRIVILEGES, MENU_ITEMS, type MenuItem } from '../../constants';
+import { SECTOR_PRIVILEGES, MENU_ITEMS} from "@/constants";
 import { PrivilegeGuard } from "./privilege-guard";
 
 interface RoutePrivilegeGuardProps {
@@ -110,7 +110,6 @@ function convertNavigationPathToFilePath(navPath: string): string {
     'aerografia': 'airbrushing',
     'cronograma': 'schedule',
     'em-espera': 'on-hold',
-    'garagens': 'garages',
     'historico': 'history',
     'observacoes': 'observations',
     'recorte': 'cutting',

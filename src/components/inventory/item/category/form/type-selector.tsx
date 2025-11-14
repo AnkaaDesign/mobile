@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Combobox } from "@/components/ui/combobox";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
-import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from '../../../../../constants';
+import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import type { ItemCategoryCreateFormData, ItemCategoryUpdateFormData } from '../../../../../schemas';
 
 type ItemCategoryFormData = ItemCategoryCreateFormData | ItemCategoryUpdateFormData;

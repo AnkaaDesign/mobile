@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, StyleSheet, RefreshControl } from "react-native";
-import { useLocalSearchParams, useRouter, Stack } from "expo-router";
+import { useLocalSearchParams, Stack, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePpeDeliveries } from "@/hooks";
 import { ThemedView } from "@/components/ui/themed-view";

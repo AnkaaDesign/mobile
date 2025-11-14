@@ -5,8 +5,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconCash, IconCalendar, IconAlertCircle } from "@tabler/icons-react-native";
 import type { Commission } from '../../../../types';
-import { COMMISSION_STATUS_LABELS, getBadgeVariant } from '../../../../constants';
-import { formatDate } from '../../../../utils';
+import { COMMISSION_STATUS_LABELS, getBadgeVariant } from "@/constants";
+import { formatDate } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 

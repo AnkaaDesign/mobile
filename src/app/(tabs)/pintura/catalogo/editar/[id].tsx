@@ -4,11 +4,11 @@ import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
-import { PaintForm } from "@/components/paint/form/paint-form";
+import { PaintForm } from "@/components/painting/forms/painting-form";
 import { SkeletonCard } from "@/components/ui/loading";
-import { usePaint, usePaintMutations } from '../../../../../hooks';
+import { usePaint, usePaintMutations } from "@/hooks";
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes } from '../../../../../constants';
+import { routes } from "@/constants";
 import { spacing } from "@/constants/design-system";
 
 export default function EditCatalogScreen() {

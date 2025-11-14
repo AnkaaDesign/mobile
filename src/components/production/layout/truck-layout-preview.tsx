@@ -6,7 +6,7 @@ import * as FileSystem from "expo-file-system";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { useLayoutsByTruck } from "@/hooks";
 import { showToast } from "@/components/ui/toast";
 

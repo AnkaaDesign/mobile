@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { ItemEditForm } from "@/components/inventory/item/form/item-edit-form";
 import { ItemEditSkeleton } from "@/components/inventory/item/skeleton/item-edit-skeleton";
 import { PrivilegeGuard } from "@/components/privilege-guard";
-import { useItem, useItemMutations } from '../../../../../hooks';
+import { useItem, useItemMutations } from "@/hooks";
 import { type ItemUpdateFormData } from '../../../../../schemas';
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes, SECTOR_PRIVILEGES } from '../../../../../constants';
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 
 export default function ItemEditScreenWrapper() {
   return (

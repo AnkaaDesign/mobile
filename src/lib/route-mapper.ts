@@ -1,7 +1,7 @@
 // Clean route utilities for Portuguese folder structure
 // No translations, no legacy code - direct Portuguese paths only
 
-import { routes } from '../constants';
+import { routes } from "@/constants";
 
 /**
  * Convert a path to the mobile format with /(tabs) prefix

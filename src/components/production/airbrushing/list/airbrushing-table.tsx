@@ -9,9 +9,9 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { AirbrushingTableRowSwipe } from "./airbrushing-table-row-swipe";
-import { formatCurrency, formatDate } from '../../../../utils';
-import { AIRBRUSHING_STATUS_LABELS } from '../../../../constants';
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { formatCurrency, formatDate } from "@/utils";
+import { AIRBRUSHING_STATUS_LABELS } from "@/constants";
+import { extendedColors} from "@/lib/theme/extended-colors";
 import { getBadgeVariantFromStatus } from "@/components/ui/badge";
 
 export interface TableColumn {

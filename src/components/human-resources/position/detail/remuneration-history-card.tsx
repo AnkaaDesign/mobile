@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconHistory, IconCurrencyReal, IconTrendingUp, IconTrendingDown, IconMinus } from "@tabler/icons-react-native";
 import type { Position, PositionRemuneration } from '../../../../types';
-import { formatCurrency, formatDateTime } from '../../../../utils';
+import { formatCurrency, formatDateTime } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";

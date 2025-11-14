@@ -1,13 +1,13 @@
 import { useMemo } from "react";
 import { Stack, router } from "expo-router";
 import { Alert } from "react-native";
-import { useServiceMutations } from '../../../../hooks';
+import { useServiceMutations } from "@/hooks";
 import { ServiceForm } from "@/components/production/service/form/service-form";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from '../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../constants';
+import { hasPrivilege } from "@/utils";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import type { ServiceCreateFormData } from '../../../../schemas';
 
 export default function CreateServiceScreen() {

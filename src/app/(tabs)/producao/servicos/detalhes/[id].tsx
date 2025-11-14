@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Stack, useLocalSearchParams, router } from "expo-router";
 import { ScrollView, View, Alert , StyleSheet} from "react-native";
-import { useServiceDetail, useServiceMutations } from '../../../../../hooks';
+import { useServiceDetail, useServiceMutations } from "@/hooks";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -11,8 +11,8 @@ import { ServiceInfoCard } from "@/components/production/service/detail/service-
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { spacing } from "@/constants/design-system";
-import { hasPrivilege } from '../../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../../constants';
+import { hasPrivilege } from "@/utils";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 
 export default function ServiceDetailsScreen() {

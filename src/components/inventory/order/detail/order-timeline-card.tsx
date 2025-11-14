@@ -4,8 +4,8 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatDateTime } from '../../../../utils';
-import { ORDER_STATUS, ORDER_STATUS_LABELS } from '../../../../constants';
+import { formatDateTime } from "@/utils";
+import { ORDER_STATUS, ORDER_STATUS_LABELS } from "@/constants";
 import type { Order, Activity } from '../../../../types';
 import {
   IconCircleCheck,

@@ -5,9 +5,9 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { formatRelativeTime } from '../../../../../utils';
-import { NOTIFICATION_IMPORTANCE } from '../../../../../constants';
-import { ReanimatedSwipeableRow, type SwipeAction } from "@/components/ui/reanimated-swipeable-row";
+import { formatRelativeTime } from "@/utils";
+import { NOTIFICATION_IMPORTANCE } from "@/constants";
+import { ReanimatedSwipeableRow} from "@/components/ui/reanimated-swipeable-row";
 
 const ACTION_WIDTH = 80;
 

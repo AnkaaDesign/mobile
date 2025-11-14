@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { usePpeDeliverySchedule } from '../../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../../constants';
+import { usePpeDeliverySchedule } from "@/hooks/usePpe";
+import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingOverlay } from "@/components/ui/loading";

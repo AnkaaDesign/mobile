@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconUsers, IconChevronRight, IconUser } from "@tabler/icons-react-native";
 import type { Position } from '../../../../types';
-import { routes, USER_STATUS_LABELS } from '../../../../constants';
+import { routes, USER_STATUS_LABELS } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";

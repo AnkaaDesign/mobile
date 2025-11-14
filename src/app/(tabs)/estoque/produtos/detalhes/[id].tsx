@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useItem } from '../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE, MEASURE_UNIT_LABELS } from '../../../../../constants';
-import { formatCurrency, itemUtils } from '../../../../../utils';
+import { useItem } from "@/hooks";
+import { routes, CHANGE_LOG_ENTITY_TYPE, MEASURE_UNIT_LABELS } from "@/constants";
+import { formatCurrency, itemUtils } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingOverlay, SkeletonCard } from "@/components/ui/loading";

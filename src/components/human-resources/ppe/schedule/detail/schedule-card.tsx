@@ -16,8 +16,8 @@ import {
   IconAlertTriangle,
   IconTruck,
 } from "@tabler/icons-react-native";
-import { getDynamicFrequencyLabel } from '../../../../../constants';
-import { formatDate, formatRelativeTime } from '../../../../../utils';
+import { getDynamicFrequencyLabel } from "@/constants";
+import { formatDate, formatRelativeTime } from "@/utils";
 import type { PpeDeliverySchedule } from '../../../../../types';
 
 interface ScheduleCardProps {
@@ -181,31 +181,6 @@ export function ScheduleCard({ schedule, onDeliverNow }: ScheduleCardProps) {
             </View>
           )}
 
-          {/* Reschedule Info */}
-          {schedule.rescheduleCount > 0 && (
-            <View
-              style={StyleSheet.flatten([
-                styles.rescheduleInfo,
-                {
-                  backgroundColor: isDark
-                    ? extendedColors.yellow[900] + "30"
-                    : extendedColors.yellow[100],
-                  borderColor: isDark ? extendedColors.yellow[700] : extendedColors.yellow[600],
-                },
-              ])}
-            >
-              <ThemedText
-                style={StyleSheet.flatten([
-                  styles.rescheduleText,
-                  { color: isDark ? extendedColors.yellow[300] : extendedColors.yellow[800] },
-                ])}
-              >
-                Reagendado {schedule.rescheduleCount}x
-                {schedule.rescheduleReason && ` - ${schedule.rescheduleReason}`}
-              </ThemedText>
-            </View>
-          )}
-
           {/* Deliver Now Button */}
           {schedule.isActive && onDeliverNow && (
             <Button onPress={onDeliverNow} style={styles.deliverButton}>
@@ -285,16 +260,6 @@ const styles = StyleSheet.create({
   infoSubtext: {
     fontSize: fontSize.xs,
     marginTop: spacing.xs / 2,
-  },
-  rescheduleInfo: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    marginTop: spacing.sm,
-  },
-  rescheduleText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
   },
   deliverButton: {
     marginTop: spacing.md,

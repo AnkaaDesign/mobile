@@ -18,7 +18,7 @@ import {
   IconHash,
 } from "@tabler/icons-react-native";
 import type { Item, Measure } from '../../../../types';
-import { MEASURE_UNIT_LABELS, MEASURE_TYPE_LABELS, MEASURE_TYPE } from '../../../../constants';
+import { MEASURE_UNIT_LABELS, MEASURE_TYPE_LABELS, MEASURE_TYPE } from "@/constants";
 import { getMeasureUnitCategory, convertValue, canConvertUnits, getUnitsInCategory } from '../../../../types/measure';
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";

@@ -10,8 +10,8 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { NotificationTableRowSwipe } from "./notification-table-row-swipe";
-import { NOTIFICATION_IMPORTANCE, NOTIFICATION_IMPORTANCE_LABELS, NOTIFICATION_TYPE_LABELS } from '../../../../constants';
-import { formatRelativeTime } from '../../../../utils';
+import { NOTIFICATION_IMPORTANCE, NOTIFICATION_IMPORTANCE_LABELS, NOTIFICATION_TYPE_LABELS } from "@/constants";
+import { formatRelativeTime } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 

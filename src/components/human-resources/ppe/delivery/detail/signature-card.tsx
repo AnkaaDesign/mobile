@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconSignature, IconCalendar, IconCircleCheck, IconCircleX } from "@tabler/icons-react-native";
-import { formatDate } from '../../../../../utils';
+import { formatDate } from "@/utils";
 import type { PpeDelivery } from '../../../../../types';
 
 interface SignatureCardProps {

@@ -1,7 +1,7 @@
 import React, { useRef, useCallback } from "react";
 import { Platform, Text, View, ViewStyle, StyleSheet } from "react-native";
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
-import { RectButton, type Swipeable } from "react-native-gesture-handler";
+import { RectButton} from "react-native-gesture-handler";
 import Animated, { SharedValue, useAnimatedStyle, interpolate } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/contexts/theme-context";

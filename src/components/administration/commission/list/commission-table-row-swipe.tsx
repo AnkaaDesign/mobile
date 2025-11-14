@@ -1,7 +1,7 @@
 import React from "react";
 import type { Commission } from '../../../../types';
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
-import { ReanimatedSwipeableRow, type SwipeAction } from "@/components/ui/reanimated-swipeable-row";
+import { ReanimatedSwipeableRow} from "@/components/ui/reanimated-swipeable-row";
 
 interface CommissionTableRowSwipeProps {
   commission: Commission;

@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconHistory } from "@tabler/icons-react-native";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
-import { CHANGE_LOG_ENTITY_TYPE } from '../../../../constants';
+import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 
 interface VacationTimelineCardProps {
   vacationId: string;

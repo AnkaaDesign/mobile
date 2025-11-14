@@ -2,7 +2,7 @@
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX, IconSearch, IconUser, IconCheck, IconAlertTriangle } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { useUsers } from '../../../../../hooks';
+import { useUsers } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";

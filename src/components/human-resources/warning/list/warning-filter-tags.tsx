@@ -2,8 +2,8 @@
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX, IconSearch, IconUser, IconAlertCircle, IconExclamationCircle, IconCheck } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { useUsers } from '../../../../hooks';
-import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from '../../../../constants';
+import { useUsers } from "@/hooks";
+import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";

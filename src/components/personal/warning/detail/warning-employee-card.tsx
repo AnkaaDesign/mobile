@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconUser, IconBriefcase, IconMail, IconPhone, IconHash } from "@tabler/icons-react-native";
 import type { Warning } from '../../../../types';
-import { formatBrazilianPhone } from '../../../../utils';
+import { formatBrazilianPhone } from "@/utils";
 
 interface WarningEmployeeCardProps {
   warning: Warning;

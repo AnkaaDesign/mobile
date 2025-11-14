@@ -3,7 +3,7 @@ import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboar
 import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signInSchema, type SignInFormData } from '../../schemas';
+import { signInSchema} from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 

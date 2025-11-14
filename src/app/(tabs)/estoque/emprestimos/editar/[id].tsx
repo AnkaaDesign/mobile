@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { BorrowReturnForm } from "@/components/inventory/borrow/form/borrow-return-form";
 import { SkeletonCard } from "@/components/ui/loading";
 import { PrivilegeGuard } from "@/components/privilege-guard";
-import { useBorrow, useBorrowMutations } from '../../../../../hooks';
+import { useBorrow, useBorrowMutations } from "@/hooks";
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes, SECTOR_PRIVILEGES } from '../../../../../constants';
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { StyleSheet } from "react-native";
 import { spacing } from "@/constants/design-system";
 

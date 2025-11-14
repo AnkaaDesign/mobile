@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet, Image } from "react-native";
+import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet} from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { Borrow } from '../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
@@ -8,8 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { BORROW_STATUS, BORROW_STATUS_LABELS } from '../../../constants';
-import { formatDate, formatDateTime } from '../../../utils';
+import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
+import { formatDate, formatDateTime } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { TeamBorrowTableRowSwipe } from "./team-borrow-table-row-swipe";
 

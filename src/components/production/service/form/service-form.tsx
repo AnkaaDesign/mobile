@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconX, IconDeviceFloppy, IconClipboardList } from "@tabler/icons-react-native";
 import { type Service } from '../../../../types';
-import { type ServiceCreateFormData, type ServiceUpdateFormData, serviceCreateSchema, serviceUpdateSchema } from '../../../../schemas';
+import { serviceCreateSchema, serviceUpdateSchema } from '../../../../schemas';
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { SimpleFormField } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight} from "@/constants/design-system";
 import { Icon } from "@/components/ui/icon";
 
 interface ServiceFormProps {

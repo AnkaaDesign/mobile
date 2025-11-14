@@ -3,7 +3,7 @@ import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PrivilegeGuard } from "@/components/privilege-guard";
-import { SECTOR_PRIVILEGES } from '../../../constants';
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { ThemedView, SearchBar, EmptyState, ErrorScreen, ListActionButton } from "@/components/ui";
 import { TeamWarningStatsCard } from "@/components/my-team/warning/team-warning-stats-card";
 import { TeamWarningTable, createWarningColumnDefinitions } from "@/components/my-team/warning/team-warning-table";
@@ -33,7 +33,7 @@ type TeamWarningFilters = {
 export default function MyTeamWarningsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user: currentUser, isLoading: isLoadingAuth } = useAuth();
+  const { user: currentUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
@@ -129,8 +129,8 @@ export default function MyTeamWarningsScreen() {
 
   // Fetch warnings with infinite scroll
   const {
-    items: warnings,
-    isLoading: isLoadingWarnings,
+    items,
+    isLoading,
     error,
     isRefetching,
     loadMore,
@@ -145,6 +145,9 @@ export default function MyTeamWarningsScreen() {
     ...queryParams,
     enabled: !!currentUser?.sectorId,
   });
+
+  // Type alias for warnings
+  const warnings = items;
 
   // Get unique team members for filter
   const teamMembers = useMemo(() => {
@@ -211,9 +214,9 @@ export default function MyTeamWarningsScreen() {
       const newFilters = { ...prev };
 
       if (value && (filterKey === "userIds" || filterKey === "categories" || filterKey === "severities")) {
-        const currentArray = newFilters[filterKey] || [];
+        const currentArray = (newFilters[filterKey] as string[] | undefined) || [];
         newFilters[filterKey] = currentArray.filter((item) => item !== value) as any;
-        if (newFilters[filterKey]?.length === 0) {
+        if ((newFilters[filterKey] as any[])?.length === 0) {
           delete newFilters[filterKey];
         }
       } else {

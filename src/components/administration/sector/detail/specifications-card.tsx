@@ -5,8 +5,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconInfoCircle, IconCalendar } from "@tabler/icons-react-native";
 import type { Sector } from '../../../../types';
-import { SECTOR_PRIVILEGES_LABELS, SECTOR_PRIVILEGES } from '../../../../constants';
-import { formatDateTime } from '../../../../utils';
+import { SECTOR_PRIVILEGES_LABELS, SECTOR_PRIVILEGES } from "@/constants";
+import { formatDateTime } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 

@@ -2,12 +2,12 @@
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX, IconSearch, IconShield, IconUsers, IconCalendar } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { SECTOR_PRIVILEGES_LABELS } from '../../../../constants';
+import { SECTOR_PRIVILEGES_LABELS } from "@/constants";
 import { spacing, fontSize } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
-import { formatDate } from '../../../../utils';
+import { formatDate } from "@/utils";
 
 interface SectorFilterTagsProps {
   filters: any;

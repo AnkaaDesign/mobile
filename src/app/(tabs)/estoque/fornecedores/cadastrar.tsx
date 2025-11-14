@@ -6,7 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconTruck, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useCreateSupplier } from "@/hooks";
-import { supplierCreateSchema, type SupplierCreateFormData } from "@/schemas";
+import { supplierCreateSchema} from "@/schemas";
 import { ThemedView, ThemedText, Card, Input, Combobox, Button, SimpleFormField } from "@/components/ui";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { useTheme } from "@/lib/theme";
@@ -203,8 +203,8 @@ export default function SupplierCreateScreen() {
                       name="cnpj"
                       render={({ field: { onChange, onBlur, value } }) => (
                         <Input
-                          value={value ? formatCNPJ(value) : ""}
-                          onChangeText={(text) => onChange(cleanCNPJ(text))}
+                          value={value ? formatCNPJ(String(value || '')) : ""}
+                          onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
                           onBlur={onBlur}
                           placeholder="00.000.000/0000-00"
                           keyboardType="numeric"
@@ -287,8 +287,8 @@ export default function SupplierCreateScreen() {
                       name="zipCode"
                       render={({ field: { onChange, onBlur, value } }) => (
                         <Input
-                          value={value ? formatZipCode(value) : ""}
-                          onChangeText={(text) => onChange(cleanZipCode(text))}
+                          value={value ? formatZipCode(String(value || '')) : ""}
+                          onChangeText={(text) => onChange(cleanZipCode(text) || "")}
                           onBlur={onBlur}
                           placeholder="00000-000"
                           keyboardType="numeric"

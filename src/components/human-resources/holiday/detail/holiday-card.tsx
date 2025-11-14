@@ -1,8 +1,8 @@
 
 import { View, StyleSheet } from "react-native";
 import type { Holiday } from '../../../../types';
-import { HOLIDAY_TYPE_LABELS } from '../../../../constants';
-import { formatDate } from '../../../../utils';
+import { HOLIDAY_TYPE_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";

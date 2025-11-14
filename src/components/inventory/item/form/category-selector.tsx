@@ -5,9 +5,9 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { ThemedText } from "@/components/ui/themed-text";
 
-import { useItemCategories, useItemCategoryMutations } from '../../../../hooks';
+import { useItemCategories, useItemCategoryMutations } from "@/hooks";
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';
-import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from '../../../../constants';
+import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 
 type ItemFormData = ItemCreateFormData | ItemUpdateFormData;
 

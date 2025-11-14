@@ -10,11 +10,11 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { UserTableRowSwipe } from "./user-table-row-swipe";
-import { formatBrazilianPhone, formatDateTime } from '../../../../utils';
+import { formatBrazilianPhone, formatDateTime } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
-import { getUserStatusBadgeText } from '../../../../utils/user';
-import { getBadgeVariant } from '../../../../constants/badge-colors';
+import { getUserStatusBadgeText } from "@/utils/user";
+import { getBadgeVariant } from "@/constants/badge-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {

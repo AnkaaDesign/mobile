@@ -2,8 +2,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  // Maintenance functions
-  getMaintenances,
   getMaintenanceById,
   createMaintenance,
   updateMaintenance,
@@ -14,8 +12,6 @@ import {
   batchDeleteMaintenances,
   batchFinishMaintenances,
   batchStartMaintenances,
-  // MaintenanceItem functions
-  getMaintenanceItems,
   getMaintenanceItemById,
   createMaintenanceItem,
   updateMaintenanceItem,
@@ -23,8 +19,6 @@ import {
   batchCreateMaintenanceItems,
   batchUpdateMaintenanceItems,
   batchDeleteMaintenanceItems,
-  // MaintenanceSchedule functions
-  getMaintenanceSchedules,
   getMaintenanceScheduleById,
   createMaintenanceSchedule,
   updateMaintenanceSchedule,
@@ -34,24 +28,18 @@ import {
   batchDeleteMaintenanceSchedules,
 } from '@/api-client';
 import type {
-  // Maintenance types
-  MaintenanceGetManyFormData,
   MaintenanceCreateFormData,
   MaintenanceUpdateFormData,
   MaintenanceBatchCreateFormData,
   MaintenanceBatchUpdateFormData,
   MaintenanceBatchDeleteFormData,
   MaintenanceInclude,
-  // MaintenanceItem types
-  MaintenanceItemGetManyFormData,
   MaintenanceItemCreateFormData,
   MaintenanceItemUpdateFormData,
   MaintenanceItemBatchCreateFormData,
   MaintenanceItemBatchUpdateFormData,
   MaintenanceItemBatchDeleteFormData,
   MaintenanceItemInclude,
-  // MaintenanceSchedule types
-  MaintenanceScheduleGetManyFormData,
   MaintenanceScheduleCreateFormData,
   MaintenanceScheduleUpdateFormData,
   MaintenanceScheduleBatchCreateFormData,
@@ -60,11 +48,7 @@ import type {
   MaintenanceScheduleInclude,
 } from '@/schemas';
 import type {
-  // Entity types
-  Maintenance,
   MaintenanceItem,
-  // Maintenance Interface types
-  MaintenanceGetUniqueResponse,
   MaintenanceGetManyResponse,
   MaintenanceCreateResponse,
   MaintenanceUpdateResponse,
@@ -72,8 +56,6 @@ import type {
   MaintenanceBatchCreateResponse,
   MaintenanceBatchUpdateResponse,
   MaintenanceBatchDeleteResponse,
-  // MaintenanceItem Interface types
-  MaintenanceItemGetUniqueResponse,
   MaintenanceItemGetManyResponse,
   MaintenanceItemCreateResponse,
   MaintenanceItemUpdateResponse,
@@ -81,8 +63,6 @@ import type {
   MaintenanceItemBatchCreateResponse,
   MaintenanceItemBatchUpdateResponse,
   MaintenanceItemBatchDeleteResponse,
-  // MaintenanceSchedule Interface types
-  MaintenanceSchedule,
   MaintenanceScheduleGetUniqueResponse,
   MaintenanceScheduleGetManyResponse,
   MaintenanceScheduleCreateResponse,

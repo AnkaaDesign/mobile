@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { formatDate } from '../../../../utils';
+import { formatDate } from "@/utils";
 import {
   MAINTENANCE_STATUS_LABELS
-} from '../../../../constants';
+} from "@/constants";
 import type { Maintenance } from '../../../../types';
 
 interface MaintenanceTableProps {
@@ -109,7 +109,11 @@ export function MaintenanceTable({
             <View className="flex-row items-center">
               <Icon name="IconClock" size={16} color="#6B7280" />
               <Text className="text-sm font-medium text-foreground ml-1">
-                {item.timeTaken} min
+                {(() => {
+                  const hours = Math.floor(item.timeTaken / 3600);
+                  const minutes = Math.floor((item.timeTaken % 3600) / 60);
+                  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                })()}
               </Text>
             </View>
           )}

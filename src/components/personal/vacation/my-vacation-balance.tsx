@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { IconCalendar, IconCircleCheck, IconClock, IconAlertCircle } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { calculateVacationBalance } from '../../../utils';
+import { calculateVacationBalance } from "@/utils";
 import type { Vacation } from '../../../types';
 
 interface MyVacationBalanceProps {

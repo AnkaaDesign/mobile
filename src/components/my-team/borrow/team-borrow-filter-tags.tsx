@@ -4,8 +4,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { BORROW_STATUS_LABELS } from '../../../constants';
-import { formatDate } from '../../../utils';
+import { BORROW_STATUS_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
 import type { User } from '../../../types';
 import type { TeamBorrowFilters } from './team-borrow-filter-modal';
 

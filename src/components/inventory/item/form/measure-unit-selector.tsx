@@ -4,7 +4,7 @@ import { View } from "react-native";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { ThemedText } from "@/components/ui/themed-text";
-import { MEASURE_UNIT, MEASURE_UNIT_LABELS } from '../../../../constants';
+import { MEASURE_UNIT, MEASURE_UNIT_LABELS } from "@/constants";
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';
 
 // NOTE: This component is using an incorrect field name 'measureUnit'.

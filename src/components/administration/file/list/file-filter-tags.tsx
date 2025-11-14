@@ -5,7 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
-import { formatFileSize } from '../../../../utils';
+import { formatFileSize } from "@/utils";
 import type { FileGetManyFormData } from '../../../../schemas';
 
 interface FileFilterTagsProps {

@@ -15,7 +15,7 @@ import {
   MASK_SIZE,
   GLOVES_SIZE,
   RAIN_BOOTS_SIZE,
-} from '../../../../../constants';
+} from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";

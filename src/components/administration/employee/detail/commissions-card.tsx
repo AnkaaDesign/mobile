@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
-import { formatCurrency } from '../../../../utils';
+import { formatCurrency } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";

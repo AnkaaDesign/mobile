@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useNotification } from '../../../../../hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
+import { useNotification } from "@/hooks";
+import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";

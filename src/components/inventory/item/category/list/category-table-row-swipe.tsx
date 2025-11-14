@@ -1,10 +1,10 @@
 import React, { useCallback, useRef, useEffect } from "react";
-import { Alert, View, type ViewStyle } from "react-native";
+import { Alert, View} from "react-native";
 import { IconEdit, IconCopy, IconTrash } from "@tabler/icons-react-native";
 import type { ItemCategory } from '../../../../../types';
 import { useTheme } from "@/contexts/theme-context";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
-import { ReanimatedSwipeableRow, type SwipeAction, type Swipeable } from "@/components/ui/reanimated-swipeable-row";
+import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
 
 interface CustomSwipeAction {
   key: string;

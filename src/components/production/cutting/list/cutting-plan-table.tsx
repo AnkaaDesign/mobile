@@ -9,10 +9,10 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { CuttingPlanTableRowSwipe } from "./cutting-plan-table-row-swipe";
-import { getBadgeVariant } from "../../../../constants/badge-colors";
-import { CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from "../../../../constants";
+import { getBadgeVariant } from "@/constants/badge-colors";
+import { CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from "@/constants";
 import { extendedColors } from "@/lib/theme/extended-colors";
-import { CUT_STATUS } from '../../../../constants';
+import { CUT_STATUS } from "@/constants";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {

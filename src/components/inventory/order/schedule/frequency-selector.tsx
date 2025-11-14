@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { View, ViewStyle, Text } from "react-native";
-import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from '../../../../constants';
+import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 import { Combobox } from "@/components/ui/combobox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";

@@ -21,9 +21,9 @@ import {
   IconCalendar,
 } from "@tabler/icons-react-native";
 import type { ChangeLog } from '../../types';
-import { CHANGE_LOG_ENTITY_TYPE, CHANGE_ACTION, CHANGE_TRIGGERED_BY, CHANGE_LOG_ENTITY_TYPE_LABELS } from '../../constants';
-import { formatRelativeTime, getFieldLabel, formatFieldValue, getActionLabel } from '../../utils';
-import { useChangeLogs } from '../../hooks';
+import { CHANGE_LOG_ENTITY_TYPE, CHANGE_ACTION, CHANGE_TRIGGERED_BY, CHANGE_LOG_ENTITY_TYPE_LABELS } from "@/constants";
+import { formatRelativeTime, getFieldLabel, formatFieldValue, getActionLabel } from "@/utils";
+import { useChangeLogs } from "@/hooks";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { useEntityDetails } from "@/hooks";
@@ -54,7 +54,6 @@ const actionConfig: Record<CHANGE_ACTION, { icon: IconComponent; color: string }
   [CHANGE_ACTION.REJECT]: { icon: IconX, color: "#ef4444" },
   [CHANGE_ACTION.CANCEL]: { icon: IconX, color: "#ef4444" },
   [CHANGE_ACTION.COMPLETE]: { icon: IconCheck, color: "#22c55e" },
-  [CHANGE_ACTION.RESCHEDULE]: { icon: IconClock, color: "#737373" },
   [CHANGE_ACTION.BATCH_CREATE]: { icon: IconPlus, color: "#22c55e" },
   [CHANGE_ACTION.BATCH_UPDATE]: { icon: IconEdit, color: "#737373" },
   [CHANGE_ACTION.BATCH_DELETE]: { icon: IconTrash, color: "#ef4444" },

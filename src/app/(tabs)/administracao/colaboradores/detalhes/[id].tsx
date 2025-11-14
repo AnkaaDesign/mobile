@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { useUser } from '../../../../../hooks';
+import { useUser } from "@/hooks";
 import { useAuth } from '../../../../../contexts/auth-context';
-import { CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
+import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";

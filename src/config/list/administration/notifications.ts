@@ -1,0 +1,270 @@
+import type { ListConfig } from '@/components/list/types'
+import type { Notification } from '@/types'
+import { NOTIFICATION_IMPORTANCE, NOTIFICATION_TYPE } from '@/constants/enums'
+
+const IMPORTANCE_LABELS: Record<string, string> = {
+  LOW: 'Baixa',
+  NORMAL: 'Normal',
+  HIGH: 'Alta',
+  URGENT: 'Urgente',
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  SYSTEM: 'Sistema',
+  TASK: 'Tarefa',
+  ORDER: 'Pedido',
+  PPE: 'EPI',
+  VACATION: 'Férias',
+  WARNING: 'Advertência',
+  STOCK: 'Estoque',
+  GENERAL: 'Geral',
+}
+
+export const notificationsListConfig: ListConfig<Notification> = {
+  key: 'administration-notifications',
+  title: 'Notificações',
+
+  query: {
+    hook: 'useNotificationsInfiniteMobile',
+    defaultSort: { field: 'sentAt', direction: 'desc' },
+    pageSize: 25,
+    include: {
+      seenBy: true,
+      _count: {
+        select: {
+          seenBy: true,
+        },
+      },
+    },
+  },
+
+  table: {
+    columns: [
+      {
+        key: 'title',
+        label: 'TÍTULO',
+        sortable: true,
+        width: 2.0,
+        align: 'left',
+        render: (notification) => notification.title,
+        style: { fontWeight: '500' },
+      },
+      {
+        key: 'importance',
+        label: 'IMPORTÂNCIA',
+        sortable: true,
+        width: 1.2,
+        align: 'center',
+        render: (notification) => notification.importance,
+        format: 'badge',
+      },
+      {
+        key: 'type',
+        label: 'TIPO',
+        sortable: true,
+        width: 1.2,
+        align: 'center',
+        render: (notification) => notification.type,
+        format: 'badge',
+      },
+      {
+        key: 'message',
+        label: 'MENSAGEM',
+        sortable: false,
+        width: 2.5,
+        align: 'left',
+        render: (notification) => notification.message || '-',
+      },
+      {
+        key: 'seenCount',
+        label: 'VISUALIZAÇÕES',
+        sortable: false,
+        width: 1.0,
+        align: 'center',
+        render: (notification) => (notification as any)._count?.seenBy || 0,
+        format: 'badge',
+      },
+      {
+        key: 'sentAt',
+        label: 'ENVIADO EM',
+        sortable: true,
+        width: 1.5,
+        align: 'left',
+        render: (notification) => notification.sentAt,
+        format: 'datetime',
+      },
+      {
+        key: 'createdAt',
+        label: 'CADASTRADO EM',
+        sortable: true,
+        width: 1.2,
+        align: 'left',
+        render: (notification) => notification.createdAt,
+        format: 'date',
+      },
+    ],
+    defaultVisible: ['title', 'importance', 'type', 'sentAt'],
+    rowHeight: 60,
+    actions: [
+      {
+        key: 'view',
+        label: 'Ver',
+        icon: 'eye',
+        variant: 'default',
+        onPress: (notification, router) => {
+          router.push(`/administracao/notificacoes/detalhes/${notification.id}`)
+        },
+      },
+      {
+        key: 'edit',
+        label: 'Editar',
+        icon: 'pencil',
+        variant: 'default',
+        visible: (notification) => !notification.sentAt,
+        onPress: (notification, router) => {
+          router.push(`/administracao/notificacoes/editar/${notification.id}`)
+        },
+      },
+      {
+        key: 'delete',
+        label: 'Excluir',
+        icon: 'trash',
+        variant: 'destructive',
+        confirm: {
+          title: 'Confirmar Exclusão',
+          message: (notification) => `Deseja excluir a notificação "${notification.title}"?`,
+        },
+        onPress: async (notification, _, { delete: deleteNotification }) => {
+          await deleteNotification(notification.id)
+        },
+      },
+    ],
+  },
+
+  filters: {
+    sections: [
+      {
+        key: 'importance',
+        label: 'Importância',
+        icon: 'alert-circle',
+        collapsible: true,
+        defaultOpen: true,
+        fields: [
+          {
+            key: 'importance',
+            label: 'Importância',
+            type: 'select',
+            multiple: true,
+            options: Object.values(NOTIFICATION_IMPORTANCE).map((importance) => ({
+              label: IMPORTANCE_LABELS[importance],
+              value: importance,
+            })),
+            placeholder: 'Selecione a importância',
+          },
+        ],
+      },
+      {
+        key: 'type',
+        label: 'Tipo',
+        icon: 'tag',
+        collapsible: true,
+        defaultOpen: false,
+        fields: [
+          {
+            key: 'type',
+            label: 'Tipo',
+            type: 'select',
+            multiple: true,
+            options: Object.values(NOTIFICATION_TYPE).map((type) => ({
+              label: TYPE_LABELS[type],
+              value: type,
+            })),
+            placeholder: 'Selecione os tipos',
+          },
+        ],
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        icon: 'check',
+        collapsible: true,
+        defaultOpen: false,
+        fields: [
+          {
+            key: 'sent',
+            label: 'Enviadas',
+            description: 'Apenas notificações enviadas',
+            type: 'toggle',
+          },
+          {
+            key: 'hasSeen',
+            label: 'Visualizadas',
+            description: 'Apenas notificações visualizadas',
+            type: 'toggle',
+          },
+        ],
+      },
+      {
+        key: 'dates',
+        label: 'Datas',
+        icon: 'calendar',
+        collapsible: true,
+        defaultOpen: false,
+        fields: [
+          {
+            key: 'sentAt',
+            label: 'Data de Envio',
+            type: 'date-range',
+          },
+          {
+            key: 'createdAt',
+            label: 'Data de Cadastro',
+            type: 'date-range',
+          },
+        ],
+      },
+    ],
+  },
+
+  search: {
+    placeholder: 'Buscar notificações...',
+    debounce: 300,
+  },
+
+  export: {
+    title: 'Notificações',
+    filename: 'notificacoes',
+    formats: ['csv', 'json', 'pdf'],
+    columns: [
+      { key: 'title', label: 'Título', path: 'title' },
+      { key: 'importance', label: 'Importância', path: 'importance', format: (value) => IMPORTANCE_LABELS[value] || value },
+      { key: 'type', label: 'Tipo', path: 'type', format: (value) => TYPE_LABELS[value] || value },
+      { key: 'message', label: 'Mensagem', path: 'message' },
+      { key: 'seenCount', label: 'Visualizações', path: '_count.seenBy' },
+      { key: 'sentAt', label: 'Enviado em', path: 'sentAt', format: 'datetime' },
+      { key: 'createdAt', label: 'Cadastrado em', path: 'createdAt', format: 'date' },
+    ],
+  },
+
+  actions: {
+    create: {
+      label: 'Cadastrar Notificação',
+      route: '/administracao/notificacoes/cadastrar/enviar',
+    },
+    bulk: [
+      {
+        key: 'delete',
+        label: 'Excluir',
+        icon: 'trash',
+        variant: 'destructive',
+        confirm: {
+          title: 'Confirmar Exclusão',
+          message: (count) => `Deseja excluir ${count} ${count === 1 ? 'notificação' : 'notificações'}?`,
+        },
+        onPress: async (ids, { batchDeleteAsync }) => {
+          await batchDeleteAsync({ ids: Array.from(ids) })
+        },
+      },
+    ],
+  },
+}

@@ -1,14 +1,14 @@
 import { useMemo } from "react";
 import { Stack, useLocalSearchParams, router } from "expo-router";
 import { Alert } from "react-native";
-import { useServiceDetail, useServiceMutations } from '../../../../../hooks';
+import { useServiceDetail, useServiceMutations } from "@/hooks";
 import { ServiceForm } from "@/components/production/service/form/service-form";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from '../../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../../constants';
+import { hasPrivilege } from "@/utils";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import type { ServiceUpdateFormData } from '../../../../../schemas';
 
 export default function EditServiceScreen() {

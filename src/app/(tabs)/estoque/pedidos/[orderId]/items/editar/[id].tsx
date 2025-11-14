@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderItem, useOrderItemMutations } from '../../../../../../../hooks';
+import { useOrderItem, useOrderItemMutations } from "@/hooks";
 import { orderItemUpdateSchema } from '../../../../../../../schemas';
 import type { OrderItemUpdateFormData } from '../../../../../../../schemas';
 import { ThemedView, ThemedText, ErrorScreen, LoadingScreen, Button } from "@/components/ui";
@@ -12,10 +12,10 @@ import { Card } from "@/components/ui/card";
 import { ThemedTextInput } from "@/components/ui/themed-text-input";
 
 import { useTheme } from "@/lib/theme";
-import { formatCurrency, formatDate } from '../../../../../../../utils';
+import { formatCurrency, formatDate } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from '../../../../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../../../../constants';
+import { hasPrivilege } from "@/utils";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function EditOrderItemScreen() {
   const router = useRouter();

@@ -12,7 +12,7 @@ import {
   MASK_SIZE_LABELS,
   GLOVES_SIZE_LABELS,
   RAIN_BOOTS_SIZE_LABELS,
-} from '../../../../../constants';
+} from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 

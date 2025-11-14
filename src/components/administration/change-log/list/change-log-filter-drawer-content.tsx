@@ -7,13 +7,13 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { Combobox } from '@/components/ui/combobox';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateRangeFilter } from '@/components/common/filters';
-import { useUsers } from '../../../../hooks';
+import { useUsers } from "@/hooks";
 import {
   CHANGE_LOG_ACTION,
   CHANGE_LOG_ACTION_LABELS,
   CHANGE_LOG_ENTITY_TYPE,
   CHANGE_LOG_ENTITY_TYPE_LABELS,
-} from '../../../../constants';
+} from "@/constants";
 import type { ChangeLogGetManyFormData } from '../../../../schemas';
 
 interface ChangeLogFilterDrawerContentProps {

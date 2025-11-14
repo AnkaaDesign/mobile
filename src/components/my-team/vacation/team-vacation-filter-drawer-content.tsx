@@ -6,7 +6,7 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateRangeFilter } from '@/components/common/filters';
-import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '../../../constants';
+import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from "@/constants";
 import type { VacationGetManyFormData } from '../../../schemas';
 
 interface TeamVacationFilterDrawerContentProps {

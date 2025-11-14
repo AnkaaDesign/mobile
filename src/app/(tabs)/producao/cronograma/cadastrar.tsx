@@ -5,11 +5,11 @@ import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { TaskForm } from "@/components/production/task/form/task-form";
-import { useTaskMutations, useLayoutMutations } from '../../../../hooks';
+import { useTaskMutations, useLayoutMutations } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes, SECTOR_PRIVILEGES } from '../../../../constants';
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 
 export default function CreateScheduleScreen() {
   const router = useRouter();
@@ -78,7 +78,7 @@ export default function CreateScheduleScreen() {
           const layoutPromises = [];
 
           // Transform layout data to match API schema
-          const transformLayoutForAPI = (layoutData: any, side: string) => {
+          const transformLayoutForAPI = (layoutData: any) => {
             if (!layoutData?.sections) return null;
 
             const sections = layoutData.sections.map((section: any, index: number) => ({
@@ -97,7 +97,7 @@ export default function CreateScheduleScreen() {
 
           // Create layouts for each side
           if (taskLayouts.left?.sections?.length > 0) {
-            const leftLayoutData = transformLayoutForAPI(taskLayouts.left, 'left');
+            const leftLayoutData = transformLayoutForAPI(taskLayouts.left);
             if (leftLayoutData) {
               layoutPromises.push(
                 createOrUpdateTruckLayout({ truckId, side: 'left', data: leftLayoutData })
@@ -106,7 +106,7 @@ export default function CreateScheduleScreen() {
           }
 
           if (taskLayouts.right?.sections?.length > 0) {
-            const rightLayoutData = transformLayoutForAPI(taskLayouts.right, 'right');
+            const rightLayoutData = transformLayoutForAPI(taskLayouts.right);
             if (rightLayoutData) {
               layoutPromises.push(
                 createOrUpdateTruckLayout({ truckId, side: 'right', data: rightLayoutData })
@@ -115,7 +115,7 @@ export default function CreateScheduleScreen() {
           }
 
           if (taskLayouts.back?.sections?.length > 0) {
-            const backLayoutData = transformLayoutForAPI(taskLayouts.back, 'back');
+            const backLayoutData = transformLayoutForAPI(taskLayouts.back);
             if (backLayoutData) {
               layoutPromises.push(
                 createOrUpdateTruckLayout({ truckId, side: 'back', data: backLayoutData })

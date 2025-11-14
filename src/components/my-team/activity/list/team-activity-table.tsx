@@ -8,9 +8,9 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TeamActivityTableRowSwipe } from "./team-activity-table-row-swipe";
-import { formatDateTime } from '../../../../utils';
+import { formatDateTime } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '../../../../constants';
+import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from "@/constants";
 
 export interface TableColumn {
   key: string;

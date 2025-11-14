@@ -3,7 +3,7 @@ import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboar
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { passwordResetSchema, type PasswordResetFormData } from '../../../schemas';
+import { passwordResetSchema} from '../../../schemas';
 import { authService } from '../../../api-client';
 
 import { ThemedView } from "@/components/ui/themed-view";
@@ -18,9 +18,11 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { IconEye, IconEyeOff, IconLock } from "@tabler/icons-react-native";
 import { Logo } from "@/components/ui/logo";
 import { shadow, spacing, borderRadius } from "@/constants/design-system";
+import { useTheme } from "@/lib/theme";
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);

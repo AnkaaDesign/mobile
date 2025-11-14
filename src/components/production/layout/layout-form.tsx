@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, Text, TextInput } from "react-native";
+import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image,Input } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";

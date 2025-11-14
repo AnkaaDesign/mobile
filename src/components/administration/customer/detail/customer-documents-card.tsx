@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconFileDescription, IconBuilding, IconId } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
-import { formatCNPJ, formatCPF } from '../../../../utils';
+import { formatCNPJ, formatCPF } from "@/utils";
 
 interface CustomerDocumentsCardProps {
   customer: Customer;

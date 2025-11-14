@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { View, StyleSheet, Image, TouchableOpacity, Alert } from "react-native";
+import { View, StyleSheet, Image, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { IconCamera, IconX, IconUpload } from "@tabler/icons-react-native";
+import { IconCamera, IconUpload } from "@tabler/icons-react-native";
 import { ThemedText, Button } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 

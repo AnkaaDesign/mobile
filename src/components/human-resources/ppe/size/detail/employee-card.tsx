@@ -5,8 +5,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconUser, IconBuilding, IconBriefcase, IconId } from "@tabler/icons-react-native";
 import type { PpeSize } from '../../../../../types';
-import { USER_STATUS_LABELS } from '../../../../../constants';
-import { formatCPF } from '../../../../../utils';
+import { USER_STATUS_LABELS } from "@/constants";
+import { formatCPF } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 

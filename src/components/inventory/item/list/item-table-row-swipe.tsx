@@ -4,7 +4,7 @@ import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/contexts/theme-context";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
-import { ReanimatedSwipeableRow, type SwipeAction, type Swipeable } from "@/components/ui/reanimated-swipeable-row";
+import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
 
 const ACTION_WIDTH = 80;
 

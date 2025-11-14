@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, TextInput, Switch as RNSwitch } from 'react-native';
-import { IconFilter, IconX, IconUser, IconPackage, IconClock, IconTag } from '@tabler/icons-react-native';
+import { IconFilter, IconX, IconPackage, IconClock, IconTag } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON, ACTIVITY_REASON_LABELS } from '@/constants';
+import { ACTIVITY_OPERATION, ACTIVITY_OPERATION} from '@/constants';
 
 interface TeamActivityFilterDrawerContentProps {
   filters: {

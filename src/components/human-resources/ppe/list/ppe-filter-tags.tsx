@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { useItemCategories } from '../../../../hooks';
-import { PPE_TYPE, PPE_TYPE_LABELS } from '../../../../constants';
+import { useItemCategories } from "@/hooks";
+import { PPE_TYPE, PPE_TYPE_LABELS } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
 import { ThemedText } from "@/components/ui/themed-text";

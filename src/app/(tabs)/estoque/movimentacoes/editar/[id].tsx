@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocalSearchParams, router } from "expo-router";
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes } from "../../../../../constants";
+import { routes } from "@/constants";
 
 export default function EditMovementPage() {
   const { id } = useLocalSearchParams<{ id: string }>();

@@ -9,8 +9,8 @@ import {
   CHANGE_LOG_ACTION_LABELS,
   CHANGE_LOG_ENTITY_TYPE_LABELS,
   CHANGE_LOG_ACTION,
-} from '../../../../constants';
-import { formatDateTime } from '../../../../utils';
+} from "@/constants";
+import { formatDateTime } from "@/utils";
 import type { ChangeLog } from '../../../../types';
 import {
   IconFileText,
@@ -58,8 +58,6 @@ export function ChangeLogCard({ changeLog }: ChangeLogCardProps) {
       case CHANGE_LOG_ACTION.DEACTIVATE:
       case CHANGE_LOG_ACTION.CANCEL:
         return <IconX {...iconProps} />;
-      case CHANGE_LOG_ACTION.RESCHEDULE:
-        return <IconRefresh {...iconProps} />;
       default:
         return <IconFileText {...iconProps} />;
     }
@@ -81,7 +79,6 @@ export function ChangeLogCard({ changeLog }: ChangeLogCardProps) {
         return "destructive";
       case CHANGE_LOG_ACTION.UPDATE:
       case CHANGE_LOG_ACTION.BATCH_UPDATE:
-      case CHANGE_LOG_ACTION.RESCHEDULE:
         return "info";
       case CHANGE_LOG_ACTION.RESTORE:
       case CHANGE_LOG_ACTION.ROLLBACK:

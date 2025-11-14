@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
-import { TASK_STATUS } from '../../../../constants';
+import { TASK_STATUS } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Progress } from "@/components/ui/progress";

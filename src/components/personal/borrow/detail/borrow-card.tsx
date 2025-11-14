@@ -4,7 +4,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconPackage, IconAlertTriangle } from "@tabler/icons-react-native";
+import { IconPackage} from "@tabler/icons-react-native";
 import type { Borrow } from "@/types";
 import { getBadgeVariant, getBadgeColors } from "@/constants/badge-colors";
 import { BORROW_STATUS_LABELS } from "@/constants/enum-labels";
@@ -15,12 +15,6 @@ interface BorrowCardProps {
 
 export function BorrowCard({ borrow }: BorrowCardProps) {
   const { colors } = useTheme();
-
-  // Check if borrow is overdue (active and past expected return date)
-  const isOverdue =
-    borrow.status === "ACTIVE" &&
-    borrow.expectedReturnDate &&
-    new Date(borrow.expectedReturnDate) < new Date();
 
   const statusVariant = getBadgeVariant(borrow.status, "BORROW");
   const statusColors = getBadgeColors(statusVariant);
@@ -47,12 +41,6 @@ export function BorrowCard({ borrow }: BorrowCardProps) {
             >
               {BORROW_STATUS_LABELS[borrow.status as keyof typeof BORROW_STATUS_LABELS]}
             </Badge>
-            {isOverdue && (
-              <View style={styles.overdueContainer}>
-                <IconAlertTriangle size={16} color="#ea580c" />
-                <ThemedText style={styles.overdueText}>Atrasado</ThemedText>
-              </View>
-            )}
           </View>
         </View>
 

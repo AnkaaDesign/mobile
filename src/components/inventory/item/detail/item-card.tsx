@@ -1,8 +1,8 @@
 
 import { View, Pressable , StyleSheet} from "react-native";
 import type { Item } from '../../../../types';
-import { formatCurrency, determineStockLevel } from '../../../../utils';
-import { STOCK_LEVEL, STOCK_LEVEL_LABELS } from '../../../../constants';
+import { formatCurrency, determineStockLevel } from "@/utils";
+import { STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";

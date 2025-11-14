@@ -8,8 +8,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconBriefcase, IconBuilding } from "@tabler/icons-react-native";
-import { getBadgeVariant } from '../../../../constants/badge-colors';
-import { getUserStatusBadgeText } from '../../../../utils/user';
+import { getBadgeVariant } from "@/constants/badge-colors";
+import { getUserStatusBadgeText } from "@/utils/user";
 
 interface EmployeeCardProps {
   employee: User;

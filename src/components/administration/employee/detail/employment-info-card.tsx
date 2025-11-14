@@ -1,7 +1,7 @@
 
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
-import { formatDate } from '../../../../utils';
+import { formatDate } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
@@ -16,18 +16,17 @@ interface EmploymentInfoCardProps {
 export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
   const { colors } = useTheme();
 
-  const formattedContractDate = employee.contractedAt ? formatDate(employee.contractedAt) : "Não informado";
   const formattedAdmissional = employee.admissional ? formatDate(employee.admissional) : "Não informado";
   const formattedDismissal = employee.dismissedAt ? formatDate(employee.dismissedAt) : "-";
 
   // Calculate time at company
   const getTimeAtCompany = () => {
-    if (!employee.contractedAt) return "Não informado";
+    if (!employee.admissional) return "Não informado";
 
     const now = employee.dismissedAt ? new Date(employee.dismissedAt) : new Date();
-    const contractDate = new Date(employee.contractedAt);
-    const years = Math.floor((now.getTime() - contractDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
-    const months = Math.floor((now.getTime() - contractDate.getTime()) / (1000 * 60 * 60 * 24 * 30)) % 12;
+    const admissionalDate = new Date(employee.admissional);
+    const years = Math.floor((now.getTime() - admissionalDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
+    const months = Math.floor((now.getTime() - admissionalDate.getTime()) / (1000 * 60 * 60 * 24 * 30)) % 12;
 
     if (years > 0) {
       return `${years} ano${years > 1 ? "s" : ""} e ${months} ${months === 1 ? "mês" : "meses"}`;
@@ -97,20 +96,6 @@ export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
             </View>
           </View>
         )}
-
-        <View style={styles.detailRow}>
-          <View style={styles.detailIcon}>
-            <IconCalendar size={20} color={colors.mutedForeground} />
-          </View>
-          <View style={styles.detailContent}>
-            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-              Data de Contratação
-            </ThemedText>
-            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-              {formattedContractDate}
-            </ThemedText>
-          </View>
-        </View>
 
         <View style={styles.detailRow}>
           <View style={styles.detailIcon}>

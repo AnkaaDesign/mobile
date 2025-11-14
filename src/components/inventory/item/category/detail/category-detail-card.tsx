@@ -1,7 +1,7 @@
 
 import { View, Pressable , StyleSheet} from "react-native";
 import type { ItemCategory } from '../../../../../types';
-import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from '../../../../../constants';
+import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";

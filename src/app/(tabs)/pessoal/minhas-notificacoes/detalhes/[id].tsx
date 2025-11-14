@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { IconArrowLeft, IconTrash, IconBellOff, IconBell } from "@tabler/icons-react-native";
@@ -16,7 +16,7 @@ export default function MyNotificationDetailsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user } = useAuth();
+  const { data: currentUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   // Fetch notification data
@@ -39,16 +39,16 @@ export default function MyNotificationDetailsScreen() {
 
   // Mark as read when opening
   useEffect(() => {
-    if (notification && user?.id) {
-      const isUnread = !notification.seenBy?.some((s) => s.userId === user.id);
+    if (notification && currentUser?.id) {
+      const isUnread = !notification.seenBy?.some((s) => s.userId === currentUser.id);
       if (isUnread) {
         seenNotificationService.createSeenNotification({
           notificationId: notification.id,
-          userId: user.id,
+          userId: currentUser.id,
         }).catch(console.error);
       }
     }
-  }, [notification?.id, user?.id]);
+  }, [notification?.id, currentUser?.id]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -88,14 +88,14 @@ export default function MyNotificationDetailsScreen() {
   }, [notification, deleteNotification, router]);
 
   const handleToggleRead = useCallback(async () => {
-    if (!notification || !user?.id) return;
+    if (!notification || !currentUser?.id) return;
 
-    const isRead = notification.seenBy?.some((s) => s.userId === user.id);
+    const isRead = notification.seenBy?.some((s) => s.userId === currentUser.id);
 
     try {
       if (isRead) {
         // Mark as unread by deleting the seen record
-        const seenRecord = notification.seenBy?.find((s) => s.userId === user.id);
+        const seenRecord = notification.seenBy?.find((s) => s.userId === currentUser.id);
         if (seenRecord) {
           await seenNotificationService.deleteSeenNotification(seenRecord.id);
         }
@@ -103,7 +103,7 @@ export default function MyNotificationDetailsScreen() {
         // Mark as read
         await seenNotificationService.createSeenNotification({
           notificationId: notification.id,
-          userId: user.id,
+          userId: currentUser.id,
         });
       }
       await refetch();
@@ -111,7 +111,7 @@ export default function MyNotificationDetailsScreen() {
       console.error("Failed to toggle read status:", err);
       Alert.alert("Erro", "Não foi possível atualizar o status da notificação");
     }
-  }, [notification, user?.id, refetch]);
+  }, [notification, currentUser?.id, refetch]);
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -125,7 +125,7 @@ export default function MyNotificationDetailsScreen() {
     );
   }
 
-  const isRead = notification.seenBy?.some((s) => s.userId === user?.id);
+  const isRead = notification.seenBy?.some((s) => s.userId === currentUser?.id);
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>

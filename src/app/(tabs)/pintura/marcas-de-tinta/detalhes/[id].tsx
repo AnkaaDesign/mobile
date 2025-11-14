@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintBrand } from '../../../../../hooks';
+import { usePaintBrand } from "@/hooks";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from '../../../../../constants';
-import { hasPrivilege } from '../../../../../utils';
+import { SECTOR_PRIVILEGES } from "@/constants";
+import { hasPrivilege } from "@/utils";
 import {
   IconTag,
   IconPalette,

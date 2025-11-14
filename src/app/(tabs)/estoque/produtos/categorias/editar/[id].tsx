@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { ItemCategoryForm } from "@/components/inventory/item/category/form/category-form";
 import { SkeletonCard } from "@/components/ui/loading";
 import { PrivilegeGuard } from "@/components/privilege-guard";
-import { useItemCategory, useItemCategoryMutations } from '../../../../../../hooks';
+import { useItemCategory, useItemCategoryMutations } from "@/hooks";
 import { type ItemCategoryUpdateFormData } from '../../../../../../schemas';
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes, SECTOR_PRIVILEGES } from '../../../../../../constants';
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { StyleSheet } from "react-native";
 import { spacing } from "@/constants/design-system";
 

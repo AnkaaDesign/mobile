@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
-import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS, WARNING_CATEGORY, WARNING_SEVERITY } from '../../../constants';
+import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS, WARNING_CATEGORY, WARNING_SEVERITY } from "@/constants";
 import type { Warning } from '../../../types';
 import { Icon } from "@/components/ui/icon";
 

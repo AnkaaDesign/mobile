@@ -16,7 +16,7 @@ import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useRouter, usePathname } from 'expo-router';
 import { Icon } from '@/components/ui/icon';
 import { IconChevronRight, IconStar, IconStarFilled } from '@tabler/icons-react-native';
-import { MENU_ITEMS, MenuItem, routes } from '@/constants';
+import { MENU_ITEMS, MenuItem} from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
 import { routeToMobilePath, normalizePath } from '@/lib/route-mapper';
 import { useFavorites } from '@/contexts/favorites-context';

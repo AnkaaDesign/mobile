@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { BORROW_STATUS, BORROW_STATUS_LABELS } from '../../../../constants';
+import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
 import type { Borrow } from '../../../../types';
 import {
   IconInfoCircle,

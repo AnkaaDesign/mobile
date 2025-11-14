@@ -4,8 +4,8 @@ import { Icon } from "@/components/ui/icon";
 import { Badge, BadgeProps } from "@/components/ui/badge";
 import { fontSize, spacing } from "@/constants/design-system";
 import type { Item } from '../../../../types';
-import { determineStockLevel } from '../../../../utils';
-import { STOCK_LEVEL, STOCK_LEVEL_LABELS } from '../../../../constants';
+import { determineStockLevel } from "@/utils";
+import { STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
 
 interface StockBadgeProps {
   item: Pick<Item, "quantity" | "reorderPoint" | "maxQuantity"> & { measures?: Item["measures"] };

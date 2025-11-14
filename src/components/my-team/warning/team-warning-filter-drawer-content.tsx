@@ -6,7 +6,7 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateRangeFilter } from '@/components/common/filters';
-import { WARNING_CATEGORY, WARNING_SEVERITY, WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from '../../../constants';
+import { WARNING_CATEGORY, WARNING_SEVERITY, WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from "@/constants";
 import type { User } from '../../../types';
 
 export interface TeamWarningFilters {

@@ -113,7 +113,7 @@ export default function BorrowDetailScreen() {
   }
 
   // Determine if user can request to return the item
-  const canRequestReturn = borrow.status === "ACTIVE" && borrow.quantity > borrow.quantityReturned;
+  const canRequestReturn = borrow.status === "ACTIVE" && !borrow.returnedAt;
 
   return (
     <ScrollView
@@ -138,9 +138,9 @@ export default function BorrowDetailScreen() {
                 <ThemedText style={StyleSheet.flatten([styles.borrowTitle, { color: colors.foreground }])}>
                   {borrow.item?.name || "Empréstimo"}
                 </ThemedText>
-                {borrow.item?.code && (
+                {borrow.item?.uniCode && (
                   <ThemedText style={StyleSheet.flatten([styles.borrowSubtitle, { color: colors.mutedForeground }])}>
-                    Código: {borrow.item.code}
+                    Código: {borrow.item.uniCode}
                   </ThemedText>
                 )}
               </View>

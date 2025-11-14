@@ -4,13 +4,14 @@ import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { useBorrow, useBorrowMutations } from '../../../../../hooks';
+import { useBorrow, useBorrowMutations } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { BORROW_STATUS, SECTOR_PRIVILEGES, routes } from '../../../../../constants';
-import { hasPrivilege } from '../../../../../utils';
+import { BORROW_STATUS, SECTOR_PRIVILEGES, routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { hasPrivilege } from "@/utils";
 import { showToast } from "@/components/ui/toast";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { BorrowStatusCard } from "@/components/inventory/borrow/detail/borrow-status-card";
@@ -251,6 +252,22 @@ export default function BorrowDetailsScreen() {
 
         {/* History Card */}
         <BorrowHistoryCard borrow={borrow} />
+
+        {/* Changelog */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Histórico de Alterações</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChangelogTimeline
+              entityType={CHANGE_LOG_ENTITY_TYPE.BORROW}
+              entityId={borrow.id}
+              entityName={`Empréstimo - ${borrow.item?.name || 'Item'}`}
+              entityCreatedAt={borrow.createdAt}
+              maxHeight={400}
+            />
+          </CardContent>
+        </Card>
 
         {/* Action Buttons */}
         {borrow.status === BORROW_STATUS.ACTIVE && (

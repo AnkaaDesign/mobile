@@ -7,7 +7,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconUsers, IconUser, IconUserCheck, IconUserX } from "@tabler/icons-react-native";
-import { ASSIGNMENT_TYPE, ASSIGNMENT_TYPE_LABELS } from '../../../../../constants';
+import { ASSIGNMENT_TYPE, ASSIGNMENT_TYPE_LABELS } from "@/constants";
 import type { PpeDeliverySchedule } from '../../../../../types';
 
 interface EmployeeCardProps {

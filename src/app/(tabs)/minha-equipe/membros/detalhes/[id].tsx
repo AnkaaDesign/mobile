@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
+import { useState, useCallback } from "react";
+import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
 import { useUser } from "@/hooks";
@@ -36,7 +36,7 @@ const getStatusLabel = (status: string) => {
   const statusLabels: Record<string, string> = {
     [USER_STATUS.EXPERIENCE_PERIOD_1]: "Experiência 1",
     [USER_STATUS.EXPERIENCE_PERIOD_2]: "Experiência 2",
-    [USER_STATUS.CONTRACTED]: "Contratado",
+    [USER_STATUS.EFFECTED]: "Efetivo",
     [USER_STATUS.DISMISSED]: "Demitido",
   };
   return statusLabels[status] || status;
@@ -47,7 +47,7 @@ const getStatusColor = (status: string, colors: any) => {
   const statusColors: Record<string, string> = {
     [USER_STATUS.EXPERIENCE_PERIOD_1]: colors.warning,
     [USER_STATUS.EXPERIENCE_PERIOD_2]: colors.warning,
-    [USER_STATUS.CONTRACTED]: colors.success,
+    [USER_STATUS.EFFECTED]: colors.success,
     [USER_STATUS.DISMISSED]: colors.destructive,
   };
   return statusColors[status] || colors.mutedForeground;
@@ -208,7 +208,8 @@ export default function TeamMemberDetailScreen() {
             <Avatar
               source={member.avatar?.url ? { uri: member.avatar.url } : undefined}
               fallback={member.name?.[0]?.toUpperCase() || "U"}
-              size={80}
+              size="lg"
+              style={{ width: 80, height: 80, borderRadius: 40 }}
             />
             <View style={styles.headerInfo}>
               <ThemedText style={[styles.memberName, { color: colors.foreground }]}>

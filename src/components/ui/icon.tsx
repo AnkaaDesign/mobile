@@ -1,14 +1,12 @@
 import React from "react";
 import { cssInterop } from "nativewind";
-import { getTablerIcon } from '../../utils';
+import { getTablerIcon } from "@/utils";
 import { useTheme } from "@/lib/theme";
-import { getIconSize, type IconSize } from "@/constants/icon-sizes";
+import { getIconSize} from "@/constants/icon-sizes";
 import { getIconColor } from "@/constants/icon-colors";
 
 // Import the specific icons we need (expanded set to cover most used icons)
 import {
-  // Navigation & UI
-  IconDashboard,
   IconMenu2,
   IconHome,
   IconChevronRight,
@@ -17,9 +15,6 @@ import {
   IconChevronUp,
   IconArrowLeft,
   IconArrowRight,
-
-  // Common actions
-  IconEye,
   IconEyeOff,
   IconEdit,
   IconPlus,
@@ -31,9 +26,6 @@ import {
   IconFilter,
   IconSettings,
   IconLogout,
-
-  // Business domain
-  IconPackage,
   IconPackages,
   IconUsers,
   IconUser,
@@ -50,9 +42,6 @@ import {
   IconPalette,
   IconBriefcase,
   IconShield,
-
-  // Status indicators
-  IconCircleCheck,
   IconCircleX,
   IconAlertCircle,
   IconInfoCircle,
@@ -60,9 +49,6 @@ import {
   IconArrowsSort,
   IconArrowUp,
   IconArrowDown,
-
-  // Additional commonly used icons from analysis
-  IconArchive,
   IconArchiveOff,
   IconToggleLeft,
   IconToggleRight,
@@ -141,9 +127,6 @@ import {
   IconFolderX,
   IconBadge,
   IconCalendarEvent,
-
-  // Additional missing icons
-  IconPlayerStop,
   IconArrowsUpDown,
   IconApi,
   IconFlask,

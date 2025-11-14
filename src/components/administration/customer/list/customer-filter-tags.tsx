@@ -4,10 +4,10 @@ import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { BRAZILIAN_STATE_NAMES, type BrazilianState } from '../../../../constants';
+import { BRAZILIAN_STATE_NAMES} from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import type { CustomerGetManyFormData } from '../../../../schemas';
-import { formatDate } from '../../../../utils';
+import { formatDate } from "@/utils";
 
 interface CustomerFilterTagsProps {
   filters: Partial<CustomerGetManyFormData>;

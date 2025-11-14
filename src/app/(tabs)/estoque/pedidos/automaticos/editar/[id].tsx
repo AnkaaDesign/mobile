@@ -4,11 +4,11 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderSchedule, useOrderScheduleMutations } from '../../../../../../hooks';
-import { orderScheduleUpdateSchema, type OrderScheduleUpdateFormData, type OrderScheduleInclude, mapOrderScheduleToFormData } from '../../../../../../schemas';
+import { useOrderSchedule, useOrderScheduleMutations } from "@/hooks";
+import { orderScheduleUpdateSchema, mapOrderScheduleToFormData } from '../../../../../../schemas';
 import type { OrderSchedule } from '../../../../../../types';
-import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS, SECTOR_PRIVILEGES, routes } from '../../../../../../constants';
-import { hasPrivilege } from '../../../../../../utils';
+import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS, SECTOR_PRIVILEGES, routes } from "@/constants";
+import { hasPrivilege } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
 import {
   ThemedView,
@@ -243,7 +243,7 @@ export default function EditAutomaticOrderScreen() {
                   name="frequencyCount"
                   render={({ field: { onChange, value } }) => (
                     <Input
-                      value={value?.toString() || ""}
+                      value={String(value || '')}
                       onChangeText={(text) => onChange(parseInt(text) || 1)}
                       placeholder="1"
                       keyboardType="numeric"
@@ -349,40 +349,6 @@ export default function EditAutomaticOrderScreen() {
               </View>
             </Card>
           </FormSection>
-
-          {/* Reschedule Information (if applicable) */}
-          {(schedule.rescheduleCount > 0 || schedule.originalDate || schedule.lastRescheduleDate) && (
-            <FormSection title="Informações de Reagendamento" icon="history">
-              <Card style={styles.card}>
-                {/* Reschedule Reason */}
-                <View style={styles.fieldContainer}>
-                  <ThemedText style={styles.fieldLabel}>Motivo do Reagendamento</ThemedText>
-                  <Controller
-                    control={control}
-                    name="rescheduleReason"
-                    render={({ field: { onChange, value } }) => (
-                      <Input
-                        value={value || ""}
-                        onChangeText={onChange}
-                        placeholder="Descreva o motivo do reagendamento..."
-                        multiline
-                        numberOfLines={3}
-                      />
-                    )}
-                  />
-                </View>
-
-                {/* Display current reschedule info */}
-                {schedule.rescheduleCount > 0 && (
-                  <View style={styles.infoContainer}>
-                    <ThemedText style={styles.infoLabel}>
-                      Reagendamentos: {schedule.rescheduleCount}
-                    </ThemedText>
-                  </View>
-                )}
-              </Card>
-            </FormSection>
-          )}
 
           {/* Summary */}
           <FormSection title="Resumo" icon="info">

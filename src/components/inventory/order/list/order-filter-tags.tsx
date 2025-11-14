@@ -5,8 +5,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { ORDER_STATUS, ORDER_STATUS_LABELS } from '../../../../constants';
-import { formatDate, formatCurrency } from '../../../../utils';
+import { ORDER_STATUS, ORDER_STATUS_LABELS } from "@/constants";
+import { formatDate, formatCurrency } from "@/utils";
 import type { OrderGetManyFormData } from '../../../../schemas';
 
 interface OrderFilterTagsProps {

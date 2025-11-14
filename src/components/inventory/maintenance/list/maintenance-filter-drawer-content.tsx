@@ -4,7 +4,7 @@ import { IconFilter, IconX, IconTool, IconCalendar } from '@tabler/icons-react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { MAINTENANCE_STATUS, MAINTENANCE_STATUS_LABELS } from '../../../../constants';
+import { MAINTENANCE_STATUS, MAINTENANCE_STATUS_LABELS } from "@/constants";
 import { DateRangeFilter } from '@/components/common/filters';
 import type { MaintenanceGetManyParams } from '../../../../types';
 

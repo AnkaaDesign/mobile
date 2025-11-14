@@ -10,7 +10,7 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row";
 import { FileTypeIcon } from "@/components/ui/file-type-icon";
-import { formatFileSize, formatDateTime } from '../../../../utils';
+import { formatFileSize, formatDateTime } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 

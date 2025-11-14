@@ -1,0 +1,570 @@
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'expo-router';
+import { orderCreateSchema } from '@/schemas';
+import type { OrderCreateFormData } from '@/schemas';
+import { useOrderMutations, useSuppliers, useItems } from '@/hooks';
+import { ORDER_STATUS } from '@/constants';
+import { ThemedText } from '@/components/ui/themed-text';
+import { ThemedView } from '@/components/ui/themed-view';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { Select } from '@/components/ui/select';
+import { RadioGroup } from '@/components/ui/radio-group';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
+import { useTheme } from '@/lib/theme';
+import { routeToMobilePath } from '@/lib/route-mapper';
+import { showToast } from '@/lib/toast';
+
+interface OrderCreateFormProps {
+  onSuccess?: () => void;
+}
+
+export const OrderCreateForm: React.FC<OrderCreateFormProps> = ({ onSuccess }) => {
+  const theme = useTheme();
+  const router = useRouter();
+  const [orderItemMode, setOrderItemMode] = useState<'inventory' | 'temporary'>('inventory');
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
+  const [itemPrices, setItemPrices] = useState<Record<string, number>>({});
+  const [itemIcms, setItemIcms] = useState<Record<string, number>>({});
+  const [itemIpi, setItemIpi] = useState<Record<string, number>>({});
+  const [temporaryItems, setTemporaryItems] = useState<Array<{
+    temporaryItemDescription: string;
+    orderedQuantity: number;
+    price: number | null;
+    icms: number;
+    ipi: number;
+  }>>([{ temporaryItemDescription: '', orderedQuantity: 1, price: null, icms: 0, ipi: 0 }]);
+
+  const form = useForm<OrderCreateFormData>({
+    resolver: zodResolver(orderCreateSchema),
+    defaultValues: {
+      description: '',
+      status: ORDER_STATUS.CREATED,
+      supplierId: undefined,
+      forecast: undefined,
+      notes: '',
+      items: [],
+      temporaryItems: [],
+    },
+    mode: 'onTouched',
+  });
+
+  const { createAsync, isLoading } = useOrderMutations();
+  const { data: suppliersResponse } = useSuppliers({
+    orderBy: { fantasyName: 'asc' },
+    take: 100,
+  });
+  const suppliers = suppliersResponse?.data || [];
+
+  // Fetch all items for selection (simplified - should use paginated selector)
+  const { data: itemsResponse } = useItems({
+    orderBy: { name: 'asc' },
+    take: 100,
+    where: { isActive: true },
+    include: { brand: true, category: true },
+  });
+  const items = itemsResponse?.data || [];
+
+  const supplierOptions = useMemo(
+    () =>
+      suppliers.map((s) => ({
+        label: s.fantasyName || s.name,
+        value: s.id,
+      })),
+    [suppliers]
+  );
+
+  const itemOptions = useMemo(
+    () =>
+      items.map((item) => ({
+        label: `${item.name}${item.uniCode ? ` (${item.uniCode})` : ''}`,
+        value: item.id,
+      })),
+    [items]
+  );
+
+  const handleAddTemporaryItem = useCallback(() => {
+    setTemporaryItems((prev) => [
+      ...prev,
+      { temporaryItemDescription: '', orderedQuantity: 1, price: null, icms: 0, ipi: 0 },
+    ]);
+  }, []);
+
+  const handleRemoveTemporaryItem = useCallback((index: number) => {
+    setTemporaryItems((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleUpdateTemporaryItem = useCallback(
+    (index: number, field: string, value: any) => {
+      setTemporaryItems((prev) =>
+        prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+      );
+    },
+    []
+  );
+
+  const handleSubmit = useCallback(
+    async (data: OrderCreateFormData) => {
+      try {
+        let itemsData: any[] = [];
+
+        if (orderItemMode === 'inventory') {
+          // Validate selection
+          if (selectedItems.size === 0) {
+            Alert.alert('Erro', 'Selecione pelo menos um item');
+            return;
+          }
+
+          // Validate prices
+          const itemsWithoutPrice = Array.from(selectedItems).filter(
+            (id) => !itemPrices[id] || itemPrices[id] <= 0
+          );
+          if (itemsWithoutPrice.length > 0) {
+            Alert.alert('Erro', 'Todos os itens devem ter preço definido');
+            return;
+          }
+
+          itemsData = Array.from(selectedItems).map((itemId) => ({
+            itemId,
+            orderedQuantity: itemQuantities[itemId] || 1,
+            price: itemPrices[itemId] || 0,
+            icms: itemIcms[itemId] || 0,
+            ipi: itemIpi[itemId] || 0,
+          }));
+        } else {
+          // Validate temporary items
+          if (temporaryItems.length === 0) {
+            Alert.alert('Erro', 'Adicione pelo menos um item temporário');
+            return;
+          }
+
+          const hasIncomplete = temporaryItems.some(
+            (item) =>
+              !item.temporaryItemDescription ||
+              !item.orderedQuantity ||
+              item.orderedQuantity <= 0 ||
+              item.price === null ||
+              item.price < 0
+          );
+
+          if (hasIncomplete) {
+            Alert.alert('Erro', 'Todos os itens devem ter descrição, quantidade e preço');
+            return;
+          }
+
+          itemsData = temporaryItems;
+        }
+
+        const orderData: OrderCreateFormData = {
+          ...data,
+          items: orderItemMode === 'inventory' ? itemsData : [],
+          temporaryItems: orderItemMode === 'temporary' ? itemsData : [],
+        };
+
+        const result = await createAsync(orderData);
+
+        if (result.success && result.data) {
+          showToast({
+            type: 'success',
+            message: 'Pedido criado com sucesso!',
+          });
+
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            router.push(routeToMobilePath(`/inventory/orders/details/${result.data.id}`));
+          }
+        }
+      } catch (error) {
+        console.error('Error creating order:', error);
+        Alert.alert('Erro', 'Falha ao criar pedido');
+      }
+    },
+    [orderItemMode, selectedItems, itemQuantities, itemPrices, itemIcms, itemIpi, temporaryItems, createAsync, onSuccess, router]
+  );
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    content: {
+      padding: theme.spacing.md,
+    },
+    section: {
+      marginBottom: theme.spacing.lg,
+    },
+    sectionTitle: {
+      fontSize: theme.fontSize.lg,
+      fontWeight: theme.fontWeight.semibold as any,
+      marginBottom: theme.spacing.md,
+      color: theme.colors.text,
+    },
+    field: {
+      marginBottom: theme.spacing.md,
+    },
+    label: {
+      fontSize: theme.fontSize.sm,
+      fontWeight: theme.fontWeight.medium as any,
+      marginBottom: theme.spacing.xs,
+      color: theme.colors.textSecondary,
+    },
+    required: {
+      color: theme.colors.error,
+    },
+    radioGroup: {
+      gap: theme.spacing.sm,
+    },
+    radioOption: {
+      padding: theme.spacing.md,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: theme.borderRadius.md,
+      marginBottom: theme.spacing.sm,
+    },
+    radioOptionSelected: {
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.colors.primaryForeground + '10',
+    },
+    itemList: {
+      gap: theme.spacing.sm,
+    },
+    itemCard: {
+      padding: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+    },
+    itemRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: theme.spacing.xs,
+    },
+    tempItemRow: {
+      flexDirection: 'row',
+      gap: theme.spacing.sm,
+      marginBottom: theme.spacing.md,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: theme.spacing.sm,
+      padding: theme.spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    actionButton: {
+      flex: 1,
+    },
+  });
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        {/* Basic Information */}
+        <Card style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
+
+          <View style={styles.field}>
+            <ThemedText style={styles.label}>
+              Descrição <ThemedText style={styles.required}>*</ThemedText>
+            </ThemedText>
+            <Controller
+              control={form.control}
+              name="description"
+              render={({ field, fieldState }) => (
+                <>
+                  <Input
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    placeholder="Ex: Pedido de materiais de escritório"
+                    error={fieldState.error?.message}
+                  />
+                </>
+              )}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <ThemedText style={styles.label}>Fornecedor</ThemedText>
+            <Controller
+              control={form.control}
+              name="supplierId"
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  options={supplierOptions}
+                  placeholder="Selecione um fornecedor (opcional)"
+                />
+              )}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <ThemedText style={styles.label}>Previsão de Entrega</ThemedText>
+            <Controller
+              control={form.control}
+              name="forecast"
+              render={({ field }) => (
+                <DateTimePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  mode="date"
+                  placeholder="Selecione uma data"
+                />
+              )}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <ThemedText style={styles.label}>Observações</ThemedText>
+            <Controller
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <Input
+                  value={field.value || ''}
+                  onChangeText={field.onChange}
+                  placeholder="Observações sobre o pedido (opcional)"
+                  multiline
+                  numberOfLines={4}
+                />
+              )}
+            />
+          </View>
+        </Card>
+
+        {/* Item Mode Selection */}
+        <Card style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Tipo de Itens</ThemedText>
+
+          <View style={styles.radioGroup}>
+            <Button
+              onPress={() => setOrderItemMode('inventory')}
+              variant={orderItemMode === 'inventory' ? 'default' : 'outline'}
+              style={styles.radioOption}
+            >
+              <ThemedText>Itens do Estoque</ThemedText>
+            </Button>
+            <Button
+              onPress={() => setOrderItemMode('temporary')}
+              variant={orderItemMode === 'temporary' ? 'default' : 'outline'}
+              style={styles.radioOption}
+            >
+              <ThemedText>Itens Temporários</ThemedText>
+            </Button>
+          </View>
+        </Card>
+
+        {/* Item Selection or Temporary Items */}
+        {orderItemMode === 'inventory' ? (
+          <Card style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>Seleção de Itens</ThemedText>
+            <ThemedText style={{ color: theme.colors.textSecondary, marginBottom: theme.spacing.md }}>
+              Nota: Interface simplificada. Para seleção avançada, use a versão web.
+            </ThemedText>
+
+            <Select
+              value=""
+              onValueChange={(itemId) => {
+                if (itemId && !selectedItems.has(itemId)) {
+                  setSelectedItems((prev) => new Set([...prev, itemId]));
+                  setItemQuantities((prev) => ({ ...prev, [itemId]: 1 }));
+                  setItemPrices((prev) => ({ ...prev, [itemId]: 0 }));
+                  setItemIcms((prev) => ({ ...prev, [itemId]: 0 }));
+                  setItemIpi((prev) => ({ ...prev, [itemId]: 0 }));
+                }
+              }}
+              options={itemOptions.filter((opt) => !selectedItems.has(opt.value))}
+              placeholder="Adicionar item..."
+            />
+
+            <Separator style={{ marginVertical: theme.spacing.md }} />
+
+            {Array.from(selectedItems).map((itemId) => {
+              const item = items.find((i) => i.id === itemId);
+              if (!item) return null;
+
+              return (
+                <Card key={itemId} style={styles.itemCard}>
+                  <ThemedText style={{ fontWeight: theme.fontWeight.semibold as any, marginBottom: theme.spacing.sm }}>
+                    {item.name}
+                  </ThemedText>
+
+                  <View style={styles.field}>
+                    <ThemedText style={styles.label}>Quantidade</ThemedText>
+                    <Input
+                      value={String(itemQuantities[itemId] || 1)}
+                      onChangeText={(value) =>
+                        setItemQuantities((prev) => ({ ...prev, [itemId]: Number(value) || 1 }))
+                      }
+                      keyboardType="numeric"
+                    />
+                  </View>
+
+                  <View style={styles.field}>
+                    <ThemedText style={styles.label}>Preço Unitário</ThemedText>
+                    <Input
+                      value={String(itemPrices[itemId] || 0)}
+                      onChangeText={(value) =>
+                        setItemPrices((prev) => ({ ...prev, [itemId]: Number(value) || 0 }))
+                      }
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+
+                  <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+                    <View style={{ flex: 1 }}>
+                      <ThemedText style={styles.label}>ICMS (%)</ThemedText>
+                      <Input
+                        value={String(itemIcms[itemId] || 0)}
+                        onChangeText={(value) =>
+                          setItemIcms((prev) => ({ ...prev, [itemId]: Number(value) || 0 }))
+                        }
+                        keyboardType="numeric"
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <ThemedText style={styles.label}>IPI (%)</ThemedText>
+                      <Input
+                        value={String(itemIpi[itemId] || 0)}
+                        onChangeText={(value) =>
+                          setItemIpi((prev) => ({ ...prev, [itemId]: Number(value) || 0 }))
+                        }
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  </View>
+
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onPress={() => {
+                      setSelectedItems((prev) => {
+                        const next = new Set(prev);
+                        next.delete(itemId);
+                        return next;
+                      });
+                    }}
+                    style={{ marginTop: theme.spacing.sm }}
+                  >
+                    <ThemedText>Remover</ThemedText>
+                  </Button>
+                </Card>
+              );
+            })}
+          </Card>
+        ) : (
+          <Card style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>Itens Temporários</ThemedText>
+
+            {temporaryItems.map((item, index) => (
+              <Card key={index} style={styles.itemCard}>
+                <View style={styles.field}>
+                  <ThemedText style={styles.label}>Descrição</ThemedText>
+                  <Input
+                    value={item.temporaryItemDescription}
+                    onChangeText={(value) =>
+                      handleUpdateTemporaryItem(index, 'temporaryItemDescription', value)
+                    }
+                    placeholder="Descrição do item"
+                  />
+                </View>
+
+                <View style={styles.field}>
+                  <ThemedText style={styles.label}>Quantidade</ThemedText>
+                  <Input
+                    value={String(item.orderedQuantity)}
+                    onChangeText={(value) =>
+                      handleUpdateTemporaryItem(index, 'orderedQuantity', Number(value) || 1)
+                    }
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.field}>
+                  <ThemedText style={styles.label}>Preço Unitário</ThemedText>
+                  <Input
+                    value={item.price !== null ? String(item.price) : ''}
+                    onChangeText={(value) =>
+                      handleUpdateTemporaryItem(index, 'price', value ? Number(value) : null)
+                    }
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+
+                <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+                  <View style={{ flex: 1 }}>
+                    <ThemedText style={styles.label}>ICMS (%)</ThemedText>
+                    <Input
+                      value={String(item.icms)}
+                      onChangeText={(value) =>
+                        handleUpdateTemporaryItem(index, 'icms', Number(value) || 0)
+                      }
+                      keyboardType="numeric"
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <ThemedText style={styles.label}>IPI (%)</ThemedText>
+                    <Input
+                      value={String(item.ipi)}
+                      onChangeText={(value) =>
+                        handleUpdateTemporaryItem(index, 'ipi', Number(value) || 0)
+                      }
+                      keyboardType="numeric"
+                    />
+                  </View>
+                </View>
+
+                {temporaryItems.length > 1 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onPress={() => handleRemoveTemporaryItem(index)}
+                    style={{ marginTop: theme.spacing.sm }}
+                  >
+                    <ThemedText>Remover</ThemedText>
+                  </Button>
+                )}
+              </Card>
+            ))}
+
+            <Button variant="outline" onPress={handleAddTemporaryItem}>
+              <ThemedText>Adicionar Item</ThemedText>
+            </Button>
+          </Card>
+        )}
+      </ScrollView>
+
+      {/* Actions */}
+      <View style={styles.actions}>
+        <Button
+          variant="outline"
+          onPress={() => router.back()}
+          style={styles.actionButton}
+          disabled={isLoading}
+        >
+          <ThemedText>Cancelar</ThemedText>
+        </Button>
+        <Button
+          onPress={form.handleSubmit(handleSubmit)}
+          style={styles.actionButton}
+          disabled={isLoading}
+          loading={isLoading}
+        >
+          <ThemedText>Criar Pedido</ThemedText>
+        </Button>
+      </View>
+    </KeyboardAvoidingView>
+  );
+};

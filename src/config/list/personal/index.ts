@@ -1,0 +1,7 @@
+export { personalEmployeesListConfig } from './employees'
+export { personalBorrowsListConfig } from './borrows'
+export { personalWarningsListConfig } from './warnings'
+export { personalVacationsListConfig } from './vacations'
+export { personalHolidaysListConfig } from './holidays'
+export { personalNotificationsListConfig } from './notifications'
+export { personalPpeDeliveriesListConfig } from './ppe-deliveries'

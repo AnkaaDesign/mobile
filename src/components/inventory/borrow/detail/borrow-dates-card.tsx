@@ -5,8 +5,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatDateTime } from '../../../../utils';
-import { BORROW_STATUS } from '../../../../constants';
+import { formatDateTime } from "@/utils";
+import { BORROW_STATUS } from "@/constants";
 import type { Borrow } from '../../../../types';
 import {
   IconCalendar,

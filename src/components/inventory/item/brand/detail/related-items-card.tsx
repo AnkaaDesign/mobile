@@ -6,12 +6,12 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { IconTags, IconPackage, IconChevronRight } from "@tabler/icons-react-native";
 import type { ItemBrand } from '../../../../../types';
 import { router } from "expo-router";
-import { routes } from '../../../../../constants';
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
-import { itemUtils } from '../../../../../utils';
+import { itemUtils } from "@/utils";
 
 interface RelatedItemsCardProps {
   brand: ItemBrand;

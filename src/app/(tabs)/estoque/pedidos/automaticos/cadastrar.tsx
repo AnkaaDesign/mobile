@@ -4,9 +4,9 @@ import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderScheduleMutations } from '../../../../../hooks';
-import { orderScheduleCreateSchema, type OrderScheduleCreateFormData } from '../../../../../schemas';
-import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from '../../../../../constants';
+import { useOrderScheduleMutations } from "@/hooks";
+import { orderScheduleCreateSchema} from '../../../../../schemas';
+import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 import {
   ThemedView,
   ThemedText,
@@ -24,11 +24,11 @@ import { ItemMultiSelector } from "@/components/inventory/item/item-multi-select
 import { FrequencySelector } from "@/components/inventory/order/schedule/frequency-selector";
 import { ScheduleConfigurationForm } from "@/components/inventory/order/schedule/schedule-configuration-form";
 import { useTheme } from "@/lib/theme";
-import { routes } from '../../../../../constants';
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from '../../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../../constants';
+import { hasPrivilege } from "@/utils";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function CreateAutomaticOrderScreen() {
   const router = useRouter();
@@ -173,7 +173,7 @@ export default function CreateAutomaticOrderScreen() {
                   name="frequencyCount"
                   render={({ field: { onChange, value } }) => (
                     <Input
-                      value={value?.toString() || ""}
+                      value={String(value || '')}
                       onChangeText={(text) => onChange(parseInt(text) || 1)}
                       placeholder="1"
                       keyboardType="numeric"

@@ -21,8 +21,8 @@ import {
   IconMinus,
 } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { useItemBrands, useItemCategories, useSuppliers } from '../../../../hooks';
-import { MEASURE_UNIT, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE_LABELS } from '../../../../constants';
+import { useItemBrands, useItemCategories, useSuppliers } from "@/hooks";
+import { MEASURE_UNIT, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";

@@ -1,7 +1,6 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { useAuth } from "@/contexts/auth-context";
-import { useTimeRecords } from "@/hooks";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
@@ -9,7 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import {
   IconClock,
   IconCalendar,
@@ -41,7 +40,7 @@ export default function MeusPontosScreen() {
   const insets = useSafeAreaInsets();
   const { user: currentUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const selectedMonth = new Date(); // Current month as default
 
   // Build query parameters for user's own time records
   const queryParams = useMemo(() => {
@@ -65,25 +64,21 @@ export default function MeusPontosScreen() {
     };
   }, [currentUser?.id, selectedMonth]);
 
-  const {
-    data: recordsResponse,
-    isLoading,
-    error,
-    refetch,
-  } = useTimeRecords(queryParams || {}, {
-    enabled: !!queryParams,
-  });
-
-  const records = recordsResponse?.data || [];
+  // TODO: Implement time records fetching when API is available
+  // For now, using empty array as placeholder
+  const isLoading = false;
+  const error = null;
+  const records: any[] = [];
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      // TODO: Implement refresh when API is available
+      // await refetch();
     } finally {
       setRefreshing(false);
     }
-  }, [refetch]);
+  }, []);
 
   // Group records by date
   const groupedRecords = useMemo(() => {
@@ -429,7 +424,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
   },
   adjustedText: {
-    fontSize: fontSize.xxs,
+    fontSize: fontSize.xs,
     fontWeight: "500",
   },
   infoCard: {

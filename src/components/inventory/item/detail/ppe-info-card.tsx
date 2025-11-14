@@ -2,9 +2,9 @@
 import { View, StyleSheet} from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { IconShirt, IconShoe, IconBoxSeam, IconMask, IconBulb, IconCertificate, IconPackage, IconCalendar, IconUser, IconRuler } from "@tabler/icons-react-native";
+import { IconShirt, IconShoe, IconBoxSeam, IconMask, IconBulb, IconCertificate, IconPackage, IconUser, IconRuler } from "@tabler/icons-react-native";
 import type { Item } from '../../../../types';
-import { PPE_TYPE_LABELS, PPE_SIZE_LABELS, PPE_DELIVERY_MODE_LABELS, PPE_TYPE } from '../../../../constants';
+import { PPE_TYPE_LABELS, PPE_SIZE_LABELS, PPE_DELIVERY_MODE_LABELS, PPE_TYPE } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 

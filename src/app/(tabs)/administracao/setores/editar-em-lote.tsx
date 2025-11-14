@@ -3,11 +3,11 @@ import { View, ScrollView, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconBuildingSkyscraper, IconDeviceFloppy } from "@tabler/icons-react-native";
-import { useSectors, useSectorBatchMutations } from '../../../../hooks';
+import { useSectors, useSectorBatchMutations } from "@/hooks";
 import type { Sector } from '../../../../types';
 import { ThemedView, ThemedText, Button, LoadingScreen } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
-import { routes } from '../../../../constants';
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { toast } from "@/lib/toast";
 

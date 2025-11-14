@@ -16,7 +16,7 @@ import { MENU_ITEMS, MenuItem } from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
 import { useFavorites } from '@/contexts/favorites-context';
 import { useAuth } from '@/contexts/auth-context';
-import { IconChevronRight, IconStar, IconStarFilled } from '@tabler/icons-react-native';
+import { IconChevronRight} from '@tabler/icons-react-native';
 
 interface DrawerContentProps extends DrawerContentComponentProps {
   onNavigate: (path: string) => Promise<void>;

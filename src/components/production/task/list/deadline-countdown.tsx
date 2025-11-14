@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { fontSize, fontWeight } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
-import { TASK_STATUS } from "../../../../constants";
+import { TASK_STATUS } from "@/constants";
 import type { Task } from "../../../../types";
 
 interface DeadlineCountdownProps {

@@ -144,7 +144,7 @@ export default function TeamActivitiesScreen() {
   }, [isTeamLeader, currentUser?.managedSectorId, searchText, buildWhereClause, buildOrderBy]);
 
   const {
-    items: activities,
+    items,
     isLoading,
     error,
     isRefetching,
@@ -156,9 +156,10 @@ export default function TeamActivitiesScreen() {
     refresh,
     prefetchNext,
     shouldPrefetch,
-  } = useActivitiesInfiniteMobile(queryParams || {}, {
-    enabled: !!queryParams,
-  });
+  } = useActivitiesInfiniteMobile(queryParams || {});
+
+  // Type alias for activities
+  const activities = items;
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);

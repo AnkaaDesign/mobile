@@ -21,7 +21,6 @@ const ROUTE_FIXES: RouteMapping[] = [
   { menuPath: '/administracao', screenName: 'administracao/index', actualPath: '(tabs)/administracao/index' },
   { menuPath: '/pintura', screenName: 'pintura/index', actualPath: '(tabs)/pintura/index' },
   { menuPath: '/servidor', screenName: 'servidor/index', actualPath: '(tabs)/servidor/index' },
-  { menuPath: '/integracoes', screenName: 'integracoes/index', actualPath: '(tabs)/integracoes/index' },
 ];
 
 /**
@@ -40,7 +39,7 @@ export function normalizeRouteForScreen(menuPath: string): string {
   // For routes without /index, add it if it's a module root
   const moduleRoots = [
     'producao', 'estoque', 'recursos-humanos', 'administracao',
-    'pintura', 'servidor', 'integracoes', 'meu-pessoal'
+    'pintura', 'servidor', 'meu-pessoal'
   ];
 
   if (moduleRoots.includes(normalized) && !normalized.endsWith('/index')) {
@@ -106,8 +105,6 @@ export function getModuleForRoute(screenName: string): string | null {
   if (screenName.startsWith('meu-pessoal')) return 'personal';
   if (screenName.startsWith('pintura')) return 'painting';
   if (screenName.startsWith('servidor')) return 'server';
-  if (screenName.startsWith('integracoes')) return 'integrations';
-  if (screenName.startsWith('estatisticas')) return 'statistics';
 
   return null;
 }

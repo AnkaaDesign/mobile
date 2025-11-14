@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { useState, useEffect } from "react";
+import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useObservation, useObservationMutations } from "@/hooks";
-import { observationUpdateSchema, type ObservationUpdateFormData } from "@/schemas";
-import { LoadingScreen, ErrorScreen, ThemedText, ThemedView, Card, Button, Input, Skeleton, SimpleFormField } from "@/components/ui";
+import { observationUpdateSchema} from "@/schemas";
+import { ErrorScreen, ThemedText, ThemedView, Card, Button, Input, Skeleton, SimpleFormField } from "@/components/ui";
 import { IconAlertCircle, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";

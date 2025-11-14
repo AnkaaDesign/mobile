@@ -7,7 +7,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconShield, IconPackage, IconHash } from "@tabler/icons-react-native";
-import { PPE_TYPE_LABELS } from '../../../../../constants';
+import { PPE_TYPE_LABELS } from "@/constants";
 import type { PpeDeliverySchedule } from '../../../../../types';
 
 interface PpeItemsCardProps {

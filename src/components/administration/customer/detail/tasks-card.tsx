@@ -8,8 +8,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconClipboardList, IconChevronRight, IconCalendar } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
-import { routes, TASK_STATUS_LABELS } from '../../../../constants';
-import { formatDate } from '../../../../utils';
+import { routes, TASK_STATUS_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { extendedColors } from "@/lib/theme/extended-colors";
 

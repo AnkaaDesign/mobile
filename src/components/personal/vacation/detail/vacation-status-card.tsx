@@ -7,8 +7,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconFileCheck } from "@tabler/icons-react-native";
 import type { Vacation } from '../../../../types';
-import { VACATION_STATUS_LABELS, getBadgeVariant } from '../../../../constants';
-import { formatDate } from '../../../../utils';
+import { VACATION_STATUS_LABELS, getBadgeVariant } from "@/constants";
+import { formatDate } from "@/utils";
 
 interface VacationStatusCardProps {
   vacation: Vacation;

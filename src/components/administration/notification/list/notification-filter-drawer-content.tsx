@@ -4,7 +4,7 @@ import { IconFilter, IconX, IconBell, IconCalendarPlus, IconAlertCircle } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { NOTIFICATION_IMPORTANCE, NOTIFICATION_TYPE, NOTIFICATION_IMPORTANCE_LABELS, NOTIFICATION_TYPE_LABELS } from '../../../../constants';
+import { NOTIFICATION_IMPORTANCE, NOTIFICATION_TYPE, NOTIFICATION_IMPORTANCE_LABELS, NOTIFICATION_TYPE_LABELS } from "@/constants";
 import type { NotificationGetManyFormData } from '../../../../schemas';
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';

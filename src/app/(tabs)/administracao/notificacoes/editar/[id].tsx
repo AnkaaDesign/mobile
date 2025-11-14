@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconBell, IconArrowLeft } from "@tabler/icons-react-native";
 import { ThemedView, ThemedText, Button } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
-import { routes } from '../../../../../constants';
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function EditNotificationScreen() {

@@ -5,8 +5,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconCalendar } from "@tabler/icons-react-native";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { VACATION_STATUS, VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '../../../constants';
-import { formatDate, getDifferenceInDays } from '../../../utils';
+import { VACATION_STATUS, VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from "@/constants";
+import { formatDate, getDifferenceInDays } from "@/utils";
 import type { Vacation } from '../../../types';
 
 interface MyVacationCalendarProps {

@@ -117,13 +117,13 @@ export default function TeamEPIsScreen() {
     return {
       orderBy: buildOrderBy(
         {
-          userName: { user: { name: "asc" } },
-          itemName: { item: { name: "asc" } },
+          userName: "user.name",
+          itemName: "item.name",
           quantity: "quantity",
           status: "status",
           deliveryDate: "actualDeliveryDate",
           scheduledDate: "scheduledDate",
-          reviewedBy: { reviewedByUser: { name: "asc" } },
+          reviewedBy: "reviewedByUser.name",
           createdAt: "createdAt",
         },
         { createdAt: "desc" }
@@ -168,7 +168,7 @@ export default function TeamEPIsScreen() {
     router.push(`/meu-pessoal/epis/detalhes/${deliveryId}` as any);
   }, [router]);
 
-  const handleEditDelivery = useCallback((deliveryId: string) => {
+  const handleEditDelivery = useCallback(() => {
     // TODO: Navigate to edit page when implemented
     showToast({ message: "Edição ainda não implementada", type: "info" });
   }, []);

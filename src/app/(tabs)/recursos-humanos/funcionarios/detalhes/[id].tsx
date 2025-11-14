@@ -37,7 +37,7 @@ import { ptBR } from "date-fns/locale";
 // Helper function to get status badge variant
 const getStatusBadgeVariant = (status: USER_STATUS) => {
   switch (status) {
-    case USER_STATUS.CONTRACTED:
+    case USER_STATUS.EFFECTED:
       return "default";
     case USER_STATUS.EXPERIENCE_PERIOD_1:
     case USER_STATUS.EXPERIENCE_PERIOD_2:
@@ -52,8 +52,8 @@ const getStatusBadgeVariant = (status: USER_STATUS) => {
 // Helper function to get status label
 const getStatusLabel = (status: USER_STATUS) => {
   switch (status) {
-    case USER_STATUS.CONTRACTED:
-      return "Contratado";
+    case USER_STATUS.EFFECTED:
+      return "Efetivo";
     case USER_STATUS.EXPERIENCE_PERIOD_1:
       return "Experiência 1";
     case USER_STATUS.EXPERIENCE_PERIOD_2:
@@ -478,16 +478,6 @@ export default function EmployeeDetailScreen() {
                   </ThemedText>
                   <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
                     {format(new Date(employee.admissional), "dd/MM/yyyy", { locale: ptBR })}
-                  </ThemedText>
-                </View>
-              )}
-              {employee.contractedAt && (
-                <View style={styles.infoItem}>
-                  <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
-                    Data de Contratação
-                  </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                    {format(new Date(employee.contractedAt), "dd/MM/yyyy", { locale: ptBR })}
                   </ThemedText>
                 </View>
               )}

@@ -1,4 +1,4 @@
-import { USER_STATUS } from '../constants';
+import { USER_STATUS } from "@/constants";
 
 /**
  * Interface for time duration breakdown
@@ -145,7 +145,7 @@ export function formatDaysRemainingInPortuguese(days: number): string {
  */
 export interface EmployeeWithStatusDates {
   status: USER_STATUS;
-  contractedAt: Date | null;
+  admissional: Date | null;
   exp1StartAt: Date | null;
   exp1EndAt: Date | null;
   exp2StartAt: Date | null;
@@ -194,15 +194,15 @@ export function getEmployeeStatusText(employee: EmployeeWithStatusDates): string
       return `Experiência 2/2 (${daysRemaining} ${daysRemaining === 1 ? 'dia' : 'dias'} restantes)`;
     }
 
-    case USER_STATUS.CONTRACTED: {
-      if (!employee.contractedAt) {
-        return 'Contratado';
+    case USER_STATUS.EFFECTED: {
+      if (!employee.admissional) {
+        return 'Efetivado';
       }
 
-      const duration = calculateTimeDuration(new Date(employee.contractedAt), now);
+      const duration = calculateTimeDuration(new Date(employee.admissional), now);
       const formattedDuration = formatDurationInPortuguese(duration);
 
-      return `Contratado (${formattedDuration})`;
+      return `Efetivado (${formattedDuration})`;
     }
 
     case USER_STATUS.DISMISSED: {
@@ -260,15 +260,15 @@ export function getEmployeeStatusTextCompact(employee: EmployeeWithStatusDates):
       return `Exp 2/2 (${daysRemaining}d)`;
     }
 
-    case USER_STATUS.CONTRACTED: {
-      if (!employee.contractedAt) {
-        return 'Contratado';
+    case USER_STATUS.EFFECTED: {
+      if (!employee.admissional) {
+        return 'Efetivado';
       }
 
-      const duration = calculateTimeDuration(new Date(employee.contractedAt), now);
+      const duration = calculateTimeDuration(new Date(employee.admissional), now);
       const formattedDuration = formatDurationInPortuguese(duration, { compact: true });
 
-      return `Contratado (${formattedDuration})`;
+      return `Efetivado (${formattedDuration})`;
     }
 
     case USER_STATUS.DISMISSED: {

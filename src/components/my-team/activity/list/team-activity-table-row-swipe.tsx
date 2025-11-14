@@ -3,7 +3,7 @@ import { View, StyleSheet, ViewStyle, StyleProp, Alert } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
-import { ReanimatedSwipeableRow, type SwipeAction, type Swipeable } from "@/components/ui/reanimated-swipeable-row";
+import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
 
 const ACTION_WIDTH = 80;
 

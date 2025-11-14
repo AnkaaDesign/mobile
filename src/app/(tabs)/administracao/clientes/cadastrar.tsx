@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconBuilding, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useCustomerMutations } from "@/hooks";
 import { useCnpjLookup } from "@/hooks/use-cnpj-lookup";
 import { useCepLookup } from "@/hooks/use-cep-lookup";
-import { customerCreateSchema, type CustomerCreateFormData } from "@/schemas";
+import { customerCreateSchema} from "@/schemas";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { getEconomicActivities, createEconomicActivity, getEconomicActivityById } from "@/api-client/economic-activity";
+import { getEconomicActivities, createEconomicActivity } from "@/api-client/economic-activity";
 import { showToast } from "@/components/ui/toast";
 import {
   ThemedView,
@@ -22,18 +22,17 @@ import {
   SimpleFormField,
 } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
-import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, LOGRADOURO_TYPE_OPTIONS } from "@/constants";
+import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
 import { PhoneManager } from "@/components/administration/customer/form/phone-manager";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
 import { LogoUpload } from "@/components/administration/customer/form/logo-upload";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 
 export default function CreateCustomerScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cnpj");
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -66,10 +65,10 @@ export default function CreateCustomerScreen() {
       phones: [],
       tags: [],
       logoId: null,
-      situacaoCadastral: null,
+      registrationStatus: null,
       inscricaoEstadual: null,
       economicActivityId: null,
-      logradouro: null,
+      streetType: null,
     },
   });
 
@@ -89,8 +88,8 @@ export default function CreateCustomerScreen() {
       if (data.zipCode) {
         setValue("zipCode", data.zipCode, { shouldDirty: true, shouldValidate: true });
       }
-      if (data.logradouroType) {
-        setValue("logradouro", data.logradouroType, { shouldDirty: true, shouldValidate: true });
+      if (data.streetType) {
+        setValue("streetType", data.streetType, { shouldDirty: true, shouldValidate: true });
       }
       if (data.address) {
         setValue("address", data.address, { shouldDirty: true, shouldValidate: true });
@@ -113,8 +112,8 @@ export default function CreateCustomerScreen() {
       if (data.phones && data.phones.length > 0) {
         setValue("phones", data.phones, { shouldDirty: true, shouldValidate: true });
       }
-      if (data.situacaoCadastral) {
-        setValue("situacaoCadastral", data.situacaoCadastral, { shouldDirty: true, shouldValidate: true });
+      if (data.registrationStatus) {
+        setValue("registrationStatus", data.registrationStatus, { shouldDirty: true, shouldValidate: true });
       }
 
       // Handle economic activity (CNAE)
@@ -124,15 +123,17 @@ export default function CreateCustomerScreen() {
             code: data.economicActivityCode,
             description: data.economicActivityDescription,
           });
-          setValue("economicActivityId", response.data.id, { shouldDirty: true, shouldValidate: true });
+          if (response.data) {
+            setValue("economicActivityId", response.data.id, { shouldDirty: true, shouldValidate: true });
 
-          // Set initial options for the combobox
-          setEconomicActivityInitialOptions([{
-            value: response.data.id,
-            label: `${response.data.code} - ${response.data.description}`,
-          }]);
+            // Set initial options for the combobox
+            setEconomicActivityInitialOptions([{
+              value: response.data.id,
+              label: `${response.data.code} - ${response.data.description}`,
+            }]);
 
-          queryClient.invalidateQueries({ queryKey: ["economic-activities"] });
+            queryClient.invalidateQueries({ queryKey: ["economic-activities"] });
+          }
         } catch (error) {
           console.error("Error handling economic activity:", error);
         }
@@ -143,8 +144,8 @@ export default function CreateCustomerScreen() {
   // CEP Lookup Hook
   const { lookupCep } = useCepLookup({
     onSuccess: (data) => {
-      if (data.logradouroType) {
-        setValue("logradouro", data.logradouroType, { shouldDirty: true, shouldValidate: true });
+      if (data.streetType) {
+        setValue("streetType", data.streetType, { shouldDirty: true, shouldValidate: true });
       }
       if (data.logradouro) {
         setValue("address", data.logradouro, { shouldDirty: true, shouldValidate: true });
@@ -360,15 +361,15 @@ export default function CreateCustomerScreen() {
             />
           </SimpleFormField>
 
-          <SimpleFormField label="Situação Cadastral" error={errors.situacaoCadastral}>
+          <SimpleFormField label="Situação Cadastral" error={errors.registrationStatus}>
             <Controller
               control={control}
-              name="situacaoCadastral"
+              name="registrationStatus"
               render={({ field: { onChange, value } }) => (
                 <Combobox
                   value={value || ""}
                   onValueChange={onChange}
-                  options={REGISTRATION_STATUS_OPTIONS}
+                  options={[...REGISTRATION_STATUS_OPTIONS]}
                   placeholder="Selecione a situação cadastral"
                   searchPlaceholder="Pesquisar situação..."
                   emptyText="Nenhuma situação encontrada"
@@ -420,10 +421,10 @@ export default function CreateCustomerScreen() {
                     });
 
                     return {
-                      data: response.data.map((activity) => ({
+                      data: response.data?.map((activity) => ({
                         value: activity.id,
                         label: `${activity.code} - ${activity.description}`,
-                      })),
+                      })) || [],
                       hasMore: false,
                     };
                   }}
@@ -440,7 +441,9 @@ export default function CreateCustomerScreen() {
                         description: searchTerm,
                       });
 
-                      setValue("economicActivityId", result.data.id, { shouldDirty: true, shouldValidate: true });
+                      if (result?.data?.id) {
+                        setValue("economicActivityId", result.data.id, { shouldDirty: true, shouldValidate: true });
+                      }
                       showToast({
                         message: result.message || "Atividade econômica configurada com sucesso",
                         type: "success",
@@ -499,8 +502,8 @@ export default function CreateCustomerScreen() {
                   name="cnpj"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                      value={value ? formatCNPJ(value) : ""}
-                      onChangeText={(text) => onChange(cleanCNPJ(text))}
+                      value={value ? formatCNPJ(String(value)) : ""}
+                      onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
                       onBlur={onBlur}
                       placeholder="00.000.000/0000-00"
                       keyboardType="numeric"
@@ -515,8 +518,8 @@ export default function CreateCustomerScreen() {
                   name="cpf"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                      value={value ? formatCPF(value) : ""}
-                      onChangeText={(text) => onChange(cleanCPF(text))}
+                      value={value ? formatCPF(String(value)) : ""}
+                      onChangeText={(text) => onChange(cleanCPF(text) || "")}
                       onBlur={onBlur}
                       placeholder="000.000.000-00"
                       keyboardType="numeric"
@@ -540,16 +543,16 @@ export default function CreateCustomerScreen() {
         <Card style={styles.card}>
           <ThemedText style={styles.sectionTitle}>Endereço</ThemedText>
 
-          <SimpleFormField label="Tipo de Logradouro" error={errors.logradouro}>
+          <SimpleFormField label="Tipo de Logradouro" error={errors.streetType}>
             <Controller
               control={control}
-              name="logradouro"
+              name="streetType"
               render={({ field: { onChange, value } }) => (
                 <Combobox
                   value={value || ""}
                   onValueChange={onChange}
-                  options={LOGRADOURO_TYPE_OPTIONS}
-                  placeholder="Selecione o tipo de logradouro"
+                  options={[...STREET_TYPE_OPTIONS]}
+                  placeholder="Select street type"
                   searchPlaceholder="Pesquisar tipo..."
                   emptyText="Nenhum tipo encontrado"
                   searchable={true}
@@ -565,8 +568,8 @@ export default function CreateCustomerScreen() {
               name="zipCode"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  value={value ? formatCEP(value) : ""}
-                  onChangeText={(text) => onChange(cleanCEP(text))}
+                  value={value ? formatCEP(String(value)) : ""}
+                  onChangeText={(text) => onChange(cleanCEP(text) || "")}
                   onBlur={onBlur}
                   placeholder="00000-000"
                   keyboardType="numeric"

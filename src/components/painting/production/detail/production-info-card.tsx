@@ -5,7 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconFlask, IconDroplet, IconWeight, IconCalendar } from "@tabler/icons-react-native";
 import type { PaintProduction } from '../../../../types';
-import { formatDateTime } from '../../../../utils';
+import { formatDateTime } from "@/utils";
 
 interface ProductionInfoCardProps {
   production: PaintProduction;

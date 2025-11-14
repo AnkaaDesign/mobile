@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Text, type TextProps, View, type ViewProps, ViewStyle, TextStyle, StyleProp } from "react-native";
+import { Text, View, ViewStyle, TextStyle, StyleProp } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, spacing, fontSize, fontWeight, lineHeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";

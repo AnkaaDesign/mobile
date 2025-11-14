@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { ItemBrandForm } from "@/components/inventory/item/brand/form/brand-form";
 import { SkeletonCard } from "@/components/ui/loading";
 import { PrivilegeGuard } from "@/components/privilege-guard";
-import { useItemBrand, useItemBrandMutations } from '../../../../../../hooks';
+import { useItemBrand, useItemBrandMutations } from "@/hooks";
 import { type ItemBrandUpdateFormData } from '../../../../../../schemas';
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes, SECTOR_PRIVILEGES } from '../../../../../../constants';
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { StyleSheet } from "react-native";
 import { spacing } from "@/constants/design-system";
 

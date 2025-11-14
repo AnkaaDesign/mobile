@@ -7,11 +7,11 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { TaskForm } from "@/components/production/task/form/task-form";
 import { SkeletonCard } from "@/components/ui/loading";
-import { useTaskDetail, useTaskMutations, useLayoutsByTruck } from '../../../../../hooks';
+import { useTaskDetail, useTaskMutations, useLayoutsByTruck } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes, SECTOR_PRIVILEGES } from '../../../../../constants';
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { spacing } from "@/constants/design-system";
 
 export default function EditScheduleScreen() {

@@ -5,8 +5,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { IconChevronLeft, IconChevronRight, IconUser, IconUsers } from "@tabler/icons-react-native";
 import { spacing } from "@/constants/design-system";
-import { VACATION_STATUS } from '../../../constants';
-import { getDaysInMonth, getMonthName, isDateInRange, isSameDay } from '../../../utils';
+import { VACATION_STATUS } from "@/constants";
+import { getDaysInMonth, getMonthName, isDateInRange, isSameDay } from "@/utils";
 import type { Vacation } from '../../../types';
 
 interface TeamVacationCalendarProps {

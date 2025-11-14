@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { UserTable } from "./user-table";
 import type { User } from '../../../../types';
 import type { UserGetManyFormData } from '../../../../schemas';
-import { useUsers } from '../../../../hooks';
+import { useUsers } from "@/hooks";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";

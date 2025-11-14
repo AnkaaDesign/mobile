@@ -8,9 +8,9 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TeamVacationTableRowSwipe } from "./team-vacation-table-row-swipe";
-import { formatDate, getDifferenceInDays, isDateInRange } from '../../../utils';
+import { formatDate, getDifferenceInDays, isDateInRange } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { VACATION_STATUS, VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '../../../constants';
+import { VACATION_STATUS, VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from "@/constants";
 
 export interface TableColumn {
   key: string;

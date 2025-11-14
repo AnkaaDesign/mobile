@@ -9,7 +9,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import type { Borrow } from '../../../../types';
 import { IconLoader } from "@tabler/icons-react-native";
-import { BORROW_STATUS } from '../../../../constants';
+import { BORROW_STATUS } from "@/constants";
 
 interface BorrowReturnFormProps {
   borrow: Borrow & {

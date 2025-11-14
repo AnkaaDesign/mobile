@@ -3,13 +3,13 @@ import { View, FlatList, TouchableOpacity, StyleSheet, Switch as RNSwitch } from
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconChevronDown, IconChevronRight, IconX, IconFilter } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { useItemBrands, useItemCategories, useSuppliers } from '../../../../hooks';
+import { useItemBrands, useItemCategories, useSuppliers } from "@/hooks";
 import {
   STOCK_LEVEL,
   STOCK_LEVEL_LABELS,
   ITEM_CATEGORY_TYPE,
   ITEM_CATEGORY_TYPE_LABELS,
-} from '../../../../constants';
+} from "@/constants";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";

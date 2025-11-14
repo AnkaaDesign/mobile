@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { IconUsers, IconChevronRight, IconSearch } from "@tabler/icons-react-native";
 import type { Position, User } from '../../../../types';
 import type { UserGetManyFormData } from '../../../../schemas';
-import { routes } from '../../../../constants';
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";

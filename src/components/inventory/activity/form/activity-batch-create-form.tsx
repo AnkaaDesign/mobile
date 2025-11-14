@@ -14,9 +14,9 @@ import { Icon } from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useItems, useUsers, useOrders, useOrderItems } from '../../../../hooks';
-import { ACTIVITY_OPERATION, ACTIVITY_REASON } from '../../../../constants';
-import { ACTIVITY_REASON_LABELS } from '../../../../constants/enum-labels';
+import { useItems, useUsers, useOrders, useOrderItems } from "@/hooks";
+import { ACTIVITY_OPERATION, ACTIVITY_REASON } from "@/constants";
+import { ACTIVITY_REASON_LABELS } from "@/constants/enum-labels";
 import { IconLoader, IconAlertCircle, IconInfoCircle } from "@tabler/icons-react-native";
 
 // Form schema for batch activity creation with conditional validation

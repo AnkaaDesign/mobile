@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Switch } from "@/components/ui/switch";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
-import { ITEM_CATEGORY_TYPE } from '../../../../../constants';
+import { ITEM_CATEGORY_TYPE } from "@/constants";
 import type { ItemCategoryCreateFormData, ItemCategoryUpdateFormData } from '../../../../../schemas';
 
 type ItemCategoryFormData = ItemCategoryCreateFormData | ItemCategoryUpdateFormData;

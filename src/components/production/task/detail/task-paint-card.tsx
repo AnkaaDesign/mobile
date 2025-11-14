@@ -8,7 +8,7 @@ import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { PAINT_FINISH_LABELS } from '@/constants/enum-labels';
 import { PAINT_FINISH } from '@/constants/enums';
 import { IconPaint, IconSparkles, IconBrush, IconAlertCircle } from "@tabler/icons-react-native";
-import { PaintPreview } from "@/components/paint/paint-preview";
+import { PaintingPreview } from "@/components/painting/preview/painting-preview";
 
 interface Paint {
   id: string;

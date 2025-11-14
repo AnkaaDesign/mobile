@@ -1,10 +1,10 @@
 import { Stack, useRouter } from "expo-router";
 import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
-import { PaintForm } from "@/components/paint/form/paint-form";
-import { usePaintMutations } from '../../../../hooks';
+import { PaintForm } from "@/components/painting/forms/painting-form";
+import { usePaintMutations } from "@/hooks";
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes } from '../../../../constants';
+import { routes } from "@/constants";
 
 export default function CreateCatalogScreen() {
   const router = useRouter();

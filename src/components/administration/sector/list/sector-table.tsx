@@ -11,8 +11,8 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SectorTableRowSwipe } from "./sector-table-row-swipe";
 import { extendedColors } from "@/lib/theme/extended-colors";
-import { SECTOR_PRIVILEGES_LABELS } from '../../../../constants';
-import { getBadgeVariant } from '../../../../constants/badge-colors';
+import { SECTOR_PRIVILEGES_LABELS } from "@/constants";
+import { getBadgeVariant } from "@/constants/badge-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {

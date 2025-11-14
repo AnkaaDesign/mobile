@@ -11,7 +11,7 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorScreen } from '@/components/ui/error-screen';
 import { Combobox } from '@/components/ui/combobox';
 import { SearchBar } from '@/components/ui/search-bar';
-import { Badge, type BadgeProps } from '@/components/ui/badge';
+import { Badge} from '@/components/ui/badge';
 
 interface LogEntry {
   timestamp: string;

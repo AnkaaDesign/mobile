@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useAirbrushingDetail, useAirbrushingMutations } from '../../../../../hooks';
+import { useAirbrushingDetail, useAirbrushingMutations } from "@/hooks";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -10,9 +10,9 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from '../../../../../utils';
-import { SECTOR_PRIVILEGES } from '../../../../../constants';
-import { formatDate } from '../../../../../utils';
+import { hasPrivilege } from "@/utils";
+import { SECTOR_PRIVILEGES } from "@/constants";
+import { formatDate } from "@/utils";
 
 // Import modular components
 import {
@@ -21,6 +21,8 @@ import {
   AirbrushingFilesCard,
 } from "@/components/production/airbrushing/detail";
 import { AirbrushingDetailSkeleton } from "@/components/production/airbrushing/skeleton";
+import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 
 export default function AirbrushingDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -192,6 +194,18 @@ export default function AirbrushingDetailScreen() {
         <AirbrushingTaskCard airbrushing={airbrushing} />
         <AirbrushingDatesCard airbrushing={airbrushing} />
         <AirbrushingFilesCard airbrushing={airbrushing} />
+
+        {/* Changelog Timeline */}
+        <Card style={styles.card}>
+          <ChangelogTimeline
+            entityType={CHANGE_LOG_ENTITY_TYPE.AIRBRUSHING}
+            entityId={airbrushing.id}
+            entityName={airbrushing.task?.name}
+            entityCreatedAt={airbrushing.createdAt}
+            maxHeight={500}
+            limit={50}
+          />
+        </Card>
 
         {/* Metadata Card */}
         <Card style={styles.card}>

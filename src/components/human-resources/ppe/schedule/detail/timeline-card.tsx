@@ -7,8 +7,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconTimeline, IconCircleDot, IconCalendar, IconAlertTriangle, IconClock } from "@tabler/icons-react-native";
-import { SCHEDULE_FREQUENCY } from '../../../../../constants';
-import { formatDate, addDays, addWeeks, addMonths } from '../../../../../utils';
+import { SCHEDULE_FREQUENCY } from "@/constants";
+import { formatDate, addDays, addWeeks, addMonths } from "@/utils";
 import type { PpeDeliverySchedule } from '../../../../../types';
 
 interface TimelineCardProps {

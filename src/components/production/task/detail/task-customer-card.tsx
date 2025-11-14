@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatBrazilianPhone, formatCPF, formatCNPJ } from '../../../../utils';
+import { formatBrazilianPhone, formatCPF, formatCNPJ } from "@/utils";
 import type { Customer } from '../../../../types';
 import { IconUser, IconPhone, IconMail, IconMapPin, IconId } from "@tabler/icons-react-native";
 

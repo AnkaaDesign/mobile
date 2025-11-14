@@ -11,9 +11,10 @@ import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useActivity, useActivityMutations } from '../../../../../hooks';
-import { hasPrivilege, formatDateTime, formatCurrency } from '../../../../../utils';
-import { SECTOR_PRIVILEGES, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS, ACTIVITY_OPERATION } from '../../../../../constants';
+import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { useActivity, useActivityMutations } from "@/hooks";
+import { hasPrivilege, formatDateTime, formatCurrency } from "@/utils";
+import { SECTOR_PRIVILEGES, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS, ACTIVITY_OPERATION, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { IconArrowUp, IconArrowDown, IconRefresh } from "@tabler/icons-react-native";
 import { ActivityDetailSkeleton } from "@/components/inventory/activity/skeleton/activity-detail-skeleton";
 
@@ -381,6 +382,22 @@ export default function ActivityDetailScreen() {
               </CardContent>
             </Card>
           )}
+
+          {/* Changelog */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico de Alterações</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChangelogTimeline
+                entityType={CHANGE_LOG_ENTITY_TYPE.ACTIVITY}
+                entityId={activity.id}
+                entityName={`Movimentação - ${activity.item?.name || 'Item'}`}
+                entityCreatedAt={activity.createdAt}
+                maxHeight={400}
+              />
+            </CardContent>
+          </Card>
 
           {/* Actions */}
           {isAdmin && (

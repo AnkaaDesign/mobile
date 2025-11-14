@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
-import { PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from '../../../../constants';
+import { PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from "@/constants";
 import type { Paint } from '../../../../types';
 
 interface PaintCatalogCardProps {

@@ -1,14 +1,14 @@
 
 import { View, StyleSheet, Linking } from "react-native";
 import type { User } from '../../../../types';
-import { formatBrazilianPhone, getUserStatusBadgeText } from '../../../../utils';
+import { formatBrazilianPhone, getUserStatusBadgeText } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconUser, IconMail, IconPhone, IconBrandWhatsapp } from "@tabler/icons-react-native";
-import { USER_STATUS } from '../../../../constants';
+import { IconUser, IconMail, IconPhone, IconBrandWhatsapp, IconId, IconShieldCheck } from "@tabler/icons-react-native";
+import { USER_STATUS } from "@/constants";
 
 interface BasicInfoCardProps {
   employee: User;
@@ -19,7 +19,7 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
 
   const getBadgeVariant = (status: string) => {
     switch (status) {
-      case USER_STATUS.CONTRACTED:
+      case USER_STATUS.EFFECTED:
       case USER_STATUS.EXPERIENCE_PERIOD_1:
       case USER_STATUS.EXPERIENCE_PERIOD_2:
         return "success";
@@ -71,9 +71,12 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
         </ThemedText>
 
         <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
-          <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-            Nome
-          </ThemedText>
+          <View style={styles.labelWithIcon}>
+            <IconId size={16} color={colors.mutedForeground} />
+            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
+              Nome
+            </ThemedText>
+          </View>
           <ThemedText style={[styles.value, { color: colors.foreground }]}>
             {employee.name}
           </ThemedText>
@@ -121,9 +124,12 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
         )}
 
         <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
-          <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-            Status
-          </ThemedText>
+          <View style={styles.labelWithIcon}>
+            <IconShieldCheck size={16} color={colors.mutedForeground} />
+            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
+              Status
+            </ThemedText>
+          </View>
           <Badge variant={getBadgeVariant(employee.status)}>
             {getUserStatusBadgeText(employee)}
           </Badge>

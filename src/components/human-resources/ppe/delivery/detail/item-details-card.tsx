@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconBox, IconRuler, IconShield, IconTag } from "@tabler/icons-react-native";
-import { PPE_TYPE_LABELS } from '../../../../../constants';
+import { PPE_TYPE_LABELS } from "@/constants";
 import type { PpeDelivery } from '../../../../../types';
 
 interface ItemDetailsCardProps {

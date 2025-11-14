@@ -1,5 +1,5 @@
 import { useTheme } from "@/lib/theme";
-import { ICON_SIZES, getIconSize, type IconSize } from "@/constants/icon-sizes";
+import { ICON_SIZES, getIconSize} from "@/constants/icon-sizes";
 import { getIconColor, ICON_OPACITY } from "@/constants/icon-colors";
 
 /**

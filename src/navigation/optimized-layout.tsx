@@ -1,14 +1,14 @@
 // Optimized navigation layout with lazy loading and performance improvements
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from "react";
 import { Drawer } from "expo-router/drawer";
-import { View, Text, Pressable, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useFavorites } from "@/contexts/favorites-context";
 import { useTheme } from "@/lib/theme";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Icon } from "@/components/ui/icon";
-import { useRouter, usePathname } from "expo-router";
+import { usePathname } from "expo-router";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { MENU_ITEMS, MenuItem } from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';

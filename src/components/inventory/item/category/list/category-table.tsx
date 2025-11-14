@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useRef} from "react";
 import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView , StyleSheet} from "react-native";
 import { IconChevronUp, IconChevronDown, IconArrowsVertical } from "@tabler/icons-react-native";
 import type { ItemCategory } from '../../../../../types';
-import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from '../../../../../constants';
+import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";

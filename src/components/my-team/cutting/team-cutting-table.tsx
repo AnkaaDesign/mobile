@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from '../../../constants';
-import { formatDate } from '../../../utils';
+import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from "@/constants";
+import { formatDate } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
 interface TeamCuttingTableProps {

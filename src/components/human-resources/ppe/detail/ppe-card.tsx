@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { DetailRow } from "@/components/ui/detail-row";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconShield, IconCalendar, IconClock, IconCertificate } from "@tabler/icons-react-native";
-import { PPE_TYPE_LABELS, PPE_DELIVERY_MODE_LABELS } from '../../../../constants';
+import { IconShield, IconClock, IconCertificate } from "@tabler/icons-react-native";
+import { PPE_TYPE_LABELS, PPE_DELIVERY_MODE_LABELS } from "@/constants";
 import type { Item } from '../../../../types';
 
 interface PpeCardProps {

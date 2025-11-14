@@ -5,8 +5,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 
 import { IconChartLine, IconCurrencyDollar, IconSquareArrowUpFilled, IconSquareArrowDownFilled, IconTags } from "@tabler/icons-react-native";
 import type { Item } from '../../../../types';
-import { formatCurrency, itemUtils, determineStockLevel, getStockLevelMessage } from '../../../../utils';
-import { STOCK_LEVEL, STOCK_LEVEL_LABELS, ABC_CATEGORY_LABELS, XYZ_CATEGORY_LABELS, ACTIVITY_OPERATION, ORDER_STATUS } from '../../../../constants';
+import { formatCurrency, itemUtils, determineStockLevel, getStockLevelMessage } from "@/utils";
+import { STOCK_LEVEL, STOCK_LEVEL_LABELS, ABC_CATEGORY_LABELS, XYZ_CATEGORY_LABELS, ACTIVITY_OPERATION, ORDER_STATUS } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";

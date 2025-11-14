@@ -9,7 +9,7 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { CustomerTableRowSwipe } from "./customer-table-row-swipe";
-import { formatCNPJ, formatCPF, formatBrazilianPhone, formatDateTime } from '../../../../utils';
+import { formatCNPJ, formatCPF, formatBrazilianPhone, formatDateTime } from "@/utils";
 import { getFileUrl } from '@/utils/file';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { ACTIVITY_OPERATION } from '../../../constants';
+import { ACTIVITY_OPERATION } from "@/constants";
 import type { Activity } from '../../../types';
 import { extendedColors } from "@/lib/theme/extended-colors";
 

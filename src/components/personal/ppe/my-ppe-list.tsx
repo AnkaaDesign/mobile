@@ -6,9 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/contexts/auth-context";
-import { usePpeDeliveries } from '../../../hooks';
-import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS } from '../../../constants';
-import { formatDate, isDateInPast, addDays } from '../../../utils';
+import { usePpeDeliveries } from "@/hooks";
+import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS } from "@/constants";
+import { formatDate, isDateInPast, addDays } from "@/utils";
 import { cn } from "@/lib/utils";
 
 interface MyPpeListProps {

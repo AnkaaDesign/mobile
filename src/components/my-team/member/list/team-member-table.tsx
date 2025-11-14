@@ -9,10 +9,10 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TeamMemberTableRowSwipe } from "./team-member-table-row-swipe";
-import { formatBrazilianPhone, formatDateTime, formatDate } from '../../../../utils';
+import { formatBrazilianPhone, formatDate } from "@/utils";
 import { getFileUrl } from '@/utils/file';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { USER_STATUS } from '../../../../constants';
+import { USER_STATUS } from "@/constants";
 
 export interface TableColumn {
   key: string;
@@ -56,7 +56,7 @@ const getStatusColor = (status: string) => {
       return { background: badgeColors.warning.background, text: badgeColors.warning.text };
     case USER_STATUS.EXPERIENCE_PERIOD_2:
       return { background: badgeColors.warning.background, text: badgeColors.warning.text };
-    case USER_STATUS.CONTRACTED:
+    case USER_STATUS.EFFECTED:
       return { background: badgeColors.success.background, text: badgeColors.success.text };
     case USER_STATUS.DISMISSED:
       return { background: badgeColors.error.background, text: badgeColors.error.text };
@@ -72,8 +72,8 @@ const getStatusLabel = (status: string) => {
       return "Experiência 1";
     case USER_STATUS.EXPERIENCE_PERIOD_2:
       return "Experiência 2";
-    case USER_STATUS.CONTRACTED:
-      return "Contratado";
+    case USER_STATUS.EFFECTED:
+      return "Efetivado";
     case USER_STATUS.DISMISSED:
       return "Desligado";
     default:

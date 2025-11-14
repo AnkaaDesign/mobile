@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Modal, Pressable } from "react-native";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { useRouter } from "expo-router";
-import { routes } from '../../constants';
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { Icon } from "./icon";
 

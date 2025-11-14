@@ -6,7 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconTruck, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useSupplierDetail, useUpdateSupplier } from "@/hooks";
-import { supplierUpdateSchema, type SupplierUpdateFormData } from "@/schemas";
+import { supplierUpdateSchema} from "@/schemas";
 import {
   ThemedView,
   ThemedText,
@@ -281,8 +281,8 @@ export default function SupplierEditScreen() {
                       name="cnpj"
                       render={({ field: { onChange, onBlur, value } }) => (
                         <Input
-                          value={value ? formatCNPJ(value) : ""}
-                          onChangeText={(text) => onChange(cleanCNPJ(text))}
+                          value={value ? formatCNPJ(String(value || '')) : ""}
+                          onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
                           onBlur={onBlur}
                           placeholder="00.000.000/0000-00"
                           keyboardType="numeric"
@@ -365,8 +365,8 @@ export default function SupplierEditScreen() {
                       name="zipCode"
                       render={({ field: { onChange, onBlur, value } }) => (
                         <Input
-                          value={value ? formatZipCode(value) : ""}
-                          onChangeText={(text) => onChange(cleanZipCode(text))}
+                          value={value ? formatZipCode(String(value || '')) : ""}
+                          onChangeText={(text) => onChange(cleanZipCode(text) || "")}
                           onBlur={onBlur}
                           placeholder="00000-000"
                           keyboardType="numeric"

@@ -2,7 +2,7 @@
 
 import { View, StyleSheet, ScrollView } from "react-native";
 import { Chip } from "@/components/ui/chip";
-import { SCHEDULE_FREQUENCY_LABELS } from '../../../../../constants';
+import { SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 import type { PpeDeliveryScheduleGetManyFormData } from '../../../../../schemas';
 
 interface PpeScheduleFilterTagsProps {

@@ -51,9 +51,7 @@ import {
   VALIDATION_SEVERITY,
   VERIFICATION_ERROR_SEVERITY,
   SECTOR_PRIVILEGES,
-  COMMISSION_STATUS,
-  GARAGE_STATUS,
-} from "./enums";
+  COMMISSION_STATUS,} from "./enums";
 
 /**
  * Badge Variant Types
@@ -247,7 +245,7 @@ export const ENTITY_BADGE_CONFIG = {
   USER: {
     [USER_STATUS.EXPERIENCE_PERIOD_1]: "pending" as BadgeVariant,  // Yellow (amber-500) - matches LOW stock
     [USER_STATUS.EXPERIENCE_PERIOD_2]: "warning" as BadgeVariant,  // Orange (orange-500) - matches CRITICAL stock
-    [USER_STATUS.CONTRACTED]: "success" as BadgeVariant,           // Green - fully hired
+    [USER_STATUS.EFFECTED]: "success" as BadgeVariant,            // Green - fully hired
     [USER_STATUS.DISMISSED]: "destructive" as BadgeVariant,        // Red - dismissed
   },
 
@@ -301,12 +299,6 @@ export const ENTITY_BADGE_CONFIG = {
     [BORROW_STATUS.LOST]: "destructive" as BadgeVariant, // Red for lost
   },
 
-  // Garage Status
-  GARAGE: {
-    [GARAGE_STATUS.ACTIVE]: "active" as BadgeVariant, // Green for active
-    [GARAGE_STATUS.INACTIVE]: "inactive" as BadgeVariant, // Gray for inactive
-    [GARAGE_STATUS.MAINTENANCE]: "warning" as BadgeVariant, // Orange for maintenance
-  },
 
   // PPE Request Status
   PPE_REQUEST: {
@@ -685,12 +677,13 @@ export const XYZ_BADGE_COLORS: Record<
 
 /**
  * Boolean Badge Configurations
- * For fields like willReturn, isActive, etc.
+ * For fields like type, isActive, etc.
  */
 export const BOOLEAN_BADGE_CONFIG = {
-  willReturn: {
-    true: "success" as BadgeVariant, // Green - will return items (positive)
-    false: "destructive" as BadgeVariant, // Red - won't return items (negative)
+  type: {
+    RETURNABLE: "success" as BadgeVariant, // Green - will return items
+    CHARGEABLE: "destructive" as BadgeVariant, // Red - chargeable items
+    COMPLIMENTARY: "secondary" as BadgeVariant, // Gray - complimentary items
   },
   isActive: {
     true: "active" as BadgeVariant,

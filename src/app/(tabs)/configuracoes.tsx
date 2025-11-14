@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { IconUser, IconBell, IconPalette, IconLock, IconChevronRight } from "@tabler/icons-react-native";
 import { ThemedSafeAreaView } from "@/components/ui/themed-safe-area-view";
 import { useColorScheme } from "nativewind";
-import { routes } from '../../constants';
+import { routes } from "@/constants";
 
 export default function SettingsScreen() {
   const router = useRouter();

@@ -2,8 +2,8 @@
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import type { User } from '../../../../types';
-import { TASK_STATUS_LABELS, routes } from '../../../../constants';
-import { formatDate } from '../../../../utils';
+import { TASK_STATUS_LABELS, routes } from "@/constants";
+import { formatDate } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconClipboardList, IconCalendar, IconChevronRight } from "@tabler/icons-react-native";
-import { getBadgeVariant } from '../../../../constants';
+import { getBadgeVariant } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 
 interface TasksCardProps {

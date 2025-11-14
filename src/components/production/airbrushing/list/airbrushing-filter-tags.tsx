@@ -5,8 +5,8 @@ import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { formatDate } from '../../../../utils';
-import { AIRBRUSHING_STATUS_LABELS } from '../../../../constants';
+import { formatDate } from "@/utils";
+import { AIRBRUSHING_STATUS_LABELS } from "@/constants";
 
 interface AirbrushingFilterTagsProps {
   filters: Partial<any>;

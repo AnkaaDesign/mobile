@@ -8,9 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 
 import { Separator } from "@/components/ui/separator";
 
-import { itemCreateSchema, itemUpdateSchema, type ItemCreateFormData, type ItemUpdateFormData } from '../../../../schemas';
-import { useItemCategories } from '../../../../hooks';
-import { ITEM_CATEGORY_TYPE } from '../../../../constants';
+import { itemCreateSchema, itemUpdateSchema,} from '../../../../schemas';
+import { useItemCategories } from "@/hooks";
+import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { spacing } from "@/constants/design-system";
 import type { Supplier, ItemBrand, ItemCategory } from '../../../../types';
 

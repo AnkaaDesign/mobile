@@ -4,8 +4,8 @@ import type { Task } from '../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { COMMISSION_STATUS_LABELS } from '../../../constants';
-import { formatCurrency, formatDate } from '../../../utils';
+import { COMMISSION_STATUS_LABELS } from "@/constants";
+import { formatCurrency, formatDate } from "@/utils";
 import { IconUser, IconBriefcase } from "@tabler/icons-react-native";
 
 interface TeamCommissionTableProps {

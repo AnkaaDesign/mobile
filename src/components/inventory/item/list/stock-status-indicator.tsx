@@ -3,8 +3,8 @@ import { View, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { Item } from '../../../../types';
 
-import { determineStockLevel } from '../../../../utils';
-import { STOCK_LEVEL } from '../../../../constants';
+import { determineStockLevel } from "@/utils";
+import { STOCK_LEVEL } from "@/constants";
 
 interface StockStatusIndicatorProps {
   item: Item;

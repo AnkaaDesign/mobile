@@ -132,8 +132,7 @@ export const routes = {
   humanResources: {
     bonusSimulation: "/recursos-humanos/simulacao-bonus",
     calculations: {
-      list: "/recursos-humanos/calculos",
-      root: "/recursos-humanos/calculos",
+      root: "/recursos-humanos/calculos-ponto",
     },
     employees: {
       create: "/recursos-humanos/colaboradores/cadastrar",
@@ -191,21 +190,10 @@ export const routes = {
         edit: (id: string) => `/recursos-humanos/epi/agendamentos/editar/${id}`,
         root: "/recursos-humanos/epi/agendamentos",
       },
-      sizes: {
-        create: "/recursos-humanos/epi/tamanhos/cadastrar",
-        details: (id: string) => `/recursos-humanos/epi/tamanhos/detalhes/${id}`,
-        edit: (id: string) => `/recursos-humanos/epi/tamanhos/editar/${id}`,
-        root: "/recursos-humanos/epi/tamanhos",
-      },
-    },
-    requisicoes: {
-      list: "/recursos-humanos/requisicoes",
-      root: "/recursos-humanos/requisicoes",
     },
     root: "/recursos-humanos",
     timeClock: {
-      list: "/recursos-humanos/controle-ponto",
-      root: "/recursos-humanos/controle-ponto",
+      root: "/recursos-humanos/registros-ponto",
     },
     vacations: {
       batchEdit: "/recursos-humanos/ferias/editar-em-lote",
@@ -216,11 +204,11 @@ export const routes = {
       root: "/recursos-humanos/ferias",
     },
     warnings: {
-      batchEdit: "/recursos-humanos/avisos/editar-em-lote",
-      create: "/recursos-humanos/avisos/cadastrar",
-      details: (id: string) => `/recursos-humanos/avisos/detalhes/${id}`,
-      edit: (id: string) => `/recursos-humanos/avisos/editar/${id}`,
-      root: "/recursos-humanos/avisos",
+      batchEdit: "/recursos-humanos/advertencias/editar-em-lote",
+      create: "/recursos-humanos/advertencias/cadastrar",
+      details: (id: string) => `/recursos-humanos/advertencias/detalhes/${id}`,
+      edit: (id: string) => `/recursos-humanos/advertencias/editar/${id}`,
+      root: "/recursos-humanos/advertencias",
     },
     payroll: {
       root: "/recursos-humanos/folha-de-pagamento",
@@ -243,6 +231,20 @@ export const routes = {
         edit: (id: string) => `/recursos-humanos/bonificacoes-desconto/editar/${id}`,
       },
     },
+    timeEntries: {
+      root: "/recursos-humanos/registros-ponto",
+      details: (id: string) => `/recursos-humanos/registros-ponto/detalhes/${id}`,
+      list: "/recursos-humanos/registros-ponto/listar",
+    },
+    timeCalculations: {
+      root: "/recursos-humanos/calculos-ponto",
+      list: "/recursos-humanos/calculos-ponto/listar",
+    },
+    timeRequests: {
+      root: "/recursos-humanos/requisicoes-ponto",
+      list: "/recursos-humanos/requisicoes-ponto/listar",
+    },
+    syncStatus: "/recursos-humanos/status-sincronizacao-ponto",
   },
 
   // Inventory - Estoque - Inventory Management
@@ -532,18 +534,6 @@ export const routes = {
       list: "/producao/recorte/listar",
       root: "/producao/recorte",
     },
-    garages: {
-      create: "/producao/garagens/cadastrar",
-      details: (id: string) => `/producao/garagens/detalhes/${id}`,
-      edit: (id: string) => `/producao/garagens/editar/${id}`,
-      lanes: {
-        create: (_garageId: string) => `/producao/garagens/${_garageId}/lanes/cadastrar`,
-        details: (_garageId: string, laneId: string) => `/producao/garagens/lanes/detalhes/${laneId}`,
-        edit: (_garageId: string, laneId: string) => `/producao/garagens/${_garageId}/lanes/editar/${laneId}`,
-      },
-      list: "/producao/garagens",
-      root: "/producao/garagens",
-    },
     history: {
       root: "/producao/historico",
       details: (id: string) => `/producao/historico/detalhes/${id}`,
@@ -588,51 +578,6 @@ export const routes = {
       edit: (id: string) => `/producao/caminhoes/editar/${id}`,
       list: "/producao/caminhoes",
       root: "/producao/caminhoes",
-    },
-  },
-
-  // Statistics - Estatísticas - Statistics/Analytics
-  statistics: {
-    root: "/estatisticas",
-    // Entity-specific statistics
-    administration: "/estatisticas/administracao",
-    humanResources: "/estatisticas/recursos-humanos",
-    inventory: "/estatisticas/estoque",
-    production: "/estatisticas/producao",
-    orders: "/estatisticas/pedidos",
-    financial: "/estatisticas/financeiro",
-    // Advanced Analytics
-    analytics: {
-      root: "/estatisticas/analytics",
-      predictive: "/estatisticas/analytics/preditiva",
-      comparative: "/estatisticas/analytics/comparativa",
-      correlation: "/estatisticas/analytics/correlacao",
-      cohort: "/estatisticas/analytics/cohort",
-    },
-    // Dashboards and Monitoring
-    dashboards: {
-      executive: "/estatisticas/dashboards/executivo",
-      goals: "/estatisticas/dashboards/metas",
-      realtime: "/estatisticas/dashboards/tempo-real",
-      explorer: "/estatisticas/dashboards/explorador",
-    },
-    // Reports
-    reports: {
-      builder: "/estatisticas/relatorios/construtor",
-    },
-  },
-
-  // Integrations - Integrações - System integrations
-  integrations: {
-    root: "/integracoes",
-    secullum: {
-      root: "/integracoes/secullum",
-      timeEntries: {
-        root: "/integracoes/secullum/registros-ponto",
-        details: (id: string) => `/integracoes/secullum/registros-ponto/detalhes/${id}`,
-      },
-      calculations: "/integracoes/secullum/calculos",
-      syncStatus: "/integracoes/secullum/status-sincronizacao",
     },
   },
 

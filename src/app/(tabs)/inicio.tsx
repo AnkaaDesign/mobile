@@ -1,11 +1,10 @@
 
 import { View, Text, ScrollView, Pressable } from "react-native";
-import { UnderConstruction } from "@/components/ui/under-construction";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
-import { routes } from '../../constants';
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";

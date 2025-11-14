@@ -2,9 +2,9 @@ import { ReactNode } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
-import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from '../constants';
-import { hasAnyPrivilege, hasPrivilege, hasAllPrivileges } from '../utils';
-import { getSectorPrivilegesLabel } from '../utils';
+import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from "@/constants";
+import { hasAnyPrivilege, hasPrivilege, hasAllPrivileges } from "@/utils";
+import { getSectorPrivilegesLabel } from "@/utils";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";

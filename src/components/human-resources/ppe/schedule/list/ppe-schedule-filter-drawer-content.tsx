@@ -4,8 +4,8 @@ import { IconFilter, IconX, IconShield, IconUsers, IconCategory, IconClock } fro
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useUsers, useItems, useItemCategories } from '../../../../../hooks';
-import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from '../../../../../constants';
+import { useUsers, useItems, useItemCategories } from "@/hooks";
+import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 import { Combobox } from '@/components/ui/combobox';
 import type { PpeDeliveryScheduleGetManyFormData } from '../../../../../schemas';
 

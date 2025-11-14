@@ -2,7 +2,7 @@
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX, IconSearch, IconCalendar, IconTag } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { HOLIDAY_TYPE, HOLIDAY_TYPE_LABELS } from '../../../../constants';
+import { HOLIDAY_TYPE, HOLIDAY_TYPE_LABELS } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
 import { ThemedText } from "@/components/ui/themed-text";

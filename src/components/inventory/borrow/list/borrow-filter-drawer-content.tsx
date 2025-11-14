@@ -4,8 +4,8 @@ import { IconFilter, IconX, IconPackage, IconUser, IconCalendar } from '@tabler/
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useItems, useUsers } from '../../../../hooks';
-import { BORROW_STATUS, BORROW_STATUS_LABELS } from '../../../../constants';
+import { useItems, useUsers } from "@/hooks";
+import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
 import type { BorrowGetManyFormData } from '../../../../schemas';

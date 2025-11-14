@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
-import { useEditForm } from '../../../../hooks';
+import { useEditForm } from "@/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Separator } from "@/components/ui/separator";
 import { IconLoader } from "@tabler/icons-react-native";
-import { itemUpdateSchema, type ItemUpdateFormData } from '../../../../schemas';
+import { itemUpdateSchema} from '../../../../schemas';
 import type { Item } from '../../../../types';
-import { useItemCategories } from '../../../../hooks';
-import { ITEM_CATEGORY_TYPE } from '../../../../constants';
+import { useItemCategories } from "@/hooks";
+import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { FormProvider } from "react-hook-form";
 
 import { spacing } from "@/constants/design-system";

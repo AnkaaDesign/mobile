@@ -3,7 +3,7 @@ import { View, StyleSheet, Pressable, FlatList } from "react-native";
 import { IconCheck, IconX } from "@tabler/icons-react-native";
 import type { PaintType } from "../../../../types";
 import { useTheme } from "@/lib/theme";
-import { formatDate } from "../../../../utils";
+import { formatDate } from "@/utils";
 import { ThemedText } from "@/components/ui/themed-text";
 
 import { Badge } from "@/components/ui/badge";

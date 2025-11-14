@@ -6,7 +6,7 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DateRangeFilter } from '@/components/common/filters';
-import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from '../../../constants';
+import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from "@/constants";
 
 export interface TeamCuttingFilters {
   statuses?: string[];

@@ -1,7 +1,7 @@
 // packages/hooks/src/bonus.ts
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { bonusService, type BonusCalculationResult } from '@/api-client';
+import { bonusService} from '@/api-client';
 import { bonusKeys, userKeys } from "./queryKeys";
 import { createEntityHooks } from "./createEntityHooks";
 

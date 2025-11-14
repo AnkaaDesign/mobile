@@ -1,5 +1,22 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { OrderEditForm } from '@/components/inventory/order/form/order-edit-form';
 
 export default function EstoquePedidosEditarScreen() {
-  return <UnderConstruction title="Editar Pedido" />;
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  if (!id) {
+    return null;
+  }
+
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          title: 'Editar Pedido',
+          headerShown: true,
+        }}
+      />
+      <OrderEditForm orderId={id} />
+    </>
+  );
 }

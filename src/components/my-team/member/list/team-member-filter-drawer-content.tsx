@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, TextInput, Switch as RNSwitch } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity, TextInput} from 'react-native';
 import { IconFilter, IconX, IconAlertTriangle, IconBriefcase, IconBuilding, IconCalendar } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { USER_STATUS } from '../../../../constants';
+import { USER_STATUS } from "@/constants";
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface TeamMemberFilters {
@@ -28,7 +28,7 @@ interface TeamMemberFilterDrawerContentProps {
 const STATUS_OPTIONS = [
   { value: USER_STATUS.EXPERIENCE_PERIOD_1, label: "Experiência 1" },
   { value: USER_STATUS.EXPERIENCE_PERIOD_2, label: "Experiência 2" },
-  { value: USER_STATUS.CONTRACTED, label: "Contratado" },
+  { value: USER_STATUS.EFFECTED, label: "Efetivado" },
   { value: USER_STATUS.DISMISSED, label: "Desligado" },
 ];
 

@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useHoliday } from '../../../../../hooks';
-import { CHANGE_LOG_ENTITY_TYPE } from '../../../../../constants';
+import { useHoliday } from "@/hooks/useHoliday";
+import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";

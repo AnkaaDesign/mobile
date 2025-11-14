@@ -5,8 +5,8 @@ import { Text } from "@/components/ui/text";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { measureUtils } from '../../../utils';
-import { MEASURE_UNIT } from '../../../constants';
+import { measureUtils } from "@/utils";
+import { MEASURE_UNIT } from "@/constants";
 import type { PaintFormulaComponent } from '../../../types';
 
 interface PaintFormulaComponentCardProps {

@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity} from 'react-native';
 import { IconFilter, IconX, IconPackage, IconBuilding, IconCalendar } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useSuppliers } from '../../../../hooks';
-import { ORDER_STATUS, ORDER_STATUS_LABELS } from '../../../../constants';
+import { useSuppliers } from "@/hooks";
+import {_LABELS } from "@/constants";
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
 import type { OrderGetManyFormData } from '../../../../schemas';
@@ -25,6 +25,8 @@ interface FilterState {
   createdBefore?: Date;
   forecastAfter?: Date;
   forecastBefore?: Date;
+  updatedAfter?: Date;
+  updatedBefore?: Date;
 }
 
 export function OrderFilterDrawerContent({
@@ -48,6 +50,8 @@ export function OrderFilterDrawerContent({
     createdBefore: filters.createdAt?.lte ? new Date(filters.createdAt.lte) : undefined,
     forecastAfter: filters.forecastRange?.gte ? new Date(filters.forecastRange.gte) : undefined,
     forecastBefore: filters.forecastRange?.lte ? new Date(filters.forecastRange.lte) : undefined,
+    updatedAfter: filters.updatedAt?.gte ? new Date(filters.updatedAt.gte) : undefined,
+    updatedBefore: filters.updatedAt?.lte ? new Date(filters.updatedAt.lte) : undefined,
   }));
 
   const handleApply = useCallback(() => {
@@ -78,6 +82,16 @@ export function OrderFilterDrawerContent({
       }
       if (localFilters.forecastBefore) {
         newFilters.forecastRange.lte = localFilters.forecastBefore;
+      }
+    }
+
+    if (localFilters.updatedAfter || localFilters.updatedBefore) {
+      newFilters.updatedAt = {};
+      if (localFilters.updatedAfter) {
+        newFilters.updatedAt.gte = localFilters.updatedAfter;
+      }
+      if (localFilters.updatedBefore) {
+        newFilters.updatedAt.lte = localFilters.updatedBefore;
       }
     }
 
@@ -223,6 +237,23 @@ export function OrderFilterDrawerContent({
                   ...prev,
                   forecastAfter: range?.from,
                   forecastBefore: range?.to
+                }))
+              }
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <DateRangeFilter
+              label="Data de Atualização"
+              value={{
+                from: localFilters.updatedAfter,
+                to: localFilters.updatedBefore
+              }}
+              onChange={(range) =>
+                setLocalFilters((prev) => ({
+                  ...prev,
+                  updatedAfter: range?.from,
+                  updatedBefore: range?.to
                 }))
               }
             />

@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { IconPhone, IconMail, IconPhoneCall, IconWorld, IconBrandWhatsapp } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
-import { formatBrazilianPhone } from '../../../../utils';
+import { formatBrazilianPhone } from "@/utils";
 import { showToast } from "@/components/ui/toast";
 
 interface ContactInfoCardProps {

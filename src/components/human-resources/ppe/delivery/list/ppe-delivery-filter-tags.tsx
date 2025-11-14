@@ -2,13 +2,13 @@ import React from "react";
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX, IconSearch, IconUser, IconPackage, IconCalendar, IconCircleCheck, IconCircleX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { useUsers } from '../../../../../hooks';
-import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '../../../../../constants';
+import { useUsers } from "@/hooks";
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
-import { formatDate } from '../../../../../utils';
+import { formatDate } from "@/utils";
 
 interface PpeDeliveryFilterTagsProps {
   filters: any;

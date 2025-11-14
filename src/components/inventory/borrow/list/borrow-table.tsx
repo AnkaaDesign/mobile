@@ -11,8 +11,8 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { BorrowTableRowSwipe } from "./borrow-table-row-swipe";
 import { getDefaultVisibleColumns } from "./borrow-column-visibility-manager";
-import { BORROW_STATUS, BORROW_STATUS_LABELS } from '../../../../constants';
-import { formatDate, formatRelativeTime } from '../../../../utils';
+import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
+import { formatDate, formatRelativeTime } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 

@@ -1,5 +1,5 @@
 import { Redirect } from 'expo-router';
-import { routes } from '../../../../constants';
+import { routes } from "@/constants";
 import { routeToMobilePath } from '@/lib/route-mapper';
 
 export default function CustomersIndex() {

@@ -9,9 +9,9 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconCalendarEvent, IconUser, IconPlus, IconCalendar, IconClock, IconCircleCheck, IconCircleX } from "@tabler/icons-react-native";
-import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS } from '../../../../constants';
-import { formatDate } from '../../../../utils';
-import { routes } from '../../../../constants';
+import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS } from "@/constants";
+import { formatDate } from "@/utils";
+import { routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import type { Item, PpeDeliverySchedule } from '../../../../types';
 

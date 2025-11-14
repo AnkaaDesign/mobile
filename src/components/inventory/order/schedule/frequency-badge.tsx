@@ -1,6 +1,6 @@
 
 import { View, Text, StyleSheet} from "react-native";
-import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from '../../../../constants';
+import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 
 interface FrequencyBadgeProps {
   frequency: SCHEDULE_FREQUENCY;

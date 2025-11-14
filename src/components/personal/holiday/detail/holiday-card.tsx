@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconCalendar, IconMapPin } from "@tabler/icons-react-native";
 import type { Holiday } from '../../../../types';
-import { formatDate } from '../../../../utils';
+import { formatDate } from "@/utils";
 import { HOLIDAY_TYPE_LABELS } from '@/constants/enum-labels';
 import { HOLIDAY_TYPE } from '@/constants/enums';
 import { badgeColors } from "@/lib/theme/extended-colors";

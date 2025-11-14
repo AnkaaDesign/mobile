@@ -14,29 +14,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useItems, useUsers } from '../../../../hooks';
+import { useItems, useUsers } from "@/hooks";
 import { IconLoader } from "@tabler/icons-react-native";
 
 // Form schema for batch borrow creation
 const borrowBatchFormSchema = z.object({
   userId: z.string().uuid("Usuário é obrigatório"),
-  expectedReturnDate: z.date().optional(),
   reason: z.string().max(200, "Motivo deve ter no máximo 200 caracteres").optional(),
   notes: z.string().max(500, "Notas devem ter no máximo 500 caracteres").optional(),
   items: z.array(z.object({
     itemId: z.string().uuid(),
     quantity: z.number().positive("Quantidade deve ser positiva"),
   })).min(1, "Selecione pelo menos um item").max(50, "Máximo de 50 itens por empréstimo"),
-}).refine((data) => {
-  if (data.expectedReturnDate) {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    return data.expectedReturnDate >= now;
-  }
-  return true;
-}, {
-  message: "Data de devolução esperada deve ser futura",
-  path: ["expectedReturnDate"],
 });
 
 type BorrowBatchFormData = z.infer<typeof borrowBatchFormSchema>;
@@ -57,7 +46,6 @@ export function BorrowBatchCreateForm({ onSubmit, onCancel, isSubmitting }: Borr
     resolver: zodResolver(borrowBatchFormSchema),
     defaultValues: {
       userId: "",
-      expectedReturnDate: undefined,
       reason: "",
       notes: "",
       items: [],
@@ -214,36 +202,6 @@ export function BorrowBatchCreateForm({ onSubmit, onCancel, isSubmitting }: Borr
                     {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
                     <ThemedText style={styles.helpText}>
                       Selecione o colaborador que receberá os itens emprestados
-                    </ThemedText>
-                  </View>
-                )}
-              />
-
-              {/* Expected Return Date */}
-              <Controller
-                control={form.control}
-                name="expectedReturnDate"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View style={styles.fieldGroup}>
-                    <Label>Data de Devolução Esperada</Label>
-                    <Input
-                      value={value ? new Date(value).toLocaleDateString("pt-BR") : ""}
-                      onChangeText={(text) => {
-                        // Simple date parsing - in production use a proper date picker
-                        const parts = text.split('/');
-                        if (parts.length === 3) {
-                          const date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-                          if (!isNaN(date.getTime())) {
-                            onChange(date);
-                          }
-                        }
-                      }}
-                      placeholder="DD/MM/AAAA"
-                      editable={!isSubmitting}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                    <ThemedText style={styles.helpText}>
-                      Data esperada para devolução dos itens (opcional)
                     </ThemedText>
                   </View>
                 )}

@@ -20,8 +20,8 @@ import {
   CHANGE_LOG_ACTION_LABELS,
   CHANGE_LOG_ENTITY_TYPE_LABELS,
   CHANGE_LOG_ACTION
-} from '../../../../constants';
-import { formatDateTime } from '../../../../utils';
+} from "@/constants";
+import { formatDateTime } from "@/utils";
 import type { ChangeLog } from '../../../../types';
 
 interface ChangeLogTableProps {

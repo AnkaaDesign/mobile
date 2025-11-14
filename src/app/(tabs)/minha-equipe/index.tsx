@@ -14,6 +14,9 @@ import {
   IconAlertTriangle,
   IconPackage,
   IconChartBar,
+  IconShield,
+  IconScissors,
+  IconCurrencyDollar,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -46,7 +49,7 @@ export default function MinhaEquipeScreen() {
       title: "Férias",
       description: "Visualize as férias da sua equipe",
       icon: <IconCalendar size={24} color={colors.primary} />,
-      route: "/(tabs)/meu-pessoal/ferias",
+      route: "/(tabs)/minha-equipe/ferias/listar",
       available: true,
     },
     {
@@ -54,7 +57,7 @@ export default function MinhaEquipeScreen() {
       title: "Advertências",
       description: "Visualize as advertências dos colaboradores",
       icon: <IconAlertTriangle size={24} color={colors.primary} />,
-      route: "/(tabs)/meu-pessoal/advertencias",
+      route: "/(tabs)/minha-equipe/advertencias/listar",
       available: true,
     },
     {
@@ -63,6 +66,30 @@ export default function MinhaEquipeScreen() {
       description: "Visualize empréstimos de equipamentos",
       icon: <IconPackage size={24} color={colors.primary} />,
       route: "/(tabs)/meu-pessoal/emprestimos",
+      available: true,
+    },
+    {
+      id: "ppe-deliveries",
+      title: "Entregas de EPI",
+      description: "Visualize entregas de EPIs da equipe",
+      icon: <IconShield size={24} color={colors.primary} />,
+      route: "/(tabs)/minha-equipe/epi-entregas/listar",
+      available: true,
+    },
+    {
+      id: "cutting",
+      title: "Recortes",
+      description: "Visualize os recortes da sua equipe",
+      icon: <IconScissors size={24} color={colors.primary} />,
+      route: "/(tabs)/minha-equipe/recortes/listar",
+      available: true,
+    },
+    {
+      id: "commissions",
+      title: "Comissões",
+      description: "Visualize as comissões da sua equipe",
+      icon: <IconCurrencyDollar size={24} color={colors.primary} />,
+      route: "/(tabs)/minha-equipe/comissoes/listar",
       available: true,
     },
     {
@@ -258,7 +285,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
   },
   comingSoonText: {
-    fontSize: fontSize.xxs,
+    fontSize: fontSize.xs,
     fontWeight: "500",
   },
   infoCard: {

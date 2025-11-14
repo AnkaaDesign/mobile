@@ -7,8 +7,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconCalendar, IconUserShield, IconUsers, IconCategory } from "@tabler/icons-react-native";
 import type { Warning } from '../../../../types';
-import { WARNING_CATEGORY_LABELS } from '../../../../constants';
-import { formatDate, formatDateTime } from '../../../../utils';
+import { WARNING_CATEGORY_LABELS } from "@/constants";
+import { formatDate, formatDateTime } from "@/utils";
 
 interface WarningDetailsCardProps {
   warning: Warning;

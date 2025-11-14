@@ -2,8 +2,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  // ExternalWithdrawal functions
-  getExternalWithdrawals,
   getExternalWithdrawalById,
   createExternalWithdrawal,
   updateExternalWithdrawal,
@@ -11,13 +9,9 @@ import {
   batchCreateExternalWithdrawals,
   batchUpdateExternalWithdrawals,
   batchDeleteExternalWithdrawals,
-  // Status transition functions
-  markExternalWithdrawalAsPartiallyReturned,
   markExternalWithdrawalAsFullyReturned,
   markExternalWithdrawalAsCharged,
   cancelExternalWithdrawal,
-  // ExternalWithdrawalItem functions
-  getExternalWithdrawalItems,
   getExternalWithdrawalItemById,
   createExternalWithdrawalItem,
   updateExternalWithdrawalItem,
@@ -27,16 +21,12 @@ import {
   batchDeleteExternalWithdrawalItems,
 } from '@/api-client';
 import type {
-  // ExternalWithdrawal types
-  ExternalWithdrawalGetManyFormData,
   ExternalWithdrawalCreateFormData,
   ExternalWithdrawalUpdateFormData,
   ExternalWithdrawalBatchCreateFormData,
   ExternalWithdrawalBatchUpdateFormData,
   ExternalWithdrawalBatchDeleteFormData,
   ExternalWithdrawalInclude,
-  // ExternalWithdrawalItem types
-  ExternalWithdrawalItemGetManyFormData,
   ExternalWithdrawalItemCreateFormData,
   ExternalWithdrawalItemUpdateFormData,
   ExternalWithdrawalItemBatchCreateFormData,
@@ -45,8 +35,6 @@ import type {
   ExternalWithdrawalItemInclude,
 } from '@/schemas';
 import type {
-  // ExternalWithdrawal Interface types
-  ExternalWithdrawalGetUniqueResponse,
   ExternalWithdrawalGetManyResponse,
   ExternalWithdrawalCreateResponse,
   ExternalWithdrawalUpdateResponse,
@@ -54,8 +42,6 @@ import type {
   ExternalWithdrawalBatchCreateResponse,
   ExternalWithdrawalBatchUpdateResponse,
   ExternalWithdrawalBatchDeleteResponse,
-  // ExternalWithdrawalItem Interface types
-  ExternalWithdrawalItemGetUniqueResponse,
   ExternalWithdrawalItemGetManyResponse,
   ExternalWithdrawalItemCreateResponse,
   ExternalWithdrawalItemUpdateResponse,

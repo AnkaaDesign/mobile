@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, TextInput, Switch as RNSwitch } from 'react-native';
-import { IconFilter, IconX, IconBriefcase, IconMapPin, IconCalendarPlus, IconTags } from '@tabler/icons-react-native';
+import { IconFilter, IconX, IconBriefcase, IconMapPin, IconTags } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';

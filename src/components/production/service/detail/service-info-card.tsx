@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatDateTime } from '../../../../utils';
+import { formatDateTime } from "@/utils";
 import type { Service } from '../../../../types';
 import { IconFileDescription, IconClock } from "@tabler/icons-react-native";
 

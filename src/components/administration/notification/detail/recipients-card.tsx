@@ -1,7 +1,7 @@
 
 import { View, ScrollView, StyleSheet } from "react-native";
 import type { Notification } from '../../../../types';
-import { formatDateTime } from '../../../../utils';
+import { formatDateTime } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";

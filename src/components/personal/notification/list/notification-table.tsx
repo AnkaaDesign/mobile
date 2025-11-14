@@ -9,9 +9,9 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { NotificationTableRowSwipe } from "./notification-table-row-swipe";
-import { formatDate, formatDateTime } from '../../../../utils';
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { NOTIFICATION_TYPE, NOTIFICATION_IMPORTANCE } from '../../../../constants';
+import { formatDate, formatDateTime } from "@/utils";
+import { extendedColors} from "@/lib/theme/extended-colors";
+import { NOTIFICATION_TYPE, NOTIFICATION_IMPORTANCE } from "@/constants";
 import {
   IconBell,
   IconBellRinging,

@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconMapPin, IconExternalLink } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
-import { formatCEP } from '../../../../utils';
+import { formatCEP } from "@/utils";
 import { showToast } from "@/components/ui/toast";
 
 interface AddressCardProps {
@@ -131,7 +131,7 @@ export function AddressCard({ customer }: AddressCardProps) {
                 <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
                   <View style={styles.fieldLabelWithIcon}>
                     <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                      Logradouro
+                      Street
                     </ThemedText>
                   </View>
                   <ThemedText

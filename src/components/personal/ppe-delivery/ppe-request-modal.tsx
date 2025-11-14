@@ -5,13 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { Combobox} from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TextArea } from "@/components/ui/text-area";
 import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { useItems, usePpeSize, useRequestPpeDelivery } from '@/hooks';
-import { ppeRequestSchema, type PpeRequestFormData } from '@/schemas/ppe-request';
+import { ppeRequestSchema} from '@/schemas/ppe-request';
 import { PPE_TYPE } from '@/constants';
 import { cn } from "@/lib/utils";
 

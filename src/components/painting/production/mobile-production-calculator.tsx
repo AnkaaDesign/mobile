@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Icon } from "@/components/ui/icon";
-import { measureUtils } from '../../../utils';
-import { MEASURE_UNIT } from '../../../constants';
+import { measureUtils } from "@/utils";
+import { MEASURE_UNIT } from "@/constants";
 import type { PaintFormula, PaintFormulaComponent } from '../../../types';
 
 interface MobileProductionCalculatorProps {

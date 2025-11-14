@@ -7,8 +7,8 @@ import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { PaintFormulaComponentCard } from "./paint-formula-component-card";
-import { measureUtils } from '../../../utils';
-import { MEASURE_UNIT } from '../../../constants';
+import { measureUtils } from "@/utils";
+import { MEASURE_UNIT } from "@/constants";
 import type { PaintFormula } from '../../../types';
 
 interface PaintFormulaDetailProps {
