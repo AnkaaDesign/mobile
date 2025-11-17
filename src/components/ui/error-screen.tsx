@@ -1,7 +1,7 @@
 import { View, Text } from "react-native";
 import { IconAlertCircle } from "@tabler/icons-react-native";
 import { Button } from "./button";
-import { useTheme } from "@/contexts/theme-context";
+import { useTheme } from "@/lib/theme";
 
 interface ErrorScreenProps {
   error?: Error | { message?: string };

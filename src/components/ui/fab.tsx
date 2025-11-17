@@ -1,6 +1,6 @@
 import { TouchableOpacity, Text, ViewStyle, StyleSheet } from "react-native";
 import { Icon } from "./icon";
-import { useTheme } from "@/contexts/theme-context";
+import { useTheme } from "@/lib/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as React from "react";
 

@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { fileKeys, taskKeys, customerKeys, supplierKeys, userKeys, activityKeys, itemKeys } from "./queryKeys";
-import { getFiles, getFileById, createFile, updateFile, deleteFile, batchCreateFiles, batchUpdateFiles, batchDeleteFiles, uploadSingleFile, fileService } from '@/api-client';
+import { getFiles, getFileById, createFile, updateFile, deleteFile, batchCreateFiles, batchUpdateFiles, batchDeleteFiles, uploadSingleFile, uploadFiles, fileService } from '@/api-client';
 import type { FileUploadOptions as ApiFileUploadOptions, FileUploadProgress as ApiFileUploadProgress } from '@/api-client';
 import type { FileGetManyFormData, FileCreateFormData, FileUpdateFormData, FileBatchCreateFormData, FileBatchUpdateFormData, FileBatchDeleteFormData } from '@/schemas';
 import type {
@@ -18,6 +18,8 @@ import type {
   FileBatchDeleteResponse,
 } from '@/types';
 import { createEntityHooks } from "./createEntityHooks";
+import { smartCompressFile } from "@/utils/file-compression";
+import { isImageFile } from "@/utils/file-utils";
 
 // =====================================================
 // Enhanced Upload Progress Types
@@ -37,6 +39,8 @@ export interface FileUploadOptions extends Omit<ApiFileUploadOptions, "onProgres
   onSuccess?: (file: File) => void;
   onError?: (error: Error) => void;
   retryAttempts?: number;
+  compress?: boolean; // Enable image compression before upload (default: true)
+  networkAwareCompression?: boolean; // Adjust compression based on network speed (default: true)
 }
 
 export interface MultiFileUploadOptions extends Omit<FileUploadOptions, "onProgress" | "onSuccess" | "onError"> {
@@ -298,59 +302,59 @@ export const useMultiFileUpload = (options: MultiFileUploadOptions = {}) => {
       setUploads(initialUploads);
 
       try {
-        // TODO: Fix file upload API mismatch - temporarily disabled
-        // Use the existing API client batch upload method
-        const response = { completed: [], errors: [] } as any; // await uploadFiles(_files, {
-        // signal: options.signal,
-        // timeout: options.timeout,
-        // onProgress: (progressEvent) => {
-        // For batch uploads, we get overall progress
-        // We can estimate individual file progress
-        // const overallLoaded = progressEvent.loaded;
-        // const overallTotal = progressEvent.total;
-        // const overallPercentage = progressEvent.percentage;
+        // Use the batch upload API
+        const response = await uploadFiles(_files, {
+          signal: options.signal,
+          timeout: options.timeout,
+          fileContext: options.fileContext,
+          entityId: options.entityId,
+          entityType: options.entityType,
+          onProgress: (progressEvent) => {
+            // For batch uploads, we get overall progress
+            // We can estimate individual file progress
+            const overallLoaded = progressEvent.loaded;
+            const overallTotal = progressEvent.total;
 
-        // Update all pending/uploading files with estimated progress
-        // setUploads(prev => {
-        // const updated = new Map(prev);
-        // let currentLoaded = 0;
+            // Update all pending/uploading files with estimated progress
+            setUploads(prev => {
+              const updated = new Map(prev);
+              let currentLoaded = 0;
 
-        // updated.forEach((progress, fileId) => {
-        // if (progress.status === 'uploading' || progress.status === 'pending') {
-        // const estimatedLoaded = Math.min(
-        // progress.total,
-        // Math.max(0, overallLoaded - currentLoaded)
-        // );
-        // const estimatedPercentage = Math.round((estimatedLoaded / progress.total) * 100);
+              updated.forEach((progress, fileId) => {
+                if (progress.status === 'uploading' || progress.status === 'pending') {
+                  const estimatedLoaded = Math.min(
+                    progress.total,
+                    Math.max(0, overallLoaded - currentLoaded)
+                  );
+                  const estimatedPercentage = Math.round((estimatedLoaded / progress.total) * 100);
 
-        // updated.set(fileId, {
-        // ...progress,
-        // status: 'uploading',
-        // loaded: estimatedLoaded,
-        // percentage: estimatedPercentage,
-        // });
+                  updated.set(fileId, {
+                    ...progress,
+                    status: 'uploading',
+                    loaded: estimatedLoaded,
+                    percentage: estimatedPercentage,
+                  });
 
-        // options.onProgress?.(fileId, {
-        // ...progress,
-        // status: 'uploading',
-        // loaded: estimatedLoaded,
-        // percentage: estimatedPercentage,
-        // });
-        // }
+                  options.onProgress?.(fileId, {
+                    ...progress,
+                    status: 'uploading',
+                    loaded: estimatedLoaded,
+                    percentage: estimatedPercentage,
+                  });
+                }
 
-        // if (progress.status === 'completed') {
-        // currentLoaded += progress.total;
-        // }
-        // });
+                if (progress.status === 'completed') {
+                  currentLoaded += progress.total;
+                }
+              });
 
-        // return updated;
-        // });
-        // },
-        // });
+              return updated;
+            });
+          },
+        });
 
         // Mark all files as completed or failed based on response
-        if (false) {
-          // TODO: Fix response type mismatch
+        if (response.data?.successful && response.data.successful.length > 0) {
           response.data.successful.forEach((file: any, index: number) => {
             const fileId = `multi-upload-${Date.now()}-${index}`;
             const completedProgress: UploadProgress = {
@@ -374,8 +378,7 @@ export const useMultiFileUpload = (options: MultiFileUploadOptions = {}) => {
           });
         }
 
-        if (false) {
-          // TODO: Fix response type mismatch
+        if (response.data?.failed && response.data.failed.length > 0) {
           response.data.failed.forEach(({ file: _fileName, error: errorMsg }: any, index: number) => {
             const fileId = `multi-upload-${Date.now()}-${index}`;
             const errorObj = new Error(errorMsg);

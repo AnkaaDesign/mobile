@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
-import { IconFilter, IconX, IconUsers, IconTrophy, IconBriefcase } from '@tabler/icons-react-native';
+import { IconFilter, IconX, IconUsers, IconTrophy, IconBriefcase, IconUserCheck, IconUserMinus } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
@@ -28,6 +28,8 @@ interface FilterState {
   positionIds?: string[];
   sectorIds?: string[];
   performanceLevelRange?: FilterRange;
+  includeUserIds?: string[];
+  excludeUserIds?: string[];
   isActive?: boolean;
 }
 
@@ -42,9 +44,16 @@ export function PerformanceLevelFilterDrawerContent({
   const insets = useSafeAreaInsets();
   const { data: positionsData } = usePositions({ limit: 100, orderBy: { name: "asc" } });
   const { data: sectorsData } = useSectors({ limit: 100, orderBy: { name: "asc" } });
+  const { data: usersData } = useUsers({
+    include: { position: true, sector: true },
+    where: { status: 'EFFECTED' },
+    orderBy: { name: 'asc' },
+    limit: 100,
+  });
 
   const positions = positionsData?.data || [];
   const sectors = sectorsData?.data || [];
+  const users = usersData?.data || [];
 
   const [localFilters, setLocalFilters] = useState<FilterState>(() => ({
     statuses: filters.where?.status?.in || [],
@@ -54,6 +63,8 @@ export function PerformanceLevelFilterDrawerContent({
       min: filters.where?.performanceLevel?.gte,
       max: filters.where?.performanceLevel?.lte,
     },
+    includeUserIds: filters.includeUserIds || [],
+    excludeUserIds: filters.excludeUserIds || [],
     isActive: filters.isActive,
   }));
 
@@ -70,6 +81,14 @@ export function PerformanceLevelFilterDrawerContent({
 
     if (localFilters.isActive !== undefined) {
       newFilters.isActive = localFilters.isActive;
+    }
+
+    if (localFilters.includeUserIds && localFilters.includeUserIds.length > 0) {
+      newFilters.includeUserIds = localFilters.includeUserIds;
+    }
+
+    if (localFilters.excludeUserIds && localFilters.excludeUserIds.length > 0) {
+      newFilters.excludeUserIds = localFilters.excludeUserIds;
     }
 
     // Transform performance level range to where clause
@@ -117,6 +136,53 @@ export function PerformanceLevelFilterDrawerContent({
     () => sectors.map((sector) => ({ label: sector.name, value: sector.id })),
     [sectors]
   );
+
+  // Filter users based on selected sectors and positions
+  const filteredUsers = useMemo(() => {
+    let filtered = users;
+
+    if (localFilters.sectorIds && localFilters.sectorIds.length > 0) {
+      filtered = filtered.filter(
+        (user) => user.sectorId && localFilters.sectorIds!.includes(user.sectorId)
+      );
+    }
+
+    if (localFilters.positionIds && localFilters.positionIds.length > 0) {
+      filtered = filtered.filter(
+        (user) => user.positionId && localFilters.positionIds!.includes(user.positionId)
+      );
+    }
+
+    return filtered;
+  }, [users, localFilters.sectorIds, localFilters.positionIds]);
+
+  const userOptions = useMemo(
+    () =>
+      filteredUsers.map((user) => ({
+        value: user.id,
+        label: `${user.name}${user.sector?.name ? ` (${user.sector.name})` : ''}`,
+      })),
+    [filteredUsers]
+  );
+
+  // Handle filter changes with user list clearing
+  const handleSectorsChange = (selectedIds: string[]) => {
+    setLocalFilters((prev) => ({
+      ...prev,
+      sectorIds: selectedIds,
+      includeUserIds: [],
+      excludeUserIds: [],
+    }));
+  };
+
+  const handlePositionsChange = (selectedIds: string[]) => {
+    setLocalFilters((prev) => ({
+      ...prev,
+      positionIds: selectedIds,
+      includeUserIds: [],
+      excludeUserIds: [],
+    }));
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -275,7 +341,7 @@ export function PerformanceLevelFilterDrawerContent({
             <Combobox
               options={positionOptions}
               selectedValues={localFilters.positionIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, positionIds: values }))}
+              onValueChange={handlePositionsChange}
               placeholder={positions.length === 0 ? "Carregando cargos..." : "Todos os cargos"}
               searchPlaceholder="Buscar cargos..."
               emptyText="Nenhum cargo encontrado"
@@ -290,12 +356,67 @@ export function PerformanceLevelFilterDrawerContent({
             <Combobox
               options={sectorOptions}
               selectedValues={localFilters.sectorIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sectorIds: values }))}
+              onValueChange={handleSectorsChange}
               placeholder={sectors.length === 0 ? "Carregando setores..." : "Todos os setores"}
               searchPlaceholder="Buscar setores..."
               emptyText="Nenhum setor encontrado"
               disabled={sectors.length === 0}
             />
+          </View>
+        </View>
+
+        {/* Include/Exclude Users */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconUserCheck size={18} color={colors.mutedForeground} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Incluir/Excluir Usuários
+            </ThemedText>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
+              Incluir Apenas os Usuários
+            </ThemedText>
+            <Combobox
+              options={userOptions}
+              selectedValues={localFilters.includeUserIds || []}
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, includeUserIds: values }))}
+              placeholder="Todos os usuários"
+              searchPlaceholder="Buscar usuários..."
+              emptyText="Nenhum usuário encontrado"
+              disabled={filteredUsers.length === 0}
+            />
+            <ThemedText style={[styles.helperText, { color: colors.mutedForeground }]}>
+              {localFilters.includeUserIds?.length || 0} usuário(s) incluído(s)
+              {(localFilters.sectorIds && localFilters.sectorIds.length > 0) || (localFilters.positionIds && localFilters.positionIds.length > 0)
+                ? ` de ${filteredUsers.length} disponível(is)`
+                : ''}
+            </ThemedText>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <View style={styles.sectionHeader}>
+              <IconUserMinus size={18} color={colors.mutedForeground} />
+              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+                Excluir Usuários Específicos
+              </ThemedText>
+            </View>
+            <Combobox
+              options={userOptions}
+              selectedValues={localFilters.excludeUserIds || []}
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, excludeUserIds: values }))}
+              placeholder="Nenhuma exclusão"
+              searchPlaceholder="Buscar usuários..."
+              emptyText="Nenhum usuário encontrado"
+              disabled={filteredUsers.length === 0}
+            />
+            <ThemedText style={[styles.helperText, { color: colors.mutedForeground }]}>
+              {localFilters.excludeUserIds?.length || 0} usuário(s) excluído(s)
+              {(localFilters.sectorIds && localFilters.sectorIds.length > 0) || (localFilters.positionIds && localFilters.positionIds.length > 0)
+                ? ` de ${filteredUsers.length} disponível(is)`
+                : ''}
+            </ThemedText>
           </View>
         </View>
       </ScrollView>
@@ -416,6 +537,10 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 13,
     lineHeight: 20,
+  },
+  helperText: {
+    fontSize: 12,
+    marginTop: 4,
   },
   footer: {
     position: "absolute",

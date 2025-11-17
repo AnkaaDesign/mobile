@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
-import { Combobox} from "@/components/ui/combobox";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { usePpeDeliveryMutations, useUsers, useItems } from "@/hooks";

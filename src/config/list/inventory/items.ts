@@ -19,7 +19,11 @@ export const itemsListConfig: ListConfig<Item> = {
     hook: 'useItemsInfiniteMobile',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
-    include: {},
+    include: {
+      brand: true,
+      category: true,
+      supplier: true,
+    },
   },
 
   table: {

@@ -18,6 +18,13 @@ export const tasksListConfig: ListConfig<Task> = {
       customer: true,
       sector: true,
       generalPainting: true,
+      truck: {
+        select: {
+          id: true,
+          chassisNumber: true,
+          plate: true,
+        },
+      },
       services: {
         select: {
           id: true,
@@ -330,47 +337,34 @@ export const tasksListConfig: ListConfig<Task> = {
         defaultOpen: false,
         fields: [
           {
-            key: 'term',
+            key: 'termRange',
             label: 'Prazo',
             type: 'date-range',
           },
           {
-            key: 'entryDate',
+            key: 'entryDateRange',
             label: 'Data de Entrada',
             type: 'date-range',
           },
           {
-            key: 'startedAt',
+            key: 'startedDateRange',
             label: 'Data de Início',
             type: 'date-range',
           },
           {
-            key: 'finishedAt',
+            key: 'finishedDateRange',
             label: 'Data de Conclusão',
             type: 'date-range',
           },
           {
-            key: 'createdAt',
+            key: 'createdAtRange',
             label: 'Data de Criação',
             type: 'date-range',
           },
         ],
       },
-      {
-        key: 'ranges',
-        label: 'Faixas de Valores',
-        icon: 'coins',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'priceRange',
-            label: 'Preço (R$)',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-        ],
-      },
+      // Note: priceRange removed - not supported in schema
+      // Task entity doesn't have a price field for filtering
     ],
   },
 

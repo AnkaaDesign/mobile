@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/components/ui/theme-provider";
+import { SidebarProvider } from "@/contexts/sidebar-context";
 import { SwipeRowProvider } from "@/contexts/swipe-row-context";
 import { NavigationHistoryProvider } from "@/contexts/navigation-history-context";
 import { FavoritesProvider } from "@/contexts/favorites-context";
@@ -141,11 +142,12 @@ export default function RootLayout() {
           <ThemeProvider>
             <QueryClientProvider client={queryClient}>
               <AuthProvider>
-                <FavoritesProvider>
-                  <FileViewerProvider baseUrl={process.env.EXPO_PUBLIC_API_URL}>
-                    <NavigationHistoryProvider>
-                      <SwipeRowProvider>
-                        <AppStatusBar />
+                <SidebarProvider>
+                  <FavoritesProvider>
+                    <FileViewerProvider baseUrl={process.env.EXPO_PUBLIC_API_URL}>
+                      <NavigationHistoryProvider>
+                        <SwipeRowProvider>
+                          <AppStatusBar />
                       {!isHydrated ? (
                       // Show loading screen during hydration
                       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -178,10 +180,11 @@ export default function RootLayout() {
                         <PortalHost />
                       </>
                     )}
-                      </SwipeRowProvider>
-                    </NavigationHistoryProvider>
-                  </FileViewerProvider>
-                </FavoritesProvider>
+                        </SwipeRowProvider>
+                      </NavigationHistoryProvider>
+                    </FileViewerProvider>
+                  </FavoritesProvider>
+                </SidebarProvider>
               </AuthProvider>
             </QueryClientProvider>
           </ThemeProvider>

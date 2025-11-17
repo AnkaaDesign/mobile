@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useState, useEffect, useCallback } from 'react'
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ThemedText } from '@/components/ui/themed-text'

@@ -32,7 +32,7 @@ export const usePpeDeliveriesInfiniteMobile = (filters?: Partial<PpeDeliveryGetM
         ...filters,
       };
 
-      return (ppeDeliveryService as any).getMany?.(params) || ppeDeliveryService.getPpeDeliveries(params);
+      return ppeDeliveryService.getPpeDeliveries(params);
     },
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage.meta?.hasNextPage) return undefined;
@@ -47,7 +47,8 @@ export const usePpeDeliveriesInfiniteMobile = (filters?: Partial<PpeDeliveryGetM
   const totalCount = query.data?.pages[0]?.meta?.totalRecords;
 
   return {
-    deliveries: allDeliveries,
+    items: allDeliveries,
+    deliveries: allDeliveries, // Alias for backward compatibility
     isLoading: query.isLoading,
     error: query.error,
     refetch: query.refetch,

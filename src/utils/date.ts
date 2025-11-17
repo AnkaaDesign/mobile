@@ -11,6 +11,12 @@ export const formatDate = (date: Date | string | null | undefined, _locale: stri
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "Data inválida";
 
+  // Fix dates with malformed years (e.g., year 2 instead of 2025)
+  // This handles corrupted data where the year was truncated
+  if (d.getFullYear() < 100) {
+    d.setFullYear(d.getFullYear() + 2000);
+  }
+
   return new Intl.DateTimeFormat(_locale, {
     day: "2-digit",
     month: "2-digit",
@@ -23,13 +29,16 @@ export const formatDateTime = (date: Date | string | null | undefined, _locale: 
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "Data inválida";
 
-  return new Intl.DateTimeFormat(_locale, {
+  const formatted = new Intl.DateTimeFormat(_locale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   }).format(d);
+
+  // Replace comma with dash separator: "15/01/2025, 14:30" -> "15/01/2025 - 14:30"
+  return formatted.replace(',', ' -');
 };
 
 export const formatTime = (date: Date | string, _locale: string = "pt-BR"): string => {
@@ -574,16 +583,17 @@ export const getDurationBetweenDates = (startDate: Date | string | null, endDate
 
   if (diff < 0) return "-";
 
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const totalMinutes = Math.floor(diff / (1000 * 60));
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
 
-  if (hours > 24) {
-    const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
-    return `${days}d ${remainingHours}h ${minutes}m`;
-  }
+  // Format as dd:hh:mm
+  const dd = String(days).padStart(2, '0');
+  const hh = String(hours).padStart(2, '0');
+  const mm = String(minutes).padStart(2, '0');
 
-  return `${hours}h ${minutes}m`;
+  return `${dd}:${hh}:${mm}`;
 };
 
 export const dayOfWeekToNumber = (day: WEEK_DAY): number => {

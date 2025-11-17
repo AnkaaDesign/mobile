@@ -39,7 +39,8 @@ export const usePaintTypesInfiniteMobile = (filters?: Partial<PaintTypeGetManyFo
   const totalCount = query.data?.pages[0]?.meta?.totalRecords;
 
   return {
-    paintTypes: allItems,
+    items: allItems,
+    paintTypes: allItems, // Alias for backward compatibility
     isLoading: query.isLoading,
     error: query.error,
     refetch: query.refetch,

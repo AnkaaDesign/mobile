@@ -45,6 +45,10 @@ export interface FileUploadOptions {
   fileContext?: string;
   entityId?: string;
   entityType?: string;
+  // Retry configuration
+  maxRetries?: number; // Default: 3
+  retryDelay?: number; // Initial delay in ms, default: 1000
+  retryMultiplier?: number; // Backoff multiplier, default: 2
 }
 
 export interface FileUploadResponse {
@@ -78,6 +82,97 @@ export interface FileThumbnailResponse {
 export interface FileDownloadOptions {
   signal?: AbortSignal;
   onProgress?: (progress: FileUploadProgress) => void;
+}
+
+// =====================
+// Retry Helper Functions
+// =====================
+
+interface RetryConfig {
+  maxRetries: number;
+  initialDelay: number;
+  multiplier: number;
+  signal?: AbortSignal;
+}
+
+function isRetryableError(error: any): boolean {
+  // Don't retry if cancelled by user
+  if (axios.isCancel(error)) {
+    return false;
+  }
+
+  // Don't retry if aborted by signal
+  if (error.name === 'AbortError') {
+    return false;
+  }
+
+  // Don't retry client errors (4xx) except specific cases
+  if (error.response) {
+    const status = error.response.status;
+    // Retry on: 408 (Request Timeout), 429 (Too Many Requests), 503 (Service Unavailable), 504 (Gateway Timeout)
+    if ([408, 429, 503, 504].includes(status)) {
+      return true;
+    }
+    // Don't retry other 4xx or 5xx errors that are likely permanent
+    if (status >= 400 && status < 500) {
+      return false;
+    }
+    // Retry 5xx server errors
+    if (status >= 500) {
+      return true;
+    }
+  }
+
+  // Retry network errors
+  if (error.code === "ERR_NETWORK" || error.code === "ECONNABORTED") {
+    return true;
+  }
+
+  // Retry timeout errors
+  if (error.message?.includes("timeout")) {
+    return true;
+  }
+
+  // Default: don't retry
+  return false;
+}
+
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  config: RetryConfig
+): Promise<T> {
+  let lastError: any;
+  let delay = config.initialDelay;
+
+  for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+    // Check if aborted before attempting
+    if (config.signal?.aborted) {
+      throw new Error("Upload cancelado");
+    }
+
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+
+      // Don't retry if this is the last attempt
+      if (attempt === config.maxRetries) {
+        break;
+      }
+
+      // Check if error is retryable
+      if (!isRetryableError(error)) {
+        throw error;
+      }
+
+      // Wait before retrying (with exponential backoff)
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay *= config.multiplier;
+    }
+  }
+
+  // All retries exhausted
+  throw lastError;
 }
 
 // =====================
@@ -134,20 +229,15 @@ export class FileService {
   // =====================
 
   async uploadFiles(files: any[] | ArrayLike<any>, options: FileUploadOptions = {}): Promise<BatchFileUploadResponse> {
-    const formData = new FormData();
     const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Convert FileList to Array if needed
     const fileArray = Array.from(files);
 
-    // Add files to FormData
-    fileArray.forEach((file, _index) => {
-      formData.append(`files`, file);
-    });
-
-    // Create cancel token for this upload
-    const cancelTokenSource = axios.CancelToken.source();
-    this.uploadCancelTokens.set(uploadId, cancelTokenSource);
+    // Setup retry configuration
+    const maxRetries = options.maxRetries ?? 3;
+    const retryDelay = options.retryDelay ?? 1000;
+    const retryMultiplier = options.retryMultiplier ?? 2;
 
     // Setup abort signal handling
     if (options.signal) {
@@ -157,38 +247,60 @@ export class FileService {
     }
 
     try {
-      const config: AxiosRequestConfig = {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        cancelToken: cancelTokenSource.token,
-        timeout: options.timeout || 300000, // 5 minutes default
-        onUploadProgress: (progressEvent) => {
-          if (options.onProgress && progressEvent.total) {
-            const progress: FileUploadProgress = {
-              loaded: progressEvent.loaded,
-              total: progressEvent.total,
-              percentage: Math.round((progressEvent.loaded * 100) / progressEvent.total),
-            };
-            options.onProgress(progress);
+      return await retryWithBackoff(
+        async () => {
+          const formData = new FormData();
+
+          // Add files to FormData
+          fileArray.forEach((file, _index) => {
+            formData.append(`files`, file);
+          });
+
+          // Create cancel token for this upload attempt
+          const cancelTokenSource = axios.CancelToken.source();
+          this.uploadCancelTokens.set(uploadId, cancelTokenSource);
+
+          const config: AxiosRequestConfig = {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+            cancelToken: cancelTokenSource.token,
+            timeout: options.timeout || 300000, // 5 minutes default
+            onUploadProgress: (progressEvent) => {
+              if (options.onProgress && progressEvent.total) {
+                const progress: FileUploadProgress = {
+                  loaded: progressEvent.loaded,
+                  total: progressEvent.total,
+                  percentage: Math.round((progressEvent.loaded * 100) / progressEvent.total),
+                };
+                options.onProgress(progress);
+              }
+            },
+            // Add WebDAV context as query parameters
+            params: {
+              ...(options.fileContext && { fileContext: options.fileContext }),
+              ...(options.entityId && { entityId: options.entityId }),
+              ...(options.entityType && { entityType: options.entityType }),
+            },
+          };
+
+          try {
+            const response = await apiClient.post<BatchFileUploadResponse>(`${this.basePath}/upload/multiple`, formData, config);
+            return response.data;
+          } catch (error) {
+            if (axios.isCancel(error)) {
+              throw new Error("Upload cancelado");
+            }
+            throw error;
           }
         },
-        // Add WebDAV context as query parameters
-        params: {
-          ...(options.fileContext && { fileContext: options.fileContext }),
-          ...(options.entityId && { entityId: options.entityId }),
-          ...(options.entityType && { entityType: options.entityType }),
-        },
-      };
-
-      const response = await apiClient.post<BatchFileUploadResponse>(`${this.basePath}/upload/multiple`, formData, config);
-
-      return response.data;
-    } catch (error) {
-      if (axios.isCancel(error)) {
-        throw new Error("Upload cancelado");
-      }
-      throw error;
+        {
+          maxRetries,
+          initialDelay: retryDelay,
+          multiplier: retryMultiplier,
+          signal: options.signal,
+        }
+      );
     } finally {
       // Clean up cancel token
       this.uploadCancelTokens.delete(uploadId);
@@ -196,15 +308,12 @@ export class FileService {
   }
 
   async uploadSingleFile(file: any, options: FileUploadOptions = {}): Promise<FileUploadResponse> {
-    const formData = new FormData();
     const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Add single file to FormData with field name 'file' (not 'files')
-    formData.append("file", file);
-
-    // Create cancel token for this upload
-    const cancelTokenSource = axios.CancelToken.source();
-    this.uploadCancelTokens.set(uploadId, cancelTokenSource);
+    // Setup retry configuration
+    const maxRetries = options.maxRetries ?? 3;
+    const retryDelay = options.retryDelay ?? 1000;
+    const retryMultiplier = options.retryMultiplier ?? 2;
 
     // Setup abort signal handling
     if (options.signal) {
@@ -214,36 +323,56 @@ export class FileService {
     }
 
     try {
-      const config: AxiosRequestConfig = {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        cancelToken: cancelTokenSource.token,
-        timeout: options.timeout || 180000, // 3 minutes for file uploads (EPS thumbnails can take time)
-        onUploadProgress: options.onProgress
-          ? (progressEvent) => {
-              const loaded = progressEvent.loaded || 0;
-              const total = progressEvent.total || 1;
-              const percentage = Math.round((loaded * 100) / total);
-              options.onProgress!({ loaded, total, percentage });
+      return await retryWithBackoff(
+        async () => {
+          const formData = new FormData();
+
+          // Add single file to FormData with field name 'file' (not 'files')
+          formData.append("file", file);
+
+          // Create cancel token for this upload attempt
+          const cancelTokenSource = axios.CancelToken.source();
+          this.uploadCancelTokens.set(uploadId, cancelTokenSource);
+
+          const config: AxiosRequestConfig = {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+            cancelToken: cancelTokenSource.token,
+            timeout: options.timeout || 180000, // 3 minutes for file uploads (EPS thumbnails can take time)
+            onUploadProgress: options.onProgress
+              ? (progressEvent) => {
+                  const loaded = progressEvent.loaded || 0;
+                  const total = progressEvent.total || 1;
+                  const percentage = Math.round((loaded * 100) / total);
+                  options.onProgress!({ loaded, total, percentage });
+                }
+              : undefined,
+            // Add WebDAV context as query parameters
+            params: {
+              ...(options.fileContext && { fileContext: options.fileContext }),
+              ...(options.entityId && { entityId: options.entityId }),
+              ...(options.entityType && { entityType: options.entityType }),
+            },
+          };
+
+          try {
+            const response = await apiClient.post<FileUploadResponse>(`${this.basePath}/upload`, formData, config);
+            return response.data;
+          } catch (error) {
+            if (axios.isCancel(error)) {
+              throw new Error("Upload cancelado");
             }
-          : undefined,
-        // Add WebDAV context as query parameters
-        params: {
-          ...(options.fileContext && { fileContext: options.fileContext }),
-          ...(options.entityId && { entityId: options.entityId }),
-          ...(options.entityType && { entityType: options.entityType }),
+            throw error;
+          }
         },
-      };
-
-      const response = await apiClient.post<FileUploadResponse>(`${this.basePath}/upload`, formData, config);
-
-      return response.data;
-    } catch (error) {
-      if (axios.isCancel(error)) {
-        throw new Error("Upload cancelado");
-      }
-      throw error;
+        {
+          maxRetries,
+          initialDelay: retryDelay,
+          multiplier: retryMultiplier,
+          signal: options.signal,
+        }
+      );
     } finally {
       // Clean up cancel token
       this.uploadCancelTokens.delete(uploadId);

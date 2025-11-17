@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useState, useCallback } from 'react'
 import { View, TouchableOpacity, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import { useTheme } from '@/lib/theme'

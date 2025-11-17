@@ -135,26 +135,42 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
         defaultOpen: true,
         fields: [
           {
-            key: 'paintIds',
-            label: 'Tintas',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione as tintas',
-          },
-          {
             key: 'paintTypeIds',
             label: 'Tipos de Tinta',
             type: 'select',
             multiple: true,
             async: true,
             loadOptions: async () => {
+              // TODO: Implement paint types loading
               return []
             },
             placeholder: 'Selecione os tipos',
+          },
+          {
+            key: 'paintFinishes',
+            label: 'Acabamentos',
+            type: 'select',
+            multiple: true,
+            options: [
+              { value: 'SOLID', label: 'Lisa' },
+              { value: 'METALLIC', label: 'Metálico' },
+              { value: 'PEARL', label: 'Perolizado' },
+              { value: 'MATTE', label: 'Fosco' },
+              { value: 'SATIN', label: 'Semi Brilho' },
+            ],
+            placeholder: 'Selecione os acabamentos',
+          },
+          {
+            key: 'paintBrands',
+            label: 'Marcas de Tinta (Legacy)',
+            type: 'select',
+            multiple: true,
+            options: [
+              { value: 'PPG', label: 'PPG' },
+              { value: 'FARBEN', label: 'Farben' },
+              { value: 'LAZZURIL', label: 'Lazzuril' },
+            ],
+            placeholder: 'Selecione as marcas',
           },
           {
             key: 'paintBrandIds',
@@ -163,6 +179,7 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
             multiple: true,
             async: true,
             loadOptions: async () => {
+              // TODO: Implement paint brands loading
               return []
             },
             placeholder: 'Selecione as marcas',
@@ -174,6 +191,7 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
             multiple: true,
             async: true,
             loadOptions: async () => {
+              // TODO: Implement formulas loading
               return []
             },
             placeholder: 'Selecione as fórmulas',
@@ -188,13 +206,13 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
         defaultOpen: false,
         fields: [
           {
-            key: 'minVolumeLiters',
+            key: 'volumeRange.min',
             label: 'Volume Mínimo (L)',
             type: 'number',
             placeholder: 'Volume mínimo em litros',
           },
           {
-            key: 'maxVolumeLiters',
+            key: 'volumeRange.max',
             label: 'Volume Máximo (L)',
             type: 'number',
             placeholder: 'Volume máximo em litros',

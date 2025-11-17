@@ -1,7 +1,7 @@
 // packages/hooks/src/use-stable-query.ts
 
 import { useRef, useMemo, useCallback, useEffect } from "react";
-import { useQuery, useQueryClient,} from "@tanstack/react-query";
+import { useQuery, useQueryClient, UseQueryOptions, UseQueryResult } from "@tanstack/react-query";
 
 /**
  * A wrapper around useQuery that provides stable query key management
@@ -309,8 +309,7 @@ export function useSmartPrefetch<TData = unknown>(
   useEffect(() => {
     const data = queryClient.getQueryData<TData>(mainQueryKey);
 
-    if (!data || !strategy.relatedQueries) return;
-    return undefined;
+    if (!data || !strategy.relatedQueries) return undefined;
 
     const triggerPrefetch = () => {
       strategy.relatedQueries?.forEach(({ queryKey, queryFn, condition }) => {

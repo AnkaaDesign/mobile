@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useRef, useEffect } from 'react'
 import { View, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
 import { useTheme } from '@/lib/theme'
 import { IconSearch, IconX } from '@tabler/icons-react-native'

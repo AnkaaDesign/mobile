@@ -14,6 +14,7 @@ import { OrderItemsCard } from "@/components/inventory/order/detail/order-items-
 import { OrderSupplierCard } from "@/components/inventory/order/detail/order-supplier-card";
 import { OrderTimelineCard } from "@/components/inventory/order/detail/order-timeline-card";
 import { OrderSummaryCard } from "@/components/inventory/order/detail/order-summary-card";
+import { OrderDocumentsCard } from "@/components/inventory/order/detail/order-documents-card";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
@@ -61,6 +62,12 @@ export default function OrderDetailScreen() {
         orderBy: { createdAt: "desc" },
         take: 10,
       },
+      // File relations for documents
+      budgets: true,
+      invoices: true,
+      receipts: true,
+      reimbursements: true,
+      invoiceReimbursements: true,
       _count: { select: { items: true } },
     },
   });
@@ -258,6 +265,9 @@ export default function OrderDetailScreen() {
 
           {/* Order Items */}
           <OrderItemsCard items={order?.items || []} />
+
+          {/* Documents */}
+          <OrderDocumentsCard order={order} />
 
           {/* Timeline */}
           <OrderTimelineCard order={order} activities={order?.activities || []} />

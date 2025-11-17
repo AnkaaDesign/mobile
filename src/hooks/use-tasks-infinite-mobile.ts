@@ -24,5 +24,5 @@ export function useTasksInfiniteMobile(params?: Partial<TaskGetManyFormData> & {
   const infiniteQuery = useTasksInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery as any);
+  return useInfiniteMobile(infiniteQuery);
 }

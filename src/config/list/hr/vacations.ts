@@ -12,14 +12,14 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  ANNUAL: 'Anual',
-  COLLECTIVE: 'Coletivo',
-  MEDICAL: 'Médico',
-  MATERNITY: 'Maternidade',
-  PATERNITY: 'Paternidade',
+  ANNUAL: 'Férias Anuais',
+  COLLECTIVE: 'Férias Coletivas',
+  MEDICAL: 'Licença Médica',
+  MATERNITY: 'Licença Maternidade',
+  PATERNITY: 'Licença Paternidade',
   EMERGENCY: 'Emergência',
-  STUDY: 'Estudo',
-  UNPAID: 'Não Remunerado',
+  STUDY: 'Licença Estudo',
+  UNPAID: 'Unpaid',
   OTHER: 'Outro',
 }
 

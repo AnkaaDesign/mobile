@@ -1,7 +1,8 @@
 import React from "react";
-import { View, ActivityIndicator, Animated, Text, ViewStyle, TextStyle, AccessibilityInfo, StyleSheet} from "react-native";
+import { View, ActivityIndicator, Animated, Text, ViewStyle, TextStyle, StyleSheet} from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, spacing, fontSize, fontWeight, transitions } from "@/constants/design-system";
+import { Skeleton as BaseSkeleton } from "./skeleton";
 
 // Loading Spinner Component
 interface LoadingSpinnerProps {
@@ -106,66 +107,8 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isVisible, messa
   );
 };
 
-// Skeleton Component
-interface SkeletonProps {
-  style?: ViewStyle | ViewStyle[];
-  children?: React.ReactNode;
-}
-
-export const Skeleton: React.FC<SkeletonProps> = ({ style, children }) => {
-  const { colors } = useTheme();
-  const animatedValue = React.useRef(new Animated.Value(0.3)).current;
-  const [reduceMotionEnabled, setReduceMotionEnabled] = React.useState(false);
-
-  React.useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotionEnabled);
-
-    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotionEnabled);
-
-    return () => subscription?.remove();
-  }, []);
-
-  React.useEffect(() => {
-    if (!reduceMotionEnabled) {
-      const animation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(animatedValue, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(animatedValue, {
-            toValue: 0.3,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ]),
-      );
-      animation.start();
-      return () => animation.stop();
-    } else {
-      animatedValue.setValue(0.7); // Static opacity when motion is reduced
-    }
-  }, [animatedValue, reduceMotionEnabled]);
-
-  const skeletonStyles: ViewStyle = {
-    backgroundColor: colors.muted,
-    borderRadius: borderRadius.DEFAULT,
-    ...(Array.isArray(style) ? Object.assign({}, ...style) : style),
-  };
-
-  return (
-    <Animated.View
-      style={StyleSheet.flatten([skeletonStyles, { opacity: animatedValue }])}
-      accessible={true}
-      accessibilityRole="progressbar"
-      accessibilityLabel="Carregando conteúdo"
-      accessibilityState={{ busy: true }}
-    >
-      {children}
-    </Animated.View>
-  );
-};
+// Re-export Skeleton from skeleton.tsx for backward compatibility
+export { Skeleton } from "./skeleton";
 
 // Common skeleton patterns
 interface SkeletonTextProps {
@@ -179,12 +122,10 @@ export const SkeletonText: React.FC<SkeletonTextProps> = ({ lines = 1, width, he
   // If width and height are provided, render a single skeleton (for custom usage)
   if (width !== undefined) {
     return (
-      <Skeleton
-        style={{
-          width,
-          height,
-          ...(Array.isArray(style) ? Object.assign({}, ...style) : style),
-        }}
+      <BaseSkeleton
+        width={width}
+        height={height}
+        style={Array.isArray(style) ? Object.assign({}, ...style) : style}
       />
     );
   }
@@ -197,11 +138,11 @@ export const SkeletonText: React.FC<SkeletonTextProps> = ({ lines = 1, width, he
   return (
     <View style={containerStyles}>
       {Array.from({ length: lines }, (_, i) => (
-        <Skeleton
+        <BaseSkeleton
           key={i}
+          width={i === lines - 1 && lines > 1 ? "75%" : "100%"}
+          height={height}
           style={{
-            height,
-            width: i === lines - 1 && lines > 1 ? "75%" : "100%",
             marginBottom: i < lines - 1 ? 8 : 0,
           }}
         />
@@ -240,10 +181,10 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({ style }) => {
   return (
     <View style={cardStyles}>
       <View style={headerStyles}>
-        <Skeleton style={{ height: 48, width: 48, borderRadius: 24 }} />
+        <BaseSkeleton width={48} height={48} borderRadius={24} />
         <View style={contentStyles}>
-          <Skeleton style={{ height: 16, width: "75%" }} />
-          <Skeleton style={{ height: 16, width: "50%", marginTop: spacing.sm }} />
+          <BaseSkeleton width="75%" height={16} />
+          <BaseSkeleton width="50%" height={16} style={{ marginTop: spacing.sm }} />
         </View>
       </View>
       <SkeletonText lines={3} style={{ marginTop: spacing.md }} />
@@ -266,13 +207,11 @@ export const SkeletonAvatar: React.FC<SkeletonAvatarProps> = ({ size = "md", sty
   const avatarSize = sizeMap[size as keyof typeof sizeMap];
 
   return (
-    <Skeleton
-      style={{
-        height: avatarSize,
-        width: avatarSize,
-        borderRadius: avatarSize / 2,
-        ...(Array.isArray(style) ? Object.assign({}, ...style) : style),
-      }}
+    <BaseSkeleton
+      width={avatarSize}
+      height={avatarSize}
+      borderRadius={avatarSize / 2}
+      style={Array.isArray(style) ? Object.assign({}, ...style) : style}
     />
   );
 };

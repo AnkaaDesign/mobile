@@ -53,6 +53,7 @@ export const usePaintsInfiniteMobile = (filters?: Partial<PaintGetManyFormData>)
 
   const allItems = query.data?.pages.flatMap((page) => page.data || []) ?? [];
   const totalItemsLoaded = allItems.length;
+  const totalCount = query.data?.pages[0]?.meta?.totalRecords;
 
   return {
     items: allItems,
@@ -64,6 +65,7 @@ export const usePaintsInfiniteMobile = (filters?: Partial<PaintGetManyFormData>)
     canLoadMore: query.hasNextPage,
     isFetchingNextPage: query.isFetchingNextPage,
     totalItemsLoaded,
+    totalCount,
     refresh: async () => {
       await query.refetch();
     },

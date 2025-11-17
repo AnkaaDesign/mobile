@@ -1,6 +1,6 @@
 import * as React from "react";
 import { View, Text, ViewStyle, TextStyle, ViewProps, TouchableOpacity, StyleSheet} from "react-native";
-import { useTheme } from "@/contexts/theme-context";
+import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, fontSize, fontWeight } from "@/constants/design-system";
 
 import { IconChevronLeft } from "@tabler/icons-react-native";

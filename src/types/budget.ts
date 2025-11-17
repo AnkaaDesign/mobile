@@ -1,7 +1,7 @@
 // packages/interfaces/src/budget.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { ORDER_BY_DIRECTION } from '@constants';
+import type { ORDER_BY_DIRECTION } from '@/constants';
 import type { Task, TaskIncludes, TaskOrderBy } from "./task";
 
 // =====================
@@ -18,14 +18,17 @@ export interface Budget extends BaseEntity {
   items?: BudgetItem[];
 }
 
-// Budget Item (line items)
-export interface BudgetItem {
-  id: string;
+// =====================
+// BudgetItem Interface
+// =====================
+
+export interface BudgetItem extends BaseEntity {
   description: string;
   amount: number;
   budgetId: string;
-  createdAt: Date;
-  updatedAt: Date;
+
+  // Relations
+  budget?: Budget;
 }
 
 // =====================

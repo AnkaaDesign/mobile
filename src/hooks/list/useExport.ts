@@ -137,14 +137,14 @@ function getNestedValue(obj: any, path: string): any {
   return path.split('.').reduce((current, key) => current?.[key], obj)
 }
 
-function formatValue(value: any, format: any): string {
+function formatValue(value: any, formatType: any): string {
   if (value === null || value === undefined) return '-'
 
-  if (typeof format === 'function') {
-    return format(value)
+  if (typeof formatType === 'function') {
+    return formatType(value)
   }
 
-  switch (format) {
+  switch (formatType) {
     case 'date':
       return value instanceof Date ? format(value, 'dd/MM/yyyy') : String(value)
     case 'datetime':

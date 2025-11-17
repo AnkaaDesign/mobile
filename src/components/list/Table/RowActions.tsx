@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useRef, useEffect, useCallback } from 'react'
 import { View, TouchableOpacity, StyleSheet, Alert, Animated } from 'react-native'
 import { Swipeable } from 'react-native-gesture-handler'
 import { ThemedText } from '@/components/ui/themed-text'
@@ -75,17 +75,21 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
       closeActions()
 
       if (action.confirm) {
+        const message = typeof action.confirm.message === 'function'
+          ? action.confirm.message(item)
+          : action.confirm.message
+
         Alert.alert(
-          'Confirmar',
-          action.confirmMessage || `Deseja realmente ${action.label?.toLowerCase() || 'executar esta ação'}?`,
+          action.confirm.title,
+          message,
           [
             { text: 'Cancelar', style: 'cancel' },
             {
               text: 'Confirmar',
-              style: action.type === 'delete' ? 'destructive' : 'default',
+              style: action.variant === 'destructive' ? 'destructive' : 'default',
               onPress: async () => {
                 if (action.onPress) {
-                  await action.onPress(item)
+                  await action.onPress(item, router)
                 } else if (action.route) {
                   const route = typeof action.route === 'function' ? action.route(item) : action.route
                   router.push(route as any)
@@ -96,7 +100,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
         )
       } else {
         if (action.onPress) {
-          await action.onPress(item)
+          await action.onPress(item, router)
         } else if (action.route) {
           const route = typeof action.route === 'function' ? action.route(item) : action.route
           router.push(route as any)
@@ -114,20 +118,21 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
             let backgroundColor = colors.primary
             let Icon = IconEye
 
-            if (action.type === 'edit') {
+            // Determine icon and color based on action key or variant
+            if (action.key === 'edit' || action.icon === 'pencil') {
               backgroundColor = '#1d4ed8'
               Icon = IconEdit
-            } else if (action.type === 'delete') {
+            } else if (action.key === 'delete' || action.variant === 'destructive') {
               backgroundColor = '#ef4444'
               Icon = IconTrash
-            } else if (action.type === 'view') {
+            } else if (action.key === 'view' || action.icon === 'eye') {
               backgroundColor = '#10b981'
               Icon = IconEye
             }
 
             return (
               <TouchableOpacity
-                key={action.type + index}
+                key={action.key}
                 style={[styles.actionButton, { backgroundColor }]}
                 onPress={() => handleAction(action)}
                 activeOpacity={0.7}

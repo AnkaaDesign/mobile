@@ -3,7 +3,7 @@ import { View, StyleSheet} from "react-native";
 import { Controller, useWatch, useFormContext } from "react-hook-form";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Input } from "@/components/ui/input";
-import { Combobox} from "@/components/ui/combobox";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { PpeSizeSelector } from "./ppe-size-selector";
 import { PPE_TYPE_LABELS, PPE_DELIVERY_MODE_LABELS } from "@/constants";
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';

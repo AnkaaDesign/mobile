@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
-import { Combobox} from "@/components/ui/combobox";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 

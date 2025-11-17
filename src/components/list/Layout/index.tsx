@@ -13,6 +13,7 @@ import { Search } from '../Search'
 import { Filters } from '../Filters'
 import { Export } from '../Export'
 import { BulkActions } from '../BulkActions'
+import { ColumnVisibility } from '../ColumnVisibility'
 import type { ListConfig } from '../types'
 
 interface LayoutProps {
@@ -79,6 +80,14 @@ export const Layout = memo(function Layout({
         </View>
 
         <View style={styles.actions}>
+          {/* Column Visibility */}
+          <ColumnVisibility
+            columns={list.table.columns}
+            visibleColumns={list.table.visibleColumns}
+            onToggleColumn={list.table.onToggleColumn}
+            onResetColumns={list.table.onResetColumns}
+          />
+
           {config.export && (
             <Export
               onExport={list.export.onExport}

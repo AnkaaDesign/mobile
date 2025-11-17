@@ -227,10 +227,82 @@ export const suppliersListConfig: ListConfig<Supplier> = {
         defaultOpen: false,
         fields: [
           {
+            key: 'hasLogo',
+            label: 'Com Logo',
+            description: 'Apenas fornecedores com logo cadastrado',
+            type: 'toggle',
+          },
+          {
             key: 'hasItems',
             label: 'Com Produtos',
             description: 'Apenas fornecedores que fornecem produtos',
             type: 'toggle',
+          },
+          {
+            key: 'hasOrders',
+            label: 'Com Pedidos',
+            description: 'Apenas fornecedores com pedidos registrados',
+            type: 'toggle',
+          },
+          {
+            key: 'hasCnpj',
+            label: 'Com CNPJ',
+            description: 'Apenas fornecedores com CNPJ cadastrado',
+            type: 'toggle',
+          },
+          {
+            key: 'hasEmail',
+            label: 'Com Email',
+            description: 'Apenas fornecedores com email cadastrado',
+            type: 'toggle',
+          },
+          {
+            key: 'hasSite',
+            label: 'Com Website',
+            description: 'Apenas fornecedores com site cadastrado',
+            type: 'toggle',
+          },
+        ],
+      },
+      {
+        key: 'contact',
+        label: 'Contato',
+        icon: 'phone',
+        collapsible: true,
+        defaultOpen: false,
+        fields: [
+          {
+            key: 'phoneContains',
+            label: 'Telefone',
+            type: 'text',
+            placeholder: 'Digite parte do telefone',
+          },
+          {
+            key: 'cnpj',
+            label: 'CNPJ',
+            type: 'text',
+            placeholder: 'Digite o CNPJ',
+          },
+        ],
+      },
+      {
+        key: 'ranges',
+        label: 'Faixas de Valores',
+        icon: 'hash',
+        collapsible: true,
+        defaultOpen: false,
+        fields: [
+          {
+            key: 'itemCount',
+            label: 'Quantidade de Produtos',
+            type: 'number-range',
+            placeholder: { min: 'Mín', max: 'Máx' },
+          },
+          {
+            key: 'orderCount',
+            label: 'Quantidade de Pedidos',
+            type: 'number-range',
+            placeholder: { min: 'Mín', max: 'Máx' },
           },
         ],
       },
@@ -244,6 +316,11 @@ export const suppliersListConfig: ListConfig<Supplier> = {
           {
             key: 'createdAt',
             label: 'Data de Cadastro',
+            type: 'date-range',
+          },
+          {
+            key: 'updatedAt',
+            label: 'Data de Atualização',
             type: 'date-range',
           },
         ],

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { IconFilter, IconX, IconBeach, IconUsers, IconCalendarPlus } from '@tabler/icons-react-native';
+import { IconFilter, IconX, IconBeach, IconUsers, IconCalendarPlus, IconCalendar } from '@tabler/icons-react-native';
+import { Switch as RNSwitch } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
@@ -22,6 +23,8 @@ interface FilterState {
   statuses?: string[];
   types?: string[];
   userIds?: string[];
+  isCollective?: boolean;
+  year?: number;
   startAfter?: Date;
   startBefore?: Date;
   endAfter?: Date;
@@ -46,6 +49,8 @@ export function VacationFilterDrawerContent({
     statuses: filters.statuses || [],
     types: filters.types || [],
     userIds: filters.userIds || [],
+    isCollective: filters.isCollective,
+    year: filters.year || new Date().getFullYear(),
     startAfter: filters.startAtRange?.gte,
     startBefore: filters.startAtRange?.lte,
     endAfter: filters.endAtRange?.gte,
@@ -65,6 +70,14 @@ export function VacationFilterDrawerContent({
 
     if (localFilters.userIds && localFilters.userIds.length > 0) {
       newFilters.userIds = localFilters.userIds;
+    }
+
+    if (localFilters.isCollective !== undefined) {
+      newFilters.isCollective = localFilters.isCollective;
+    }
+
+    if (localFilters.year !== undefined) {
+      newFilters.year = localFilters.year;
     }
 
     if (localFilters.startAfter || localFilters.startBefore) {
@@ -122,6 +135,19 @@ export function VacationFilterDrawerContent({
       })),
     []
   );
+
+  const yearOptions = useMemo(() => {
+    const years = [];
+    const currentYear = new Date().getFullYear();
+    for (let i = -5; i <= 5; i++) {
+      const year = currentYear + i;
+      years.push({
+        value: year.toString(),
+        label: year.toString(),
+      });
+    }
+    return years;
+  }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -220,6 +246,55 @@ export function VacationFilterDrawerContent({
               placeholder="Todos os colaboradores"
               searchPlaceholder="Buscar colaboradores..."
               emptyText="Nenhum colaborador encontrado"
+            />
+          </View>
+        </View>
+
+        {/* Year and Collective */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconCalendar size={18} color={colors.mutedForeground} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Ano e Tipo
+            </ThemedText>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
+              Ano
+            </ThemedText>
+            <Combobox
+              options={yearOptions}
+              selectedValues={localFilters.year ? [localFilters.year.toString()] : []}
+              onValueChange={(values) => {
+                const year = values[0] ? parseInt(values[0]) : undefined;
+                setLocalFilters((prev) => ({ ...prev, year }));
+              }}
+              placeholder="Selecione o ano..."
+              emptyText="Nenhum ano encontrado"
+              singleSelect
+            />
+          </View>
+
+          <View style={[styles.filterItem, { borderBottomWidth: 0 }]}>
+            <TouchableOpacity
+              style={styles.filterTouchable}
+              onPress={() => setLocalFilters((prev) => ({ ...prev, isCollective: !prev.isCollective }))}
+              activeOpacity={0.7}
+            >
+              <View>
+                <ThemedText style={styles.filterLabel}>Apenas férias coletivas</ThemedText>
+                <ThemedText style={[styles.filterDescription, { color: colors.mutedForeground }]}>
+                  Mostrar apenas períodos de férias coletivas
+                </ThemedText>
+              </View>
+            </TouchableOpacity>
+            <RNSwitch
+              value={localFilters.isCollective || false}
+              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, isCollective: value || undefined }))}
+              trackColor={{ false: colors.muted, true: colors.primary }}
+              thumbColor={localFilters.isCollective ? colors.primaryForeground : "#f4f3f4"}
+              ios_backgroundColor={colors.muted}
             />
           </View>
         </View>
@@ -355,6 +430,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     marginBottom: 4,
+  },
+  filterItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  filterTouchable: {
+    flex: 1,
+    paddingRight: 16,
+  },
+  filterLabel: {
+    fontSize: 15,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  filterDescription: {
+    fontSize: 13,
   },
   footer: {
     position: "absolute",

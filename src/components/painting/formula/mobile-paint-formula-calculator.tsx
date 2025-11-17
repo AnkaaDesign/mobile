@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { View, TouchableOpacity, Modal, ScrollView } from "react-native";
+import { useRouter } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
@@ -14,18 +15,19 @@ import { MEASURE_UNIT } from "@/constants";
 import { formatCurrency, measureUtils } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import type { PaintFormula } from "../../../types";
-import { IconAlertTriangle, IconCheck, IconX, IconExclamationCircle } from "@tabler/icons-react-native";
+import { IconAlertTriangle, IconCheck, IconX, IconExclamationCircle, IconLoader } from "@tabler/icons-react-native";
+import { usePaintProductionMutations } from "@/hooks";
 
 interface MobilePaintFormulaCalculatorProps {
   formula: PaintFormula;
 }
 
-// Predefined volume options
-const PREDEFINED_VOLUMES = [
-  { label: "100ml", value: 100 },
-  { label: "1L", value: 1000 },
-  { label: "2L", value: 2000 },
-  { label: "3.6L", value: 3600 },
+// Predefined weight options (in grams)
+const PREDEFINED_WEIGHTS = [
+  { label: "500g", value: 500 },
+  { label: "1kg", value: 1000 },
+  { label: "2kg", value: 2000 },
+  { label: "3kg", value: 3000 },
 ];
 
 interface ComponentCalculation {
@@ -59,39 +61,43 @@ interface ErrorComponent {
 
 export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalculatorProps) {
   const { colors } = useTheme();
-  const [targetVolume, setTargetVolume] = useState<string>("2000");
+  const router = useRouter();
+  const { createAsync: createProduction } = usePaintProductionMutations();
+
+  // Main state - now weight-based like web version
+  const [targetWeight, setTargetWeight] = useState<string>("1000"); // Default 1kg
+  const [targetWeightUnit, setTargetWeightUnit] = useState<MEASURE_UNIT>(MEASURE_UNIT.GRAM);
+  const [removedAmount, setRemovedAmount] = useState<string>("0"); // Amount removed for testing
+  const [removedUnit, setRemovedUnit] = useState<MEASURE_UNIT>(MEASURE_UNIT.GRAM);
+  const [isCreatingProduction, setIsCreatingProduction] = useState(false);
+
+  // Display options
   const [showPrices, setShowPrices] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+
+  // Correction mode (keeping this as a mobile-specific enhancement)
   const [correctionMode, setCorrectionMode] = useState(false);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
-  const [selectedComponents, setSelectedComponents] = useState<Set<string>>(new Set());
   const [errorComponent, setErrorComponent] = useState<ErrorComponent | null>(null);
   const [tempErrorComponentId, setTempErrorComponentId] = useState<string>("");
   const [tempActualWeight, setTempActualWeight] = useState<string>("");
   const [alreadyAddedComponents, setAlreadyAddedComponents] = useState<Set<string>>(new Set());
 
   const components = formula.components || [];
-  const targetVolumeInMl = parseFloat(targetVolume) || 0;
   const formulaDensity = Number(formula.density) || 1.0;
-  const targetWeightInGrams = targetVolumeInMl * formulaDensity;
 
-  // Normalize ratios if needed (matching web logic)
-  const normalizedComponents = useMemo(() => {
-    const sumRatio = components.reduce((sum, c) => sum + (c.ratio || 0), 0);
+  // Convert target weight to grams (matching web logic)
+  const targetWeightInGrams = targetWeightUnit === MEASURE_UNIT.KILOGRAM ? (parseFloat(targetWeight) || 0) * 1000 : (parseFloat(targetWeight) || 0);
 
-    // If ratios are in decimal format (0-10 range), multiply by 100
-    if (sumRatio > 0 && sumRatio <= 10) {
-      return components.map(c => ({
-        ...c,
-        ratio: (c.ratio || 0) * 100
-      }));
-    }
+  // Convert removed amount to grams (matching web logic)
+  const removedAmountInGrams = removedUnit === MEASURE_UNIT.KILOGRAM ? (parseFloat(removedAmount) || 0) * 1000 : (parseFloat(removedAmount) || 0);
 
-    return components;
-  }, [components]);
+  // Calculate actual weight after removal (matching web logic)
+  const actualTargetWeight = targetWeightInGrams - removedAmountInGrams;
 
-  const handlePredefinedVolume = (value: number) => {
-    setTargetVolume(value.toString());
+  const handlePredefinedWeight = (value: number) => {
+    setTargetWeight(value.toString());
+    setTargetWeightUnit(MEASURE_UNIT.GRAM);
   };
 
   const handleToggleCorrectionMode = (value: boolean) => {
@@ -109,9 +115,9 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
   };
 
   const handleConfirmError = () => {
-    const component = normalizedComponents.find(c => c.id === tempErrorComponentId);
+    const component = components.find(c => c.id === tempErrorComponentId);
     if (component && tempActualWeight) {
-      const expectedWeight = (component.ratio / 100) * targetWeightInGrams;
+      const expectedWeight = (component.ratio / 100) * actualTargetWeight;
       const actualWeight = parseFloat(tempActualWeight);
 
       if (actualWeight >= expectedWeight) {
@@ -125,7 +131,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
 
         // Mark all components as already added except the error one
         const added = new Set<string>();
-        normalizedComponents.forEach(c => {
+        components.forEach(c => {
           if (c.id !== tempErrorComponentId) {
             added.add(c.id || "");
           }
@@ -151,17 +157,18 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
     });
   };
 
-  // Calculate component requirements based on ratios
+  // Calculate component requirements based on ratios (matching web exactly)
   const componentCalculations = useMemo((): ComponentCalculation[] => {
-    return normalizedComponents.map((comp) => {
-      const baseWeight = (comp.ratio / 100) * targetWeightInGrams;
+    return components.map((comp) => {
+      // Calculate weight based on ratio and actual target weight (after removal)
+      const baseWeight = (comp.ratio / 100) * actualTargetWeight;
       let calculatedWeight = baseWeight;
       let correctedWeight: number | undefined;
       let additionalWeight: number | undefined;
       let isErrorComponent = false;
       let wasAlreadyAdded = false;
 
-      // Apply correction logic if in correction mode
+      // Apply correction logic if in correction mode (mobile-specific feature)
       if (correctionMode && errorComponent) {
         if (comp.id === errorComponent.componentId) {
           // This is the error component
@@ -185,7 +192,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
       const unitPrice = item?.prices?.[0]?.value || 0;
       const availableStock = item?.quantity || 0;
 
-      // Get weight and volume measures
+      // Get weight and volume measures (matching web logic exactly)
       const weightMeasure = item?.measures?.find(
         (m) => m.measureType === "WEIGHT" && m.unit === MEASURE_UNIT.GRAM
       );
@@ -193,16 +200,16 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
         (m) => m.measureType === "VOLUME" && m.unit === MEASURE_UNIT.MILLILITER
       );
 
-      // Calculate item density
+      // Calculate item density (matching web logic exactly)
       const itemDensity =
         weightMeasure?.value && volumeMeasure?.value && volumeMeasure.value > 0
           ? weightMeasure.value / volumeMeasure.value
-          : formulaDensity;
+          : Number(formula.density) || 1.0;
 
       // Calculate volume based on weight and density
       const calculatedVolume = calculatedWeight / itemDensity;
 
-      // Determine stock unit and calculate required units
+      // Determine stock unit and calculate required units (matching web logic exactly)
       const stockUnit = item?.measures?.[0]?.unit || MEASURE_UNIT.UNIT;
       let requiredUnits = calculatedWeight;
 
@@ -210,11 +217,8 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
         requiredUnits = calculatedWeight / 1000;
       } else if (stockUnit === MEASURE_UNIT.GRAM) {
         requiredUnits = calculatedWeight;
-      } else if (stockUnit === MEASURE_UNIT.MILLILITER) {
-        requiredUnits = calculatedVolume;
-      } else if (stockUnit === MEASURE_UNIT.LITER) {
-        requiredUnits = calculatedVolume / 1000;
       } else if (weightMeasure?.value) {
+        // For items with specific weight per unit
         requiredUnits = calculatedWeight / weightMeasure.value;
       }
 
@@ -241,22 +245,69 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
         additionalWeight,
       };
     });
-  }, [normalizedComponents, targetWeightInGrams, formulaDensity, correctionMode, errorComponent, alreadyAddedComponents]);
+  }, [components, actualTargetWeight, formula.density, correctionMode, errorComponent, alreadyAddedComponents]);
 
-  // Sort components by ratio (highest first)
-  const sortedCalculations = [...componentCalculations].sort((a, b) => b.ratio - a.ratio);
+  // Calculate totals (matching web logic exactly)
+  const calculatedTotals = useMemo(() => {
+    const totalWeight = componentCalculations.reduce((sum, calc) => sum + calc.calculatedWeight, 0);
+    const totalVolume = componentCalculations.reduce((sum, calc) => sum + calc.calculatedVolume, 0);
+    const totalCost = componentCalculations.reduce((sum, calc) => sum + calc.totalCost, 0);
+    const missingComponents = componentCalculations.filter((calc) => !calc.hasStock);
+    const calculatedVolumeInLiters = totalVolume / 1000;
+    const costPerLiter = calculatedVolumeInLiters > 0 ? totalCost / calculatedVolumeInLiters : 0;
 
-  // Calculate totals
-  const totalCost = sortedCalculations.reduce((sum, calc) => sum + calc.totalCost, 0);
-  const totalWeight = sortedCalculations.reduce((sum, calc) => sum + (calc.correctedWeight || calc.calculatedWeight), 0);
-  const totalVolume = totalWeight / formulaDensity;
-  const pricePerLiter = totalVolume > 0 ? (totalCost / (totalVolume / 1000)) : 0;
-  const allInStock = sortedCalculations.every((calc) => calc.hasStock);
-  const missingComponents = sortedCalculations.filter((calc) => !calc.hasStock);
+    return {
+      totalWeight,
+      totalVolume,
+      totalCost,
+      missingComponents,
+      calculatedVolumeInLiters,
+      costPerLiter,
+    };
+  }, [componentCalculations]);
 
-  // Validate ratio sum
-  const ratioSum = normalizedComponents.reduce((sum, c) => sum + (c.ratio || 0), 0);
-  const isValidRatioSum = Math.abs(ratioSum - 100) < 0.1;
+  const calculatedDensity = calculatedTotals.totalVolume > 0 ? calculatedTotals.totalWeight / calculatedTotals.totalVolume : 0;
+
+  // Handle production start (matching web logic exactly)
+  const handleStartProduction = async () => {
+    try {
+      setIsCreatingProduction(true);
+
+      // Validate required data
+      if (!formula.id) {
+        return;
+      }
+
+      if (!formula.paint?.id) {
+        return;
+      }
+
+      if (actualTargetWeight <= 0) {
+        return;
+      }
+
+      // Calculate volume from weight using formula density
+      const formulaDensity = Number(formula.density) || 1.0;
+      const volumeInMl = actualTargetWeight / formulaDensity;
+      const volumeInLiters = volumeInMl / 1000;
+
+      // Create the production with the calculated volume (in liters)
+      const result = await createProduction({
+        formulaId: formula.id,
+        volumeLiters: volumeInLiters,
+      });
+
+      // Navigate to the production details page
+      if (result?.data?.id) {
+        router.push(`/painting/production/${result.data.id}`);
+      }
+    } catch (error) {
+      console.error("Error creating production:", error);
+      // Error handled by API client
+    } finally {
+      setIsCreatingProduction(false);
+    }
+  };
 
   return (
     <Card className="p-4">
@@ -268,36 +319,27 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
         <Text className="text-lg font-semibold text-foreground">Calculadora de Fórmula</Text>
       </View>
 
-      {!isValidRatioSum && (
-        <Alert variant="destructive" style={{ marginBottom: 16 }}>
-          <IconAlertTriangle size={16} color={colors.destructive} />
-          <AlertDescription>
-            A soma das proporções ({ratioSum.toFixed(1)}%) deve ser igual a 100%
-          </AlertDescription>
-        </Alert>
-      )}
-
       <View className="gap-4">
-        {/* Volume Input */}
+        {/* Target Weight Input (matching web layout) */}
         <View className="gap-2">
-          <Text className="text-sm font-medium text-foreground">Volume Desejado (ml)</Text>
+          <Text className="text-sm font-medium text-foreground">Peso desejado para produção</Text>
 
-          {/* Predefined Volume Buttons */}
+          {/* Predefined Weight Buttons */}
           <View className="flex-row gap-2 flex-wrap">
-            {PREDEFINED_VOLUMES.map((option) => (
+            {PREDEFINED_WEIGHTS.map((option) => (
               <TouchableOpacity
                 key={option.value}
-                onPress={() => handlePredefinedVolume(option.value)}
+                onPress={() => handlePredefinedWeight(option.value)}
                 className="px-3 py-2 rounded-lg border"
                 style={{
-                  backgroundColor: targetVolume === option.value.toString() ? colors.primary : 'transparent',
-                  borderColor: targetVolume === option.value.toString() ? colors.primary : colors.border,
+                  backgroundColor: targetWeight === option.value.toString() && targetWeightUnit === MEASURE_UNIT.GRAM ? colors.primary : 'transparent',
+                  borderColor: targetWeight === option.value.toString() && targetWeightUnit === MEASURE_UNIT.GRAM ? colors.primary : colors.border,
                 }}
               >
                 <Text
                   className="text-sm font-medium"
                   style={{
-                    color: targetVolume === option.value.toString() ? colors.primaryForeground : colors.foreground,
+                    color: targetWeight === option.value.toString() && targetWeightUnit === MEASURE_UNIT.GRAM ? colors.primaryForeground : colors.foreground,
                   }}
                 >
                   {option.label}
@@ -306,14 +348,104 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
             ))}
           </View>
 
-          {/* Custom Volume Input */}
-          <Input
-            value={targetVolume}
-            onChangeText={setTargetVolume}
-            keyboardType="numeric"
-            placeholder="2000"
-          />
+          {/* Custom Weight Input with Unit Selector */}
+          <View className="flex-row gap-2">
+            <View className="flex-1">
+              <Input
+                value={targetWeight}
+                onChangeText={setTargetWeight}
+                keyboardType="numeric"
+                placeholder="1000"
+              />
+            </View>
+            <View className="w-20">
+              <Button
+                variant="outline"
+                onPress={() => {
+                  setTargetWeightUnit(targetWeightUnit === MEASURE_UNIT.GRAM ? MEASURE_UNIT.KILOGRAM : MEASURE_UNIT.GRAM);
+                }}
+                className="h-full"
+              >
+                <Text className="text-sm font-medium">{targetWeightUnit === MEASURE_UNIT.GRAM ? 'g' : 'kg'}</Text>
+              </Button>
+            </View>
+          </View>
+
+          {/* Volume Estimate Display */}
+          {targetWeightInGrams > 0 && (
+            <View className="bg-muted/30 rounded-lg p-3">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-xs text-muted-foreground">Volume Estimado</Text>
+                <Text className="text-base font-bold">{calculatedTotals.calculatedVolumeInLiters.toFixed(2)} L</Text>
+              </View>
+              <Text className="text-xs text-muted-foreground text-right mt-1">
+                Densidade: {calculatedDensity.toFixed(3)} g/ml
+              </Text>
+            </View>
+          )}
         </View>
+
+        {/* Removed Amount Input (matching web) */}
+        <View className="gap-2">
+          <Text className="text-sm font-medium text-foreground">Quantidade retirada para teste</Text>
+
+          <View className="flex-row gap-2">
+            <View className="flex-1">
+              <Input
+                value={removedAmount}
+                onChangeText={setRemovedAmount}
+                keyboardType="numeric"
+                placeholder="0"
+              />
+            </View>
+            <View className="w-20">
+              <Button
+                variant="outline"
+                onPress={() => {
+                  setRemovedUnit(removedUnit === MEASURE_UNIT.GRAM ? MEASURE_UNIT.KILOGRAM : MEASURE_UNIT.GRAM);
+                }}
+                className="h-full"
+              >
+                <Text className="text-sm font-medium">{removedUnit === MEASURE_UNIT.GRAM ? 'g' : 'kg'}</Text>
+              </Button>
+            </View>
+          </View>
+
+          <Text className="text-xs text-muted-foreground">
+            Digite a quantidade de tinta que foi retirada para ajustar automaticamente os componentes
+          </Text>
+
+          {/* Adjusted Weight Display */}
+          {removedAmountInGrams > 0 && actualTargetWeight > 0 && (
+            <View className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3 border border-orange-200 dark:border-orange-800">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-xs text-muted-foreground">Peso Ajustado</Text>
+                <Text className="text-base font-bold text-orange-600 dark:text-orange-400">
+                  {measureUtils.formatMeasure({
+                    value: actualTargetWeight,
+                    unit: MEASURE_UNIT.GRAM,
+                  })}
+                </Text>
+              </View>
+              <Text className="text-xs text-muted-foreground text-right">
+                após retirar {measureUtils.formatMeasure({
+                  value: removedAmountInGrams,
+                  unit: MEASURE_UNIT.GRAM,
+                })}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Warning for invalid removal */}
+        {actualTargetWeight <= 0 && removedAmountInGrams > 0 && (
+          <Alert variant="destructive">
+            <IconAlertTriangle size={16} color={colors.destructive} />
+            <AlertDescription>
+              A quantidade retirada não pode ser maior que o peso desejado para produção.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Toggles */}
         <View className="gap-3">
@@ -344,25 +476,25 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
           )}
         </View>
 
-        {targetVolumeInMl > 0 && (
+        {actualTargetWeight > 0 && targetWeightInGrams > 0 && (
           <>
             {/* Components Table */}
             <View className="gap-3">
               <View className="flex-row items-center justify-between mb-2">
                 <Text className="text-sm font-medium text-foreground">Componentes</Text>
                 <Badge
-                  variant={allInStock ? "default" : "destructive"}
+                  variant={calculatedTotals.missingComponents.length === 0 ? "default" : "destructive"}
                   style={{
-                    backgroundColor: allInStock ? "#16a34a" : colors.destructive,
+                    backgroundColor: calculatedTotals.missingComponents.length === 0 ? "#16a34a" : colors.destructive,
                   }}
                 >
                   <Text className="text-xs font-medium" style={{ color: "#FFFFFF" }}>
-                    {allInStock ? "Estoque OK" : "Falta Estoque"}
+                    {calculatedTotals.missingComponents.length === 0 ? "Estoque OK" : "Falta Estoque"}
                   </Text>
                 </Badge>
               </View>
 
-              {sortedCalculations.map((calc, index) => {
+              {componentCalculations.map((calc, index) => {
                 const displayName = calc.uniCode
                   ? `${calc.uniCode} - ${calc.name}`
                   : calc.name;
@@ -535,39 +667,72 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
               })}
             </View>
 
-            {/* Production Summary */}
-            <View className="bg-primary/10 rounded-lg p-3 gap-2">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-sm font-medium text-foreground">Volume Total</Text>
-                <Text className="text-base font-bold">
-                  {(totalVolume / 1000).toFixed(2)} L ({totalVolume.toFixed(0)} ml)
-                </Text>
+            {/* Production Summary (matching web) */}
+            <Separator className="my-2" />
+            <View className="gap-3">
+              <View className="bg-muted/30 rounded-lg p-3">
+                <View className="flex-row items-center justify-between mb-2">
+                  <Text className="text-xs text-muted-foreground">Peso Total</Text>
+                  <Text className="text-lg font-bold">
+                    {measureUtils.formatMeasure({
+                      value: calculatedTotals.totalWeight,
+                      unit: MEASURE_UNIT.GRAM,
+                    })}
+                  </Text>
+                </View>
               </View>
 
-              <View className="flex-row items-center justify-between">
-                <Text className="text-sm font-medium text-foreground">Peso Total</Text>
-                <Text className="text-base font-bold">
-                  {(totalWeight / 1000).toFixed(2)} kg ({totalWeight.toFixed(0)} g)
-                </Text>
+              <View className="bg-muted/30 rounded-lg p-3">
+                <View className="flex-row items-center justify-between mb-2">
+                  <Text className="text-xs text-muted-foreground">Volume Total</Text>
+                  <Text className="text-lg font-bold">
+                    {calculatedTotals.calculatedVolumeInLiters.toFixed(2)} L
+                  </Text>
+                </View>
               </View>
 
               {showPrices && (
                 <>
-                  <Separator className="my-1" />
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-sm font-medium text-foreground">Custo Total</Text>
-                    <Text className="text-lg font-bold text-primary">
-                      {formatCurrency(totalCost)}
-                    </Text>
+                  <View className="bg-muted/30 rounded-lg p-3">
+                    <View className="flex-row items-center justify-between mb-2">
+                      <Text className="text-xs text-muted-foreground">Custo Total</Text>
+                      <Text className="text-lg font-bold text-primary">
+                        {formatCurrency(calculatedTotals.totalCost)}
+                      </Text>
+                    </View>
                   </View>
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-xs text-muted-foreground">Custo por Litro</Text>
-                    <Text className="text-xs font-medium">
-                      {formatCurrency(pricePerLiter)}
-                    </Text>
+
+                  <View className="bg-muted/30 rounded-lg p-3">
+                    <View className="flex-row items-center justify-between mb-2">
+                      <Text className="text-xs text-muted-foreground">Custo por Litro</Text>
+                      <Text className="text-lg font-bold">
+                        {formatCurrency(calculatedTotals.costPerLiter)}
+                      </Text>
+                    </View>
                   </View>
                 </>
               )}
+            </View>
+
+            {/* Production Actions (matching web) */}
+            <View className="gap-2 mt-4">
+              <Button
+                onPress={handleStartProduction}
+                disabled={calculatedTotals.missingComponents.length > 0 || actualTargetWeight <= 0 || isCreatingProduction}
+                className="w-full"
+              >
+                {isCreatingProduction ? (
+                  <View className="flex-row items-center gap-2">
+                    <IconLoader size={20} color={colors.primaryForeground} className="animate-spin" />
+                    <Text style={{ color: colors.primaryForeground }}>Criando Produção...</Text>
+                  </View>
+                ) : (
+                  <View className="flex-row items-center gap-2">
+                    <Icon name="calculator" size={20} className="text-primary-foreground" />
+                    <Text style={{ color: colors.primaryForeground }}>Iniciar Produção</Text>
+                  </View>
+                )}
+              </Button>
             </View>
 
             {/* Technical Specs Card */}
@@ -587,13 +752,12 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
               </View>
             </Card>
 
-            {/* Warnings */}
-            {!allInStock && (
+            {/* Warnings (matching web) */}
+            {calculatedTotals.missingComponents.length > 0 && (
               <Alert variant="destructive">
-                <Icon name="alert-triangle" size={16} />
+                <IconAlertTriangle size={16} color={colors.destructive} />
                 <AlertDescription>
-                  {missingComponents.length} componente{missingComponents.length > 1 ? "s" : ""}{" "}
-                  sem estoque suficiente
+                  <Text className="font-semibold">Estoque insuficiente:</Text> {calculatedTotals.missingComponents.length} componente{calculatedTotals.missingComponents.length > 1 ? "s" : ""} sem estoque suficiente para esta produção.
                 </AlertDescription>
               </Alert>
             )}
@@ -603,7 +767,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
                 <IconExclamationCircle size={16} color={colors.primary} />
                 <AlertDescription>
                   Modo correção ativo. Componente com erro: {
-                    sortedCalculations.find(c => c.id === errorComponent.componentId)?.name
+                    componentCalculations.find(c => c.id === errorComponent.componentId)?.name
                   } (Razão de erro: {errorComponent.errorRatio.toFixed(2)}x)
                 </AlertDescription>
               </Alert>
@@ -631,7 +795,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
               <View>
                 <Text className="text-sm font-medium mb-2">Componente</Text>
                 <ScrollView style={{ maxHeight: 200 }} className="border rounded-lg p-2">
-                  {sortedCalculations.map((calc) => (
+                  {componentCalculations.map((calc) => (
                     <TouchableOpacity
                       key={calc.id}
                       onPress={() => setTempErrorComponentId(calc.id)}
@@ -657,7 +821,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
                     keyboardType="numeric"
                     placeholder="Ex: 150"
                   />
-                  {tempActualWeight && parseFloat(tempActualWeight) < sortedCalculations.find(c => c.id === tempErrorComponentId)?.calculatedWeight! && (
+                  {tempActualWeight && parseFloat(tempActualWeight) < componentCalculations.find(c => c.id === tempErrorComponentId)?.calculatedWeight! && (
                     <Text className="text-xs text-destructive mt-1">
                       A quantidade real deve ser maior ou igual ao esperado
                     </Text>
@@ -679,7 +843,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
                 <Button
                   onPress={handleConfirmError}
                   disabled={!tempErrorComponentId || !tempActualWeight ||
-                    parseFloat(tempActualWeight) < sortedCalculations.find(c => c.id === tempErrorComponentId)?.calculatedWeight!}
+                    parseFloat(tempActualWeight) < componentCalculations.find(c => c.id === tempErrorComponentId)?.calculatedWeight!}
                   className="flex-1"
                 >
                   <Text style={{ color: colors.primaryForeground }}>Confirmar</Text>

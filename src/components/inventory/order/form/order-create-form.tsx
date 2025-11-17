@@ -3,9 +3,10 @@ import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert } f
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
+import * as DocumentPicker from 'expo-document-picker';
 import { orderCreateSchema } from '@/schemas';
 import type { OrderCreateFormData } from '@/schemas';
-import { useOrderMutations, useSuppliers, useItems } from '@/hooks';
+import { useOrderMutations, useSuppliers, useItems, useFile } from '@/hooks';
 import { ORDER_STATUS } from '@/constants';
 import { ThemedText } from '@/components/ui/themed-text';
 import { ThemedView } from '@/components/ui/themed-view';
@@ -16,6 +17,8 @@ import { Separator } from '@/components/ui/separator';
 import { Select } from '@/components/ui/select';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
+import { FileUploadField } from '@/components/ui/file-upload-field';
+import type { FileWithPreview } from '@/components/ui/file-upload-field';
 import { useTheme } from '@/lib/theme';
 import { routeToMobilePath } from '@/lib/route-mapper';
 import { showToast } from '@/lib/toast';
@@ -41,6 +44,14 @@ export const OrderCreateForm: React.FC<OrderCreateFormProps> = ({ onSuccess }) =
     ipi: number;
   }>>([{ temporaryItemDescription: '', orderedQuantity: 1, price: null, icms: 0, ipi: 0 }]);
 
+  // File upload state for all 5 types
+  const [budgetFiles, setBudgetFiles] = useState<FileWithPreview[]>([]);
+  const [invoiceFiles, setInvoiceFiles] = useState<FileWithPreview[]>([]);
+  const [receiptFiles, setReceiptFiles] = useState<FileWithPreview[]>([]);
+  const [reimbursementFiles, setReimbursementFiles] = useState<FileWithPreview[]>([]);
+  const [reimbursementInvoiceFiles, setReimbursementInvoiceFiles] = useState<FileWithPreview[]>([]);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+
   const form = useForm<OrderCreateFormData>({
     resolver: zodResolver(orderCreateSchema),
     defaultValues: {
@@ -56,6 +67,33 @@ export const OrderCreateForm: React.FC<OrderCreateFormProps> = ({ onSuccess }) =
   });
 
   const { createAsync, isLoading } = useOrderMutations();
+
+  // Setup file upload hooks for each file type
+  const budgetUpload = useFile({
+    entityType: 'order',
+    fileContext: 'budget',
+  });
+
+  const invoiceUpload = useFile({
+    entityType: 'order',
+    fileContext: 'invoice',
+  });
+
+  const receiptUpload = useFile({
+    entityType: 'order',
+    fileContext: 'receipt',
+  });
+
+  const reimbursementUpload = useFile({
+    entityType: 'order',
+    fileContext: 'reimbursement',
+  });
+
+  const reimbursementInvoiceUpload = useFile({
+    entityType: 'order',
+    fileContext: 'reimbursementInvoice',
+  });
+
   const { data: suppliersResponse } = useSuppliers({
     orderBy: { fantasyName: 'asc' },
     take: 100,
@@ -109,6 +147,43 @@ export const OrderCreateForm: React.FC<OrderCreateFormProps> = ({ onSuccess }) =
     []
   );
 
+  // File picker handlers
+  const handlePickFiles = useCallback(async (
+    fileType: 'budget' | 'invoice' | 'receipt' | 'reimbursement' | 'reimbursementInvoice',
+    setFiles: React.Dispatch<React.SetStateAction<FileWithPreview[]>>
+  ) => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        multiple: true,
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const newFiles: FileWithPreview[] = result.assets.map((asset) => ({
+        uri: asset.uri,
+        name: asset.name,
+        type: asset.mimeType || 'application/octet-stream',
+        size: asset.size,
+      }));
+
+      setFiles((prev) => [...prev, ...newFiles]);
+    } catch (error) {
+      console.error('Error picking files:', error);
+      Alert.alert('Erro', 'Falha ao selecionar arquivos');
+    }
+  }, []);
+
+  const handleRemoveFile = useCallback((
+    index: number,
+    setFiles: React.Dispatch<React.SetStateAction<FileWithPreview[]>>
+  ) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
   const handleSubmit = useCallback(
     async (data: OrderCreateFormData) => {
       try {
@@ -161,32 +236,135 @@ export const OrderCreateForm: React.FC<OrderCreateFormProps> = ({ onSuccess }) =
           itemsData = temporaryItems;
         }
 
-        const orderData: OrderCreateFormData = {
-          ...data,
-          items: orderItemMode === 'inventory' ? itemsData : [],
-          temporaryItems: orderItemMode === 'temporary' ? itemsData : [],
-        };
+        // Upload files and collect IDs
+        setIsUploadingFiles(true);
 
-        const result = await createAsync(orderData);
-
-        if (result.success && result.data) {
-          showToast({
-            type: 'success',
-            message: 'Pedido criado com sucesso!',
-          });
-
-          if (onSuccess) {
-            onSuccess();
-          } else {
-            router.push(routeToMobilePath(`/inventory/orders/details/${result.data.id}`));
+        try {
+          // Upload budget files
+          for (const filePreview of budgetFiles) {
+            await budgetUpload.addFile({
+              uri: filePreview.uri,
+              name: filePreview.name,
+              type: filePreview.type,
+              size: filePreview.size || 0,
+            });
           }
+
+          // Upload invoice files
+          for (const filePreview of invoiceFiles) {
+            await invoiceUpload.addFile({
+              uri: filePreview.uri,
+              name: filePreview.name,
+              type: filePreview.type,
+              size: filePreview.size || 0,
+            });
+          }
+
+          // Upload receipt files
+          for (const filePreview of receiptFiles) {
+            await receiptUpload.addFile({
+              uri: filePreview.uri,
+              name: filePreview.name,
+              type: filePreview.type,
+              size: filePreview.size || 0,
+            });
+          }
+
+          // Upload reimbursement files
+          for (const filePreview of reimbursementFiles) {
+            await reimbursementUpload.addFile({
+              uri: filePreview.uri,
+              name: filePreview.name,
+              type: filePreview.type,
+              size: filePreview.size || 0,
+            });
+          }
+
+          // Upload reimbursement invoice files
+          for (const filePreview of reimbursementInvoiceFiles) {
+            await reimbursementInvoiceUpload.addFile({
+              uri: filePreview.uri,
+              name: filePreview.name,
+              type: filePreview.type,
+              size: filePreview.size || 0,
+            });
+          }
+
+          // Collect uploaded file IDs
+          const budgetIds = budgetUpload.uploadedFiles
+            .filter((f) => f.status === 'completed' && f.id)
+            .map((f) => f.id!);
+
+          const invoiceIds = invoiceUpload.uploadedFiles
+            .filter((f) => f.status === 'completed' && f.id)
+            .map((f) => f.id!);
+
+          const receiptIds = receiptUpload.uploadedFiles
+            .filter((f) => f.status === 'completed' && f.id)
+            .map((f) => f.id!);
+
+          const reimbursementIds = reimbursementUpload.uploadedFiles
+            .filter((f) => f.status === 'completed' && f.id)
+            .map((f) => f.id!);
+
+          const reimbursementInvoiceIds = reimbursementInvoiceUpload.uploadedFiles
+            .filter((f) => f.status === 'completed' && f.id)
+            .map((f) => f.id!);
+
+          const orderData: OrderCreateFormData = {
+            ...data,
+            items: orderItemMode === 'inventory' ? itemsData : [],
+            temporaryItems: orderItemMode === 'temporary' ? itemsData : [],
+            budgetIds: budgetIds.length > 0 ? budgetIds : undefined,
+            invoiceIds: invoiceIds.length > 0 ? invoiceIds : undefined,
+            receiptIds: receiptIds.length > 0 ? receiptIds : undefined,
+            reimbursementIds: reimbursementIds.length > 0 ? reimbursementIds : undefined,
+            reimbursementInvoiceIds: reimbursementInvoiceIds.length > 0 ? reimbursementInvoiceIds : undefined,
+          };
+
+          const result = await createAsync(orderData);
+
+          if (result.success && result.data) {
+            showToast({
+              type: 'success',
+              message: 'Pedido criado com sucesso!',
+            });
+
+            if (onSuccess) {
+              onSuccess();
+            } else {
+              router.push(routeToMobilePath(`/inventory/orders/details/${result.data.id}`));
+            }
+          }
+        } catch (error) {
+          console.error('Error uploading files or creating order:', error);
+          Alert.alert('Erro', 'Falha ao fazer upload dos arquivos ou criar pedido');
+        } finally {
+          setIsUploadingFiles(false);
         }
       } catch (error) {
         console.error('Error creating order:', error);
         Alert.alert('Erro', 'Falha ao criar pedido');
       }
     },
-    [orderItemMode, selectedItems, itemQuantities, itemPrices, itemIcms, itemIpi, temporaryItems, createAsync, onSuccess, router]
+    [
+      orderItemMode,
+      selectedItems,
+      itemQuantities,
+      itemPrices,
+      itemIcms,
+      itemIpi,
+      temporaryItems,
+      budgetFiles,
+      invoiceFiles,
+      receiptFiles,
+      reimbursementFiles,
+      reimbursementInvoiceFiles,
+      uploadFile,
+      createAsync,
+      onSuccess,
+      router,
+    ]
   );
 
   const styles = StyleSheet.create({
@@ -342,6 +520,51 @@ export const OrderCreateForm: React.FC<OrderCreateFormProps> = ({ onSuccess }) =
               )}
             />
           </View>
+        </Card>
+
+        {/* Documents Section */}
+        <Card style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Documentos</ThemedText>
+
+          <FileUploadField
+            files={budgetFiles}
+            onRemove={(index) => handleRemoveFile(index, setBudgetFiles)}
+            onAdd={() => handlePickFiles('budget', setBudgetFiles)}
+            maxFiles={10}
+            label="Orçamentos"
+          />
+
+          <FileUploadField
+            files={invoiceFiles}
+            onRemove={(index) => handleRemoveFile(index, setInvoiceFiles)}
+            onAdd={() => handlePickFiles('invoice', setInvoiceFiles)}
+            maxFiles={10}
+            label="Notas Fiscais"
+          />
+
+          <FileUploadField
+            files={receiptFiles}
+            onRemove={(index) => handleRemoveFile(index, setReceiptFiles)}
+            onAdd={() => handlePickFiles('receipt', setReceiptFiles)}
+            maxFiles={10}
+            label="Recibos"
+          />
+
+          <FileUploadField
+            files={reimbursementFiles}
+            onRemove={(index) => handleRemoveFile(index, setReimbursementFiles)}
+            onAdd={() => handlePickFiles('reimbursement', setReimbursementFiles)}
+            maxFiles={10}
+            label="Reembolsos"
+          />
+
+          <FileUploadField
+            files={reimbursementInvoiceFiles}
+            onRemove={(index) => handleRemoveFile(index, setReimbursementInvoiceFiles)}
+            onAdd={() => handlePickFiles('reimbursementInvoice', setReimbursementInvoiceFiles)}
+            maxFiles={10}
+            label="Notas Fiscais de Reembolso"
+          />
         </Card>
 
         {/* Item Mode Selection */}
@@ -552,17 +775,19 @@ export const OrderCreateForm: React.FC<OrderCreateFormProps> = ({ onSuccess }) =
           variant="outline"
           onPress={() => router.back()}
           style={styles.actionButton}
-          disabled={isLoading}
+          disabled={isLoading || isUploadingFiles}
         >
           <ThemedText>Cancelar</ThemedText>
         </Button>
         <Button
           onPress={form.handleSubmit(handleSubmit)}
           style={styles.actionButton}
-          disabled={isLoading}
-          loading={isLoading}
+          disabled={isLoading || isUploadingFiles}
+          loading={isLoading || isUploadingFiles}
         >
-          <ThemedText>Criar Pedido</ThemedText>
+          <ThemedText>
+            {isUploadingFiles ? 'Enviando arquivos...' : 'Criar Pedido'}
+          </ThemedText>
         </Button>
       </View>
     </KeyboardAvoidingView>

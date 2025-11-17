@@ -78,7 +78,7 @@ function FullMenuDrawerContent({
   // Filter menu items based on user privileges
   const filteredMenu = useMemo(() => {
     if (!user) return [];
-    return getFilteredMenuForUser(MENU_ITEMS, user.sectors || []);
+    return getFilteredMenuForUser(MENU_ITEMS, user, 'mobile');
   }, [user]);
 
   // Get favorite items

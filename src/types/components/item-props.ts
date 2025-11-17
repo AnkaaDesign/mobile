@@ -2,6 +2,7 @@ import type { ViewStyle } from "react-native";
 import type { Item } from '..';
 import type { UseFormReturn } from "react-hook-form";
 import type { ItemCreateFormData, ItemUpdateFormData } from '@/schemas';
+import type { PPE_TYPE } from '@/constants';
 
 // List Components Props
 export interface ItemListProps {
@@ -226,7 +227,7 @@ export interface PpeTypeSelectorProps {
 
 export interface PpeSizeSelectorProps<TFormData extends ItemCreateFormData | ItemUpdateFormData = ItemCreateFormData | ItemUpdateFormData> {
   control: import("react-hook-form").Control<TFormData>;
-  ppeType?: import("../../constants").PPE_TYPE;
+  ppeType?: PPE_TYPE;
   disabled?: boolean;
   required?: boolean;
   name?: string;

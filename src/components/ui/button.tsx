@@ -14,6 +14,9 @@ export interface ButtonProps {
   icon?: React.ReactNode;
   style?: ViewStyle;
   className?: string;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  testID?: string;
 }
 
 const getButtonStyles = (variant: ButtonProps["variant"] = "default", size: ButtonProps["size"] = "default", colors: ThemeColors, isDark?: boolean): ViewStyle => {
@@ -163,7 +166,7 @@ const getPressedStyles = (variant: ButtonProps["variant"] = "default", colors: T
   return pressedStyles[variant as keyof typeof pressedStyles];
 };
 
-const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size = "default", disabled, children, icon, style, className, onPress, ...props }, ref) => {
+const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size = "default", disabled, children, icon, style, className, onPress, accessibilityLabel, accessibilityHint, testID, ...props }, ref) => {
   const { colors, isDark } = useTheme();
   const scaleValue = React.useRef(new Animated.Value(1)).current;
   const opacityValue = React.useRef(new Animated.Value(1)).current;
@@ -171,6 +174,13 @@ const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size 
   const buttonStyles = getButtonStyles(variant, size, colors, isDark);
   const textStyles = getTextStyles(variant, size, colors);
   const pressedStyles = getPressedStyles(variant, colors);
+
+  // Generate accessibility label from children if not provided
+  const getAccessibilityLabel = () => {
+    if (accessibilityLabel) return accessibilityLabel;
+    if (typeof children === "string") return children;
+    return "Botão";
+  };
 
   const handlePressIn = () => {
     Animated.parallel([
@@ -236,7 +246,20 @@ const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size 
   };
 
   return (
-    <Pressable ref={ref} onPress={disabled ? undefined : onPress} onPressIn={handlePressIn} onPressOut={handlePressOut} disabled={disabled} {...props}>
+    <Pressable
+      ref={ref}
+      onPress={disabled ? undefined : onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={disabled}
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel={getAccessibilityLabel()}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: !!disabled }}
+      testID={testID}
+      {...props}
+    >
       {({ pressed }) => (
         <Animated.View
           style={StyleSheet.flatten([

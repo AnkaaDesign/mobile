@@ -24,5 +24,5 @@ export function usePaintProductionsInfiniteMobile(params?: Partial<PaintProducti
   const infiniteQuery = usePaintProductionsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery as any);
+  return useInfiniteMobile(infiniteQuery);
 }

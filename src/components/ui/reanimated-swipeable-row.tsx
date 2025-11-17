@@ -4,7 +4,7 @@ import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeabl
 import { RectButton} from "react-native-gesture-handler";
 import Animated, { SharedValue, useAnimatedStyle, interpolate } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { useTheme } from "@/contexts/theme-context";
+import { useTheme } from "@/lib/theme";
 
 export interface SwipeAction {
   key: string;

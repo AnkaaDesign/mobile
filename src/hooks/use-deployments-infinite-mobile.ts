@@ -24,5 +24,5 @@ export function useDeploymentsInfiniteMobile(params?: Partial<DeploymentGetManyP
   const infiniteQuery = useDeploymentsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery as any);
+  return useInfiniteMobile(infiniteQuery);
 }

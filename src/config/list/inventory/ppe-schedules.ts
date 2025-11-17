@@ -182,6 +182,45 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         }),
       },
       {
+        key: 'itemIds',
+        label: 'Itens EPI',
+        type: 'entity-multi-select',
+        entityType: 'item',
+        mapToQuery: (values) => ({
+          where: {
+            ppeItems: {
+              some: {
+                itemId: { in: values },
+              },
+            },
+          },
+        }),
+      },
+      {
+        key: 'userIds',
+        label: 'Usuários',
+        type: 'entity-multi-select',
+        entityType: 'user',
+        mapToQuery: (values) => ({
+          where: {
+            OR: [
+              {
+                assignmentType: ASSIGNMENT_TYPE.SPECIFIC,
+                includedUserIds: {
+                  hasSome: values,
+                },
+              },
+              {
+                assignmentType: ASSIGNMENT_TYPE.ALL_EXCEPT,
+                excludedUserIds: {
+                  hasSome: values,
+                },
+              },
+            ],
+          },
+        }),
+      },
+      {
         key: 'frequency',
         label: 'Frequência',
         type: 'multi-select',

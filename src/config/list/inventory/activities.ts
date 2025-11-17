@@ -209,6 +209,12 @@ export const activitiesListConfig: ListConfig<Activity> = {
         defaultOpen: false,
         fields: [
           {
+            key: 'hasUser',
+            label: 'Com Usuário',
+            description: 'Apenas movimentações associadas a um usuário',
+            type: 'toggle',
+          },
+          {
             key: 'showPaintProduction',
             label: 'Produção de Tintas',
             description: 'Incluir movimentações de produção de tintas',

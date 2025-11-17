@@ -3,8 +3,6 @@ import type { User } from '@/types'
 import {
   USER_STATUS,
   USER_STATUS_LABELS,
-  PERFORMANCE_LEVEL,
-  PERFORMANCE_LEVEL_LABELS,
 } from '@/constants'
 import { badgeColors } from '@/lib/theme/extended-colors'
 

@@ -1,5 +1,5 @@
 import { View, ActivityIndicator, Text } from "react-native";
-import { useTheme } from "@/contexts/theme-context";
+import { useTheme } from "@/lib/theme";
 
 interface LoadingScreenProps {
   message?: string;

@@ -10,12 +10,22 @@ export interface CheckboxProps {
   style?: ViewStyle;
   className?: string;
   label?: string;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  testID?: string;
 }
 
-const Checkbox = React.forwardRef<View, CheckboxProps>(({ checked = false, onCheckedChange, disabled = false, style, className, ...props }, ref) => {
+const Checkbox = React.forwardRef<View, CheckboxProps>(({ checked = false, onCheckedChange, disabled = false, style, className, label, accessibilityLabel, accessibilityHint, testID, ...props }, ref) => {
   const { colors } = useTheme();
   const [isFocused, setIsFocused] = React.useState(false);
   const [_isPressed, _setIsPressed] = React.useState(false);
+
+  // Generate accessibility label
+  const getAccessibilityLabel = () => {
+    if (accessibilityLabel) return accessibilityLabel;
+    if (label) return label;
+    return "Checkbox";
+  };
 
   // Animation values
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
@@ -108,6 +118,12 @@ const Checkbox = React.forwardRef<View, CheckboxProps>(({ checked = false, onChe
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
       disabled={disabled}
+      accessible={true}
+      accessibilityRole="checkbox"
+      accessibilityLabel={getAccessibilityLabel()}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ checked, disabled }}
+      testID={testID}
       {...props}
     >
       <Animated.View style={StyleSheet.flatten([animatedCheckboxStyle, focusStyle])}>

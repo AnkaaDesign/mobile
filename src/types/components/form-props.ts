@@ -1,4 +1,5 @@
 import type { TextInputProps, TextStyle, ViewStyle } from "react-native";
+import type React from "react";
 
 // Base Option Types
 export interface ComboboxOption {
@@ -96,6 +97,12 @@ export interface DatePickerProps {
   disabled?: boolean;
   minimumDate?: Date;
   maximumDate?: Date;
+  disabledDates?: Date[]; // Array of dates that should be disabled
+  disablePastDates?: boolean; // Disable all dates before today
+  disableFutureDates?: boolean; // Disable all dates after today
+  disableWeekends?: boolean; // Disable Saturdays and Sundays
+  onlyBusinessDays?: boolean; // Only allow weekdays (Mon-Fri)
+  error?: string; // Error message to display
 }
 
 export interface TimePickerProps {

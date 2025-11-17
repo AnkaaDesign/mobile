@@ -160,7 +160,18 @@ export const pisSchema = z.string().transform(cleanPIS).refine(isValidPIS, { mes
 export const emailSchema = z.string().transform(cleanEmail).refine(isValidEmail, { message: "E-mail inválido" });
 
 // Contact method schema (email or phone)
-export const contactMethodSchema = z.string().transform(cleanContactMethod).refine(isValidContactMethod, { message: "Digite um email ou telefone válido" });
+export const contactMethodSchema = z
+  .string()
+  .transform(cleanContactMethod)
+  .refine(
+    (val) => {
+      // Allow empty during typing (will be caught by required validation)
+      if (!val || val.trim() === "") return false;
+      // Otherwise must be valid
+      return isValidContactMethod(val);
+    },
+    { message: "Digite um email ou telefone válido" }
+  );
 
 // SMS code schema
 export const smsCodeSchema = z.string().transform(cleanSmsCode).refine(isValidSmsCode, { message: "Código SMS inválido" });
@@ -241,6 +252,16 @@ export const createDescriptionSchema = (minLength = 3, maxLength = 1000, require
 // =====================
 
 export const orderByDirectionSchema = z.enum(["asc", "desc"]);
+
+// Schema for orderBy with nulls handling (Prisma 4+ format)
+// Supports both simple direction and object with sort + nulls
+export const orderByWithNullsSchema = z.union([
+  orderByDirectionSchema,
+  z.object({
+    sort: orderByDirectionSchema,
+    nulls: z.enum(["first", "last"]).optional(),
+  }),
+]);
 
 /**
  * Normalizes orderBy to Prisma format.
@@ -424,7 +445,18 @@ export const hexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, { message: "
 export const percentageSchema = z.number().min(0, { message: "Porcentagem deve ser maior ou igual a 0" }).max(100, { message: "Porcentagem deve ser menor ou igual a 100" });
 
 // Money/currency validation (non-negative with 2 decimal places)
-export const moneySchema = z.number().min(0, { message: "Valor deve ser maior ou igual a 0" }).multipleOf(0.01, { message: "Valor deve ter no máximo 2 casas decimais" });
+export const moneySchema = z
+  .number()
+  .min(0, { message: "Valor deve ser maior ou igual a 0" })
+  .transform((val) => Math.round(val * 100) / 100) // Round to 2 decimal places
+  .refine(
+    (val) => {
+      // Check if the value has at most 2 decimal places after rounding
+      const decimalPlaces = (val.toString().split('.')[1] || '').length;
+      return decimalPlaces <= 2;
+    },
+    { message: "Valor deve ter no máximo 2 casas decimais" }
+  );
 
 // Positive quantity validation
 export const quantitySchema = z.number().positive({ message: "Quantidade deve ser positiva" });

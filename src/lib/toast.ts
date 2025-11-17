@@ -1,4 +1,6 @@
-import { Platform, ToastAndroid } from "react-native";
+// This file is deprecated in favor of @/components/ui/toast
+// Kept for backward compatibility, but now uses the custom toast implementation
+import { showToast as customShowToast } from "@/components/ui/toast";
 import * as Haptics from "expo-haptics";
 
 interface ToastOptions {
@@ -8,69 +10,83 @@ interface ToastOptions {
 }
 
 class Toast {
-  private static showNative(message: string, duration: "short" | "long" = "short") {
-    if (Platform.OS === "android") {
-      const androidDuration = duration === "short" ? ToastAndroid.SHORT : ToastAndroid.LONG;
-      ToastAndroid.show(message, androidDuration);
-    } else {
-      // For iOS, we'll need to use a different approach or a library
-      // For now, just log to console
-      console.log(`Toast: ${message}`);
-      // In production, you might want to use a library like react-native-toast-message
-      // or create a custom toast component
-    }
-  }
-
   static success(message: string, options: ToastOptions = {}) {
-    const { duration = "short", withHaptics = true } = options;
+    const { duration = "short", withHaptics = true, position = "top" } = options;
 
     if (withHaptics) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
 
-    this.showNative(`✅ ${message}`, duration);
+    customShowToast({
+      message,
+      type: "success",
+      duration: duration === "short" ? 3000 : 5000,
+      position,
+    });
   }
 
   static error(message: string, options: ToastOptions = {}) {
-    const { duration = "long", withHaptics = true } = options;
+    const { duration = "long", withHaptics = true, position = "top" } = options;
 
     if (withHaptics) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
 
-    this.showNative(`❌ ${message}`, duration);
+    customShowToast({
+      message,
+      type: "error",
+      duration: duration === "short" ? 3000 : 5000,
+      position,
+    });
   }
 
   static warning(message: string, options: ToastOptions = {}) {
-    const { duration = "short", withHaptics = true } = options;
+    const { duration = "short", withHaptics = true, position = "top" } = options;
 
     if (withHaptics) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     }
 
-    this.showNative(`⚠️ ${message}`, duration);
+    customShowToast({
+      message,
+      type: "warning",
+      duration: duration === "short" ? 3000 : 5000,
+      position,
+    });
   }
 
   static info(message: string, options: ToastOptions = {}) {
-    const { duration = "short", withHaptics = false } = options;
+    const { duration = "short", withHaptics = false, position = "top" } = options;
 
     if (withHaptics) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
-    this.showNative(`ℹ️ ${message}`, duration);
+    customShowToast({
+      message,
+      type: "info",
+      duration: duration === "short" ? 3000 : 5000,
+      position,
+    });
   }
 
   static show(message: string, options: ToastOptions = {}) {
-    const { duration = "short", withHaptics = false } = options;
+    const { duration = "short", withHaptics = false, position = "top" } = options;
 
     if (withHaptics) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
-    this.showNative(message, duration);
+    customShowToast({
+      message,
+      type: "info",
+      duration: duration === "short" ? 3000 : 5000,
+      position,
+    });
   }
 }
 
+// Also export the new showToast function for direct use
+export { showToast } from "@/components/ui/toast";
 export const toast = Toast;
 export default Toast;

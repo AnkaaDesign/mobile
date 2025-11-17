@@ -309,12 +309,12 @@ export const historyListConfig: ListConfig<Task> = {
             type: 'date-range',
           },
           {
-            key: 'entryDate',
+            key: 'entryDateRange',
             label: 'Data de Entrada',
             type: 'date-range',
           },
           {
-            key: 'startedAt',
+            key: 'startedDateRange',
             label: 'Data de Início',
             type: 'date-range',
           },

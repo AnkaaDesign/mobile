@@ -10,19 +10,110 @@ import { borderRadius, spacing } from "@/constants/design-system";
 import type { DatePickerProps } from "@/types/components/form-props";
 
 /**
- * A unified Date/Time/DateTime picker for both iOS and Android.
+ * A unified Date/Time/DateTime picker for both iOS and Android with date constraints.
  * - iOS uses a custom modal to allow "Limpar", "Hoje", and "17:30" buttons.
  * - Android uses the default native picker (which doesn't allow custom buttons).
+ * - Supports minDate, maxDate, disabledDates, weekends, and business days constraints.
  */
-export function DatePicker({ value, onChange, label, type = "date", style, placeholder, disabled }: DatePickerProps) {
+export function DatePicker({
+  value,
+  onChange,
+  label,
+  type = "date",
+  style,
+  placeholder,
+  disabled,
+  minimumDate,
+  maximumDate,
+  disabledDates,
+  disablePastDates,
+  disableFutureDates,
+  disableWeekends,
+  onlyBusinessDays,
+  error,
+}: DatePickerProps) {
   const { colors } = useTheme();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date | undefined>(undefined);
+  const [validationError, setValidationError] = useState<string | undefined>(error);
 
   const isDateOnly = type === "date";
   const isTimeOnly = type === "time";
   const isDateTime = type === "datetime";
+
+  // Helper function to check if a date is a weekend (Saturday or Sunday)
+  const isWeekend = (date: Date): boolean => {
+    const day = date.getDay();
+    return day === 0 || day === 6; // Sunday = 0, Saturday = 6
+  };
+
+  // Helper function to check if a date is in the disabled dates array
+  const isDateInDisabledList = (date: Date): boolean => {
+    if (!disabledDates || disabledDates.length === 0) return false;
+    const dateStr = date.toDateString();
+    return disabledDates.some(d => d.toDateString() === dateStr);
+  };
+
+  // Helper function to normalize date (remove time component)
+  const normalizeDate = (date: Date): Date => {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+  };
+
+  // Validate if a date is allowed based on all constraints
+  const isDateAllowed = (date: Date): { allowed: boolean; error?: string } => {
+    const normalized = normalizeDate(date);
+    const today = normalizeDate(new Date());
+
+    // Check minimum date
+    if (minimumDate && normalized < normalizeDate(minimumDate)) {
+      return {
+        allowed: false,
+        error: `Data não pode ser anterior a ${minimumDate.toLocaleDateString("pt-BR")}`,
+      };
+    }
+
+    // Check maximum date
+    if (maximumDate && normalized > normalizeDate(maximumDate)) {
+      return {
+        allowed: false,
+        error: `Data não pode ser posterior a ${maximumDate.toLocaleDateString("pt-BR")}`,
+      };
+    }
+
+    // Check if past dates are disabled
+    if (disablePastDates && normalized < today) {
+      return { allowed: false, error: "Datas passadas não são permitidas" };
+    }
+
+    // Check if future dates are disabled
+    if (disableFutureDates && normalized > today) {
+      return { allowed: false, error: "Datas futuras não são permitidas" };
+    }
+
+    // Check weekends
+    if (disableWeekends && isWeekend(date)) {
+      return { allowed: false, error: "Finais de semana não são permitidos" };
+    }
+
+    // Check business days (inverse of weekends)
+    if (onlyBusinessDays && isWeekend(date)) {
+      return { allowed: false, error: "Apenas dias úteis são permitidos" };
+    }
+
+    // Check disabled dates array
+    if (isDateInDisabledList(date)) {
+      return { allowed: false, error: "Esta data não está disponível" };
+    }
+
+    return { allowed: true };
+  };
+
+  // Calculate effective min/max dates for the native picker
+  const effectiveMinDate = minimumDate || (disablePastDates ? new Date() : undefined);
+  const effectiveMaxDate = maximumDate || (disableFutureDates ? new Date() : undefined);
 
   // Displayed text in the main "input" row
   let displayValue = placeholder || (isDateOnly ? "dd/mm/yyyy" : "dd/mm/yyyy hh:mm");
@@ -86,7 +177,19 @@ export function DatePicker({ value, onChange, label, type = "date", style, place
    */
   const onDateSelected = (event: DateTimePickerEvent, selectedDate?: Date) => {
     if (event.type === "set" && selectedDate) {
+      // Validate the selected date
+      const validation = isDateAllowed(selectedDate);
+
+      if (!validation.allowed) {
+        setValidationError(validation.error);
+        setShowDatePicker(false);
+        setTempDate(undefined);
+        return;
+      }
+
+      setValidationError(undefined);
       setTempDate(selectedDate);
+
       // On Android, if "datetime", show time next
       if (Platform.OS === "android") {
         if (isDateOnly) {
@@ -203,6 +306,8 @@ export function DatePicker({ value, onChange, label, type = "date", style, place
                     setTempDate(selectedDate);
                   }
                 }}
+                minimumDate={effectiveMinDate}
+                maximumDate={effectiveMaxDate}
               />
 
               {/* Buttons row */}
@@ -239,6 +344,18 @@ export function DatePicker({ value, onChange, label, type = "date", style, place
                     variant="default"
                     size="sm"
                     onPress={() => {
+                      if (tempDate) {
+                        // Validate before confirming
+                        const validation = isDateAllowed(tempDate);
+                        if (!validation.allowed) {
+                          setValidationError(validation.error);
+                          setShowDatePicker(false);
+                          setTempDate(undefined);
+                          return;
+                        }
+                        setValidationError(undefined);
+                      }
+
                       setShowDatePicker(false);
                       if (isDateTime) {
                         // If we also have a time step, open it next
@@ -326,10 +443,26 @@ export function DatePicker({ value, onChange, label, type = "date", style, place
       )}
 
       {/* Android Date Picker */}
-      {Platform.OS === "android" && showDatePicker && !isTimeOnly && <DateTimePicker value={tempDate || new Date()} mode="date" display="default" onChange={onDateSelected} />}
+      {Platform.OS === "android" && showDatePicker && !isTimeOnly && (
+        <DateTimePicker
+          value={tempDate || new Date()}
+          mode="date"
+          display="default"
+          onChange={onDateSelected}
+          minimumDate={effectiveMinDate}
+          maximumDate={effectiveMaxDate}
+        />
+      )}
 
       {/* Android Time Picker */}
       {Platform.OS === "android" && showTimePicker && <DateTimePicker value={tempDate || new Date()} mode="time" display="default" onChange={onTimeSelected} />}
+
+      {/* Error message */}
+      {(validationError || error) && (
+        <Text style={{ color: colors.destructive, fontSize: 12, marginTop: spacing.xs }}>
+          {validationError || error}
+        </Text>
+      )}
     </View>
   );
 }

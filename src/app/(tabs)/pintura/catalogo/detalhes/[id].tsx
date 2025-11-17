@@ -2,10 +2,15 @@ import React from "react";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, RefreshControl, StyleSheet } from "react-native";
 import { usePaintDetail } from "@/hooks";
-import { PaintCatalogCard } from "@/components/painting";
-import { PaintFormulasCard } from "@/components/painting/catalog/detail/paint-formulas-card";
-import { PaintTasksCard } from "@/components/painting/catalog/detail/paint-tasks-card";
-import { PaintRelatedPaintsCard } from "@/components/painting/catalog/detail/paint-related-paints-card";
+import {
+  PaintCatalogCard,
+  PaintFormulasCard,
+  PaintTasksCard,
+  PaintRelatedPaintsCard,
+  PaintSpecificationsCard,
+  PaintGroundPaintsCard,
+  PaintProductionHistoryCard,
+} from "@/components/painting/catalog/detail";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Text } from "@/components/ui/text";
@@ -28,6 +33,8 @@ export default function CatalogDetailsScreen() {
     refetch,
   } = usePaintDetail(id as string, {
     include: {
+      paintType: true,
+      paintBrand: true,
       formulas: {
         include: {
           components: {
@@ -35,6 +42,7 @@ export default function CatalogDetailsScreen() {
               item: true,
             },
           },
+          paintProduction: true,
         },
       },
       generalPaintings: {
@@ -63,6 +71,16 @@ export default function CatalogDetailsScreen() {
       },
       relatedPaints: true,
       relatedTo: true,
+      paintGrounds: {
+        include: {
+          groundPaint: {
+            include: {
+              paintType: true,
+              paintBrand: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -173,14 +191,23 @@ export default function CatalogDetailsScreen() {
         }
       >
         <View style={styles.container}>
-          {/* Paint Info Card */}
+          {/* Paint Info Card - Overview */}
           <PaintCatalogCard paint={paint!} />
+
+          {/* Specifications Card - Detailed info with color codes */}
+          <PaintSpecificationsCard paint={paint!} />
+
+          {/* Ground Paints Card - Recommended base paints */}
+          <PaintGroundPaintsCard paint={paint!} />
 
           {/* Formulas Card */}
           <PaintFormulasCard paint={paint!} />
 
-          {/* Tasks Table Card - NEW */}
+          {/* Tasks Table Card */}
           <PaintTasksCard paint={paint!} maxHeight={500} />
+
+          {/* Production History Card */}
+          <PaintProductionHistoryCard paint={paint!} maxHeight={400} />
 
           {/* Related Paints Card */}
           <PaintRelatedPaintsCard paint={paint!} />

@@ -3,11 +3,13 @@ import { View, StyleSheet, ScrollView, RefreshControl, Pressable } from "react-n
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePayrollBonuses } from '@/hooks';
-import { ThemedView, ThemedText, ErrorScreen, EmptyState, Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
+import { ThemedView, ThemedText, ErrorScreen, EmptyState, Card, CardHeader, CardTitle, CardContent, Button } from "@/components/ui";
 import { formatCurrency } from '@/utils';
 import { useTheme } from "@/lib/theme";
 import { SECTOR_PRIVILEGES } from '@/constants';
 import { PrivilegeGuard } from "@/components/privilege-guard";
+import { PayrollFilterDrawerContent } from "@/components/human-resources/payroll/list/payroll-filter-drawer-content";
+import { PayrollColumnVisibilityDrawer } from "@/components/human-resources/payroll/list/payroll-column-visibility-drawer";
 
 // Get current payroll period (26th-25th cycle)
 function getCurrentPayrollPeriod() {
@@ -52,6 +54,8 @@ export default function PayrollListScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [columnDrawerOpen, setColumnDrawerOpen] = useState(false);
 
   // Get current period
   const { year, month } = getCurrentPayrollPeriod();
@@ -176,7 +180,44 @@ export default function PayrollListScreen() {
               <CardTitle>Folha de Pagamento</CardTitle>
               <ThemedText style={styles.periodText}>{periodLabel}</ThemedText>
             </CardHeader>
+            <CardContent>
+              <View style={styles.headerActions}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onPress={() => setFilterDrawerOpen(true)}
+                  style={styles.headerButton}
+                >
+                  Filtros
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onPress={() => setColumnDrawerOpen(true)}
+                  style={styles.headerButton}
+                >
+                  Colunas
+                </Button>
+              </View>
+            </CardContent>
           </Card>
+
+          {/* Filter Drawer */}
+          <PayrollFilterDrawerContent
+            open={filterDrawerOpen}
+            onClose={() => setFilterDrawerOpen(false)}
+            onApply={(filters) => {
+              // TODO: Apply filters to payroll query
+              console.log('Filters applied:', filters);
+              setFilterDrawerOpen(false);
+            }}
+          />
+
+          {/* Column Visibility Drawer */}
+          <PayrollColumnVisibilityDrawer
+            open={columnDrawerOpen}
+            onClose={() => setColumnDrawerOpen(false)}
+          />
 
           {hasPayrolls ? (
             <>
@@ -315,6 +356,14 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     marginBottom: 16,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  headerButton: {
+    flex: 1,
   },
   periodText: {
     fontSize: 14,

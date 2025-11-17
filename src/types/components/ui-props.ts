@@ -1,5 +1,5 @@
 import type { TextProps, TextStyle, ViewStyle, TextInputProps } from "react-native";
-
+import type React from "react";
 import type { Icon } from "@tabler/icons-react-native";
 
 // Button Component Props

@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Badge } from '@/components/ui/badge'
@@ -46,7 +46,7 @@ export const Tags = memo(function Tags({
           case 'select':
             if (field.multiple && Array.isArray(value) && value.length > 0) {
               // Get labels for selected values
-              const options = field.options?.data || []
+              const options = field.options || []
               value.forEach((val) => {
                 const option = options.find((opt) => opt.value === val)
                 if (option) {
@@ -61,7 +61,7 @@ export const Tags = memo(function Tags({
                 }
               })
             } else if (!field.multiple && value) {
-              const options = field.options?.data || []
+              const options = field.options || []
               const option = options.find((opt) => opt.value === value)
               if (option) {
                 result.push({

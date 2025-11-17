@@ -38,7 +38,8 @@ export const usePaintBrandsInfiniteMobile = (filters?: Partial<PaintBrandGetMany
   const totalCount = query.data?.pages[0]?.meta?.totalRecords;
 
   return {
-    paintBrands: allItems,
+    items: allItems,
+    paintBrands: allItems, // Alias for backward compatibility
     isLoading: query.isLoading,
     error: query.error,
     refetch: query.refetch,

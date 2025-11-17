@@ -38,6 +38,16 @@ interface MenuSectionProps {
   onPrefetch?: () => void;
 }
 
+// Helper to get icon component
+const getIconComponent = (iconKey: string, variant: any = 'navigation') => {
+  try {
+    const tablerIconName = iconKey.startsWith('Icon') ? iconKey : getTablerIcon(iconKey);
+    return <Icon name={tablerIconName} size="tab" variant={variant} />;
+  } catch {
+    return <Icon name="menu" size="tab" variant={variant} />;
+  }
+};
+
 // Memoized menu item component for performance
 const MenuSection = memo<MenuSectionProps>(({
   item,
@@ -98,16 +108,6 @@ const MenuSection = memo<MenuSectionProps>(({
 
 MenuSection.displayName = 'MenuSection';
 
-// Helper to get icon component
-const getIconComponent = (iconKey: string, variant: any = 'navigation') => {
-  try {
-    const tablerIconName = iconKey.startsWith('Icon') ? iconKey : getTablerIcon(iconKey);
-    return <Icon name={tablerIconName} size="tab" variant={variant} />;
-  } catch {
-    return <Icon name="menu" size="tab" variant={variant} />;
-  }
-};
-
 // Main drawer content component
 function DrawerContentComponent({
   navigation,
@@ -128,7 +128,7 @@ function DrawerContentComponent({
   // Filter menu items based on user privileges
   const filteredMenu = useMemo(() => {
     if (!user) return [];
-    return getFilteredMenuForUser(MENU_ITEMS, user.sectors || []);
+    return getFilteredMenuForUser(MENU_ITEMS, user, 'mobile');
   }, [user]);
 
   // Get favorite items

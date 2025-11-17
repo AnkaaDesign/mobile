@@ -15,6 +15,15 @@ export const ordersListConfig: ListConfig<Order> = {
     pageSize: 25,
     include: {
       supplier: { select: { id: true, fantasyName: true } },
+      items: {
+        select: {
+          id: true,
+          orderedQuantity: true,
+          price: true,
+          icms: true,
+          ipi: true,
+        },
+      },
       _count: { select: { items: true } },
     },
   },
@@ -217,7 +226,7 @@ export const ordersListConfig: ListConfig<Order> = {
             type: 'date-range',
           },
           {
-            key: 'forecast',
+            key: 'forecastRange',
             label: 'Previsão de Entrega',
             type: 'date-range',
           },

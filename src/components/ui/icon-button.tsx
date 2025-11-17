@@ -104,62 +104,8 @@ export function IconButton({
   );
 }
 
-/**
- * Floating Action Button with standardized styling
- */
-interface FABProps extends Omit<IconButtonProps, "size" | "showBackground"> {
-  /** FAB size */
-  size?: "sm" | "md" | "lg";
-  /** Whether to show shadow */
-  showShadow?: boolean;
-}
-
-export function FAB({ name, size = "md", variant = "primary", showShadow = true, style, ...props }: FABProps) {
-  const { colors } = useTheme();
-
-  const sizeConfig = {
-    sm: { size: 48, iconSize: 20 as const },
-    md: { size: 56, iconSize: 24 as const },
-    lg: { size: 64, iconSize: 28 as const },
-  };
-
-  const config = sizeConfig[size as keyof typeof sizeConfig];
-
-  const fabStyle: ViewStyle = {
-    width: config.size,
-    height: config.size,
-    borderRadius: config.size / 2,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: showShadow ? 6 : 0,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: showShadow ? 0.27 : 0,
-    shadowRadius: showShadow ? 4.65 : 0,
-    ...style,
-  };
-
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        fabStyle,
-        {
-          opacity: pressed ? 0.8 : 1,
-          transform: [{ scale: pressed ? 0.95 : 1 }],
-        },
-      ]}
-      accessible={true}
-      accessibilityRole="button"
-      {...props}
-    >
-      <Icon name={name} size={config.iconSize as number} variant="primary" color={colors.primaryForeground} accessible={false} />
-    </Pressable>
-  );
-}
+// Note: FAB (Floating Action Button) is available from ./fab.tsx
+// The icon-button is focused on general icon buttons, not FABs
 
 /**
  * Icon button with text label

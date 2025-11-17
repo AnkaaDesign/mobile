@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { View, StyleSheet } from "react-native";
-import { useForm, Controller } from "react-hook-form";
+import { useState, useMemo } from "react";
+import { View, StyleSheet, Alert } from "react-native";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView } from "react-native";
-import { IconArrowDown, IconArrowUp, IconDeviceFloppy, IconX, IconLoader } from "@tabler/icons-react-native";
+import { IconArrowDown, IconArrowUp, IconDeviceFloppy, IconX, IconLoader, IconAlertTriangle, IconCheck, IconInfoCircle } from "@tabler/icons-react-native";
 import {
   ThemedText,
   Card,
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
-import { useItems, useUsers } from "@/hooks";
+import { useItems, useUsers, useItem } from "@/hooks";
 import { ACTIVITY_OPERATION, ACTIVITY_REASON, ACTIVITY_REASON_LABELS } from "@/constants";
 
 // Simple Activity Form Schema
@@ -83,7 +83,64 @@ export function ActivitySimpleForm({ onSubmit, onCancel, isSubmitting }: Activit
 
   const operation = form.watch("operation");
 
+  // Watch selected item and quantity for stock validation
+  const selectedItemId = useWatch({
+    control: form.control,
+    name: "itemId",
+  });
+
+  const selectedQuantity = useWatch({
+    control: form.control,
+    name: "quantity",
+  });
+
+  // Fetch selected item details for validation
+  const { data: selectedItem, isLoading: isLoadingItem } = useItem(selectedItemId, {
+    enabled: !!selectedItemId,
+  });
+
+  // Stock validation logic with borrow awareness
+  const stockValidation = useMemo(() => {
+    if (!selectedItem || !selectedQuantity) {
+      return { isValid: true, errors: [] };
+    }
+
+    const errors: string[] = [];
+
+    // Calculate available stock (accounting for active borrows)
+    const activeBorrowsQuantity = selectedItem.activeBorrowsQuantity || 0;
+    const availableStock = selectedItem.quantity - activeBorrowsQuantity;
+    const totalStock = selectedItem.quantity;
+
+    // Only validate stock for OUTBOUND operations
+    if (operation === ACTIVITY_OPERATION.OUTBOUND) {
+      if (selectedQuantity > availableStock) {
+        errors.push(`Estoque insuficiente. Disponível: ${availableStock} (${activeBorrowsQuantity} em empréstimo)`);
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      availableStock,
+      totalStock,
+      activeBorrowsQuantity,
+      itemName: selectedItem.name,
+      showWarning: operation === ACTIVITY_OPERATION.OUTBOUND && activeBorrowsQuantity > 0,
+    };
+  }, [selectedItem, selectedQuantity, operation]);
+
   const handleSubmit = async (data: ActivitySimpleFormData) => {
+    // Validate stock for OUTBOUND operations before submission
+    if (operation === ACTIVITY_OPERATION.OUTBOUND && !stockValidation.isValid) {
+      Alert.alert(
+        "Validação falhou",
+        stockValidation.errors.join("\n"),
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     await onSubmit(data);
   };
 
@@ -176,6 +233,113 @@ export function ActivitySimpleForm({ onSubmit, onCancel, isSubmitting }: Activit
                   )}
                 />
               </SimpleFormField>
+
+              {/* Stock Information with Borrow Awareness */}
+              {selectedItemId && selectedItem && (
+                <Card style={[
+                  styles.stockCard,
+                  {
+                    backgroundColor: !stockValidation.isValid
+                      ? colors.destructive + "10"
+                      : stockValidation.showWarning
+                      ? colors.warning + "10"
+                      : colors.muted,
+                    borderColor: !stockValidation.isValid
+                      ? colors.destructive
+                      : stockValidation.showWarning
+                      ? colors.warning
+                      : colors.border,
+                  }
+                ]}>
+                  <View style={styles.stockContent}>
+                    {isLoadingItem ? (
+                      <View style={styles.stockRow}>
+                        <IconLoader size={16} color={colors.mutedForeground} />
+                        <ThemedText style={[styles.stockText, { color: colors.mutedForeground }]}>
+                          Carregando informações do item...
+                        </ThemedText>
+                      </View>
+                    ) : (
+                      <>
+                        <View style={styles.stockRow}>
+                          {!stockValidation.isValid ? (
+                            <IconAlertTriangle size={16} color={colors.destructive} />
+                          ) : stockValidation.showWarning ? (
+                            <IconInfoCircle size={16} color={colors.warning} />
+                          ) : (
+                            <IconCheck size={16} color={colors.success} />
+                          )}
+                          <ThemedText style={[
+                            styles.stockText,
+                            {
+                              color: !stockValidation.isValid
+                                ? colors.destructive
+                                : stockValidation.showWarning
+                                ? colors.warning
+                                : colors.foreground,
+                              fontWeight: "600"
+                            }
+                          ]}>
+                            {stockValidation.itemName}
+                          </ThemedText>
+                        </View>
+
+                        <View style={styles.stockDetails}>
+                          <View style={styles.stockDetailRow}>
+                            <ThemedText style={[styles.stockDetailLabel, { color: colors.mutedForeground }]}>
+                              Estoque Total:
+                            </ThemedText>
+                            <ThemedText style={[styles.stockDetailValue, { color: colors.foreground }]}>
+                              {stockValidation.totalStock || 0}
+                            </ThemedText>
+                          </View>
+
+                          {operation === ACTIVITY_OPERATION.OUTBOUND && stockValidation.activeBorrowsQuantity > 0 && (
+                            <>
+                              <View style={styles.stockDetailRow}>
+                                <ThemedText style={[styles.stockDetailLabel, { color: colors.mutedForeground }]}>
+                                  Em Empréstimo:
+                                </ThemedText>
+                                <ThemedText style={[styles.stockDetailValue, { color: colors.warning }]}>
+                                  {stockValidation.activeBorrowsQuantity}
+                                </ThemedText>
+                              </View>
+
+                              <View style={[styles.stockDetailRow, styles.stockDetailRowHighlight]}>
+                                <ThemedText style={[styles.stockDetailLabel, { color: colors.foreground, fontWeight: "600" }]}>
+                                  Disponível:
+                                </ThemedText>
+                                <ThemedText style={[
+                                  styles.stockDetailValue,
+                                  {
+                                    color: stockValidation.isValid ? colors.success : colors.destructive,
+                                    fontWeight: "600"
+                                  }
+                                ]}>
+                                  {stockValidation.availableStock}
+                                </ThemedText>
+                              </View>
+                            </>
+                          )}
+                        </View>
+
+                        {!stockValidation.isValid && stockValidation.errors.length > 0 && (
+                          <View style={styles.stockErrors}>
+                            {stockValidation.errors.map((error, index) => (
+                              <ThemedText
+                                key={index}
+                                style={[styles.stockErrorText, { color: colors.destructive }]}
+                              >
+                                • {error}
+                              </ThemedText>
+                            ))}
+                          </View>
+                        )}
+                      </>
+                    )}
+                  </View>
+                </Card>
+              )}
             </View>
           </Card>
 
@@ -242,7 +406,11 @@ export function ActivitySimpleForm({ onSubmit, onCancel, isSubmitting }: Activit
         <Button
           variant="default"
           onPress={form.handleSubmit(handleSubmit)}
-          disabled={!form.formState.isValid || isSubmitting}
+          disabled={
+            !form.formState.isValid ||
+            isSubmitting ||
+            (operation === ACTIVITY_OPERATION.OUTBOUND && !stockValidation.isValid)
+          }
           style={styles.actionButton}
         >
           {isSubmitting ? (
@@ -319,5 +487,52 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,
+  },
+  stockCard: {
+    borderWidth: 1,
+    marginTop: spacing.md,
+  },
+  stockContent: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  stockRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  stockText: {
+    fontSize: 14,
+  },
+  stockDetails: {
+    marginLeft: spacing.lg + spacing.xs,
+    gap: spacing.xs,
+  },
+  stockDetailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  stockDetailRowHighlight: {
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.1)",
+    marginTop: spacing.xs,
+  },
+  stockDetailLabel: {
+    fontSize: 12,
+  },
+  stockDetailValue: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  stockErrors: {
+    marginLeft: spacing.lg + spacing.xs,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  stockErrorText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });

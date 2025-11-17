@@ -3,9 +3,10 @@ import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert } f
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
+import * as DocumentPicker from 'expo-document-picker';
 import { orderUpdateSchema } from '@/schemas';
 import type { OrderUpdateFormData } from '@/schemas';
-import { useOrderMutations, useOrder, useSuppliers} from '@/hooks';
+import { useOrderMutations, useOrder, useSuppliers, useFile } from '@/hooks';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Select } from '@/components/ui/select';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
+import { FileUploadField } from '@/components/ui/file-upload-field';
+import type { FileWithPreview } from '@/components/ui/file-upload-field';
 import { useTheme } from '@/lib/theme';
 import { showToast } from '@/lib/toast';
 
@@ -31,6 +34,11 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       items: {
         include: { item: { include: { brand: true, category: true } } },
       },
+      budgets: true,
+      invoices: true,
+      receipts: true,
+      reimbursements: true,
+      invoiceReimbursements: true,
     },
   });
 
@@ -40,6 +48,52 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
   });
 
   const { updateAsync, isLoading } = useOrderMutations();
+
+  // Setup file upload hooks for each file type
+  const budgetUpload = useFile({
+    entityType: 'order',
+    fileContext: 'budget',
+    entityId: orderId,
+  });
+
+  const invoiceUpload = useFile({
+    entityType: 'order',
+    fileContext: 'invoice',
+    entityId: orderId,
+  });
+
+  const receiptUpload = useFile({
+    entityType: 'order',
+    fileContext: 'receipt',
+    entityId: orderId,
+  });
+
+  const reimbursementUpload = useFile({
+    entityType: 'order',
+    fileContext: 'reimbursement',
+    entityId: orderId,
+  });
+
+  const reimbursementInvoiceUpload = useFile({
+    entityType: 'order',
+    fileContext: 'reimbursementInvoice',
+    entityId: orderId,
+  });
+
+  // File upload state for all 5 types
+  const [budgetFiles, setBudgetFiles] = useState<FileWithPreview[]>([]);
+  const [invoiceFiles, setInvoiceFiles] = useState<FileWithPreview[]>([]);
+  const [receiptFiles, setReceiptFiles] = useState<FileWithPreview[]>([]);
+  const [reimbursementFiles, setReimbursementFiles] = useState<FileWithPreview[]>([]);
+  const [reimbursementInvoiceFiles, setReimbursementInvoiceFiles] = useState<FileWithPreview[]>([]);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+
+  // Track existing file IDs (already uploaded)
+  const [existingBudgetIds, setExistingBudgetIds] = useState<string[]>([]);
+  const [existingInvoiceIds, setExistingInvoiceIds] = useState<string[]>([]);
+  const [existingReceiptIds, setExistingReceiptIds] = useState<string[]>([]);
+  const [existingReimbursementIds, setExistingReimbursementIds] = useState<string[]>([]);
+  const [existingReimbursementInvoiceIds, setExistingReimbursementInvoiceIds] = useState<string[]>([]);
   const { data: suppliersResponse } = useSuppliers({
     orderBy: { fantasyName: 'asc' },
     take: 100,
@@ -64,8 +118,62 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         forecast: order.forecast ? new Date(order.forecast) : undefined,
         notes: order.notes || '',
       });
+
+      // Load existing file IDs
+      if (order.budgets) {
+        setExistingBudgetIds(order.budgets.map((f: any) => f.id));
+      }
+      if (order.invoices) {
+        setExistingInvoiceIds(order.invoices.map((f: any) => f.id));
+      }
+      if (order.receipts) {
+        setExistingReceiptIds(order.receipts.map((f: any) => f.id));
+      }
+      if (order.reimbursements) {
+        setExistingReimbursementIds(order.reimbursements.map((f: any) => f.id));
+      }
+      if (order.invoiceReimbursements) {
+        setExistingReimbursementInvoiceIds(order.invoiceReimbursements.map((f: any) => f.id));
+      }
     }
   }, [order, form]);
+
+  // File picker handlers
+  const handlePickFiles = useCallback(async (
+    fileType: 'budget' | 'invoice' | 'receipt' | 'reimbursement' | 'reimbursementInvoice',
+    setFiles: React.Dispatch<React.SetStateAction<FileWithPreview[]>>
+  ) => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        multiple: true,
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const newFiles: FileWithPreview[] = result.assets.map((asset) => ({
+        uri: asset.uri,
+        name: asset.name,
+        type: asset.mimeType || 'application/octet-stream',
+        size: asset.size,
+      }));
+
+      setFiles((prev) => [...prev, ...newFiles]);
+    } catch (error) {
+      console.error('Error picking files:', error);
+      Alert.alert('Erro', 'Falha ao selecionar arquivos');
+    }
+  }, []);
+
+  const handleRemoveFile = useCallback((
+    index: number,
+    setFiles: React.Dispatch<React.SetStateAction<FileWithPreview[]>>
+  ) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
   const handleSubmit = useCallback(
     async (data: OrderUpdateFormData) => {
@@ -84,6 +192,116 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         }
         if (data.notes !== order?.notes) {
           changedData.notes = data.notes;
+        }
+
+        // Upload new files and merge with existing IDs
+        const hasNewFiles =
+          budgetFiles.length > 0 ||
+          invoiceFiles.length > 0 ||
+          receiptFiles.length > 0 ||
+          reimbursementFiles.length > 0 ||
+          reimbursementInvoiceFiles.length > 0;
+
+        if (hasNewFiles) {
+          setIsUploadingFiles(true);
+
+          try {
+            // Upload new budget files
+            for (const filePreview of budgetFiles) {
+              await budgetUpload.addFile({
+                uri: filePreview.uri,
+                name: filePreview.name,
+                type: filePreview.type,
+                size: filePreview.size || 0,
+              });
+            }
+
+            // Upload new invoice files
+            for (const filePreview of invoiceFiles) {
+              await invoiceUpload.addFile({
+                uri: filePreview.uri,
+                name: filePreview.name,
+                type: filePreview.type,
+                size: filePreview.size || 0,
+              });
+            }
+
+            // Upload new receipt files
+            for (const filePreview of receiptFiles) {
+              await receiptUpload.addFile({
+                uri: filePreview.uri,
+                name: filePreview.name,
+                type: filePreview.type,
+                size: filePreview.size || 0,
+              });
+            }
+
+            // Upload new reimbursement files
+            for (const filePreview of reimbursementFiles) {
+              await reimbursementUpload.addFile({
+                uri: filePreview.uri,
+                name: filePreview.name,
+                type: filePreview.type,
+                size: filePreview.size || 0,
+              });
+            }
+
+            // Upload new reimbursement invoice files
+            for (const filePreview of reimbursementInvoiceFiles) {
+              await reimbursementInvoiceUpload.addFile({
+                uri: filePreview.uri,
+                name: filePreview.name,
+                type: filePreview.type,
+                size: filePreview.size || 0,
+              });
+            }
+
+            // Collect uploaded file IDs and merge with existing
+            const newBudgetIds = budgetUpload.uploadedFiles
+              .filter((f) => f.status === 'completed' && f.id)
+              .map((f) => f.id!);
+            if (newBudgetIds.length > 0) {
+              changedData.budgetIds = [...existingBudgetIds, ...newBudgetIds];
+            }
+
+            const newInvoiceIds = invoiceUpload.uploadedFiles
+              .filter((f) => f.status === 'completed' && f.id)
+              .map((f) => f.id!);
+            if (newInvoiceIds.length > 0) {
+              changedData.invoiceIds = [...existingInvoiceIds, ...newInvoiceIds];
+            }
+
+            const newReceiptIds = receiptUpload.uploadedFiles
+              .filter((f) => f.status === 'completed' && f.id)
+              .map((f) => f.id!);
+            if (newReceiptIds.length > 0) {
+              changedData.receiptIds = [...existingReceiptIds, ...newReceiptIds];
+            }
+
+            const newReimbursementIds = reimbursementUpload.uploadedFiles
+              .filter((f) => f.status === 'completed' && f.id)
+              .map((f) => f.id!);
+            if (newReimbursementIds.length > 0) {
+              changedData.reimbursementIds = [...existingReimbursementIds, ...newReimbursementIds];
+            }
+
+            const newReimbursementInvoiceIds = reimbursementInvoiceUpload.uploadedFiles
+              .filter((f) => f.status === 'completed' && f.id)
+              .map((f) => f.id!);
+            if (newReimbursementInvoiceIds.length > 0) {
+              changedData.reimbursementInvoiceIds = [
+                ...existingReimbursementInvoiceIds,
+                ...newReimbursementInvoiceIds,
+              ];
+            }
+          } catch (error) {
+            console.error('Error uploading files:', error);
+            Alert.alert('Erro', 'Falha ao fazer upload dos arquivos');
+            setIsUploadingFiles(false);
+            return;
+          } finally {
+            setIsUploadingFiles(false);
+          }
         }
 
         if (Object.keys(changedData).length === 0) {
@@ -110,7 +328,24 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         Alert.alert('Erro', 'Falha ao atualizar pedido');
       }
     },
-    [orderId, order, updateAsync, onSuccess, router]
+    [
+      orderId,
+      order,
+      budgetFiles,
+      invoiceFiles,
+      receiptFiles,
+      reimbursementFiles,
+      reimbursementInvoiceFiles,
+      existingBudgetIds,
+      existingInvoiceIds,
+      existingReceiptIds,
+      existingReimbursementIds,
+      existingReimbursementInvoiceIds,
+      uploadFile,
+      updateAsync,
+      onSuccess,
+      router,
+    ]
   );
 
   const styles = StyleSheet.create({
@@ -245,7 +480,62 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
               )}
             />
           </View>
+        </Card>
 
+        {/* Documents Section */}
+        <Card style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Documentos</ThemedText>
+          <ThemedText style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary, marginBottom: theme.spacing.md }}>
+            {existingBudgetIds.length > 0 && `${existingBudgetIds.length} orçamento(s) existente(s). `}
+            {existingInvoiceIds.length > 0 && `${existingInvoiceIds.length} nota(s) fiscal(is) existente(s). `}
+            {existingReceiptIds.length > 0 && `${existingReceiptIds.length} recibo(s) existente(s). `}
+            {existingReimbursementIds.length > 0 && `${existingReimbursementIds.length} reembolso(s) existente(s). `}
+            {existingReimbursementInvoiceIds.length > 0 && `${existingReimbursementInvoiceIds.length} NF(s) de reembolso existente(s). `}
+          </ThemedText>
+
+          <FileUploadField
+            files={budgetFiles}
+            onRemove={(index) => handleRemoveFile(index, setBudgetFiles)}
+            onAdd={() => handlePickFiles('budget', setBudgetFiles)}
+            maxFiles={10}
+            label="Adicionar Orçamentos"
+          />
+
+          <FileUploadField
+            files={invoiceFiles}
+            onRemove={(index) => handleRemoveFile(index, setInvoiceFiles)}
+            onAdd={() => handlePickFiles('invoice', setInvoiceFiles)}
+            maxFiles={10}
+            label="Adicionar Notas Fiscais"
+          />
+
+          <FileUploadField
+            files={receiptFiles}
+            onRemove={(index) => handleRemoveFile(index, setReceiptFiles)}
+            onAdd={() => handlePickFiles('receipt', setReceiptFiles)}
+            maxFiles={10}
+            label="Adicionar Recibos"
+          />
+
+          <FileUploadField
+            files={reimbursementFiles}
+            onRemove={(index) => handleRemoveFile(index, setReimbursementFiles)}
+            onAdd={() => handlePickFiles('reimbursement', setReimbursementFiles)}
+            maxFiles={10}
+            label="Adicionar Reembolsos"
+          />
+
+          <FileUploadField
+            files={reimbursementInvoiceFiles}
+            onRemove={(index) => handleRemoveFile(index, setReimbursementInvoiceFiles)}
+            onAdd={() => handlePickFiles('reimbursementInvoice', setReimbursementInvoiceFiles)}
+            maxFiles={10}
+            label="Adicionar Notas Fiscais de Reembolso"
+          />
+        </Card>
+
+        {/* Items Note */}
+        <Card style={styles.section}>
           <View style={styles.itemsNote}>
             <ThemedText style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}>
               Nota: Para editar itens, quantidades ou preços, acesse a página de detalhes do pedido.
@@ -259,17 +549,19 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
           variant="outline"
           onPress={() => router.back()}
           style={styles.actionButton}
-          disabled={isLoading}
+          disabled={isLoading || isUploadingFiles}
         >
           <ThemedText>Cancelar</ThemedText>
         </Button>
         <Button
           onPress={form.handleSubmit(handleSubmit)}
           style={styles.actionButton}
-          disabled={isLoading}
-          loading={isLoading}
+          disabled={isLoading || isUploadingFiles}
+          loading={isLoading || isUploadingFiles}
         >
-          <ThemedText>Salvar</ThemedText>
+          <ThemedText>
+            {isUploadingFiles ? 'Enviando arquivos...' : 'Salvar'}
+          </ThemedText>
         </Button>
       </View>
     </KeyboardAvoidingView>

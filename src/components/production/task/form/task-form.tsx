@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
@@ -23,13 +23,17 @@ import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius, fontWeight } from "@/constants/design-system";
 import { useSectors } from "@/hooks";
-import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES } from "@/constants";
-import { IconLoader, IconX, IconDeviceFloppy, IconTrash } from "@tabler/icons-react-native";
+import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES, CUT_TYPE } from "@/constants";
+import { IconLoader, IconX, IconDeviceFloppy, IconTrash, IconPlus } from "@tabler/icons-react-native";
 import { CustomerSelector } from "./customer-selector";
 import { ServiceSelector } from "./service-selector";
 import { GeneralPaintingSelector, LogoPaintsSelector } from "./paint-selector";
+import { BudgetSelector, type BudgetSelectorRef } from "./budget-selector";
+import { MultiCutSelector, type MultiCutSelectorRef } from "./multi-cut-selector";
+import { MultiAirbrushingSelector, type MultiAirbrushingSelectorRef } from "./multi-airbrushing-selector";
 import { LayoutForm } from "@/components/production/layout/layout-form";
 import { useAuth } from "@/hooks/useAuth";
+import { getCustomerById } from "@/api-client";
 import type { LayoutCreateFormData } from "@/schemas";
 
 // Enhanced Task Form Schema for Mobile with Cross-field Validation
@@ -75,6 +79,40 @@ const taskFormSchema = z.object({
     description: z.string().min(3, "Mínimo de 3 caracteres").max(400, "Máximo de 400 caracteres"),
     status: z.enum(Object.values(SERVICE_ORDER_STATUS) as [string, ...string[]]).optional(),
   })).min(1, "Pelo menos um serviço é obrigatório"),
+  // Budget detailed - line items
+  budget: z.object({
+    items: z.array(z.object({
+      description: z.string().min(1, "Descrição é obrigatória"),
+      amount: z.number().positive("Valor deve ser positivo"),
+    })).optional(),
+    expiresIn: z.date().nullable().optional(),
+  }).nullable().optional(),
+  // Cuts
+  cuts: z.array(z.object({
+    type: z.string(), // CUT_TYPE enum
+    quantity: z.number().min(1, "Quantidade mínima é 1").default(1),
+    file: z.any().nullable().optional(), // File object
+    measurements: z.string().nullable().optional(),
+    origin: z.string().optional(), // CUT_ORIGIN enum
+  })).optional(),
+  // Airbrushings
+  airbrushings: z.array(z.object({
+    id: z.string().optional(),
+    status: z.string().optional(), // AIRBRUSHING_STATUS enum
+    price: z.number().nullable().optional(),
+    startDate: z.date().nullable().optional(),
+    finishDate: z.date().nullable().optional(),
+    receiptFiles: z.array(z.any()).optional(), // File[]
+    nfeFiles: z.array(z.any()).optional(), // File[]
+    artworkFiles: z.array(z.any()).optional(), // File[]
+    receiptIds: z.array(z.string()).optional(),
+    invoiceIds: z.array(z.string()).optional(),
+    artworkIds: z.array(z.string()).optional(),
+  })).optional(),
+  // Financial file IDs
+  budgetIds: z.array(z.string()).optional(),
+  invoiceIds: z.array(z.string()).optional(),
+  receiptIds: z.array(z.string()).optional(),
   status: z.enum(Object.values(TASK_STATUS) as [string, ...string[]]).optional(),
   commission: z.string().nullable().optional(),
   startedAt: z.date().nullable().optional(),
@@ -155,9 +193,27 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
   // File upload state
   const [artworkFiles, setArtworkFiles] = useState<FileWithPreview[]>([]);
   const [observationFiles, setObservationFiles] = useState<FileWithPreview[]>([]);
+  const [budgetFile, setBudgetFile] = useState<FileWithPreview[]>([]);
+  const [nfeFile, setNfeFile] = useState<FileWithPreview[]>([]);
+  const [receiptFile, setReceiptFile] = useState<FileWithPreview[]>([]);
+
+  // Component refs for imperative methods
+  const multiCutSelectorRef = useRef<MultiCutSelectorRef>(null);
+  const multiAirbrushingSelectorRef = useRef<MultiAirbrushingSelectorRef>(null);
+  const budgetSelectorRef = useRef<BudgetSelectorRef>(null);
+
+  // Count states for UI feedback
+  const [cutsCount, setCutsCount] = useState(0);
+  const [airbrushingsCount, setAirbrushingsCount] = useState(0);
+  const [budgetCount, setBudgetCount] = useState(0);
 
   // Observation section state
   const [isObservationOpen, setIsObservationOpen] = useState(false);
+
+  // Debug logging for cuts count changes (matching web implementation)
+  const handleSetCutsCount = useCallback((count: number) => {
+    setCutsCount(count);
+  }, []);
 
   // Layout state - Initialize with existingLayouts if available (edit mode)
   const [selectedLayoutSide, setSelectedLayoutSide] = useState<"left" | "right" | "back">("left");

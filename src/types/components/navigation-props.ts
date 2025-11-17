@@ -1,3 +1,4 @@
+import type React from "react";
 import type { SECTOR_PRIVILEGES } from '@/constants';
 
 // Privilege Guard Props

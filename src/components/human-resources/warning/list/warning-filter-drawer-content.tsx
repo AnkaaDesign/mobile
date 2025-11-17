@@ -22,6 +22,7 @@ interface FilterState {
   isActive?: boolean;
   collaboratorIds?: string[];
   supervisorIds?: string[];
+  witnessIds?: string[];
   categories?: string[];
   severities?: string[];
   createdAfter?: Date;
@@ -48,6 +49,7 @@ export function WarningFilterDrawerContent({
     isActive: filters.isActive,
     collaboratorIds: filters.collaboratorIds || [],
     supervisorIds: filters.supervisorIds || [],
+    witnessIds: filters.witnessIds || [],
     categories: filters.categories || [],
     severities: filters.severities || [],
     createdAfter: filters.createdAt?.gte,
@@ -69,6 +71,10 @@ export function WarningFilterDrawerContent({
 
     if (localFilters.supervisorIds && localFilters.supervisorIds.length > 0) {
       newFilters.supervisorIds = localFilters.supervisorIds;
+    }
+
+    if (localFilters.witnessIds && localFilters.witnessIds.length > 0) {
+      newFilters.witnessIds = localFilters.witnessIds;
     }
 
     if (localFilters.categories && localFilters.categories.length > 0) {
@@ -278,6 +284,20 @@ export function WarningFilterDrawerContent({
               placeholder="Todos os supervisores"
               searchPlaceholder="Buscar supervisores..."
               emptyText="Nenhum supervisor encontrado"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
+              Testemunhas
+            </ThemedText>
+            <Combobox
+              options={userOptions}
+              selectedValues={localFilters.witnessIds || []}
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, witnessIds: values }))}
+              placeholder="Todas as testemunhas"
+              searchPlaceholder="Buscar testemunhas..."
+              emptyText="Nenhuma testemunha encontrada"
             />
           </View>
         </View>

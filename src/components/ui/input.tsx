@@ -75,6 +75,9 @@ export interface InputProps extends Omit<TextInputProps, "value" | "onChangeText
   max?: number;
   step?: number;
   loading?: boolean;
+  // Accessibility props
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 const Input = React.forwardRef<TextInput, InputProps>(
@@ -808,6 +811,10 @@ const Input = React.forwardRef<TextInput, InputProps>(
                 props.onFocus?.(e);
               }}
               onBlur={handleBlur}
+              accessible={true}
+              accessibilityLabel={props.accessibilityLabel || getPlaceholder()}
+              accessibilityHint={props.accessibilityHint}
+              accessibilityValue={{ text: String(internalValue || '') }}
             />
 
             {/* Loading indicator */}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,10 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
-import { Combobox} from "@/components/ui/combobox";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { FileUpload} from "@/components/ui/file-upload";
+import { FileUpload } from "@/components/ui/file-upload";
 import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 
@@ -20,6 +20,7 @@ import type { WarningCreateFormData, WarningUpdateFormData } from "@/schemas/war
 import type { Warning } from "@/types";
 import { useWarningMutations } from "@/hooks/useWarning";
 import { useUsers } from "@/hooks/useUser";
+import { useFile } from "@/hooks/useFile";
 import { WARNING_SEVERITY, WARNING_CATEGORY, USER_STATUS } from "@/constants";
 
 interface WarningFormProps {
@@ -50,11 +51,35 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
   const { createAsync, updateAsync, createMutation, updateMutation } = useWarningMutations();
   const [files, setFiles] = useState<FileItem[]>([]);
 
+  // File upload management
+  const {
+    uploadedFiles,
+    isUploading,
+    uploadProgress,
+    addFile,
+    removeFile,
+    clearFiles,
+  } = useFile({
+    entityType: "warning",
+    fileContext: "attachments",
+  });
+
   const { data: users } = useUsers({
     where: { status: { not: USER_STATUS.DISMISSED } },
     orderBy: { name: "asc" },
     include: { position: true },
   });
+
+  // Update form's attachmentIds when files finish uploading
+  useEffect(() => {
+    const completedFileIds = uploadedFiles
+      .filter((f) => f.status === "completed" && f.id)
+      .map((f) => f.id!);
+
+    if (completedFileIds.length > 0) {
+      form.setValue("attachmentIds", completedFileIds);
+    }
+  }, [uploadedFiles]);
 
   const form = useForm<WarningCreateFormData | WarningUpdateFormData>({
     resolver: zodResolver(mode === "create" ? warningCreateSchema : warningUpdateSchema),
@@ -94,15 +119,44 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
 
   const handleSubmit = async (data: WarningCreateFormData | WarningUpdateFormData) => {
     try {
-      // Note: File upload would need to be handled separately via file upload API
-      // For now, we're just tracking the file objects
+      // Check if files are still uploading
+      const hasUploadingFiles = uploadedFiles.some((f) => f.status === "uploading");
+      if (hasUploadingFiles) {
+        Alert.alert(
+          "Aguarde",
+          "Alguns arquivos ainda estão sendo enviados. Aguarde a conclusão do upload.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      // Check if any files failed to upload
+      const hasFailedFiles = uploadedFiles.some((f) => f.status === "error");
+      if (hasFailedFiles) {
+        Alert.alert(
+          "Erro no upload",
+          "Alguns arquivos falharam no envio. Remova-os ou tente novamente.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      // Ensure attachmentIds includes all uploaded file IDs
+      const uploadedFileIds = uploadedFiles
+        .filter((f) => f.status === "completed" && f.id)
+        .map((f) => f.id!);
+
+      const submissionData = {
+        ...data,
+        attachmentIds: uploadedFileIds,
+      };
 
       if (mode === "create") {
-        await createAsync(data as WarningCreateFormData);
+        await createAsync(submissionData as WarningCreateFormData);
       } else if (warning) {
         await updateAsync({
           id: warning.id,
-          data: data as WarningUpdateFormData,
+          data: submissionData as WarningUpdateFormData,
         });
       }
       onSuccess?.();
@@ -363,23 +417,47 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
               render={({ field: { onChange, value }, fieldState: { error } }) => (
                 <FileUpload
                   label="Anexos (opcional)"
-                  value={files}
-                  onChange={(newFiles) => {
-                    setFiles(newFiles);
-                    // In a real implementation, you'd upload files and get IDs
-                    // For now, we're just tracking file count
-                    onChange(newFiles.map((_, i) => `temp-${i}`));
+                  value={uploadedFiles}
+                  onChange={async (newFiles) => {
+                    // Handle added files (upload them)
+                    const currentFileUris = uploadedFiles.map((f) => f.uri);
+                    const addedFiles = newFiles.filter((f) => !currentFileUris.includes(f.uri));
+
+                    for (const file of addedFiles) {
+                      try {
+                        await addFile(file);
+                      } catch (error) {
+                        console.error("File upload error:", error);
+                        Alert.alert("Erro", `Falha ao enviar arquivo ${file.name}`);
+                      }
+                    }
+
+                    // Handle removed files
+                    const newFileUris = newFiles.map((f) => f.uri);
+                    const removedFiles = uploadedFiles.filter((f) => !newFileUris.includes(f.uri));
+
+                    for (const file of removedFiles) {
+                      if (file.id) {
+                        removeFile(file.id);
+                      }
+                    }
                   }}
                   maxFiles={10}
                   accept="all"
-                  disabled={isLoading}
+                  disabled={isLoading || isUploading}
                   error={error?.message}
+                  progress={uploadProgress}
                 />
               )}
             />
             <Text style={[styles.helpText, { color: colors.mutedForeground }]}>
               Máximo de 10 arquivos (imagens ou documentos)
             </Text>
+            {isUploading && (
+              <Text style={[styles.helpText, { color: colors.warning }]}>
+                Enviando arquivos... {Math.round(uploadProgress * 100)}%
+              </Text>
+            )}
           </View>
 
           {/* HR Notes (optional) */}
@@ -413,15 +491,28 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
 
       {/* Action Buttons */}
       <View style={styles.buttonRow}>
-        <Button variant="outline" onPress={handleCancel} disabled={isLoading} style={{ flex: 1 }}>
+        <Button
+          variant="outline"
+          onPress={handleCancel}
+          disabled={isLoading || isUploading}
+          style={{ flex: 1 }}
+        >
           <Text>Cancelar</Text>
         </Button>
         <Button
           onPress={form.handleSubmit(handleSubmit)}
-          disabled={isLoading || !form.formState.isValid}
+          disabled={isLoading || !form.formState.isValid || isUploading}
           style={{ flex: 1 }}
         >
-          <Text>{isLoading ? "Salvando..." : mode === "create" ? "Criar" : "Salvar"}</Text>
+          <Text>
+            {isLoading
+              ? "Salvando..."
+              : isUploading
+              ? `Enviando arquivos... ${Math.round(uploadProgress * 100)}%`
+              : mode === "create"
+              ? "Criar"
+              : "Salvar"}
+          </Text>
         </Button>
       </View>
     </ScrollView>

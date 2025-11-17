@@ -4,6 +4,7 @@ import { Text } from "./text";
 import { Icon } from "./icon";
 import { Separator } from "./separator";
 import { cn } from "@/lib/cn";
+import { useTheme } from "@/lib/theme";
 
 interface FormSectionProps {
   title?: string;
@@ -35,6 +36,7 @@ export function FormSection({
   collapsible = false,
   defaultCollapsed = false,
 }: FormSectionProps) {
+  const { colors } = useTheme();
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed);
 
   const handleToggle = () => {
@@ -59,7 +61,7 @@ export function FormSection({
               <View className="flex-1 flex-row items-start">
                 {icon && (
                   <View className="w-8 h-8 rounded-lg bg-primary/10 items-center justify-center mr-3">
-                    <Icon name={icon} size={18} color="#3B82F6" />
+                    <Icon name={icon} size={18} color={colors.primary} />
                   </View>
                 )}
                 <View className="flex-1">
@@ -97,7 +99,7 @@ export function FormSection({
                   <Icon
                     name={isCollapsed ? "IconChevronDown" : "IconChevronUp"}
                     size={20}
-                    color="#6B7280"
+                    color={colors.mutedForeground}
                   />
                 )}
               </View>
@@ -246,6 +248,7 @@ export function FormInlineField({
   onPress?: () => void;
   className?: string;
 }) {
+  const { colors } = useTheme();
   const content = (
     <View className="flex-row items-center justify-between">
       <Text className="text-sm text-muted-foreground">
@@ -263,7 +266,7 @@ export function FormInlineField({
           <Icon
             name="IconChevronRight"
             size={16}
-            color="#6B7280"
+            color={colors.mutedForeground}
           />
         )}
       </View>

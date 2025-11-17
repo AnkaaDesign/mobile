@@ -2,7 +2,7 @@ import React, { useCallback, useRef, useEffect } from "react";
 import { Alert, View} from "react-native";
 import { IconEdit, IconCopy, IconTrash } from "@tabler/icons-react-native";
 import type { ItemBrand } from '../../../../../types';
-import { useTheme } from "@/contexts/theme-context";
+import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
 

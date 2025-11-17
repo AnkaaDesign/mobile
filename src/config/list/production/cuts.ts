@@ -232,13 +232,13 @@ export const cutsListConfig: ListConfig<Cut> = {
         defaultOpen: false,
         fields: [
           {
-            key: 'startedAt',
-            label: 'Data de Início',
+            key: 'createdAt',
+            label: 'Data de Criação',
             type: 'date-range',
           },
           {
-            key: 'completedAt',
-            label: 'Data de Conclusão',
+            key: 'updatedAt',
+            label: 'Data de Atualização',
             type: 'date-range',
           },
         ],

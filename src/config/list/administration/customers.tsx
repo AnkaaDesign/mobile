@@ -86,9 +86,11 @@ export const customersListConfig: ListConfig<Customer> = {
       logo: true,
       economicActivity: true,
       _count: {
-        tasks: true,
-        serviceOrders: true,
-        services: true,
+        select: {
+          tasks: true,
+          serviceOrders: true,
+          services: true,
+        },
       },
     },
   },

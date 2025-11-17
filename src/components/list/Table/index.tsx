@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useMemo, useCallback } from 'react'
 import { View, FlatList, RefreshControl, StyleSheet, Dimensions } from 'react-native'
 import { useTheme } from '@/lib/theme'
 import { Header } from './Header'

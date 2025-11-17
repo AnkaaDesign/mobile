@@ -14,7 +14,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   MISCONDUCT: 'Má Conduta',
   INSUBORDINATION: 'Insubordinação',
   POLICY_VIOLATION: 'Violação de Política',
-  ATTENDANCE: 'Presença',
+  ATTENDANCE: 'Assiduidade',
   PERFORMANCE: 'Desempenho',
   BEHAVIOR: 'Comportamento',
   OTHER: 'Outro',

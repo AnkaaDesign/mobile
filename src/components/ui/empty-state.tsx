@@ -1,7 +1,7 @@
 
 import { View, Text, ViewStyle, StyleSheet } from "react-native";
 import { Icon } from "./icon";
-import { useTheme } from "@/contexts/theme-context";
+import { useTheme } from "@/lib/theme";
 import { Button } from "./button";
 import { fontSize, fontWeight, spacing, borderRadius } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";

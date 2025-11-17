@@ -1308,39 +1308,60 @@ export const orderCreateSchema = z
     orderScheduleId: z.string().uuid({ message: "Cronograma inválido" }).optional(),
     orderRuleId: z.string().uuid({ message: "Regra de pedido inválida" }).optional(),
     ppeScheduleId: z.string().uuid({ message: "Agendamento EPI inválido" }).optional(),
-    budgetId: z.string().uuid({ message: "Orçamento inválido" }).optional(),
-    nfeId: z.string().uuid({ message: "NFe inválida" }).optional(),
-    receiptId: z.string().uuid({ message: "Recibo inválido" }).optional(),
     notes: z.string().optional(),
+    // File arrays - aligned with web
+    budgetIds: z.array(z.string().uuid("Orçamento inválido")).optional(),
+    invoiceIds: z.array(z.string().uuid("NFe inválida")).optional(),
+    receiptIds: z.array(z.string().uuid("Recibo inválido")).optional(),
+    reimbursementIds: z.array(z.string().uuid("Reimbursement inválido")).optional(),
+    reimbursementInvoiceIds: z.array(z.string().uuid("NFe de reimbursement inválida")).optional(),
     items: z
       .array(
         z.object({
-          itemId: z.string().uuid({ message: "Item inválido" }),
+          itemId: z.string().uuid({ message: "Item inválido" }).optional(),
+          temporaryItemDescription: z.string().min(1, "Descrição do item temporário é obrigatória").max(500, "Descrição muito longa").optional(),
           orderedQuantity: z.number().positive("Quantidade deve ser positiva"),
           price: moneySchema,
           icms: z
             .number()
-            .min(0, "ICMS deve ser entre 0 e 100%")
-            .max(100, "ICMS deve ser entre 0 e 100%")
-            .multipleOf(0.01, "ICMS deve ter no máximo 2 casas decimais")
+            .min(0, "ICMS deve ser maior ou igual a 0")
+            .max(100, "ICMS deve ser menor ou igual a 100")
+            .transform((val) => Math.round(val * 100) / 100)
             .default(0),
           ipi: z
             .number()
-            .min(0, "IPI deve ser entre 0 e 100%")
-            .max(100, "IPI deve ser entre 0 e 100%")
-            .multipleOf(0.01, "IPI deve ter no máximo 2 casas decimais")
+            .min(0, "IPI deve ser maior ou igual a 0")
+            .max(100, "IPI deve ser menor ou igual a 100")
+            .transform((val) => Math.round(val * 100) / 100)
             .default(0),
           isCritical: z.boolean().default(false),
+        })
+        .superRefine((data, ctx) => {
+          // Either itemId or temporaryItemDescription must be provided, but not both
+          if (!data.itemId && !data.temporaryItemDescription) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Item de estoque ou descrição de item temporário deve ser fornecido",
+              path: ['itemId'],
+            });
+          }
+          if (data.itemId && data.temporaryItemDescription) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Não é possível fornecer item de estoque e descrição de item temporário ao mesmo tempo",
+              path: ['itemId'],
+            });
+          }
         }),
       )
       .refine(
         (items) => {
-          // Check for duplicate items
-          const itemIds = items.map((item) => item.itemId);
+          // Check for duplicate inventory items (ignore temporary items)
+          const itemIds = items.filter(item => item.itemId).map((item) => item.itemId);
           return new Set(itemIds).size === itemIds.length;
         },
         {
-          message: "Lista não pode conter itens duplicados",
+          message: "Lista não pode conter itens de estoque duplicados",
         },
       )
       .optional(),
@@ -1360,10 +1381,13 @@ export const orderUpdateSchema = z
     orderScheduleId: z.string().uuid({ message: "Cronograma inválido" }).optional(),
     orderRuleId: z.string().uuid({ message: "Regra de pedido inválida" }).optional(),
     ppeScheduleId: z.string().uuid({ message: "Agendamento EPI inválido" }).optional(),
-    budgetId: z.string().uuid({ message: "Orçamento inválido" }).optional(),
-    nfeId: z.string().uuid({ message: "NFe inválida" }).optional(),
-    receiptId: z.string().uuid({ message: "Recibo inválido" }).optional(),
     notes: z.string().optional(),
+    // File arrays - aligned with web
+    budgetIds: z.array(z.string().uuid("Orçamento inválido")).optional(),
+    invoiceIds: z.array(z.string().uuid("NFe inválida")).optional(),
+    receiptIds: z.array(z.string().uuid("Recibo inválido")).optional(),
+    reimbursementIds: z.array(z.string().uuid("Reimbursement inválido")).optional(),
+    reimbursementInvoiceIds: z.array(z.string().uuid("NFe de reimbursement inválida")).optional(),
   })
   .transform(toFormData);
 

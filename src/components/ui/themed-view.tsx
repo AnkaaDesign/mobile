@@ -1,6 +1,6 @@
 import * as React from "react";
 import { View, ViewProps, StyleSheet} from "react-native";
-import { useTheme } from "@/contexts/theme-context";
+import { useTheme } from "@/lib/theme";
 
 export interface ThemedViewProps extends ViewProps {
   style?: ViewProps["style"];
