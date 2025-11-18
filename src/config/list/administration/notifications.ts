@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Notification } from '@/types'
 import { NOTIFICATION_IMPORTANCE, NOTIFICATION_TYPE } from '@/constants/enums'
+import { canEditUsers } from '@/utils/permissions/entity-permissions'
 
 const IMPORTANCE_LABELS: Record<string, string> = {
   LOW: 'Baixa',
@@ -250,6 +251,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
     create: {
       label: 'Cadastrar Notificação',
       route: '/administracao/notificacoes/cadastrar/enviar',
+      canCreate: canEditUsers,
     },
     bulk: [
       {

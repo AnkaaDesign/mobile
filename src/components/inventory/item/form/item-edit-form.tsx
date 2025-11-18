@@ -147,9 +147,9 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
               </CardHeader>
               <CardContent>
                 <View style={styles.fieldGroup}>
-                  <BrandSelector disabled={isSubmitting} required={false} />
-                  <CategorySelector disabled={isSubmitting} required={false} onCategoryChange={setSelectedCategoryId} />
-                  <SupplierSelector disabled={isSubmitting} />
+                  <BrandSelector disabled={isSubmitting} required={false} initialBrand={item.brand} />
+                  <CategorySelector disabled={isSubmitting} required={false} initialCategory={item.category} onCategoryChange={setSelectedCategoryId} />
+                  <SupplierSelector disabled={isSubmitting} initialSupplier={item.supplier} />
                 </View>
               </CardContent>
             </Card>

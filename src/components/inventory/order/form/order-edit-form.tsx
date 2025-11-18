@@ -6,18 +6,20 @@ import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { orderUpdateSchema } from '@/schemas';
 import type { OrderUpdateFormData } from '@/schemas';
-import { useOrderMutations, useOrder, useSuppliers, useFile } from '@/hooks';
+import { useOrderMutations, useOrder, useFile } from '@/hooks';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Select } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { FileUploadField } from '@/components/ui/file-upload-field';
 import type { FileWithPreview } from '@/components/ui/file-upload-field';
 import { useTheme } from '@/lib/theme';
 import { showToast } from '@/lib/toast';
+import { getSuppliers } from '@/api-client';
+import type { Supplier } from '@/types';
 
 interface OrderEditFormProps {
   orderId: string;
@@ -94,20 +96,42 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
   const [existingReceiptIds, setExistingReceiptIds] = useState<string[]>([]);
   const [existingReimbursementIds, setExistingReimbursementIds] = useState<string[]>([]);
   const [existingReimbursementInvoiceIds, setExistingReimbursementInvoiceIds] = useState<string[]>([]);
-  const { data: suppliersResponse } = useSuppliers({
-    orderBy: { fantasyName: 'asc' },
-    take: 100,
-  });
-  const suppliers = suppliersResponse?.data || [];
 
-  const supplierOptions = useMemo(
-    () =>
-      suppliers.map((s) => ({
-        label: s.fantasyName || s.name,
-        value: s.id,
-      })),
-    [suppliers]
+  // Memoize initial supplier options for async combobox
+  const initialSupplierOptions = useMemo(
+    () => order?.supplier ? [order.supplier] : [],
+    [order?.supplier?.id]
   );
+
+  // Async search function for suppliers
+  const searchSuppliers = useCallback(async (
+    search: string,
+    page: number = 1
+  ): Promise<{
+    data: Supplier[];
+    hasMore: boolean;
+  }> => {
+    const params: any = {
+      orderBy: { fantasyName: "asc" },
+      page: page,
+      take: 50,
+    };
+
+    if (search && search.trim()) {
+      params.searchingFor = search.trim();
+    }
+
+    try {
+      const response = await getSuppliers(params);
+      return {
+        data: response.data || [],
+        hasMore: response.meta?.hasNextPage || false,
+      };
+    } catch (error) {
+      console.error('[OrderEditForm] Error fetching suppliers:', error);
+      return { data: [], hasMore: false };
+    }
+  }, []);
 
   // Load order data into form
   useEffect(() => {
@@ -438,11 +462,22 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
               control={form.control}
               name="supplierId"
               render={({ field }) => (
-                <Select
-                  value={field.value}
+                <Combobox<Supplier>
+                  value={field.value || ""}
                   onValueChange={field.onChange}
-                  options={supplierOptions}
+                  async={true}
+                  queryKey={["suppliers", "order-edit"]}
+                  queryFn={searchSuppliers}
+                  initialOptions={initialSupplierOptions}
+                  getOptionLabel={(supplier) => supplier.fantasyName}
+                  getOptionValue={(supplier) => supplier.id}
                   placeholder="Selecione um fornecedor (opcional)"
+                  searchPlaceholder="Buscar fornecedor..."
+                  emptyText="Nenhum fornecedor encontrado"
+                  minSearchLength={0}
+                  pageSize={50}
+                  debounceMs={300}
+                  clearable={true}
                 />
               )}
             />

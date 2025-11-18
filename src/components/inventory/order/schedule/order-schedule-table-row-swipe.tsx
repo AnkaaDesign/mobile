@@ -3,6 +3,8 @@ import { StyleSheet, Pressable } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { ReanimatedSwipeableRow} from "@/components/ui/reanimated-swipeable-row";
+import { useAuth } from "@/contexts/auth-context";
+import { canEditOrders, canDeleteOrders } from "@/utils/permissions/entity-permissions";
 
 interface OrderScheduleTableRowSwipeProps {
   scheduleId: string;
@@ -24,10 +26,22 @@ export function OrderScheduleTableRowSwipe({
   // onOpenChange removed
 }: OrderScheduleTableRowSwipeProps) {
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const canEdit = canEditOrders(user);
+  const canDelete = canDeleteOrders(user);
+
+  // Return early if no permissions
+  if (!canEdit && !canDelete) {
+    return (
+      <Pressable onPress={onPress} style={styles.content}>
+        {children}
+      </Pressable>
+    );
+  }
 
   const rightActions: SwipeAction[] = [];
 
-  if (onEdit) {
+  if (onEdit && canEdit) {
     rightActions.push({
       key: "edit",
       label: "Editar",
@@ -38,7 +52,7 @@ export function OrderScheduleTableRowSwipe({
     });
   }
 
-  if (onDelete) {
+  if (onDelete && canDelete) {
     rightActions.push({
       key: "delete",
       label: "Excluir",

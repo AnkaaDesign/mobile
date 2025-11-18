@@ -4,6 +4,8 @@ import { IconCheck, IconX, IconTrash } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
+import { useAuth } from "@/contexts/auth-context";
+import { canDeleteUsers } from "@/utils/permissions/entity-permissions";
 
 const ACTION_WIDTH = 80;
 
@@ -32,11 +34,16 @@ const NotificationTableRowSwipeComponent = ({
   const { activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow } = useSwipeRow();
   const swipeableRef = useRef<Swipeable>(null);
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useAuth();
 
   // Early return if colors are not available yet (during theme initialization)
   if (!colors || !children) {
     return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
   }
+
+  const canDelete = canDeleteUsers(user);
+
+  // Note: Mark as read/unread are always available for personal notifications
 
   const isThisRowActive = activeRowId === notificationId;
 
@@ -106,7 +113,7 @@ const NotificationTableRowSwipeComponent = ({
           },
         ]
       : []),
-    ...(onDelete
+    ...(canDelete && onDelete
       ? [
           {
             key: "delete",

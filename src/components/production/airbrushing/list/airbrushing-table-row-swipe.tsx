@@ -7,6 +7,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing } from "@/constants/design-system";
+import { useAuth } from "@/contexts/auth-context";
+import { canEditAirbrushings, canDeleteAirbrushings } from "@/utils/permissions/entity-permissions";
 
 interface AirbrushingTableRowSwipeProps {
   airbrushingId: string;
@@ -32,6 +34,14 @@ export const AirbrushingTableRowSwipe: React.FC<AirbrushingTableRowSwipeProps> =
   const swipeableRef = useRef<Swipeable>(null);
   const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow();
   const isActive = activeRowId === airbrushingId;
+  const { user } = useAuth();
+  const canEdit = canEditAirbrushings(user);
+  const canDelete = canDeleteAirbrushings(user);
+
+  // Return early if no permissions
+  if (!canEdit && !canDelete) {
+    return <>{children(isActive)}</>;
+  }
 
   const handleEdit = useCallback(() => {
     swipeableRef.current?.close();
@@ -95,13 +105,13 @@ export const AirbrushingTableRowSwipe: React.FC<AirbrushingTableRowSwipeProps> =
             },
           ]}
         >
-          {onEdit && (
+          {onEdit && canEdit && (
             <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={handleEdit} activeOpacity={0.7}>
               <Icon name="edit" size="md" color="white" />
               <ThemedText style={styles.actionText}>Editar</ThemedText>
             </TouchableOpacity>
           )}
-          {onDelete && (
+          {onDelete && canDelete && (
             <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.destructive }]} onPress={handleDelete} activeOpacity={0.7}>
               <Icon name="trash" size="md" color="white" />
               <ThemedText style={styles.actionText}>Excluir</ThemedText>

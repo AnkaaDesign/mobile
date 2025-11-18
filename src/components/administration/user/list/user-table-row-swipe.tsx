@@ -5,6 +5,8 @@ import { Icon } from "@/components/ui/icon";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useAuth } from "@/contexts/auth-context";
+import { canEditUsers, canDeleteUsers } from "@/utils/permissions/entity-permissions";
 
 interface UserTableRowSwipeProps {
   userId: string;
@@ -21,6 +23,14 @@ export function UserTableRowSwipe({ userId, userName, onEdit, onDelete, onView, 
   const swipeableRef = useRef<Swipeable>(null);
   const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow();
   const isActive = activeRowId === userId;
+  const { user } = useAuth();
+  const canEdit = canEditUsers(user);
+  const canDelete = canDeleteUsers(user);
+
+  // Return early if no permissions
+  if (!canEdit && !canDelete && !onView) {
+    return <>{children(false)}</>;
+  }
 
   // Close this row when another row becomes active
   useEffect(() => {
@@ -98,7 +108,7 @@ export function UserTableRowSwipe({ userId, userName, onEdit, onDelete, onView, 
               </Pressable>
             </Animated.View>
           )}
-          {onEdit && (
+          {onEdit && canEdit && (
             <Animated.View
               style={[
                 styles.actionButton,
@@ -114,7 +124,7 @@ export function UserTableRowSwipe({ userId, userName, onEdit, onDelete, onView, 
               </Pressable>
             </Animated.View>
           )}
-          {onDelete && (
+          {onDelete && canDelete && (
             <Animated.View
               style={[
                 styles.actionButton,

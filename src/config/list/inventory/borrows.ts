@@ -4,6 +4,7 @@ import {
   BORROW_STATUS,
   BORROW_STATUS_LABELS,
 } from '@/constants'
+import { canEditBorrows } from '@/utils/permissions/entity-permissions'
 
 export const borrowsListConfig: ListConfig<Borrow> = {
   key: 'inventory-borrows',
@@ -378,6 +379,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
     create: {
       label: 'Cadastrar Empréstimo',
       route: '/estoque/emprestimos/cadastrar',
+      canCreate: canEditBorrows,
     },
     bulk: [
       {

@@ -1,31 +1,61 @@
-import { useState } from "react";
+import { useMemo, useCallback } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { View } from "react-native";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { ThemedText } from "@/components/ui/themed-text";
-import { useSuppliers } from '../../../../hooks';
+import { getSuppliers } from '@/api-client';
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';
+import type { Supplier } from '@/types';
 
 type ItemFormData = ItemCreateFormData | ItemUpdateFormData;
 
 interface SupplierSelectorProps {
   disabled?: boolean;
+  initialSupplier?: Supplier;
 }
 
-export function SupplierSelector({ disabled }: SupplierSelectorProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+export function SupplierSelector({ disabled, initialSupplier }: SupplierSelectorProps) {
   const { control } = useFormContext<ItemFormData>();
-  const { data: suppliers, isLoading } = useSuppliers({
-    searchingFor: searchQuery,
-    orderBy: { fantasyName: "asc" },
-  });
 
-  const supplierOptions =
-    suppliers?.data?.map((supplier) => ({
-      value: supplier.id,
-      label: supplier.fantasyName,
-    })) || [];
+  // Memoize initial options to prevent infinite loop
+  const initialOptions = useMemo(
+    () => initialSupplier ? [initialSupplier] : [],
+    [initialSupplier?.id]
+  );
+
+  // Async search function for suppliers
+  const searchSuppliers = useCallback(async (
+    search: string,
+    page: number = 1
+  ): Promise<{
+    data: Supplier[];
+    hasMore: boolean;
+  }> => {
+    const params: any = {
+      orderBy: { fantasyName: "asc" },
+      page: page,
+      take: 50,
+    };
+
+    if (search && search.trim()) {
+      params.searchingFor = search.trim();
+    }
+
+    try {
+      const response = await getSuppliers(params);
+      return {
+        data: response.data || [],
+        hasMore: response.meta?.hasNextPage || false,
+      };
+    } catch (error) {
+      console.error('[SupplierSelector] Error fetching suppliers:', error);
+      return { data: [], hasMore: false };
+    }
+  }, []);
+
+  const getOptionLabel = useCallback((supplier: Supplier) => supplier.fantasyName, []);
+  const getOptionValue = useCallback((supplier: Supplier) => supplier.id, []);
 
   return (
     <Controller
@@ -36,15 +66,23 @@ export function SupplierSelector({ disabled }: SupplierSelectorProps) {
           <Label nativeID="supplierId" style={{ marginBottom: 4 }}>
             Fornecedor
           </Label>
-          <Combobox
+          <Combobox<Supplier>
             value={value || ""}
             onValueChange={onChange}
-            options={supplierOptions}
+            async={true}
+            queryKey={["suppliers", "search"]}
+            queryFn={searchSuppliers}
+            initialOptions={initialOptions}
+            getOptionLabel={getOptionLabel}
+            getOptionValue={getOptionValue}
             placeholder="Selecione um fornecedor"
             searchPlaceholder="Buscar fornecedor..."
             emptyText="Nenhum fornecedor encontrado"
-            onSearchChange={setSearchQuery}
-            disabled={disabled || isLoading}
+            disabled={disabled}
+            minSearchLength={0}
+            pageSize={50}
+            debounceMs={300}
+            clearable={true}
           />
           {error && <ThemedText style={{ fontSize: 12, color: "#ef4444" }}>{error.message}</ThemedText>}
         </View>

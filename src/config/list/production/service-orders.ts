@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { ServiceOrder } from '@/types'
+import { canEditTasks } from '@/utils/permissions/entity-permissions'
 import {
   SERVICE_ORDER_STATUS,
   SERVICE_ORDER_STATUS_LABELS,
@@ -225,6 +226,7 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
     create: {
       label: 'Cadastrar Ordem de Serviço',
       route: '/producao/ordens-de-servico/cadastrar',
+      canCreate: canEditTasks,
     },
     bulk: [
       {

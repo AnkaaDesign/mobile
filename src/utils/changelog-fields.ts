@@ -1,7 +1,19 @@
-import { CHANGE_LOG_ENTITY_TYPE, MEASURE_UNIT_LABELS, CHANGE_LOG_ACTION, CHANGE_TRIGGERED_BY } from '../constants';
-import { formatDateTime } from "./date";
+import {
+  CHANGE_LOG_ENTITY_TYPE,
+  MEASURE_UNIT_LABELS,
+  CHANGE_LOG_ACTION,
+  CHANGE_TRIGGERED_BY,
+  SHIRT_SIZE_LABELS,
+  BOOT_SIZE_LABELS,
+  PANTS_SIZE_LABELS,
+  SLEEVES_SIZE_LABELS,
+  MASK_SIZE_LABELS,
+  GLOVES_SIZE_LABELS,
+  RAIN_BOOTS_SIZE_LABELS,
+} from '../constants';
+import { formatDateTime, formatDate } from "./date";
 import { formatCurrency } from "./number";
-import { formatBrazilianPhone, formatCPF, formatCNPJ } from "./formatters";
+import { formatBrazilianPhone, formatCPF, formatCNPJ, formatChassis } from "./formatters";
 
 // Common field name mapping for all entities
 const commonFields: Record<string, string> = {
@@ -35,6 +47,8 @@ const commonFields: Record<string, string> = {
 // Entity-specific field mappings
 const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string, string>>> = {
   [CHANGE_LOG_ENTITY_TYPE.ITEM]: {
+    // Basic fields
+    name: "Nome",
     quantity: "Quantidade",
     price: "Preço",
     maxQuantity: "Quantidade Máxima",
@@ -45,41 +59,69 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     barcodes: "Códigos de Barras",
     unicode: "Código Único",
     uniCode: "Código Único",
+
+    // PPE fields
     CA: "CA (Certificado de Aprovação)",
-    leadTime: "Tempo de Entrega",
-    estimatedLeadTime: "Tempo de Entrega Estimado",
-    icms: "ICMS (%)",
-    ipi: "IPI (%)",
-    totalPrice: "Preço Total",
-    monthlyConsumption: "Consumo Mensal",
-    monthlyConsumptionTrendPercent: "Tendência de Consumo (%)",
+    ppeCA: "CA (Certificado de Aprovação)",
+    ppeType: "Tipo de EPI",
+    ppeSize: "Tamanho do EPI",
+    ppeDeliveryMode: "Modo de Entrega de EPI",
+    ppeStandardQuantity: "Quantidade Padrão de EPI",
     shouldAssignToUser: "Deve ser Atribuído a Usuário",
     isForEpi: "É EPI",
+
+    // Stock management
+    leadTime: "Tempo de Entrega",
+    estimatedLeadTime: "Tempo de Entrega Estimado",
     boxQuantity: "Quantidade por Caixa",
     reorderPoint: "Ponto de Reposição",
     reorderQuantity: "Quantidade de Reposição",
     location: "Localização",
-    weight: "Peso",
-    dimensions: "Dimensões",
-    abcCategory: "Categoria ABC",
-    xyzCategory: "Categoria XYZ",
-    serialNumber: "Número de Série",
-    manufacturerCode: "Código do Fabricante",
-    supplierCode: "Código do Fornecedor",
-    sku: "SKU",
-    ean: "EAN",
-    ncm: "NCM",
-    warranty: "Garantia",
-    warrantyPeriod: "Período de Garantia",
-    expirationDate: "Data de Validade",
-    manufacturingDate: "Data de Fabricação",
-    lastPurchaseDate: "Data da Última Compra",
+
+    // Financial fields
+    icms: "ICMS (%)",
+    ipi: "IPI (%)",
+    taxrate: "Taxa de Imposto (%)",
+    totalPrice: "Preço Total",
     lastPurchasePrice: "Preço da Última Compra",
     averageCost: "Custo Médio",
     unitCost: "Custo Unitário",
     margin: "Margem",
     minimumMargin: "Margem Mínima",
     suggestedPrice: "Preço Sugerido",
+
+    // Analysis fields
+    monthlyConsumption: "Consumo Mensal",
+    monthlyConsumptionTrendPercent: "Tendência de Consumo (%)",
+    abcCategory: "Categoria ABC",
+    abcCategoryOrder: "Ordem da Categoria ABC",
+    xyzCategory: "Categoria XYZ",
+    xyzCategoryOrder: "Ordem da Categoria XYZ",
+
+    // Physical attributes
+    weight: "Peso",
+    dimensions: "Dimensões",
+
+    // Codes and identifiers
+    serialNumber: "Número de Série",
+    manufacturerCode: "Código do Fabricante",
+    supplierCode: "Código do Fornecedor",
+    sku: "SKU",
+    ean: "EAN",
+    ncm: "NCM",
+
+    // Dates and warranty
+    warranty: "Garantia",
+    warrantyPeriod: "Período de Garantia",
+    expirationDate: "Data de Validade",
+    manufacturingDate: "Data de Fabricação",
+    lastPurchaseDate: "Data da Última Compra",
+
+    // Status and relationships
+    isActive: "Ativo",
+    relatedItems: "Itens Relacionados",
+    relatedItemIds: "Itens Relacionados",
+    relatedTo: "Relacionado a",
   },
   [CHANGE_LOG_ENTITY_TYPE.ITEM_CATEGORY]: {
     isPpe: "É EPI",
@@ -136,57 +178,93 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     totalPrice: "Valor Total",
   },
   [CHANGE_LOG_ENTITY_TYPE.USER]: {
+    // Basic information
     name: "Nome",
     email: "E-mail",
+    phone: "Telefone",
     cpf: "CPF",
     pis: "PIS",
     payrollNumber: "Número da Folha",
-    phone: "Telefone",
+    birth: "Data de Nascimento",
+
+    // Address fields
+    address: "Endereço",
+    addressNumber: "Número",
+    addressComplement: "Complemento",
+    neighborhood: "Bairro",
+    city: "Cidade",
+    state: "Estado",
+    zipCode: "CEP",
+    site: "Site",
+
+    // Organizational fields
     position: "Cargo",
     positionId: "Cargo",
-    performanceLevel: "Nível de Desempenho",
     sector: "Setor",
     sectorId: "Setor",
     managedSectorId: "Setor Gerenciado",
+    performanceLevel: "Nível de Desempenho",
+
+    // Status and employment
     status: "Status",
     statusOrder: "Ordem do Status",
+    isActive: "Ativo",
+    admissional: "Data de Admissão",
+    effectedAt: "Data de Contratação",
+    exp1StartAt: "Início da Experiência 1",
+    exp1EndAt: "Fim da Experiência 1",
+    exp2StartAt: "Início da Experiência 2",
+    exp2EndAt: "Fim da Experiência 2",
+    dismissedAt: "Data de Demissão",
+
+    // Security and verification
     verified: "Verificado",
     requirePasswordChange: "Requer Mudança de Senha",
-    hireDate: "Data de Contratação",
-    birthDate: "Data de Nascimento",
-    admissional: "Data de Admissão",
-    dismissedAt: "Data de Demissão",
+    password: "Senha",
     verificationCode: "Código de Verificação",
     verificationExpiresAt: "Expiração da Verificação",
     verificationType: "Tipo de Verificação",
     sessionToken: "Token de Sessão",
     lastLoginAt: "Último Login",
+
+    // External integrations
+    secullumId: "ID Secullum",
+    preferenceId: "ID de Preferências",
+    avatarId: "Avatar",
+
+    // PPE size fields
+    "ppeSize.shirts": "Tamanho de Camiseta",
+    "ppeSize.boots": "Tamanho de Botas",
+    "ppeSize.pants": "Tamanho de Calças",
+    "ppeSize.sleeves": "Tamanho de Mangas",
+    "ppeSize.mask": "Tamanho de Máscara",
+    "ppeSize.gloves": "Tamanho de Luvas",
+    "ppeSize.rainBoots": "Tamanho de Galochas",
+
+    // Legacy/computed fields
     isExternal: "É Externo",
-    password: "Senha",
   },
   [CHANGE_LOG_ENTITY_TYPE.TASK]: {
-    title: "Título",
-    priority: "Prioridade",
-    dueDate: "Data de Vencimento",
-    startedAt: "Iniciado em",
-    completedAt: "Concluído em",
-    finishedAt: "Finalizado em",
-    estimatedHours: "Horas Estimadas",
-    actualHours: "Horas Reais",
+    name: "Nome",
+    status: "Status",
+    statusOrder: "Ordem do Status",
     serialNumber: "Número de Série",
+    chassisNumber: "Número do Chassi",
     plate: "Placa",
     details: "Detalhes",
     entryDate: "Data de Entrada",
     term: "Prazo",
+    startedAt: "Iniciado em",
+    finishedAt: "Finalizado em",
+    paintId: "Tinta",
     commission: "Comissão",
-    statusOrder: "Ordem do Status",
+    bonusDiscountId: "Desconto Bônus",
     customerId: "Cliente",
     sectorId: "Setor",
     createdById: "Criado por",
     budgetId: "Orçamento",
     nfeId: "Nota Fiscal",
     receiptId: "Recibo",
-    paintId: "Tinta",
     generalPainting: "Pintura Geral",
     observationId: "Observação",
     truckId: "Caminhão",
@@ -201,11 +279,13 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     truck: "Caminhão",
     createdBy: "Criado por",
     artworks: "Artes",
-    logoPaints: "Tintas do Logo",
-    paints: "Tintas do Logo",
+    logoPaints: "Tintas da logomarca",
+    paints: "Tintas da logomarca",
+    groundPaints: "Fundos da Tinta",
     commissions: "Comissões",
     services: "Serviços",
     airbrushings: "Aerografias",
+    cuts: "Recortes",
     cutRequest: "Solicitações de Corte",
     cutPlan: "Planos de Corte",
     relatedTasks: "Tarefas Relacionadas",
@@ -227,6 +307,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "truck.manufacturer": "Fabricante do Caminhão",
   },
   [CHANGE_LOG_ENTITY_TYPE.SUPPLIER]: {
+    // Basic information
     corporateName: "Razão Social",
     fantasyName: "Nome Fantasia",
     cnpj: "CNPJ",
@@ -234,19 +315,29 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     phone: "Telefone",
     phones: "Telefones",
     site: "Site",
-    representativeName: "Nome do Representante",
+
+    // Address fields
+    streetType: "Tipo de Logradouro",
     address: "Endereço",
+    addressNumber: "Número",
+    addressComplement: "Complemento",
     number: "Número",
     complement: "Complemento",
     neighborhood: "Bairro",
     city: "Cidade",
     state: "Estado",
     zipCode: "CEP",
+
+    // Additional fields
+    tags: "Tags",
+    logoId: "Logo",
+    logo: "Logo",
+
+    // Legacy fields (may exist in old data)
+    representativeName: "Nome do Representante",
     country: "País",
     observations: "Observações",
     statusOrder: "Ordem do Status",
-    logoId: "Logo",
-    logo: "Logo",
   },
   [CHANGE_LOG_ENTITY_TYPE.PPE_DELIVERY]: {
     ppeConfigId: "ID da Configuração de EPI",
@@ -377,6 +468,8 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     price: "Preço Unitário",
     unitPrice: "Preço Unitário",
     totalPrice: "Preço Total",
+    icms: "ICMS (%)",
+    ipi: "IPI (%)",
     discount: "Desconto",
     notes: "Observações",
     condition: "Condição",
@@ -508,6 +601,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "user.name": "Nome do Usuário",
   },
   [CHANGE_LOG_ENTITY_TYPE.CUSTOMER]: {
+    // Basic information
     fantasyName: "Nome Fantasia",
     corporateName: "Razão Social",
     cnpj: "CNPJ",
@@ -515,6 +609,11 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     email: "E-mail",
     phone: "Telefone",
     phones: "Telefones",
+    site: "Site",
+    tags: "Tags",
+
+    // Address fields
+    streetType: "Tipo de Logradouro",
     address: "Endereço",
     addressNumber: "Número",
     addressComplement: "Complemento",
@@ -522,12 +621,16 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     city: "Cidade",
     state: "Estado",
     zipCode: "CEP",
-    site: "Site",
-    tags: "Tags",
+
+    // Additional fields
     logoId: "Logo",
+    economicActivityId: "Atividade Econômica",
+    registrationStatus: "Status de Registro",
+
     // Nested relationship fields
     "logo.filename": "Nome do Logo",
     "tasks.length": "Quantidade de Tarefas",
+    "economicActivity.description": "Descrição da Atividade Econômica",
   },
   [CHANGE_LOG_ENTITY_TYPE.PAINT]: {
     name: "Nome",
@@ -754,7 +857,38 @@ interface FieldMetadata {
  * @returns The formatted value as a string
  */
 export function formatFieldValue(value: ComplexFieldValue, field?: string | null, entityType?: CHANGE_LOG_ENTITY_TYPE, metadata?: FieldMetadata): string {
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined) return "Nenhum";
+
+  // First, try to parse JSON-encoded strings (double-encoded values from backend)
+  if (typeof value === "string") {
+    // Check if it's a JSON-encoded string (starts and ends with quotes)
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      try {
+        value = JSON.parse(value);
+      } catch (e) {
+        // Not a valid JSON string, continue with the original value
+      }
+    }
+  }
+
+  // Parse string numbers for specific numeric fields
+  if (typeof value === "string" && field) {
+    const numericFields = [
+      "pricePerLiter", "density", "price", "totalPrice", "unitCost", "averageCost",
+      "lastPurchasePrice", "suggestedPrice", "totalAmount", "remuneration", "cost",
+      "icms", "ipi", "margin", "minimumMargin", "monthlyConsumptionTrendPercent", "ratio",
+      "quantity", "maxQuantity", "boxQuantity", "reorderPoint", "reorderQuantity",
+      "orderedQuantity", "receivedQuantity", "withdrawedQuantity", "returnedQuantity",
+      "viscosity", "weight", "volume", "volumeLiters", "timeTaken"
+    ];
+
+    if (numericFields.includes(field)) {
+      const parsed = parseFloat(value);
+      if (!isNaN(parsed)) {
+        value = parsed;
+      }
+    }
+  }
 
   // Special handling for item returned quantity from metadata
   if (metadata?.fieldType === "item_returned_quantity" && typeof value === "number") {
@@ -814,8 +948,10 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       if (field === "artworks") {
         return `${value.length} ${value.length === 1 ? "arte" : "artes"}`;
       }
-      if (field === "logoPaints" || field === "paints") {
-        return `${value.length} ${value.length === 1 ? "tinta" : "tintas"}`;
+      // Don't format logoPaints/paints/groundPaints as strings - they will be rendered as special cards in the UI
+      if (field === "logoPaints" || field === "paints" || field === "groundPaints") {
+        // Return the array as-is to be handled by the UI component
+        return value as any;
       }
       if (field === "services") {
         return `${value.length} ${value.length === 1 ? "serviço" : "serviços"}`;
@@ -834,6 +970,18 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       }
       if (field === "relatedTasks" || field === "relatedTo") {
         return `${value.length} ${value.length === 1 ? "tarefa relacionada" : "tarefas relacionadas"}`;
+      }
+    }
+
+    // Paint-specific array handling
+    if (entityType === CHANGE_LOG_ENTITY_TYPE.PAINT) {
+      // Don't format paintGrounds as strings - they will be rendered as special cards in the UI
+      if (field === "paintGrounds" || field === "groundPaints") {
+        // Return the array as-is to be handled by the UI component
+        return value as any;
+      }
+      if (field === "formulas") {
+        return `${value.length} ${value.length === 1 ? "fórmula" : "fórmulas"}`;
       }
     }
 
@@ -900,10 +1048,35 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     const userStatusLabels: Record<string, string> = {
       EXPERIENCE_PERIOD_1: "Experiência - 1º Período",
       EXPERIENCE_PERIOD_2: "Experiência - 2º Período",
-      CONTRACTED: "Contratado",
+      EFFECTED: "Efetivado",
       DISMISSED: "Demitido",
     };
     return userStatusLabels[value] || value;
+  }
+
+  // Handle PPE size fields for User entity
+  if (entityType === CHANGE_LOG_ENTITY_TYPE.USER && typeof value === "string") {
+    if (field === "ppeSize.shirts") {
+      return SHIRT_SIZE_LABELS[value as keyof typeof SHIRT_SIZE_LABELS] || value;
+    }
+    if (field === "ppeSize.boots") {
+      return BOOT_SIZE_LABELS[value as keyof typeof BOOT_SIZE_LABELS] || value;
+    }
+    if (field === "ppeSize.pants") {
+      return PANTS_SIZE_LABELS[value as keyof typeof PANTS_SIZE_LABELS] || value;
+    }
+    if (field === "ppeSize.sleeves") {
+      return SLEEVES_SIZE_LABELS[value as keyof typeof SLEEVES_SIZE_LABELS] || value;
+    }
+    if (field === "ppeSize.mask") {
+      return MASK_SIZE_LABELS[value as keyof typeof MASK_SIZE_LABELS] || value;
+    }
+    if (field === "ppeSize.gloves") {
+      return GLOVES_SIZE_LABELS[value as keyof typeof GLOVES_SIZE_LABELS] || value;
+    }
+    if (field === "ppeSize.rainBoots") {
+      return RAIN_BOOTS_SIZE_LABELS[value as keyof typeof RAIN_BOOTS_SIZE_LABELS] || value;
+    }
   }
 
   // Handle PPE delivery status
@@ -1059,6 +1232,45 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     return xyzLabels[value] || value;
   }
 
+  // Handle street type for Supplier and Customer
+  if (field === "streetType" && typeof value === "string") {
+    const streetTypeLabels: Record<string, string> = {
+      RUA: "Rua",
+      AVENIDA: "Avenida",
+      ALAMEDA: "Alameda",
+      TRAVESSA: "Travessa",
+      PRACA: "Praça",
+      RODOVIA: "Rodovia",
+      ESTRADA: "Estrada",
+      VIA: "Via",
+      LARGO: "Largo",
+      VIELA: "Viela",
+      BECO: "Beco",
+      RUELA: "Ruela",
+      CAMINHO: "Caminho",
+      PASSAGEM: "Passagem",
+      JARDIM: "Jardim",
+      QUADRA: "Quadra",
+      LOTE: "Lote",
+      SITIO: "Sítio",
+      PARQUE: "Parque",
+      FAZENDA: "Fazenda",
+    };
+    return streetTypeLabels[value] || value;
+  }
+
+  // Handle registration status for Customer
+  if (field === "registrationStatus" && typeof value === "string") {
+    const registrationStatusLabels: Record<string, string> = {
+      ACTIVE: "Active",
+      SUSPENDED: "Suspended",
+      UNFIT: "Unfit",
+      ACTIVE_NOT_REGULAR: "Active Not Regular",
+      DEREGISTERED: "Deregistered",
+    };
+    return registrationStatusLabels[value] || value;
+  }
+
   // Handle sector privileges
   if (field === "privileges" && (entityType === CHANGE_LOG_ENTITY_TYPE.SECTOR || entityType === CHANGE_LOG_ENTITY_TYPE.POSITION) && typeof value === "string") {
     const privilegeLabels: Record<string, string> = {
@@ -1171,6 +1383,17 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       FACE_SHIELD: "Protetor Facial",
     };
     return ppeTypeLabels[value] || value;
+  }
+
+  // Handle PPE delivery mode
+  if (field === "ppeDeliveryMode" && typeof value === "string") {
+    const ppeDeliveryModeLabels: Record<string, string> = {
+      INDIVIDUAL: "Individual",
+      CATEGORY: "Por Categoria",
+      SCHEDULED: "Agendado",
+      ON_DEMAND: "Sob Demanda",
+    };
+    return ppeDeliveryModeLabels[value] || value;
   }
 
   // Handle PPE sizes
@@ -1392,6 +1615,11 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     return formatCNPJ(value);
   }
 
+  // Handle Chassis Number field
+  if (field === "chassisNumber" && typeof value === "string") {
+    return formatChassis(value);
+  }
+
   // Handle payrollNumber field
   if (field === "payrollNumber" && typeof value === "number") {
     return value.toString();
@@ -1468,9 +1696,11 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       return `${value} ${value === 1 ? "dia" : "dias"}`;
     }
 
-    // Time fields (minutes)
+    // Time fields (seconds to HH:MM format)
     if (field === "timeTaken") {
-      return `${value} ${value === 1 ? "minuto" : "minutos"}`;
+      const hours = Math.floor(value / 3600);
+      const minutes = Math.floor((value % 3600) / 60);
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     }
 
     // Quantity fields
@@ -1521,31 +1751,58 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     return value.toLocaleString("pt-BR");
   }
 
-  // Handle date formatting
+  // Generic ISO date string detection - catches any value that looks like an ISO date
+  if (typeof value === "string") {
+    // Check if the string matches ISO 8601 format (e.g., "2025-10-30T14:35:59.569Z")
+    const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/;
+    if (isoDateRegex.test(value)) {
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        return formatDateTime(date);
+      }
+    }
+  }
+
+  // Handle date formatting for known date fields
+  // Date-only fields (no time component needed)
   if (
-    field === "createdAt" ||
-    field === "updatedAt" ||
     field === "expirationDate" ||
     field === "manufacturingDate" ||
     field === "lastPurchaseDate" ||
     field === "deliveryDate" ||
     field === "receivedDate" ||
     field === "dueDate" ||
-    field === "startedAt" ||
-    field === "completedAt" ||
-    field === "finishedAt" ||
     field === "entryDate" ||
     field === "term" ||
     field === "scheduledFor" ||
     field === "forecast" ||
-    field === "receivedAt" ||
-    field === "fulfilledAt" ||
     field === "scheduledDate" ||
     field === "actualDeliveryDate" ||
     field === "nextRun" ||
     field === "lastRun" ||
-    field === "hireDate" ||
-    field === "birthDate" ||
+    field === "birth" ||
+    field === "productionDate" ||
+    field === "admissional" ||
+    field === "exp1StartAt" ||
+    field === "exp1EndAt" ||
+    field === "exp2StartAt" ||
+    field === "exp2EndAt"
+  ) {
+    const date = new Date(value as any);
+    if (!isNaN(date.getTime())) {
+      return formatDate(date);
+    }
+  }
+
+  // DateTime fields (include time component)
+  if (
+    field === "createdAt" ||
+    field === "updatedAt" ||
+    field === "startedAt" ||
+    field === "completedAt" ||
+    field === "finishedAt" ||
+    field === "receivedAt" ||
+    field === "fulfilledAt" ||
     field === "verificationExpiresAt" ||
     field === "lastLoginAt" ||
     field === "startAt" ||
@@ -1553,10 +1810,11 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     field === "approvedAt" ||
     field === "rejectedAt" ||
     field === "cancelledAt" ||
-    field === "productionDate" ||
     field === "sentAt" ||
     field === "scheduledAt" ||
-    field === "seenAt"
+    field === "seenAt" ||
+    field === "effectedAt" ||
+    field === "dismissedAt"
   ) {
     const date = new Date(value as any);
     if (!isNaN(date.getTime())) {
@@ -1566,7 +1824,7 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
 
   // Handle empty strings
   if (value === "") {
-    return "Vazio";
+    return "Nenhum";
   }
 
   // Handle objects
@@ -1596,6 +1854,30 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
         return `${(value as any).itemName} adicionado (${(value as any).ratio.toFixed(2)}%)`;
       } else if ((value as any).action === "REMOVE_COMPONENT") {
         return `Componente removido (${(value as any).ratio.toFixed(2)}%)`;
+      }
+    }
+
+    // Special handling for delivery_completed field in PPE_DELIVERY
+    if (field === "delivery_completed" && entityType === CHANGE_LOG_ENTITY_TYPE.PPE_DELIVERY) {
+      const data = value as any;
+      if (data.itemName && data.userName && data.quantity) {
+        return `${data.itemName} entregue para ${data.userName} (Quantidade: ${data.quantity})`;
+      }
+    }
+
+    // Special handling for batch_approval field in PPE_DELIVERY
+    if (field === "batch_approval" && entityType === CHANGE_LOG_ENTITY_TYPE.PPE_DELIVERY) {
+      const data = value as any;
+      if (data.approvedCount) {
+        return `${data.approvedCount} ${data.approvedCount === 1 ? "entrega aprovada" : "entregas aprovadas"}`;
+      }
+    }
+
+    // Special handling for batch_rejection field in PPE_DELIVERY
+    if (field === "batch_rejection" && entityType === CHANGE_LOG_ENTITY_TYPE.PPE_DELIVERY) {
+      const data = value as any;
+      if (data.rejectedCount) {
+        return `${data.rejectedCount} ${data.rejectedCount === 1 ? "entrega rejeitada" : "entregas rejeitadas"}`;
       }
     }
 

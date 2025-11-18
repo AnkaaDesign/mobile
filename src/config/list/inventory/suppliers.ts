@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Supplier } from '@/types'
+import { canEditSuppliers } from '@/utils/permissions/entity-permissions'
 
 export const suppliersListConfig: ListConfig<Supplier> = {
   key: 'inventory-suppliers',
@@ -356,6 +357,7 @@ export const suppliersListConfig: ListConfig<Supplier> = {
     create: {
       label: 'Cadastrar Fornecedor',
       route: '/estoque/fornecedores/cadastrar',
+      canCreate: canEditSuppliers,
     },
     bulk: [
       {

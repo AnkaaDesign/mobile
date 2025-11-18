@@ -5,6 +5,8 @@ import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
+import { useAuth } from "@/contexts/auth-context";
+import { canEditOrders, canDeleteOrders } from "@/utils/permissions/entity-permissions";
 
 const ACTION_WIDTH = 80;
 
@@ -33,9 +35,17 @@ const OrderTableRowSwipeComponent = ({ children, orderId, orderName, onEdit, onD
   const { activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow } = useSwipeRow();
   const swipeableRef = useRef<Swipeable>(null);
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useAuth();
+  const canEdit = canEditOrders(user);
+  const canDelete = canDeleteOrders(user);
 
   // Early return if colors are not available yet (during theme initialization)
   if (!colors || !children) {
+    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
+  }
+
+  // Return early if no permissions
+  if (!canEdit && !canDelete) {
     return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
   }
 
@@ -86,7 +96,7 @@ const OrderTableRowSwipeComponent = ({ children, orderId, orderName, onEdit, onD
   // Duplicate button uses orange (#FF9500)
   // Delete button uses red (#FF3B30)
   const rightActions: SwipeAction[] = [
-    ...(onEdit
+    ...(onEdit && canEdit
       ? [
           {
             key: "edit",
@@ -98,7 +108,7 @@ const OrderTableRowSwipeComponent = ({ children, orderId, orderName, onEdit, onD
           },
         ]
       : []),
-    ...(onDuplicate
+    ...(onDuplicate && canEdit
       ? [
           {
             key: "duplicate",
@@ -115,7 +125,7 @@ const OrderTableRowSwipeComponent = ({ children, orderId, orderName, onEdit, onD
       icon: <Icon name={action.icon} size={20} color="white" />,
       closeOnPress: true,
     })),
-    ...(onDelete
+    ...(onDelete && canDelete
       ? [
           {
             key: "delete",

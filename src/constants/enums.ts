@@ -227,6 +227,12 @@ export enum EXTERNAL_WITHDRAWAL_STATUS {
   CANCELLED = "CANCELLED",
 }
 
+export enum EXTERNAL_WITHDRAWAL_TYPE {
+  RETURNABLE = "RETURNABLE",
+  CHARGEABLE = "CHARGEABLE",
+  COURTESY = "COURTESY",
+}
+
 // =====================
 // Analytics & Trends
 // =====================

@@ -19,6 +19,7 @@ import {
   MAINTENANCE_STATUS,
   USER_STATUS,
   EXTERNAL_WITHDRAWAL_STATUS,
+  EXTERNAL_WITHDRAWAL_TYPE,
   VACATION_STATUS,
   SERVICE_ORDER_STATUS,
   AIRBRUSHING_STATUS,
@@ -256,6 +257,13 @@ export const ENTITY_BADGE_CONFIG = {
     [EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED]: "success" as BadgeVariant, // Green - completed
     [EXTERNAL_WITHDRAWAL_STATUS.CHARGED]: "primary" as BadgeVariant, // Blue - charged
     [EXTERNAL_WITHDRAWAL_STATUS.CANCELLED]: "cancelled" as BadgeVariant, // Red - cancelled
+  },
+
+  // External Withdrawal Type
+  EXTERNAL_WITHDRAWAL_TYPE: {
+    [EXTERNAL_WITHDRAWAL_TYPE.RETURNABLE]: "default" as BadgeVariant, // Blue - returnable
+    [EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE]: "destructive" as BadgeVariant, // Red - chargeable
+    [EXTERNAL_WITHDRAWAL_TYPE.COURTESY]: "secondary" as BadgeVariant, // Gray - courtesy
   },
 
   // Vacation Status

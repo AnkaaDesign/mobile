@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
+import { canEditUsers } from '@/utils/permissions/entity-permissions'
 import { USER_STATUS } from '@/constants/enums'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -418,6 +419,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
     create: {
       label: 'Cadastrar Colaborador',
       route: '/administracao/colaboradores/cadastrar',
+      canCreate: canEditUsers,
     },
     bulk: [
       {

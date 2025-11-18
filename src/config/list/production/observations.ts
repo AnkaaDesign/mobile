@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Observation } from '@/types'
+import { canEditObservations } from '@/utils/permissions/entity-permissions'
 
 export const observationsListConfig: ListConfig<Observation> = {
   key: 'production-observations',
@@ -148,6 +149,7 @@ export const observationsListConfig: ListConfig<Observation> = {
     create: {
       label: 'Nova Observação',
       route: '/producao/observacoes/cadastrar',
+      canCreate: canEditObservations,
     },
     bulk: [
       {

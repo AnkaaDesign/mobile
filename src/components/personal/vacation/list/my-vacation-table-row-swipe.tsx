@@ -4,6 +4,8 @@ import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
+import { useAuth } from "@/contexts/auth-context";
+import { canEditHrEntities, canDeleteHrEntities } from "@/utils/permissions/entity-permissions";
 
 const ACTION_WIDTH = 80;
 
@@ -22,9 +24,18 @@ const MyVacationTableRowSwipeComponent = ({ children, vacationId, vacationPeriod
   const { activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow } = useSwipeRow();
   const swipeableRef = useRef<Swipeable>(null);
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useAuth();
 
   // Early return if colors are not available yet (during theme initialization)
   if (!colors || !children) {
+    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
+  }
+
+  const canEdit = canEditHrEntities(user);
+  const canDelete = canDeleteHrEntities(user);
+
+  // Return early if no permissions
+  if (!canEdit && !canDelete) {
     return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
   }
 
@@ -74,7 +85,7 @@ const MyVacationTableRowSwipeComponent = ({ children, vacationId, vacationPeriod
   // Edit button uses green (#15803d)
   // Delete button uses red (#b91c1c)
   const rightActions: SwipeAction[] = [
-    ...(onEdit
+    ...(canEdit && onEdit
       ? [
           {
             key: "edit",
@@ -86,7 +97,7 @@ const MyVacationTableRowSwipeComponent = ({ children, vacationId, vacationPeriod
           },
         ]
       : []),
-    ...(onDelete
+    ...(canDelete && onDelete
       ? [
           {
             key: "delete",

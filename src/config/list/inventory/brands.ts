@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { ItemBrand } from '@/types'
+import { canEditItems } from '@/utils/permissions/entity-permissions'
 
 export const brandsListConfig: ListConfig<ItemBrand> = {
   key: 'inventory-brands',
@@ -140,6 +141,7 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
     create: {
       label: 'Cadastrar Marca',
       route: '/estoque/produtos/marcas/cadastrar',
+      canCreate: canEditItems,
     },
     bulk: [
       {

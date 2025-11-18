@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Airbrushing } from '@/types'
+import { canEditAirbrushings } from '@/utils/permissions/entity-permissions'
 import { AIRBRUSHING_STATUS } from '@/constants/enums'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -272,6 +273,7 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
     create: {
       label: 'Cadastrar Aerografia',
       route: '/producao/aerografia/cadastrar',
+      canCreate: canEditAirbrushings,
     },
     bulk: [
       {

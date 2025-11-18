@@ -178,6 +178,11 @@ export * from "./useTableSort";
 export * from "./useDebouncedSearch";
 
 // =====================================================
+// Form State Management Hooks
+// =====================================================
+export * from "./use-external-withdrawal-form-state";
+
+// =====================================================
 // Lookup & Validation Hooks
 // =====================================================
 export * from "./use-cnpj-lookup";

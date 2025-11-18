@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Service } from '@/types'
+import { canEditTasks } from '@/utils/permissions/entity-permissions'
 
 export const servicesListConfig: ListConfig<Service> = {
   key: 'production-services',
@@ -174,6 +175,7 @@ export const servicesListConfig: ListConfig<Service> = {
     create: {
       label: 'Cadastrar Serviço',
       route: '/producao/servicos/cadastrar',
+      canCreate: canEditTasks,
     },
     bulk: [
       {

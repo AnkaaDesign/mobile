@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { File } from '@/types'
 import { formatFileSize} from '@/utils'
+import { canEditUsers } from '@/utils/permissions/entity-permissions'
 import { fontSize, fontWeight } from '@/constants/design-system'
 import { View, StyleSheet } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
@@ -313,6 +314,7 @@ export const filesListConfig: ListConfig<File> = {
     create: {
       label: 'Enviar Arquivo',
       route: '/administracao/arquivos/enviar',
+      canCreate: canEditUsers,
     },
     bulk: [
       {

@@ -4,16 +4,34 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { IconPackage, IconHash, IconCurrencyReal, IconArrowBack } from "@tabler/icons-react-native";
+import { IconPackage, IconHash, IconCurrencyReal, IconArrowBack, IconAlertCircle, IconCircleCheck } from "@tabler/icons-react-native";
 import type { ExternalWithdrawalItem } from "@/types";
 import { formatCurrency } from "@/utils";
+import { EXTERNAL_WITHDRAWAL_TYPE } from "@/constants";
 
 interface ExternalWithdrawalItemsCardProps {
   items: ExternalWithdrawalItem[];
+  withdrawalType?: EXTERNAL_WITHDRAWAL_TYPE;
 }
 
-export function ExternalWithdrawalItemsCard({ items }: ExternalWithdrawalItemsCardProps) {
+export function ExternalWithdrawalItemsCard({ items, withdrawalType }: ExternalWithdrawalItemsCardProps) {
   const { colors } = useTheme();
+
+  const isReturnable = withdrawalType === EXTERNAL_WITHDRAWAL_TYPE.RETURNABLE;
+
+  // Calculate summary statistics
+  const summary = items.reduce(
+    (acc, item) => {
+      const stillOut = item.withdrawedQuantity - item.returnedQuantity;
+      return {
+        totalWithdrawn: acc.totalWithdrawn + item.withdrawedQuantity,
+        totalReturned: acc.totalReturned + item.returnedQuantity,
+        totalPending: acc.totalPending + stillOut,
+        totalValue: acc.totalValue + (item.withdrawedQuantity * (item.price || 0)),
+      };
+    },
+    { totalWithdrawn: 0, totalReturned: 0, totalPending: 0, totalValue: 0 }
+  );
 
   if (!items || items.length === 0) {
     return (
@@ -44,6 +62,47 @@ export function ExternalWithdrawalItemsCard({ items }: ExternalWithdrawalItemsCa
         <ThemedText style={styles.headerTitle}>Itens Retirados</ThemedText>
         <Badge variant="secondary">{items.length}</Badge>
       </View>
+
+      {/* Summary Section */}
+      {isReturnable && items.length > 0 && (
+        <View style={[styles.summarySection, { borderBottomColor: colors.border, backgroundColor: colors.muted + "20" }]}>
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryItem}>
+              <IconArrowBack size={16} color={colors.mutedForeground} />
+              <View>
+                <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
+                  Retirado
+                </ThemedText>
+                <ThemedText style={[styles.summaryValue, { color: colors.foreground }]}>
+                  {summary.totalWithdrawn}
+                </ThemedText>
+              </View>
+            </View>
+            <View style={styles.summaryItem}>
+              <IconCircleCheck size={16} color={colors.success} />
+              <View>
+                <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
+                  Devolvido
+                </ThemedText>
+                <ThemedText style={[styles.summaryValue, { color: colors.success }]}>
+                  {summary.totalReturned}
+                </ThemedText>
+              </View>
+            </View>
+            <View style={styles.summaryItem}>
+              <IconAlertCircle size={16} color={colors.warning} />
+              <View>
+                <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
+                  Pendente
+                </ThemedText>
+                <ThemedText style={[styles.summaryValue, { color: colors.warning }]}>
+                  {summary.totalPending}
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* Items List */}
       <View style={styles.content}>
@@ -249,5 +308,28 @@ const styles = StyleSheet.create({
   },
   metaBadge: {
     fontSize: fontSize.xs,
+  },
+  summarySection: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    gap: spacing.sm,
+  },
+  summaryItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  summaryLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+  },
+  summaryValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
   },
 });

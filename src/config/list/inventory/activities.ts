@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Activity } from '@/types'
 import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON, ACTIVITY_REASON_LABELS } from '@/constants/enums'
+import { canEditItems } from '@/utils/permissions/entity-permissions'
 
 export const activitiesListConfig: ListConfig<Activity> = {
   key: 'inventory-activities',
@@ -279,6 +280,7 @@ export const activitiesListConfig: ListConfig<Activity> = {
     create: {
       label: 'Cadastrar Movimentação',
       route: '/estoque/movimentacoes/cadastrar',
+      canCreate: canEditItems,
     },
     bulk: [
       {

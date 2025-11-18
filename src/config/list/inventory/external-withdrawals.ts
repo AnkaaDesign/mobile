@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { ExternalWithdrawal } from '@/types'
 import { EXTERNAL_WITHDRAWAL_STATUS } from '@/constants/enums'
+import { canEditExternalWithdrawals } from '@/utils/permissions/entity-permissions'
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
@@ -212,6 +213,7 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
     create: {
       label: 'Cadastrar Retirada',
       route: '/estoque/retiradas-externas/cadastrar',
+      canCreate: canEditExternalWithdrawals,
     },
     bulk: [
       {

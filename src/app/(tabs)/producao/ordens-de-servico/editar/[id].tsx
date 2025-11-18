@@ -122,6 +122,7 @@ export default function EditServiceOrderScreen() {
       <TaskForm
         mode="edit"
         initialData={initialData}
+        initialCustomer={task.data.customer}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         isSubmitting={isUpdating}

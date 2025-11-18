@@ -331,6 +331,11 @@ export async function exportBorrows(borrows: any[], format: ExportFormat = 'csv'
 export async function exportOrders(orders: any[], format: ExportFormat = 'csv'): Promise<void> {
   const columns: ExportColumn[] = [
     {
+      key: 'id',
+      label: 'Código',
+      getValue: (order) => order.id,
+    },
+    {
       key: 'description',
       label: 'Descrição',
       getValue: (order) => order.description,
@@ -351,6 +356,23 @@ export async function exportOrders(orders: any[], format: ExportFormat = 'csv'):
       getValue: (order) => order._count?.items || order.items?.length || 0,
     },
     {
+      key: 'total',
+      label: 'Valor Total',
+      getValue: (order) => {
+        if (order.items && order.items.length > 0) {
+          const total = order.items.reduce((sum: number, item: any) => {
+            const subtotal = item.orderedQuantity * item.price;
+            const icmsAmount = subtotal * (item.icms / 100);
+            const ipiAmount = subtotal * (item.ipi / 100);
+            return sum + subtotal + icmsAmount + ipiAmount;
+          }, 0);
+          return total;
+        }
+        return 0;
+      },
+      format: (value) => formatCurrency(value as number),
+    },
+    {
       key: 'forecast',
       label: 'Previsão',
       getValue: (order) => order.forecast,
@@ -362,12 +384,23 @@ export async function exportOrders(orders: any[], format: ExportFormat = 'csv'):
       getValue: (order) => order.createdAt,
       format: (value) => (value ? formatDateTime(new Date(value)) : '-'),
     },
+    {
+      key: 'updatedAt',
+      label: 'Atualizado em',
+      getValue: (order) => order.updatedAt,
+      format: (value) => (value ? formatDateTime(new Date(value)) : '-'),
+    },
+    {
+      key: 'notes',
+      label: 'Observações',
+      getValue: (order) => order.notes,
+    },
   ];
 
   await exportData({
     data: orders,
     columns,
-    filename: 'orders',
+    filename: 'pedidos',
     format,
     title: 'Exportar Pedidos',
   });

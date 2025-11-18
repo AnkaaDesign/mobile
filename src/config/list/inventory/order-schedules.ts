@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { OrderSchedule } from '@/types'
 import { SCHEDULE_FREQUENCY } from '@/constants/enums'
+import { canEditOrders } from '@/utils/permissions/entity-permissions'
 
 const FREQUENCY_LABELS: Record<string, string> = {
   ONCE: 'Uma Vez',
@@ -237,6 +238,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
     create: {
       label: 'Novo Pedido Automático',
       route: '/estoque/pedidos/automaticos/cadastrar',
+      canCreate: canEditOrders,
     },
     bulk: [
       {

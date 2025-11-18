@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Task } from '@/types'
+import { canEditTasks } from '@/utils/permissions/entity-permissions'
 import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
@@ -402,6 +403,7 @@ export const tasksListConfig: ListConfig<Task> = {
     create: {
       label: 'Cadastrar Tarefa',
       route: '/producao/cronograma/cadastrar',
+      canCreate: canEditTasks,
     },
     bulk: [
       {

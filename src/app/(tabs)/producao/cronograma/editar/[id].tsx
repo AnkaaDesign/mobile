@@ -212,6 +212,7 @@ export default function EditScheduleScreen() {
           startedAt: task.startedAt ? new Date(task.startedAt) : null,
           finishedAt: task.finishedAt ? new Date(task.finishedAt) : null,
         }}
+        initialCustomer={task.customer}
         existingLayouts={existingLayouts}
         onSubmit={handleSubmit}
         onCancel={handleCancel}

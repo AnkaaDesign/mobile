@@ -8,6 +8,7 @@ import { FAB } from '@/components/ui/fab'
 import { ErrorScreen } from '@/components/ui/error-screen'
 import { useTheme } from '@/lib/theme'
 import { useList } from '@/hooks/list/useList'
+import { useAuth } from '@/contexts/auth-context'
 import { Table } from '../Table'
 import { Search } from '../Search'
 import { Filters } from '../Filters'
@@ -29,6 +30,7 @@ export const Layout = memo(function Layout({
 }: LayoutProps) {
   const { colors } = useTheme()
   const router = useRouter()
+  const { user } = useAuth()
   const list = useList(config)
 
   // Handle create action
@@ -37,6 +39,11 @@ export const Layout = memo(function Layout({
       router.push(config.actions.create.route as any)
     }
   }
+
+  // Check if user can create (using permission function if provided)
+  const canCreate = config.actions?.create?.canCreate
+    ? config.actions.create.canCreate(user)
+    : true // Default to true if no permission check is provided
 
   // Show loading on initial load
   if (list.isLoading && list.items.length === 0) {
@@ -166,7 +173,7 @@ export const Layout = memo(function Layout({
       />
 
       {/* FAB for Create */}
-      {config.actions?.create && (
+      {config.actions?.create && canCreate && (
         <FAB
           icon={<IconPlus size={24} color="#fff" />}
           label={config.actions.create.label}

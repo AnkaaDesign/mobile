@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PaintFormulaComponent } from '@/types'
+import { canEditPaintFormulas } from '@/utils/permissions/entity-permissions'
 
 /**
  * Factory function for Paint Formula Components list config
@@ -246,6 +247,7 @@ export function createFormulaComponentsListConfig(
       create: {
         label: 'Adicionar Componente',
         route: `/pintura/formulas/${formulaId}/componentes/cadastrar`,
+        canCreate: canEditPaintFormulas,
       },
       bulk: [
         {

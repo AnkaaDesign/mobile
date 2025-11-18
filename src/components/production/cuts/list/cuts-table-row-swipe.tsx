@@ -7,12 +7,15 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing } from "@/constants/design-system";
+import { useAuth } from "@/contexts/auth-context";
+import { canEditCuts, canDeleteCuts } from "@/utils/permissions/entity-permissions";
 
 interface CutsTableRowSwipeProps {
   cutId: string;
   cutName: string;
   onEdit?: (cutId: string) => void;
   onDelete?: (cutId: string) => void;
+  onRequest?: (cutId: string) => void;
   children: (isActive: boolean) => ReactNode;
   disabled?: boolean;
 }
@@ -25,6 +28,7 @@ export const CutsTableRowSwipe: React.FC<CutsTableRowSwipeProps> = ({
   cutName,
   onEdit,
   onDelete,
+  onRequest,
   children,
   disabled = false,
 }) => {
@@ -32,6 +36,14 @@ export const CutsTableRowSwipe: React.FC<CutsTableRowSwipeProps> = ({
   const swipeableRef = useRef<Swipeable>(null);
   const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow();
   const isActive = activeRowId === cutId;
+  const { user } = useAuth();
+  const canEdit = canEditCuts(user);
+  const canDelete = canDeleteCuts(user);
+
+  // Return early if no permissions
+  if (!canEdit && !canDelete) {
+    return <>{children(isActive)}</>;
+  }
 
   const handleEdit = useCallback(() => {
     swipeableRef.current?.close();
@@ -51,6 +63,11 @@ export const CutsTableRowSwipe: React.FC<CutsTableRowSwipeProps> = ({
       },
     ]);
   }, [cutId, cutName, onDelete]);
+
+  const handleRequest = useCallback(() => {
+    swipeableRef.current?.close();
+    onRequest?.(cutId);
+  }, [cutId, onRequest]);
 
   const handleSwipeOpen = useCallback(() => {
     // Close previously active row if different
@@ -76,7 +93,7 @@ export const CutsTableRowSwipe: React.FC<CutsTableRowSwipeProps> = ({
   const renderRightActions = useCallback(
     (_progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
       // Calculate number of actions
-      const actionsCount = [onEdit, onDelete].filter(Boolean).length;
+      const actionsCount = [onRequest, onEdit, onDelete].filter(Boolean).length;
       const totalWidth = actionsCount * SWIPE_ACTION_WIDTH;
 
       const trans = dragX.interpolate({
@@ -95,13 +112,19 @@ export const CutsTableRowSwipe: React.FC<CutsTableRowSwipeProps> = ({
             },
           ]}
         >
-          {onEdit && (
+          {onRequest && (
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.info || "#3b82f6" }]} onPress={handleRequest} activeOpacity={0.7}>
+              <Icon name="scissors" size="md" color="white" />
+              <ThemedText style={styles.actionText}>Solicitar</ThemedText>
+            </TouchableOpacity>
+          )}
+          {onEdit && canEdit && (
             <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={handleEdit} activeOpacity={0.7}>
               <Icon name="edit" size="md" color="white" />
               <ThemedText style={styles.actionText}>Editar</ThemedText>
             </TouchableOpacity>
           )}
-          {onDelete && (
+          {onDelete && canDelete && (
             <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.destructive }]} onPress={handleDelete} activeOpacity={0.7}>
               <Icon name="trash" size="md" color="white" />
               <ThemedText style={styles.actionText}>Excluir</ThemedText>
@@ -110,10 +133,10 @@ export const CutsTableRowSwipe: React.FC<CutsTableRowSwipeProps> = ({
         </Animated.View>
       );
     },
-    [colors, onEdit, onDelete, handleEdit, handleDelete],
+    [colors, onRequest, onEdit, onDelete, handleRequest, handleEdit, handleDelete],
   );
 
-  if (disabled || (!onEdit && !onDelete)) {
+  if (disabled || (!onEdit && !onDelete && !onRequest)) {
     return <View style={styles.container}>{children(isActive)}</View>;
   }
 

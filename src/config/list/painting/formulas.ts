@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PaintFormula } from '@/types'
+import { canEditPaintFormulas } from '@/utils/permissions/entity-permissions'
 
 export const formulasListConfig: ListConfig<PaintFormula> = {
   key: 'painting-formulas',
@@ -260,6 +261,7 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
     create: {
       label: 'Cadastrar Fórmula',
       route: '/pintura/formulas/cadastrar',
+      canCreate: canEditPaintFormulas,
     },
     bulk: [
       {

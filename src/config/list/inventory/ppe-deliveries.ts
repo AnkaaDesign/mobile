@@ -3,6 +3,7 @@ import type { PpeDelivery } from '@/types'
 import { PPE_DELIVERY_STATUS} from '@/constants'
 import { routes } from '@/constants'
 import { routeToMobilePath } from '@/lib/route-mapper'
+import { canEditPpeDeliveries } from '@/utils/permissions/entity-permissions'
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
@@ -246,6 +247,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
     create: {
       label: 'Registrar Entrega',
       route: routeToMobilePath(routes.inventory.ppe.deliveries.create),
+      canCreate: canEditPpeDeliveries,
     },
     bulk: [
       {

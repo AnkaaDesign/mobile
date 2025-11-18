@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { BackupMetadata } from '@/api-client/backup'
+import { canEditUsers } from '@/utils/permissions/entity-permissions'
 
 // Status labels from the actual codebase
 const STATUS_LABELS: Record<string, string> = {
@@ -289,6 +290,7 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
     create: {
       label: 'Novo Backup',
       route: '/servidor/backups/cadastrar',
+      canCreate: canEditUsers,
     },
     bulk: [
       {

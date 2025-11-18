@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { OrderItem } from '@/types'
+import { canEditOrders } from '@/utils/permissions/entity-permissions'
 import { formatCurrency } from '@/utils'
 
 /**
@@ -321,6 +322,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
     create: {
       label: 'Adicionar Item',
       route: '', // Will be set dynamically in page component with orderId
+      canCreate: canEditOrders,
     },
     bulk: [
       {

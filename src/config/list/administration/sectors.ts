@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Sector } from '@/types'
+import { canEditHrEntities } from '@/utils/permissions/entity-permissions'
 import { SECTOR_PRIVILEGES } from '@/constants/enums'
 import { SECTOR_PRIVILEGES_LABELS } from '@/constants/enum-labels'
 
@@ -203,6 +204,7 @@ export const sectorsListConfig: ListConfig<Sector> = {
     create: {
       label: 'Cadastrar Setor',
       route: '/administracao/setores/cadastrar',
+      canCreate: canEditHrEntities,
     },
     bulk: [
       {

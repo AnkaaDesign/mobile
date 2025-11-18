@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
+import { CutRequestModal } from "@/components/production/cuts/form/cut-request-modal";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useCut, useCutMutations } from "@/hooks";
@@ -53,6 +54,7 @@ export default function CuttingPlanDetailsScreen() {
   const { user } = useAuth();
   const { update, delete: deleteAsync } = useCutMutations();
   const [refreshing, setRefreshing] = useState(false);
+  const [requestModalVisible, setRequestModalVisible] = useState(false);
 
   // Get file viewer context
   const fileViewer = useFileViewer();
@@ -62,6 +64,8 @@ export default function CuttingPlanDetailsScreen() {
                   hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) ||
                   hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+  const canRequestCut = hasPrivilege(user, SECTOR_PRIVILEGES.LEADER) ||
+                        hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
   // Fetch cut details with all relations
   const { data: response, isLoading, error, refetch } = useCut(id as string, {
@@ -172,6 +176,22 @@ export default function CuttingPlanDetailsScreen() {
     );
   };
 
+  // Handle request cut
+  const handleRequestCut = () => {
+    if (!canRequestCut) {
+      showToast({ message: "Você não tem permissão para solicitar cortes", type: "error" });
+      return;
+    }
+    setRequestModalVisible(true);
+  };
+
+  // Handle request success
+  const handleRequestSuccess = () => {
+    setRequestModalVisible(false);
+    showToast({ message: "Cortes solicitados com sucesso", type: "success" });
+    refetch();
+  };
+
   // Get status badge variant
   const getStatusBadgeVariant = (status: CUT_STATUS) => {
     return (ENTITY_BADGE_CONFIG.CUT[status] || "default") as any;
@@ -226,6 +246,15 @@ export default function CuttingPlanDetailsScreen() {
               </ThemedText>
             </View>
             <View style={styles.headerActions}>
+              {canRequestCut && (
+                <TouchableOpacity
+                  onPress={handleRequestCut}
+                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.info || "#3b82f6" }])}
+                  activeOpacity={0.7}
+                >
+                  <IconScissors size={18} color="#ffffff" />
+                </TouchableOpacity>
+              )}
               {cut.status === CUT_STATUS.PENDING && canEdit && (
                 <TouchableOpacity
                   onPress={() => handleStatusChange(CUT_STATUS.CUTTING)}
@@ -507,6 +536,14 @@ export default function CuttingPlanDetailsScreen() {
         {/* Bottom spacing for mobile navigation */}
         <View style={{ height: spacing.xxl * 2 }} />
       </View>
+
+      {/* Cut Request Modal */}
+      <CutRequestModal
+        visible={requestModalVisible}
+        onClose={() => setRequestModalVisible(false)}
+        cutItem={cut}
+        onSuccess={handleRequestSuccess}
+      />
     </ScrollView>
   );
 }

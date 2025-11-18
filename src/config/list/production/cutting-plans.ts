@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Cut } from '@/types'
 import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from '@/constants/enums'
+import { canEditCuts } from '@/utils/permissions/entity-permissions'
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
@@ -259,6 +260,7 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
     create: {
       label: 'Novo Plano de Corte',
       route: '/producao/recorte/plano-de-recorte/cadastrar',
+      canCreate: canEditCuts,
     },
     bulk: [
       {

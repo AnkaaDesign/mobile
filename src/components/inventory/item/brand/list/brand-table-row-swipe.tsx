@@ -5,6 +5,8 @@ import type { ItemBrand } from '../../../../../types';
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
+import { useAuth } from "@/contexts/auth-context";
+import { canEditItems, canDeleteItems } from "@/utils/permissions/entity-permissions";
 
 interface CustomSwipeAction {
   key: string;
@@ -48,10 +50,18 @@ function BrandTableRowSwipeComponent({
   const brandId = brand.id;
   const swipeableRef = useRef<Swipeable | null>(null);
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useAuth();
+  const canEdit = canEditItems(user);
+  const canDelete = canDeleteItems(user);
 
   // Prevent rendering issues during theme initialization
   if (!colors) {
     return <>{children}</>;
+  }
+
+  // Return early if no permissions
+  if (!canEdit && !canDelete) {
+    return <View style={style}>{children as React.ReactNode}</View>;
   }
 
   const handleDelete = useCallback(() => {
@@ -89,7 +99,7 @@ function BrandTableRowSwipeComponent({
 
   const rightActions: SwipeAction[] = [];
 
-  if (onEdit) {
+  if (onEdit && canEdit) {
     rightActions.push({
       key: "edit",
       label: "Editar",
@@ -116,7 +126,7 @@ function BrandTableRowSwipeComponent({
     });
   }
 
-  if (onDuplicate) {
+  if (onDuplicate && canEdit) {
     rightActions.push({
       key: "duplicate",
       label: "Duplicar",
@@ -128,7 +138,7 @@ function BrandTableRowSwipeComponent({
     });
   }
 
-  if (onDelete) {
+  if (onDelete && canDelete) {
     rightActions.push({
       key: "delete",
       label: "Excluir",

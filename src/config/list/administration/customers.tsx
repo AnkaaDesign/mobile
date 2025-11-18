@@ -5,6 +5,7 @@ import {
   BRAZILIAN_STATE_NAMES,
   REGISTRATION_STATUS_OPTIONS,
 } from '@/constants'
+import { canEditCustomers } from '@/utils/permissions/entity-permissions'
 import { formatCNPJ, formatCPF, formatBrazilianPhone, getFileUrl } from '@/utils'
 import { extendedColors, badgeColors } from '@/lib/theme/extended-colors'
 import { fontSize, fontWeight } from '@/constants/design-system'
@@ -521,6 +522,7 @@ export const customersListConfig: ListConfig<Customer> = {
     create: {
       label: 'Cadastrar Cliente',
       route: '/administracao/clientes/cadastrar',
+      canCreate: canEditCustomers,
     },
     bulk: [
       {

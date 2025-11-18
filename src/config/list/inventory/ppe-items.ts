@@ -3,6 +3,7 @@ import type { Item } from '@/types'
 import { ITEM_CATEGORY_TYPE} from '@/constants'
 import { routes } from '@/constants'
 import { routeToMobilePath } from '@/lib/route-mapper'
+import { canEditItems } from '@/utils/permissions/entity-permissions'
 
 export const ppeItemsListConfig: ListConfig<Item> = {
   key: 'inventory-ppe-items',
@@ -255,6 +256,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
     create: {
       label: 'Cadastrar EPI',
       route: routeToMobilePath(routes.inventory.ppe.create),
+      canCreate: canEditItems,
     },
     bulk: [
       {

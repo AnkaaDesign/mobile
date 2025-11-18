@@ -35,6 +35,7 @@ import { LayoutForm } from "@/components/production/layout/layout-form";
 import { useAuth } from "@/hooks/useAuth";
 import { getCustomerById } from "@/api-client";
 import type { LayoutCreateFormData } from "@/schemas";
+import type { Customer } from "@/types";
 
 // Enhanced Task Form Schema for Mobile with Cross-field Validation
 const taskFormSchema = z.object({
@@ -160,6 +161,7 @@ type TaskFormData = z.infer<typeof taskFormSchema>;
 interface TaskFormProps {
   mode: "create" | "edit";
   initialData?: Partial<TaskFormData>;
+  initialCustomer?: Customer;
   existingLayouts?: {
     left?: LayoutCreateFormData;
     right?: LayoutCreateFormData;
@@ -178,7 +180,7 @@ const TASK_STATUS_OPTIONS = [
   { value: TASK_STATUS.CANCELLED, label: "Cancelada" },
 ];
 
-export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCancel, isSubmitting }: TaskFormProps) {
+export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, onSubmit, onCancel, isSubmitting }: TaskFormProps) {
   const { colors } = useTheme();
   const { data: user } = useAuth();
   const [sectorSearch, setSectorSearch] = useState("");
@@ -576,6 +578,7 @@ export function TaskForm({ mode, initialData, existingLayouts, onSubmit, onCance
                   <CustomerSelector
                     value={value}
                     onValueChange={onChange}
+                    initialCustomer={initialCustomer}
                     disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector}
                     error={error?.message}
                     required={true}

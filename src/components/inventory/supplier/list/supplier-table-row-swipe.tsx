@@ -5,6 +5,8 @@ import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
+import { useAuth } from "@/contexts/auth-context";
+import { canEditSuppliers, canDeleteSuppliers } from "@/utils/permissions/entity-permissions";
 
 const ACTION_WIDTH = 80;
 
@@ -32,9 +34,17 @@ const SupplierTableRowSwipeComponent = ({ children, supplierId, supplierName, on
   const { activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow } = useSwipeRow();
   const swipeableRef = useRef<Swipeable>(null);
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useAuth();
+  const canEdit = canEditSuppliers(user);
+  const canDelete = canDeleteSuppliers(user);
 
   // Early return if colors are not available yet (during theme initialization)
   if (!colors || !children) {
+    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
+  }
+
+  // Return early if no permissions
+  if (!canEdit && !canDelete) {
     return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
   }
 
@@ -84,7 +94,7 @@ const SupplierTableRowSwipeComponent = ({ children, supplierId, supplierName, on
   // Edit button uses optimal stock green (#15803d from STOCK_LEVEL.OPTIMAL)
   // Delete button uses critical/out-of-stock red (#b91c1c from STOCK_LEVEL.OUT_OF_STOCK)
   const rightActions: SwipeAction[] = [
-    ...(onEdit
+    ...(onEdit && canEdit
       ? [
           {
             key: "edit",
@@ -101,7 +111,7 @@ const SupplierTableRowSwipeComponent = ({ children, supplierId, supplierName, on
       icon: <Icon name={action.icon} size={20} color="white" />,
       closeOnPress: true,
     })),
-    ...(onDelete
+    ...(onDelete && canDelete
       ? [
           {
             key: "delete",

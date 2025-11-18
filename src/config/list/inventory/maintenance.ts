@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Maintenance } from '@/types'
 import { MAINTENANCE_STATUS } from '@/constants/enums'
+import { canEditMaintenance } from '@/utils/permissions/entity-permissions'
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
@@ -227,6 +228,7 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
     create: {
       label: 'Cadastrar Manutenção',
       route: '/estoque/manutencao/cadastrar',
+      canCreate: canEditMaintenance,
     },
     bulk: [
       {

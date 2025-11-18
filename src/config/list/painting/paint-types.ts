@@ -1,5 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PaintType } from '@/types'
+import { canEditPaints } from '@/utils/permissions/entity-permissions'
 
 export const paintTypesListConfig: ListConfig<PaintType> = {
   key: 'painting-paint-types',
@@ -155,6 +156,7 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
     create: {
       label: 'Cadastrar Tipo de Tinta',
       route: '/pintura/tipos-de-tinta/cadastrar',
+      canCreate: canEditPaints,
     },
     bulk: [
       {

@@ -4,6 +4,7 @@ import {
   ORDER_STATUS,
   ORDER_STATUS_LABELS,
 } from '@/constants'
+import { canEditOrders } from '@/utils/permissions/entity-permissions'
 
 export const ordersListConfig: ListConfig<Order> = {
   key: 'inventory-orders',
@@ -306,6 +307,7 @@ export const ordersListConfig: ListConfig<Order> = {
     create: {
       label: 'Cadastrar Pedido',
       route: '/estoque/pedidos/cadastrar',
+      canCreate: canEditOrders,
     },
     bulk: [
       {

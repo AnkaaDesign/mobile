@@ -283,6 +283,7 @@ export interface ListConfig<T extends { id: string }> {
       label: string
       route: string
       icon?: string
+      canCreate?: (user: any) => boolean
     }
     bulk?: BulkAction[]
   }

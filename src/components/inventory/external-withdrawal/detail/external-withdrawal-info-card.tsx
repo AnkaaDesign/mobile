@@ -17,6 +17,9 @@ import {
 import type { ExternalWithdrawal } from "@/types";
 import { EXTERNAL_WITHDRAWAL_STATUS, EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_TYPE_LABELS } from "@/constants";
 import { formatDateTime, formatCurrency } from "@/utils";
+import { FileItem, FileViewMode } from "@/components/file/file-item";
+import { TouchableOpacity, Linking, Alert } from "react-native";
+import { useState } from "react";
 
 interface ExternalWithdrawalInfoCardProps {
   withdrawal: ExternalWithdrawal;
@@ -44,6 +47,7 @@ const getStatusColor = (status: EXTERNAL_WITHDRAWAL_STATUS, colors: any) => {
 
 export function ExternalWithdrawalInfoCard({ withdrawal }: ExternalWithdrawalInfoCardProps) {
   const { colors } = useTheme();
+  const [fileViewMode] = useState<FileViewMode>("list");
 
   const isFullyReturned = withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED;
   const isCharged = withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.CHARGED;
@@ -51,12 +55,34 @@ export function ExternalWithdrawalInfoCard({ withdrawal }: ExternalWithdrawalInf
 
   // Calculate total price if chargeable
   const totalPrice =
-    !withdrawal.willReturn
+    withdrawal.type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE
       ? withdrawal.items?.reduce(
           (sum, item) => sum + item.withdrawedQuantity * (item.price || 0),
           0
         ) || 0
       : 0;
+
+  const handleFilePress = (file: any) => {
+    const apiUrl = (global as { __ANKAA_API_URL__?: string }).__ANKAA_API_URL__ || "http://localhost:3030";
+    const downloadUrl = `${apiUrl}/files/serve/${file.id}`;
+
+    Alert.alert(
+      "Download File",
+      `Deseja fazer download de ${file.filename}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Download",
+          onPress: () => {
+            Linking.openURL(downloadUrl).catch(err => {
+              console.error("Failed to open URL:", err);
+              Alert.alert("Erro", "Não foi possível abrir o arquivo");
+            });
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <Card style={styles.card}>
@@ -116,17 +142,19 @@ export function ExternalWithdrawalInfoCard({ withdrawal }: ExternalWithdrawalInf
               </View>
               <Badge
                 variant={
-                  withdrawal.willReturn
+                  withdrawal.type === EXTERNAL_WITHDRAWAL_TYPE.RETURNABLE
                     ? "default"
-                    : "destructive"
+                    : withdrawal.type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE
+                    ? "destructive"
+                    : "secondary"
                 }
               >
-                {withdrawal.willReturn ? "Retornável" : "Cobrável"}
+                {EXTERNAL_WITHDRAWAL_TYPE_LABELS[withdrawal.type]}
               </Badge>
             </View>
           </View>
 
-          {!withdrawal.willReturn && (
+          {withdrawal.type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && (
             <View style={styles.infoRow}>
               <View style={[styles.infoItem, { backgroundColor: colors.muted + "50" }]}>
                 <View style={styles.infoLeft}>
@@ -180,32 +208,42 @@ export function ExternalWithdrawalInfoCard({ withdrawal }: ExternalWithdrawalInf
 
             {withdrawal.nfe && (
               <View style={styles.infoRow}>
-                <View style={[styles.infoItem, { backgroundColor: colors.muted + "50" }]}>
-                  <View style={styles.infoLeft}>
+                <View style={styles.fileSection}>
+                  <View style={styles.fileSectionHeader}>
                     <IconFileInvoice size={16} color={colors.mutedForeground} />
                     <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
                       Nota Fiscal
                     </ThemedText>
                   </View>
-                  <ThemedText style={[styles.infoValue, { color: colors.primary }]}>
-                    {withdrawal.nfe.filename}
-                  </ThemedText>
+                  <FileItem
+                    file={withdrawal.nfe}
+                    viewMode={fileViewMode}
+                    onPress={handleFilePress}
+                    showFilename={true}
+                    showFileSize={true}
+                    showRelativeTime={false}
+                  />
                 </View>
               </View>
             )}
 
             {withdrawal.receipt && (
               <View style={styles.infoRow}>
-                <View style={[styles.infoItem, { backgroundColor: colors.muted + "50" }]}>
-                  <View style={styles.infoLeft}>
+                <View style={styles.fileSection}>
+                  <View style={styles.fileSectionHeader}>
                     <IconReceipt size={16} color={colors.mutedForeground} />
                     <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
                       Recibo
                     </ThemedText>
                   </View>
-                  <ThemedText style={[styles.infoValue, { color: colors.primary }]}>
-                    {withdrawal.receipt.filename}
-                  </ThemedText>
+                  <FileItem
+                    file={withdrawal.receipt}
+                    viewMode={fileViewMode}
+                    onPress={handleFilePress}
+                    showFilename={true}
+                    showFileSize={true}
+                    showRelativeTime={false}
+                  />
                 </View>
               </View>
             )}
@@ -299,5 +337,15 @@ const styles = StyleSheet.create({
   notesText: {
     fontSize: fontSize.sm,
     flex: 1,
+  },
+  fileSection: {
+    flex: 1,
+    gap: spacing.sm,
+  },
+  fileSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
   },
 });

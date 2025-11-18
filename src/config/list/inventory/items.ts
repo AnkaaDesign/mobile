@@ -10,6 +10,7 @@ import {
   ITEM_CATEGORY_TYPE,
   ITEM_CATEGORY_TYPE_LABELS,
 } from '@/constants'
+import { canEditItems } from '@/utils/permissions/entity-permissions'
 
 export const itemsListConfig: ListConfig<Item> = {
   key: 'inventory-items',
@@ -478,6 +479,7 @@ export const itemsListConfig: ListConfig<Item> = {
     create: {
       label: 'Cadastrar Produto',
       route: '/estoque/produtos/cadastrar',
+      canCreate: canEditItems,
     },
     bulk: [
       {

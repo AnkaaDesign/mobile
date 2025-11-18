@@ -30,6 +30,7 @@ interface CutsTableProps {
   onCutPress?: (cutId: string) => void;
   onCutEdit?: (cutId: string) => void;
   onCutDelete?: (cutId: string) => void;
+  onCutRequest?: (cutId: string) => void;
   onRefresh?: () => Promise<void>;
   onEndReached?: () => void;
   onPrefetch?: () => void;
@@ -158,6 +159,7 @@ export const CutsTable = React.memo<CutsTableProps>(
     onCutPress,
     onCutEdit,
     onCutDelete,
+    onCutRequest,
     onRefresh,
     onEndReached,
     onPrefetch,
@@ -384,7 +386,7 @@ export const CutsTable = React.memo<CutsTableProps>(
         const isSelected = selectedCuts.has(item.id);
         const isEven = index % 2 === 0;
 
-        if (enableSwipeActions && (onCutEdit || onCutDelete)) {
+        if (enableSwipeActions && (onCutEdit || onCutDelete || onCutRequest)) {
           return (
             <CutsTableRowSwipe
               key={item.id}
@@ -392,6 +394,7 @@ export const CutsTable = React.memo<CutsTableProps>(
               cutName={(item as any).file?.filename || "Corte"}
               onEdit={onCutEdit}
               onDelete={onCutDelete}
+              onRequest={onCutRequest}
               disabled={showSelection}
             >
               {(_isActive) => (
@@ -494,6 +497,7 @@ export const CutsTable = React.memo<CutsTableProps>(
         enableSwipeActions,
         onCutEdit,
         onCutDelete,
+        onCutRequest,
         isDark,
       ],
     );

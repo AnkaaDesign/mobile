@@ -178,6 +178,24 @@ export function checkItemBorrowRestrictions(item: Item | null, user: User | null
     return null; // Basic validation handled elsewhere
   }
 
+  // Check if item is a TOOL (only tools can be borrowed)
+  if (item.category?.type !== ITEM_CATEGORY_TYPE.TOOL) {
+    return {
+      field: "item",
+      message: "Apenas ferramentas podem ser emprestadas",
+      type: "business",
+    };
+  }
+
+  // Check if item is active
+  if (!item.isActive) {
+    return {
+      field: "item",
+      message: "Item inativo não pode ser emprestado",
+      type: "business",
+    };
+  }
+
   // Check if item is a PPE and user has PPE configuration
   if (item.category?.type === ITEM_CATEGORY_TYPE.PPE) {
     // Check if user has PPE size configured if required
@@ -190,25 +208,64 @@ export function checkItemBorrowRestrictions(item: Item | null, user: User | null
     }
   }
 
-  // Check if item is restricted to certain sectors
-  // This could be extended based on business rules
-
   return null;
 }
 
 /**
  * Validate return date if provided
  */
-export function validateReturnDate(returnedAt: Date | null | undefined): ValidationError | null {
+export function validateReturnDate(returnedAt: Date | null | undefined, borrowDate?: Date): ValidationError | null {
   if (!returnedAt) {
     return null; // Return date is optional
   }
 
   const now = new Date();
-  if (returnedAt < now) {
+
+  // Return date cannot be in the future
+  if (returnedAt > now) {
     return {
       field: "returnedAt",
-      message: "Data de devolução não pode ser no passado",
+      message: "Data de devolução não pode ser no futuro",
+      type: "data",
+    };
+  }
+
+  // Return date cannot be before borrow date
+  if (borrowDate && returnedAt < borrowDate) {
+    return {
+      field: "returnedAt",
+      message: "Data de devolução não pode ser anterior à data do empréstimo",
+      type: "data",
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Validate expected return date if provided
+ */
+export function validateExpectedReturnDate(expectedReturnDate: Date | null | undefined, borrowDate?: Date): ValidationError | null {
+  if (!expectedReturnDate) {
+    return null; // Expected return date is optional
+  }
+
+  const now = new Date();
+
+  // Expected return date should be in the future
+  if (expectedReturnDate < now) {
+    return {
+      field: "expectedReturnDate",
+      message: "Data esperada de devolução deve ser no futuro",
+      type: "data",
+    };
+  }
+
+  // Expected return date cannot be before borrow date
+  if (borrowDate && expectedReturnDate < borrowDate) {
+    return {
+      field: "expectedReturnDate",
+      message: "Data esperada não pode ser anterior à data do empréstimo",
       type: "data",
     };
   }
@@ -218,10 +275,10 @@ export function validateReturnDate(returnedAt: Date | null | undefined): Validat
   const maxReturnDate = new Date();
   maxReturnDate.setDate(maxReturnDate.getDate() + maxBorrowDays);
 
-  if (returnedAt > maxReturnDate) {
+  if (expectedReturnDate > maxReturnDate) {
     return {
-      field: "returnedAt",
-      message: `Data de devolução não pode exceder ${maxBorrowDays} dias`,
+      field: "expectedReturnDate",
+      message: `Data esperada não pode exceder ${maxBorrowDays} dias`,
       type: "business",
     };
   }
@@ -238,12 +295,13 @@ export function validateBorrowRequest(
     user: User | null;
     quantity: number;
     returnedAt?: Date | null;
+    expectedReturnDate?: Date | null;
   },
   context: {
     userActiveBorrows: Borrow[];
     currentUser: User | null; // The user making the request (not the borrower)
   },
-  config: BorrowValidationConfig = DEFAULT_CONFIG,
+  config: BorrowValidationConfig = DEFAULT_CONFIG
 ): ValidationResult {
   const errors: ValidationError[] = [];
 
@@ -294,6 +352,12 @@ export function validateBorrowRequest(
   const returnDateError = validateReturnDate(data.returnedAt);
   if (returnDateError) {
     errors.push(returnDateError);
+  }
+
+  // Validate expected return date
+  const expectedReturnDateError = validateExpectedReturnDate(data.expectedReturnDate);
+  if (expectedReturnDateError) {
+    errors.push(expectedReturnDateError);
   }
 
   return {
@@ -394,9 +458,43 @@ export function getBorrowStatusMessage(borrow: Borrow): string {
     return `Devolvido em ${new Date(borrow.returnedAt!).toLocaleDateString("pt-BR")}`;
   }
 
-  if (borrow.returnedAt && new Date(borrow.returnedAt) < new Date()) {
+  if (borrow.status === BORROW_STATUS.LOST) {
+    return "Item perdido";
+  }
+
+  if (borrow.expectedReturnDate && new Date(borrow.expectedReturnDate) < new Date()) {
     return "Atrasado para devolução";
   }
 
   return "Ativo";
+}
+
+/**
+ * Validate quantity returned
+ */
+export function validateQuantityReturned(
+  quantityReturned: number | null | undefined,
+  quantityBorrowed: number
+): ValidationError | null {
+  if (quantityReturned === null || quantityReturned === undefined) {
+    return null; // Quantity returned is optional
+  }
+
+  if (quantityReturned < 0) {
+    return {
+      field: "quantityReturned",
+      message: "Quantidade devolvida não pode ser negativa",
+      type: "data",
+    };
+  }
+
+  if (quantityReturned > quantityBorrowed) {
+    return {
+      field: "quantityReturned",
+      message: `Quantidade devolvida (${quantityReturned}) não pode exceder a quantidade emprestada (${quantityBorrowed})`,
+      type: "data",
+    };
+  }
+
+  return null;
 }
