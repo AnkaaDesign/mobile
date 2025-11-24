@@ -1,24 +1,19 @@
 
-import { View, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
-import { useForm, Controller, FormProvider } from "react-hook-form";
+import { ScrollView, StyleSheet } from "react-native";
+import { useForm, Controller } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ThemedText } from "@/components/ui/themed-text";
-import { IconLoader } from "@tabler/icons-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { itemCategoryCreateSchema, itemCategoryUpdateSchema,} from '../../../../../schemas';
-import { ITEM_CATEGORY_TYPE } from "@/constants";
+import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
+import { spacing } from "@/constants/design-system";
+import { formSpacing } from "@/constants/form-styles";
 import { useItems } from "@/hooks";
 import { Combobox } from "@/components/ui/combobox";
-import { Label } from "@/components/ui/label";
-
-// Import form components
-import { NameInput } from "./name-input";
-import { TypeSelector } from "./type-selector";
+import { Input } from "@/components/ui/input";
+import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
+import { SimpleFormActionBar } from "@/components/forms";
 
 interface ItemCategoryFormProps<TMode extends "create" | "update"> {
   onSubmit: (data: TMode extends "create" ? ItemCategoryCreateFormData : ItemCategoryUpdateFormData) => Promise<any>;
@@ -67,105 +62,118 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
       label: `${item.name}${item.category ? ` (${item.category.name})` : ""}`,
     })) || [];
 
+  const typeOptions = Object.values(ITEM_CATEGORY_TYPE).map((type) => ({
+    label: ITEM_CATEGORY_TYPE_LABELS[type],
+    value: type,
+  }));
+
+  const watchedType = form.watch("type");
+
   return (
-    <FormProvider {...form}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
-        <ThemedScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-          <View style={styles.content}>
-            {/* Basic Information */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Informações da Categoria</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.fieldGroup}>
-                  <NameInput disabled={isSubmitting} required={isRequired} />
-                  <TypeSelector disabled={isSubmitting} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <FormCard title="Informações da Categoria">
+          <FormFieldGroup
+            label="Nome da Categoria"
+            required={isRequired}
+            error={form.formState.errors.name?.message}
+          >
+            <Controller
+              control={form.control}
+              name="name"
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Ex: Ferramentas, EPIs, etc."
+                  editable={!isSubmitting}
+                  autoCapitalize="words"
+                  error={!!error}
+                />
+              )}
+            />
+          </FormFieldGroup>
 
-                  <View>
-                    <Label style={styles.label}>Produtos Associados</Label>
-                    <Controller
-                      control={form.control}
-                      name={"itemIds" as any}
-                      render={({ field }) => (
-                        <Combobox mode="multiple"
-                          options={itemOptions}
-                          selectedValues={Array.isArray(field.value) ? field.value : []}
-                          onValueChange={field.onChange}
-                          onCreate={() => {}}
-                          onSearchChange={() => {}}
-                          onEndReached={() => {}}
-                          placeholder="Selecione produtos para associar"
-                          selectedText="produtos selecionados"
-                          searchPlaceholder="Pesquisar produtos..."
-                          disabled={isSubmitting || isLoadingItems}
-                        />
-                      )}
-                    />
-                  </View>
-                </View>
-              </CardContent>
-            </Card>
+          <FormFieldGroup
+            label="Tipo da Categoria"
+            helper={
+              watchedType === ITEM_CATEGORY_TYPE.PPE
+                ? "Categoria para Equipamentos de Proteção Individual"
+                : watchedType === ITEM_CATEGORY_TYPE.TOOL
+                  ? "Categoria para ferramentas e equipamentos"
+                  : "Categoria para produtos gerais"
+            }
+            error={form.formState.errors.type?.message}
+          >
+            <Controller
+              control={form.control}
+              name="type"
+              render={({ field: { onChange, value }, fieldState: { error } }) => (
+                <Combobox
+                  placeholder="Selecione o tipo da categoria"
+                  options={typeOptions}
+                  value={value}
+                  onValueChange={onChange}
+                  disabled={isSubmitting}
+                  searchable={false}
+                  clearable={false}
+                  error={error?.message}
+                />
+              )}
+            />
+          </FormFieldGroup>
 
-            {/* Actions */}
-            <View style={styles.actionsContainer}>
-              <View style={styles.actions}>
-                <Button variant="outline" onPress={onCancel} disabled={isSubmitting} style={styles.cancelButton}>
-                  Cancelar
-                </Button>
-                <Button onPress={form.handleSubmit(handleSubmit as any)} disabled={isSubmitting} style={styles.submitButton}>
-                  {isSubmitting ? (
-                    <>
-                      <IconLoader size={20} color={colors.primaryForeground} />
-                      <ThemedText style={{ color: colors.primaryForeground }}>Salvando...</ThemedText>
-                    </>
-                  ) : (
-                    <ThemedText style={{ color: colors.primaryForeground }}>{mode === "create" ? "Criar Categoria" : "Atualizar Categoria"}</ThemedText>
-                  )}
-                </Button>
-              </View>
-            </View>
-          </View>
-        </ThemedScrollView>
-      </KeyboardAvoidingView>
-    </FormProvider>
+          <FormFieldGroup label="Produtos Associados">
+            <Controller
+              control={form.control}
+              name={"itemIds" as any}
+              render={({ field }) => (
+                <Combobox
+                  mode="multiple"
+                  options={itemOptions}
+                  selectedValues={Array.isArray(field.value) ? field.value : []}
+                  onValueChange={field.onChange}
+                  onCreate={() => {}}
+                  onSearchChange={() => {}}
+                  onEndReached={() => {}}
+                  placeholder="Selecione produtos para associar"
+                  selectedText="produtos selecionados"
+                  searchPlaceholder="Pesquisar produtos..."
+                  disabled={isSubmitting || isLoadingItems}
+                />
+              )}
+            />
+          </FormFieldGroup>
+        </FormCard>
+      </ScrollView>
+
+      <SimpleFormActionBar
+        onCancel={onCancel}
+        onSubmit={form.handleSubmit(handleSubmit as any)}
+        isSubmitting={isSubmitting}
+        canSubmit={form.formState.isValid}
+        submitLabel={mode === "create" ? "Criar" : "Salvar"}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
   },
   scrollView: {
     flex: 1,
   },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.lg,
-  },
-  card: {
-    marginBottom: spacing.lg,
-  },
-  fieldGroup: {
-    gap: spacing.lg,
-  },
-  actionsContainer: {
-    marginTop: spacing.xs,
-  },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: spacing.md,
-  },
-  cancelButton: {
-    minWidth: 100,
-  },
-  submitButton: {
-    minWidth: 120,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-    marginBottom: spacing.xs,
+  scrollContent: {
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: formSpacing.containerPaddingVertical,
+    paddingBottom: 0, // No spacing - action bar has its own margin
   },
 });

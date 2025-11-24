@@ -17,7 +17,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 
 export default function CreateObservationScreen() {
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const params = useLocalSearchParams<{ taskId?: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createAsync } = useObservationMutations();
@@ -215,7 +215,7 @@ export default function CreateObservationScreen() {
       </KeyboardAvoidingView>
 
       {/* Action Buttons */}
-      <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.card }}>
+      <SafeAreaView edges={[]} style={{ backgroundColor: colors.card }}>
         <View
           style={[
             styles.actionBar,

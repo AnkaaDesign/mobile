@@ -1,24 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Warning } from '@/types'
-import { WARNING_SEVERITY, WARNING_CATEGORY } from '@/constants/enums'
-
-const SEVERITY_LABELS: Record<string, string> = {
-  VERBAL: 'Verbal',
-  WRITTEN: 'Escrita',
-  SUSPENSION: 'Suspensão',
-  FINAL_WARNING: 'Advertência Final',
-}
-
-const CATEGORY_LABELS: Record<string, string> = {
-  SAFETY: 'Segurança',
-  MISCONDUCT: 'Má Conduta',
-  INSUBORDINATION: 'Insubordinação',
-  POLICY_VIOLATION: 'Violação de Política',
-  ATTENDANCE: 'Assiduidade',
-  PERFORMANCE: 'Desempenho',
-  BEHAVIOR: 'Comportamento',
-  OTHER: 'Outro',
-}
+import { WARNING_SEVERITY, WARNING_CATEGORY, WARNING_SEVERITY_LABELS, WARNING_CATEGORY_LABELS } from '@/constants/enum-labels'
 
 export const warningsListConfig: ListConfig<Warning> = {
   key: 'hr-warnings',
@@ -38,21 +20,12 @@ export const warningsListConfig: ListConfig<Warning> = {
     columns: [
       {
         key: 'collaborator.name',
-        label: 'COLABORADOR',
+        label: 'FUNCIONÁRIO',
         sortable: true,
         width: 2.0,
         align: 'left',
-        render: (warning) => warning.collaborator?.name || '-',
+        render: (warning) => warning.collaborator?.name || '—',
         style: { fontWeight: '500' },
-      },
-      {
-        key: 'severity',
-        label: 'SEVERIDADE',
-        sortable: true,
-        width: 1.5,
-        align: 'center',
-        render: (warning) => warning.severity,
-        format: 'badge',
       },
       {
         key: 'category',
@@ -60,51 +33,53 @@ export const warningsListConfig: ListConfig<Warning> = {
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (warning) => warning.category ? CATEGORY_LABELS[warning.category] : '-',
+        render: (warning) => warning.category ? WARNING_CATEGORY_LABELS[warning.category] : '—',
         format: 'badge',
+        badgeVariant: 'primary',
       },
       {
-        key: 'description',
-        label: 'DESCRIÇÃO',
-        sortable: false,
-        width: 2.5,
+        key: 'severity',
+        label: 'SEVERIDADE',
+        sortable: true,
+        width: 1.5,
         align: 'left',
-        render: (warning) => warning.description || '-',
+        render: (warning) => warning.severity ? WARNING_SEVERITY_LABELS[warning.severity] : '—',
+        format: 'badge',
+        badgeVariant: 'secondary',
       },
       {
         key: 'followUpDate',
-        label: 'ACOMPANHAMENTO',
+        label: 'DATA',
         sortable: true,
-        width: 1.3,
+        width: 1.2,
         align: 'left',
         render: (warning) => warning.followUpDate,
         format: 'date',
       },
       {
+        key: 'attachments',
+        label: 'ANEXO',
+        sortable: false,
+        width: 0.8,
+        align: 'center',
+        render: (warning) => warning.attachments && warning.attachments.length > 0 ? '📎' : '—',
+      },
+      {
         key: 'createdAt',
-        label: 'DATA',
+        label: 'CRIADO EM',
         sortable: true,
         width: 1.2,
         align: 'left',
         render: (warning) => warning.createdAt,
         format: 'date',
       },
-      {
-        key: 'attachmentsCount',
-        label: 'ANEXOS',
-        sortable: false,
-        width: 0.8,
-        align: 'center',
-        render: (warning) => warning.attachments?.length || 0,
-        format: 'badge',
-      },
     ],
-    defaultVisible: ['collaborator.name', 'severity', 'createdAt'],
-    rowHeight: 60,
+    defaultVisible: ['collaborator.name', 'category', 'followUpDate'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (warning, router) => {
@@ -137,85 +112,64 @@ export const warningsListConfig: ListConfig<Warning> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'severity',
-        label: 'Severidade',
-        icon: 'alert-triangle',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'severities',
-            label: 'Severidade',
-            type: 'select',
-            multiple: true,
-            options: Object.values(WARNING_SEVERITY).map((severity) => ({
-              label: SEVERITY_LABELS[severity],
-              value: severity,
-            })),
-            placeholder: 'Selecione as severidades',
-          },
-        ],
+        type: 'select',
+        multiple: false,
+        options: Object.entries(WARNING_SEVERITY_LABELS).map(([key, label]) => ({
+          label,
+          value: key,
+        })),
+        placeholder: 'Severidade',
       },
       {
         key: 'category',
-        label: 'Categoria',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'categories',
-            label: 'Categoria',
-            type: 'select',
-            multiple: true,
-            options: Object.values(WARNING_CATEGORY).map((category) => ({
-              label: CATEGORY_LABELS[category],
-              value: category,
-            })),
-            placeholder: 'Selecione as categorias',
-          },
-        ],
+        type: 'select',
+        multiple: false,
+        options: Object.entries(WARNING_CATEGORY_LABELS).map(([key, label]) => ({
+          label,
+          value: key,
+        })),
+        placeholder: 'Categoria',
       },
       {
-        key: 'collaborator',
-        label: 'Colaborador',
-        icon: 'user',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'collaboratorIds',
-            label: 'Colaboradores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os colaboradores',
-          },
+        key: 'isActive',
+        type: 'select',
+        multiple: false,
+        options: [
+          { label: 'Ativas', value: 'active' },
+          { label: 'Resolvidas', value: 'resolved' },
         ],
+        placeholder: 'Status',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data da Advertência',
-            type: 'date-range',
-          },
-          {
-            key: 'followUpDate',
-            label: 'Data de Acompanhamento',
-            type: 'date-range',
-          },
-        ],
+        key: 'collaboratorIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Colaboradores',
+      },
+      {
+        key: 'supervisorIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Supervisores',
+      },
+      {
+        key: 'witnessIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Testemunhas',
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: { from: 'Criação de', to: 'Criação até' },
+      },
+      {
+        key: 'followUpDate',
+        type: 'date-range',
+        placeholder: { from: 'Acompanhamento de', to: 'Acompanhamento até' },
       },
     ],
   },
@@ -230,12 +184,12 @@ export const warningsListConfig: ListConfig<Warning> = {
     filename: 'advertencias',
     formats: ['csv', 'json', 'pdf'],
     columns: [
-      { key: 'collaborator', label: 'Colaborador', path: 'collaborator.name' },
-      { key: 'severity', label: 'Severidade', path: 'severity', format: (value) => SEVERITY_LABELS[value] || value },
-      { key: 'category', label: 'Categoria', path: 'category', format: (value) => value ? CATEGORY_LABELS[value] : '-' },
-      { key: 'description', label: 'Descrição', path: 'description' },
-      { key: 'followUpDate', label: 'Acompanhamento', path: 'followUpDate', format: 'date' },
-      { key: 'createdAt', label: 'Data', path: 'createdAt', format: 'date' },
+      { key: 'collaborator', label: 'Funcionário', path: 'collaborator.name' },
+      { key: 'category', label: 'Categoria', path: 'category', format: (value) => value ? WARNING_CATEGORY_LABELS[value] : '—' },
+      { key: 'severity', label: 'Severidade', path: 'severity', format: (value) => WARNING_SEVERITY_LABELS[value] || value },
+      { key: 'followUpDate', label: 'Data', path: 'followUpDate', format: 'date' },
+      { key: 'attachments', label: 'Anexo', path: 'attachments', format: (value) => value && value.length > 0 ? 'Sim' : 'Não' },
+      { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
     ],
   },
 

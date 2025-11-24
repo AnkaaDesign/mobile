@@ -81,7 +81,7 @@ export const itemsListConfig: ListConfig<Item> = {
         sortable: true,
         width: 0.9,
         align: 'left',
-        render: (item) => item.quantity || 0,
+        render: (item) => String(item.quantity || 0),
         component: 'quantity-with-status',
       },
       {
@@ -190,7 +190,7 @@ export const itemsListConfig: ListConfig<Item> = {
         sortable: true,
         width: 1.4,
         align: 'center',
-        render: (item) => item.shouldAssignToUser,
+        render: (item) => item.shouldAssignToUser || '-',
         format: 'boolean',
       },
       {
@@ -216,7 +216,7 @@ export const itemsListConfig: ListConfig<Item> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (item) => (item as any)._count?.activities || 0,
+        render: (item) => String((item as any)._count?.activities || 0),
         format: 'badge',
       },
       {
@@ -225,16 +225,16 @@ export const itemsListConfig: ListConfig<Item> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (item) => item.createdAt,
+        render: (item) => item.createdAt || '-',
         format: 'date',
       },
     ],
     defaultVisible: ['uniCode', 'name', 'quantity'],
-    rowHeight: 60,
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (item, router) => {
@@ -267,187 +267,119 @@ export const itemsListConfig: ListConfig<Item> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'status',
-        label: 'Status',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'isActive',
-            label: 'Produtos Ativos',
-            description: 'Incluir apenas produtos ativos',
-            type: 'toggle',
-            defaultValue: true,
-          },
-          {
-            key: 'shouldAssignToUser',
-            label: 'Atribuir ao Usuário',
-            description: 'Atribuir produtos ao usuário',
-            type: 'toggle',
-          },
-        ],
+        key: 'isActive',
+        description: 'Incluir apenas produtos ativos',
+        type: 'toggle',
+        defaultValue: true,
+        placeholder: 'Produtos Ativos',
       },
       {
-        key: 'stock-levels',
-        label: 'Nível de Estoque',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'stockLevels',
-            type: 'select',
-            multiple: true,
-            options: Object.values(STOCK_LEVEL).map((level) => ({
-              label: STOCK_LEVEL_LABELS[level as keyof typeof STOCK_LEVEL_LABELS] || level,
-              value: level,
-            })),
-            placeholder: 'Selecione os níveis de estoque',
-          },
-        ],
+        key: 'shouldAssignToUser',
+        description: 'Atribuir produtos ao usuário',
+        type: 'toggle',
+        placeholder: 'Atribuir ao Usuário',
       },
       {
-        key: 'entities',
-        label: 'Marcas, Categorias e Fornecedores',
-        icon: 'tags',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'brandIds',
-            label: 'Marcas',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione as marcas',
-          },
-          {
-            key: 'categoryIds',
-            label: 'Categorias',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione as categorias',
-          },
-          {
-            key: 'supplierIds',
-            label: 'Fornecedores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os fornecedores',
-          },
-        ],
+        key: 'stockLevels',
+        type: 'select',
+        multiple: true,
+        options: Object.values(STOCK_LEVEL).map((level) => ({
+          label: STOCK_LEVEL_LABELS[level as keyof typeof STOCK_LEVEL_LABELS] || level,
+          value: level,
+        })),
+        placeholder: 'Nível de Estoque',
       },
       {
-        key: 'measures',
-        label: 'Unidades e Tipos de Medida',
-        icon: 'ruler',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'measureUnits',
-            label: 'Unidades de Medida',
-            type: 'select',
-            multiple: true,
-            options: Object.values(MEASURE_UNIT).map((unit) => ({
-              label: MEASURE_UNIT_LABELS[unit] || unit,
-              value: unit,
-            })),
-            placeholder: 'Selecione as unidades de medida',
-          },
-          {
-            key: 'measureTypes',
-            label: 'Tipos de Medida',
-            type: 'select',
-            multiple: true,
-            options: Object.values(MEASURE_TYPE).map((type) => ({
-              label: MEASURE_TYPE_LABELS[type] || type,
-              value: type,
-            })),
-            placeholder: 'Selecione os tipos de medida',
-          },
-        ],
+        key: 'nearReorderPoint',
+        description: 'Itens próximos ao ponto de reposição',
+        type: 'toggle',
+        placeholder: 'Próximo ao Ponto de Reposição',
       },
       {
-        key: 'ranges',
-        label: 'Faixas de Valores',
-        icon: 'coins',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'quantityRange',
-            label: 'Quantidade em Estoque',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-          {
-            key: 'totalPriceRange',
-            label: 'Preço Total (R$)',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-          {
-            key: 'icmsRange',
-            label: 'ICMS (%)',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-          {
-            key: 'ipiRange',
-            label: 'IPI (%)',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-          {
-            key: 'monthlyConsumptionRange',
-            label: 'Consumo Mensal',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-          {
-            key: 'measureValueRange',
-            label: 'Valor de Medida',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-        ],
+        key: 'noReorderPoint',
+        description: 'Itens sem ponto de reposição definido',
+        type: 'toggle',
+        placeholder: 'Sem Ponto de Reposição',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Criação',
-            type: 'date-range',
-          },
-          {
-            key: 'updatedAt',
-            label: 'Data de Atualização',
-            type: 'date-range',
-          },
-        ],
+        key: 'brandIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Marcas',
+      },
+      {
+        key: 'categoryIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Categorias',
+      },
+      {
+        key: 'supplierIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Fornecedores',
+      },
+      {
+        key: 'measureUnits',
+        type: 'select',
+        multiple: true,
+        options: Object.values(MEASURE_UNIT).map((unit) => ({
+          label: MEASURE_UNIT_LABELS[unit] || unit,
+          value: unit,
+        })),
+        placeholder: 'Unidades de Medida',
+      },
+      {
+        key: 'measureTypes',
+        type: 'select',
+        multiple: true,
+        options: Object.values(MEASURE_TYPE).map((type) => ({
+          label: MEASURE_TYPE_LABELS[type] || type,
+          value: type,
+        })),
+        placeholder: 'Tipos de Medida',
+      },
+      {
+        key: 'quantityRange',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
+      },
+      {
+        key: 'totalPriceRange',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
+      },
+      {
+        key: 'icmsRange',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
+      },
+      {
+        key: 'ipiRange',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
+      },
+      {
+        key: 'monthlyConsumptionRange',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
+      },
+      {
+        key: 'measureValueRange',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Criação',
+      },
+      {
+        key: 'updatedAt',
+        type: 'date-range',
+        placeholder: 'Data de Atualização',
       },
     ],
   },

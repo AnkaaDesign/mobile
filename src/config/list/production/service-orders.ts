@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { ServiceOrder } from '@/types'
-import { canEditTasks } from '@/utils/permissions/entity-permissions'
+import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
 import {
   SERVICE_ORDER_STATUS,
   SERVICE_ORDER_STATUS_LABELS,
@@ -95,12 +95,12 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['description', 'status', 'task.customer.fantasyName', 'service.name'],
-    rowHeight: 60,
+    defaultVisible: ['description', 'status', 'task.customer.fantasyName'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (order, router) => {
@@ -112,6 +112,7 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditTasks,
         onPress: (order, router) => {
           router.push(`/producao/ordens-de-servico/editar/${order.id}`)
         },
@@ -121,6 +122,7 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteTasks,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (order) => `Deseja excluir a ordem de serviço "${order.description || order.id}"?`,
@@ -133,71 +135,37 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'list-checks',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(SERVICE_ORDER_STATUS).map((status) => ({
-              label: SERVICE_ORDER_STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(SERVICE_ORDER_STATUS).map((status) => ({
+          label: SERVICE_ORDER_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status',
       },
       {
-        key: 'entities',
-        label: 'Tarefas e Clientes',
-        icon: 'briefcase',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'taskIds',
-            label: 'Tarefas',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione as tarefas',
-          },
-        ],
+        key: 'taskIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Tarefas',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'startedAt',
-            label: 'Data de Início',
-            type: 'date-range',
-          },
-          {
-            key: 'finishedAt',
-            label: 'Data de Conclusão',
-            type: 'date-range',
-          },
-          {
-            key: 'createdAt',
-            label: 'Data de Criação',
-            type: 'date-range',
-          },
-        ],
+        key: 'startedAt',
+        type: 'date-range',
+        placeholder: 'Data de Início',
+      },
+      {
+        key: 'finishedAt',
+        type: 'date-range',
+        placeholder: 'Data de Conclusão',
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Criação',
       },
     ],
   },

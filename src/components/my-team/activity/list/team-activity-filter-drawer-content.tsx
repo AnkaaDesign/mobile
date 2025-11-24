@@ -4,7 +4,7 @@ import { IconFilter, IconX, IconPackage, IconClock, IconTag } from '@tabler/icon
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { ACTIVITY_OPERATION, ACTIVITY_OPERATION} from '@/constants';
+import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '@/constants';
 
 interface TeamActivityFilterDrawerContentProps {
   filters: {

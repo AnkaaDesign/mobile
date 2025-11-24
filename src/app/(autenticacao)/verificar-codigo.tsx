@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert } from "react-native";
+import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 
 import { ThemedView } from "@/components/ui/themed-view";
@@ -49,15 +49,9 @@ export default function VerificationCodeScreen() {
         code: code,
       });
 
-      Alert.alert("Verificação bem-sucedida!", "Sua conta foi verificada com sucesso.", [
-        {
-          text: "OK",
-          onPress: () => {
-            const destination = Array.isArray(returnTo) ? returnTo[0] : returnTo;
-            router.replace((destination || '/(autenticacao)/entrar') as any);
-          },
-        },
-      ]);
+      console.log("Verificação bem-sucedida! Sua conta foi verificada com sucesso.");
+      const destination = Array.isArray(returnTo) ? returnTo[0] : returnTo;
+      router.replace((destination || '/(autenticacao)/entrar') as any);
     } catch (error) {
       console.error("Verification failed:", error);
 
@@ -76,13 +70,12 @@ export default function VerificationCodeScreen() {
       }
 
       setError(errorMessage);
-      Alert.alert("Erro na verificação", errorMessage);
     }
   };
 
   const handleResendCode = async () => {
     if (!cleanContactValue) {
-      Alert.alert("Erro", "Informação de contato não encontrada");
+      console.error("Erro: Informação de contato não encontrada");
       return;
     }
 
@@ -93,7 +86,7 @@ export default function VerificationCodeScreen() {
       await resendVerification.mutateAsync({ contact: cleanContactValue });
 
       const contactType = cleanContactValue.includes("@") ? "email" : "SMS";
-      Alert.alert("Código reenviado!", `Um novo código foi enviado por ${contactType}.`, [{ text: "OK" }]);
+      console.log(`Código reenviado! Um novo código foi enviado por ${contactType}.`);
     } catch (error) {
       console.error("Resend failed:", error);
 
@@ -106,8 +99,6 @@ export default function VerificationCodeScreen() {
           errorMessage = error.message;
         }
       }
-
-      Alert.alert("Erro ao reenviar código", errorMessage);
     }
   };
 

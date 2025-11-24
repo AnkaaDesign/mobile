@@ -35,7 +35,7 @@ export default function EditAutomaticOrderScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormReady, setIsFormReady] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);

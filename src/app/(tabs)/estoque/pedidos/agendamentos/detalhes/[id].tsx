@@ -44,7 +44,7 @@ export default function OrderScheduleDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 

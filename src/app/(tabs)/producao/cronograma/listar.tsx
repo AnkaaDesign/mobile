@@ -1,6 +1,6 @@
-import { Layout } from '@/components/list/Layout'
+import { TaskScheduleLayout } from '@/components/production/task/schedule'
 import { tasksListConfig } from '@/config/list/production/tasks'
 
-export default function TaskListScreen() {
-  return <Layout config={tasksListConfig} />
+export default function TaskScheduleScreen() {
+  return <TaskScheduleLayout config={tasksListConfig} />
 }

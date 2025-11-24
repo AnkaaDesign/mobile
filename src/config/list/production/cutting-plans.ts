@@ -1,7 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Cut } from '@/types'
 import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from '@/constants/enums'
-import { canEditCuts } from '@/utils/permissions/entity-permissions'
+import { canEditCuts, canDeleteCuts } from '@/utils/permissions/entity-permissions'
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
@@ -114,12 +114,12 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['status', 'type', 'task'],
-    rowHeight: 60,
+    defaultVisible: ['task', 'status', 'type'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (cut, router) => {
@@ -131,6 +131,7 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditCuts,
         onPress: (cut, router) => {
           router.push(`/producao/recorte/editar/${cut.id}`)
         },
@@ -140,6 +141,7 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteCuts,
         confirm: {
           title: 'Confirmar Exclusão',
           message: () => `Deseja excluir este plano de corte?`,
@@ -152,85 +154,42 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'scissors',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(CUT_STATUS).map((status) => ({
-              label: STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(CUT_STATUS).map((status) => ({
+          label: STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status',
       },
       {
         key: 'type',
-        label: 'Tipo',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'type',
-            label: 'Tipo de Corte',
-            type: 'select',
-            multiple: true,
-            options: Object.values(CUT_TYPE).map((type) => ({
-              label: TYPE_LABELS[type],
-              value: type,
-            })),
-            placeholder: 'Selecione os tipos',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(CUT_TYPE).map((type) => ({
+          label: TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Tipo de Corte',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'taskIds',
-            label: 'Tarefas',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione as tarefas',
-          },
-        ],
+        key: 'taskIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Tarefas',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Criação',
-            type: 'date-range',
-          },
-          {
-            key: 'updatedAt',
-            label: 'Data de Atualização',
-            type: 'date-range',
-          },
-        ],
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Criação',
+      },
+      {
+        key: 'updatedAt',
+        type: 'date-range',
+        placeholder: 'Data de Atualização',
       },
     ],
   },

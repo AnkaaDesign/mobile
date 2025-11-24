@@ -47,7 +47,7 @@ export const Search = memo(function Search({
       style={[
         styles.container,
         {
-          backgroundColor: colors.muted,
+          backgroundColor: colors.card,
           borderColor: colors.border,
         },
       ]}

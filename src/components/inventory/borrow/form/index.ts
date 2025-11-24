@@ -2,6 +2,7 @@
 export { BorrowSimpleForm } from "./borrow-simple-form";
 export { BorrowEditForm } from "./borrow-edit-form";
 export { BorrowBatchCreateForm } from "./borrow-batch-create-form";
+export { BorrowBatchCreateFormV2 } from "./borrow-batch-create-form-v2";
 export { BorrowReturnForm } from "./borrow-return-form";
 
 // Form Components

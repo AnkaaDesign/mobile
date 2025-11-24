@@ -1,6 +1,5 @@
 import { useRouter } from "expo-router";
 import { showToast } from "@/components/ui/toast";
-import { ThemedView } from "@/components/ui/themed-view";
 import { ItemForm } from "@/components/inventory/item/form/item-form";
 import { useItemMutations } from "@/hooks";
 import { itemCreateSchema} from '../../../../schemas';
@@ -31,9 +30,16 @@ export default function ItemCreateScreen() {
     }
   };
 
+  const handleCancel = () => {
+    router.back();
+  };
+
   return (
-    <ThemedView className="flex-1">
-      <ItemForm mode="create" onSubmit={handleSubmit} isSubmitting={createMutation.isPending} />
-    </ThemedView>
+    <ItemForm
+      mode="create"
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
+      isSubmitting={createMutation.isPending}
+    />
   );
 }

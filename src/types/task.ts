@@ -26,8 +26,7 @@ export interface Task extends BaseEntity {
   statusOrder: number;
   commission: COMMISSION_STATUS;
   serialNumber: string | null;
-  chassisNumber?: string | null;
-  plate?: string | null;
+  // Note: chassisNumber and plate are now on the Truck entity (task.truck?.chassisNumber, task.truck?.plate)
   details: string | null;
   description?: string | null; // Alias for details
   entryDate: Date | null;
@@ -180,8 +179,7 @@ export interface TaskOrderBy {
   statusOrder?: ORDER_BY_DIRECTION;
   commission?: ORDER_BY_DIRECTION;
   serialNumber?: ORDER_BY_DIRECTION;
-  chassisNumber?: ORDER_BY_DIRECTION;
-  plate?: ORDER_BY_DIRECTION;
+  // Note: chassisNumber and plate sorting removed - these are now on Truck entity
   details?: ORDER_BY_DIRECTION;
   entryDate?: ORDER_BY_DIRECTION;
   term?: ORDER_BY_DIRECTION;

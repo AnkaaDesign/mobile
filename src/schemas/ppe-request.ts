@@ -3,10 +3,9 @@ import { z } from "zod";
 
 export const ppeRequestSchema = z.object({
   itemId: z.string().uuid("Item inválido").min(1, "Selecione um item"),
-  quantity: z.coerce.number().int("Quantidade deve ser um número inteiro").positive("Quantidade deve ser positiva").min(1, "Quantidade mínima é 1"),
+  quantity: z.coerce.number().int().positive().default(1),
+  reason: z.string().min(1, "Justificativa é obrigatória"),
   scheduledDate: z.date().nullable().optional(),
-  notes: z.string().optional(),
-  reason: z.string().optional(),
 });
 
 export type PpeRequestFormData = z.infer<typeof ppeRequestSchema>;

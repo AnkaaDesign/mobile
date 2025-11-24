@@ -1,5 +1,5 @@
-// Import localStorage polyfill first
-import "@/lib/localStorage-polyfill";
+// Import global polyfills first (includes localStorage and window object)
+import "@/lib/global-polyfills";
 // Import type definitions
 import "@/types";
 
@@ -20,12 +20,74 @@ import { FileViewerProvider } from "@/components/file";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { PortalHost } from "@rn-primitives/portal";
 import { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator, LogBox } from "react-native";
 import { AppStatusBar } from "@/components/app-status-bar";
+import { ToastContainer } from "@/components/ui/toast";
 import NetInfo from "@react-native-community/netinfo";
 import { updateApiUrl } from '../api-client';
 import { setupMobileNotifications } from "@/lib/setup-notifications";
 import "../../global.css";
+
+// =====================================================
+// Global Error Handling Setup
+// =====================================================
+
+// Store for tracking if we're handling an error (prevent cascading)
+let isHandlingError = false;
+
+// Set up global error handler to prevent red screen crashes from logging out users
+const setupGlobalErrorHandler = () => {
+  // Get the original error handler
+  const originalHandler = ErrorUtils.getGlobalHandler();
+
+  ErrorUtils.setGlobalHandler((error, isFatal) => {
+    // Prevent re-entrant error handling
+    if (isHandlingError) {
+      return;
+    }
+    isHandlingError = true;
+
+    console.error('[Global Error Handler]', isFatal ? 'FATAL:' : 'ERROR:', error?.message || error);
+
+    // For non-fatal errors, just log them - don't show red screen
+    if (!isFatal) {
+      console.warn('[Global Error Handler] Non-fatal error caught, suppressing red screen');
+      isHandlingError = false;
+      return;
+    }
+
+    // For fatal errors in development, show the red screen for debugging
+    // In production, we could show a custom error screen instead
+    if (__DEV__) {
+      // Still show the error in dev, but with a delay to let ErrorBoundary try first
+      setTimeout(() => {
+        if (originalHandler) {
+          originalHandler(error, isFatal);
+        }
+        isHandlingError = false;
+      }, 100);
+    } else {
+      // In production, just log the error
+      console.error('[Global Error Handler] Fatal error in production:', error);
+      isHandlingError = false;
+    }
+  });
+};
+
+// Configure LogBox to be less intrusive
+if (__DEV__) {
+  // Ignore specific warnings that are noisy but not critical
+  LogBox.ignoreLogs([
+    'Non-serializable values were found in the navigation state',
+    'Sending `onAnimatedValueUpdate` with no listeners registered',
+    'VirtualizedLists should never be nested',
+    // Add common React Native warnings that aren't actual problems
+    'Each child in a list should have a unique "key" prop',
+  ]);
+}
+
+// Initialize the global error handler
+setupGlobalErrorHandler();
 
 // Initialize API URL early - this is critical for mobile
 if (process.env.EXPO_PUBLIC_API_URL) {
@@ -136,18 +198,17 @@ export default function RootLayout() {
   // Show loading state while hydrating, but render the full component tree
   // to avoid breaking hooks in child components
   return (
-    <ErrorBoundary>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <ThemeProvider>
-            <QueryClientProvider client={queryClient}>
-              <AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <ErrorBoundary>
                 <SidebarProvider>
                   <FavoritesProvider>
                     <FileViewerProvider baseUrl={process.env.EXPO_PUBLIC_API_URL}>
                       <NavigationHistoryProvider>
                         <SwipeRowProvider>
-                          <AppStatusBar />
                       {!isHydrated ? (
                       // Show loading screen during hydration
                       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -157,6 +218,7 @@ export default function RootLayout() {
                     ) : (
                       // Show app content after hydration
                       <>
+                        <AppStatusBar />
                         {isConnected === false && (
                           <View
                             style={{
@@ -178,6 +240,7 @@ export default function RootLayout() {
                           <Stack.Screen name="index" options={{ headerShown: false }} />
                         </Stack>
                         <PortalHost />
+                        <ToastContainer />
                       </>
                     )}
                         </SwipeRowProvider>
@@ -185,11 +248,11 @@ export default function RootLayout() {
                     </FileViewerProvider>
                   </FavoritesProvider>
                 </SidebarProvider>
-              </AuthProvider>
-            </QueryClientProvider>
-          </ThemeProvider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </ErrorBoundary>
+              </ErrorBoundary>
+            </AuthProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

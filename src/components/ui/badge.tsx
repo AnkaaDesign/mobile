@@ -40,7 +40,7 @@ export interface BadgeProps {
 
 const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeProps["size"] = "default", colors: any, isDark: boolean): ViewStyle => {
   // Size-based padding matching web (increased vertical padding for better height)
-  const sizePadding = {
+  const sizePadding: Record<string, { paddingHorizontal: number; paddingVertical: number }> = {
     sm: { paddingHorizontal: 8, paddingVertical: 5 },
     default: { paddingHorizontal: 10, paddingVertical: 7 },
     md: { paddingHorizontal: 10, paddingVertical: 5 },
@@ -53,8 +53,11 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
     justifyContent: "flex-start", // Changed from center to flex-start for left alignment
     borderRadius: borderRadius.DEFAULT,
     borderWidth: 1,
-    ...sizePadding[size],
+    ...(sizePadding[size || "default"] || sizePadding.default),
   };
+
+  // Safe border color with fallback
+  const borderColor = colors?.border || "#d4d4d4";
 
   const variantStyles: Record<string, ViewStyle> = {
     // Neutral variants
@@ -72,7 +75,7 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
     },
     outline: {
       backgroundColor: "transparent",
-      borderColor: colors.border,
+      borderColor: borderColor,
     },
 
     // Primary/Info variants (Blue tones)
@@ -168,44 +171,52 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
     },
   };
 
+  // Safely get variant style with fallback to default
+  const selectedVariantStyle = variantStyles[variant || "default"] || variantStyles.default;
+
   return {
     ...baseStyles,
-    ...variantStyles[variant],
+    ...selectedVariantStyle,
   };
 };
 
 const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: BadgeProps["size"] = "default", colors: any, _isDark: boolean): TextStyle => {
   // Size-based font sizes matching web
-  const sizeFont = {
-    sm: { fontSize: 11 }, // 0.688rem
+  const sizeFont: Record<string, { fontSize: number }> = {
+    sm: { fontSize: 10 },
     default: { fontSize: fontSize.xs },
     md: { fontSize: fontSize.xs },
     lg: { fontSize: fontSize.sm },
   };
 
   const baseStyles: TextStyle = {
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.semibold,
     textAlign: "left", // Changed from center to left
-    ...sizeFont[size],
+    ...(sizeFont[size || "default"] || sizeFont.default),
   };
 
   const white = "#ffffff";
+
+  // Safe color access with fallbacks
+  const primaryForeground = colors?.primaryForeground || white;
+  const secondaryForeground = colors?.secondaryForeground || "#171717";
+  const foreground = colors?.foreground || "#171717";
 
   const variantStyles: Record<string, TextStyle> = {
     default: {
       color: white,
     },
     primary: {
-      color: colors.primaryForeground,
+      color: primaryForeground,
     },
     secondary: {
-      color: colors.secondaryForeground,
+      color: secondaryForeground,
     },
     destructive: {
       color: white,
     },
     outline: {
-      color: colors.foreground,
+      color: foreground,
     },
     success: {
       color: white,
@@ -266,9 +277,12 @@ const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: Ba
     },
   };
 
+  // Safely get variant style with fallback to default
+  const selectedVariantStyle = variantStyles[variant || "default"] || variantStyles.default;
+
   return {
     ...baseStyles,
-    ...variantStyles[variant],
+    ...selectedVariantStyle,
   };
 };
 
@@ -278,14 +292,57 @@ export function getBadgeVariantFromStatus(status: string, entity?: string): Badg
   return getCentralizedBadgeVariant(status, entity as any) as BadgeProps["variant"];
 }
 
-function Badge({ children, variant = "default", size = "default", style, textStyle, className, ...props }: BadgeProps) {
-  const { colors, isDark } = useTheme();
-  const badgeStyles = getBadgeStyles(variant, size, colors, isDark);
-  const badgeTextStyles = getBadgeTextStyles(variant, size, colors, isDark);
+function Badge(props: BadgeProps) {
+  // Safely destructure props with defaults
+  const {
+    children,
+    variant = "default",
+    size = "default",
+    style,
+    textStyle,
+    className,
+    ...restProps
+  } = props || {};
+
+  // Get theme (will return defaults if not in provider)
+  const theme = useTheme();
+  const colors = theme?.colors || null;
+  const isDark = Boolean(theme?.isDark);
+
+  // Ensure variant and size are valid strings
+  const safeVariant = (typeof variant === 'string' && variant) ? variant : "default";
+  const safeSize = (typeof size === 'string' && size) ? size : "default";
+
+  // Calculate styles with error handling
+  let badgeStyles: ViewStyle;
+  let badgeTextStyles: TextStyle;
+
+  try {
+    badgeStyles = getBadgeStyles(safeVariant as BadgeProps["variant"], safeSize as BadgeProps["size"], colors, isDark);
+    badgeTextStyles = getBadgeTextStyles(safeVariant as BadgeProps["variant"], safeSize as BadgeProps["size"], colors, isDark);
+  } catch (error) {
+    // Fallback styles if something goes wrong
+    console.warn('Badge: Error calculating styles', error);
+    badgeStyles = {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 4,
+      backgroundColor: "#6b7280",
+      borderWidth: 1,
+      borderColor: "transparent",
+    };
+    badgeTextStyles = {
+      fontSize: 12,
+      fontWeight: "500",
+      color: "#ffffff",
+    };
+  }
 
   const renderChildren = () => {
     if (typeof children === "string" || typeof children === "number") {
-      return <Text style={StyleSheet.flatten([badgeTextStyles, textStyle])} numberOfLines={1} ellipsizeMode="tail">{children}</Text>;
+      return <Text style={StyleSheet.flatten([badgeTextStyles, textStyle].filter(Boolean))} numberOfLines={1} ellipsizeMode="tail">{children}</Text>;
     }
 
     // For non-text children, wrap Text components with styles
@@ -293,7 +350,7 @@ function Badge({ children, variant = "default", size = "default", style, textSty
       if (React.isValidElement(child) && child.type === Text) {
         const element = child as React.ReactElement<{ style?: TextStyle; numberOfLines?: number; ellipsizeMode?: "head" | "middle" | "tail" | "clip" }>;
         return React.cloneElement(element, {
-          style: StyleSheet.flatten([badgeTextStyles, element.props.style, textStyle]),
+          style: StyleSheet.flatten([badgeTextStyles, element.props?.style, textStyle].filter(Boolean)),
           numberOfLines: 1,
           ellipsizeMode: "tail" as const,
         });
@@ -302,8 +359,11 @@ function Badge({ children, variant = "default", size = "default", style, textSty
     });
   };
 
+  // Filter out undefined props to avoid spread issues
+  const safeProps = restProps && typeof restProps === 'object' ? restProps : {};
+
   return (
-    <View style={StyleSheet.flatten([badgeStyles, style])} {...props}>
+    <View style={StyleSheet.flatten([badgeStyles, style].filter(Boolean))} {...safeProps}>
       {renderChildren()}
     </View>
   );

@@ -1,8 +1,11 @@
+import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { Sector } from '@/types'
 import { canEditHrEntities } from '@/utils/permissions/entity-permissions'
 import { SECTOR_PRIVILEGES } from '@/constants/enums'
 import { SECTOR_PRIVILEGES_LABELS } from '@/constants/enum-labels'
+import { Badge } from '@/components/ui/badge'
+import { getBadgeVariant } from '@/constants/badge-colors'
 
 export const sectorsListConfig: ListConfig<Sector> = {
   key: 'administration-sectors',
@@ -28,7 +31,7 @@ export const sectorsListConfig: ListConfig<Sector> = {
         key: 'name',
         label: 'NOME',
         sortable: true,
-        width: 2.0,
+        width: 1.5,
         align: 'left',
         render: (sector) => sector.name,
         style: { fontWeight: '500' },
@@ -38,10 +41,20 @@ export const sectorsListConfig: ListConfig<Sector> = {
         label: 'PRIVILÉGIOS',
         sortable: true,
         width: 2.0,
-        align: 'left',
+        align: 'center',
         render: (sector) => {
-          if (!sector.privileges || sector.privileges.length === 0) return '-'
-          return sector.privileges.map(p => SECTOR_PRIVILEGES_LABELS[p]).join(', ')
+          if (!sector.privileges) return '-'
+          const variant = getBadgeVariant(sector.privileges, 'SECTOR_PRIVILEGES')
+          const label = SECTOR_PRIVILEGES_LABELS[sector.privileges] || sector.privileges
+          return (
+            <Badge
+              variant={variant}
+              size="sm"
+              style={{ flex: 1, justifyContent: 'center' }}
+            >
+              {label}
+            </Badge>
+          )
         },
       },
       {
@@ -50,17 +63,37 @@ export const sectorsListConfig: ListConfig<Sector> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (sector) => (sector as any)._count?.users || 0,
-        format: 'badge',
+        render: (sector) => {
+          const count = (sector as any)._count?.users || 0
+          return (
+            <Badge
+              variant="muted"
+              size="sm"
+              style={{ alignSelf: 'center', minWidth: 40, justifyContent: 'center' }}
+            >
+              {String(count)}
+            </Badge>
+          )
+        },
       },
       {
         key: 'tasksCount',
         label: 'TAREFAS',
         sortable: false,
-        width: 0.8,
+        width: 1.0,
         align: 'center',
-        render: (sector) => (sector as any)._count?.tasks || 0,
-        format: 'badge',
+        render: (sector) => {
+          const count = (sector as any)._count?.tasks || 0
+          return (
+            <Badge
+              variant="muted"
+              size="sm"
+              style={{ alignSelf: 'center', minWidth: 40, justifyContent: 'center' }}
+            >
+              {String(count)}
+            </Badge>
+          )
+        },
       },
       {
         key: 'createdAt',
@@ -68,7 +101,7 @@ export const sectorsListConfig: ListConfig<Sector> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (sector) => sector.createdAt,
+        render: (sector) => sector.createdAt || '-',
         format: 'date',
       },
       {
@@ -81,12 +114,12 @@ export const sectorsListConfig: ListConfig<Sector> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['name', 'privileges'],
-    rowHeight: 60,
+    defaultVisible: ['name', 'usersCount', 'privileges'],
+    rowHeight: 48,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (sector, router) => {
@@ -119,60 +152,22 @@ export const sectorsListConfig: ListConfig<Sector> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'privileges',
-        label: 'Privilégios',
-        icon: 'shield',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'privileges',
-            label: 'Privilégios',
-            type: 'select',
-            multiple: true,
-            options: Object.values(SECTOR_PRIVILEGES).map((privilege) => ({
-              label: SECTOR_PRIVILEGES_LABELS[privilege],
-              value: privilege,
-            })),
-            placeholder: 'Selecione os privilégios',
-          },
-        ],
+        type: 'select',
+        multiple: false,
+        options: Object.values(SECTOR_PRIVILEGES).map((privilege) => ({
+          label: SECTOR_PRIVILEGES_LABELS[privilege],
+          value: privilege,
+        })),
+        placeholder: 'Privilégios',
       },
       {
-        key: 'options',
-        label: 'Opções',
-        icon: 'settings',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'hasUsers',
-            label: 'Com Colaboradores',
-            description: 'Apenas setores com colaboradores',
-            type: 'toggle',
-          },
-        ],
-      },
-      {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
-          {
-            key: 'updatedAt',
-            label: 'Data de Atualização',
-            type: 'date-range',
-          },
-        ],
+        key: 'hasUsers',
+        type: 'toggle',
+        placeholder: 'Com Colaboradores',
+        description: 'Apenas setores com colaboradores',
       },
     ],
   },
@@ -192,7 +187,7 @@ export const sectorsListConfig: ListConfig<Sector> = {
         key: 'privileges',
         label: 'Privilégios',
         path: 'privileges',
-        format: (value: string[]) => value?.map(p => SECTOR_PRIVILEGES_LABELS[p]).join(', ') || '-'
+        format: (value: string) => value ? SECTOR_PRIVILEGES_LABELS[value] || value : '-'
       },
       { key: 'usersCount', label: 'Colaboradores', path: '_count.users' },
       { key: 'tasksCount', label: 'Tarefas', path: '_count.tasks' },

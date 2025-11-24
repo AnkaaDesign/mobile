@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert, Pressable } from "react-native";
+import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -72,7 +72,7 @@ export default function RegisterScreen() {
       if (result.requiresVerification) {
         if (result.phone) {
           // Phone verification required
-          Alert.alert("Conta criada com sucesso!", "Você receberá um código de verificação por SMS.", [{ text: "OK" }]);
+          console.log("Conta criada com sucesso! Você receberá um código de verificação por SMS.");
 
           router.replace({
             pathname: '/(autenticacao)/verificar-codigo' as any,
@@ -83,12 +83,12 @@ export default function RegisterScreen() {
           });
         } else {
           // Email verification or other verification required
-          Alert.alert("Conta criada com sucesso!", "Verifique seu email para continuar.", [{ text: "OK" }]);
+          console.log("Conta criada com sucesso! Verifique seu email para continuar.");
           router.replace('/(autenticacao)/entrar' as any);
         }
       } else {
         // No verification required, already logged in
-        Alert.alert("Conta criada com sucesso!", "Você será redirecionado para o sistema.", [{ text: "OK" }]);
+        console.log("Conta criada com sucesso! Você será redirecionado para o sistema.");
         // Navigation is handled by the AuthContext
       }
     } catch (error) {
@@ -96,10 +96,10 @@ export default function RegisterScreen() {
 
       // Check if this is a verification redirect (success case)
       if (errorMessage.includes("Conta criada com sucesso")) {
-        Alert.alert("Conta criada com sucesso!", "Verifique seu email ou telefone para continuar.", [{ text: "OK" }]);
+        console.log("Conta criada com sucesso! Verifique seu email ou telefone para continuar.");
         // Don't show as error since user was redirected to verification
       } else {
-        Alert.alert("Erro ao criar conta", errorMessage, [{ text: "OK" }]);
+        console.error("Erro ao criar conta:", errorMessage);
       }
     } finally {
       setIsLoading(false);

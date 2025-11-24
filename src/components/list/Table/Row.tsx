@@ -3,6 +3,7 @@ import { View, ScrollView, Pressable, StyleSheet, Dimensions } from 'react-nativ
 import { useTheme } from '@/lib/theme'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Cell } from './Cell'
+import { CellContent } from './CellContent'
 import { RowActions } from './RowActions'
 import type { TableColumn, TableAction } from '../types'
 
@@ -17,6 +18,7 @@ interface RowProps<T extends { id: string }> {
   }
   actions?: TableAction<T>[]
   onPress?: (item: T) => void
+  getRowStyle?: (item: T, isDark?: boolean) => { backgroundColor?: string; borderLeftColor?: string; borderLeftWidth?: number } | undefined
 }
 
 export const Row = memo(function Row<T extends { id: string }>({
@@ -26,6 +28,7 @@ export const Row = memo(function Row<T extends { id: string }>({
   selection,
   actions,
   onPress,
+  getRowStyle,
 }: RowProps<T>) {
   const { colors, isDark } = useTheme()
   const { width: screenWidth } = Dimensions.get('window')
@@ -40,12 +43,29 @@ export const Row = memo(function Row<T extends { id: string }>({
     [selection, item.id]
   )
 
+  const customRowStyle = useMemo(() => {
+    return getRowStyle?.(item, isDark)
+  }, [getRowStyle, item, isDark])
+
   const backgroundColor = useMemo(() => {
+    if (customRowStyle?.backgroundColor) {
+      return customRowStyle.backgroundColor
+    }
     if (isSelected) {
       return isDark ? colors.primary + '20' : colors.primary + '10'
     }
-    return index % 2 === 0 ? colors.card : colors.background
-  }, [isSelected, index, colors, isDark])
+    return index % 2 === 0 ? colors.background : colors.card
+  }, [isSelected, index, colors, isDark, customRowStyle])
+
+  const borderStyle = useMemo(() => {
+    if (customRowStyle?.borderLeftColor) {
+      return {
+        borderLeftColor: customRowStyle.borderLeftColor,
+        borderLeftWidth: customRowStyle.borderLeftWidth || 4,
+      }
+    }
+    return {}
+  }, [customRowStyle])
 
   const handlePress = useCallback(() => {
     if (selection?.enabled) {
@@ -58,20 +78,21 @@ export const Row = memo(function Row<T extends { id: string }>({
   const hasActions = actions && actions.length > 0 && !selection?.enabled
 
   return (
-    <View style={[styles.rowWrapper, { backgroundColor }]}>
+    <View style={[styles.rowWrapper, { backgroundColor }, borderStyle]}>
       {hasActions ? (
         <RowActions item={item} actions={actions}>
           {(closeActions) => (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              scrollEnabled={tableWidth > screenWidth - 32}
-            >
-              <Pressable
-                style={[styles.row, { width: Math.max(tableWidth, screenWidth - 32) }]}
-                onPress={handlePress}
-                android_ripple={{ color: colors.primary + '20' }}
+            <View style={{ backgroundColor }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                scrollEnabled={tableWidth > screenWidth - 32}
               >
+                <Pressable
+                  style={[styles.row, { width: Math.max(tableWidth, screenWidth - 32), backgroundColor }]}
+                  onPress={handlePress}
+                  android_ripple={{ color: colors.primary + '20' }}
+                >
                 {selection?.enabled && (
                   <View style={styles.checkboxCell}>
                     <Checkbox
@@ -81,17 +102,23 @@ export const Row = memo(function Row<T extends { id: string }>({
                   </View>
                 )}
 
-                {columns.map((column) => (
+                {columns.map((column, colIndex) => (
                   <Cell
                     key={column.key}
                     width={column.width}
                     align={column.align}
+                    style={colIndex === columns.length - 1 ? { paddingLeft: 4 } : undefined}
                   >
-                    {column.render(item)}
+                    <CellContent
+                      value={column.render(item)}
+                      format={column.format}
+                      style={column.style}
+                    />
                   </Cell>
                 ))}
               </Pressable>
             </ScrollView>
+            </View>
           )}
         </RowActions>
       ) : (
@@ -101,7 +128,7 @@ export const Row = memo(function Row<T extends { id: string }>({
           scrollEnabled={tableWidth > screenWidth - 32}
         >
           <Pressable
-            style={[styles.row, { width: Math.max(tableWidth, screenWidth - 32) }]}
+            style={[styles.row, { width: Math.max(tableWidth, screenWidth - 32), backgroundColor }]}
             onPress={handlePress}
             android_ripple={{ color: colors.primary + '20' }}
           >
@@ -114,13 +141,18 @@ export const Row = memo(function Row<T extends { id: string }>({
               </View>
             )}
 
-            {columns.map((column) => (
+            {columns.map((column, colIndex) => (
               <Cell
                 key={column.key}
                 width={column.width}
                 align={column.align}
+                style={colIndex === columns.length - 1 ? { paddingLeft: 4 } : undefined}
               >
-                {column.render(item)}
+                <CellContent
+                  value={column.render(item)}
+                  format={column.format}
+                  style={column.style}
+                />
               </Cell>
             ))}
           </Pressable>

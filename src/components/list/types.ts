@@ -28,6 +28,7 @@ export interface FilterValue {
 export type CellFormat =
   | 'date'
   | 'datetime'
+  | 'datetime-multiline'
   | 'currency'
   | 'number'
   | 'percentage'
@@ -59,6 +60,8 @@ export interface TableAction<T = any> {
   }
   onPress?: (item: T, router?: any, mutations?: any) => void | Promise<void>
   visible?: (item: T) => boolean
+  /** Permission check - if provided, action will only be shown if this returns true */
+  canPerform?: (user: any) => boolean
 }
 
 export interface TableProps<T extends { id: string }> {
@@ -89,6 +92,8 @@ export interface TableProps<T extends { id: string }> {
     title?: string
     description?: string
   }
+  totalCount?: number
+  getRowStyle?: (item: T, isDark?: boolean) => { backgroundColor?: string; borderLeftColor?: string; borderLeftWidth?: number } | undefined
 }
 
 // ============================================================================
@@ -107,7 +112,7 @@ export interface FilterField {
   label?: string
   description?: string
   type: FilterFieldType
-  placeholder?: string | { min?: string; max?: string } // For range inputs
+  placeholder?: string | { min?: string; max?: string; from?: string; to?: string } // For range/date inputs
   multiple?: boolean
   defaultValue?: any
   options?: Array<{ label: string; value: any }> // Static options
@@ -118,17 +123,8 @@ export interface FilterField {
   step?: number
 }
 
-export interface FilterSection {
-  key: string
-  label: string
-  icon?: string
-  collapsible?: boolean
-  defaultOpen?: boolean
-  fields: FilterField[]
-}
-
 export interface FiltersProps {
-  sections: FilterSection[]
+  fields: FilterField[]
   values: FilterValue
   onChange: (values: FilterValue) => void
   onClear: () => void
@@ -140,7 +136,7 @@ export interface FiltersProps {
 export interface FilterTagsProps {
   values: FilterValue
   searchText?: string
-  sections: FilterSection[]
+  fields: FilterField[]
   onRemove: (key: string, value?: any) => void
   onClearSearch?: () => void
   onClearAll: () => void
@@ -251,6 +247,7 @@ export interface ListConfig<T extends { id: string }> {
     hook: string // Name of the infinite query hook
     defaultSort: SortConfig
     pageSize?: number
+    sortOptions?: Array<{ field: string; label: string }> // Available sort options
     include?: any // Prisma include object
     where?: any // Base Prisma where clause (will be merged with filters)
   }
@@ -261,11 +258,13 @@ export interface ListConfig<T extends { id: string }> {
     defaultVisible: string[]
     rowHeight?: number
     actions?: TableAction<T>[]
+    onRowPress?: (item: T, router: any) => void
+    getRowStyle?: (item: T, isDark?: boolean) => { backgroundColor?: string; borderLeftColor?: string; borderLeftWidth?: number } | undefined
   }
 
   // Filters
   filters?: {
-    sections: FilterSection[]
+    fields: FilterField[]
   }
 
   // Search
@@ -286,6 +285,13 @@ export interface ListConfig<T extends { id: string }> {
       canCreate?: (user: any) => boolean
     }
     bulk?: BulkAction[]
+    toolbar?: Array<{
+      key: string
+      label: string
+      icon?: string
+      variant?: 'default' | 'primary' | 'secondary'
+      onPress: (router: any) => void
+    }>
   }
 
   // Permissions
@@ -326,10 +332,14 @@ export interface UseListReturn<T extends { id: string }> {
     visibleColumns: string[]
     onToggleColumn: (key: string) => void
     onResetColumns: () => void
+    isColumnPanelOpen: boolean
+    onOpenColumnPanel: () => void
+    onCloseColumnPanel: () => void
     sort: SortConfig | null
     onSort: (field: string) => void
     rowHeight: number
     actions: TableAction<T>[]
+    getRowStyle?: (item: T, isDark?: boolean) => { backgroundColor?: string; borderLeftColor?: string; borderLeftWidth?: number } | undefined
   }
 
   // Search
@@ -345,7 +355,7 @@ export interface UseListReturn<T extends { id: string }> {
 
   // Filters
   filters: {
-    sections: FilterSection[]
+    fields: FilterField[]
     values: FilterValue
     onChange: (values: FilterValue) => void
     onClear: () => void
@@ -367,16 +377,6 @@ export interface UseListReturn<T extends { id: string }> {
     onDisable: () => void
   }
 
-  // Export
-  export: {
-    onExport: (format: ExportFormat, mode: 'all' | 'selected') => Promise<void>
-    isExporting: boolean
-    disabled: boolean
-    formats: ExportFormat[]
-    hasSelection: boolean
-    selectedCount: number
-    totalCount: number
-  }
 
   // Pagination
   pagination: {

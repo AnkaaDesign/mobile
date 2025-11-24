@@ -26,7 +26,7 @@ export const TABLER_ICONS = {
 
   // Paint/Painting
   paintBrush: "IconBrush", // Paint brush tool
-  paint: "IconBrush",
+  paint: "IconPaint",
 
   // Human Resources
   users: "IconUsers", // Multiple users
@@ -96,6 +96,9 @@ export const TABLER_ICONS = {
   // Scheduling and Automation
   calendar: "IconCalendar",
   calendarEvent: "IconCalendarEvent", // Alias for favorites icon mapping
+  calendarStats: "IconCalendarStats",
+  calendarWeek: "IconCalendarWeek",
+  calendarDollar: "IconCalendarDollar",
   schedule: "IconCalendarPlus",
   automation: "IconRobot",
 
@@ -143,6 +146,7 @@ export const TABLER_ICONS = {
   // Catalog
   catalog: "IconBook",
   swatch: "IconColorSwatch",
+  colorPicker: "IconColorPicker",
 
   // ==================== HUMAN RESOURCES ====================
   // People Management
@@ -174,6 +178,8 @@ export const TABLER_ICONS = {
   dollarSign: "IconCurrencyDollar",
   coins: "IconCoins", // Coins icon (for favorites - commissions)
   salary: "IconCurrencyDollar",
+  deviceIpadDollar: "IconDeviceIpadDollar",
+  payroll: "IconCalendarDollar",
 
   // Job Openings
   jobOpening: "IconBriefcase",
@@ -235,6 +241,7 @@ export const TABLER_ICONS = {
   revenue: "IconCurrencyDollar",
   profit: "IconTrendingUp",
   cost: "IconCalculator",
+  calculator: "IconCalculator",
 
   // ==================== COMMON ACTIONS ====================
   // CRUD Operations
@@ -299,6 +306,9 @@ export const TABLER_ICONS = {
   loader: "IconLoader",
   loading: "IconLoader2",
   sync: "IconRefresh",
+
+  // Biometrics
+  fingerprint: "IconFingerprint",
 
   // ==================== AUTHENTICATION ====================
   login: "IconLogin",

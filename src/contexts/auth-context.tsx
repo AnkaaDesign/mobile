@@ -54,6 +54,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const isFetchingUserRef = useRef<boolean>(false);
   const lastValidationTime = useRef<number>(0);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const hasCompletedInitialAuth = useRef<boolean>(false); // Track if initial auth validation is complete
 
   console.log("[AUTH DEBUG] Initial state:", {
     user: user ? `${user.name} (${user.id})` : "null",
@@ -95,19 +96,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const handleAuthError = async (error: { statusCode: number; message: string; category: any }) => {
       console.log("[MOBILE AUTH DEBUG] Authentication error detected:", error);
 
-      // Only logout for actual authentication errors (invalid/expired tokens), not authorization errors (insufficient permissions)
-      const isTokenError =
-        ((error as any).message)?.toLowerCase().includes("token") ||
-        ((error as any).message)?.toLowerCase().includes("expirado") ||
-        ((error as any).message)?.toLowerCase().includes("expired") ||
-        ((error as any).message)?.toLowerCase().includes("inválido") ||
-        ((error as any).message)?.toLowerCase().includes("invalid") ||
-        ((error as any).message)?.toLowerCase().includes("não autenticado") ||
-        ((error as any).message)?.toLowerCase().includes("unauthenticated");
-
-      // Check if it's a token-related 401 error, not just any unauthorized action
-      if (((error as any).statusCode) === 401 && isTokenError) {
-        console.log("[MOBILE AUTH DEBUG] Triggering logout due to token authentication error");
+      // Only logout for 401 errors (authentication failures)
+      // 403 errors are authorization (permission) errors - user is authenticated but lacks permission
+      // The API returns proper HTTP status codes, so we trust those
+      if (error.statusCode === 401) {
+        console.log("[MOBILE AUTH DEBUG] Triggering logout due to 401 authentication error");
 
         // Set logout flag to suppress further error notifications
         setIsLoggingOut(true);
@@ -192,13 +185,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return response;
   };
 
-  const fetchAndUpdateUserData = useCallback(async (token: string, forceRefresh = false) => {
+  const fetchAndUpdateUserData = useCallback(async (token: string, forceRefresh = false): Promise<User | null | 'SKIP'> => {
     console.log(`[AUTH DEBUG] fetchAndUpdateUserData called - forceRefresh: ${forceRefresh}, isFetchingUserRef.current: ${isFetchingUserRef.current}`);
 
     // Prevent duplicate concurrent user fetching using ref to avoid stale closure issues
     if (isFetchingUserRef.current && !forceRefresh) {
-      console.log("[AUTH DEBUG] User fetch already in progress, skipping");
-      return null;
+      console.log("[AUTH DEBUG] User fetch already in progress, skipping - returning SKIP marker");
+      return 'SKIP'; // Return special marker to indicate concurrent fetch, not auth failure
     }
 
     console.log("[AUTH DEBUG] Starting user data fetch");
@@ -293,9 +286,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
 
       // Check if it's a 401 authentication error
-      if (error?.message?.includes("não está autorizado") || error?.status === 401) {
+      // The API returns proper HTTP status codes, so we trust those
+      if (error?.status === 401) {
         // Clear invalid auth state and force re-login
-        console.log("[AUTH DEBUG] Authentication failed (401), clearing all auth data");
+        console.log("[AUTH DEBUG] 401 authentication failure detected, clearing all auth data");
         try {
           await removeStoredToken();
           await removeUserData();
@@ -342,6 +336,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const now = Date.now();
     if (now - lastValidationTime.current < 1000) {
       console.log("[AUTH DEBUG] Validation called too soon after last validation, skipping");
+      // Still mark as ready if we're skipping due to throttle - the previous validation should have completed
+      if (!isAuthReady) {
+        console.log("[AUTH DEBUG] Auth not ready but skipping validation - forcing ready state");
+        setLoading(false);
+        setIsAuthReady(true);
+      }
       return;
     }
     lastValidationTime.current = now;
@@ -381,7 +381,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log("[AUTH DEBUG] Calling fetchAndUpdateUserData");
         const userData = await fetchAndUpdateUserData(token);
 
-        // If fetchAndUpdateUserData returns null, clear auth state
+        // Handle SKIP marker - fetch was already in progress, don't clear auth
+        if (userData === 'SKIP') {
+          console.log("[AUTH DEBUG] User fetch was skipped (concurrent request in progress), keeping current auth state");
+          // Don't clear auth - there's already a fetch in progress that will update the state
+          return;
+        }
+
+        // If fetchAndUpdateUserData returns null (actual failure), clear auth state
         if (!userData) {
           console.log("[AUTH DEBUG] No user data returned from fetchAndUpdateUserData, clearing auth state");
           await removeStoredToken();
@@ -433,6 +440,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(false);
       setIsAuthReady(true);
       setIsValidatingSession(false);
+      hasCompletedInitialAuth.current = true; // Mark initial auth as complete
       console.log("[AUTH DEBUG] Final auth state:", {
         user: user ? `${user.name} (${user.id})` : "null",
         accessToken: accessToken ? "exists" : "null",
@@ -440,7 +448,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         isAuthReady: true,
       });
     }
-  }, [fetchAndUpdateUserData]);
+  }, [fetchAndUpdateUserData, isAuthReady]);
 
   // Initial mount effect to validate session - run only once
   useEffect(() => {
@@ -494,7 +502,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const refreshInterval = setInterval(() => {
       if (AppState.currentState === "active") {
         console.log("[AUTH DEBUG] Periodic refresh - checking for user updates");
-        fetchAndUpdateUserData(accessToken, true).catch(error => {
+        fetchAndUpdateUserData(accessToken, true).then(result => {
+          if (result === 'SKIP') {
+            console.log("[AUTH DEBUG] Periodic refresh skipped (concurrent fetch in progress)");
+          } else if (!result) {
+            console.log("[AUTH DEBUG] Periodic refresh returned no user data");
+          }
+        }).catch(error => {
           console.error("[AUTH DEBUG] Periodic refresh failed:", error);
         });
       }
@@ -504,7 +518,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [user, accessToken, fetchAndUpdateUserData]);
 
   useEffect(() => {
-    console.log(`[AUTH DEBUG] accessToken useEffect triggered - token: ${accessToken ? "exists" : "null"}`);
+    console.log(`[AUTH DEBUG] accessToken useEffect triggered - token: ${accessToken ? "exists" : "null"}, initialAuthComplete: ${hasCompletedInitialAuth.current}`);
     if (accessToken) {
       console.log("[AUTH DEBUG] Setting auth token in API client");
       setAuthToken(accessToken);
@@ -518,9 +532,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setAuthToken(null);
       // Clear the cached token
       setCachedToken(null);
-      // Clear the stored token
-      console.log("[AUTH DEBUG] Removing token from storage");
-      removeStoredToken().catch((err) => console.error("[AUTH DEBUG] Failed to remove token:", err));
+
+      // CRITICAL: Only remove token from storage AFTER initial auth validation is complete
+      // This prevents deleting the token during ErrorBoundary recovery when AuthProvider remounts
+      // with initial state (accessToken: null) before validateSession can read the stored token
+      if (hasCompletedInitialAuth.current) {
+        console.log("[AUTH DEBUG] Removing token from storage (initial auth complete)");
+        removeStoredToken().catch((err) => console.error("[AUTH DEBUG] Failed to remove token:", err));
+      } else {
+        console.log("[AUTH DEBUG] Skipping token removal - initial auth not yet complete");
+      }
     }
   }, [accessToken]);
   const login = async (contact: string, password: string) => {
@@ -565,8 +586,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Fetch complete user data with relationships (sector, position, etc)
       try {
         const completeUserData = await fetchAndUpdateUserData(access_token);
-        if (!completeUserData) {
-          throw new Error("Falha ao carregar dados do usuário");
+        // Handle SKIP marker or null - use basic data from login response
+        if (completeUserData === 'SKIP' || !completeUserData) {
+          console.log("[AUTH DEBUG] Using basic user data from login response");
+          setUser(userData as User);
+          await storeUserData(userData);
         }
       } catch (fetchError) {
         // If fetching complete data fails, use the basic data from login
@@ -722,12 +746,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     console.log("[AUTH DEBUG] Manual refreshUserData called");
     if (accessToken) {
       const updatedUser = await fetchAndUpdateUserData(accessToken, true);
+      // Handle SKIP marker (shouldn't happen with forceRefresh=true, but be safe)
+      if (updatedUser === 'SKIP') {
+        console.log("[AUTH DEBUG] Manual refresh skipped (concurrent fetch in progress)");
+        showToast({ message: "Atualização em andamento", type: "info" });
+        return null;
+      }
       if (updatedUser) {
         showToast({ message: "Dados atualizados com sucesso", type: "success" });
+        return updatedUser;
       } else {
         showToast({ message: "Erro ao atualizar dados", type: "error" });
+        return null;
       }
-      return updatedUser;
     }
     return null;
   };

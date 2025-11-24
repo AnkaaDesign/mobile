@@ -121,18 +121,9 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['name', 'type', 'status', 'size'],
-    rowHeight: 60,
+    defaultVisible: ['name', 'status', 'createdAt'],
+    rowHeight: 72,
     actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (backup, router) => {
-          router.push(`/servidor/backups/detalhes/${backup.id}`)
-        },
-      },
       {
         key: 'delete',
         label: 'Excluir',
@@ -150,91 +141,51 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'activity',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: [
-              { label: 'Pendente', value: 'pending' },
-              { label: 'Em Progresso', value: 'in_progress' },
-              { label: 'Concluído', value: 'completed' },
-              { label: 'Falhou', value: 'failed' },
-            ],
-            placeholder: 'Selecione os status',
-          },
+        type: 'select',
+        multiple: true,
+        options: [
+          { label: 'Pendente', value: 'pending' },
+          { label: 'Em Progresso', value: 'in_progress' },
+          { label: 'Concluído', value: 'completed' },
+          { label: 'Falhou', value: 'failed' },
         ],
+        placeholder: 'Status',
       },
       {
         key: 'type',
-        label: 'Tipo',
-        icon: 'database',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'type',
-            label: 'Tipo',
-            type: 'select',
-            multiple: true,
-            options: [
-              { label: 'Banco de Dados', value: 'database' },
-              { label: 'Arquivos', value: 'files' },
-              { label: 'Completo', value: 'full' },
-            ],
-            placeholder: 'Selecione os tipos',
-          },
+        type: 'select',
+        multiple: true,
+        options: [
+          { label: 'Banco de Dados', value: 'database' },
+          { label: 'Arquivos', value: 'files' },
+          { label: 'Completo', value: 'full' },
         ],
+        placeholder: 'Tipo',
       },
       {
         key: 'priority',
-        label: 'Prioridade',
-        icon: 'alert-circle',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'priority',
-            label: 'Prioridade',
-            type: 'select',
-            multiple: true,
-            options: [
-              { label: 'Baixa', value: 'low' },
-              { label: 'Média', value: 'medium' },
-              { label: 'Alta', value: 'high' },
-              { label: 'Crítica', value: 'critical' },
-            ],
-            placeholder: 'Selecione as prioridades',
-          },
+        type: 'select',
+        multiple: true,
+        options: [
+          { label: 'Baixa', value: 'low' },
+          { label: 'Média', value: 'medium' },
+          { label: 'Alta', value: 'high' },
+          { label: 'Crítica', value: 'critical' },
         ],
+        placeholder: 'Prioridade',
       },
       {
-        key: 'encryption',
-        label: 'Criptografia',
-        icon: 'lock',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'encrypted',
-            label: 'Criptografado',
-            type: 'select',
-            multiple: false,
-            options: [
-              { label: 'Sim', value: 'true' },
-              { label: 'Não', value: 'false' },
-            ],
-            placeholder: 'Selecione',
-          },
+        key: 'encrypted',
+        type: 'select',
+        multiple: false,
+        options: [
+          { label: 'Sim', value: 'true' },
+          { label: 'Não', value: 'false' },
         ],
+        placeholder: 'Criptografado',
       },
     ],
   },

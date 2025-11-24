@@ -124,99 +124,45 @@ export const performanceLevelsListConfig: ListConfig<User> = {
       },
     ],
     defaultVisible: ['name', 'position.name', 'performanceLevel'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (user, router) => {
-          router.push(`/recursos-humanos/funcionarios/detalhes/${user.id}`)
-        },
-      },
-    ],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'performance',
-        label: 'Nível de Performance',
-        icon: 'trophy',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'performanceLevel',
-            label: 'Nível de Performance',
-            description: 'Filtrar por nível de performance',
-            type: 'number-range',
-            placeholder: { min: 'Mínimo', max: 'Máximo' },
-            min: 0,
-            max: 5,
-          },
-        ],
+        key: 'performanceLevel',
+        type: 'number-range',
+        placeholder: { min: 'Nível mínimo', max: 'Nível máximo' },
+        min: 0,
+        max: 5,
       },
       {
         key: 'status',
-        label: 'Status',
-        icon: 'user-check',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status do Funcionário',
-            description: 'Filtrar por status do funcionário',
-            type: 'select',
-            multiple: true,
-            options: Object.values(USER_STATUS).map((status) => ({
-              label: USER_STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Todos os status',
-          },
-          {
-            key: 'isActive',
-            label: 'Apenas Ativos',
-            description: 'Mostrar apenas funcionários ativos',
-            type: 'toggle',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(USER_STATUS).map((status) => ({
+          label: USER_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status do funcionário',
       },
       {
-        key: 'organization',
-        label: 'Cargo e Setor',
-        icon: 'briefcase',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'positionIds',
-            label: 'Cargos',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os cargos',
-          },
-          {
-            key: 'sectorIds',
-            label: 'Setores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os setores',
-          },
-        ],
+        key: 'isActive',
+        type: 'toggle',
+        placeholder: 'Apenas ativos',
+      },
+      {
+        key: 'positionIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Cargos',
+      },
+      {
+        key: 'sectorIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Setores',
       },
     ],
   },

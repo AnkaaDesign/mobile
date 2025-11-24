@@ -103,6 +103,7 @@ export function getModuleForRoute(screenName: string): string | null {
   if (screenName.startsWith('recursos-humanos')) return 'hr';
   if (screenName.startsWith('administracao')) return 'admin';
   if (screenName.startsWith('meu-pessoal')) return 'personal';
+  if (screenName.startsWith('pessoal')) return 'personal';
   if (screenName.startsWith('pintura')) return 'painting';
   if (screenName.startsWith('servidor')) return 'server';
 

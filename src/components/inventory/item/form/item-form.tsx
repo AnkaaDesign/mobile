@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { View, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, FormProvider, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
-
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-
-import { Separator } from "@/components/ui/separator";
-
 import { itemCreateSchema, itemUpdateSchema,} from '../../../../schemas';
 import { useItemCategories } from "@/hooks";
 import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { spacing } from "@/constants/design-system";
+import { formSpacing } from "@/constants/form-styles";
+import { useTheme } from "@/lib/theme";
+import { FormCard } from "@/components/ui/form-section";
+import { SimpleFormActionBar } from "@/components/forms";
 import type { Supplier, ItemBrand, ItemCategory } from '../../../../types';
 
 // Import all form components
@@ -37,6 +36,7 @@ interface BaseItemFormProps {
   isSubmitting?: boolean;
   onDirtyChange?: (isDirty: boolean) => void;
   onFormStateChange?: (formState: { isValid: boolean; isDirty: boolean }) => void;
+  onCancel?: () => void;
   initialSupplier?: Supplier;
   initialBrand?: ItemBrand;
   initialCategory?: ItemCategory;
@@ -57,7 +57,8 @@ interface UpdateItemFormProps extends BaseItemFormProps {
 type ItemFormProps = CreateItemFormProps | UpdateItemFormProps;
 
 export function ItemForm(props: ItemFormProps) {
-  const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, initialCategory: _initialCategory, initialBrand: _initialBrand, initialSupplier: _initialSupplier } = props;
+  const { colors } = useTheme();
+  const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, onCancel, initialCategory: _initialCategory, initialBrand: _initialBrand, initialSupplier: _initialSupplier } = props;
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(defaultValues?.categoryId || undefined);
   const [isPPE, setIsPPE] = useState(false);
 
@@ -174,127 +175,117 @@ export function ItemForm(props: ItemFormProps) {
 
   const isRequired = mode === "create";
 
+  const handleSubmit = async () => {
+    try {
+      const data = form.getValues();
+      await props.onSubmit(data as any);
+    } catch (error) {
+      // Error handling done by parent component
+    }
+  };
+
   return (
     <FormProvider {...form}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
-        <ThemedScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-          <View style={styles.content}>
-            {/* Basic Information & Classification */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Informações Básicas</CardTitle>
-                <CardDescription>Identificação e classificação do item</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.fieldGroup}>
-                  <UnicodeInput disabled={isSubmitting} />
-                  <NameInput disabled={isSubmitting} required={isRequired} />
-                </View>
-                <Separator style={styles.separator} />
-                <View style={styles.fieldGroup}>
-                  <CategorySelector
-                    disabled={isSubmitting}
-                    onCategoryChange={setSelectedCategoryId}
-                  />
-                  <BrandSelector
-                    disabled={isSubmitting}
-                  />
-                  <SupplierSelector
-                    disabled={isSubmitting}
-                  />
-                </View>
-              </CardContent>
-            </Card>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView} keyboardVerticalOffset={0}>
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+          {/* Basic Information & Classification */}
+          <FormCard title="Informações Básicas">
+            <View style={styles.fieldGroup}>
+              <UnicodeInput disabled={isSubmitting} />
+              <NameInput disabled={isSubmitting} required={isRequired} />
+              <CategorySelector
+                disabled={isSubmitting}
+                onCategoryChange={setSelectedCategoryId}
+              />
+              <BrandSelector
+                disabled={isSubmitting}
+              />
+              <SupplierSelector
+                disabled={isSubmitting}
+              />
+            </View>
+          </FormCard>
 
-            {/* Inventory */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Controle de Estoque</CardTitle>
-                <CardDescription>Quantidades e níveis de estoque</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.fieldGroup}>
-                  <QuantityInput disabled={isSubmitting} required={isRequired} />
-                  <MaxQuantityInput disabled={isSubmitting} />
-                  <BoxQuantityInput disabled={isSubmitting} />
-                  <LeadTimeInput disabled={isSubmitting} />
+          {/* Inventory */}
+          <FormCard title="Controle de Estoque">
+            <View style={styles.fieldGroup}>
+              <QuantityInput disabled={isSubmitting} required={isRequired} />
+              <MaxQuantityInput disabled={isSubmitting} />
+              <BoxQuantityInput disabled={isSubmitting} />
+              <LeadTimeInput disabled={isSubmitting} />
+            </View>
+          </FormCard>
+
+          {/* Pricing */}
+          <FormCard title="Preço e Taxas">
+            <View style={styles.fieldGroup}>
+              <PriceInput disabled={isSubmitting} />
+              <View style={styles.fieldRow}>
+                <View style={styles.halfField}>
+                  <IcmsInput disabled={isSubmitting} required={isRequired} priceFieldName="price" />
                 </View>
-              </CardContent>
-            </Card>
-
-            {/* Pricing */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Preço e Taxas</CardTitle>
-                <CardDescription>Informações de preço e impostos</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.fieldGroup}>
-                  <PriceInput disabled={isSubmitting} />
-                  <View style={styles.fieldRow}>
-                    <View style={styles.halfField}>
-                      <IcmsInput disabled={isSubmitting} required={isRequired} priceFieldName="price" />
-                    </View>
-                    <View style={styles.halfField}>
-                      <IpiInput disabled={isSubmitting} required={isRequired} priceFieldName="price" />
-                    </View>
-                  </View>
+                <View style={styles.halfField}>
+                  <IpiInput disabled={isSubmitting} required={isRequired} priceFieldName="price" />
                 </View>
-              </CardContent>
-            </Card>
+              </View>
+            </View>
+          </FormCard>
 
-            {/* Multiple Measures - Only show for non-PPE categories */}
-            {!isPPE && <MeasuresManager disabled={isSubmitting} />}
+          {/* Multiple Measures - Only show for non-PPE categories */}
+          {!isPPE && <MeasuresManager disabled={isSubmitting} />}
 
-            {/* PPE Configuration - Only show for PPE categories */}
-            {isPPE && <PpeConfigSection disabled={isSubmitting} required={isRequired} />}
+          {/* PPE Configuration - Only show for PPE categories */}
+          {isPPE && <PpeConfigSection disabled={isSubmitting} required={isRequired} />}
 
-            {/* Tracking */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Rastreamento</CardTitle>
-                <CardDescription>Códigos de barras para identificação do item</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.fieldGroup}>
-                  <BarcodeManager disabled={isSubmitting} />
-                </View>
-              </CardContent>
-            </Card>
+          {/* Tracking */}
+          <FormCard title="Rastreamento">
+            <View style={styles.fieldGroup}>
+              <BarcodeManager disabled={isSubmitting} />
+            </View>
+          </FormCard>
 
-            {/* Extra Configurations */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Configurações Extras</CardTitle>
-                <CardDescription>Configurações adicionais do item</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.fieldGroup}>
-                  <AssignToUserToggle disabled={isSubmitting} />
-                  <StatusToggle disabled={isSubmitting} />
-                </View>
-              </CardContent>
-            </Card>
-          </View>
-        </ThemedScrollView>
-      </KeyboardAvoidingView>
+          {/* Extra Configurations */}
+          <FormCard title="Configurações Extras">
+            <View style={styles.fieldGroup}>
+              <AssignToUserToggle disabled={isSubmitting} />
+              <StatusToggle disabled={isSubmitting} />
+            </View>
+          </FormCard>
+          </ScrollView>
+
+          <SimpleFormActionBar
+            onCancel={onCancel}
+            onSubmit={form.handleSubmit(handleSubmit)}
+            isSubmitting={isSubmitting}
+            canSubmit={isValid}
+            submitLabel={mode === "create" ? "Criar" : "Salvar"}
+          />
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </FormProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
     flex: 1,
   },
   scrollView: {
     flex: 1,
   },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.lg,
-  },
-  card: {
-    marginBottom: spacing.lg,
+  scrollContent: {
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: formSpacing.containerPaddingVertical,
+    paddingBottom: 0, // No spacing - action bar has its own margin
   },
   fieldGroup: {
     gap: spacing.lg,
@@ -305,8 +296,5 @@ const styles = StyleSheet.create({
   },
   halfField: {
     flex: 1,
-  },
-  separator: {
-    marginVertical: spacing.md,
   },
 });

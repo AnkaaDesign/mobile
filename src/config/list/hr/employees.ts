@@ -87,13 +87,12 @@ export const employeesListConfig: ListConfig<User> = {
         style: { fontFamily: 'monospace' },
       },
       {
-        key: 'position.name',
+        key: 'position.hierarchy',
         label: 'CARGO',
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (employee) => employee.position?.name || '-',
-        format: 'badge',
+        render: (employee) => employee.position?.name || '—',
       },
       {
         key: 'sector.name',
@@ -118,7 +117,7 @@ export const employeesListConfig: ListConfig<User> = {
         sortable: true,
         width: 1.4,
         align: 'left',
-        render: (employee) => employee.birth,
+        render: (employee) => employee.birth || '-',
         format: 'date',
       },
       {
@@ -145,7 +144,7 @@ export const employeesListConfig: ListConfig<User> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (employee) => (employee as any)._count?.createdTasks || 0,
+        render: (employee) => String((employee as any)._count?.createdTasks || 0),
         format: 'badge',
       },
       {
@@ -154,7 +153,7 @@ export const employeesListConfig: ListConfig<User> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (employee) => (employee as any)._count?.vacations || 0,
+        render: (employee) => String((employee as any)._count?.vacations || 0),
         format: 'badge',
       },
       {
@@ -163,7 +162,7 @@ export const employeesListConfig: ListConfig<User> = {
         sortable: false,
         width: 1.2,
         align: 'center',
-        render: (employee) => (employee as any)._count?.warnings || 0,
+        render: (employee) => String((employee as any)._count?.warnings || 0),
         format: 'badge',
       },
       {
@@ -172,7 +171,7 @@ export const employeesListConfig: ListConfig<User> = {
         sortable: true,
         width: 1.5,
         align: 'center',
-        render: (employee) => employee.performanceLevel || 0,
+        render: (employee) => String(employee.performanceLevel || 0),
         format: 'badge',
       },
       {
@@ -275,12 +274,12 @@ export const employeesListConfig: ListConfig<User> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['name', 'position.name', 'status'],
-    rowHeight: 60,
+    defaultVisible: ['name', 'sector.name', 'status'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (employee, router) => {
@@ -313,133 +312,48 @@ export const employeesListConfig: ListConfig<User> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'user-check',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status do Funcionário',
-            description: 'Filtrar por status do funcionário',
-            type: 'select',
-            multiple: true,
-            options: Object.values(USER_STATUS).map((status) => ({
-              label: USER_STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Todos os status',
-          },
-          {
-            key: 'verified',
-            label: 'Funcionários Verificados',
-            description: 'Incluir apenas funcionários verificados',
-            type: 'toggle',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(USER_STATUS).map((status) => ({
+          label: USER_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status do funcionário',
       },
       {
-        key: 'organization',
-        label: 'Cargo e Setor',
-        icon: 'briefcase',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'positionIds',
-            label: 'Cargos',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os cargos',
-          },
-          {
-            key: 'sectorIds',
-            label: 'Setores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os setores',
-          },
-        ],
+        key: 'verified',
+        type: 'toggle',
+        placeholder: 'Apenas verificados',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'admissional',
-            label: 'Data de Admissão',
-            type: 'date-range',
-          },
-          {
-            key: 'birth',
-            label: 'Data de Nascimento',
-            type: 'date-range',
-          },
-          {
-            key: 'dismissedAt',
-            label: 'Data de Demissão',
-            type: 'date-range',
-          },
-          {
-            key: 'exp1StartAt',
-            label: 'Início da Experiência 1',
-            type: 'date-range',
-          },
-          {
-            key: 'exp2StartAt',
-            label: 'Início da Experiência 2',
-            type: 'date-range',
-          },
-          {
-            key: 'createdAt',
-            label: 'Data de Criação',
-            type: 'date-range',
-          },
-          {
-            key: 'updatedAt',
-            label: 'Data de Atualização',
-            type: 'date-range',
-          },
-        ],
+        key: 'positionIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Cargos',
       },
       {
-        key: 'ranges',
-        label: 'Faixas de Valores',
-        icon: 'chart-bar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'performanceLevel',
-            label: 'Nível de Performance',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-            min: 0,
-            max: 100,
-          },
-          {
-            key: 'payrollNumber',
-            label: 'Número da Folha',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-        ],
+        key: 'sectorIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Setores',
+      },
+      {
+        key: 'birth',
+        type: 'date-range',
+        placeholder: { from: 'Nascimento de', to: 'Nascimento até' },
+      },
+      {
+        key: 'dismissedAt',
+        type: 'date-range',
+        placeholder: { from: 'Demissão de', to: 'Demissão até' },
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: { from: 'Cadastro de', to: 'Cadastro até' },
       },
     ],
   },

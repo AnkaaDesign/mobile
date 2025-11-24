@@ -32,32 +32,36 @@ export const DateRangeField = memo(function DateRangeField({
     })
   }
 
+  // Get placeholder labels - use field.placeholder if object, otherwise defaults
+  const placeholders = typeof field.placeholder === 'object' && field.placeholder
+    ? {
+        from: field.placeholder.from || field.placeholder.min || 'Data inicial',
+        to: field.placeholder.to || field.placeholder.max || 'Data final'
+      }
+    : { from: 'Data inicial', to: 'Data final' }
+
   return (
     <View style={styles.container}>
-      <ThemedText style={[styles.label, { color: colors.foreground }]}>
-        {field.label}
-      </ThemedText>
-
       <View style={styles.row}>
         <View style={styles.dateField}>
           <ThemedText style={[styles.subLabel, { color: colors.mutedForeground }]}>
-            De
+            {placeholders.from}
           </ThemedText>
           <DatePicker
             value={value?.gte || null}
             onChange={handleFromChange}
-            placeholder="Selecionar data"
+            placeholder="Selecionar..."
           />
         </View>
 
         <View style={styles.dateField}>
           <ThemedText style={[styles.subLabel, { color: colors.mutedForeground }]}>
-            Até
+            {placeholders.to}
           </ThemedText>
           <DatePicker
             value={value?.lte || null}
             onChange={handleToChange}
-            placeholder="Selecionar data"
+            placeholder="Selecionar..."
           />
         </View>
       </View>
@@ -67,12 +71,7 @@ export const DateRangeField = memo(function DateRangeField({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   row: {
     flexDirection: 'row',
@@ -83,6 +82,7 @@ const styles = StyleSheet.create({
   },
   subLabel: {
     fontSize: 12,
+    fontWeight: '500',
     marginBottom: 4,
   },
 })

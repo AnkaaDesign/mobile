@@ -1,14 +1,10 @@
 import { useRouter } from "expo-router";
-import { KeyboardAvoidingView, Platform } from "react-native";
 import { showToast } from "@/components/ui/toast";
-
-import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { ItemCategoryForm } from "@/components/inventory/item/category/form/category-form";
 import { useItemCategoryMutations } from "@/hooks";
 import { itemCategoryCreateSchema} from '../../../../../schemas';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { routes } from "@/constants";
-import { spacing } from "@/constants/design-system";
 
 export default function CategoryCreateScreen() {
   const router = useRouter();
@@ -38,11 +34,5 @@ export default function CategoryCreateScreen() {
     router.replace(routeToMobilePath(routes.inventory.products.categories.root) as any);
   };
 
-  return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-      <ThemedScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.lg }}>
-        <ItemCategoryForm mode="create" onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending} />
-      </ThemedScrollView>
-    </KeyboardAvoidingView>
-  );
+  return <ItemCategoryForm mode="create" onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending} />;
 }

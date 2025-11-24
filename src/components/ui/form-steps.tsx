@@ -1,7 +1,8 @@
-import { View } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Text } from "./text";
 import { useTheme } from "@/lib/theme";
 import { IconCheck } from "@tabler/icons-react-native";
+import { spacing, fontSize } from "@/constants/design-system";
 
 export interface FormStep {
   id: number;
@@ -18,59 +19,50 @@ export function FormSteps({ steps, currentStep }: FormStepsProps) {
   const { colors } = useTheme();
 
   return (
-    <View className="mb-6">
-      <View className="flex-row items-center justify-between">
+    <View style={styles.container}>
+      <View style={styles.stepsRow}>
         {steps.map((step, index) => {
           const isCompleted = step.id < currentStep;
           const isCurrent = step.id === currentStep;
-          const isUpcoming = step.id > currentStep;
+          const isLast = index === steps.length - 1;
 
           return (
-            <View key={step.id} className="flex-1">
-              {/* Step indicator and connector */}
-              <View className="flex-row items-center">
-                {/* Step circle */}
-                <View
-                  className="w-10 h-10 rounded-full items-center justify-center"
-                  style={{
+            <View key={step.id} style={[styles.stepItem, isLast && styles.stepItemLast]}>
+              {/* Step circle */}
+              <View
+                style={[
+                  styles.stepCircle,
+                  {
                     backgroundColor: isCompleted || isCurrent ? colors.primary : colors.muted,
-                  }}
-                >
-                  {isCompleted ? (
-                    <IconCheck size={20} color={colors.primaryForeground} />
-                  ) : (
-                    <Text
-                      className="text-sm font-bold"
-                      style={{
+                  },
+                ]}
+              >
+                {isCompleted ? (
+                  <IconCheck size={16} color={colors.primaryForeground} />
+                ) : (
+                  <Text
+                    style={[
+                      styles.stepNumber,
+                      {
                         color: isCurrent ? colors.primaryForeground : colors.mutedForeground,
-                      }}
-                    >
-                      {step.id}
-                    </Text>
-                  )}
-                </View>
-
-                {/* Connector line (except for last step) */}
-                {index < steps.length - 1 && (
-                  <View
-                    className="flex-1 h-0.5 mx-2"
-                    style={{
-                      backgroundColor: isCompleted ? colors.primary : colors.muted,
-                    }}
-                  />
+                      },
+                    ]}
+                  >
+                    {step.id}
+                  </Text>
                 )}
               </View>
 
-              {/* Step label (only show for current step on mobile to save space) */}
-              {isCurrent && (
-                <View className="mt-2">
-                  <Text className="text-xs font-medium text-foreground text-center">
-                    {step.name}
-                  </Text>
-                  <Text className="text-xs text-muted-foreground text-center mt-0.5">
-                    {step.description}
-                  </Text>
-                </View>
+              {/* Connector line (except for last step) */}
+              {!isLast && (
+                <View
+                  style={[
+                    styles.connector,
+                    {
+                      backgroundColor: isCompleted ? colors.primary : colors.muted,
+                    },
+                  ]}
+                />
               )}
             </View>
           );
@@ -79,3 +71,39 @@ export function FormSteps({ steps, currentStep }: FormStepsProps) {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    paddingVertical: spacing.sm,
+  },
+  stepsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+  },
+  stepItem: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  stepItemLast: {
+    flex: 0,
+  },
+  stepCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepNumber: {
+    fontSize: fontSize.xs,
+    fontWeight: "700",
+  },
+  connector: {
+    flex: 1,
+    height: 2,
+    marginHorizontal: spacing.sm,
+    minWidth: 20,
+  },
+});

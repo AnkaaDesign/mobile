@@ -30,7 +30,7 @@ export const servicesListConfig: ListConfig<Service> = {
         sortable: true,
         width: 1.2,
         align: 'right',
-        render: (service) => service.price || 0,
+        render: (service) => String(service.price || 0),
         format: 'currency',
       },
       {
@@ -61,11 +61,11 @@ export const servicesListConfig: ListConfig<Service> = {
       },
     ],
     defaultVisible: ['description', 'price', 'isActive'],
-    rowHeight: 60,
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (service, router) => {
@@ -98,57 +98,27 @@ export const servicesListConfig: ListConfig<Service> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'status',
-        label: 'Status',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'isActive',
-            label: 'Serviços Ativos',
-            description: 'Incluir apenas serviços ativos',
-            type: 'toggle',
-            defaultValue: true,
-          },
-        ],
+        key: 'isActive',
+        type: 'toggle',
+        placeholder: 'Serviços Ativos',
+        defaultValue: true,
       },
       {
-        key: 'ranges',
-        label: 'Faixas',
-        icon: 'adjustments',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'priceRange',
-            label: 'Preço (R$)',
-            type: 'number-range',
-            placeholder: { min: 'Mínimo', max: 'Máximo' },
-          },
-          {
-            key: 'durationRange',
-            label: 'Duração (horas)',
-            type: 'number-range',
-            placeholder: { min: 'Mínimo', max: 'Máximo' },
-          },
-        ],
+        key: 'priceRange',
+        type: 'number-range',
+        placeholder: { min: 'Mínimo', max: 'Máximo' },
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
-        ],
+        key: 'durationRange',
+        type: 'number-range',
+        placeholder: { min: 'Mínimo', max: 'Máximo' },
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Cadastro',
       },
     ],
   },

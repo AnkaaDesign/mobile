@@ -96,6 +96,7 @@ export * from "./useMaintenance";
 // Common Module Hooks
 // =====================================================
 export * from "./useFile";
+export * from "./useFileUploadManager";
 export * from "./use-files-infinite-mobile";
 export * from "./useNotification";
 export * from "./usePreferences";
@@ -132,6 +133,9 @@ export * from "./use-infinite-mobile";
 // Entity-specific infinite mobile hooks
 export * from "./use-activities-infinite-mobile";
 export * from "./use-borrows-infinite-mobile";
+export * from "./use-my-activities-infinite-mobile";
+export * from "./use-my-bonuses-with-live";
+export * from "./use-my-borrows-infinite-mobile";
 export * from "./use-change-logs-infinite-mobile";
 export * from "./use-customers-infinite-mobile";
 export * from "./use-external-withdrawals-infinite-mobile";
@@ -161,6 +165,7 @@ export * from "./use-tasks-infinite-mobile";
 export * from "./use-users-infinite-mobile";
 export * from "./use-vacations-infinite-mobile";
 export * from "./use-warnings-infinite-mobile";
+export * from "./use-my-warnings-infinite-mobile";
 export * from "./use-order-schedules-infinite-mobile";
 export * from "./use-cuts-infinite-mobile";
 export * from "./use-airbrushings-infinite-mobile";
@@ -181,6 +186,7 @@ export * from "./useDebouncedSearch";
 // Form State Management Hooks
 // =====================================================
 export * from "./use-external-withdrawal-form-state";
+export * from "./use-multi-step-form";
 
 // =====================================================
 // Lookup & Validation Hooks

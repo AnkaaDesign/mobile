@@ -15,8 +15,8 @@ interface PositionCardProps {
 export function PositionCard({ position }: PositionCardProps) {
   const { colors } = useTheme();
 
-  // Get count of monetary values (prioritize monetaryValues over deprecated remunerations)
-  const remunerationCount = position._count?.monetaryValues || position._count?.remunerations || 0;
+  // Get count of remunerations (MonetaryValue entities via remunerations relation)
+  const remunerationCount = position._count?.remunerations || 0;
 
   return (
     <Card style={styles.card}>

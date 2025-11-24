@@ -259,24 +259,36 @@ export function isUserBlocked(user: User): boolean {
 
 /**
  * Check if user has specific privilege
+ * Uses EXACT privilege matching (not hierarchical) - ADMIN is special case with access to everything
+ * FINANCIAL can edit tasks but not inventory, WAREHOUSE can edit inventory but not tasks
  */
 export function hasPrivilege(user: User | null, requiredPrivilege: SECTOR_PRIVILEGES): boolean {
   if (!user?.sector?.privileges) return false;
 
-  const userPrivilegeLevel = getSectorPrivilegeLevel(user.sector.privileges);
-  const requiredPrivilegeLevel = getSectorPrivilegeLevel(requiredPrivilege);
+  const userPrivilege = user.sector.privileges;
 
-  return userPrivilegeLevel >= requiredPrivilegeLevel;
+  // ADMIN has access to everything (special case)
+  if (userPrivilege === SECTOR_PRIVILEGES.ADMIN) return true;
+
+  // For all other privileges, require EXACT match (no hierarchy)
+  return userPrivilege === requiredPrivilege;
 }
 
 /**
  * Check if user has ANY of the specified privileges (OR logic)
- * Matches backend @Roles decorator behavior - user needs only one of the privileges
+ * Matches backend @Roles decorator behavior - checks if user's privilege is IN the array
+ * ADMIN can access everything, others need exact match
  */
 export function hasAnyPrivilege(user: User | null, requiredPrivileges: SECTOR_PRIVILEGES[]): boolean {
   if (!user?.sector?.privileges || !requiredPrivileges.length) return false;
 
-  return requiredPrivileges.some((privilege) => hasPrivilege(user, privilege));
+  const userPrivilege = user.sector.privileges;
+
+  // ADMIN has access to everything (special case)
+  if (userPrivilege === SECTOR_PRIVILEGES.ADMIN) return true;
+
+  // Check if user's privilege is in the allowed array (exact match)
+  return requiredPrivileges.includes(userPrivilege);
 }
 
 /**

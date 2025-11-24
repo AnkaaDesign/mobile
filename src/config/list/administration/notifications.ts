@@ -56,7 +56,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (notification) => notification.importance,
+        render: (notification) => IMPORTANCE_LABELS[notification.importance] || notification.importance,
         format: 'badge',
       },
       {
@@ -65,7 +65,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (notification) => notification.type,
+        render: (notification) => notification.type ? TYPE_LABELS[notification.type] : '-',
         format: 'badge',
       },
       {
@@ -82,7 +82,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (notification) => (notification as any)._count?.seenBy || 0,
+        render: (notification) => String((notification as any)._count?.seenBy || 0),
         format: 'badge',
       },
       {
@@ -91,7 +91,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (notification) => notification.sentAt,
+        render: (notification) => notification.sentAt || '-',
         format: 'datetime',
       },
       {
@@ -104,12 +104,12 @@ export const notificationsListConfig: ListConfig<Notification> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['title', 'importance', 'type', 'sentAt'],
-    rowHeight: 60,
+    defaultVisible: ['title', 'type', 'sentAt'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (notification, router) => {
@@ -143,86 +143,48 @@ export const notificationsListConfig: ListConfig<Notification> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'importance',
-        label: 'Importância',
-        icon: 'alert-circle',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'importance',
-            label: 'Importância',
-            type: 'select',
-            multiple: true,
-            options: Object.values(NOTIFICATION_IMPORTANCE).map((importance) => ({
-              label: IMPORTANCE_LABELS[importance],
-              value: importance,
-            })),
-            placeholder: 'Selecione a importância',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(NOTIFICATION_IMPORTANCE).map((importance) => ({
+          label: IMPORTANCE_LABELS[importance],
+          value: importance,
+        })),
+        placeholder: 'Importância',
       },
       {
         key: 'type',
-        label: 'Tipo',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'type',
-            label: 'Tipo',
-            type: 'select',
-            multiple: true,
-            options: Object.values(NOTIFICATION_TYPE).map((type) => ({
-              label: TYPE_LABELS[type],
-              value: type,
-            })),
-            placeholder: 'Selecione os tipos',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(NOTIFICATION_TYPE).map((type) => ({
+          label: TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Tipo',
       },
       {
-        key: 'status',
-        label: 'Status',
-        icon: 'check',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'sent',
-            label: 'Enviadas',
-            description: 'Apenas notificações enviadas',
-            type: 'toggle',
-          },
-          {
-            key: 'hasSeen',
-            label: 'Visualizadas',
-            description: 'Apenas notificações visualizadas',
-            type: 'toggle',
-          },
-        ],
+        key: 'sent',
+        type: 'toggle',
+        placeholder: 'Enviadas',
+        description: 'Apenas notificações enviadas',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'sentAt',
-            label: 'Data de Envio',
-            type: 'date-range',
-          },
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
-        ],
+        key: 'hasSeen',
+        type: 'toggle',
+        placeholder: 'Visualizadas',
+        description: 'Apenas notificações visualizadas',
+      },
+      {
+        key: 'sentAt',
+        type: 'date-range',
+        placeholder: 'Data de Envio',
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Cadastro',
       },
     ],
   },

@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Observation } from '@/types'
-import { canEditObservations } from '@/utils/permissions/entity-permissions'
+import { canEditObservations, canDeleteObservations } from '@/utils/permissions/entity-permissions'
+
 
 export const observationsListConfig: ListConfig<Observation> = {
   key: 'production-observations',
@@ -41,24 +42,33 @@ export const observationsListConfig: ListConfig<Observation> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (observation) => observation.files?.length || 0,
+        render: (observation) => String(observation.files?.length || 0),
       },
       {
         key: 'createdAt',
-        label: 'DATA',
+        label: 'CRIADO EM',
         sortable: true,
-        width: 1.5,
+        width: 1.6,
         align: 'left',
         render: (observation) => observation.createdAt,
-        format: 'datetime',
+        format: 'date',
+      },
+      {
+        key: 'updatedAt',
+        label: 'ATUALIZADO EM',
+        sortable: true,
+        width: 1.4,
+        align: 'left',
+        render: (observation) => observation.updatedAt,
+        format: 'date',
       },
     ],
     defaultVisible: ['task', 'description', 'createdAt'],
-    rowHeight: 60,
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (observation, router) => {
@@ -70,6 +80,7 @@ export const observationsListConfig: ListConfig<Observation> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditObservations,
         onPress: (observation, router) => {
           router.push(`/producao/observacoes/editar/${observation.id}`)
         },
@@ -79,6 +90,7 @@ export const observationsListConfig: ListConfig<Observation> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteObservations,
         confirm: {
           title: 'Confirmar Exclusão',
           message: () => `Deseja excluir esta observação?`,
@@ -91,40 +103,17 @@ export const observationsListConfig: ListConfig<Observation> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'taskIds',
-            label: 'Tarefas',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione as tarefas',
-          },
-        ],
+        key: 'taskIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Tarefas',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Criação',
-            type: 'date-range',
-          },
-        ],
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Criação',
       },
     ],
   },

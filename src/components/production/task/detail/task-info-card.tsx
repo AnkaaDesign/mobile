@@ -24,13 +24,14 @@ import {
 
 interface TaskInfoCardProps {
   task: Task & {
-    plate?: string;
-    chassisNumber?: string;
+    // Note: plate and chassisNumber are accessed via task.truck.plate and task.truck.chassisNumber
     truck?: {
       id: string;
       name?: string;
       width?: number;
       height?: number;
+      plate?: string;
+      chassisNumber?: string;
     };
     customer?: {
       fantasyName: string;

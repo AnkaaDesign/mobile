@@ -1,7 +1,42 @@
 import type { ListConfig } from '@/components/list/types'
-import type { Cut } from '@/types'
-import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from '@/constants/enums'
-import { canEditCuts } from '@/utils/permissions/entity-permissions'
+import type { Cut, User } from '@/types'
+import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN, SECTOR_PRIVILEGES } from '@/constants/enums'
+import { canEditCuts, canDeleteCuts } from '@/utils/permissions/entity-permissions'
+
+// Special value for tasks without a sector
+const UNDEFINED_SECTOR_VALUE = "__UNDEFINED__";
+
+// Helper function to get sector-based where clause for production/leader users
+const getSectorBasedWhere = (user: User | null) => {
+  if (!user?.sector) return {};
+
+  const { privileges, id: userSectorId, managedSectorId } = user.sector;
+
+  // Production users can only see cuts from their own sector
+  if (privileges === SECTOR_PRIVILEGES.PRODUCTION) {
+    return {
+      task: {
+        sectorId: userSectorId,
+      },
+    };
+  }
+
+  // Leader users can see cuts from their sector and managed sector
+  if (privileges === SECTOR_PRIVILEGES.LEADER) {
+    const sectorIds = [userSectorId];
+    if (managedSectorId) {
+      sectorIds.push(managedSectorId);
+    }
+    return {
+      task: {
+        sectorId: { in: sectorIds },
+      },
+    };
+  }
+
+  // Other privileges (ADMIN, WAREHOUSE, etc.) can see all cuts
+  return {};
+};
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
@@ -29,7 +64,11 @@ export const cutsListConfig: ListConfig<Cut> = {
     pageSize: 25,
     include: {
       file: true,
-      task: true,
+      task: {
+        include: {
+          sector: true,
+        },
+      },
       parentCut: true,
     },
   },
@@ -37,29 +76,12 @@ export const cutsListConfig: ListConfig<Cut> = {
   table: {
     columns: [
       {
-        key: 'status',
-        label: 'STATUS',
-        sortable: true,
-        width: 1.2,
-        align: 'center',
-        render: (cut) => cut.status,
-        format: 'badge',
-      },
-      {
-        key: 'type',
-        label: 'TIPO',
-        sortable: true,
-        width: 1.2,
-        align: 'center',
-        render: (cut) => TYPE_LABELS[cut.type] || cut.type,
-      },
-      {
-        key: 'origin',
-        label: 'ORIGEM',
-        sortable: true,
-        width: 1.2,
-        align: 'center',
-        render: (cut) => ORIGIN_LABELS[cut.origin] || cut.origin,
+        key: 'fileName',
+        label: 'NOME DO ARQUIVO',
+        sortable: false,
+        width: 2.0,
+        align: 'left',
+        render: (cut) => cut.file?.filename || cut.file?.fileName || cut.file?.key || '-',
       },
       {
         key: 'task',
@@ -71,16 +93,41 @@ export const cutsListConfig: ListConfig<Cut> = {
         style: { fontWeight: '500' },
       },
       {
-        key: 'file',
-        label: 'ARQUIVO',
+        key: 'status',
+        label: 'STATUS',
+        sortable: true,
+        width: 1.2,
+        align: 'left',
+        render: (cut) => STATUS_LABELS[cut.status] || cut.status,
+        format: 'badge',
+      },
+      {
+        key: 'type',
+        label: 'TIPO',
+        sortable: true,
+        width: 1.2,
+        align: 'left',
+        render: (cut) => TYPE_LABELS[cut.type] || cut.type,
+      },
+      {
+        key: 'origin',
+        label: 'ORIGEM',
+        sortable: true,
+        width: 1.2,
+        align: 'left',
+        render: (cut) => ORIGIN_LABELS[cut.origin] || cut.origin,
+      },
+      {
+        key: 'reason',
+        label: 'MOTIVO',
         sortable: false,
         width: 2.0,
         align: 'left',
-        render: (cut) => cut.file?.fileName || cut.file?.key || '-',
+        render: (cut) => cut.reason || '-',
       },
       {
         key: 'startedAt',
-        label: 'INÍCIO',
+        label: 'INICIADO EM',
         sortable: true,
         width: 1.5,
         align: 'left',
@@ -89,7 +136,7 @@ export const cutsListConfig: ListConfig<Cut> = {
       },
       {
         key: 'completedAt',
-        label: 'CONCLUSÃO',
+        label: 'FINALIZADO EM',
         sortable: true,
         width: 1.5,
         align: 'left',
@@ -105,13 +152,21 @@ export const cutsListConfig: ListConfig<Cut> = {
         render: (cut) => cut.createdAt,
         format: 'datetime',
       },
+      {
+        key: 'sector',
+        label: 'SETOR',
+        sortable: false,
+        width: 1.5,
+        align: 'left',
+        render: (cut) => cut.task?.sector?.name || 'Indefinido',
+      },
     ],
-    defaultVisible: ['status', 'type', 'task', 'origin'],
-    rowHeight: 60,
+    defaultVisible: ['fileName', 'status'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (cut, router) => {
@@ -123,6 +178,7 @@ export const cutsListConfig: ListConfig<Cut> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditCuts,
         onPress: (cut, router) => {
           router.push(`/producao/recorte/editar/${cut.id}`)
         },
@@ -132,6 +188,7 @@ export const cutsListConfig: ListConfig<Cut> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteCuts,
         confirm: {
           title: 'Confirmar Exclusão',
           message: () => `Deseja excluir este corte?`,
@@ -144,105 +201,48 @@ export const cutsListConfig: ListConfig<Cut> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'scissors',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(CUT_STATUS).map((status) => ({
-              label: STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(CUT_STATUS).map((status) => ({
+          label: STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status',
       },
       {
         key: 'type',
-        label: 'Tipo',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'type',
-            label: 'Tipo de Corte',
-            type: 'select',
-            multiple: true,
-            options: Object.values(CUT_TYPE).map((type) => ({
-              label: TYPE_LABELS[type],
-              value: type,
-            })),
-            placeholder: 'Selecione os tipos',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(CUT_TYPE).map((type) => ({
+          label: TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Tipo de Corte',
       },
       {
         key: 'origin',
-        label: 'Origem',
-        icon: 'map-pin',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'origin',
-            label: 'Origem do Corte',
-            type: 'select',
-            multiple: true,
-            options: Object.values(CUT_ORIGIN).map((origin) => ({
-              label: ORIGIN_LABELS[origin],
-              value: origin,
-            })),
-            placeholder: 'Selecione as origens',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(CUT_ORIGIN).map((origin) => ({
+          label: ORIGIN_LABELS[origin],
+          value: origin,
+        })),
+        placeholder: 'Origem',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'taskIds',
-            label: 'Tarefas',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione as tarefas',
-          },
-        ],
+        key: 'sectorIds',
+        type: 'select',
+        multiple: true,
+        async: true,
+        placeholder: 'Setores',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Criação',
-            type: 'date-range',
-          },
-          {
-            key: 'updatedAt',
-            label: 'Data de Atualização',
-            type: 'date-range',
-          },
-        ],
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Criação',
       },
     ],
   },

@@ -1,13 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Combobox } from "@/components/ui/combobox";
-import { Badge } from "@/components/ui/badge";
-import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight} from "@/constants/design-system";
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
+import { IconFilter, IconX } from '@tabler/icons-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/lib/theme';
+import { ThemedText } from '@/components/ui/themed-text';
+import { Badge } from '@/components/ui/badge';
+import { ColorPicker } from '@/components/ui/color-picker';
+import { Slider } from '@/components/ui/slider';
+import { Combobox } from '@/components/ui/combobox';
 import {
   PAINT_FINISH,
   COLOR_PALETTE,
@@ -15,47 +15,59 @@ import {
   PAINT_FINISH_LABELS,
   COLOR_PALETTE_LABELS,
   TRUCK_MANUFACTURER_LABELS,
-} from "@/constants";
-import { usePaintTypes, usePaintBrands } from "@/hooks";
-import {
-  IconFilter,
-  IconPalette,
-  IconPaint,
-  IconTag,
-  IconBrush,
-  IconTruck,
-  IconSparkles,
-  IconX,
-} from "@tabler/icons-react-native";
+} from '@/constants';
+import { usePaintTypes, usePaintBrands } from '@/hooks';
 
 interface PaintFilterDrawerProps {
-  filters: any;
-  onFilterChange: (filters: any) => void;
-  onClose: () => void;
+  filters: {
+    paintTypeIds?: string[];
+    paintBrandIds?: string[];
+    finishes?: string[];
+    manufacturers?: string[];
+    palettes?: string[];
+    hasFormulas?: boolean;
+    similarColor?: string;
+    similarColorThreshold?: number;
+  };
+  onFiltersChange: (filters: any) => void;
+  onClear: () => void;
+  activeFiltersCount: number;
+  onClose?: () => void;
 }
 
-export function PaintFilterDrawer({ filters, onFilterChange, onClose }: PaintFilterDrawerProps) {
+export function PaintFilterDrawer({
+  filters,
+  onFiltersChange,
+  onClear,
+  activeFiltersCount,
+  onClose,
+}: PaintFilterDrawerProps) {
   const { colors } = useTheme();
-
-  // Local state for filters
-  const [localFilters, setLocalFilters] = useState(filters);
+  const insets = useSafeAreaInsets();
+  const handleClose = onClose || (() => {});
+  // Initialize localFilters with filters value immediately
+  const [localFilters, setLocalFilters] = useState(() => filters || {});
 
   // Fetch paint types and brands
   const { data: paintTypesData } = usePaintTypes({ orderBy: { name: "asc" } });
   const { data: paintBrandsData } = usePaintBrands({ orderBy: { name: "asc" } });
 
   const paintTypeOptions = useMemo(() => {
-    return paintTypesData?.data?.map((type) => ({
-      value: type.id,
-      label: type.name,
-    })) || [];
+    return (
+      paintTypesData?.data?.map((type) => ({
+        value: type?.id,
+        label: type?.name,
+      })) || []
+    );
   }, [paintTypesData]);
 
   const paintBrandOptions = useMemo(() => {
-    return paintBrandsData?.data?.map((brand) => ({
-      value: brand.id,
-      label: brand.name,
-    })) || [];
+    return (
+      paintBrandsData?.data?.map((brand) => ({
+        value: brand?.id,
+        label: brand?.name,
+      })) || []
+    );
   }, [paintBrandsData]);
 
   const finishOptions = Object.values(PAINT_FINISH).map((finish) => ({
@@ -73,230 +85,211 @@ export function PaintFilterDrawer({ filters, onFilterChange, onClose }: PaintFil
     label: COLOR_PALETTE_LABELS[palette] || palette,
   }));
 
-  // Count active filters
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (localFilters.paintTypeIds?.length) count++;
-    if (localFilters.paintBrandIds?.length) count++;
-    if (localFilters.finishes?.length) count++;
-    if (localFilters.manufacturers?.length) count++;
-    if (localFilters.palettes?.length) count++;
-    if (localFilters.hasFormulas !== undefined) count++;
-    return count;
-  }, [localFilters]);
+  const handleToggle = useCallback((key: string, value: boolean) => {
+    setLocalFilters(prev => ({
+      ...prev,
+      [key]: value || undefined
+    }));
+  }, []);
 
-  // Sync local filters with parent
-  useEffect(() => {
-    setLocalFilters(filters);
-  }, [filters]);
-
-  // Handle filter changes
-  const handleChange = (key: string, value: any) => {
-    setLocalFilters((prev: any) => {
-      if (value === undefined || value === null || value === "") {
-        const { [key]: _, ...rest } = prev;
+  const handleChange = useCallback((key: string, value: any) => {
+    setLocalFilters((prev) => {
+      const currentFilters = prev || {};
+      if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) {
+        const { [key]: _, ...rest } = currentFilters;
         return rest;
       }
       return {
-        ...prev,
+        ...currentFilters,
         [key]: value,
       };
     });
-  };
+  }, []);
 
-  // Apply filters
-  const handleApply = () => {
-    const cleanedFilters = { ...localFilters };
+  const handleApply = useCallback(() => {
+    const cleanedFilters = { ...(localFilters || {}) };
 
-    // Remove empty values
+    // CRITICAL: Remove similarColor if it's empty, undefined, or the default black color
+    if (
+      !cleanedFilters.similarColor ||
+      cleanedFilters.similarColor === "#000000" ||
+      cleanedFilters.similarColor === ""
+    ) {
+      delete cleanedFilters.similarColor;
+      delete cleanedFilters.similarColorThreshold;
+    }
+
+    // Remove any empty values
     Object.keys(cleanedFilters).forEach((key) => {
       const value = cleanedFilters[key];
-      if (value === "" || value === null || value === undefined || (Array.isArray(value) && value.length === 0)) {
+      if (
+        value === "" ||
+        value === null ||
+        value === undefined ||
+        (Array.isArray(value) && value.length === 0)
+      ) {
         delete cleanedFilters[key];
       }
     });
 
-    onFilterChange(cleanedFilters);
-    onClose();
-  };
+    onFiltersChange(cleanedFilters);
+    handleClose();
+  }, [localFilters, onFiltersChange, handleClose]);
 
-  // Reset filters
-  const handleReset = () => {
+  const handleClear = useCallback(() => {
     setLocalFilters({});
-    onFilterChange({});
-  };
+    onClear();
+  }, [onClear]);
+
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconFilter size={24} color={colors.primary} />
-          <ThemedText style={styles.headerTitle}>Filtros</ThemedText>
-          {activeFilterCount > 0 && (
-            <Badge variant="secondary" style={styles.filterCountBadge}>
-              <ThemedText style={styles.filterCountText}>{activeFilterCount}</ThemedText>
-            </Badge>
+      <View style={[styles.header]}>
+        <View style={styles.headerContent}>
+          <IconFilter size={24} color={colors.foreground} />
+          <ThemedText style={[styles.title, { color: colors.foreground }]}>Filtros</ThemedText>
+          {activeFiltersCount > 0 && (
+            <View style={[styles.badge, { backgroundColor: colors.destructive }]}>
+              <ThemedText style={[styles.badgeText, { color: '#fff' }]}>
+                {activeFiltersCount}
+              </ThemedText>
+            </View>
           )}
         </View>
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={onClose}
-          style={styles.closeButton}
-        >
-          <IconX size={20} color={colors.foreground} />
-        </Button>
+        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+          <IconX size={24} color={colors.mutedForeground} />
+        </TouchableOpacity>
       </View>
 
-      {/* Filter Content */}
+      {/* Scrollable Content */}
       <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 90 }]}
+        showsVerticalScrollIndicator={true}
       >
-        {/* Paint Types */}
-        <View style={styles.filterSection}>
-          <Label style={[styles.filterLabel, { color: colors.foreground }]}>
-            <IconPaint size={16} color={colors.foreground} style={styles.labelIcon} />
-            <ThemedText style={styles.labelText}>Tipos de Tinta</ThemedText>
-          </Label>
+        {/* All filters in a single flat list */}
+        <View style={styles.filterGroup}>
           <Combobox
             mode="multiple"
             options={paintTypeOptions}
-            selectedValues={localFilters.paintTypeIds || []}
+            value={localFilters.paintTypeIds || []}
             onValueChange={(values) => handleChange("paintTypeIds", values)}
-            onCreate={() => {}}
-            onSearchChange={() => {}}
-            onEndReached={() => {}}
-            placeholder="Selecione os tipos"
-            selectedText="tipos selecionados"
+            placeholder="Tipo de Tinta"
             searchPlaceholder="Buscar tipos..."
             emptyText="Nenhum tipo encontrado"
           />
         </View>
 
-        {/* Paint Brands */}
-        <View style={styles.filterSection}>
-          <Label style={[styles.filterLabel, { color: colors.foreground }]}>
-            <IconTag size={16} color={colors.foreground} style={styles.labelIcon} />
-            <ThemedText style={styles.labelText}>Marcas</ThemedText>
-          </Label>
+        <View style={styles.filterGroup}>
           <Combobox
             mode="multiple"
             options={paintBrandOptions}
-            selectedValues={localFilters.paintBrandIds || []}
+            value={localFilters.paintBrandIds || []}
             onValueChange={(values) => handleChange("paintBrandIds", values)}
-            onCreate={() => {}}
-            onSearchChange={() => {}}
-            onEndReached={() => {}}
-            placeholder="Selecione as marcas"
-            selectedText="marcas selecionadas"
+            placeholder="Marca"
             searchPlaceholder="Buscar marcas..."
             emptyText="Nenhuma marca encontrada"
           />
         </View>
 
-        {/* Finishes */}
-        <View style={styles.filterSection}>
-          <Label style={[styles.filterLabel, { color: colors.foreground }]}>
-            <IconBrush size={16} color={colors.foreground} style={styles.labelIcon} />
-            <ThemedText style={styles.labelText}>Acabamentos</ThemedText>
-          </Label>
+        <View style={styles.filterGroup}>
           <Combobox
             mode="multiple"
             options={finishOptions}
-            selectedValues={localFilters.finishes || []}
+            value={localFilters.finishes || []}
             onValueChange={(values) => handleChange("finishes", values)}
-            onCreate={() => {}}
-            onSearchChange={() => {}}
-            onEndReached={() => {}}
-            placeholder="Selecione os acabamentos"
-            selectedText="acabamentos selecionados"
+            placeholder="Acabamento"
             searchPlaceholder="Buscar acabamentos..."
             emptyText="Nenhum acabamento encontrado"
           />
         </View>
 
-        {/* Manufacturers */}
-        <View style={styles.filterSection}>
-          <Label style={[styles.filterLabel, { color: colors.foreground }]}>
-            <IconTruck size={16} color={colors.foreground} style={styles.labelIcon} />
-            <ThemedText style={styles.labelText}>Montadoras</ThemedText>
-          </Label>
+        <View style={styles.filterGroup}>
           <Combobox
             mode="multiple"
             options={manufacturerOptions}
-            selectedValues={localFilters.manufacturers || []}
+            value={localFilters.manufacturers || []}
             onValueChange={(values) => handleChange("manufacturers", values)}
-            onCreate={() => {}}
-            onSearchChange={() => {}}
-            onEndReached={() => {}}
-            placeholder="Selecione as montadoras"
-            selectedText="montadoras selecionadas"
+            placeholder="Montadora"
             searchPlaceholder="Buscar montadoras..."
             emptyText="Nenhuma montadora encontrada"
           />
         </View>
 
-        {/* Color Palettes */}
-        <View style={styles.filterSection}>
-          <Label style={[styles.filterLabel, { color: colors.foreground }]}>
-            <IconPalette size={16} color={colors.foreground} style={styles.labelIcon} />
-            <ThemedText style={styles.labelText}>Paletas de Cores</ThemedText>
-          </Label>
+        <View style={styles.filterGroup}>
           <Combobox
             mode="multiple"
             options={paletteOptions}
-            selectedValues={localFilters.palettes || []}
+            value={localFilters.palettes || []}
             onValueChange={(values) => handleChange("palettes", values)}
-            onCreate={() => {}}
-            onSearchChange={() => {}}
-            onEndReached={() => {}}
-            placeholder="Selecione as paletas"
-            selectedText="paletas selecionadas"
+            placeholder="Paleta de Cor"
             searchPlaceholder="Buscar paletas..."
             emptyText="Nenhuma paleta encontrada"
           />
         </View>
 
-        {/* Has Formulas */}
-        <View style={[styles.filterSection, styles.switchSection]}>
-          <View style={styles.switchLabelContainer}>
-            <Label style={[styles.filterLabel, { color: colors.foreground }]}>
-              <IconSparkles size={16} color={colors.foreground} style={styles.labelIcon} />
-              <ThemedText style={styles.labelText}>Apenas com fórmulas</ThemedText>
-            </Label>
-            <ThemedText style={[styles.switchDescription, { color: colors.mutedForeground }]}>
-              Mostrar apenas tintas que possuem fórmulas cadastradas
-            </ThemedText>
-          </View>
-          <Switch
-            checked={localFilters.hasFormulas === true}
-            onCheckedChange={(checked) => handleChange("hasFormulas", checked ? true : undefined)}
+        {/* Has Formulas Toggle */}
+        <View style={[styles.toggleRow, { borderBottomColor: colors.border }]}>
+          <ThemedText style={[styles.toggleLabel, { color: colors.foreground }]}>Apenas com fórmulas</ThemedText>
+          <RNSwitch
+            value={!!localFilters.hasFormulas}
+            onValueChange={(value) => handleToggle('hasFormulas', value)}
+            trackColor={{ false: colors.muted, true: colors.primary }}
+            thumbColor={localFilters.hasFormulas ? colors.primaryForeground : "#f4f3f4"}
+            ios_backgroundColor={colors.muted}
           />
+        </View>
+
+        {/* Color Similarity Filter */}
+        <View style={styles.filterGroup}>
+          <ThemedText style={[styles.filterLabel, { color: colors.foreground }]}>Cor Similar</ThemedText>
+          <ColorPicker
+            color={localFilters.similarColor || "#000000"}
+            onColorChange={(color) => handleChange("similarColor", color === "#000000" ? undefined : color)}
+          />
+
+          {localFilters.similarColor && localFilters.similarColor !== "#000000" && (
+            <View style={styles.thresholdContainer}>
+              <View style={styles.thresholdHeader}>
+                <ThemedText style={[styles.filterLabel, { color: colors.foreground }]}>
+                  Limiar
+                </ThemedText>
+                <Badge variant="secondary">
+                  <ThemedText style={{ fontSize: 12 }}>
+                    {localFilters.similarColorThreshold || 15}
+                  </ThemedText>
+                </Badge>
+              </View>
+              <Slider
+                value={localFilters.similarColorThreshold || 15}
+                onValueChange={(value) => handleChange("similarColorThreshold", value)}
+                min={0}
+                max={100}
+                step={5}
+              />
+            </View>
+          )}
         </View>
       </ScrollView>
 
-      {/* Footer Actions */}
-      <View style={[styles.footer, { borderTopColor: colors.border }]}>
-        <Button
-          variant="outline"
-          onPress={handleReset}
-          style={styles.footerButton}
+      {/* Footer */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16, borderTopColor: colors.border, backgroundColor: colors.background }]}>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+          onPress={handleClear}
+          activeOpacity={0.7}
         >
-          <IconX size={16} color={colors.foreground} />
-          <ThemedText style={[styles.buttonText, { color: colors.foreground }]}>Limpar</ThemedText>
-        </Button>
-        <Button
-          variant="default"
-          onPress={handleApply}
-          style={styles.footerButton}
-        >
-          <ThemedText style={[styles.buttonText, { color: colors.primaryForeground }]}>
-            Aplicar Filtros
+          <ThemedText style={[styles.buttonText, { color: colors.foreground }]}>
+            {activeFiltersCount > 0 ? `Limpar (${activeFiltersCount})` : 'Limpar'}
           </ThemedText>
-        </Button>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.primary, borderColor: colors.primary, borderWidth: 1 }]}
+          onPress={handleApply}
+          activeOpacity={0.7}
+        >
+          <ThemedText style={[styles.buttonText, { color: colors.primaryForeground }]}>Aplicar</ThemedText>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -307,89 +300,101 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flex: 1,
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  headerTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
   },
-  filterCountBadge: {
-    marginLeft: spacing.xs,
+  badge: {
+    marginLeft: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    minWidth: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  filterCountText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   closeButton: {
-    padding: spacing.xs,
-  },
-  content: {
-    flex: 1,
+    padding: 4,
   },
   scrollContent: {
-    padding: spacing.lg,
-    gap: spacing.xl,
-    paddingBottom: spacing.xxl,
+    paddingTop: 8,
+    paddingHorizontal: 16,
+    gap: 12,
   },
-  filterSection: {
-    gap: spacing.sm,
+  filterGroup: {
+    marginBottom: 0,
   },
   filterLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 6,
+  },
+  toggleRow: {
     flexDirection: "row",
     alignItems: "center",
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium,
-    marginBottom: spacing.xs,
-  },
-  labelIcon: {
-    marginRight: spacing.xs,
-  },
-  labelText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium,
-  },
-  switchSection: {
-    flexDirection: "row",
     justifyContent: "space-between",
+    paddingVertical: 12,
+  },
+  toggleLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  thresholdContainer: {
+    marginTop: 16,
+  },
+  thresholdHeader: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.sm,
+    justifyContent: "space-between",
+    marginBottom: 4,
   },
-  switchLabelContainer: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  switchDescription: {
-    fontSize: fontSize.sm,
-    marginTop: spacing.xxs,
-    lineHeight: 18,
+  thresholdDescription: {
+    fontSize: 12,
+    marginBottom: 12,
   },
   footer: {
-    flexDirection: "row",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
-  footerButton: {
+  button: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
+    height: 48,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
+
+export default PaintFilterDrawer;

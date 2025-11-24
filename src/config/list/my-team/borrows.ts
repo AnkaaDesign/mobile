@@ -5,6 +5,7 @@ import {
   BORROW_STATUS_LABELS,
 } from '@/constants'
 
+
 export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
   key: 'my-team-borrows',
   title: 'Empréstimos da Equipe',
@@ -56,7 +57,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
         sortable: true,
         width: 1.0,
         align: 'center',
-        render: (borrow) => borrow.status,
+        render: (borrow) => BORROW_STATUS_LABELS[borrow.status] || borrow.status,
         format: 'badge',
         component: 'status-badge',
       },
@@ -141,7 +142,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (borrow) => borrow.quantityReturned || 0,
+        render: (borrow) => String(borrow.quantityReturned || 0),
         format: 'number',
       },
       {
@@ -179,11 +180,11 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
       },
     ],
     defaultVisible: ['user.name', 'item.name', 'status'],
-    rowHeight: 60,
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (borrow, router) => {
@@ -244,113 +245,61 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'status',
-        label: 'Status',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'statuses',
-            label: 'Status do Empréstimo',
-            type: 'select',
-            multiple: true,
-            options: Object.values(BORROW_STATUS).map((status) => ({
-              label: BORROW_STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-          {
-            key: 'isOverdue',
-            label: 'Apenas Atrasados',
-            type: 'toggle',
-            description: 'Mostrar apenas empréstimos atrasados',
-          },
-        ],
+        key: 'statuses',
+        type: 'select',
+        multiple: true,
+        options: Object.values(BORROW_STATUS).map((status) => ({
+          label: BORROW_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status do Empréstimo',
       },
       {
-        key: 'entities',
-        label: 'Usuários e Itens',
-        icon: 'users',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'userIds',
-            label: 'Usuários',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os usuários',
-          },
-          {
-            key: 'itemIds',
-            label: 'Itens',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os itens',
-          },
-          {
-            key: 'categoryIds',
-            label: 'Categorias',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione as categorias',
-          },
-          {
-            key: 'brandIds',
-            label: 'Marcas',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione as marcas',
-          },
-        ],
+        key: 'isOverdue',
+        type: 'toggle',
+        placeholder: 'Apenas Atrasados',
+        description: 'Mostrar apenas empréstimos atrasados',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'borrowDate',
-            label: 'Data de Empréstimo',
-            type: 'date-range',
-          },
-          {
-            key: 'returnDate',
-            label: 'Data de Devolução',
-            type: 'date-range',
-          },
-          {
-            key: 'updatedAt',
-            label: 'Data de Atualização',
-            type: 'date-range',
-          },
-        ],
+        key: 'userIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Usuários',
+      },
+      {
+        key: 'itemIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Itens',
+      },
+      {
+        key: 'categoryIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Categorias',
+      },
+      {
+        key: 'brandIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Marcas',
+      },
+      {
+        key: 'borrowDate',
+        type: 'date-range',
+        placeholder: 'Data de Empréstimo',
+      },
+      {
+        key: 'returnDate',
+        type: 'date-range',
+        placeholder: 'Data de Devolução',
+      },
+      {
+        key: 'updatedAt',
+        type: 'date-range',
+        placeholder: 'Data de Atualização',
       },
     ],
   },

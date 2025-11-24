@@ -36,7 +36,7 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
         sortable: false,
         width: 0.8,
         align: 'center',
-        render: (brand) => (brand as any)._count?.paints || 0,
+        render: (brand) => String((brand as any)._count?.paints || 0),
         format: 'badge',
       },
       {
@@ -45,16 +45,16 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (brand) => brand.createdAt,
+        render: (brand) => brand.createdAt || '-',
         format: 'date',
       },
     ],
-    defaultVisible: ['name', 'paintsCount'],
-    rowHeight: 60,
+    defaultVisible: ['name', 'paintsCount', 'createdAt'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (brand, router) => {
@@ -87,35 +87,17 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'options',
-        label: 'Opções',
-        icon: 'settings',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'hasPaints',
-            label: 'Com Tintas',
-            description: 'Apenas marcas com tintas cadastradas',
-            type: 'toggle',
-          },
-        ],
+        key: 'hasPaints',
+        type: 'toggle',
+        placeholder: 'Com Tintas',
+        description: 'Apenas marcas com tintas cadastradas',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
-        ],
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Cadastro',
       },
     ],
   },

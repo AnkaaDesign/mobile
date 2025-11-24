@@ -7,6 +7,7 @@ import { getIconColor } from "@/constants/icon-colors";
 
 // Import the specific icons we need (expanded set to cover most used icons)
 import {
+  IconDashboard,
   IconMenu2,
   IconHome,
   IconChevronRight,
@@ -15,6 +16,7 @@ import {
   IconChevronUp,
   IconArrowLeft,
   IconArrowRight,
+  IconEye,
   IconEyeOff,
   IconEdit,
   IconPlus,
@@ -26,6 +28,7 @@ import {
   IconFilter,
   IconSettings,
   IconLogout,
+  IconPackage,
   IconPackages,
   IconUsers,
   IconUser,
@@ -42,6 +45,7 @@ import {
   IconPalette,
   IconBriefcase,
   IconShield,
+  IconCircleCheck,
   IconCircleX,
   IconAlertCircle,
   IconInfoCircle,
@@ -49,6 +53,7 @@ import {
   IconArrowsSort,
   IconArrowUp,
   IconArrowDown,
+  IconArchive,
   IconArchiveOff,
   IconToggleLeft,
   IconToggleRight,
@@ -62,6 +67,7 @@ import {
   IconQrcode,
   IconPlayerPlay,
   IconPlayerPause,
+  IconPlayerStop,
   IconChartBar,
   IconChartLine,
   IconBox,
@@ -149,6 +155,22 @@ import {
   IconQuestionMark,
   IconCircle,
   IconPhotoPlus,
+  IconTrash2,
+  IconFlipHorizontal,
+  IconCalendarStats,
+  IconCalendarWeek,
+  IconCalendarDollar,
+  IconDeviceIpadDollar,
+  IconFingerprint,
+  IconColorPicker,
+  IconPaint,
+  IconCoins,
+  IconRepeat,
+  IconHourglass,
+  IconFileInvoice,
+  IconBuildingSkyscraper,
+  IconTag,
+  IconShoppingCart,
 } from "@tabler/icons-react-native";
 
 // Apply cssInterop to all Tabler icons to support className prop
@@ -172,10 +194,21 @@ const tablerIcons = [
   IconPlayerStop, IconArrowsUpDown, IconApi, IconFlask, IconCalculator, IconReceipt, IconFileText, IconUserCog,
   IconFolderShare, IconDatabaseImport, IconColorSwatch, IconListDetails, IconBeach, IconCalendarMinus,
   IconCalendarTime, IconHelmet, IconBuildingBank, IconFileReport, IconListSearch, IconDroplet, IconQuestionMark,
-  IconCircle, IconPhotoPlus
+  IconCircle, IconPhotoPlus, IconTrash2, IconFlipHorizontal, IconCalendarStats, IconCalendarWeek, IconCalendarDollar,
+  IconDeviceIpadDollar, IconFingerprint, IconColorPicker, IconPaint, IconCoins, IconRepeat, IconHourglass,
+  IconFileInvoice, IconBuildingSkyscraper, IconTag, IconShoppingCart
 ];
 
-tablerIcons.forEach(icon => {
+// Log any undefined icons for debugging
+if (__DEV__) {
+  const undefinedIcons = tablerIcons.filter((icon, index) => icon === undefined);
+  if (undefinedIcons.length > 0) {
+    console.warn(`[Icon] Found ${undefinedIcons.length} undefined icon(s) in tablerIcons array`);
+  }
+}
+
+// Filter out undefined icons and apply cssInterop
+tablerIcons.filter(icon => icon !== undefined).forEach(icon => {
   cssInterop(icon, {
     className: {
       target: "style",
@@ -208,6 +241,7 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   x: IconX,
   check: IconCheck,
   trash: IconTrash,
+  "trash-2": IconTrash2,
   refresh: IconRefresh,
   search: IconSearch,
   filter: IconFilter,
@@ -415,6 +449,8 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   radio: IconCircle, // Alias
   "photo-plus": IconPhotoPlus,
   image: IconPhotoPlus, // Alias
+  "flip-horizontal": IconFlipHorizontal,
+  mirror: IconFlipHorizontal, // Alias
 
   // Common aliases used in navigation
   cog: IconSettings, // Alias for settings
@@ -447,6 +483,39 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   sharedFolders: IconFolderShare, // camelCase version
   databaseImport: IconDatabaseImport, // camelCase version
   clipboardList: IconClipboardList, // camelCase version
+
+  // Calendar variants
+  "calendar-stats": IconCalendarStats,
+  calendarStats: IconCalendarStats, // camelCase version
+  "calendar-week": IconCalendarWeek,
+  calendarWeek: IconCalendarWeek, // camelCase version
+  "calendar-dollar": IconCalendarDollar,
+  calendarDollar: IconCalendarDollar, // camelCase version
+
+  // Device and biometric icons
+  "device-ipad-dollar": IconDeviceIpadDollar,
+  deviceIpadDollar: IconDeviceIpadDollar, // camelCase version
+  fingerprint: IconFingerprint,
+
+  // Paint icons
+  "color-picker": IconColorPicker,
+  colorPicker: IconColorPicker, // camelCase version
+  paint: IconPaint,
+
+  // Financial icons
+  coins: IconCoins,
+  "file-invoice": IconFileInvoice,
+  fileInvoice: IconFileInvoice, // camelCase version
+
+  // Other icons
+  repeat: IconRepeat,
+  loan: IconArrowsExchange, // loan maps to arrows exchange
+  hourglass: IconHourglass,
+  "building-skyscraper": IconBuildingSkyscraper,
+  buildingSkyscraper: IconBuildingSkyscraper, // camelCase version
+  tag: IconTag,
+  "shopping-cart": IconShoppingCart,
+  shoppingCart: IconShoppingCart, // camelCase version
 };
 
 interface IconProps {
@@ -464,6 +533,12 @@ interface IconProps {
 export function Icon({ name, size = "md", color, variant = "default", className, testID, accessibilityLabel, accessible = true }: IconProps) {
   const { colors } = useTheme();
 
+  // Ensure name is a valid string
+  if (!name || typeof name !== 'string') {
+    console.warn('Icon component received invalid name:', name);
+    return null;
+  }
+
   // Get size
   const iconSize = typeof size === "number" ? size : getIconSize(size);
 
@@ -471,7 +546,12 @@ export function Icon({ name, size = "md", color, variant = "default", className,
   const iconColor = color || getIconColor(colors, variant);
 
   // Helper function to convert "IconHome" to "home"
-  const convertIconNameToKebab = (iconName: string): string => {
+  const convertIconNameToKebab = (iconName: string | undefined | null): string => {
+    // Early return if iconName is not valid
+    if (!iconName || typeof iconName !== 'string') {
+      return '';
+    }
+
     if (iconName.startsWith("Icon")) {
       // Convert "IconHome" to "home", "IconChevronRight" to "chevron-right"
       return iconName

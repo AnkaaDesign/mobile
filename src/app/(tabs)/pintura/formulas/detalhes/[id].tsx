@@ -20,14 +20,13 @@ import {
   IconEdit,
   IconTrash,
   IconDroplet,
-  IconCalendar,
   IconClipboardList,
 } from "@tabler/icons-react-native";
 
 export default function FormulaDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const { delete: deleteFormula } = usePaintFormulaMutations();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -84,8 +83,7 @@ export default function FormulaDetailsScreen() {
       showToast({ message: "Você não tem permissão para editar", type: "error" });
       return;
     }
-    // Navigate to edit page when implemented
-    showToast({ message: "Edição em desenvolvimento", type: "info" });
+    router.push(`/(tabs)/pintura/formulas/editar/${id}`);
   };
 
   // Handle delete
@@ -155,122 +153,10 @@ export default function FormulaDetailsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.content}>
-        {/* Formula Name Header Card */}
-        <Card>
-          <CardContent style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <ThemedText style={StyleSheet.flatten([styles.formulaTitle, { color: colors.foreground }])} numberOfLines={2}>
-                {formula.description || (formula.paint?.name ? `Fórmula de ${formula.paint.name}` : "Fórmula de Tinta")}
-              </ThemedText>
-            </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={handleRefresh}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-                activeOpacity={0.7}
-                disabled={refreshing}
-              >
-                <IconRefresh size={18} color={colors.foreground} />
-              </TouchableOpacity>
-              {canEdit && (
-                <TouchableOpacity
-                  onPress={handleEdit}
-                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
-                  activeOpacity={0.7}
-                >
-                  <IconEdit size={18} color={colors.primaryForeground} />
-                </TouchableOpacity>
-              )}
-              {canDelete && (
-                <TouchableOpacity
-                  onPress={handleDelete}
-                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.destructive }])}
-                  activeOpacity={0.7}
-                >
-                  <IconTrash size={18} color={colors.destructiveForeground} />
-                </TouchableOpacity>
-              )}
-            </View>
-          </CardContent>
-        </Card>
-
-        {/* Basic Information Card */}
-        <Card style={styles.card}>
-          <View style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}>
-            <IconFlask size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
-          </View>
-          <View style={styles.itemDetails}>
-            {formula.description && (
-              <View style={styles.detailRow}>
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                  Descrição:
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {formula.description}
-                </ThemedText>
-              </View>
-            )}
-            <View style={styles.detailRow}>
-              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                Componentes:
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                {totalComponents} {totalComponents === 1 ? "componente" : "componentes"}
-              </ThemedText>
-            </View>
-            {/* Fixed: Changed productions to paintProduction to match API type */}
-            {formula._count?.paintProduction !== undefined && (
-              <View style={styles.detailRow}>
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                  Produções:
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {formula._count.paintProduction} {formula._count.paintProduction === 1 ? "produção" : "produções"}
-                </ThemedText>
-              </View>
-            )}
-          </View>
-        </Card>
-
-        {/* Production Calculator */}
+        {/* Production Calculator - Main Focus */}
         {formula.components && formula.components.length > 0 && (
           <MobilePaintFormulaCalculator formula={formula} />
         )}
-
-        {/* Formula Details Card */}
-        <Card style={styles.card}>
-          <View style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}>
-            <IconDroplet size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Especificações Técnicas</ThemedText>
-          </View>
-          <View style={styles.itemDetails}>
-            <View style={styles.detailRow}>
-              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                Densidade:
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                {formula.density ? `${Number(formula.density).toFixed(3)} g/ml` : "N/A"}
-              </ThemedText>
-            </View>
-            <View style={styles.detailRow}>
-              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                Preço por Litro:
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.primary }])}>
-                {formula.pricePerLiter ? formatCurrency(Number(formula.pricePerLiter)) : "N/A"}
-              </ThemedText>
-            </View>
-            <View style={styles.detailRow}>
-              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                Proporção Total:
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                {totalRatio.toFixed(2)}%
-              </ThemedText>
-            </View>
-          </View>
-        </Card>
 
         {/* Productions Summary Card */}
         {/* Fixed: Changed productions to paintProduction to match API type */}
@@ -290,32 +176,6 @@ export default function FormulaDetailsScreen() {
             </View>
           </Card>
         )}
-
-        {/* Metadata Card */}
-        <Card style={styles.card}>
-          <View style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}>
-            <IconCalendar size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Informações do Sistema</ThemedText>
-          </View>
-          <View style={styles.itemDetails}>
-            <View style={styles.detailRow}>
-              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                Criado em:
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                {formatDateTime(formula.createdAt)}
-              </ThemedText>
-            </View>
-            <View style={styles.detailRow}>
-              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                Atualizado em:
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                {formatDateTime(formula.updatedAt)}
-              </ThemedText>
-            </View>
-          </View>
-        </Card>
 
         {/* Bottom spacing for mobile navigation */}
         <View style={{ height: spacing.xxl * 2 }} />

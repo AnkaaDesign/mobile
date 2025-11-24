@@ -3,14 +3,15 @@ import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Text } from "@/components/ui/text";
-import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { spacing } from "@/constants/design-system";
+import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
+import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
+import { formSpacing } from "@/constants/form-styles";
+import { spacing } from "@/constants/design-system";
 
 import { positionCreateSchema, positionUpdateSchema } from "@/schemas/position";
 import type { PositionCreateFormData, PositionUpdateFormData } from "@/schemas/position";
@@ -41,7 +42,7 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
           }
         : {
             name: position?.name,
-            remuneration: undefined, // Optional for updates
+            remuneration: undefined,
             bonifiable: position?.bonifiable,
             hierarchy: position?.hierarchy ?? undefined,
           },
@@ -75,111 +76,89 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Card style={[styles.card, { backgroundColor: colors.card }]}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Informações do Cargo</Text>
-          <Text style={[styles.cardDescription, { color: colors.mutedForeground }]}>
-            Preencha as informações básicas do cargo
-          </Text>
-        </View>
-
-        <View style={styles.cardContent}>
-          {/* Name Input */}
-          <View style={styles.formField}>
-            <Text style={[styles.label, { color: colors.foreground }]}>
-              Nome <Text style={{ color: colors.destructive }}>*</Text>
-            </Text>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <FormCard title="Informações do Cargo">
+          {/* Name */}
+          <FormFieldGroup
+            label="Nome"
+            required
+            error={form.formState.errors.name?.message}
+          >
             <Controller
               control={form.control}
               name="name"
-              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-                <View>
-                  <Input
-                    value={value || ""}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    placeholder="Nome do cargo"
-                    editable={!isLoading}
-                    error={!!error}
-                  />
-                  {error && (
-                    <Text style={[styles.errorText, { color: colors.destructive }]}>{error.message}</Text>
-                  )}
-                </View>
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Nome do cargo"
+                  editable={!isLoading}
+                  error={!!form.formState.errors.name}
+                />
               )}
             />
-          </View>
+          </FormFieldGroup>
 
-          {/* Remuneration Input */}
-          <View style={styles.formField}>
-            <Text style={[styles.label, { color: colors.foreground }]}>
-              Remuneração {mode === "create" && <Text style={{ color: colors.destructive }}>*</Text>}
-            </Text>
+          {/* Remuneration */}
+          <FormFieldGroup
+            label="Remuneração"
+            required={mode === "create"}
+            helper={mode === "update" ? "Deixe em branco para manter a remuneração atual. Ao atualizar, um novo registro será criado no histórico." : undefined}
+            error={form.formState.errors.remuneration?.message}
+          >
             <Controller
               control={form.control}
               name="remuneration"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <View>
-                  <Input
-                    type="currency"
-                    value={value ?? undefined}
-                    onChange={onChange}
-                    placeholder="R$ 0,00"
-                    editable={!isLoading}
-                    error={!!error}
-                  />
-                  {error && (
-                    <Text style={[styles.errorText, { color: colors.destructive }]}>{error.message}</Text>
-                  )}
-                  {mode === "update" && (
-                    <Text style={[styles.helpText, { color: colors.mutedForeground }]}>
-                      Deixe em branco para manter a remuneração atual. Ao atualizar, um novo registro será criado no histórico.
-                    </Text>
-                  )}
-                </View>
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  type="currency"
+                  value={value ?? undefined}
+                  onChange={onChange}
+                  placeholder="R$ 0,00"
+                  editable={!isLoading}
+                  error={!!form.formState.errors.remuneration}
+                />
               )}
             />
-          </View>
+          </FormFieldGroup>
 
-          {/* Hierarchy Input */}
-          <View style={styles.formField}>
-            <Text style={[styles.label, { color: colors.foreground }]}>Hierarquia (opcional)</Text>
+          {/* Hierarchy */}
+          <FormFieldGroup
+            label="Hierarquia"
+            helper="Valor entre 0 e 999. Maior hierarquia = número maior."
+            error={form.formState.errors.hierarchy?.message}
+          >
             <Controller
               control={form.control}
               name="hierarchy"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <View>
-                  <Input
-                    type="integer"
-                    value={value ?? undefined}
-                    onChange={onChange}
-                    placeholder="0"
-                    min={0}
-                    max={999}
-                    editable={!isLoading}
-                    error={!!error}
-                  />
-                  {error && (
-                    <Text style={[styles.errorText, { color: colors.destructive }]}>{error.message}</Text>
-                  )}
-                  <Text style={[styles.helpText, { color: colors.mutedForeground }]}>
-                    Valor entre 0 e 999. Maior hierarquia = número maior.
-                  </Text>
-                </View>
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  type="integer"
+                  value={value ?? undefined}
+                  onChange={onChange}
+                  placeholder="0"
+                  min={0}
+                  max={999}
+                  editable={!isLoading}
+                  error={!!form.formState.errors.hierarchy}
+                />
               )}
             />
-          </View>
+          </FormFieldGroup>
 
-          {/* Bonifiable Toggle */}
-          <View style={styles.formField}>
+          {/* Bonifiable */}
+          <FormFieldGroup
+            label="Bonificável"
+            helper="Cargo recebe bonificação por desempenho"
+          >
             <View style={styles.switchRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.label, { color: colors.foreground }]}>Bonificável</Text>
-                <Text style={[styles.helpText, { color: colors.mutedForeground }]}>
-                  Cargo recebe bonificação por desempenho
-                </Text>
-              </View>
               <Controller
                 control={form.control}
                 name="bonifiable"
@@ -192,80 +171,36 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
                 )}
               />
             </View>
-          </View>
-        </View>
-      </Card>
+          </FormFieldGroup>
+        </FormCard>
+      </ScrollView>
 
-      {/* Action Buttons */}
-      <View style={styles.buttonRow}>
-        <Button
-          variant="outline"
-          onPress={handleCancel}
-          disabled={isLoading}
-          style={{ flex: 1 }}
-        >
-          <Text>Cancelar</Text>
-        </Button>
-        <Button
-          onPress={form.handleSubmit(handleSubmit)}
-          disabled={isLoading || !form.formState.isValid}
-          style={{ flex: 1 }}
-        >
-          <Text>{isLoading ? "Salvando..." : mode === "create" ? "Criar" : "Salvar"}</Text>
-        </Button>
-      </View>
-    </ScrollView>
+      <SimpleFormActionBar
+        onCancel={handleCancel}
+        onSubmit={form.handleSubmit(handleSubmit)}
+        isSubmitting={isLoading}
+        canSubmit={form.formState.isValid}
+        submitLabel={mode === "create" ? "Criar" : "Salvar"}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    padding: spacing.md,
   },
-  card: {
-    marginBottom: spacing.lg,
+  scrollView: {
+    flex: 1,
   },
-  cardHeader: {
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.1)",
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: spacing.xs,
-  },
-  cardDescription: {
-    fontSize: 14,
-  },
-  cardContent: {
-    padding: spacing.lg,
-  },
-  formField: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: spacing.xs,
-  },
-  errorText: {
-    fontSize: 12,
-    marginTop: spacing.xs,
-  },
-  helpText: {
-    fontSize: 12,
-    marginTop: spacing.xs,
+  scrollContent: {
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: formSpacing.containerPaddingVertical,
+    paddingBottom: 0, // No spacing - action bar has its own margin
   },
   switchRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: spacing.md,
-    marginBottom: spacing.xl,
+    justifyContent: "flex-end",
   },
 });

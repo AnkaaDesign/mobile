@@ -1,11 +1,61 @@
+import React from 'react'
+import { View } from 'react-native'
+import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig } from '@/components/list/types'
 import type { Task } from '@/types'
-import { canEditTasks } from '@/utils/permissions/entity-permissions'
+import { canCreateTasks, canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
+import { useAuth } from '@/hooks/useAuth'
 import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
   COMMISSION_STATUS,
 } from '@/constants'
+import { DeadlineCountdown } from '@/components/production/DeadlineCountdown'
+import { PaintPreview } from '@/components/painting/preview/painting-preview'
+import { PAINT_FINISH } from '@/constants/enums'
+
+// Statuses that should show the countdown
+const COUNTDOWN_STATUSES = [
+  TASK_STATUS.IN_PRODUCTION,
+  TASK_STATUS.PENDING,
+  TASK_STATUS.ON_HOLD,
+]
+
+// Get row background color based on status and deadline
+// Matches web version logic exactly
+const getRowBackgroundColor = (task: Task, isDark: boolean = false) => {
+  // Non-production tasks (PENDING, COMPLETED, CANCELLED, ON_HOLD) use neutral gray
+  if (task.status !== TASK_STATUS.IN_PRODUCTION) {
+    return isDark ? '#262626' : '#f5f5f5' // neutral-800 / neutral-100
+  }
+
+  // Tasks with no deadline use neutral gray
+  if (!task.term) {
+    return isDark ? '#262626' : '#f5f5f5' // neutral-800 / neutral-100
+  }
+
+  // Check if task is overdue
+  const now = new Date()
+  const deadline = new Date(task.term)
+  const diffMs = deadline.getTime() - now.getTime()
+
+  if (diffMs < 0) {
+    // Overdue - red
+    return isDark ? '#7f1d1d' : '#fecaca' // red-900 / red-200
+  }
+
+  // Calculate hours remaining for active production tasks
+  const hoursRemaining = diffMs / (1000 * 60 * 60)
+
+  if (hoursRemaining > 4) {
+    // Safe - green (>4 hours)
+    return isDark ? '#14532d' : '#bbf7d0' // green-900 / green-200
+  } else {
+    // Warning - orange (0-4 hours)
+    return isDark ? '#7c2d12' : '#fed7aa' // orange-900 / orange-200
+  }
+}
+
 
 export const tasksListConfig: ListConfig<Task> = {
   key: 'production-tasks',
@@ -13,25 +63,25 @@ export const tasksListConfig: ListConfig<Task> = {
 
   query: {
     hook: 'useTasksInfiniteMobile',
-    defaultSort: { field: 'priority', direction: 'desc' },
+    defaultSort: { field: 'term', direction: 'asc' },
     pageSize: 25,
     include: {
       customer: true,
       sector: true,
-      generalPainting: true,
-      truck: {
-        select: {
-          id: true,
-          chassisNumber: true,
-          plate: true,
+      generalPainting: {
+        include: {
+          paintType: true,
+          paintBrand: true,
         },
       },
+      truck: true,
       services: {
         select: {
           id: true,
           name: true,
         },
       },
+      createdBy: true,
     },
   },
 
@@ -39,20 +89,31 @@ export const tasksListConfig: ListConfig<Task> = {
     columns: [
       {
         key: 'name',
-        label: 'TÍTULO',
+        label: 'LOGOMARCA',
         sortable: true,
-        width: 2.5,
+        width: 1.8,
         align: 'left',
-        render: (task) => task.name,
+        render: (task: Task) => {
+          if (task.generalPainting?.hex) {
+            return React.createElement(
+              View,
+              { style: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 } },
+              React.createElement(
+                ThemedText,
+                { style: { flex: 1, marginRight: 8, fontSize: 12, fontWeight: '500' } },
+                task.name
+              ),
+              React.createElement(PaintPreview, {
+                paint: task.generalPainting,
+                width: 24,
+                height: 24,
+                borderRadius: 4,
+              })
+            )
+          }
+          return task.name
+        },
         style: { fontWeight: '500' },
-      },
-      {
-        key: 'serialNumber',
-        label: 'NÚMERO DE SÉRIE',
-        sortable: true,
-        width: 1.5,
-        align: 'left',
-        render: (task) => task.serialNumber || '-',
       },
       {
         key: 'status',
@@ -69,16 +130,24 @@ export const tasksListConfig: ListConfig<Task> = {
         sortable: true,
         width: 1.0,
         align: 'center',
-        render: (task) => task.priority || '-',
+        render: (task) => String(task.priority || '-'),
         format: 'badge',
       },
       {
         key: 'customer.fantasyName',
         label: 'CLIENTE',
         sortable: true,
-        width: 1.8,
+        width: 1.5,
         align: 'left',
         render: (task) => task.customer?.fantasyName || '-',
+      },
+      {
+        key: 'measures',
+        label: 'MEDIDAS',
+        sortable: true,
+        width: 1.1,
+        align: 'left',
+        render: (task) => task.measures || '-',
       },
       {
         key: 'sector.name',
@@ -92,16 +161,16 @@ export const tasksListConfig: ListConfig<Task> = {
         key: 'term',
         label: 'PRAZO',
         sortable: true,
-        width: 1.2,
+        width: 1.1,
         align: 'left',
         render: (task) => task.term,
         format: 'date',
       },
       {
         key: 'entryDate',
-        label: 'DATA DE ENTRADA',
+        label: 'ENTRADA',
         sortable: true,
-        width: 1.3,
+        width: 1.1,
         align: 'left',
         render: (task) => task.entryDate,
         format: 'date',
@@ -125,20 +194,20 @@ export const tasksListConfig: ListConfig<Task> = {
         format: 'datetime',
       },
       {
-        key: 'chassisNumber',
-        label: 'NÚMERO DO CHASSI',
-        sortable: true,
-        width: 1.5,
-        align: 'left',
-        render: (task) => task.truck?.chassisNumber || '-',
-      },
-      {
-        key: 'plate',
-        label: 'PLACA',
+        key: 'serialNumber',
+        label: 'Nº SÉRIE',
         sortable: true,
         width: 1.0,
         align: 'left',
-        render: (task) => task.truck?.plate || '-',
+        render: (task) => task.serialNumber || task.truck?.plate || '-',
+      },
+      {
+        key: 'chassisNumber',
+        label: 'Nº CHASSI',
+        sortable: true,
+        width: 1.4,
+        align: 'left',
+        render: (task) => task.truck?.chassisNumber || '-',
       },
       {
         key: 'details',
@@ -154,7 +223,7 @@ export const tasksListConfig: ListConfig<Task> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (task) => task.commission,
+        render: (task) => task.commission || '-',
         format: 'badge',
       },
       {
@@ -168,9 +237,9 @@ export const tasksListConfig: ListConfig<Task> = {
       },
       {
         key: 'generalPainting.name',
-        label: 'PINTURA GERAL',
+        label: 'PINTURA',
         sortable: true,
-        width: 1.5,
+        width: 1.0,
         align: 'left',
         render: (task) => task.generalPainting?.name || '-',
       },
@@ -194,13 +263,30 @@ export const tasksListConfig: ListConfig<Task> = {
         render: (task) => task.createdAt,
         format: 'date',
       },
+      {
+        key: 'remainingTime',
+        label: 'TEMPO RESTANTE',
+        sortable: true,
+        width: 1.1,
+        align: 'left',
+        render: (task) => {
+          return React.createElement(DeadlineCountdown, {
+            deadline: task.term,
+            showForStatuses: COUNTDOWN_STATUSES,
+            currentStatus: task.status,
+          })
+        },
+      },
     ],
-    defaultVisible: ['name', 'status', 'priority', 'term'],
-    rowHeight: 60,
+    defaultVisible: ['name', 'serialNumber', 'remainingTime'],
+    rowHeight: 48,
+    getRowStyle: (task, isDark) => ({
+      backgroundColor: getRowBackgroundColor(task, isDark),
+    }),
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (task, router) => {
@@ -212,6 +298,7 @@ export const tasksListConfig: ListConfig<Task> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditTasks,
         onPress: (task, router) => {
           router.push(`/producao/cronograma/editar/${task.id}`)
         },
@@ -221,6 +308,7 @@ export const tasksListConfig: ListConfig<Task> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteTasks,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (task) => `Deseja excluir a tarefa "${task.name}"?`,
@@ -233,168 +321,55 @@ export const tasksListConfig: ListConfig<Task> = {
   },
 
   filters: {
-    sections: [
+    defaultValues: {
+      status: [TASK_STATUS.PENDING, TASK_STATUS.IN_PRODUCTION],
+    },
+    fields: [
       {
-        key: 'status',
-        label: 'Status',
-        icon: 'list-checks',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(TASK_STATUS).map((status) => ({
-              label: TASK_STATUS_LABELS[status as keyof typeof TASK_STATUS_LABELS] || status,
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        key: 'sectorIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Setores',
       },
       {
-        key: 'priority',
-        label: 'Prioridade',
-        icon: 'alert-circle',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'priority',
-            label: 'Prioridade',
-            type: 'select',
-            multiple: true,
-            options: [
-              { label: 'Baixa', value: 'LOW' },
-              { label: 'Média', value: 'MEDIUM' },
-              { label: 'Alta', value: 'HIGH' },
-              { label: 'Urgente', value: 'URGENT' },
-            ],
-            placeholder: 'Selecione as prioridades',
-          },
-        ],
+        key: 'termRange',
+        type: 'date-range',
+        placeholder: 'Prazo',
       },
       {
-        key: 'entities',
-        label: 'Clientes e Setores',
-        icon: 'users',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'customerIds',
-            label: 'Clientes',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os clientes',
-          },
-          {
-            key: 'sectorIds',
-            label: 'Setores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os setores',
-          },
-        ],
+        key: 'isOverdue',
+        type: 'switch',
+        placeholder: 'Mostrar apenas tarefas atrasadas',
       },
-      {
-        key: 'assignee',
-        label: 'Responsável',
-        icon: 'user',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdByIds',
-            label: 'Criado por',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os usuários',
-          },
-        ],
-      },
-      {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'termRange',
-            label: 'Prazo',
-            type: 'date-range',
-          },
-          {
-            key: 'entryDateRange',
-            label: 'Data de Entrada',
-            type: 'date-range',
-          },
-          {
-            key: 'startedDateRange',
-            label: 'Data de Início',
-            type: 'date-range',
-          },
-          {
-            key: 'finishedDateRange',
-            label: 'Data de Conclusão',
-            type: 'date-range',
-          },
-          {
-            key: 'createdAtRange',
-            label: 'Data de Criação',
-            type: 'date-range',
-          },
-        ],
-      },
-      // Note: priceRange removed - not supported in schema
-      // Task entity doesn't have a price field for filtering
     ],
   },
 
   search: {
-    placeholder: 'Buscar tarefas...',
+    placeholder: 'Buscar por nome, cliente, número de série, placa, setor...',
     debounce: 300,
   },
 
   export: {
-    title: 'Tarefas',
-    filename: 'tarefas',
+    title: 'Cronograma',
+    filename: 'cronograma',
     formats: ['csv', 'json', 'pdf'],
     columns: [
-      { key: 'name', label: 'Título', path: 'name' },
-      { key: 'serialNumber', label: 'Número de Série', path: 'serialNumber' },
-      { key: 'status', label: 'Status', path: 'status' },
-      { key: 'priority', label: 'Prioridade', path: 'priority' },
+      { key: 'name', label: 'Logomarca', path: 'name' },
       { key: 'customer', label: 'Cliente', path: 'customer.fantasyName' },
+      { key: 'measures', label: 'Medidas', path: 'measures' },
+      { key: 'generalPainting', label: 'Pintura', path: 'generalPainting.name' },
+      { key: 'serialNumber', label: 'Nº Série', path: 'serialNumber' },
+      { key: 'chassisNumber', label: 'Nº Chassi', path: 'truck.chassisNumber' },
       { key: 'sector', label: 'Setor', path: 'sector.name' },
-      { key: 'term', label: 'Prazo', path: 'term', format: 'date' },
-      { key: 'entryDate', label: 'Data de Entrada', path: 'entryDate', format: 'date' },
+      { key: 'entryDate', label: 'Entrada', path: 'entryDate', format: 'date' },
       { key: 'startedAt', label: 'Iniciado Em', path: 'startedAt', format: 'datetime' },
       { key: 'finishedAt', label: 'Finalizado Em', path: 'finishedAt', format: 'datetime' },
-      { key: 'chassisNumber', label: 'Número do Chassi', path: 'truck.chassisNumber' },
-      { key: 'plate', label: 'Placa', path: 'truck.plate' },
+      { key: 'term', label: 'Prazo', path: 'term', format: 'date' },
+      { key: 'status', label: 'Status', path: 'status' },
+      { key: 'priority', label: 'Prioridade', path: 'priority' },
       { key: 'details', label: 'Detalhes', path: 'details' },
       { key: 'price', label: 'Preço', path: 'price', format: 'currency' },
       { key: 'commission', label: 'Comissão', path: 'commission' },
-      { key: 'generalPainting', label: 'Pintura Geral', path: 'generalPainting.name' },
       { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
     ],
   },
@@ -403,7 +378,7 @@ export const tasksListConfig: ListConfig<Task> = {
     create: {
       label: 'Cadastrar Tarefa',
       route: '/producao/cronograma/cadastrar',
-      canCreate: canEditTasks,
+      canCreate: canCreateTasks,
     },
     bulk: [
       {

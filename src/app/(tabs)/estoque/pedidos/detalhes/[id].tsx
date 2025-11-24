@@ -29,7 +29,7 @@ export default function OrderDetailScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   // Check permissions

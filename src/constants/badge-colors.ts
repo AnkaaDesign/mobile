@@ -244,10 +244,10 @@ export const ENTITY_BADGE_CONFIG = {
 
   // User Status
   USER: {
-    [USER_STATUS.EXPERIENCE_PERIOD_1]: "pending" as BadgeVariant,  // Yellow (amber-500) - matches LOW stock
-    [USER_STATUS.EXPERIENCE_PERIOD_2]: "warning" as BadgeVariant,  // Orange (orange-500) - matches CRITICAL stock
-    [USER_STATUS.EFFECTED]: "success" as BadgeVariant,            // Green - fully hired
-    [USER_STATUS.DISMISSED]: "destructive" as BadgeVariant,        // Red - dismissed
+    [USER_STATUS.EXPERIENCE_PERIOD_1]: "pending" as BadgeVariant,  // Yellow (amber-600) - first trial period
+    [USER_STATUS.EXPERIENCE_PERIOD_2]: "primary" as BadgeVariant,  // Blue (blue-700) - second trial period
+    [USER_STATUS.EFFECTED]: "success" as BadgeVariant,             // Green (green-700) - fully hired/effected
+    [USER_STATUS.DISMISSED]: "destructive" as BadgeVariant,        // Red (red-700) - dismissed
   },
 
   // External Withdrawal Status

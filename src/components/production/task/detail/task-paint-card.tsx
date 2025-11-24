@@ -5,15 +5,22 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
-import { PAINT_FINISH_LABELS } from '@/constants/enum-labels';
+import { PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from '@/constants/enum-labels';
 import { PAINT_FINISH } from '@/constants/enums';
-import { IconPaint, IconSparkles, IconBrush, IconAlertCircle } from "@tabler/icons-react-native";
-import { PaintingPreview } from "@/components/painting/preview/painting-preview";
+import { IconPaint, IconBrush, IconAlertCircle } from "@tabler/icons-react-native";
+import { PaintPreview } from "@/components/painting/preview/painting-preview";
+
+// Badge colors - unified neutral, more subtle
+const BADGE_COLORS = {
+  light: { bg: 'rgba(229, 229, 229, 0.7)', text: '#525252' },  // neutral-200/70, neutral-600
+  dark: { bg: 'rgba(64, 64, 64, 0.5)', text: '#d4d4d4' },      // neutral-700/50, neutral-300
+};
 
 interface Paint {
   id: string;
   name: string;
   hex?: string;
+  colorPreview?: string | null; // Paint preview image URL
   finish?: PAINT_FINISH;
   paintType?: {
     name: string;
@@ -37,83 +44,86 @@ export const TaskPaintCard: React.FC<TaskPaintCardProps> = ({
   onPaintPress,
 }) => {
   const { colors, isDark } = useTheme();
+  const badgeStyle = isDark ? BADGE_COLORS.dark : BADGE_COLORS.light;
 
   if (!generalPainting && (!logoPaints || logoPaints.length === 0)) {
     return null;
   }
 
-  const renderPaintItem = (paint: Paint, size: number = 80) => (
-    <TouchableOpacity
-      key={paint.id}
-      style={[styles.paintItemContainer, { backgroundColor: isDark ? colors.muted + '20' : colors.muted + '50' }]}
-      onPress={() => onPaintPress?.(paint.id)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.paintContent}>
-        {/* Color Preview */}
-        <View style={styles.previewContainer}>
-          <PaintPreview
-            baseColor={paint.hex || "#888888"}
-            finish={paint.finish || PAINT_FINISH.SOLID}
-            width={size}
-            height={size}
-            borderRadius={8}
-          />
-        </View>
+  const renderPaintItem = (paint: Paint, size: number = 80) => {
+    const manufacturerLabel = paint.manufacturer ? TRUCK_MANUFACTURER_LABELS[paint.manufacturer] || paint.manufacturer : null;
 
-        {/* Paint Information */}
-        <View style={styles.paintInfo}>
-          <View style={styles.paintHeader}>
+    return (
+      <TouchableOpacity
+        key={paint.id}
+        style={[styles.paintItemContainer, { backgroundColor: isDark ? colors.muted + '20' : colors.muted + '50' }]}
+        onPress={() => onPaintPress?.(paint.id)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.paintContent}>
+          {/* Color Preview */}
+          <View style={styles.previewContainer}>
+            <PaintPreview
+              baseColor={paint.hex || "#888888"}
+              imageUrl={paint.colorPreview}
+              width={size}
+              height={size}
+              borderRadius={8}
+            />
+          </View>
+
+          {/* Paint Information */}
+          <View style={styles.paintInfo}>
             <ThemedText style={[styles.paintName, { color: colors.foreground }]} numberOfLines={1}>
               {paint.name}
             </ThemedText>
-            {paint.hex && (
-              <ThemedText style={[styles.hexCode, { color: colors.mutedForeground }]}>
-                {paint.hex}
-              </ThemedText>
-            )}
-          </View>
 
-          {paint.paintType && (
-            <ThemedText style={[styles.paintType, { color: colors.mutedForeground }]} numberOfLines={1}>
-              {paint.paintType.name}
-            </ThemedText>
-          )}
-
-          {/* Badges */}
-          <View style={styles.badgesContainer}>
-            {paint.finish && (
-              <Badge variant="secondary" style={styles.badge}>
-                <View style={styles.badgeContent}>
-                  <IconSparkles size={12} color={colors.secondaryForeground} />
-                  <ThemedText style={[styles.badgeText, { color: colors.secondaryForeground }]}>
+            {/* Badges - unified gray/white style, no icons */}
+            <View style={styles.badgesContainer}>
+              {paint.paintType?.name && (
+                <Badge style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
+                  <ThemedText style={[styles.badgeText, { color: badgeStyle.text }]}>
+                    {paint.paintType.name}
+                  </ThemedText>
+                </Badge>
+              )}
+              {paint.paintBrand?.name && (
+                <Badge style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
+                  <ThemedText style={[styles.badgeText, { color: badgeStyle.text }]}>
+                    {paint.paintBrand.name}
+                  </ThemedText>
+                </Badge>
+              )}
+              {paint.finish && (
+                <Badge style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
+                  <ThemedText style={[styles.badgeText, { color: badgeStyle.text }]}>
                     {PAINT_FINISH_LABELS[paint.finish]}
                   </ThemedText>
-                </View>
-              </Badge>
-            )}
-            {paint.paintBrand?.name && (
-              <Badge variant="outline" style={styles.badge}>
-                <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
-                  {paint.paintBrand.name}
-                </ThemedText>
-              </Badge>
-            )}
+                </Badge>
+              )}
+              {manufacturerLabel && (
+                <Badge style={[styles.badge, styles.manufacturerBadge, { backgroundColor: badgeStyle.bg }]}>
+                  <ThemedText style={[styles.badgeText, { color: badgeStyle.text }]} numberOfLines={1}>
+                    {manufacturerLabel}
+                  </ThemedText>
+                </Badge>
+              )}
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Primer Warning */}
-      {paint.paintType?.needGround && (
-        <View style={[styles.primerWarning, { backgroundColor: isDark ? 'rgba(234, 179, 8, 0.1)' : '#fef3c7' }]}>
-          <IconAlertCircle size={14} color={isDark ? '#fbbf24' : '#d97706'} />
-          <ThemedText style={[styles.primerText, { color: isDark ? '#fbbf24' : '#92400e' }]}>
-            Requer primer
-          </ThemedText>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
+        {/* Primer Warning */}
+        {paint.paintType?.needGround && (
+          <View style={[styles.primerWarning, { backgroundColor: isDark ? 'rgba(234, 179, 8, 0.1)' : '#fef3c7' }]}>
+            <IconAlertCircle size={14} color={isDark ? '#fbbf24' : '#d97706'} />
+            <ThemedText style={[styles.primerText, { color: isDark ? '#fbbf24' : '#92400e' }]}>
+              Requer primer
+            </ThemedText>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <Card style={styles.card}>
@@ -132,7 +142,7 @@ export const TaskPaintCard: React.FC<TaskPaintCardProps> = ({
                 Pintura Geral
               </ThemedText>
             </View>
-            {renderPaintItem(generalPainting, 80)}
+            {renderPaintItem(generalPainting, 56)}
           </View>
         )}
 
@@ -142,14 +152,14 @@ export const TaskPaintCard: React.FC<TaskPaintCardProps> = ({
             <View style={styles.sectionHeader}>
               <IconPaint size={16} color={colors.mutedForeground} />
               <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Tintas do Logo
+                Tintas da Logomarca
               </ThemedText>
               <Badge variant="secondary" style={styles.countBadge}>
                 {logoPaints.length}
               </Badge>
             </View>
             <View style={styles.logoPaintsContainer}>
-              {logoPaints.map((paint) => renderPaintItem(paint, 60))}
+              {logoPaints.map((paint) => renderPaintItem(paint, 44))}
             </View>
           </View>
         )}
@@ -218,20 +228,11 @@ const styles = StyleSheet.create({
   paintInfo: {
     flex: 1,
     gap: spacing.xs,
-  },
-  paintHeader: {
-    gap: 4,
+    justifyContent: "center",
   },
   paintName: {
     fontSize: fontSize.base,
     fontWeight: "600",
-  },
-  hexCode: {
-    fontSize: fontSize.xs,
-    fontFamily: "monospace",
-  },
-  paintType: {
-    fontSize: fontSize.sm,
   },
   badgesContainer: {
     flexDirection: "row",
@@ -241,12 +242,12 @@ const styles = StyleSheet.create({
   },
   badge: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
+    borderRadius: 4,
+    borderWidth: 0,
   },
-  badgeContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+  manufacturerBadge: {
+    maxWidth: 100,
   },
   badgeText: {
     fontSize: fontSize.xs,

@@ -5,6 +5,7 @@ import { getPaints } from "@/api-client";
 import { useTheme } from "@/lib/theme";
 import { fontSize, fontWeight, spacing } from "@/constants/design-system";
 import type { Paint } from "@/types";
+import { PaintPreview } from "@/components/painting/preview/painting-preview";
 
 // Palette colors mapping
 const PALETTE_COLORS: Record<string, string> = {
@@ -50,22 +51,18 @@ interface PaintColorPreviewProps {
 
 function PaintColorPreview({ paint, size = 24 }: PaintColorPreviewProps) {
   const { colors } = useTheme();
-  const color = paint.hex || PALETTE_COLORS[paint.palette || ""] || "#888888";
 
-  // For simplicity in React Native, we'll just show solid colors
-  // Advanced finish effects would require react-native-svg or similar
+  // Use PaintPreview component - shows stored image if available, falls back to hex color
   return (
-    <View
-      style={[
-        styles.colorPreview,
-        {
-          width: size,
-          height: size,
-          backgroundColor: color,
-          borderColor: colors.border,
-        },
-      ]}
-    />
+    <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
+      <PaintPreview
+        paint={paint}
+        baseColor={paint.hex || PALETTE_COLORS[paint.palette || ""] || "#888888"}
+        width={size}
+        height={size}
+        borderRadius={0}
+      />
+    </View>
   );
 }
 

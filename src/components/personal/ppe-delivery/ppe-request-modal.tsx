@@ -11,7 +11,7 @@ import { TextArea } from "@/components/ui/text-area";
 import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { useItems, usePpeSize, useRequestPpeDelivery } from '@/hooks';
-import { ppeRequestSchema} from '@/schemas/ppe-request';
+import { ppeRequestSchema, type PpeRequestFormData } from '@/schemas/ppe-request';
 import { PPE_TYPE } from '@/constants';
 import { cn } from "@/lib/utils";
 
@@ -62,7 +62,6 @@ export function PpeRequestModal({
       itemId: "",
       quantity: 1,
       scheduledDate: null,
-      notes: "",
       reason: "",
     },
   });
@@ -189,33 +188,25 @@ export function PpeRequestModal({
   };
 
   const handleSubmit = async (data: PpeRequestFormData) => {
-    // Validate size compatibility
-    const sizeValidation = validateSizeCompatibility(data.itemId);
-    if (!sizeValidation.isValid) {
-      showToast({
-        message: sizeValidation.message || "Tamanho incompatível",
-        type: "error",
-      });
-      return;
-    }
+    console.log('[PPE Request Mobile] Submit button pressed');
+    console.log('[PPE Request Mobile] Form data:', data);
+    console.log('[PPE Request Mobile] Selected item:', selectedItem);
+    console.log('[PPE Request Mobile] Stock available:', stockAvailable);
 
-    // Check stock availability
-    if (stockAvailable !== null && data.quantity > stockAvailable) {
-      showToast({
-        message: `Estoque insuficiente. Disponível: ${stockAvailable}`,
-        type: "error",
-      });
-      return;
-    }
+    console.log('[PPE Request Mobile] Preparing request data (no size validation required)');
+    const requestData = {
+      itemId: data.itemId,
+      quantity: data.quantity,
+      scheduledDate: data.scheduledDate || undefined,
+      reason: data.reason,
+    };
+    console.log('[PPE Request Mobile] Request data:', requestData);
 
     try {
-      await requestMutation.mutateAsync({
-        itemId: data.itemId,
-        quantity: data.quantity,
-        scheduledDate: data.scheduledDate || undefined,
-        notes: data.notes,
-        reason: data.reason,
-      });
+      console.log('[PPE Request Mobile] Calling mutation...');
+      const result = await requestMutation.mutateAsync(requestData);
+      console.log('[PPE Request Mobile] Request successful:', result);
+
       showToast({
         message: "Solicitação de EPI enviada com sucesso!",
         type: "success",
@@ -223,6 +214,13 @@ export function PpeRequestModal({
       form.reset();
       onSuccess();
     } catch (error: any) {
+      console.error('[PPE Request Mobile] Request failed:', error);
+      console.error('[PPE Request Mobile] Error details:', {
+        message: error?.message,
+        response: error?.response,
+        data: error?.response?.data,
+      });
+
       const errorMessage = error?.response?.data?.message || "Erro ao solicitar EPI";
       showToast({
         message: errorMessage,
@@ -245,6 +243,13 @@ export function PpeRequestModal({
     })) || [];
 
   const isLoading = requestMutation.isPending;
+
+  // Debug logs for component state
+  console.log('[PPE Request Mobile] Component render');
+  console.log('[PPE Request Mobile] Modal visible:', visible);
+  console.log('[PPE Request Mobile] isLoading:', isLoading);
+  console.log('[PPE Request Mobile] isLoadingItems:', isLoadingItems);
+  console.log('[PPE Request Mobile] Button disabled:', isLoading || isLoadingItems);
 
   return (
     <Modal
@@ -284,38 +289,6 @@ export function PpeRequestModal({
                   </View>
                 )}
               />
-
-              {/* Selected Item Info */}
-              {selectedItem && (
-                <View className="p-3 bg-muted rounded-lg gap-2">
-                  <Text className="text-sm font-medium">Informações do Item</Text>
-                  {selectedItem.brand && (
-                    <Text className="text-xs text-muted-foreground">
-                      Marca: {selectedItem.brand.name}
-                    </Text>
-                  )}
-                  {selectedItem.ppeType && (
-                    <Text className="text-xs text-muted-foreground">
-                      Tipo: {selectedItem.ppeType}
-                    </Text>
-                  )}
-                  {selectedItem.ppeCA && (
-                    <Text className="text-xs text-muted-foreground">
-                      CA: {selectedItem.ppeCA}
-                    </Text>
-                  )}
-                  {stockAvailable !== null && (
-                    <Text
-                      className={cn(
-                        "text-xs font-medium",
-                        stockAvailable > 0 ? "text-success" : "text-destructive"
-                      )}
-                    >
-                      Estoque disponível: {stockAvailable}
-                    </Text>
-                  )}
-                </View>
-              )}
 
               {/* Quantity */}
               <Controller
@@ -369,14 +342,14 @@ export function PpeRequestModal({
                 )}
               />
 
-              {/* Reason (Optional) */}
+              {/* Reason (Required) */}
               <Controller
                 control={form.control}
                 name="reason"
                 render={({ field: { onChange, value, onBlur }, fieldState: { error } }) => (
                   <View className="gap-2">
                     <Text className="text-sm font-medium text-foreground">
-                      Justificativa (Opcional)
+                      Justificativa <Text className="text-destructive">*</Text>
                     </Text>
                     <TextArea
                       value={value}
@@ -392,35 +365,11 @@ export function PpeRequestModal({
                 )}
               />
 
-              {/* Notes (Optional) */}
-              <Controller
-                control={form.control}
-                name="notes"
-                render={({ field: { onChange, value, onBlur }, fieldState: { error } }) => (
-                  <View className="gap-2">
-                    <Text className="text-sm font-medium text-foreground">
-                      Observações (Opcional)
-                    </Text>
-                    <TextArea
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      placeholder="Observações adicionais"
-                      editable={!isLoading}
-                      numberOfLines={3}
-                      className={cn(error && "border-destructive")}
-                    />
-                    {error && <Text className="text-sm text-destructive">{error.message}</Text>}
-                  </View>
-                )}
-              />
-
-              {/* Warning about PPE sizes */}
+              {/* Info about PPE sizes */}
               {!userPpeSize?.data && (
-                <View className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                  <Text className="text-sm text-yellow-600 dark:text-yellow-500">
-                    Atenção: Você ainda não cadastrou seus tamanhos de EPI. Alguns itens podem
-                    requerer essa informação antes da solicitação.
+                <View className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <Text className="text-sm text-blue-600 dark:text-blue-400">
+                    💡 Dica: Cadastrar seus tamanhos de EPI ajuda a filtrar e sugerir os EPIs corretos para você.
                   </Text>
                 </View>
               )}
@@ -429,7 +378,23 @@ export function PpeRequestModal({
 
           <View className="p-4 border-t border-border gap-2">
             <Button
-              onPress={form.handleSubmit(handleSubmit)}
+              onPress={() => {
+                console.log('=== [PPE Request Mobile] BUTTON PRESS EVENT FIRED ===');
+                console.log('[PPE Request Mobile] Submit button clicked');
+                console.log('[PPE Request Mobile] Is loading:', isLoading);
+                console.log('[PPE Request Mobile] Is loading items:', isLoadingItems);
+                console.log('[PPE Request Mobile] Button disabled state:', isLoading || isLoadingItems);
+                console.log('[PPE Request Mobile] Form values:', form.getValues());
+                console.log('[PPE Request Mobile] Form errors:', form.formState.errors);
+
+                try {
+                  console.log('[PPE Request Mobile] Calling form.handleSubmit...');
+                  form.handleSubmit(handleSubmit)();
+                  console.log('[PPE Request Mobile] form.handleSubmit called successfully');
+                } catch (error) {
+                  console.error('[PPE Request Mobile] Error calling form.handleSubmit:', error);
+                }
+              }}
               disabled={isLoading || isLoadingItems}
             >
               {isLoading ? (
@@ -441,7 +406,14 @@ export function PpeRequestModal({
                 <Text>Solicitar EPI</Text>
               )}
             </Button>
-            <Button variant="outline" onPress={handleClose} disabled={isLoading}>
+            <Button
+              variant="outline"
+              onPress={() => {
+                console.log('[PPE Request Mobile] Cancel button pressed');
+                handleClose();
+              }}
+              disabled={isLoading}
+            >
               <Text>Cancelar</Text>
             </Button>
           </View>

@@ -29,7 +29,7 @@ import { hasPrivilege } from "@/utils";
 
 export default function CreateCuttingPlanScreen() {
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createAsync } = useCutMutations();
 

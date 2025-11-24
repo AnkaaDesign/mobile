@@ -2,6 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { PaintFormula } from '@/types'
 import { canEditPaintFormulas } from '@/utils/permissions/entity-permissions'
 
+
 export const formulasListConfig: ListConfig<PaintFormula> = {
   key: 'painting-formulas',
   title: 'Fórmulas de Tinta',
@@ -10,6 +11,11 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
     hook: 'usePaintFormulasInfiniteMobile',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
+    sortOptions: [
+      { field: 'createdAt', label: 'Data de Criação' },
+      { field: 'pricePerLiter', label: 'Preço por Litro' },
+      { field: 'density', label: 'Densidade' },
+    ],
     include: {
       paint: {
         include: {
@@ -75,7 +81,7 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (formula) => (formula as any)._count?.components || 0,
+        render: (formula) => String((formula as any)._count?.components || 0),
         format: 'badge',
       },
       {
@@ -111,17 +117,17 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['paint', 'code', 'description', 'components', 'pricePerLiter'],
-    rowHeight: 60,
+    defaultVisible: ['paint', 'paintType', 'components'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (formula, router) => {
-          if (formula.paintId) {
-            router.push(`/pintura/catalogo/detalhes/${formula.paintId}`)
+          if (formula.id) {
+            router.push(`/pintura/formulas/detalhes/${formula.id}`)
           }
         },
       },
@@ -156,81 +162,54 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'paint',
-        label: 'Tinta',
-        icon: 'droplet',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'paintTypeIds',
-            label: 'Tipos de Tinta',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os tipos',
-          },
-          {
-            key: 'paintBrandIds',
-            label: 'Marcas de Tinta',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione as marcas',
-          },
+        key: 'sortBy',
+        type: 'select',
+        multiple: false,
+        placeholder: 'Ordenar por',
+        options: [
+          { label: 'Data de Criação', value: 'createdAt' },
+          { label: 'Preço por Litro', value: 'pricePerLiter' },
+          { label: 'Densidade', value: 'density' },
         ],
       },
       {
-        key: 'price',
-        label: 'Preço',
-        icon: 'currency-real',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'pricePerLiter',
-            label: 'Preço por Litro',
-            type: 'number-range',
-            placeholder: { min: 'Mínimo', max: 'Máximo' },
-          },
+        key: 'sortOrder',
+        type: 'select',
+        multiple: false,
+        placeholder: 'Ordem',
+        options: [
+          { label: 'Crescente', value: 'asc' },
+          { label: 'Decrescente', value: 'desc' },
         ],
+      },
+      {
+        key: 'paintTypeIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Tipos de Tinta',
+      },
+      {
+        key: 'paintBrandIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Marcas de Tinta',
+      },
+      {
+        key: 'pricePerLiter',
+        type: 'number-range',
+        placeholder: { min: 'Preço Mín (R$)', max: 'Preço Máx (R$)' },
       },
       {
         key: 'density',
-        label: 'Densidade',
-        icon: 'flask',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'density',
-            label: 'Densidade (g/ml)',
-            type: 'number-range',
-            placeholder: { min: 'Mínimo', max: 'Máximo' },
-          },
-        ],
+        type: 'number-range',
+        placeholder: { min: 'Densidade Mín (g/ml)', max: 'Densidade Máx (g/ml)' },
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
-        ],
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Cadastro',
       },
     ],
   },

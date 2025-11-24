@@ -24,7 +24,7 @@ import type { UseMutationResult } from "@tanstack/react-query";
 
 interface AuthHookReturn {
   // Query data
-  data: User | undefined;
+  user: User | undefined;
   isLoading: boolean;
   error: Error | null;
 
@@ -151,7 +151,7 @@ export function useAuth(): AuthHookReturn {
 
   return {
     // Query data
-    data,
+    user: data,
     isLoading,
     error,
 
@@ -183,13 +183,13 @@ export function useAuth(): AuthHookReturn {
 
 // Hook for checking if user is authenticated
 export function useIsAuthenticated(): boolean {
-  const { data } = useCurrentUser();
-  return !!data;
+  const { user } = useAuth();
+  return !!user;
 }
 
 // Hook for getting user privileges
 export function useUserPrivileges() {
-  const { data: user } = useCurrentUser();
+  const { user } = useAuth();
   return user?.sector?.privileges || null;
 }
 

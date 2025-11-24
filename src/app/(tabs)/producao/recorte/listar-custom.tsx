@@ -12,7 +12,7 @@ import type { Cut } from "@/types";
 import { Alert } from "react-native";
 
 export default function CuttingListCustomScreen() {
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const [selectedCutForRequest, setSelectedCutForRequest] = useState<Cut | null>(null);
   const [requestModalVisible, setRequestModalVisible] = useState(false);
 

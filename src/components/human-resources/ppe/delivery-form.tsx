@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
+import { TextArea } from "@/components/ui/textarea";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 
 import { DatePicker } from "@/components/ui/date-picker";
@@ -50,6 +51,7 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
       userId: preselectedUser?.id || "",
       itemId: preselectedItem?.id || "",
       quantity: 1,
+      reason: null,
       actualDeliveryDate: new Date(),
       status: PPE_DELIVERY_STATUS.PENDING,
     },
@@ -160,7 +162,7 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
               const itemOptions: ComboboxOption[] =
                 filteredItems.map((item) => ({
                   value: item.id,
-                  label: item.name + (item.ppeCA ? ` - CA: ${item.ppeCA}` : ""),
+                  label: `${item.name}${item.ppeSize ? ` • ${item.ppeSize}` : ""}${item.ppeCA ? ` - CA: ${item.ppeCA}` : ""}`,
                 }));
 
               return (
@@ -251,6 +253,28 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
                 </View>
               );
             }}
+          />
+
+          <Controller
+            control={form.control}
+            name="reason"
+            render={({ field: { onChange, value, onBlur }, fieldState: { error } }) => (
+              <View className="gap-2">
+                <Text className="text-sm font-medium text-foreground">
+                  Justificativa (Opcional)
+                </Text>
+                <TextArea
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Motivo da solicitação ou entrega"
+                  editable={!isLoading}
+                  numberOfLines={3}
+                  className={cn(error && "border-destructive")}
+                />
+                {error && <Text className="text-xs text-destructive">{error.message}</Text>}
+              </View>
+            )}
           />
 
         </View>

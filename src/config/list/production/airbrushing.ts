@@ -1,7 +1,8 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Airbrushing } from '@/types'
-import { canEditAirbrushings } from '@/utils/permissions/entity-permissions'
+import { canEditAirbrushings, canDeleteAirbrushings } from '@/utils/permissions/entity-permissions'
 import { AIRBRUSHING_STATUS } from '@/constants/enums'
+
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
@@ -22,8 +23,13 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
       task: {
         include: {
           customer: true,
+          sector: true,
+          user: true,
         },
       },
+      artworks: true,
+      receipts: true,
+      invoices: true,
     },
   },
 
@@ -43,8 +49,8 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
         label: 'STATUS',
         sortable: true,
         width: 1.3,
-        align: 'center',
-        render: (airbrushing) => airbrushing.status,
+        align: 'left',
+        render: (airbrushing) => STATUS_LABELS[airbrushing.status] || airbrushing.status,
         format: 'badge',
       },
       {
@@ -53,7 +59,7 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
         sortable: true,
         width: 1.2,
         align: 'right',
-        render: (airbrushing) => airbrushing.price || 0,
+        render: (airbrushing) => String(airbrushing.price || 0),
         format: 'currency',
       },
       {
@@ -66,21 +72,29 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
       },
       {
         key: 'startDate',
-        label: 'INÍCIO',
+        label: 'DATA INÍCIO',
         sortable: true,
-        width: 1.2,
+        width: 1.4,
         align: 'left',
         render: (airbrushing) => airbrushing.startDate,
         format: 'date',
       },
       {
         key: 'finishDate',
-        label: 'TÉRMINO',
+        label: 'DATA FINALIZAÇÃO',
         sortable: true,
-        width: 1.2,
+        width: 1.4,
         align: 'left',
         render: (airbrushing) => airbrushing.finishDate,
         format: 'date',
+      },
+      {
+        key: 'artworksCount',
+        label: 'ARTES',
+        sortable: false,
+        width: 0.8,
+        align: 'left',
+        render: (airbrushing) => String((airbrushing as any).artworks?.length || 0),
       },
       {
         key: 'observations',
@@ -92,20 +106,29 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
       },
       {
         key: 'createdAt',
-        label: 'CADASTRADO EM',
+        label: 'CRIADO EM',
         sortable: true,
         width: 1.2,
         align: 'left',
         render: (airbrushing) => airbrushing.createdAt,
         format: 'date',
       },
+      {
+        key: 'updatedAt',
+        label: 'ATUALIZADO EM',
+        sortable: true,
+        width: 1.2,
+        align: 'left',
+        render: (airbrushing) => airbrushing.updatedAt,
+        format: 'date',
+      },
     ],
-    defaultVisible: ['task', 'status', 'price'],
-    rowHeight: 60,
+    defaultVisible: ['task', 'status', 'startDate'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (airbrushing, router) => {
@@ -117,6 +140,7 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditAirbrushings,
         visible: (airbrushing) => airbrushing.status !== 'COMPLETED' && airbrushing.status !== 'CANCELLED',
         onPress: (airbrushing, router) => {
           router.push(`/producao/aerografia/editar/${airbrushing.id}`)
@@ -127,6 +151,7 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteAirbrushings,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (airbrushing) => `Deseja excluir esta aerografia?`,
@@ -139,117 +164,38 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(AIRBRUSHING_STATUS).map((status) => ({
-              label: STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(AIRBRUSHING_STATUS).map((status) => ({
+          label: STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'taskId',
-            label: 'Tarefa',
-            type: 'select',
-            multiple: false,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione a tarefa',
-          },
-          {
-            key: 'customerId',
-            label: 'Cliente',
-            type: 'select',
-            multiple: false,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione o cliente',
-          },
-        ],
+        key: 'taskIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Tarefas',
       },
       {
-        key: 'options',
-        label: 'Opções',
-        icon: 'settings',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'hasPrice',
-            label: 'Com Preço',
-            description: 'Apenas aerografias com preço definido',
-            type: 'toggle',
-          },
-        ],
+        key: 'priceRange',
+        type: 'number-range',
+        placeholder: { min: 'Mínimo', max: 'Máximo' },
       },
       {
-        key: 'ranges',
-        label: 'Faixas',
-        icon: 'adjustments',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'priceRange',
-            label: 'Preço (R$)',
-            type: 'number-range',
-            placeholder: { min: 'Mínimo', max: 'Máximo' },
-          },
-        ],
-      },
-      {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'startDate',
-            label: 'Data de Início',
-            type: 'date-range',
-          },
-          {
-            key: 'finishDate',
-            label: 'Data de Término',
-            type: 'date-range',
-          },
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
-        ],
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Criação',
       },
     ],
   },
 
   search: {
-    placeholder: 'Buscar aerografias...',
+    placeholder: 'Buscar airbrushings...',
     debounce: 300,
   },
 

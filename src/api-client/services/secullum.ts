@@ -87,6 +87,17 @@ export const secullumService = {
       }
     }),
 
+  // Personal calculations - automatically filtered by current user
+  getMyCalculations: (params?: { startDate?: string; endDate?: string; page?: number; take?: number }) =>
+    apiClient.get<{ success: boolean; data: any; meta?: any }>("/personal/my-secullum-calculations", {
+      params: {
+        startDate: params?.startDate,
+        endDate: params?.endDate,
+        page: params?.page,
+        take: params?.take,
+      }
+    }),
+
   // Departments & Positions
   getDepartments: () => apiClient.get<{ success: boolean; data: any }>("/integrations/secullum/departments"),
 

@@ -19,10 +19,8 @@ interface RemunerationsCardProps {
 export function RemunerationsCard({ position }: RemunerationsCardProps) {
   const { colors, isDark } = useTheme();
 
-  // Use monetaryValues (new) or fallback to remunerations (deprecated)
-  const monetaryValues = position.monetaryValues || [];
-  const remunerations = position.remunerations || [];
-  const values = monetaryValues.length > 0 ? monetaryValues : remunerations;
+  // Get remunerations (MonetaryValue entities via remunerations relation)
+  const values = position.remunerations || [];
   const hasRemunerations = values.length > 0;
 
   const handleViewRemunerations = () => {

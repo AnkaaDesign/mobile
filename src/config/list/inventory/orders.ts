@@ -6,6 +6,7 @@ import {
 } from '@/constants'
 import { canEditOrders } from '@/utils/permissions/entity-permissions'
 
+
 export const ordersListConfig: ListConfig<Order> = {
   key: 'inventory-orders',
   title: 'Pedidos',
@@ -54,7 +55,7 @@ export const ordersListConfig: ListConfig<Order> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (order) => order.status,
+        render: (order) => ORDER_STATUS_LABELS[order.status as keyof typeof ORDER_STATUS_LABELS] || order.status,
         format: 'badge',
       },
       {
@@ -63,7 +64,7 @@ export const ordersListConfig: ListConfig<Order> = {
         sortable: false,
         width: 0.8,
         align: 'center',
-        render: (order) => (order as any)._count?.items || order.items?.length || 0,
+        render: (order) => String((order as any)._count?.items || order.items?.length || 0),
         format: 'badge',
       },
       {
@@ -123,11 +124,11 @@ export const ordersListConfig: ListConfig<Order> = {
       },
     ],
     defaultVisible: ['description', 'status', 'itemsCount'],
-    rowHeight: 60,
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (order, router) => {
@@ -172,86 +173,54 @@ export const ordersListConfig: ListConfig<Order> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status do Pedido',
-            type: 'select',
-            multiple: true,
-            options: Object.values(ORDER_STATUS).map((status) => ({
-              label: ORDER_STATUS_LABELS[status as keyof typeof ORDER_STATUS_LABELS] || status,
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(ORDER_STATUS).map((status) => ({
+          label: ORDER_STATUS_LABELS[status as keyof typeof ORDER_STATUS_LABELS] || status,
+          value: status,
+        })),
+        placeholder: 'Status do Pedido',
       },
       {
-        key: 'supplier',
-        label: 'Fornecedor',
-        icon: 'building',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'supplierIds',
-            label: 'Fornecedores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os fornecedores',
-          },
-        ],
+        key: 'hasItems',
+        description: 'Apenas pedidos que possuem itens',
+        type: 'toggle',
+        placeholder: 'Com Itens',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Criação',
-            type: 'date-range',
-          },
-          {
-            key: 'forecastRange',
-            label: 'Previsão de Entrega',
-            type: 'date-range',
-          },
-          {
-            key: 'updatedAt',
-            label: 'Data de Atualização',
-            type: 'date-range',
-          },
-        ],
+        key: 'isFromSchedule',
+        description: 'Apenas pedidos criados a partir de agendamentos',
+        type: 'toggle',
+        placeholder: 'De Agendamento',
       },
       {
-        key: 'ranges',
-        label: 'Faixas de Valores',
-        icon: 'coins',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'totalPriceRange',
-            label: 'Valor Total (R$)',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-        ],
+        key: 'supplierIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Fornecedores',
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Criação',
+      },
+      {
+        key: 'forecastRange',
+        type: 'date-range',
+        placeholder: 'Previsão de Entrega',
+      },
+      {
+        key: 'updatedAt',
+        type: 'date-range',
+        placeholder: 'Data de Atualização',
+      },
+      {
+        key: 'totalPriceRange',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
       },
     ],
   },

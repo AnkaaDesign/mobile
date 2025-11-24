@@ -21,7 +21,7 @@ export default function PPEDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
   const { deleteMutation, updateMutation } = usePpeDeliveryMutations();
 

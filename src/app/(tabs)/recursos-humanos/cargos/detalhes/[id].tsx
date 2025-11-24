@@ -23,7 +23,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 export default function PositionDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const { delete: deleteAsync } = usePositionMutations();
   const [refreshing, setRefreshing] = useState(false);
 

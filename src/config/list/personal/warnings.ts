@@ -12,7 +12,7 @@ export const personalWarningsListConfig: ListConfig<Warning> = {
   title: 'Minhas Advertências',
 
   query: {
-    hook: 'useWarningsInfiniteMobile',
+    hook: 'useMyWarningsInfiniteMobile',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -35,7 +35,7 @@ export const personalWarningsListConfig: ListConfig<Warning> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (warning) => warning.severity,
+        render: (warning) => WARNING_SEVERITY_LABELS[warning.severity] || warning.severity,
         format: 'badge',
         component: 'severity-badge',
       },
@@ -97,7 +97,7 @@ export const personalWarningsListConfig: ListConfig<Warning> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (warning) => warning.createdAt,
+        render: (warning) => warning.createdAt || '-',
         format: 'date',
       },
       {
@@ -106,100 +106,52 @@ export const personalWarningsListConfig: ListConfig<Warning> = {
         sortable: false,
         width: 0.8,
         align: 'center',
-        render: (warning) => warning.attachments?.length || 0,
+        render: (warning) => String(warning.attachments?.length || 0),
         format: 'badge',
       },
     ],
     defaultVisible: ['severity', 'category', 'reason'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (warning, router) => {
-          router.push(`/pessoal/minhas-advertencias/detalhes/${warning.id}` as any)
-        },
-      },
-    ],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'severity',
-        label: 'Severidade',
-        icon: 'alert-triangle',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'severity',
-            label: 'Severidade',
-            type: 'select',
-            multiple: true,
-            options: Object.values(WARNING_SEVERITY).map((severity) => ({
-              label: WARNING_SEVERITY_LABELS[severity],
-              value: severity,
-            })),
-            placeholder: 'Selecione as severidades',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(WARNING_SEVERITY).map((severity) => ({
+          label: WARNING_SEVERITY_LABELS[severity],
+          value: severity,
+        })),
+        placeholder: 'Selecione as severidades',
       },
       {
         key: 'category',
-        label: 'Categoria',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'category',
-            label: 'Categoria',
-            type: 'select',
-            multiple: true,
-            options: Object.values(WARNING_CATEGORY).map((category) => ({
-              label: WARNING_CATEGORY_LABELS[category],
-              value: category,
-            })),
-            placeholder: 'Selecione as categorias',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(WARNING_CATEGORY).map((category) => ({
+          label: WARNING_CATEGORY_LABELS[category],
+          value: category,
+        })),
+        placeholder: 'Selecione as categorias',
       },
       {
-        key: 'status',
-        label: 'Status',
-        icon: 'check-circle',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'isActive',
-            label: 'Apenas Ativas',
-            type: 'toggle',
-            description: 'Mostrar apenas advertências ativas',
-          },
-        ],
+        key: 'isActive',
+        type: 'toggle',
+        placeholder: 'Apenas Ativas',
+        description: 'Mostrar apenas advertências ativas',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data da Advertência',
-            type: 'date-range',
-          },
-          {
-            key: 'followUpDate',
-            label: 'Data de Acompanhamento',
-            type: 'date-range',
-          },
-        ],
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data da Advertência',
+      },
+      {
+        key: 'followUpDate',
+        type: 'date-range',
+        placeholder: 'Data de Acompanhamento',
       },
     ],
   },

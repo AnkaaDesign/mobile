@@ -1,27 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Vacation } from '@/types'
-import { VACATION_STATUS, VACATION_TYPE } from '@/constants/enums'
-
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Pendente',
-  APPROVED: 'Aprovado',
-  REJECTED: 'Rejeitado',
-  CANCELLED: 'Cancelado',
-  IN_PROGRESS: 'Em Andamento',
-  COMPLETED: 'Concluído',
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  ANNUAL: 'Férias Anuais',
-  COLLECTIVE: 'Férias Coletivas',
-  MEDICAL: 'Licença Médica',
-  MATERNITY: 'Licença Maternidade',
-  PATERNITY: 'Licença Paternidade',
-  EMERGENCY: 'Emergência',
-  STUDY: 'Licença Estudo',
-  UNPAID: 'Unpaid',
-  OTHER: 'Outro',
-}
+import { VACATION_STATUS, VACATION_TYPE, VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '@/constants/enum-labels'
+import { formatDate } from '@/utils'
 
 export const vacationsListConfig: ListConfig<Vacation> = {
   key: 'hr-vacations',
@@ -40,82 +20,62 @@ export const vacationsListConfig: ListConfig<Vacation> = {
     columns: [
       {
         key: 'user.name',
-        label: 'COLABORADOR',
+        label: 'FUNCIONÁRIO',
         sortable: true,
         width: 2.0,
         align: 'left',
-        render: (vacation) => vacation.user?.name || '-',
+        render: (vacation) => vacation.user?.name || '—',
         style: { fontWeight: '500' },
+      },
+      {
+        key: 'period',
+        label: 'PERÍODO',
+        sortable: false,
+        width: 2.0,
+        align: 'left',
+        render: (vacation) =>
+          vacation.startAt && vacation.endAt
+            ? `${formatDate(new Date(vacation.startAt))} - ${formatDate(new Date(vacation.endAt))}`
+            : '—',
       },
       {
         key: 'status',
         label: 'STATUS',
         sortable: true,
-        width: 1.3,
-        align: 'center',
-        render: (vacation) => vacation.status,
-        format: 'badge',
-      },
-      {
-        key: 'type',
-        label: 'TIPO',
-        sortable: true,
-        width: 1.2,
-        align: 'center',
-        render: (vacation) => vacation.type ? TYPE_LABELS[vacation.type] : '-',
-        format: 'badge',
-      },
-      {
-        key: 'startAt',
-        label: 'INÍCIO',
-        sortable: true,
-        width: 1.2,
+        width: 1.5,
         align: 'left',
-        render: (vacation) => vacation.startAt,
-        format: 'date',
+        render: (vacation) => vacation.status ? VACATION_STATUS_LABELS[vacation.status] : '—',
+        format: 'badge',
+        badgeVariant: 'primary',
       },
       {
-        key: 'endAt',
-        label: 'FIM',
-        sortable: true,
-        width: 1.2,
-        align: 'left',
-        render: (vacation) => vacation.endAt,
-        format: 'date',
-      },
-      {
-        key: 'days',
+        key: 'daysRequested',
         label: 'DIAS',
         sortable: true,
         width: 0.8,
         align: 'center',
-        render: (vacation) => vacation.days || 0,
-        format: 'number',
+        render: (vacation) => {
+          // Calculate working days - web uses getWorkdaysBetween
+          // For mobile, we can use the days field or calculate
+          return String(vacation.days || 0)
+        },
       },
       {
-        key: 'monetaryValue',
-        label: 'ABONO PECUNIÁRIO',
+        key: 'createdAt',
+        label: 'SOLICITADO EM',
         sortable: true,
-        width: 1.5,
-        align: 'right',
-        render: (vacation) => vacation.monetaryValue || 0,
-        format: 'currency',
-      },
-      {
-        key: 'notes',
-        label: 'OBSERVAÇÕES',
-        sortable: false,
-        width: 2.0,
+        width: 1.2,
         align: 'left',
-        render: (vacation) => vacation.notes || '-',
+        render: (vacation) => vacation.createdAt,
+        format: 'date',
       },
     ],
-    defaultVisible: ['user.name', 'status', 'startAt', 'endAt'],
-    rowHeight: 60,
+    defaultVisible: ['user.name', 'period', 'status'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (vacation, router) => {
@@ -149,85 +109,44 @@ export const vacationsListConfig: ListConfig<Vacation> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'statuses',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(VACATION_STATUS).map((status) => ({
-              label: STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: false,
+        options: Object.entries(VACATION_STATUS_LABELS).map(([key, label]) => ({
+          label,
+          value: key,
+        })),
+        placeholder: 'Status',
       },
       {
         key: 'type',
-        label: 'Tipo',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'types',
-            label: 'Tipo de Férias',
-            type: 'select',
-            multiple: true,
-            options: Object.values(VACATION_TYPE).map((type) => ({
-              label: TYPE_LABELS[type],
-              value: type,
-            })),
-            placeholder: 'Selecione os tipos',
-          },
-        ],
+        type: 'select',
+        multiple: false,
+        options: Object.entries(VACATION_TYPE_LABELS).map(([key, label]) => ({
+          label,
+          value: key,
+        })),
+        placeholder: 'Tipo de férias',
       },
       {
-        key: 'collaborator',
-        label: 'Colaborador',
-        icon: 'user',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'userIds',
-            label: 'Colaboradores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os colaboradores',
-          },
-        ],
+        key: 'year',
+        type: 'select',
+        multiple: false,
+        options: (() => {
+          const currentYear = new Date().getFullYear()
+          return Array.from({ length: 11 }, (_, i) => {
+            const year = currentYear - 5 + i
+            return { label: String(year), value: year }
+          })
+        })(),
+        placeholder: 'Ano',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'startAt',
-            label: 'Data de Início',
-            type: 'date-range',
-          },
-          {
-            key: 'endAt',
-            label: 'Data de Fim',
-            type: 'date-range',
-          },
-        ],
+        key: 'isCollective',
+        type: 'toggle',
+        placeholder: 'Apenas férias coletivas',
       },
     ],
   },
@@ -242,13 +161,19 @@ export const vacationsListConfig: ListConfig<Vacation> = {
     filename: 'ferias',
     formats: ['csv', 'json', 'pdf'],
     columns: [
-      { key: 'user', label: 'Colaborador', path: 'user.name' },
-      { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || value },
-      { key: 'type', label: 'Tipo', path: 'type', format: (value) => value ? TYPE_LABELS[value] : '-' },
-      { key: 'startAt', label: 'Início', path: 'startAt', format: 'date' },
-      { key: 'endAt', label: 'Fim', path: 'endAt', format: 'date' },
+      { key: 'user', label: 'Funcionário', path: 'user.name' },
+      {
+        key: 'period',
+        label: 'Período',
+        path: 'startAt',
+        format: (value, item) =>
+          item.startAt && item.endAt
+            ? `${formatDate(new Date(item.startAt))} - ${formatDate(new Date(item.endAt))}`
+            : '—',
+      },
+      { key: 'status', label: 'Status', path: 'status', format: (value) => VACATION_STATUS_LABELS[value] || value },
       { key: 'days', label: 'Dias', path: 'days' },
-      { key: 'monetaryValue', label: 'Abono Pecuniário', path: 'monetaryValue', format: 'currency' },
+      { key: 'createdAt', label: 'Solicitado Em', path: 'createdAt', format: 'date' },
     ],
   },
 

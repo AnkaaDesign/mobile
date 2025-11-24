@@ -46,7 +46,7 @@ export function FAB({ icon, onPress, label, children, style, disabled = false }:
       {children ? (
         children
       ) : icon ? (
-        <Icon name={icon} size={24} color={colors.background} />
+        <Icon name={icon} size={24} color="#FFFFFF" />
       ) : null}
       {label && (
         <Text

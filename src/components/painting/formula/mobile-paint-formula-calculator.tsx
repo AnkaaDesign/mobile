@@ -1,62 +1,45 @@
 import { useState, useMemo } from "react";
-import { View, TouchableOpacity, Modal, ScrollView } from "react-native";
+import { View, TouchableOpacity, ScrollView, StyleSheet, Modal } from "react-native";
 import { useRouter } from "expo-router";
-import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { MEASURE_UNIT } from "@/constants";
-import { formatCurrency, measureUtils } from "@/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card } from "@/components/ui/card";
+import { formatCurrency, formatNumberWithDecimals } from "@/utils";
 import { useTheme } from "@/lib/theme";
-import type { PaintFormula } from "../../../types";
-import { IconAlertTriangle, IconCheck, IconX, IconExclamationCircle, IconLoader } from "@tabler/icons-react-native";
+import type { PaintFormula, Item } from "../../../types";
+import { IconAlertTriangle, IconCheck, IconX, IconAlertCircle, IconLoader2, IconCurrencyDollar, IconAdjustments } from "@tabler/icons-react-native";
 import { usePaintProductionMutations } from "@/hooks";
+import { useItems } from "../../../hooks";
+import { showToast } from "@/components/ui/toast";
 
 interface MobilePaintFormulaCalculatorProps {
   formula: PaintFormula;
 }
 
-// Predefined weight options (in grams)
-const PREDEFINED_WEIGHTS = [
-  { label: "500g", value: 500 },
-  { label: "1kg", value: 1000 },
-  { label: "2kg", value: 2000 },
-  { label: "3kg", value: 3000 },
-];
+// Quick volume buttons (mobile optimized)
+const QUICK_VOLUMES = [100, 2000, 3600];
 
 interface ComponentCalculation {
   id: string;
+  itemId: string;
   name: string;
-  uniCode?: string;
+  code: string;
   ratio: number;
-  calculatedWeight: number;
-  calculatedVolume: number;
-  availableStock: number;
-  stockUnit: string;
-  requiredUnits: number;
-  unitPrice: number;
-  totalCost: number;
+  weightInGrams: number;
+  volumeInMl: number;
+  density: number;
+  price: number;
+  pricePerLiter: number;
   hasStock: boolean;
-  itemDensity: number;
-  // Correction mode fields
-  isErrorComponent?: boolean;
+  stockQuantity: number;
+  correctedWeightInGrams?: number;
+  correctedVolumeInMl?: number;
+  additionalWeightNeeded?: number;
   wasAlreadyAdded?: boolean;
-  correctedWeight?: number;
-  additionalWeight?: number;
-  actualWeight?: number;
-}
-
-interface ErrorComponent {
-  componentId: string;
-  expectedWeight: number;
-  actualWeight: number;
-  errorRatio: number;
+  hasError?: boolean;
 }
 
 export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalculatorProps) {
@@ -64,795 +47,851 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
   const router = useRouter();
   const { createAsync: createProduction } = usePaintProductionMutations();
 
-  // Main state - now weight-based like web version
-  const [targetWeight, setTargetWeight] = useState<string>("1000"); // Default 1kg
-  const [targetWeightUnit, setTargetWeightUnit] = useState<MEASURE_UNIT>(MEASURE_UNIT.GRAM);
-  const [removedAmount, setRemovedAmount] = useState<string>("0"); // Amount removed for testing
-  const [removedUnit, setRemovedUnit] = useState<MEASURE_UNIT>(MEASURE_UNIT.GRAM);
-  const [isCreatingProduction, setIsCreatingProduction] = useState(false);
-
-  // Display options
+  // Main state - VOLUME based like web
+  const [desiredVolume, setDesiredVolume] = useState("2000");
   const [showPrices, setShowPrices] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
+  const [isProducing, setIsProducing] = useState(false);
+  const [selectedComponents, setSelectedComponents] = useState<string[]>([]);
 
-  // Correction mode (keeping this as a mobile-specific enhancement)
+  // Correction mode state (matching web)
   const [correctionMode, setCorrectionMode] = useState(false);
+  const [errorComponentId, setErrorComponentId] = useState<string | null>(null);
+  const [actualAmount, setActualAmount] = useState("");
   const [showErrorDialog, setShowErrorDialog] = useState(false);
-  const [errorComponent, setErrorComponent] = useState<ErrorComponent | null>(null);
-  const [tempErrorComponentId, setTempErrorComponentId] = useState<string>("");
-  const [tempActualWeight, setTempActualWeight] = useState<string>("");
-  const [alreadyAddedComponents, setAlreadyAddedComponents] = useState<Set<string>>(new Set());
+  const [selectedComponentForError, setSelectedComponentForError] = useState<string | null>(null);
 
-  const components = formula.components || [];
-  const formulaDensity = Number(formula.density) || 1.0;
+  // Get item IDs from formula components
+  const itemIds = useMemo(() => {
+    return formula.components?.map((c) => c.itemId).filter(Boolean) || [];
+  }, [formula.components]);
 
-  // Convert target weight to grams (matching web logic)
-  const targetWeightInGrams = targetWeightUnit === MEASURE_UNIT.KILOGRAM ? (parseFloat(targetWeight) || 0) * 1000 : (parseFloat(targetWeight) || 0);
+  // Fetch items with measures and prices
+  const { data: itemsResponse } = useItems({
+    where: {
+      id: { in: itemIds },
+    },
+    include: {
+      measures: true,
+      prices: true,
+    },
+    enabled: itemIds.length > 0,
+  });
 
-  // Convert removed amount to grams (matching web logic)
-  const removedAmountInGrams = removedUnit === MEASURE_UNIT.KILOGRAM ? (parseFloat(removedAmount) || 0) * 1000 : (parseFloat(removedAmount) || 0);
+  // Create a map of items by ID for quick lookup
+  const itemsMap = useMemo(() => {
+    const map = new Map<string, Item>();
+    itemsResponse?.data?.forEach((item) => {
+      map.set(item.id, item);
+    });
+    return map;
+  }, [itemsResponse]);
 
-  // Calculate actual weight after removal (matching web logic)
-  const actualTargetWeight = targetWeightInGrams - removedAmountInGrams;
+  // Calculate error ratio if in correction mode (matching web)
+  const errorRatio = useMemo(() => {
+    if (!correctionMode || !errorComponentId || !actualAmount) return 1;
 
-  const handlePredefinedWeight = (value: number) => {
-    setTargetWeight(value.toString());
-    setTargetWeightUnit(MEASURE_UNIT.GRAM);
+    const errorComponent = formula.components?.find((c) => c.id === errorComponentId);
+    if (!errorComponent) return 1;
+
+    const ratioSum = formula.components?.reduce((sum, c) => sum + (c.ratio || 0), 0) || 0;
+    const needsNormalization = ratioSum > 0 && ratioSum < 10;
+
+    let componentRatio = errorComponent.ratio || 0;
+    if (needsNormalization) {
+      componentRatio = componentRatio * 100;
+    }
+
+    const volumeInMl = parseFloat(desiredVolume) || 0;
+    const formulaDensity = Number(formula.density) || 1.0;
+    const totalWeightInGrams = volumeInMl * formulaDensity;
+    const expectedWeight = (totalWeightInGrams * componentRatio) / 100;
+    const actualWeight = parseFloat(actualAmount) || 0;
+
+    return actualWeight / expectedWeight;
+  }, [correctionMode, errorComponentId, actualAmount, formula, desiredVolume]);
+
+  // Calculate components based on desired volume (EXACT web logic)
+  const calculatedComponents = useMemo((): ComponentCalculation[] => {
+    if (!formula.components || formula.components.length === 0) return [];
+
+    const volumeInMl = parseFloat(desiredVolume) || 0;
+    if (volumeInMl <= 0) return [];
+
+    // Formula density in g/ml
+    const formulaDensity = Number(formula.density) || 1.0;
+
+    // Total weight for the desired volume
+    const totalWeightInGrams = volumeInMl * formulaDensity;
+
+    // Check if ratios need to be normalized (if they sum to ~1 instead of 100)
+    const ratioSum = formula.components.reduce((sum, c) => sum + (c.ratio || 0), 0);
+    const needsNormalization = ratioSum > 0 && ratioSum < 10;
+
+    // Calculate each component
+    return formula.components
+      .map((component) => {
+        let ratio = component.ratio || 0;
+
+        // Normalize ratio if needed (convert from decimal to percentage)
+        if (needsNormalization) {
+          ratio = ratio * 100;
+        }
+
+        // IMPORTANT: The ratio represents WEIGHT percentage based on the original formula
+        // Calculate component weight based on the total weight needed
+        const componentWeightInGrams = (totalWeightInGrams * ratio) / 100;
+
+        // Get item info from either the component or the fetched items map
+        const item = itemsMap.get(component.itemId) || component.item;
+
+        // Get weight measure from item (weight per can/unit)
+        const weightMeasure = item?.measures?.find((m) => m.measureType === "WEIGHT");
+
+        // Calculate weight per unit in grams
+        let weightPerUnitInGrams = 0;
+        if (weightMeasure) {
+          if (weightMeasure.unit === "KILOGRAM") {
+            weightPerUnitInGrams = (weightMeasure.value || 0) * 1000;
+          } else if (weightMeasure.unit === "GRAM") {
+            weightPerUnitInGrams = weightMeasure.value || 0;
+          }
+        }
+
+        // If no weight measure, check for volume measure and use density
+        if (weightPerUnitInGrams === 0) {
+          const volumeMeasure = item?.measures?.find((m) => m.measureType === "VOLUME");
+          if (volumeMeasure) {
+            let volumeInMl = 0;
+            if (volumeMeasure.unit === "LITER") {
+              volumeInMl = (volumeMeasure.value || 0) * 1000;
+            } else if (volumeMeasure.unit === "MILLILITER") {
+              volumeInMl = volumeMeasure.value || 0;
+            }
+            weightPerUnitInGrams = volumeInMl * formulaDensity;
+          }
+        }
+
+        // If still no weight, assume the item quantity is already in the unit we need
+        if (weightPerUnitInGrams === 0) {
+          weightPerUnitInGrams = 1;
+        }
+
+        // Calculate total available weight in grams
+        const totalAvailableWeight = (item?.quantity || 0) * weightPerUnitInGrams;
+
+        // Calculate density
+        const volumeMeasure = item?.measures?.find((m) => m.measureType === "VOLUME");
+        let itemDensity = formulaDensity;
+
+        if (weightMeasure?.value && volumeMeasure?.value && volumeMeasure.value > 0) {
+          itemDensity = weightMeasure.value / volumeMeasure.value;
+        }
+
+        // Calculate component's proportional volume
+        const componentVolumeInMl = (volumeInMl * ratio) / 100;
+
+        // Calculate actual price based on item price and weight
+        const itemPrice = item?.prices?.[0]?.value || 0;
+        const pricePerGram = weightPerUnitInGrams > 0 ? itemPrice / weightPerUnitInGrams : 0;
+        const componentCost = pricePerGram * componentWeightInGrams;
+        const componentPricePerLiterShare = volumeInMl > 0 ? (componentCost * 1000) / volumeInMl : 0;
+
+        // Calculate corrected amounts if in correction mode (matching web)
+        let correctedWeightInGrams = componentWeightInGrams;
+        let correctedVolumeInMl = componentVolumeInMl;
+        let additionalWeightNeeded = 0;
+
+        const wasAlreadyAdded = selectedComponents.includes(component.id || "");
+        const isErrorComponent = component.id === errorComponentId;
+
+        if (correctionMode && errorRatio !== 1) {
+          correctedWeightInGrams = componentWeightInGrams * errorRatio;
+          correctedVolumeInMl = componentVolumeInMl * errorRatio;
+
+          if (wasAlreadyAdded && !isErrorComponent) {
+            additionalWeightNeeded = correctedWeightInGrams - componentWeightInGrams;
+          }
+        }
+
+        return {
+          id: component.id || "",
+          itemId: component.itemId,
+          name: item?.name || "Item não encontrado",
+          code: item?.uniCode || "SEM CÓDIGO",
+          ratio,
+          weightInGrams: componentWeightInGrams,
+          volumeInMl: componentVolumeInMl,
+          density: itemDensity,
+          price: componentCost,
+          pricePerLiter: componentPricePerLiterShare,
+          hasStock: totalAvailableWeight >= (correctionMode ? correctedWeightInGrams : componentWeightInGrams),
+          stockQuantity: totalAvailableWeight,
+          correctedWeightInGrams: correctionMode ? correctedWeightInGrams : undefined,
+          correctedVolumeInMl: correctionMode ? correctedVolumeInMl : undefined,
+          additionalWeightNeeded: correctionMode ? additionalWeightNeeded : undefined,
+          wasAlreadyAdded,
+          hasError: isErrorComponent,
+        };
+      })
+      .sort((a, b) => b.ratio - a.ratio);
+  }, [formula, desiredVolume, itemsMap, correctionMode, errorRatio, errorComponentId, selectedComponents]);
+
+  // Calculate totals
+  const totals = useMemo(() => {
+    const totalWeight = calculatedComponents.reduce((sum, comp) => sum + comp.weightInGrams, 0);
+    const totalVolume = calculatedComponents.reduce((sum, comp) => sum + comp.volumeInMl, 0);
+    const totalCost = calculatedComponents.reduce((sum, comp) => sum + comp.price, 0);
+    const allInStock = calculatedComponents.every((comp) => comp.hasStock);
+
+    const volumeInLiters = totalVolume / 1000;
+    const pricePerLiter = volumeInLiters > 0 ? totalCost / volumeInLiters : 0;
+
+    const totalRatio = calculatedComponents.reduce((sum, comp) => sum + comp.ratio, 0);
+    const ratioIsValid = Math.abs(totalRatio - 100) <= 0.1;
+
+    return {
+      weight: totalWeight,
+      volume: totalVolume,
+      price: totalCost,
+      allInStock,
+      pricePerLiter,
+      totalRatio,
+      ratioIsValid,
+      isValid: ratioIsValid && allInStock && totalWeight > 0,
+    };
+  }, [calculatedComponents]);
+
+  const handleToggleComponent = (componentId: string) => {
+    if (!correctionMode) {
+      setSelectedComponents((prev) =>
+        prev.includes(componentId)
+          ? prev.filter((id) => id !== componentId)
+          : [...prev, componentId]
+      );
+    }
   };
 
-  const handleToggleCorrectionMode = (value: boolean) => {
-    setCorrectionMode(value);
-    if (value) {
-      setShowErrorDialog(true);
-      setAlreadyAddedComponents(new Set());
-      setErrorComponent(null);
-      setTempErrorComponentId("");
-      setTempActualWeight("");
-    } else {
-      setErrorComponent(null);
-      setAlreadyAddedComponents(new Set());
-    }
+  const handleComponentError = (componentId: string) => {
+    setSelectedComponentForError(componentId);
+    setShowErrorDialog(true);
   };
 
   const handleConfirmError = () => {
-    const component = components.find(c => c.id === tempErrorComponentId);
-    if (component && tempActualWeight) {
-      const expectedWeight = (component.ratio / 100) * actualTargetWeight;
-      const actualWeight = parseFloat(tempActualWeight);
-
-      if (actualWeight >= expectedWeight) {
-        const errorRatio = actualWeight / expectedWeight;
-        setErrorComponent({
-          componentId: tempErrorComponentId,
-          expectedWeight,
-          actualWeight,
-          errorRatio
-        });
-
-        // Mark all components as already added except the error one
-        const added = new Set<string>();
-        components.forEach(c => {
-          if (c.id !== tempErrorComponentId) {
-            added.add(c.id || "");
-          }
-        });
-        setAlreadyAddedComponents(added);
-
-        setShowErrorDialog(false);
-      }
+    if (selectedComponentForError && actualAmount) {
+      setErrorComponentId(selectedComponentForError);
+      setCorrectionMode(true);
+      setShowErrorDialog(false);
     }
   };
 
-  const handleComponentAdded = (componentId: string) => {
-    if (!correctionMode || !errorComponent) return;
-
-    setAlreadyAddedComponents(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(componentId)) {
-        newSet.delete(componentId);
-      } else {
-        newSet.add(componentId);
-      }
-      return newSet;
-    });
+  const handleResetCorrection = () => {
+    setCorrectionMode(false);
+    setErrorComponentId(null);
+    setActualAmount("");
   };
 
-  // Calculate component requirements based on ratios (matching web exactly)
-  const componentCalculations = useMemo((): ComponentCalculation[] => {
-    return components.map((comp) => {
-      // Calculate weight based on ratio and actual target weight (after removal)
-      const baseWeight = (comp.ratio / 100) * actualTargetWeight;
-      let calculatedWeight = baseWeight;
-      let correctedWeight: number | undefined;
-      let additionalWeight: number | undefined;
-      let isErrorComponent = false;
-      let wasAlreadyAdded = false;
+  const handleProduction = async () => {
+    if (!totals.allInStock || totals.weight <= 0) {
+      showToast({
+        title: "Não é possível produzir",
+        description: totals.allInStock ? "Peso inválido" : "Estoque insuficiente",
+        variant: "error",
+      });
+      return;
+    }
 
-      // Apply correction logic if in correction mode (mobile-specific feature)
-      if (correctionMode && errorComponent) {
-        if (comp.id === errorComponent.componentId) {
-          // This is the error component
-          isErrorComponent = true;
-          calculatedWeight = errorComponent.actualWeight;
-          correctedWeight = errorComponent.actualWeight;
-        } else if (alreadyAddedComponents.has(comp.id || "")) {
-          // Component was already added before error
-          wasAlreadyAdded = true;
-          correctedWeight = baseWeight * errorComponent.errorRatio;
-          additionalWeight = correctedWeight - baseWeight;
-          calculatedWeight = baseWeight; // Keep original for display
-        } else {
-          // Component not yet added
-          correctedWeight = baseWeight * errorComponent.errorRatio;
-          calculatedWeight = correctedWeight;
-        }
-      }
-
-      const item = comp.item;
-      const unitPrice = item?.prices?.[0]?.value || 0;
-      const availableStock = item?.quantity || 0;
-
-      // Get weight and volume measures (matching web logic exactly)
-      const weightMeasure = item?.measures?.find(
-        (m) => m.measureType === "WEIGHT" && m.unit === MEASURE_UNIT.GRAM
-      );
-      const volumeMeasure = item?.measures?.find(
-        (m) => m.measureType === "VOLUME" && m.unit === MEASURE_UNIT.MILLILITER
-      );
-
-      // Calculate item density (matching web logic exactly)
-      const itemDensity =
-        weightMeasure?.value && volumeMeasure?.value && volumeMeasure.value > 0
-          ? weightMeasure.value / volumeMeasure.value
-          : Number(formula.density) || 1.0;
-
-      // Calculate volume based on weight and density
-      const calculatedVolume = calculatedWeight / itemDensity;
-
-      // Determine stock unit and calculate required units (matching web logic exactly)
-      const stockUnit = item?.measures?.[0]?.unit || MEASURE_UNIT.UNIT;
-      let requiredUnits = calculatedWeight;
-
-      if (stockUnit === MEASURE_UNIT.KILOGRAM) {
-        requiredUnits = calculatedWeight / 1000;
-      } else if (stockUnit === MEASURE_UNIT.GRAM) {
-        requiredUnits = calculatedWeight;
-      } else if (weightMeasure?.value) {
-        // For items with specific weight per unit
-        requiredUnits = calculatedWeight / weightMeasure.value;
-      }
-
-      const totalCost = requiredUnits * unitPrice;
-      const hasStock = availableStock >= requiredUnits;
-
-      return {
-        id: comp.id || "",
-        name: item?.name || `Componente`,
-        uniCode: item?.uniCode ?? undefined,
-        ratio: comp.ratio,
-        calculatedWeight,
-        calculatedVolume,
-        availableStock,
-        stockUnit,
-        requiredUnits,
-        unitPrice,
-        totalCost,
-        hasStock,
-        itemDensity,
-        isErrorComponent,
-        wasAlreadyAdded,
-        correctedWeight,
-        additionalWeight,
-      };
-    });
-  }, [components, actualTargetWeight, formula.density, correctionMode, errorComponent, alreadyAddedComponents]);
-
-  // Calculate totals (matching web logic exactly)
-  const calculatedTotals = useMemo(() => {
-    const totalWeight = componentCalculations.reduce((sum, calc) => sum + calc.calculatedWeight, 0);
-    const totalVolume = componentCalculations.reduce((sum, calc) => sum + calc.calculatedVolume, 0);
-    const totalCost = componentCalculations.reduce((sum, calc) => sum + calc.totalCost, 0);
-    const missingComponents = componentCalculations.filter((calc) => !calc.hasStock);
-    const calculatedVolumeInLiters = totalVolume / 1000;
-    const costPerLiter = calculatedVolumeInLiters > 0 ? totalCost / calculatedVolumeInLiters : 0;
-
-    return {
-      totalWeight,
-      totalVolume,
-      totalCost,
-      missingComponents,
-      calculatedVolumeInLiters,
-      costPerLiter,
-    };
-  }, [componentCalculations]);
-
-  const calculatedDensity = calculatedTotals.totalVolume > 0 ? calculatedTotals.totalWeight / calculatedTotals.totalVolume : 0;
-
-  // Handle production start (matching web logic exactly)
-  const handleStartProduction = async () => {
+    setIsProducing(true);
     try {
-      setIsCreatingProduction(true);
-
-      // Validate required data
-      if (!formula.id) {
-        return;
-      }
-
-      if (!formula.paint?.id) {
-        return;
-      }
-
-      if (actualTargetWeight <= 0) {
-        return;
-      }
-
-      // Calculate volume from weight using formula density
-      const formulaDensity = Number(formula.density) || 1.0;
-      const volumeInMl = actualTargetWeight / formulaDensity;
-      const volumeInLiters = volumeInMl / 1000;
-
-      // Create the production with the calculated volume (in liters)
+      const volumeInLiters = parseFloat(desiredVolume) / 1000;
       const result = await createProduction({
         formulaId: formula.id,
         volumeLiters: volumeInLiters,
       });
 
-      // Navigate to the production details page
       if (result?.data?.id) {
-        router.push(`/painting/production/${result.data.id}`);
+        showToast({
+          title: "Produção iniciada!",
+          variant: "success",
+        });
+        router.push("/pintura/catalogo/listar");
       }
     } catch (error) {
       console.error("Error creating production:", error);
-      // Error handled by API client
     } finally {
-      setIsCreatingProduction(false);
+      setIsProducing(false);
     }
   };
 
   return (
-    <Card className="p-4">
-      {/* Header */}
-      <View className="flex-row items-center gap-2 mb-4">
-        <View className="p-2 rounded-lg bg-primary/10">
-          <Icon name="calculator" size={20} className="text-primary" />
+    <View style={styles.container}>
+      {/* Controls Section */}
+      <View style={styles.controls}>
+        {/* Volume Input */}
+        <View style={styles.inputSection}>
+          <Text style={[styles.label, { color: colors.foreground }]}>
+            Volume Desejado (ml)
+          </Text>
+          <Input
+            value={desiredVolume}
+            onChangeText={setDesiredVolume}
+            keyboardType="numeric"
+            placeholder="Digite o volume desejado em ml"
+            style={styles.input}
+          />
+          {/* Quick Buttons and Action Icons Row */}
+          <View style={styles.quickButtonsRow}>
+            <View style={styles.quickButtons}>
+              {QUICK_VOLUMES.map((amount) => (
+                <TouchableOpacity
+                  key={amount}
+                  onPress={() => setDesiredVolume(amount.toString())}
+                  style={[
+                    styles.quickButton,
+                    {
+                      backgroundColor: parseInt(desiredVolume) === amount ? colors.primary : colors.card,
+                      borderColor: parseInt(desiredVolume) === amount ? colors.primary : colors.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.quickButtonText,
+                      {
+                        color: parseInt(desiredVolume) === amount ? colors.primaryForeground : colors.foreground,
+                      },
+                    ]}
+                  >
+                    {amount >= 1000 ? `${amount / 1000}L` : `${amount}ml`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Icon Action Buttons */}
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setShowPrices(!showPrices)}
+                style={[
+                  styles.iconButton,
+                  {
+                    backgroundColor: showPrices ? colors.primary : colors.card,
+                    borderColor: showPrices ? colors.primary : colors.border,
+                  },
+                ]}
+              >
+                <IconCurrencyDollar
+                  size={20}
+                  color={showPrices ? colors.primaryForeground : colors.foreground}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (!correctionMode) {
+                    const firstUnchecked = calculatedComponents.find((c) => !selectedComponents.includes(c.id));
+                    if (firstUnchecked) {
+                      handleComponentError(firstUnchecked.id);
+                    }
+                  } else {
+                    handleResetCorrection();
+                  }
+                }}
+                style={[
+                  styles.iconButton,
+                  {
+                    backgroundColor: correctionMode ? colors.primary : colors.card,
+                    borderColor: correctionMode ? colors.primary : colors.border,
+                  },
+                ]}
+                disabled={parseFloat(desiredVolume) <= 0}
+              >
+                <IconAdjustments
+                  size={20}
+                  color={correctionMode ? colors.primaryForeground : colors.foreground}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-        <Text className="text-lg font-semibold text-foreground">Calculadora de Fórmula</Text>
       </View>
 
-      <View className="gap-4">
-        {/* Target Weight Input (matching web layout) */}
-        <View className="gap-2">
-          <Text className="text-sm font-medium text-foreground">Peso desejado para produção</Text>
-
-          {/* Predefined Weight Buttons */}
-          <View className="flex-row gap-2 flex-wrap">
-            {PREDEFINED_WEIGHTS.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                onPress={() => handlePredefinedWeight(option.value)}
-                className="px-3 py-2 rounded-lg border"
-                style={{
-                  backgroundColor: targetWeight === option.value.toString() && targetWeightUnit === MEASURE_UNIT.GRAM ? colors.primary : 'transparent',
-                  borderColor: targetWeight === option.value.toString() && targetWeightUnit === MEASURE_UNIT.GRAM ? colors.primary : colors.border,
+      {/* Components Table */}
+      {calculatedComponents.length > 0 && (
+        <View style={[styles.table, { borderColor: colors.border }]}>
+          {/* Header */}
+          <View style={[styles.tableHeader, { backgroundColor: colors.muted }]}>
+            <View style={styles.checkboxCell}>
+              <Checkbox
+                checked={calculatedComponents.length > 0 && calculatedComponents.every((c) => selectedComponents.includes(c.id))}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setSelectedComponents(calculatedComponents.map((c) => c.id));
+                  } else {
+                    setSelectedComponents([]);
+                  }
                 }}
+                disabled={correctionMode}
+              />
+            </View>
+            <Text style={[styles.headerText, { color: colors.foreground }]}>Item</Text>
+            <Text style={[styles.headerTextRight, { color: colors.foreground }]}>Peso (g)</Text>
+            {correctionMode && <Text style={[styles.headerTextRight, { color: colors.foreground }]}>Correção</Text>}
+            {showPrices && <Text style={[styles.headerTextRight, { color: colors.foreground }]}>Preço</Text>}
+          </View>
+
+          {/* Rows */}
+          <ScrollView>
+            {calculatedComponents.map((component) => (
+              <TouchableOpacity
+                key={component.id}
+                onPress={() => handleToggleComponent(component.id)}
+                style={[
+                  styles.tableRow,
+                  {
+                    backgroundColor: selectedComponents.includes(component.id) ? colors.muted + "50" : "transparent",
+                    borderBottomColor: colors.border,
+                  },
+                ]}
               >
-                <Text
-                  className="text-sm font-medium"
-                  style={{
-                    color: targetWeight === option.value.toString() && targetWeightUnit === MEASURE_UNIT.GRAM ? colors.primaryForeground : colors.foreground,
-                  }}
-                >
-                  {option.label}
-                </Text>
+                <View style={styles.checkboxCell}>
+                  {correctionMode ? (
+                    component.hasError ? (
+                      <IconAlertCircle size={16} color={colors.destructive} />
+                    ) : component.wasAlreadyAdded ? (
+                      <IconCheck size={16} color="#16a34a" />
+                    ) : (
+                      <IconX size={16} color={colors.mutedForeground} />
+                    )
+                  ) : (
+                    <Checkbox
+                      checked={selectedComponents.includes(component.id)}
+                      onCheckedChange={() => handleToggleComponent(component.id)}
+                    />
+                  )}
+                </View>
+                <View style={styles.itemCell}>
+                  <Text style={[styles.itemText, { color: colors.foreground }]} numberOfLines={2}>
+                    <Text style={[styles.itemCode, { color: colors.mutedForeground }]}>{component.code}</Text>
+                    {" "}
+                    <Text style={[styles.itemName, { color: colors.foreground }]}>{component.name}</Text>
+                  </Text>
+                  {!component.hasStock && (
+                    <IconAlertCircle size={16} color={colors.destructive} style={styles.stockIcon} />
+                  )}
+                </View>
+                <View style={styles.weightCell}>
+                  <Text style={[styles.weightText, { color: colors.foreground }]}>
+                    {component.weightInGrams > 20
+                      ? Math.round(component.weightInGrams)
+                      : formatNumberWithDecimals(component.weightInGrams, 1)}
+                  </Text>
+                </View>
+                {correctionMode && (
+                  <View style={styles.weightCell}>
+                    {component.hasError ? (
+                      <Text style={[styles.weightText, { color: colors.destructive, fontWeight: "600" }]}>
+                        {parseFloat(actualAmount) > 20
+                          ? Math.round(parseFloat(actualAmount))
+                          : formatNumberWithDecimals(parseFloat(actualAmount) || 0, 1)}
+                      </Text>
+                    ) : component.correctedWeightInGrams ? (
+                      component.wasAlreadyAdded && component.additionalWeightNeeded !== undefined ? (
+                        <Text style={[styles.weightText, { color: "#f59e0b", fontWeight: "600" }]}>
+                          {component.additionalWeightNeeded >= 0 ? "+" : ""}
+                          {component.additionalWeightNeeded > 20 || component.additionalWeightNeeded < -20
+                            ? Math.round(component.additionalWeightNeeded)
+                            : formatNumberWithDecimals(component.additionalWeightNeeded, 1)}
+                        </Text>
+                      ) : (
+                        <Text style={[styles.weightText, { color: "#3b82f6", fontWeight: "600" }]}>
+                          {component.correctedWeightInGrams > 20
+                            ? Math.round(component.correctedWeightInGrams)
+                            : formatNumberWithDecimals(component.correctedWeightInGrams, 1)}
+                        </Text>
+                      )
+                    ) : null}
+                  </View>
+                )}
+                {showPrices && (
+                  <View style={styles.priceCell}>
+                    <Text style={[styles.priceText, { color: colors.foreground }]}>
+                      {formatCurrency(component.price)}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             ))}
-          </View>
 
-          {/* Custom Weight Input with Unit Selector */}
-          <View className="flex-row gap-2">
-            <View className="flex-1">
-              <Input
-                value={targetWeight}
-                onChangeText={setTargetWeight}
-                keyboardType="numeric"
-                placeholder="1000"
-              />
-            </View>
-            <View className="w-20">
-              <Button
-                variant="outline"
-                onPress={() => {
-                  setTargetWeightUnit(targetWeightUnit === MEASURE_UNIT.GRAM ? MEASURE_UNIT.KILOGRAM : MEASURE_UNIT.GRAM);
-                }}
-                className="h-full"
-              >
-                <Text className="text-sm font-medium">{targetWeightUnit === MEASURE_UNIT.GRAM ? 'g' : 'kg'}</Text>
-              </Button>
-            </View>
-          </View>
-
-          {/* Volume Estimate Display */}
-          {targetWeightInGrams > 0 && (
-            <View className="bg-muted/30 rounded-lg p-3">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-xs text-muted-foreground">Volume Estimado</Text>
-                <Text className="text-base font-bold">{calculatedTotals.calculatedVolumeInLiters.toFixed(2)} L</Text>
+            {/* Total Row */}
+            <View style={[styles.tableRow, styles.totalRow, { backgroundColor: colors.muted + "80" }]}>
+              <View style={styles.checkboxCell} />
+              <View style={styles.itemCell}>
+                <Text style={[styles.totalText, { color: colors.foreground }]}>Total</Text>
               </View>
-              <Text className="text-xs text-muted-foreground text-right mt-1">
-                Densidade: {calculatedDensity.toFixed(3)} g/ml
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Removed Amount Input (matching web) */}
-        <View className="gap-2">
-          <Text className="text-sm font-medium text-foreground">Quantidade retirada para teste</Text>
-
-          <View className="flex-row gap-2">
-            <View className="flex-1">
-              <Input
-                value={removedAmount}
-                onChangeText={setRemovedAmount}
-                keyboardType="numeric"
-                placeholder="0"
-              />
-            </View>
-            <View className="w-20">
-              <Button
-                variant="outline"
-                onPress={() => {
-                  setRemovedUnit(removedUnit === MEASURE_UNIT.GRAM ? MEASURE_UNIT.KILOGRAM : MEASURE_UNIT.GRAM);
-                }}
-                className="h-full"
-              >
-                <Text className="text-sm font-medium">{removedUnit === MEASURE_UNIT.GRAM ? 'g' : 'kg'}</Text>
-              </Button>
-            </View>
-          </View>
-
-          <Text className="text-xs text-muted-foreground">
-            Digite a quantidade de tinta que foi retirada para ajustar automaticamente os componentes
-          </Text>
-
-          {/* Adjusted Weight Display */}
-          {removedAmountInGrams > 0 && actualTargetWeight > 0 && (
-            <View className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3 border border-orange-200 dark:border-orange-800">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-xs text-muted-foreground">Peso Ajustado</Text>
-                <Text className="text-base font-bold text-orange-600 dark:text-orange-400">
-                  {measureUtils.formatMeasure({
-                    value: actualTargetWeight,
-                    unit: MEASURE_UNIT.GRAM,
-                  })}
+              <View style={styles.weightCell}>
+                <Text style={[styles.totalText, { color: colors.foreground }]}>
+                  {totals.weight > 20 ? Math.round(totals.weight) : formatNumberWithDecimals(totals.weight, 1)}
                 </Text>
               </View>
-              <Text className="text-xs text-muted-foreground text-right">
-                após retirar {measureUtils.formatMeasure({
-                  value: removedAmountInGrams,
-                  unit: MEASURE_UNIT.GRAM,
-                })}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Warning for invalid removal */}
-        {actualTargetWeight <= 0 && removedAmountInGrams > 0 && (
-          <Alert variant="destructive">
-            <IconAlertTriangle size={16} color={colors.destructive} />
-            <AlertDescription>
-              A quantidade retirada não pode ser maior que o peso desejado para produção.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Toggles */}
-        <View className="gap-3">
-          <View className="flex-row items-center justify-between p-3 bg-muted/30 rounded-lg">
-            <View className="flex-row items-center gap-2">
-              <Icon name="currency-real" size={16} className="text-muted-foreground" />
-              <Text className="text-sm text-foreground">Exibir Preços</Text>
-            </View>
-            <Switch checked={showPrices} onCheckedChange={setShowPrices} />
-          </View>
-
-          <View className="flex-row items-center justify-between p-3 bg-muted/30 rounded-lg">
-            <View className="flex-row items-center gap-2">
-              <IconExclamationCircle size={16} color={colors.mutedForeground} />
-              <Text className="text-sm text-foreground">Modo Correção</Text>
-            </View>
-            <Switch checked={correctionMode} onCheckedChange={handleToggleCorrectionMode} />
-          </View>
-
-          {!correctionMode && (
-            <View className="flex-row items-center gap-2">
-              <Checkbox
-                checked={showDetails}
-                onCheckedChange={setShowDetails}
-              />
-              <Text className="text-sm text-muted-foreground">Mostrar detalhes completos</Text>
-            </View>
-          )}
-        </View>
-
-        {actualTargetWeight > 0 && targetWeightInGrams > 0 && (
-          <>
-            {/* Components Table */}
-            <View className="gap-3">
-              <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-sm font-medium text-foreground">Componentes</Text>
-                <Badge
-                  variant={calculatedTotals.missingComponents.length === 0 ? "default" : "destructive"}
-                  style={{
-                    backgroundColor: calculatedTotals.missingComponents.length === 0 ? "#16a34a" : colors.destructive,
-                  }}
-                >
-                  <Text className="text-xs font-medium" style={{ color: "#FFFFFF" }}>
-                    {calculatedTotals.missingComponents.length === 0 ? "Estoque OK" : "Falta Estoque"}
-                  </Text>
-                </Badge>
-              </View>
-
-              {componentCalculations.map((calc, index) => {
-                const displayName = calc.uniCode
-                  ? `${calc.uniCode} - ${calc.name}`
-                  : calc.name;
-
-                return (
-                  <View key={calc.id}>
-                    <TouchableOpacity
-                      onPress={() => handleComponentAdded(calc.id)}
-                      disabled={!correctionMode || calc.isErrorComponent}
-                      className="bg-muted/30 rounded-lg p-3"
-                      style={{
-                        borderWidth: 1,
-                        borderColor: calc.isErrorComponent
-                          ? colors.destructive
-                          : calc.hasStock
-                            ? colors.border
-                            : colors.destructive + "40",
-                        opacity: correctionMode && !calc.isErrorComponent && !calc.wasAlreadyAdded ? 0.7 : 1,
-                      }}
-                    >
-                      <View className="flex-row items-start justify-between mb-2">
-                        {/* Status Icon for Correction Mode */}
-                        {correctionMode && (
-                          <View className="mr-2">
-                            {calc.isErrorComponent ? (
-                              <IconAlertTriangle size={20} color={colors.destructive} />
-                            ) : calc.wasAlreadyAdded ? (
-                              <IconCheck size={20} color="#16a34a" />
-                            ) : (
-                              <IconX size={20} color={colors.mutedForeground} />
-                            )}
-                          </View>
-                        )}
-
-                        {/* Component Selection (when not in correction mode) */}
-                        {!correctionMode && (
-                          <Checkbox
-                            checked={selectedComponents.has(calc.id)}
-                            onCheckedChange={(checked) => {
-                              const newSelected = new Set(selectedComponents);
-                              if (checked) {
-                                newSelected.add(calc.id);
-                              } else {
-                                newSelected.delete(calc.id);
-                              }
-                              setSelectedComponents(newSelected);
-                            }}
-                            className="mr-2"
-                          />
-                        )}
-
-                        <Text className="text-sm font-medium text-foreground flex-1">
-                          {displayName}
-                        </Text>
-                        <Badge variant="outline" className="ml-2">
-                          <Text className="text-xs">{calc.ratio.toFixed(1)}%</Text>
-                        </Badge>
-                      </View>
-
-                      <View className="gap-2">
-                        {/* Weight Display */}
-                        <View className="flex-row items-center justify-between">
-                          <View className="flex-row items-center gap-1">
-                            <Icon name="scale" size={14} className="text-muted-foreground" />
-                            <Text className="text-xs text-muted-foreground">Peso:</Text>
-                          </View>
-                          <Text className="text-xs font-medium">
-                            {measureUtils.formatMeasure({
-                              value: calc.calculatedWeight,
-                              unit: MEASURE_UNIT.GRAM,
-                            })}
-                          </Text>
-                        </View>
-
-                        {/* Correction Display */}
-                        {correctionMode && calc.correctedWeight && (
-                          <View className="flex-row items-center justify-between">
-                            <View className="flex-row items-center gap-1">
-                              <Icon name="refresh" size={14} className="text-orange-500" />
-                              <Text className="text-xs text-orange-500">Correção:</Text>
-                            </View>
-                            <Text
-                              className="text-xs font-bold"
-                              style={{
-                                color: calc.isErrorComponent
-                                  ? colors.destructive
-                                  : calc.wasAlreadyAdded
-                                    ? "#f59e0b" // amber
-                                    : "#3b82f6" // blue
-                              }}
-                            >
-                              {calc.isErrorComponent
-                                ? `${calc.actualWeight?.toFixed(1)}g (real)`
-                                : calc.wasAlreadyAdded && calc.additionalWeight
-                                  ? `+${calc.additionalWeight.toFixed(1)}g`
-                                  : `${calc.correctedWeight.toFixed(1)}g`
-                              }
-                            </Text>
-                          </View>
-                        )}
-
-                        {/* Details - shown only if showDetails is true and not in correction mode */}
-                        {showDetails && !correctionMode && (
-                          <>
-                            <View className="flex-row items-center justify-between">
-                              <View className="flex-row items-center gap-1">
-                                <Icon name="droplet" size={14} className="text-muted-foreground" />
-                                <Text className="text-xs text-muted-foreground">Volume:</Text>
-                              </View>
-                              <Text className="text-xs font-medium">
-                                {measureUtils.formatMeasure({
-                                  value: calc.calculatedVolume,
-                                  unit: MEASURE_UNIT.MILLILITER,
-                                })}
-                              </Text>
-                            </View>
-
-                            <View className="flex-row items-center justify-between">
-                              <View className="flex-row items-center gap-1">
-                                <Icon name="package" size={14} className="text-muted-foreground" />
-                                <Text className="text-xs text-muted-foreground">Necessário:</Text>
-                              </View>
-                              <Text className="text-xs font-medium">
-                                {calc.requiredUnits.toFixed(3)} {calc.stockUnit}
-                              </Text>
-                            </View>
-
-                            <View className="flex-row items-center justify-between">
-                              <View className="flex-row items-center gap-1">
-                                <Icon
-                                  name="database"
-                                  size={14}
-                                  className={calc.hasStock ? "text-green-600" : "text-red-600"}
-                                />
-                                <Text
-                                  className="text-xs"
-                                  style={{ color: calc.hasStock ? "#16a34a" : "#dc2626" }}
-                                >
-                                  Estoque:
-                                </Text>
-                              </View>
-                              <Text
-                                className="text-xs font-medium"
-                                style={{ color: calc.hasStock ? "#16a34a" : "#dc2626" }}
-                              >
-                                {calc.availableStock.toFixed(3)} {calc.stockUnit}
-                              </Text>
-                            </View>
-                          </>
-                        )}
-
-                        {/* Price Display */}
-                        {showPrices && calc.unitPrice > 0 && (
-                          <View className="flex-row items-center justify-between">
-                            <View className="flex-row items-center gap-1">
-                              <Icon name="currency-real" size={14} className="text-muted-foreground" />
-                              <Text className="text-xs text-muted-foreground">Custo:</Text>
-                            </View>
-                            <Text className="text-xs font-medium text-primary">
-                              {formatCurrency(calc.totalCost)}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-
-                    {index < sortedCalculations.length - 1 && <Separator className="my-2" />}
-                  </View>
-                );
-              })}
-            </View>
-
-            {/* Production Summary (matching web) */}
-            <Separator className="my-2" />
-            <View className="gap-3">
-              <View className="bg-muted/30 rounded-lg p-3">
-                <View className="flex-row items-center justify-between mb-2">
-                  <Text className="text-xs text-muted-foreground">Peso Total</Text>
-                  <Text className="text-lg font-bold">
-                    {measureUtils.formatMeasure({
-                      value: calculatedTotals.totalWeight,
-                      unit: MEASURE_UNIT.GRAM,
-                    })}
+              {correctionMode && (
+                <View style={styles.weightCell}>
+                  <Text style={[styles.totalText, { color: "#3b82f6" }]}>
+                    {totals.weight * errorRatio > 20
+                      ? Math.round(totals.weight * errorRatio)
+                      : formatNumberWithDecimals(totals.weight * errorRatio, 1)}
                   </Text>
                 </View>
-              </View>
-
-              <View className="bg-muted/30 rounded-lg p-3">
-                <View className="flex-row items-center justify-between mb-2">
-                  <Text className="text-xs text-muted-foreground">Volume Total</Text>
-                  <Text className="text-lg font-bold">
-                    {calculatedTotals.calculatedVolumeInLiters.toFixed(2)} L
-                  </Text>
-                </View>
-              </View>
-
+              )}
               {showPrices && (
-                <>
-                  <View className="bg-muted/30 rounded-lg p-3">
-                    <View className="flex-row items-center justify-between mb-2">
-                      <Text className="text-xs text-muted-foreground">Custo Total</Text>
-                      <Text className="text-lg font-bold text-primary">
-                        {formatCurrency(calculatedTotals.totalCost)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View className="bg-muted/30 rounded-lg p-3">
-                    <View className="flex-row items-center justify-between mb-2">
-                      <Text className="text-xs text-muted-foreground">Custo por Litro</Text>
-                      <Text className="text-lg font-bold">
-                        {formatCurrency(calculatedTotals.costPerLiter)}
-                      </Text>
-                    </View>
-                  </View>
-                </>
+                <View style={styles.priceCell}>
+                  <Text style={[styles.totalText, { color: colors.primary }]}>
+                    {formatCurrency(totals.price)}
+                  </Text>
+                </View>
               )}
             </View>
+          </ScrollView>
+        </View>
+      )}
 
-            {/* Production Actions (matching web) */}
-            <View className="gap-2 mt-4">
-              <Button
-                onPress={handleStartProduction}
-                disabled={calculatedTotals.missingComponents.length > 0 || actualTargetWeight <= 0 || isCreatingProduction}
-                className="w-full"
-              >
-                {isCreatingProduction ? (
-                  <View className="flex-row items-center gap-2">
-                    <IconLoader size={20} color={colors.primaryForeground} className="animate-spin" />
-                    <Text style={{ color: colors.primaryForeground }}>Criando Produção...</Text>
-                  </View>
-                ) : (
-                  <View className="flex-row items-center gap-2">
-                    <Icon name="calculator" size={20} className="text-primary-foreground" />
-                    <Text style={{ color: colors.primaryForeground }}>Iniciar Produção</Text>
-                  </View>
-                )}
-              </Button>
-            </View>
+      {/* Warnings */}
+      {!totals.allInStock && (
+        <Alert variant="destructive" style={styles.alert}>
+          <IconAlertTriangle size={16} color={colors.destructive} />
+          <AlertDescription>
+            Alguns componentes não têm estoque suficiente
+          </AlertDescription>
+        </Alert>
+      )}
 
-            {/* Technical Specs Card */}
-            <Card className="p-3 bg-muted/20">
-              <Text className="text-xs font-medium text-muted-foreground mb-2">Especificações Técnicas</Text>
-              <View className="gap-1">
-                <View className="flex-row justify-between">
-                  <Text className="text-xs text-muted-foreground">Densidade:</Text>
-                  <Text className="text-xs font-medium">{formulaDensity.toFixed(3)} g/ml</Text>
-                </View>
-                {formula.pricePerLiter && (
-                  <View className="flex-row justify-between">
-                    <Text className="text-xs text-muted-foreground">Preço por Litro (ref):</Text>
-                    <Text className="text-xs font-medium">{formatCurrency(formula.pricePerLiter)}</Text>
-                  </View>
-                )}
-              </View>
-            </Card>
-
-            {/* Warnings (matching web) */}
-            {calculatedTotals.missingComponents.length > 0 && (
-              <Alert variant="destructive">
-                <IconAlertTriangle size={16} color={colors.destructive} />
-                <AlertDescription>
-                  <Text className="font-semibold">Estoque insuficiente:</Text> {calculatedTotals.missingComponents.length} componente{calculatedTotals.missingComponents.length > 1 ? "s" : ""} sem estoque suficiente para esta produção.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {correctionMode && errorComponent && (
-              <Alert>
-                <IconExclamationCircle size={16} color={colors.primary} />
-                <AlertDescription>
-                  Modo correção ativo. Componente com erro: {
-                    componentCalculations.find(c => c.id === errorComponent.componentId)?.name
-                  } (Razão de erro: {errorComponent.errorRatio.toFixed(2)}x)
-                </AlertDescription>
-              </Alert>
-            )}
-          </>
+      {/* Production Button */}
+      <Button
+        onPress={handleProduction}
+        disabled={!totals.allInStock || totals.weight <= 0 || isProducing}
+        style={styles.productionButton}
+      >
+        {isProducing ? (
+          <View style={styles.buttonContent}>
+            <IconLoader2 size={20} color={colors.primaryForeground} />
+            <Text style={{ color: colors.primaryForeground, marginLeft: 8 }}>Criando Produção...</Text>
+          </View>
+        ) : (
+          <Text style={{ color: colors.primaryForeground }}>Produzir</Text>
         )}
-      </View>
+      </Button>
 
-      {/* Error Component Selection Dialog */}
+      {/* Specs Card */}
+      <Card style={styles.specsCard}>
+        <View style={styles.specsRow}>
+          <View style={styles.specItem}>
+            <Text style={[styles.specLabel, { color: colors.mutedForeground }]}>Densidade</Text>
+            <Text style={[styles.specValue, { color: colors.foreground }]}>
+              {formatNumberWithDecimals(Number(formula.density), 3)} g/ml
+            </Text>
+          </View>
+          <View style={styles.specItem}>
+            <Text style={[styles.specLabel, { color: colors.mutedForeground }]}>Preço por Litro</Text>
+            <Text style={[styles.specValue, { color: colors.foreground }]}>
+              {formatCurrency(totals.pricePerLiter)}
+            </Text>
+          </View>
+        </View>
+      </Card>
+
+      {/* Error Dialog */}
       <Modal
         visible={showErrorDialog}
         transparent
-        animationType="slide"
-        onRequestClose={() => setShowErrorDialog(false)}
+        animationType="fade"
+        onRequestClose={() => {
+          setShowErrorDialog(false);
+          if (!errorComponentId) {
+            setCorrectionMode(false);
+            setActualAmount("");
+          }
+        }}
       >
-        <View className="flex-1 justify-center items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View className="bg-background rounded-lg p-4 m-4 max-w-sm w-full" style={{ backgroundColor: colors.card }}>
-            <Text className="text-lg font-semibold mb-4">Selecionar Componente com Erro</Text>
-
-            <Text className="text-sm text-muted-foreground mb-3">
-              Selecione o componente que teve problema e informe a quantidade real adicionada.
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Informar Quantidade Real</Text>
+            <Text style={[styles.modalDescription, { color: colors.mutedForeground }]}>
+              {selectedComponentForError &&
+                (() => {
+                  const component = calculatedComponents.find((c) => c.id === selectedComponentForError);
+                  return component ? (
+                    <>
+                      Você está marcando o componente <Text style={{ fontWeight: "600" }}>{component.name}</Text> como tendo um erro. A quantidade esperada era de{" "}
+                      <Text style={{ fontWeight: "600" }}>{formatNumberWithDecimals(component.weightInGrams, 1)}g</Text>. Por favor, informe a quantidade real que foi adicionada.
+                    </>
+                  ) : null;
+                })()}
             </Text>
 
-            <View className="gap-3">
-              <View>
-                <Text className="text-sm font-medium mb-2">Componente</Text>
-                <ScrollView style={{ maxHeight: 200 }} className="border rounded-lg p-2">
-                  {componentCalculations.map((calc) => (
-                    <TouchableOpacity
-                      key={calc.id}
-                      onPress={() => setTempErrorComponentId(calc.id)}
-                      className="p-2 rounded mb-1"
-                      style={{
-                        backgroundColor: tempErrorComponentId === calc.id ? colors.primary + "20" : 'transparent'
-                      }}
-                    >
-                      <Text className="text-sm">
-                        {calc.name} ({calc.calculatedWeight.toFixed(1)}g esperado)
+            <View style={styles.modalInput}>
+              <Text style={[styles.inputLabel, { color: colors.foreground }]}>Quantidade Real (g)</Text>
+              <Input
+                value={actualAmount}
+                onChangeText={setActualAmount}
+                keyboardType="numeric"
+                placeholder="Digite a quantidade real em gramas"
+              />
+              {selectedComponentForError &&
+                (() => {
+                  const component = calculatedComponents.find((c) => c.id === selectedComponentForError);
+                  const expectedWeight = component?.weightInGrams || 0;
+                  const typedValue = parseFloat(actualAmount) || 0;
+
+                  if (actualAmount && typedValue < expectedWeight) {
+                    return (
+                      <Text style={[styles.errorText, { color: colors.destructive }]}>
+                        A quantidade não pode ser menor que o esperado ({formatNumberWithDecimals(expectedWeight, 1)}g)
                       </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
+                    );
+                  }
+                  return null;
+                })()}
+            </View>
 
-              {tempErrorComponentId && (
-                <View>
-                  <Text className="text-sm font-medium mb-2">Quantidade Real Adicionada (g)</Text>
-                  <Input
-                    value={tempActualWeight}
-                    onChangeText={setTempActualWeight}
-                    keyboardType="numeric"
-                    placeholder="Ex: 150"
-                  />
-                  {tempActualWeight && parseFloat(tempActualWeight) < componentCalculations.find(c => c.id === tempErrorComponentId)?.calculatedWeight! && (
-                    <Text className="text-xs text-destructive mt-1">
-                      A quantidade real deve ser maior ou igual ao esperado
-                    </Text>
-                  )}
-                </View>
-              )}
-
-              <View className="flex-row gap-2 mt-4">
+            <View style={styles.modalActions}>
+              <View style={styles.modalButton}>
                 <Button
                   variant="outline"
                   onPress={() => {
                     setShowErrorDialog(false);
                     setCorrectionMode(false);
+                    setActualAmount("");
+                    setSelectedComponentForError(null);
                   }}
-                  className="flex-1"
                 >
                   <Text>Cancelar</Text>
                 </Button>
+              </View>
+              <View style={styles.modalButton}>
                 <Button
                   onPress={handleConfirmError}
-                  disabled={!tempErrorComponentId || !tempActualWeight ||
-                    parseFloat(tempActualWeight) < componentCalculations.find(c => c.id === tempErrorComponentId)?.calculatedWeight!}
-                  className="flex-1"
+                  disabled={(() => {
+                    if (!actualAmount) return true;
+                    const component = calculatedComponents.find((c) => c.id === selectedComponentForError);
+                    const expectedWeight = component?.weightInGrams || 0;
+                    const typedValue = parseFloat(actualAmount) || 0;
+                    return typedValue < expectedWeight;
+                  })()}
                 >
-                  <Text style={{ color: colors.primaryForeground }}>Confirmar</Text>
+                  <Text style={{ color: colors.primaryForeground }}>Confirmar Erro</Text>
                 </Button>
               </View>
             </View>
           </View>
         </View>
       </Modal>
-    </Card>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    gap: 16,
+  },
+  controls: {
+    gap: 16,
+  },
+  inputSection: {
+    gap: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  input: {
+    height: 40,
+  },
+  quickButtonsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  quickButtons: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    flex: 1,
+  },
+  quickButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  quickButtonText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  table: {
+    borderWidth: 1,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  tableHeader: {
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+  },
+  checkboxCell: {
+    width: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  headerTextRight: {
+    width: 100,
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    textAlign: "right",
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+  },
+  itemCell: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    minHeight: 40,
+  },
+  itemText: {
+    fontSize: 14,
+    flex: 1,
+    lineHeight: 20,
+  },
+  itemCode: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  itemName: {
+    fontSize: 14,
+  },
+  stockIcon: {
+    marginLeft: 4,
+  },
+  weightCell: {
+    width: 100,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    paddingRight: 8,
+  },
+  weightText: {
+    fontSize: 14,
+    fontFamily: "monospace",
+  },
+  priceCell: {
+    width: 100,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  priceText: {
+    fontSize: 14,
+    fontFamily: "monospace",
+  },
+  totalRow: {
+    borderBottomWidth: 0,
+  },
+  totalText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  specsCard: {
+    padding: 16,
+  },
+  specsRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  specItem: {
+    flex: 1,
+    gap: 4,
+  },
+  specLabel: {
+    fontSize: 10,
+    fontWeight: "500",
+    textTransform: "uppercase",
+  },
+  specValue: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  alert: {
+    marginVertical: 8,
+  },
+  productionButton: {
+    width: "100%",
+    marginTop: 12,
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: 12,
+    padding: 20,
+    gap: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  modalDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  modalInput: {
+    gap: 8,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+  },
+});

@@ -1,10 +1,11 @@
 import React from "react";
-import { TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View, StyleSheet } from "react-native";
 import { Text } from "./text";
 import { Icon } from "./icon";
 import { Separator } from "./separator";
 import { cn } from "@/lib/cn";
 import { useTheme } from "@/lib/theme";
+import { formSpacing, formTypography, formLayout } from "@/constants/form-styles";
 
 interface FormSectionProps {
   title?: string;
@@ -118,7 +119,7 @@ export function FormSection({
   );
 }
 
-// Variant for form field grouping with less visual prominence
+// Variant for form field grouping with standardized styling
 export function FormFieldGroup({
   label,
   helper,
@@ -134,26 +135,35 @@ export function FormFieldGroup({
   children: React.ReactNode;
   className?: string;
 }) {
+  const { colors } = useTheme();
+
   return (
-    <View className={cn("mb-4", className)}>
+    <View style={fieldGroupStyles.container} className={className}>
       {label && (
-        <View className="flex-row items-center mb-1.5">
-          <Text className="text-sm font-medium text-foreground">
+        <View style={fieldGroupStyles.labelRow}>
+          <Text
+            style={[
+              fieldGroupStyles.label,
+              { color: error ? colors.destructive : colors.foreground },
+            ]}
+          >
             {label}
           </Text>
           {required && (
-            <Text className="text-sm text-destructive ml-1">*</Text>
+            <Text style={[fieldGroupStyles.required, { color: colors.destructive }]}>
+              {" *"}
+            </Text>
           )}
         </View>
       )}
       {helper && !error && (
-        <Text className="text-xs text-muted-foreground mb-2">
+        <Text style={[fieldGroupStyles.helper, { color: colors.mutedForeground }]}>
           {helper}
         </Text>
       )}
       {children}
       {error && (
-        <Text className="text-xs text-destructive mt-1.5">
+        <Text style={[fieldGroupStyles.error, { color: colors.destructive }]}>
           {error}
         </Text>
       )}
@@ -161,7 +171,35 @@ export function FormFieldGroup({
   );
 }
 
-// Card-style form section
+const fieldGroupStyles = StyleSheet.create({
+  container: {
+    marginBottom: formSpacing.fieldGap, // 16px
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: formSpacing.labelInputGap, // 4px
+  },
+  label: {
+    fontSize: formTypography.label.fontSize, // 14px
+    fontWeight: formTypography.label.fontWeight as any, // 500
+  },
+  required: {
+    fontSize: formTypography.label.fontSize,
+    fontWeight: formTypography.label.fontWeight as any,
+  },
+  helper: {
+    fontSize: formTypography.helper.fontSize, // 12px
+    marginBottom: formSpacing.helperGap, // 4px
+  },
+  error: {
+    fontSize: formTypography.error.fontSize, // 12px
+    fontWeight: formTypography.error.fontWeight as any, // 500
+    marginTop: formSpacing.errorGap, // 4px
+  },
+});
+
+// Card-style form section with standardized styling
 export function FormCard({
   title,
   subtitle,
@@ -180,19 +218,42 @@ export function FormCard({
     onPress: () => void;
   };
 }) {
+  const { colors } = useTheme();
+
   return (
-    <View className={cn("bg-card rounded-lg border border-border", className)}>
+    <View
+      style={[
+        cardStyles.container,
+        { backgroundColor: colors.card, borderColor: colors.border },
+      ]}
+      className={className}
+    >
       {(title || subtitle || action) && (
-        <View className="px-4 py-3 border-b border-border">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-1">
+        <View
+          style={[
+            cardStyles.header,
+            { borderBottomColor: colors.border },
+          ]}
+        >
+          <View style={cardStyles.headerContent}>
+            <View style={cardStyles.headerText}>
               {title && (
-                <Text className="text-base font-semibold text-foreground">
+                <Text
+                  style={[
+                    cardStyles.title,
+                    { color: colors.foreground },
+                  ]}
+                >
                   {title}
                 </Text>
               )}
               {subtitle && (
-                <Text className="text-sm text-muted-foreground mt-0.5">
+                <Text
+                  style={[
+                    cardStyles.subtitle,
+                    { color: colors.mutedForeground },
+                  ]}
+                >
                   {subtitle}
                 </Text>
               )}
@@ -202,7 +263,7 @@ export function FormCard({
                 onPress={action.onPress}
                 activeOpacity={0.7}
               >
-                <Text className="text-sm font-medium text-primary">
+                <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "500" }}>
                   {action.label}
                 </Text>
               </TouchableOpacity>
@@ -210,14 +271,48 @@ export function FormCard({
           </View>
         </View>
       )}
-      <View className={cn("p-4", contentClassName)}>
+      <View style={cardStyles.content} className={contentClassName}>
         {children}
       </View>
     </View>
   );
 }
 
-// Row layout for form fields
+const cardStyles = StyleSheet.create({
+  container: {
+    borderRadius: formLayout.cardBorderRadius, // 12px
+    borderWidth: formLayout.borderWidth, // 1px
+    marginBottom: formSpacing.cardMarginBottom, // 16px
+    overflow: "hidden",
+  },
+  header: {
+    paddingHorizontal: formSpacing.cardPadding, // 16px
+    paddingVertical: formSpacing.cardHeaderContentGap + 4, // 12px
+    borderBottomWidth: formLayout.borderWidth,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerText: {
+    flex: 1,
+  },
+  title: {
+    fontSize: formTypography.cardTitle.fontSize, // 16px
+    fontWeight: formTypography.cardTitle.fontWeight as any, // 600
+  },
+  subtitle: {
+    fontSize: formTypography.cardSubtitle.fontSize, // 14px
+    fontWeight: formTypography.cardSubtitle.fontWeight as any, // 400
+    marginTop: 2,
+  },
+  content: {
+    padding: formSpacing.cardPadding, // 16px
+  },
+});
+
+// Row layout for form fields with standardized spacing
 export function FormRow({
   children,
   className,
@@ -226,15 +321,25 @@ export function FormRow({
   className?: string;
 }) {
   return (
-    <View className={cn("flex-row space-x-3", className)}>
+    <View style={rowStyles.container} className={className}>
       {React.Children.map(children, (child, index) => (
-        <View className="flex-1" key={index}>
+        <View style={rowStyles.item} key={index}>
           {child}
         </View>
       ))}
     </View>
   );
 }
+
+const rowStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    gap: formSpacing.rowGap, // 8px - consistent gap between columns
+  },
+  item: {
+    flex: 1,
+  },
+});
 
 // Inline form field (label and value on same row)
 export function FormInlineField({

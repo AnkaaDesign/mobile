@@ -1,7 +1,7 @@
-import { View } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { showToast } from "@/components/ui/toast";
-import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ItemEditForm } from "@/components/inventory/item/form/item-edit-form";
@@ -11,6 +11,8 @@ import { useItem, useItemMutations } from "@/hooks";
 import { type ItemUpdateFormData } from '../../../../../schemas';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import { spacing } from "@/constants/design-system";
+import { useTheme } from "@/lib/theme";
 
 export default function ItemEditScreenWrapper() {
   return (
@@ -73,22 +75,45 @@ function ItemEditScreen() {
   }
 
   if (error || !item) {
+    const { colors } = useTheme();
     return (
-      <ThemedView className="flex-1">
-        <View className="flex-1 items-center justify-center px-4">
-          <ThemedText className="text-2xl font-semibold mb-2 text-center">Item não encontrado</ThemedText>
-          <ThemedText className="text-muted-foreground mb-4 text-center">O item que você está procurando não existe ou foi removido.</ThemedText>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["bottom"]}>
+        <View style={styles.errorContainer}>
+          <ThemedText style={styles.errorTitle}>Item não encontrado</ThemedText>
+          <ThemedText style={styles.errorMessage}>O item que você está procurando não existe ou foi removido.</ThemedText>
           <Button onPress={handleCancel}>
-            <ThemedText className="text-white">Voltar para lista</ThemedText>
+            <ThemedText style={styles.buttonText}>Voltar para lista</ThemedText>
           </Button>
         </View>
-      </ThemedView>
+      </SafeAreaView>
     );
   }
 
-  return (
-    <ThemedView className="flex-1">
-      <ItemEditForm item={item} onSubmit={handleFormSubmit} onCancel={handleCancel} isSubmitting={false} />
-    </ThemedView>
-  );
+  return <ItemEditForm item={item} onSubmit={handleFormSubmit} onCancel={handleCancel} isSubmitting={false} />;
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  errorMessage: {
+    marginBottom: spacing.lg,
+    textAlign: "center",
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: "white",
+  },
+});

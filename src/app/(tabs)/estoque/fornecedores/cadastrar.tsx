@@ -1,19 +1,21 @@
 import { useState } from "react";
-import { View, ScrollView, Alert, StyleSheet } from "react-native";
+import { ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IconTruck, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useCreateSupplier } from "@/hooks";
-import { supplierCreateSchema} from "@/schemas";
-import { ThemedView, ThemedText, Card, Input, Combobox, Button, SimpleFormField } from "@/components/ui";
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { supplierCreateSchema } from "@/schemas";
+import { Input, Combobox } from "@/components/ui";
+import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
+import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { formatCNPJ, cleanCNPJ, formatZipCode, cleanZipCode } from "@/utils";
 import { PhoneManager, TagManager, FileUploadManager } from "@/components/inventory/supplier/form";
+import { spacing } from "@/constants/design-system";
+import { formSpacing } from "@/constants/form-styles";
 
 interface FileUpload {
   uri: string;
@@ -25,16 +27,11 @@ interface FileUpload {
 export default function SupplierCreateScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoFiles, setLogoFiles] = useState<FileUpload[]>([]);
   const [documentFiles, setDocumentFiles] = useState<FileUpload[]>([]);
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isValid, isDirty },
-  } = useForm<SupplierCreateFormData>({
+  const form = useForm<SupplierCreateFormData>({
     resolver: zodResolver(supplierCreateSchema),
     mode: "onChange",
     defaultValues: {
@@ -149,7 +146,7 @@ export default function SupplierCreateScreen() {
   };
 
   const handleCancel = () => {
-    if (isDirty || logoFiles.length > 0 || documentFiles.length > 0) {
+    if (form.formState.isDirty || logoFiles.length > 0 || documentFiles.length > 0) {
       Alert.alert("Descartar Alterações", "Você tem alterações não salvas. Deseja descartá-las?", [
         { text: "Continuar Editando", style: "cancel" },
         { text: "Descartar", style: "destructive", onPress: () => router.back() },
@@ -165,354 +162,328 @@ export default function SupplierCreateScreen() {
   }));
 
   return (
-    <ThemedView style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.headerContent}>
-          <View style={styles.titleSection}>
-            <IconTruck size={24} color={colors.primary} />
-            <ThemedText style={styles.title}>Criar Fornecedor</ThemedText>
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.subtitle, { color: colors.mutedForeground }])}>Preencha os dados do novo fornecedor</ThemedText>
-        </View>
-      </View>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView} keyboardVerticalOffset={0}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+        {/* Basic Information */}
+        <FormCard title="Informações Básicas">
+          <FormFieldGroup
+            label="Nome Fantasia"
+            required
+            error={form.formState.errors.fantasyName?.message}
+          >
+            <Controller
+              control={form.control}
+              name="fantasyName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Ex: Fornecedor ABC"
+                  maxLength={200}
+                  error={!!form.formState.errors.fantasyName}
+                  editable={!isSubmitting}
+                />
+              )}
+            />
+          </FormFieldGroup>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}>
-        <Accordion type="multiple" collapsible defaultValue={["basic", "address"]}>
-          {/* Basic Information */}
-          <AccordionItem value="basic">
-            <Card style={styles.section}>
-              <AccordionTrigger>
-                <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
-              </AccordionTrigger>
-              <AccordionContent>
-                <View style={styles.sectionContent}>
-                  <SimpleFormField label="Nome Fantasia" required error={errors.fantasyName}>
-                    <Controller
-                      control={control}
-                      name="fantasyName"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <Input value={value} onChangeText={onChange} onBlur={onBlur} placeholder="Ex: Fornecedor ABC" maxLength={200} error={!!errors.fantasyName} />
-                      )}
-                    />
-                  </SimpleFormField>
+          <FormFieldGroup label="CNPJ" error={form.formState.errors.cnpj?.message}>
+            <Controller
+              control={form.control}
+              name="cnpj"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value ? formatCNPJ(String(value || "")) : ""}
+                  onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
+                  onBlur={onBlur}
+                  placeholder="00.000.000/0000-00"
+                  keyboardType="numeric"
+                  maxLength={18}
+                  error={!!form.formState.errors.cnpj}
+                  editable={!isSubmitting}
+                />
+              )}
+            />
+          </FormFieldGroup>
 
-                  <SimpleFormField label="CNPJ" error={errors.cnpj}>
-                    <Controller
-                      control={control}
-                      name="cnpj"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <Input
-                          value={value ? formatCNPJ(String(value || '')) : ""}
-                          onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
-                          onBlur={onBlur}
-                          placeholder="00.000.000/0000-00"
-                          keyboardType="numeric"
-                          maxLength={18}
-                          error={!!errors.cnpj}
-                        />
-                      )}
-                    />
-                  </SimpleFormField>
+          <FormFieldGroup label="Razão Social" error={form.formState.errors.corporateName?.message}>
+            <Controller
+              control={form.control}
+              name="corporateName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Ex: Fornecedor ABC LTDA"
+                  maxLength={200}
+                  error={!!form.formState.errors.corporateName}
+                  editable={!isSubmitting}
+                />
+              )}
+            />
+          </FormFieldGroup>
 
-                  <SimpleFormField label="Razão Social" error={errors.corporateName}>
-                    <Controller
-                      control={control}
-                      name="corporateName"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <Input
-                          value={value || ""}
-                          onChangeText={onChange}
-                          onBlur={onBlur}
-                          placeholder="Ex: Fornecedor ABC LTDA"
-                          maxLength={200}
-                          error={!!errors.corporateName}
-                        />
-                      )}
-                    />
-                  </SimpleFormField>
+          <FormFieldGroup label="Email" error={form.formState.errors.email?.message}>
+            <Controller
+              control={form.control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="email@fornecedor.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  maxLength={100}
+                  error={!!form.formState.errors.email}
+                  editable={!isSubmitting}
+                />
+              )}
+            />
+          </FormFieldGroup>
 
-                  <SimpleFormField label="Email" error={errors.email}>
-                    <Controller
-                      control={control}
-                      name="email"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <Input
-                          value={value || ""}
-                          onChangeText={onChange}
-                          onBlur={onBlur}
-                          placeholder="email@fornecedor.com"
-                          keyboardType="email-address"
-                          autoCapitalize="none"
-                          maxLength={100}
-                          error={!!errors.email}
-                        />
-                      )}
-                    />
-                  </SimpleFormField>
+          <FormFieldGroup label="Site" error={form.formState.errors.site?.message}>
+            <Controller
+              control={form.control}
+              name="site"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="https://fornecedor.com.br"
+                  keyboardType="url"
+                  autoCapitalize="none"
+                  error={!!form.formState.errors.site}
+                  editable={!isSubmitting}
+                />
+              )}
+            />
+          </FormFieldGroup>
+        </FormCard>
 
-                  <SimpleFormField label="Site" error={errors.site}>
-                    <Controller
-                      control={control}
-                      name="site"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <Input
-                          value={value || ""}
-                          onChangeText={onChange}
-                          onBlur={onBlur}
-                          placeholder="https://fornecedor.com.br"
-                          keyboardType="url"
-                          autoCapitalize="none"
-                          error={!!errors.site}
-                        />
-                      )}
-                    />
-                  </SimpleFormField>
-                </View>
-              </AccordionContent>
-            </Card>
-          </AccordionItem>
+        {/* Address */}
+        <FormCard title="Endereço">
+          <FormFieldGroup label="CEP" error={form.formState.errors.zipCode?.message}>
+            <Controller
+              control={form.control}
+              name="zipCode"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value ? formatZipCode(String(value || "")) : ""}
+                  onChangeText={(text) => onChange(cleanZipCode(text) || "")}
+                  onBlur={onBlur}
+                  placeholder="00000-000"
+                  keyboardType="numeric"
+                  maxLength={9}
+                  error={!!form.formState.errors.zipCode}
+                  editable={!isSubmitting}
+                />
+              )}
+            />
+          </FormFieldGroup>
 
-          {/* Address */}
-          <AccordionItem value="address">
-            <Card style={styles.section}>
-              <AccordionTrigger>
-                <ThemedText style={styles.sectionTitle}>Endereço</ThemedText>
-              </AccordionTrigger>
-              <AccordionContent>
-                <View style={styles.sectionContent}>
-                  <SimpleFormField label="CEP" error={errors.zipCode}>
-                    <Controller
-                      control={control}
-                      name="zipCode"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <Input
-                          value={value ? formatZipCode(String(value || '')) : ""}
-                          onChangeText={(text) => onChange(cleanZipCode(text) || "")}
-                          onBlur={onBlur}
-                          placeholder="00000-000"
-                          keyboardType="numeric"
-                          maxLength={9}
-                          error={!!errors.zipCode}
-                        />
-                      )}
-                    />
-                  </SimpleFormField>
+          <FormFieldGroup label="Logradouro" error={form.formState.errors.address?.message}>
+            <Controller
+              control={form.control}
+              name="address"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Rua, Avenida, etc."
+                  maxLength={200}
+                  error={!!form.formState.errors.address}
+                  editable={!isSubmitting}
+                />
+              )}
+            />
+          </FormFieldGroup>
 
-                  <SimpleFormField label="Logradouro" error={errors.address}>
-                    <Controller
-                      control={control}
-                      name="address"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <Input value={value || ""} onChangeText={onChange} onBlur={onBlur} placeholder="Rua, Avenida, etc." maxLength={200} error={!!errors.address} />
-                      )}
-                    />
-                  </SimpleFormField>
+          <FormRow>
+            <FormFieldGroup
+              label="Número"
+              error={form.formState.errors.addressNumber?.message}
+            >
+              <Controller
+                control={form.control}
+                name="addressNumber"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    value={value || ""}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="123"
+                    maxLength={10}
+                    error={!!form.formState.errors.addressNumber}
+                    editable={!isSubmitting}
+                  />
+                )}
+              />
+            </FormFieldGroup>
 
-                  <View style={styles.row}>
-                    <SimpleFormField label="Número" error={errors.addressNumber} style={styles.smallField}>
-                      <Controller
-                        control={control}
-                        name="addressNumber"
-                        render={({ field: { onChange, onBlur, value } }) => (
-                          <Input value={value || ""} onChangeText={onChange} onBlur={onBlur} placeholder="123" maxLength={10} error={!!errors.addressNumber} />
-                        )}
-                      />
-                    </SimpleFormField>
+            <FormFieldGroup
+              label="Complemento"
+              error={form.formState.errors.addressComplement?.message}
+            >
+              <Controller
+                control={form.control}
+                name="addressComplement"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    value={value || ""}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="Apto, Sala, etc."
+                    maxLength={100}
+                    error={!!form.formState.errors.addressComplement}
+                    editable={!isSubmitting}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+          </FormRow>
 
-                    <SimpleFormField label="Complemento" error={errors.addressComplement} style={styles.largeField}>
-                      <Controller
-                        control={control}
-                        name="addressComplement"
-                        render={({ field: { onChange, onBlur, value } }) => (
-                          <Input
-                            value={value || ""}
-                            onChangeText={onChange}
-                            onBlur={onBlur}
-                            placeholder="Apto, Sala, etc."
-                            maxLength={100}
-                            error={!!errors.addressComplement}
-                          />
-                        )}
-                      />
-                    </SimpleFormField>
-                  </View>
+          <FormFieldGroup label="Bairro" error={form.formState.errors.neighborhood?.message}>
+            <Controller
+              control={form.control}
+              name="neighborhood"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Centro"
+                  maxLength={100}
+                  error={!!form.formState.errors.neighborhood}
+                  editable={!isSubmitting}
+                />
+              )}
+            />
+          </FormFieldGroup>
 
-                  <SimpleFormField label="Bairro" error={errors.neighborhood}>
-                    <Controller
-                      control={control}
-                      name="neighborhood"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <Input value={value || ""} onChangeText={onChange} onBlur={onBlur} placeholder="Centro" maxLength={100} error={!!errors.neighborhood} />
-                      )}
-                    />
-                  </SimpleFormField>
+          <FormRow>
+            <FormFieldGroup label="Cidade" error={form.formState.errors.city?.message}>
+              <Controller
+                control={form.control}
+                name="city"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    value={value || ""}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="São Paulo"
+                    maxLength={100}
+                    error={!!form.formState.errors.city}
+                    editable={!isSubmitting}
+                  />
+                )}
+              />
+            </FormFieldGroup>
 
-                  <View style={styles.row}>
-                    <SimpleFormField label="Cidade" error={errors.city} style={styles.largeField}>
-                      <Controller
-                        control={control}
-                        name="city"
-                        render={({ field: { onChange, onBlur, value } }) => (
-                          <Input value={value || ""} onChangeText={onChange} onBlur={onBlur} placeholder="São Paulo" maxLength={100} error={!!errors.city} />
-                        )}
-                      />
-                    </SimpleFormField>
+            <FormFieldGroup label="Estado" error={form.formState.errors.state?.message}>
+              <Controller
+                control={form.control}
+                name="state"
+                render={({ field: { onChange, value } }) => (
+                  <Combobox
+                    value={value || ""}
+                    onValueChange={onChange}
+                    options={stateOptions}
+                    placeholder="Selecione"
+                    searchable={false}
+                    clearable={false}
+                    disabled={isSubmitting}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+          </FormRow>
+        </FormCard>
 
-                    <SimpleFormField label="Estado" error={errors.state} style={styles.smallField}>
-                      <Controller
-                        control={control}
-                        name="state"
-                        render={({ field: { onChange, value } }) => (
-                          <Combobox
-                            value={value || ""}
-                            onValueChange={onChange}
-                            options={stateOptions}
-                            placeholder="Selecione"
-                            searchable={false}
-                          />
-                        )}
-                      />
-                    </SimpleFormField>
-                  </View>
-                </View>
-              </AccordionContent>
-            </Card>
-          </AccordionItem>
+        {/* Contact */}
+        <FormCard title="Contato">
+          <FormFieldGroup label="Telefones">
+            <Controller
+              control={form.control}
+              name="phones"
+              render={({ field: { onChange, value } }) => (
+                <PhoneManager phones={value || []} onChange={onChange} />
+              )}
+            />
+          </FormFieldGroup>
+        </FormCard>
 
-          {/* Contact */}
-          <AccordionItem value="contact">
-            <Card style={styles.section}>
-              <AccordionTrigger>
-                <ThemedText style={styles.sectionTitle}>Contato</ThemedText>
-              </AccordionTrigger>
-              <AccordionContent>
-                <View style={styles.sectionContent}>
-                  <SimpleFormField label="Telefones">
-                    <Controller control={control} name="phones" render={({ field: { onChange, value } }) => <PhoneManager phones={value || []} onChange={onChange} />} />
-                  </SimpleFormField>
-                </View>
-              </AccordionContent>
-            </Card>
-          </AccordionItem>
+        {/* Files */}
+        <FormCard title="Arquivos">
+          <FormFieldGroup label="Logo do Fornecedor">
+            <FileUploadManager
+              files={logoFiles}
+              onChange={setLogoFiles}
+              maxFiles={1}
+              allowImages={true}
+            />
+          </FormFieldGroup>
 
-          {/* Files */}
-          <AccordionItem value="files">
-            <Card style={styles.section}>
-              <AccordionTrigger>
-                <ThemedText style={styles.sectionTitle}>Arquivos</ThemedText>
-              </AccordionTrigger>
-              <AccordionContent>
-                <View style={styles.sectionContent}>
-                  <SimpleFormField label="Logo do Fornecedor">
-                    <FileUploadManager files={logoFiles} onChange={setLogoFiles} maxFiles={1} allowImages={true} />
-                  </SimpleFormField>
+          <FormFieldGroup label="Documentos">
+            <FileUploadManager
+              files={documentFiles}
+              onChange={setDocumentFiles}
+              maxFiles={5}
+              allowImages={true}
+            />
+          </FormFieldGroup>
+        </FormCard>
 
-                  <SimpleFormField label="Documentos">
-                    <FileUploadManager files={documentFiles} onChange={setDocumentFiles} maxFiles={5} allowImages={true} />
-                  </SimpleFormField>
-                </View>
-              </AccordionContent>
-            </Card>
-          </AccordionItem>
+        {/* Tags */}
+        <FormCard title="Tags">
+          <FormFieldGroup label="Tags do Fornecedor">
+            <Controller
+              control={form.control}
+              name="tags"
+              render={({ field: { onChange, value } }) => (
+                <TagManager tags={value || []} onChange={onChange} />
+              )}
+            />
+          </FormFieldGroup>
+        </FormCard>
+        </ScrollView>
 
-          {/* Tags */}
-          <AccordionItem value="tags">
-            <Card style={styles.section}>
-              <AccordionTrigger>
-                <ThemedText style={styles.sectionTitle}>Tags</ThemedText>
-              </AccordionTrigger>
-              <AccordionContent>
-                <View style={styles.sectionContent}>
-                  <SimpleFormField label="Tags do Fornecedor">
-                    <Controller control={control} name="tags" render={({ field: { onChange, value } }) => <TagManager tags={value || []} onChange={onChange} />} />
-                  </SimpleFormField>
-                </View>
-              </AccordionContent>
-            </Card>
-          </AccordionItem>
-        </Accordion>
-      </ScrollView>
-
-      {/* Action Buttons */}
-      <View style={[styles.actionBar, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: insets.bottom }]}>
-        <Button variant="outline" onPress={handleCancel} disabled={isSubmitting} style={styles.actionButton}>
-          <IconX size={20} />
-          <ThemedText>Cancelar</ThemedText>
-        </Button>
-
-        <Button variant="default" onPress={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting} style={styles.actionButton}>
-          <IconDeviceFloppy size={20} />
-          <ThemedText style={{ color: "white" }}>{isSubmitting ? "Salvando..." : "Criar Fornecedor"}</ThemedText>
-        </Button>
-      </View>
-    </ThemedView>
+        <SimpleFormActionBar
+          onCancel={handleCancel}
+          onSubmit={form.handleSubmit(onSubmit)}
+          isSubmitting={isSubmitting}
+          canSubmit={form.formState.isValid}
+          submitLabel="Criar"
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  headerContent: {
-    gap: 4,
-  },
-  titleSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 14,
-    marginLeft: 32,
-  },
-  content: {
+  keyboardView: {
     flex: 1,
   },
-  section: {
-    margin: 16,
-    marginBottom: 0,
-    marginTop: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  sectionContent: {
-    gap: 16,
-    paddingTop: 8,
-  },
-  row: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  smallField: {
+  scrollView: {
     flex: 1,
   },
-  largeField: {
-    flex: 2,
-  },
-  actionBar: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
+  scrollContent: {
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: formSpacing.containerPaddingVertical,
+    paddingBottom: 0, // No spacing - action bar has its own margin
   },
 });

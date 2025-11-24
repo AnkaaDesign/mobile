@@ -4,7 +4,6 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IconBuilding, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useCustomer, useCustomerMutations } from "@/hooks";
 import { useCnpjLookup } from "@/hooks/use-cnpj-lookup";
 import { useCepLookup } from "@/hooks/use-cep-lookup";
@@ -12,17 +11,9 @@ import { customerUpdateSchema} from "@/schemas";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getEconomicActivities, createEconomicActivity, getEconomicActivityById } from "@/api-client/economic-activity";
 import { showToast } from "@/components/ui/toast";
-import {
-  ThemedView,
-  ThemedText,
-  Card,
-  Input,
-  Combobox,
-  Button,
-  ErrorScreen,
-  Skeleton,
-  SimpleFormField,
-} from "@/components/ui";
+import { Input, Combobox, Button, ErrorScreen, Skeleton } from "@/components/ui";
+import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
+import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
@@ -30,7 +21,9 @@ import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from 
 import { PhoneManager } from "@/components/administration/customer/form/phone-manager";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
 import { LogoUpload } from "@/components/administration/customer/form/logo-upload";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { Text } from "@/components/ui/text";
+import { spacing } from "@/constants/design-system";
+import { formSpacing } from "@/constants/form-styles";
 
 export default function CustomerEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -345,73 +338,62 @@ export default function CustomerEditScreen() {
 
   if (isLoading) {
     return (
-      <ThemedView style={StyleSheet.flatten([styles.wrapper, { backgroundColor: colors.background }])}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.container}>
-            <Card style={styles.card}>
-              <Skeleton height={24} width="60%" />
-              <View style={styles.skeletonRows}>
-                <Skeleton height={48} width="100%" />
-                <Skeleton height={48} width="100%" />
-                <Skeleton height={48} width="100%" />
-              </View>
-            </Card>
+          <View style={styles.scrollContent}>
+            <View style={styles.skeletonRows}>
+              <Skeleton height={48} width="100%" />
+              <Skeleton height={48} width="100%" />
+              <Skeleton height={48} width="100%" />
+            </View>
           </View>
         </ScrollView>
-      </ThemedView>
+      </SafeAreaView>
     );
   }
 
   if (error || !customer?.data) {
     return (
-      <ThemedView style={StyleSheet.flatten([styles.wrapper, { backgroundColor: colors.background }])}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
         <ErrorScreen message="Erro ao carregar cliente" detail={error?.message || "Cliente não encontrado"} onRetry={refetch} />
-      </ThemedView>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ThemedView style={StyleSheet.flatten([styles.wrapper, { backgroundColor: colors.background }])}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-      >
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView} keyboardVerticalOffset={0}>
         <ScrollView
           style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.container}>
-          {/* Customer Name Header Card */}
-          <Card style={styles.headerCard}>
-            <View style={styles.headerContent}>
-              <View style={[styles.headerLeft, { flex: 1 }]}>
-                <IconBuilding size={24} color={colors.primary} />
-                <ThemedText style={StyleSheet.flatten([styles.customerName, { color: colors.foreground }])}>
-                  Editar Cliente
-                </ThemedText>
-              </View>
-              <View style={styles.headerActions}>
-                {/* Empty placeholder to match detail page structure */}
-              </View>
-            </View>
-          </Card>
         {/* Basic Information */}
-        <Card style={styles.card}>
-          <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
-
-          <SimpleFormField label="Nome Fantasia" required error={errors.fantasyName}>
+        <FormCard title="Informações Básicas">
+          <FormFieldGroup
+            label="Nome Fantasia"
+            required
+            error={errors.fantasyName?.message}
+          >
             <Controller
               control={control}
               name="fantasyName"
               render={({ field: { onChange, onBlur, value } }) => (
-                <Input value={value} onChangeText={onChange} onBlur={onBlur} placeholder="Ex: Empresa LTDA" maxLength={200} error={!!errors.fantasyName} />
+                <Input
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Ex: Empresa LTDA"
+                  maxLength={200}
+                  error={!!errors.fantasyName}
+                  editable={!isSubmitting}
+                />
               )}
             />
-          </SimpleFormField>
+          </FormFieldGroup>
 
-          <SimpleFormField label="Razão Social" error={errors.corporateName}>
+          <FormFieldGroup label="Razão Social" error={errors.corporateName?.message}>
             <Controller
               control={control}
               name="corporateName"
@@ -423,12 +405,13 @@ export default function CustomerEditScreen() {
                   placeholder="Ex: Empresa LTDA ME"
                   maxLength={200}
                   error={!!errors.corporateName}
+                  editable={!isSubmitting}
                 />
               )}
             />
-          </SimpleFormField>
+          </FormFieldGroup>
 
-          <SimpleFormField label="Email" error={errors.email}>
+          <FormFieldGroup label="Email" error={errors.email?.message}>
             <Controller
               control={control}
               name="email"
@@ -442,12 +425,13 @@ export default function CustomerEditScreen() {
                   autoCapitalize="none"
                   maxLength={100}
                   error={!!errors.email}
+                  editable={!isSubmitting}
                 />
               )}
             />
-          </SimpleFormField>
+          </FormFieldGroup>
 
-          <SimpleFormField label="Site" error={errors.site}>
+          <FormFieldGroup label="Site" error={errors.site?.message}>
             <Controller
               control={control}
               name="site"
@@ -460,12 +444,13 @@ export default function CustomerEditScreen() {
                   keyboardType="url"
                   autoCapitalize="none"
                   error={!!errors.site}
+                  editable={!isSubmitting}
                 />
               )}
             />
-          </SimpleFormField>
+          </FormFieldGroup>
 
-          <SimpleFormField label="Situação Cadastral" error={errors.registrationStatus}>
+          <FormFieldGroup label="Situação Cadastral" error={errors.registrationStatus?.message}>
             <Controller
               control={control}
               name="registrationStatus"
@@ -479,12 +464,13 @@ export default function CustomerEditScreen() {
                   emptyText="Nenhuma situação encontrada"
                   searchable={true}
                   clearable={true}
+                  disabled={isSubmitting}
                 />
               )}
             />
-          </SimpleFormField>
+          </FormFieldGroup>
 
-          <SimpleFormField label="Inscrição Estadual" error={errors.inscricaoEstadual}>
+          <FormFieldGroup label="Inscrição Estadual" error={errors.inscricaoEstadual?.message}>
             <Controller
               control={control}
               name="inscricaoEstadual"
@@ -495,12 +481,13 @@ export default function CustomerEditScreen() {
                   onBlur={onBlur}
                   placeholder="Ex: 123.456.789.012"
                   error={!!errors.inscricaoEstadual}
+                  editable={!isSubmitting}
                 />
               )}
             />
-          </SimpleFormField>
+          </FormFieldGroup>
 
-          <SimpleFormField label="CNAE (Atividade Econômica)" error={errors.economicActivityId}>
+          <FormFieldGroup label="CNAE (Atividade Econômica)" error={errors.economicActivityId?.message}>
             <Controller
               control={control}
               name="economicActivityId"
@@ -565,89 +552,89 @@ export default function CustomerEditScreen() {
                   emptyText="Nenhuma atividade encontrada"
                   searchable={true}
                   clearable={true}
+                  disabled={isSubmitting}
                 />
               )}
             />
-          </SimpleFormField>
-        </Card>
+          </FormFieldGroup>
+        </FormCard>
 
         {/* Document */}
-        <Card style={styles.card}>
-          <ThemedText style={styles.sectionTitle}>Documento</ThemedText>
+        <FormCard title="Documento">
+          <FormFieldGroup label="Tipo de Documento" required error={errors.cnpj?.message || errors.cpf?.message}>
+            <View style={styles.documentRow}>
+              <View style={styles.documentTypeContainer}>
+                <Button
+                  variant={documentType === "cnpj" ? "default" : "outline"}
+                  onPress={() => handleDocumentTypeChange("cnpj")}
+                  size="sm"
+                  style={styles.documentTypeButton}
+                  disabled={isSubmitting}
+                >
+                  <Text style={[styles.buttonText, documentType === "cnpj" && { color: colors.primaryForeground }]}>CNPJ</Text>
+                </Button>
+                <Button
+                  variant={documentType === "cpf" ? "default" : "outline"}
+                  onPress={() => handleDocumentTypeChange("cpf")}
+                  size="sm"
+                  style={styles.documentTypeButton}
+                  disabled={isSubmitting}
+                >
+                  <Text style={[styles.buttonText, documentType === "cpf" && { color: colors.primaryForeground }]}>CPF</Text>
+                </Button>
+              </View>
 
-          <View style={styles.documentRow}>
-            <View style={styles.documentTypeContainer}>
-              <Button
-                variant={documentType === "cnpj" ? "default" : "outline"}
-                onPress={() => handleDocumentTypeChange("cnpj")}
-                size="sm"
-                style={styles.documentTypeButton}
-              >
-                <ThemedText style={{ color: documentType === "cnpj" ? colors.primaryForeground : colors.foreground }}>
-                  CNPJ
-                </ThemedText>
-              </Button>
-              <Button
-                variant={documentType === "cpf" ? "default" : "outline"}
-                onPress={() => handleDocumentTypeChange("cpf")}
-                size="sm"
-                style={styles.documentTypeButton}
-              >
-                <ThemedText style={{ color: documentType === "cpf" ? colors.primaryForeground : colors.foreground }}>
-                  CPF
-                </ThemedText>
-              </Button>
+              <View style={styles.documentInputField}>
+                {documentType === "cnpj" ? (
+                  <Controller
+                    control={control}
+                    name="cnpj"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <Input
+                        value={value ? formatCNPJ(String(value)) : ""}
+                        onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
+                        onBlur={onBlur}
+                        placeholder="00.000.000/0000-00"
+                        keyboardType="numeric"
+                        maxLength={18}
+                        error={!!errors.cnpj}
+                        editable={!isSubmitting}
+                      />
+                    )}
+                  />
+                ) : (
+                  <Controller
+                    control={control}
+                    name="cpf"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <Input
+                        value={value ? formatCPF(String(value)) : ""}
+                        onChangeText={(text) => onChange(cleanCPF(text) || "")}
+                        onBlur={onBlur}
+                        placeholder="000.000.000-00"
+                        keyboardType="numeric"
+                        maxLength={14}
+                        error={!!errors.cpf}
+                        editable={!isSubmitting}
+                      />
+                    )}
+                  />
+                )}
+              </View>
             </View>
-
-            <View style={styles.documentInputField}>
-              {documentType === "cnpj" ? (
-                <Controller
-                  control={control}
-                  name="cnpj"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <Input
-                      value={value ? formatCNPJ(String(value)) : ""}
-                      onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
-                      onBlur={onBlur}
-                      placeholder="00.000.000/0000-00"
-                      keyboardType="numeric"
-                      maxLength={18}
-                      error={!!errors.cnpj}
-                    />
-                  )}
-                />
-              ) : (
-                <Controller
-                  control={control}
-                  name="cpf"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <Input
-                      value={value ? formatCPF(String(value)) : ""}
-                      onChangeText={(text) => onChange(cleanCPF(text) || "")}
-                      onBlur={onBlur}
-                      placeholder="000.000.000-00"
-                      keyboardType="numeric"
-                      maxLength={14}
-                      error={!!errors.cpf}
-                    />
-                  )}
-                />
-              )}
-            </View>
-          </View>
-        </Card>
+          </FormFieldGroup>
+        </FormCard>
 
         {/* Logo */}
-        <Card style={styles.card}>
-          <ThemedText style={styles.sectionTitle}>Logo</ThemedText>
-          <LogoUpload value={logoFile} onChange={setLogoFile} disabled={isSubmitting} existingLogoUrl={(customer.data.logo?.url as string) || undefined} />
-        </Card>
+        <FormCard title="Logo">
+          <FormFieldGroup label="Logo do Cliente">
+            <LogoUpload value={logoFile} onChange={setLogoFile} disabled={isSubmitting} existingLogoUrl={(customer.data.logo?.url as string) || undefined} />
+          </FormFieldGroup>
+        </FormCard>
 
         {/* Address */}
-        <Card style={styles.card}>
-          <ThemedText style={styles.sectionTitle}>Endereço</ThemedText>
-
-          <SimpleFormField label="Tipo de Logradouro" error={errors.streetType}>
+        <FormCard title="Endereço">
+          <FormFieldGroup label="Tipo de Logradouro" error={errors.streetType?.message}>
             <Controller
               control={control}
               name="streetType"
@@ -656,17 +643,18 @@ export default function CustomerEditScreen() {
                   value={value || ""}
                   onValueChange={onChange}
                   options={[...STREET_TYPE_OPTIONS]}
-                  placeholder="Select street type"
+                  placeholder="Selecione o tipo de logradouro"
                   searchPlaceholder="Pesquisar tipo..."
                   emptyText="Nenhum tipo encontrado"
                   searchable={true}
                   clearable={true}
+                  disabled={isSubmitting}
                 />
               )}
             />
-          </SimpleFormField>
+          </FormFieldGroup>
 
-          <SimpleFormField label="CEP" error={errors.zipCode}>
+          <FormFieldGroup label="CEP" error={errors.zipCode?.message}>
             <Controller
               control={control}
               name="zipCode"
@@ -679,201 +667,178 @@ export default function CustomerEditScreen() {
                   keyboardType="numeric"
                   maxLength={9}
                   error={!!errors.zipCode}
+                  editable={!isSubmitting}
                 />
               )}
             />
-          </SimpleFormField>
+          </FormFieldGroup>
 
-          <SimpleFormField label="Logradouro" error={errors.address}>
+          <FormFieldGroup label="Logradouro" error={errors.address?.message}>
             <Controller
               control={control}
               name="address"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input value={value || ""} onChangeText={onChange} onBlur={onBlur} placeholder="Rua, Avenida, etc." maxLength={200} error={!!errors.address} />
-              )}
-            />
-          </SimpleFormField>
-
-          <SimpleFormField label="Número" error={errors.addressNumber}>
-            <Controller
-              control={control}
-              name="addressNumber"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input value={value || ""} onChangeText={onChange} onBlur={onBlur} placeholder="123" maxLength={10} error={!!errors.addressNumber} />
-              )}
-            />
-          </SimpleFormField>
-
-          <SimpleFormField label="Complemento" error={errors.addressComplement}>
-            <Controller
-              control={control}
-              name="addressComplement"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   value={value || ""}
                   onChangeText={onChange}
                   onBlur={onBlur}
-                  placeholder="Apto, Sala, etc."
-                  maxLength={100}
-                  error={!!errors.addressComplement}
+                  placeholder="Rua, Avenida, etc."
+                  maxLength={200}
+                  error={!!errors.address}
+                  editable={!isSubmitting}
                 />
               )}
             />
-          </SimpleFormField>
+          </FormFieldGroup>
 
-          <SimpleFormField label="Bairro" error={errors.neighborhood}>
+          <FormRow>
+            <FormFieldGroup label="Número" error={errors.addressNumber?.message}>
+              <Controller
+                control={control}
+                name="addressNumber"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    value={value || ""}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="123"
+                    maxLength={10}
+                    error={!!errors.addressNumber}
+                    editable={!isSubmitting}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+
+            <FormFieldGroup label="Complemento" error={errors.addressComplement?.message}>
+              <Controller
+                control={control}
+                name="addressComplement"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    value={value || ""}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="Apto, Sala, etc."
+                    maxLength={100}
+                    error={!!errors.addressComplement}
+                    editable={!isSubmitting}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+          </FormRow>
+
+          <FormFieldGroup label="Bairro" error={errors.neighborhood?.message}>
             <Controller
               control={control}
               name="neighborhood"
               render={({ field: { onChange, onBlur, value } }) => (
-                <Input value={value || ""} onChangeText={onChange} onBlur={onBlur} placeholder="Centro" maxLength={100} error={!!errors.neighborhood} />
-              )}
-            />
-          </SimpleFormField>
-
-          <SimpleFormField label="Cidade" error={errors.city}>
-            <Controller
-              control={control}
-              name="city"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input value={value || ""} onChangeText={onChange} onBlur={onBlur} placeholder="São Paulo" maxLength={100} error={!!errors.city} />
-              )}
-            />
-          </SimpleFormField>
-
-          <SimpleFormField label="Estado" error={errors.state}>
-            <Controller
-              control={control}
-              name="state"
-              render={({ field: { onChange, value } }) => (
-                <Combobox
+                <Input
                   value={value || ""}
-                  onValueChange={onChange}
-                  options={stateOptions}
-                  placeholder="Selecione um estado"
-                  searchPlaceholder="Pesquisar estado..."
-                  emptyText="Nenhum estado encontrado"
-                  searchable={true}
-                  clearable={true}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Centro"
+                  maxLength={100}
+                  error={!!errors.neighborhood}
+                  editable={!isSubmitting}
                 />
               )}
             />
-          </SimpleFormField>
-        </Card>
+          </FormFieldGroup>
+
+          <FormRow>
+            <FormFieldGroup label="Cidade" error={errors.city?.message}>
+              <Controller
+                control={control}
+                name="city"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    value={value || ""}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="São Paulo"
+                    maxLength={100}
+                    error={!!errors.city}
+                    editable={!isSubmitting}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+
+            <FormFieldGroup label="Estado" error={errors.state?.message}>
+              <Controller
+                control={control}
+                name="state"
+                render={({ field: { onChange, value } }) => (
+                  <Combobox
+                    value={value || ""}
+                    onValueChange={onChange}
+                    options={stateOptions}
+                    placeholder="Selecione"
+                    searchable={false}
+                    clearable={false}
+                    disabled={isSubmitting}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+          </FormRow>
+        </FormCard>
 
         {/* Contact */}
-        <Card style={styles.card}>
-          <ThemedText style={styles.sectionTitle}>Contato</ThemedText>
-
-          <SimpleFormField label="Telefones">
-            <Controller control={control} name="phones" render={({ field: { onChange, value } }) => <PhoneManager phones={value || []} onChange={onChange} />} />
-          </SimpleFormField>
-        </Card>
+        <FormCard title="Contato">
+          <FormFieldGroup label="Telefones">
+            <Controller
+              control={control}
+              name="phones"
+              render={({ field: { onChange, value } }) => (
+                <PhoneManager phones={value || []} onChange={onChange} />
+              )}
+            />
+          </FormFieldGroup>
+        </FormCard>
 
         {/* Tags */}
-        <Card style={styles.card}>
-          <ThemedText style={styles.sectionTitle}>Tags</ThemedText>
+        <FormCard title="Tags">
+          <FormFieldGroup label="Tags do Cliente">
+            <Controller
+              control={control}
+              name="tags"
+              render={({ field: { onChange, value } }) => (
+                <TagManager tags={value || []} onChange={onChange} />
+              )}
+            />
+          </FormFieldGroup>
+        </FormCard>
+        </ScrollView>
 
-          <SimpleFormField label="Tags do Cliente">
-            <Controller control={control} name="tags" render={({ field: { onChange, value } }) => <TagManager tags={value || []} onChange={onChange} />} />
-          </SimpleFormField>
-        </Card>
-
-        {/* Bottom spacing */}
-        <View style={{ height: spacing.md }} />
-        </View>
-      </ScrollView>
+        <SimpleFormActionBar
+          onCancel={handleCancel}
+          onSubmit={handleSubmit(onSubmit)}
+          isSubmitting={isSubmitting}
+          canSubmit={isValid && (isDirty || !!logoFile)}
+          submitLabel="Salvar Alterações"
+        />
       </KeyboardAvoidingView>
-
-      {/* Action Buttons */}
-      <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.card }}>
-        <View
-          style={[
-            styles.actionBar,
-            {
-              backgroundColor: colors.card,
-              borderTopColor: colors.border,
-              paddingBottom: spacing.xl,
-            },
-          ]}
-        >
-          <Button
-            variant="outline"
-            onPress={handleCancel}
-            disabled={isSubmitting}
-            style={{ flex: 1, minHeight: 40 }}
-          >
-            <>
-              <IconX size={20} color={colors.foreground} />
-              <ThemedText style={{ color: colors.foreground, marginLeft: 8 }}>Cancelar</ThemedText>
-            </>
-          </Button>
-
-          <Button
-            variant="default"
-            onPress={handleSubmit(onSubmit)}
-            disabled={!isValid || isSubmitting || (!isDirty && !logoFile)}
-            style={{ flex: 1, minHeight: 40 }}
-          >
-            <>
-              <IconDeviceFloppy size={20} color={colors.primaryForeground} />
-              <ThemedText style={{ color: colors.primaryForeground, marginLeft: 8 }}>
-                {isSubmitting ? "Salvando..." : "Salvar Alterações"}
-              </ThemedText>
-            </>
-          </Button>
-        </View>
-      </SafeAreaView>
-    </ThemedView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
+  safeArea: {
     flex: 1,
   },
-  container: {
+  keyboardView: {
     flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    gap: spacing.md,
   },
   scrollView: {
     flex: 1,
   },
-  headerCard: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.xs,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flex: 1,
-  },
-  customerName: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    flex: 1,
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    minHeight: 36, // Match detail page button height
-  },
-  card: {
-    padding: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.md,
+  scrollContent: {
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: formSpacing.containerPaddingVertical,
+    paddingBottom: 100, // Extra padding so inputs can scroll above action bar when keyboard is open
   },
   documentRow: {
     flexDirection: "row",
@@ -890,22 +855,9 @@ const styles = StyleSheet.create({
   documentTypeButton: {
     minWidth: 50,
   },
-  row: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  smallField: {
-    flex: 1,
-  },
-  largeField: {
-    flex: 2,
-  },
-  actionBar: {
-    flexDirection: "row",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    gap: spacing.md,
+  buttonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   skeletonRows: {
     gap: 8,

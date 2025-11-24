@@ -5,7 +5,9 @@ import { IconEdit, IconTrash, IconBuildingFactory2, IconProgressCheck } from "@t
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
-import { TASK_STATUS } from "@/constants";
+import { TASK_STATUS, SECTOR_PRIVILEGES } from "@/constants";
+import { useAuth } from "@/contexts/auth-context";
+import { canEditTasks, canDeleteTasks } from "@/utils/permissions/entity-permissions";
 
 const ACTION_WIDTH = 80;
 
@@ -38,9 +40,20 @@ const HistoryTableRowSwipeComponent = ({
   const { activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow } = useSwipeRow();
   const swipeableRef = useRef<Swipeable>(null);
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useAuth();
 
   // Early return if colors are not available yet (during theme initialization)
   if (!colors || !children) {
+    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
+  }
+
+  // Permission checks
+  const isAdmin = user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN;
+  const canEdit = canEditTasks(user); // ADMIN, DESIGNER, FINANCIAL, LOGISTIC
+  const canDelete = canDeleteTasks(user); // ADMIN only
+
+  // Return early if no permissions at all
+  if (!canEdit && !canDelete) {
     return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
   }
 
@@ -86,11 +99,12 @@ const HistoryTableRowSwipeComponent = ({
     ]);
   }, [taskId, taskName, onDelete]);
 
-  // Build actions array based on available handlers
+  // Build actions array based on user permissions
   const rightActions: SwipeAction[] = [];
 
-  // Edit action
-  if (onEdit) {
+  // Edit action - available to ADMIN, DESIGNER, FINANCIAL, LOGISTIC
+  // Note: Form will filter which fields they can edit based on their role
+  if (onEdit && canEdit) {
     rightActions.push({
       key: "edit",
       label: "Editar",
@@ -101,46 +115,49 @@ const HistoryTableRowSwipeComponent = ({
     });
   }
 
-  // Delete action
-  if (onDelete) {
-    rightActions.push({
-      key: "delete",
-      label: "Excluir",
-      icon: <IconTrash size={20} color="white" />,
-      backgroundColor: "#b91c1c", // red-700
-      onPress: handleDeletePress,
-      closeOnPress: false, // Don't close automatically for delete confirmation
-    });
-  }
+  // ADMIN-only actions: delete, set sector, set status
+  if (isAdmin) {
+    // Delete action
+    if (onDelete && canDelete) {
+      rightActions.push({
+        key: "delete",
+        label: "Excluir",
+        icon: <IconTrash size={20} color="white" />,
+        backgroundColor: "#b91c1c", // red-700
+        onPress: handleDeletePress,
+        closeOnPress: false, // Don't close automatically for delete confirmation
+      });
+    }
 
-  // Set Sector action
-  if (onSetSector) {
-    rightActions.push({
-      key: "setSector",
-      label: "Setor",
-      icon: <IconBuildingFactory2 size={20} color="white" />,
-      backgroundColor: "#7c3aed", // purple-600
-      onPress: () => {
-        swipeableRef.current?.close();
-        setTimeout(() => onSetSector(taskId), 300);
-      },
-      closeOnPress: true,
-    });
-  }
+    // Set Sector action
+    if (onSetSector) {
+      rightActions.push({
+        key: "setSector",
+        label: "Setor",
+        icon: <IconBuildingFactory2 size={20} color="white" />,
+        backgroundColor: "#7c3aed", // purple-600
+        onPress: () => {
+          swipeableRef.current?.close();
+          setTimeout(() => onSetSector(taskId), 300);
+        },
+        closeOnPress: true,
+      });
+    }
 
-  // Set Status action
-  if (onSetStatus) {
-    rightActions.push({
-      key: "setStatus",
-      label: "Status",
-      icon: <IconProgressCheck size={20} color="white" />,
-      backgroundColor: "#059669", // emerald-600
-      onPress: () => {
-        swipeableRef.current?.close();
-        setTimeout(() => onSetStatus(taskId), 300);
-      },
-      closeOnPress: true,
-    });
+    // Set Status action
+    if (onSetStatus) {
+      rightActions.push({
+        key: "setStatus",
+        label: "Status",
+        icon: <IconProgressCheck size={20} color="white" />,
+        backgroundColor: "#059669", // emerald-600
+        onPress: () => {
+          swipeableRef.current?.close();
+          setTimeout(() => onSetStatus(taskId), 300);
+        },
+        closeOnPress: true,
+      });
+    }
   }
 
   const handleWillOpen = useCallback(

@@ -12,7 +12,7 @@ import { SECTOR_PRIVILEGES } from "@/constants";
 export default function HomeScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
 
   // Check user permissions
   const canAccessInventory = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);

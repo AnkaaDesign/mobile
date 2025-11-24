@@ -1,34 +1,73 @@
 import { useRouter } from "expo-router";
 import { Alert } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
-import { ActivitySimpleForm } from "@/components/inventory/activity/form/activity-simple-form";
-import { useActivityMutations } from "@/hooks";
+import { ActivityBatchCreateFormV2 } from "@/components/inventory/activity/form";
+import { useActivityBatchMutations } from "@/hooks";
 import { routeToMobilePath } from "@/lib/route-mapper";
-import { routes } from "@/constants";
-import type { ActivityCreateFormData } from "@/schemas";
+import { routes, ACTIVITY_OPERATION } from "@/constants";
 
 export default function InventoryMovementsCreateScreen() {
   const router = useRouter();
-  const { createAsync, isCreating } = useActivityMutations();
+  const { batchCreateAsync, isBatchCreating } = useActivityBatchMutations();
 
-  const handleSubmit = async (data: ActivityCreateFormData) => {
+  const handleSubmit = async (data: {
+    operation: typeof ACTIVITY_OPERATION.INBOUND | typeof ACTIVITY_OPERATION.OUTBOUND;
+    userId?: string | null;
+    reason?: string | null;
+    orderId?: string | null;
+    orderItemId?: string | null;
+    items: Array<{ itemId: string; quantity: number }>;
+  }) => {
     try {
-      const result = await createAsync(data);
+      // Create batch activities - one activity per item
+      const activities = data.items.map((item) => ({
+        operation: data.operation,
+        userId: data.userId,
+        itemId: item.itemId,
+        quantity: item.quantity,
+        reason: data.reason,
+        orderId: data.orderId,
+        orderItemId: data.orderItemId,
+      }));
+
+      const result = await batchCreateAsync({ activities });
 
       if (result?.data) {
-        Alert.alert("Sucesso", "Movimentação registrada com sucesso!", [
-          {
-            text: "OK",
-            onPress: () => {
-              router.replace(routeToMobilePath(routes.inventory.activities.list) as any);
-            },
-          },
-        ]);
+        const successCount = result.data.filter((r: any) => r.success).length;
+        const failCount = result.data.filter((r: any) => !r.success).length;
+
+        if (failCount === 0) {
+          Alert.alert(
+            "Sucesso",
+            `${successCount} movimentação(ões) registrada(s) com sucesso!`,
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  router.replace(routeToMobilePath(routes.inventory.activities.list) as any);
+                },
+              },
+            ],
+          );
+        } else {
+          Alert.alert(
+            "Parcialmente Concluído",
+            `${successCount} sucesso(s), ${failCount} falha(s)`,
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  router.replace(routeToMobilePath(routes.inventory.activities.list) as any);
+                },
+              },
+            ],
+          );
+        }
       } else {
-        Alert.alert("Erro", "Erro ao registrar movimentação");
+        Alert.alert("Erro", "Erro ao registrar movimentações");
       }
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao registrar movimentação. Tente novamente.");
+      Alert.alert("Erro", error.message || "Erro ao registrar movimentações. Tente novamente.");
     }
   };
 
@@ -38,10 +77,10 @@ export default function InventoryMovementsCreateScreen() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <ActivitySimpleForm
+      <ActivityBatchCreateFormV2
         onSubmit={handleSubmit}
         onCancel={handleCancel}
-        isSubmitting={isCreating}
+        isSubmitting={isBatchCreating}
       />
     </ThemedView>
   );

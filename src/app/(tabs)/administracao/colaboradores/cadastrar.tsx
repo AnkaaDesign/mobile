@@ -1,10 +1,6 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import React from "react";
+import { CollaboratorForm } from "@/components/administration/collaborator/form/collaborator-form";
 
-export default function CreateEmployeeScreen() {
-  return (
-    <UnderConstruction
-      title="Cadastrar Colaborador"
-      description="Em breve você poderá cadastrar novos colaboradores, incluindo informações pessoais, cargo, setor e documentação necessária."
-    />
-  );
+export default function CreateCollaboratorScreen() {
+  return <CollaboratorForm mode="create" />;
 }

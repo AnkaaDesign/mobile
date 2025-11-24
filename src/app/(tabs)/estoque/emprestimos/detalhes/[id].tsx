@@ -30,7 +30,7 @@ import {
 export default function BorrowDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const { update, delete: deleteAsync } = useBorrowMutations();
   const [refreshing, setRefreshing] = useState(false);
 

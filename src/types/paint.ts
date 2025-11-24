@@ -38,6 +38,7 @@ export interface Paint extends BaseEntity {
   colorOrder: number;
   paintTypeId: string;
   paintBrandId: string | null;
+  colorPreview: string | null; // Paint preview image URL (WebP)
 
   // Relations (optional, populated based on query)
   paintType?: PaintType;
@@ -190,6 +191,11 @@ export interface PaintFormulaIncludes {
     | boolean
     | {
         include?: PaintIncludes;
+      };
+  paintProduction?:
+    | boolean
+    | {
+        include?: PaintProductionIncludes;
       };
 }
 

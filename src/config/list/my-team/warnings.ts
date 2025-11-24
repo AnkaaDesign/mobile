@@ -3,6 +3,7 @@ import type { Warning } from '@/types'
 import { WARNING_SEVERITY, WARNING_CATEGORY } from '@/constants/enums'
 import { WARNING_SEVERITY_LABELS, WARNING_CATEGORY_LABELS } from '@/constants/enum-labels'
 
+
 export const myTeamWarningsListConfig: ListConfig<Warning> = {
   key: 'my-team-warnings',
   title: 'Advertências da Equipe',
@@ -88,115 +89,53 @@ export const myTeamWarningsListConfig: ListConfig<Warning> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['collaboratorName', 'severity', 'category', 'followUpDate'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (warning, router) => {
-          router.push(`/meu-pessoal/advertencias/detalhes/${warning.id}`)
-        },
-      },
-    ],
+    defaultVisible: ['collaboratorName', 'severity', 'category'],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'severity',
-        label: 'Severidade',
-        icon: 'alert-triangle',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'severities',
-            label: 'Severidade',
-            type: 'select',
-            multiple: true,
-            options: Object.values(WARNING_SEVERITY).map((severity) => ({
-              label: WARNING_SEVERITY_LABELS[severity],
-              value: severity,
-            })),
-            placeholder: 'Selecione as severidades',
-          },
-        ],
+        key: 'severities',
+        type: 'select',
+        multiple: true,
+        options: Object.values(WARNING_SEVERITY).map((severity) => ({
+          label: WARNING_SEVERITY_LABELS[severity],
+          value: severity,
+        })),
+        placeholder: 'Severidade',
       },
       {
-        key: 'category',
-        label: 'Categoria',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'categories',
-            label: 'Categoria',
-            type: 'select',
-            multiple: true,
-            options: Object.values(WARNING_CATEGORY).map((category) => ({
-              label: WARNING_CATEGORY_LABELS[category],
-              value: category,
-            })),
-            placeholder: 'Selecione as categorias',
-          },
-        ],
+        key: 'categories',
+        type: 'select',
+        multiple: true,
+        options: Object.values(WARNING_CATEGORY).map((category) => ({
+          label: WARNING_CATEGORY_LABELS[category],
+          value: category,
+        })),
+        placeholder: 'Categoria',
       },
       {
-        key: 'collaborator',
-        label: 'Colaborador',
-        icon: 'user',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'userIds',
-            label: 'Colaboradores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os colaboradores',
-          },
-        ],
+        key: 'userIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Colaboradores',
       },
       {
-        key: 'status',
-        label: 'Status',
-        icon: 'toggle-left',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'isActive',
-            label: 'Mostrar apenas ativas',
-            type: 'toggle',
-          },
-        ],
+        key: 'isActive',
+        type: 'toggle',
+        placeholder: 'Mostrar apenas ativas',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data da Advertência',
-            type: 'date-range',
-          },
-          {
-            key: 'followUpDate',
-            label: 'Data de Acompanhamento',
-            type: 'date-range',
-          },
-        ],
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data da Advertência',
+      },
+      {
+        key: 'followUpDate',
+        type: 'date-range',
+        placeholder: 'Data de Acompanhamento',
       },
     ],
   },

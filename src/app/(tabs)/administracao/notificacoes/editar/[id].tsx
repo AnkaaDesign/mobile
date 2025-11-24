@@ -1,130 +1,54 @@
+import React from "react";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 
-import { View, ScrollView, StyleSheet } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { IconBell, IconArrowLeft } from "@tabler/icons-react-native";
-import { ThemedView, ThemedText, Button } from "@/components/ui";
+import { NotificationForm } from "@/components/administration/notification/form/notification-form";
+import { useNotification } from "@/hooks/useNotification";
 import { useTheme } from "@/lib/theme";
-import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { Text } from "@/components/ui/text";
 
 export default function EditNotificationScreen() {
-  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams();
-  const { id } = params;
+  const { data: notification, isLoading, error } = useNotification(id);
 
-  const handleCancel = () => {
-    router.push(routeToMobilePath(routes.administration.notifications.list) as any);
-  };
+  if (isLoading) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
+          Carregando notificação...
+        </Text>
+      </View>
+    );
+  }
 
-  return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <IconBell size={32} color={colors.primary} />
-            <Button
-              variant="ghost"
-              onPress={handleCancel}
-              icon={<IconArrowLeft size={20} color={colors.foreground} />}
-            >
-              Voltar
-            </Button>
-          </View>
-          <ThemedText style={[styles.headerTitle, { color: colors.foreground }]}>
-            Editar Notificação
-          </ThemedText>
-        </View>
+  if (error || !notification) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.destructive }]}>
+          Erro ao carregar notificação
+        </Text>
+      </View>
+    );
+  }
 
-        {/* Construction notice */}
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={[styles.constructionBadge, { backgroundColor: colors.warning + '20' }]}>
-            <ThemedText style={[styles.constructionText, { color: colors.warning }]}>
-              Em Construção
-            </ThemedText>
-          </View>
-          <ThemedText style={[styles.cardTitle, { color: colors.foreground }]}>
-            Editar Notificação
-          </ThemedText>
-          <ThemedText style={[styles.cardDescription, { color: colors.mutedForeground }]}>
-            ID: {id}
-          </ThemedText>
-          <ThemedText style={[styles.cardDescription, { color: colors.mutedForeground, marginTop: 12 }]}>
-            Esta funcionalidade está em desenvolvimento. A edição de notificações será implementada em breve.
-          </ThemedText>
-        </View>
-
-        <View style={styles.footer}>
-          <Button
-            variant="outline"
-            onPress={handleCancel}
-            style={styles.footerButton}
-          >
-            Voltar para Lista
-          </Button>
-        </View>
-      </ScrollView>
-    </ThemedView>
-  );
+  return <NotificationForm mode="update" notification={notification} />;
 }
 
 const styles = StyleSheet.create({
-  container: {
+  centered: {
     flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  header: {
-    marginBottom: 24,
-  },
-  headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  card: {
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  constructionBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    alignSelf: "flex-start",
-    marginBottom: 12,
-  },
-  constructionText: {
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  cardDescription: {
-    fontSize: 14,
-  },
-  footer: {
-    flexDirection: "row",
     gap: 12,
-    marginTop: 24,
   },
-  footerButton: {
-    flex: 1,
+  loadingText: {
+    fontSize: 14,
+    marginTop: 8,
+  },
+  errorText: {
+    fontSize: 16,
+    fontWeight: "500",
   },
 });

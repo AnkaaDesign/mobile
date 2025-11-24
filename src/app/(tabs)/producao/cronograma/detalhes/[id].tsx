@@ -284,8 +284,6 @@ export default function ScheduleDetailsScreen() {
           {/* Overview Card - Informações Gerais */}
           <TaskInfoCard task={{
             ...task,
-            plate: task.plate ?? undefined,
-            chassisNumber: task.chassisNumber ?? undefined,
             truck: task.truck,
             customer: task.customer,
             details: task.details ?? "",

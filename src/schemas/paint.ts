@@ -944,6 +944,9 @@ const paintFilters = {
   maxpaletteOrder: z.number().optional(),
   paintTypeIds: z.array(z.string()).optional(),
   paintBrandIds: z.array(z.string()).optional(),
+  // Color similarity filtering
+  similarColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color').optional(),
+  similarColorThreshold: z.coerce.number().min(0).max(100).default(15).optional(),
 };
 
 const paintTransform = (data: any) => {
@@ -1323,6 +1326,7 @@ export const paintCreateSchema = z.object({
     .optional(),
   paletteOrder: z.number().int().min(1).max(14).optional(),
   groundIds: z.array(z.string().uuid()).optional(),
+  colorPreview: z.string().nullable().optional(), // URL or data URL for paint preview image
 });
 
 export const paintUpdateSchema = z.object({
@@ -1350,6 +1354,7 @@ export const paintUpdateSchema = z.object({
     .optional(),
   paletteOrder: z.number().int().min(1).max(14).optional(),
   groundIds: z.array(z.string().uuid()).optional(),
+  colorPreview: z.string().nullable().optional(), // URL or data URL for paint preview image
 });
 
 // =====================

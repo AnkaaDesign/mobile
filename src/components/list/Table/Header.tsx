@@ -45,7 +45,7 @@ export const Header = memo(function Header<T>({
   )
 
   return (
-    <View style={[styles.headerWrapper, { borderBottomColor: colors.border }]}>
+    <View style={styles.headerWrapper}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -119,7 +119,7 @@ export const Header = memo(function Header<T>({
 
 const styles = StyleSheet.create({
   headerWrapper: {
-    borderBottomWidth: 2,
+    // Border is handled by parent container
   },
   headerRow: {
     flexDirection: 'row',

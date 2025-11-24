@@ -7,7 +7,7 @@ import { useTheme } from '@/lib/theme';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils';
 import { MAINTENANCE_STATUS, MAINTENANCE_STATUS_LABELS, SCHEDULE_FREQUENCY_LABELS, MEASURE_UNIT_LABELS } from '@/constants';
 import { useState, useCallback } from 'react';
-import { IconChevronRight, IconBox, IconPackage, IconCalendar, IconAlertCircle } from '@tabler/react-native-icons';
+import { IconChevronRight, IconBox, IconPackage, IconCalendar, IconAlertCircle } from '@tabler/icons-react-native';
 
 export default function MaintenanceDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

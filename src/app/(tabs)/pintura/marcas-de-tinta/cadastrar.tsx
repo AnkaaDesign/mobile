@@ -22,7 +22,7 @@ import {
 
 export default function CreatePaintBrandScreen() {
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const { create } = usePaintBrandMutations();
 
   const [isSubmitting, setIsSubmitting] = useState(false);

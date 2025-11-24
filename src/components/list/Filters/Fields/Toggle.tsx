@@ -21,12 +21,24 @@ export const ToggleField = memo(function ToggleField({
     onChange(newValue)
   }
 
+  // Use placeholder as label if provided, otherwise use label
+  const displayLabel = typeof field.placeholder === 'string'
+    ? field.placeholder
+    : field.label
+
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <ThemedText style={[styles.label, { color: colors.foreground }]}>
-          {field.label}
-        </ThemedText>
+        <View style={styles.labelContainer}>
+          <ThemedText style={[styles.label, { color: colors.foreground }]}>
+            {displayLabel}
+          </ThemedText>
+          {field.description && (
+            <ThemedText style={[styles.description, { color: colors.mutedForeground }]}>
+              {field.description}
+            </ThemedText>
+          )}
+        </View>
         <RNSwitch
           value={value || false}
           onValueChange={handleChange}
@@ -40,15 +52,23 @@ export const ToggleField = memo(function ToggleField({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  labelContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
   label: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  description: {
+    fontSize: 12,
+    marginTop: 2,
   },
 })

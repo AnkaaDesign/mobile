@@ -487,33 +487,29 @@ export const routes = {
   // Personal - Pessoal - Personal (User-specific data)
   personal: {
     myHolidays: {
-      root: "/pessoal/meus-feriados",
+      root: "/pessoal/feriados",
+    },
+    myVacations: {
+      details: (id: string) => `/pessoal/ferias/detalhes/${id}`,
+      root: "/pessoal/ferias",
+    },
+    myPpes: {
+      details: (id: string) => `/pessoal/meus-epis/detalhes/${id}`,
+      request: "/pessoal/meus-epis/solicitar",
+      root: "/pessoal/meus-epis",
     },
     myBorrows: {
       details: (id: string) => `/pessoal/meus-emprestimos/detalhes/${id}`,
       root: "/pessoal/meus-emprestimos",
     },
-    myNotifications: {
-      details: (id: string) => `/pessoal/minhas-notificacoes/detalhes/${id}`,
-      root: "/pessoal/minhas-notificacoes",
+    myActivities: {
+      details: (id: string) => `/pessoal/minhas-atividades/detalhes/${id}`,
+      root: "/pessoal/minhas-atividades",
     },
-    myPpes: {
-      request: "/pessoal/meus-epis/solicitar",
-      root: "/pessoal/meus-epis",
-    },
-    myProfile: {
-      root: "/pessoal/meu-perfil",
-    },
-    myVacations: {
-      details: (id: string) => `/pessoal/minhas-ferias/detalhes/${id}`,
-      root: "/pessoal/minhas-ferias",
-    },
-    myWarnings: {
-      details: (id: string) => `/pessoal/meus-avisos/detalhes/${id}`,
-      root: "/pessoal/meus-avisos",
-    },
-    preferences: {
-      root: "/pessoal/preferencias",
+    myBonuses: {
+      details: (id: string) => `/pessoal/meus-bonus/detalhes/${id}`,
+      root: "/pessoal/meus-bonus",
+      simulation: "/pessoal/simulacao-bonus",
     },
     root: "/pessoal",
   },

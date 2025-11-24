@@ -116,22 +116,20 @@ interface ExtendedAxiosInstance extends AxiosInstance {
 
 // Support environment-specific API URLs
 const getApiUrl = (): string => {
-  // Check for browser window object first (web environment)
-  if (typeof (globalThis as any).window !== "undefined" && typeof (globalThis as any).window.__ANKAA_API_URL__ !== "undefined") {
-    return (globalThis as any).window.__ANKAA_API_URL__; // No /api suffix - using subdomain architecture
-  }
-
-  // Check for global config object (can be set by apps) - React Native safe
-  if (typeof globalThis !== "undefined" && typeof (globalThis as any).window !== "undefined" && typeof (globalThis as any).window.__ANKAA_API_URL__ !== "undefined") {
-    return (globalThis as any).window.__ANKAA_API_URL__; // No /api suffix - using subdomain architecture
-  }
-
-  // For React Native/Expo apps
+  // For React Native/Expo apps - check env first as it's most reliable
   if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) {
+    console.log("[API URL] Using EXPO_PUBLIC_API_URL:", process.env.EXPO_PUBLIC_API_URL);
     return process.env.EXPO_PUBLIC_API_URL; // No /api suffix - using subdomain architecture
   }
 
+  // Check for window object with API URL set (web environment or React Native with polyfill)
+  if (typeof (globalThis as any).window !== "undefined" && (globalThis as any).window.__ANKAA_API_URL__) {
+    console.log("[API URL] Using window.__ANKAA_API_URL__:", (globalThis as any).window.__ANKAA_API_URL__);
+    return (globalThis as any).window.__ANKAA_API_URL__; // No /api suffix - using subdomain architecture
+  }
+
   // Default fallback
+  console.warn("[API URL] No API URL configured, using localhost fallback");
   return "http://localhost:3030"; // No /api suffix - using subdomain architecture
 };
 
@@ -593,6 +591,16 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       if (finalConfig.enableLogging) {
         console.log(`🚀 ${metadata.method} ${metadata.url} [${requestId}]`);
 
+        // Additional debugging for auth requests (login, register, etc.)
+        if (config.url?.includes("/auth/")) {
+          console.log("[AXIOS DEBUG] Auth request:");
+          console.log("[AXIOS DEBUG] - Method:", config.method?.toUpperCase());
+          console.log("[AXIOS DEBUG] - URL:", config.url);
+          console.log("[AXIOS DEBUG] - Base URL:", config.baseURL);
+          console.log("[AXIOS DEBUG] - Full URL:", config.baseURL + config.url);
+          console.log("[AXIOS DEBUG] - Has data:", !!config.data);
+        }
+
         // Additional debugging for customer requests
         if (config.url?.includes("/customers/") && config.method?.toLowerCase() === "get") {
           console.log("[AXIOS DEBUG] Customer GET request:");
@@ -734,18 +742,20 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       // so it cannot be used to recover from expired/invalid tokens.
       // On 401 errors, we should clear auth state and redirect to login (handled by auth error handler).
 
-      // Handle authentication errors (401/403) - trigger logout and redirect to login
+      // Handle authentication errors (401 ONLY) - trigger logout and redirect to login
+      // IMPORTANT: 403 errors are AUTHORIZATION errors (permission denied), NOT authentication errors
+      // We should NOT trigger logout for 403 - the user is authenticated but lacks permission
       // Skip auth error handler for login endpoint itself to avoid infinite loops
       // Also skip during logout to prevent recursive issues
       if (
         !isLoggingOut &&
-        (errorInfo.category === ErrorCategory.AUTHENTICATION || errorInfo.category === ErrorCategory.AUTHORIZATION) &&
+        errorInfo.category === ErrorCategory.AUTHENTICATION &&
         globalAuthErrorHandler &&
-        (errorInfo._statusCode === 401 || errorInfo._statusCode === 403) &&
+        errorInfo._statusCode === 401 &&
         !config.url?.includes("/auth/login")
       ) {
         if (finalConfig.enableLogging) {
-          console.log(`[API CLIENT DEBUG] Authentication error detected (${errorInfo._statusCode}), calling auth error handler`);
+          console.log(`[API CLIENT DEBUG] Authentication error detected (401), calling auth error handler`);
         }
 
         try {
@@ -758,6 +768,11 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
           if (finalConfig.enableLogging) {
             console.error("[API CLIENT DEBUG] Error in auth error handler:", handlerError);
           }
+        }
+      } else if (errorInfo._statusCode === 403) {
+        // Log 403 errors for debugging but don't trigger logout
+        if (finalConfig.enableLogging) {
+          console.log(`[API CLIENT DEBUG] Authorization error (403) - user lacks permission, NOT logging out`);
         }
       }
 
@@ -1276,15 +1291,28 @@ export const getAuthErrorHandler = (): ((error: { statusCode: number; message: s
 // Update the API URL dynamically
 export const updateApiUrl = (url: string): void => {
   const newBaseUrl = url; // No /api suffix - using subdomain architecture
+  console.log("[API CLIENT] updateApiUrl called with:", url);
 
-  // First, set the window variable for future instances (web environment only)
+  // First, set the window variable for future instances
   if (typeof (globalThis as any).window !== "undefined") {
     (globalThis as any).window.__ANKAA_API_URL__ = url;
+    console.log("[API CLIENT] Set window.__ANKAA_API_URL__ to:", url);
   }
 
-  // Only update instance if it's already created (don't force creation)
+  // Force update of singleton if it exists, or force its creation with correct URL
   if (singletonInstance) {
     singletonInstance.defaults.baseURL = newBaseUrl;
+    console.log("[API CLIENT] Updated existing singleton baseURL to:", newBaseUrl);
+  } else {
+    // Force create the singleton now with the correct URL
+    // This ensures the URL is applied before any requests are made
+    try {
+      const instance = getSingletonInstance();
+      instance.defaults.baseURL = newBaseUrl;
+      console.log("[API CLIENT] Created singleton and set baseURL to:", newBaseUrl);
+    } catch (e) {
+      console.log("[API CLIENT] Could not create singleton yet, URL will be used on first request");
+    }
   }
 };
 

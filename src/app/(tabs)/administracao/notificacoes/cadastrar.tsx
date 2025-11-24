@@ -1,5 +1,6 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import React from "react";
+import { NotificationForm } from "@/components/administration/notification/form/notification-form";
 
 export default function CreateNotificationScreen() {
-  return <UnderConstruction title="Criar Notificação" />;
+  return <NotificationForm mode="create" />;
 }

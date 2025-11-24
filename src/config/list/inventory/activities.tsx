@@ -1,7 +1,27 @@
+import React from 'react'
+import { View, StyleSheet } from 'react-native'
+import { IconArrowUp, IconArrowDown } from '@tabler/icons-react-native'
 import type { ListConfig } from '@/components/list/types'
 import type { Activity } from '@/types'
-import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON, ACTIVITY_REASON_LABELS } from '@/constants/enums'
+import { ACTIVITY_OPERATION, ACTIVITY_REASON } from '@/constants/enums'
+import { ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '@/constants/enum-labels'
 import { canEditItems } from '@/utils/permissions/entity-permissions'
+import { ThemedText } from '@/components/ui/themed-text'
+import { Badge } from '@/components/ui/badge'
+
+const styles = StyleSheet.create({
+  quantityContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  badgeText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+})
+
 
 export const activitiesListConfig: ListConfig<Activity> = {
   key: 'inventory-activities',
@@ -25,7 +45,7 @@ export const activitiesListConfig: ListConfig<Activity> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (activity) => activity.operation,
+        render: (activity) => activity.operation ? ACTIVITY_OPERATION_LABELS[activity.operation] : '-',
         format: 'badge',
       },
       {
@@ -46,13 +66,39 @@ export const activitiesListConfig: ListConfig<Activity> = {
         style: { fontWeight: '500' },
       },
       {
+        key: 'user.name',
+        label: 'COLABORADOR',
+        sortable: true,
+        width: 1.5,
+        align: 'left',
+        render: (activity) => activity.user?.name || '-',
+      },
+      {
         key: 'quantity',
         label: 'QUANTIDADE',
         sortable: true,
         width: 1.2,
-        align: 'right',
-        render: (activity) => activity.quantity,
-        format: 'number',
+        align: 'center',
+        render: (activity) => {
+          const quantity = activity.quantity || 0
+          const formattedQuantity = quantity.toLocaleString('pt-BR')
+          const isInbound = activity.operation === ACTIVITY_OPERATION.INBOUND
+
+          const IconComponent = isInbound ? IconArrowDown : IconArrowUp
+
+          return (
+            <Badge
+              variant={isInbound ? 'success' : 'destructive'}
+              size="sm"
+              style={{ alignSelf: 'center' }}
+            >
+              <View style={styles.quantityContent}>
+                <IconComponent size={12} color="#ffffff" />
+                <ThemedText style={styles.badgeText}>{formattedQuantity}</ThemedText>
+              </View>
+            </Badge>
+          )
+        },
       },
       {
         key: 'reason',
@@ -62,14 +108,6 @@ export const activitiesListConfig: ListConfig<Activity> = {
         align: 'left',
         render: (activity) => activity.reason ? ACTIVITY_REASON_LABELS[activity.reason] : '-',
         format: 'badge',
-      },
-      {
-        key: 'user.name',
-        label: 'USUÁRIO',
-        sortable: true,
-        width: 1.5,
-        align: 'left',
-        render: (activity) => activity.user?.name || '-',
       },
       {
         key: 'createdAt',
@@ -90,12 +128,12 @@ export const activitiesListConfig: ListConfig<Activity> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['operation', 'item.name', 'quantity'],
-    rowHeight: 60,
+    defaultVisible: ['item.name', 'user.name', 'quantity'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (activity, router) => {
@@ -128,130 +166,55 @@ export const activitiesListConfig: ListConfig<Activity> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'operation',
-        label: 'Operação',
-        icon: 'activity',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'operations',
-            label: 'Tipo de Operação',
-            type: 'select',
-            multiple: true,
-            options: Object.values(ACTIVITY_OPERATION).map((operation) => ({
-              label: ACTIVITY_OPERATION_LABELS[operation],
-              value: operation,
-            })),
-            placeholder: 'Selecione as operações',
-          },
-        ],
+        key: 'operations',
+        type: 'select',
+        multiple: true,
+        options: Object.values(ACTIVITY_OPERATION).map((operation) => ({
+          label: ACTIVITY_OPERATION_LABELS[operation],
+          value: operation,
+        })),
+        placeholder: 'Tipo de Operação',
       },
       {
-        key: 'reason',
-        label: 'Motivo',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'reasons',
-            label: 'Motivo da Movimentação',
-            type: 'select',
-            multiple: true,
-            options: Object.values(ACTIVITY_REASON).map((reason) => ({
-              label: ACTIVITY_REASON_LABELS[reason],
-              value: reason,
-            })),
-            placeholder: 'Selecione os motivos',
-          },
-        ],
+        key: 'reasons',
+        type: 'select',
+        multiple: true,
+        options: Object.values(ACTIVITY_REASON).map((reason) => ({
+          label: ACTIVITY_REASON_LABELS[reason],
+          value: reason,
+        })),
+        placeholder: 'Motivo da Movimentação',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'itemIds',
-            label: 'Produtos',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Will be loaded by the filter component
-              return []
-            },
-            placeholder: 'Selecione os produtos',
-          },
-          {
-            key: 'userIds',
-            label: 'Usuários',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Will be loaded by the filter component
-              return []
-            },
-            placeholder: 'Selecione os usuários',
-          },
-        ],
+        key: 'itemIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Produtos',
       },
       {
-        key: 'options',
-        label: 'Opções',
-        icon: 'settings',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'hasUser',
-            label: 'Com Usuário',
-            description: 'Apenas movimentações associadas a um usuário',
-            type: 'toggle',
-          },
-          {
-            key: 'showPaintProduction',
-            label: 'Produção de Tintas',
-            description: 'Incluir movimentações de produção de tintas',
-            type: 'toggle',
-            defaultValue: true,
-          },
-        ],
+        key: 'userIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Usuários',
       },
       {
-        key: 'ranges',
-        label: 'Faixas',
-        icon: 'adjustments',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'quantityRange',
-            label: 'Quantidade',
-            type: 'number-range',
-            placeholder: { min: 'Mínimo', max: 'Máximo' },
-          },
-        ],
+        key: 'showPaintProduction',
+        description: 'Incluir movimentações de produção de tintas',
+        type: 'toggle',
+        defaultValue: true,
+        placeholder: 'Produção de Tintas',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Criação',
-            type: 'date-range',
-          },
-        ],
+        key: 'quantityRange',
+        type: 'number-range',
+        placeholder: { min: 'Mínimo', max: 'Máximo' },
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Criação',
       },
     ],
   },

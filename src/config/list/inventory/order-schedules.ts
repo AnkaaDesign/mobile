@@ -3,6 +3,7 @@ import type { OrderSchedule } from '@/types'
 import { SCHEDULE_FREQUENCY } from '@/constants/enums'
 import { canEditOrders } from '@/utils/permissions/entity-permissions'
 
+
 const FREQUENCY_LABELS: Record<string, string> = {
   ONCE: 'Uma Vez',
   DAILY: 'Diário',
@@ -65,7 +66,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (schedule) => schedule.items?.length || 0,
+        render: (schedule) => String(schedule.items?.length || 0),
       },
       {
         key: 'isActive',
@@ -82,7 +83,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (schedule) => schedule.nextRun,
+        render: (schedule) => schedule.nextRun || '-',
         format: 'datetime',
       },
       {
@@ -95,12 +96,12 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['frequency', 'supplier', 'isActive', 'nextRun'],
-    rowHeight: 60,
+    defaultVisible: ['frequency', 'isActive', 'nextRun'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (schedule, router) => {
@@ -133,79 +134,37 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'status',
-        label: 'Status',
-        icon: 'calendar-check',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'isActive',
-            label: 'Ativo',
-            type: 'toggle',
-          },
-        ],
+        key: 'isActive',
+        type: 'toggle',
+        placeholder: 'Ativo',
       },
       {
         key: 'frequency',
-        label: 'Frequência',
-        icon: 'repeat',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'frequency',
-            label: 'Frequência',
-            type: 'select',
-            multiple: true,
-            options: Object.values(SCHEDULE_FREQUENCY).map((frequency) => ({
-              label: FREQUENCY_LABELS[frequency],
-              value: frequency,
-            })),
-            placeholder: 'Selecione as frequências',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(SCHEDULE_FREQUENCY).map((frequency) => ({
+          label: FREQUENCY_LABELS[frequency],
+          value: frequency,
+        })),
+        placeholder: 'Frequência',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'supplierIds',
-            label: 'Fornecedores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os fornecedores',
-          },
-        ],
+        key: 'supplierIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Fornecedores',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'nextRun',
-            label: 'Próxima Execução',
-            type: 'date-range',
-          },
-          {
-            key: 'lastRun',
-            label: 'Última Execução',
-            type: 'date-range',
-          },
-        ],
+        key: 'nextRun',
+        type: 'date-range',
+        placeholder: 'Próxima Execução',
+      },
+      {
+        key: 'lastRun',
+        type: 'date-range',
+        placeholder: 'Última Execução',
       },
     ],
   },

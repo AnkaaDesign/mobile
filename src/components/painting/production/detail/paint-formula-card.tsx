@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconPaint } from "@tabler/icons-react-native";
+import { IconPaint, IconCurrencyDollar, IconWeight, IconFlask } from "@tabler/icons-react-native";
 import type { PaintProduction } from '../../../../types';
 import { PAINT_FINISH_LABELS, routes } from "@/constants";
 import { routeToMobilePath } from "@/lib/route-mapper";
+import { formatCurrency } from "@/utils";
 
 interface PaintFormulaCardProps {
   production: PaintProduction;
@@ -89,15 +90,46 @@ export function PaintFormulaCard({ production }: PaintFormulaCardProps) {
                     </ThemedText>
                   </View>
 
-                  <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                    <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                      Componentes
-                    </ThemedText>
-                    <Badge variant="secondary">
-                      <ThemedText style={{ fontSize: fontSize.xs }}>
-                        {formula.components?.length || 0} componentes
+                  {/* Metrics Grid */}
+                  <View style={styles.metricsGrid}>
+                    {/* Price per Liter */}
+                    <View style={StyleSheet.flatten([styles.metricItem, { backgroundColor: colors.muted + "50" }])}>
+                      <View style={styles.metricHeader}>
+                        <IconCurrencyDollar size={14} color={colors.mutedForeground} />
+                        <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])}>
+                          Preço/L
+                        </ThemedText>
+                      </View>
+                      <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])}>
+                        {formatCurrency(formula.pricePerLiter)}/L
                       </ThemedText>
-                    </Badge>
+                    </View>
+
+                    {/* Density */}
+                    <View style={StyleSheet.flatten([styles.metricItem, { backgroundColor: colors.muted + "50" }])}>
+                      <View style={styles.metricHeader}>
+                        <IconWeight size={14} color={colors.mutedForeground} />
+                        <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])}>
+                          Densidade
+                        </ThemedText>
+                      </View>
+                      <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])}>
+                        {Number(formula.density).toFixed(3)} g/ml
+                      </ThemedText>
+                    </View>
+
+                    {/* Components Count */}
+                    <View style={StyleSheet.flatten([styles.metricItem, { backgroundColor: colors.muted + "50" }])}>
+                      <View style={styles.metricHeader}>
+                        <IconFlask size={14} color={colors.mutedForeground} />
+                        <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])}>
+                          Componentes
+                        </ThemedText>
+                      </View>
+                      <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])}>
+                        {formula.components?.length || 0}
+                      </ThemedText>
+                    </View>
                   </View>
 
                   <Button onPress={handleViewFormula} variant="outline">
@@ -230,5 +262,28 @@ const styles = StyleSheet.create({
   emptyDescription: {
     fontSize: fontSize.sm,
     textAlign: "center",
+  },
+  metricsGrid: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  metricItem: {
+    flex: 1,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
+  },
+  metricHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  metricLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+  },
+  metricValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
   },
 });

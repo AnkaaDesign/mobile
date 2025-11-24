@@ -17,12 +17,18 @@ interface FilterTag {
 export const Tags = memo(function Tags({
   values,
   searchText,
-  sections,
+  fields,
   onRemove,
   onClearSearch,
   onClearAll,
 }: FilterTagsProps) {
   const { colors } = useTheme()
+
+  // Get display label from field (prefer placeholder if string, fallback to label)
+  const getFieldLabel = (field: { label?: string; placeholder?: string | { min?: string; max?: string; from?: string; to?: string } }) => {
+    if (typeof field.placeholder === 'string') return field.placeholder
+    return field.label || ''
+  }
 
   const tags = useMemo<FilterTag[]>(() => {
     const result: FilterTag[] = []
@@ -37,93 +43,93 @@ export const Tags = memo(function Tags({
     }
 
     // Build tags from filter values
-    sections.forEach((section) => {
-      section.fields.forEach((field) => {
-        const value = values[field.key]
-        if (!value) return
+    fields.forEach((field) => {
+      const value = values[field.key]
+      if (!value) return
 
-        switch (field.type) {
-          case 'select':
-            if (field.multiple && Array.isArray(value) && value.length > 0) {
-              // Get labels for selected values
-              const options = field.options || []
-              value.forEach((val) => {
-                const option = options.find((opt) => opt.value === val)
-                if (option) {
-                  result.push({
-                    key: `${field.key}-${val}`,
-                    label: `${field.label}: ${option.label}`,
-                    onRemove: () => {
-                      const newValue = value.filter((v) => v !== val)
-                      onRemove(field.key, newValue.length > 0 ? newValue : undefined)
-                    },
-                  })
-                }
-              })
-            } else if (!field.multiple && value) {
-              const options = field.options || []
-              const option = options.find((opt) => opt.value === value)
+      const fieldLabel = getFieldLabel(field)
+
+      switch (field.type) {
+        case 'select':
+          if (field.multiple && Array.isArray(value) && value.length > 0) {
+            // Get labels for selected values
+            const options = field.options || []
+            value.forEach((val) => {
+              const option = options.find((opt) => opt.value === val)
               if (option) {
                 result.push({
-                  key: field.key,
-                  label: `${field.label}: ${option.label}`,
-                  onRemove: () => onRemove(field.key),
+                  key: `${field.key}-${val}`,
+                  label: fieldLabel ? `${fieldLabel}: ${option.label}` : option.label,
+                  onRemove: () => {
+                    const newValue = value.filter((v) => v !== val)
+                    onRemove(field.key, newValue.length > 0 ? newValue : undefined)
+                  },
                 })
               }
-            }
-            break
-
-          case 'date-range':
-            if (value.gte || value.lte) {
-              const parts: string[] = []
-              if (value.gte) parts.push(`de ${format(value.gte, 'dd/MM/yyyy')}`)
-              if (value.lte) parts.push(`até ${format(value.lte, 'dd/MM/yyyy')}`)
+            })
+          } else if (!field.multiple && value) {
+            const options = field.options || []
+            const option = options.find((opt) => opt.value === value)
+            if (option) {
               result.push({
                 key: field.key,
-                label: `${field.label}: ${parts.join(' ')}`,
+                label: fieldLabel ? `${fieldLabel}: ${option.label}` : option.label,
                 onRemove: () => onRemove(field.key),
               })
             }
-            break
+          }
+          break
 
-          case 'number-range':
-            if (value.min !== undefined || value.max !== undefined) {
-              const parts: string[] = []
-              if (value.min !== undefined) parts.push(`≥ ${value.min}`)
-              if (value.max !== undefined) parts.push(`≤ ${value.max}`)
-              result.push({
-                key: field.key,
-                label: `${field.label}: ${parts.join(' e ')}`,
-                onRemove: () => onRemove(field.key),
-              })
-            }
-            break
+        case 'date-range':
+          if (value.gte || value.lte) {
+            const parts: string[] = []
+            if (value.gte) parts.push(`de ${format(value.gte, 'dd/MM/yyyy')}`)
+            if (value.lte) parts.push(`até ${format(value.lte, 'dd/MM/yyyy')}`)
+            result.push({
+              key: field.key,
+              label: fieldLabel ? `${fieldLabel}: ${parts.join(' ')}` : parts.join(' '),
+              onRemove: () => onRemove(field.key),
+            })
+          }
+          break
 
-          case 'toggle':
-            if (value === true) {
-              result.push({
-                key: field.key,
-                label: field.label,
-                onRemove: () => onRemove(field.key),
-              })
-            }
-            break
+        case 'number-range':
+          if (value.min !== undefined || value.max !== undefined) {
+            const parts: string[] = []
+            if (value.min !== undefined) parts.push(`≥ ${value.min}`)
+            if (value.max !== undefined) parts.push(`≤ ${value.max}`)
+            result.push({
+              key: field.key,
+              label: fieldLabel ? `${fieldLabel}: ${parts.join(' e ')}` : parts.join(' e '),
+              onRemove: () => onRemove(field.key),
+            })
+          }
+          break
 
-          case 'text':
-            if (value) {
-              result.push({
-                key: field.key,
-                label: `${field.label}: ${value}`,
-                onRemove: () => onRemove(field.key),
-              })
-            }
-            break
-        }
-      })
+        case 'toggle':
+          if (value === true) {
+            result.push({
+              key: field.key,
+              label: fieldLabel,
+              onRemove: () => onRemove(field.key),
+            })
+          }
+          break
+
+        case 'text':
+          if (value) {
+            result.push({
+              key: field.key,
+              label: fieldLabel ? `${fieldLabel}: ${value}` : value,
+              onRemove: () => onRemove(field.key),
+            })
+          }
+          break
+      }
     })
 
     return result
-  }, [values, searchText, sections, onRemove, onClearSearch])
+  }, [values, searchText, fields, onRemove, onClearSearch])
 
   if (tags.length === 0) {
     return null

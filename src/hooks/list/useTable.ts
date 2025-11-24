@@ -15,6 +15,7 @@ export function useTable<T extends { id: string }>({
   storageKey,
 }: UseTableOptions<T>) {
   const [visibleColumns, setVisibleColumns] = useState<string[]>(defaultVisible)
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false)
 
   // Load saved column visibility
   useEffect(() => {
@@ -54,10 +55,21 @@ export function useTable<T extends { id: string }>({
     await AsyncStorage.setItem(`table-columns-${storageKey}`, JSON.stringify(defaultVisible))
   }, [defaultVisible, storageKey])
 
+  const handleOpenColumnPanel = useCallback(() => {
+    setIsColumnPanelOpen(true)
+  }, [])
+
+  const handleCloseColumnPanel = useCallback(() => {
+    setIsColumnPanelOpen(false)
+  }, [])
+
   return {
     columns,
     visibleColumns,
     onToggleColumn: handleColumnChange,
     onResetColumns: handleResetColumns,
+    isColumnPanelOpen,
+    onOpenColumnPanel: handleOpenColumnPanel,
+    onCloseColumnPanel: handleCloseColumnPanel,
   }
 }

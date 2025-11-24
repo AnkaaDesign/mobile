@@ -1,3 +1,12 @@
+/**
+ * @deprecated This component is deprecated in favor of `ItemSelectorTable` from `@/components/forms`.
+ * Use the new standardized component for better mobile/tablet support, filtering, and pagination.
+ *
+ * Migration guide:
+ * - For single item selection: Use Combobox with item search
+ * - For multi-item selection with quantities: Use ItemSelectorTable from @/components/forms
+ * - For multi-step forms: Use useMultiStepForm hook with MultiStepFormContainer
+ */
 import { useMemo, useCallback } from "react";
 import { View, StyleSheet } from "react-native";
 import { Combobox, ComboboxOption } from "@/components/ui/combobox";

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert } from "react-native";
+import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 
 import { ThemedView } from "@/components/ui/themed-view";
@@ -50,22 +50,16 @@ export default function VerifyPasswordCodeScreen() {
         code: code.trim(),
       });
 
-      Alert.alert("Código Verificado!", "Agora você pode criar uma nova senha.", [
-        {
-          text: "Continuar",
-          onPress: () => {
-            // Navigate to password reset page with verified code
-            router.replace({
-              pathname: `/(autenticacao)/redefinir-senha/${code.trim()}` as any,
-              params: {
-                contact: contactValue,
-                code: code.trim(),
-                returnTo: returnTo || '/(autenticacao)/entrar',
-              },
-            });
-          },
+      console.log("Código Verificado! Agora você pode criar uma nova senha.");
+      // Navigate to password reset page with verified code
+      router.replace({
+        pathname: `/(autenticacao)/redefinir-senha/${code.trim()}` as any,
+        params: {
+          contact: contactValue,
+          code: code.trim(),
+          returnTo: returnTo || '/(autenticacao)/entrar',
         },
-      ]);
+      });
     } catch (error) {
       console.error("Verification failed:", error);
 
@@ -84,7 +78,6 @@ export default function VerifyPasswordCodeScreen() {
       }
 
       setError(errorMessage);
-      Alert.alert("Erro na verificação", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +85,7 @@ export default function VerifyPasswordCodeScreen() {
 
   const handleResendCode = async () => {
     if (!contactValue) {
-      Alert.alert("Erro", "Informação de contato não encontrada");
+      console.error("Erro: Informação de contato não encontrada");
       return;
     }
 
@@ -103,7 +96,7 @@ export default function VerifyPasswordCodeScreen() {
       await authService.resendVerification({ contact: contactValue });
 
       const contactType = contactValue.includes("@") ? "email" : "SMS";
-      Alert.alert("Código reenviado!", `Um novo código foi enviado por ${contactType}.`, [{ text: "OK" }]);
+      console.log(`Código reenviado! Um novo código foi enviado por ${contactType}.`);
     } catch (error) {
       console.error("Resend failed:", error);
 
@@ -116,8 +109,6 @@ export default function VerifyPasswordCodeScreen() {
           errorMessage = error.message;
         }
       }
-
-      Alert.alert("Erro ao reenviar código", errorMessage);
     } finally {
       setIsResending(false);
     }

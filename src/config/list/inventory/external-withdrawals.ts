@@ -5,10 +5,12 @@ import { canEditExternalWithdrawals } from '@/utils/permissions/entity-permissio
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
+  CANCELLED: 'Cancelado',
   PARTIALLY_RETURNED: 'Parcialmente Devolvido',
   FULLY_RETURNED: 'Totalmente Devolvido',
   CHARGED: 'Cobrado',
-  CANCELLED: 'Cancelado',
+  LIQUIDATED: 'Liquidado',
+  DELIVERED: 'Entregue',
 }
 
 export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
@@ -46,7 +48,7 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
         sortable: true,
         width: 1.5,
         align: 'center',
-        render: (withdrawal) => withdrawal.status,
+        render: (withdrawal) => STATUS_LABELS[withdrawal.status] || withdrawal.status || '-',
         format: 'badge',
       },
       {
@@ -57,9 +59,9 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
         align: 'center',
         render: (withdrawal) => {
           const typeLabels = {
-            RETURNABLE: 'Devolutivo',
+            RETURNABLE: 'Retornável',
             CHARGEABLE: 'Cobrável',
-            COURTESY: 'Cortesia',
+            COMPLIMENTARY: 'Cortesia',
           }
           return typeLabels[withdrawal.type as keyof typeof typeLabels] || withdrawal.type
         },
@@ -71,7 +73,7 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
         sortable: false,
         width: 0.8,
         align: 'center',
-        render: (withdrawal) => (withdrawal as any)._count?.items || withdrawal.items?.length || 0,
+        render: (withdrawal) => String((withdrawal as any)._count?.items || withdrawal.items?.length || 0),
         format: 'badge',
       },
       {
@@ -80,7 +82,7 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (withdrawal) => withdrawal.createdAt,
+        render: (withdrawal) => withdrawal.createdAt || '-',
         format: 'date',
       },
       {
@@ -92,12 +94,12 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
         render: (withdrawal) => withdrawal.notes || '-',
       },
     ],
-    defaultVisible: ['withdrawerName', 'status', 'type', 'itemsCount'],
-    rowHeight: 60,
+    defaultVisible: ['withdrawerName', 'itemsCount', 'createdAt'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (withdrawal, router) => {
@@ -131,61 +133,44 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status da Retirada',
-            type: 'select',
-            multiple: true,
-            options: Object.values(EXTERNAL_WITHDRAWAL_STATUS).map((status) => ({
-              label: STATUS_LABELS[status] || status,
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(EXTERNAL_WITHDRAWAL_STATUS).map((status) => ({
+          label: STATUS_LABELS[status] || status,
+          value: status,
+        })),
+        placeholder: 'Status da Retirada',
       },
       {
         key: 'type',
-        label: 'Tipo',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'type',
-            label: 'Tipo de Retirada',
-            type: 'select',
-            multiple: true,
-            options: [
-              { label: 'Devolutivo', value: 'RETURNABLE' },
-              { label: 'Cobrável', value: 'CHARGEABLE' },
-              { label: 'Cortesia', value: 'COURTESY' },
-            ],
-            placeholder: 'Selecione os tipos',
-          },
+        type: 'select',
+        multiple: true,
+        options: [
+          { label: 'Retornável', value: 'RETURNABLE' },
+          { label: 'Cobrável', value: 'CHARGEABLE' },
+          { label: 'Cortesia', value: 'COMPLIMENTARY' },
         ],
+        placeholder: 'Tipo de Retirada',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Retirada',
-            type: 'date-range',
-          },
-        ],
+        key: 'hasNfe',
+        description: 'Apenas retiradas com nota fiscal',
+        type: 'toggle',
+        placeholder: 'Com NFe',
+      },
+      {
+        key: 'hasReceipt',
+        description: 'Apenas retiradas com recibo',
+        type: 'toggle',
+        placeholder: 'Com Recibo',
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Retirada',
       },
     ],
   },

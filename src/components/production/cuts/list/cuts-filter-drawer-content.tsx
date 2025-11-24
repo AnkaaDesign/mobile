@@ -1,20 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { IconFilter, IconX, IconBriefcase, IconCalendarPlus, IconScissors, IconMapPin } from '@tabler/icons-react-native';
+import { IconFilter, IconX, IconCalendarPlus, IconScissors, IconMapPin, IconUsers } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
-import { Combobox } from '@/components/ui/combobox';
 import { DatePicker } from '@/components/ui/date-picker';
-import { CUT_STATUS, CUT_STATUS_LABELS, CUT_TYPE, CUT_TYPE_LABELS, CUT_ORIGIN, CUT_ORIGIN_LABELS } from '@/constants';
-import { useTasksInfiniteMobile } from '@/hooks/use-tasks-infinite-mobile';
+import { CUT_STATUS, CUT_STATUS_LABELS, CUT_TYPE, CUT_TYPE_LABELS, CUT_ORIGIN, CUT_ORIGIN_LABELS, SECTOR_PRIVILEGES } from '@/constants';
+import { useSectors } from '@/hooks';
+import { useAuth } from '@/contexts/auth-context';
+
+// Special value for tasks without a sector
+const UNDEFINED_SECTOR_VALUE = "__UNDEFINED__";
 
 interface CutsFilterDrawerContentProps {
   filters: {
     status?: string[];
     type?: string[];
     origin?: string[];
-    taskId?: string;
+    sectorIds?: string[];
     dateRange?: { gte?: Date; lte?: Date };
   };
   onFiltersChange: (filters: any) => void;
@@ -32,16 +35,23 @@ export function CutsFilterDrawerContent({
 }: CutsFilterDrawerContentProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   // Initialize localFilters with filters value immediately
   const [localFilters, setLocalFilters] = useState(() => filters || {});
 
-  // Fetch tasks for the task selector
-  const { data: tasksData } = useTasksInfiniteMobile({
-    orderBy: { name: 'asc' },
-    enabled: true,
-  });
+  // Check if user has production or leader privileges (they have automatic sector filtering)
+  const shouldHideSectorFilter = useMemo(() => {
+    const userPrivileges = user?.sector?.privileges;
+    return userPrivileges === SECTOR_PRIVILEGES.PRODUCTION || userPrivileges === SECTOR_PRIVILEGES.LEADER;
+  }, [user?.sector?.privileges]);
 
-  const tasks = tasksData || [];
+  // Fetch production sectors (only if not hidden)
+  const { data: sectorsData } = useSectors({ limit: 100, enabled: !shouldHideSectorFilter });
+  const sectors = useMemo(() => {
+    if (shouldHideSectorFilter) return [];
+    const items = sectorsData?.data || [];
+    return items.filter((sector: any) => sector.privileges === SECTOR_PRIVILEGES.PRODUCTION);
+  }, [sectorsData, shouldHideSectorFilter]);
 
   const handleApply = useCallback(() => {
     onFiltersChange(localFilters);
@@ -94,6 +104,21 @@ export function CutsFilterDrawerContent({
       return {
         ...prev,
         origin: newOrigins.length > 0 ? newOrigins : undefined
+      };
+    });
+  }, []);
+
+  // Toggle a sector in the sectorIds array
+  const toggleSector = useCallback((sectorId: string) => {
+    setLocalFilters(prev => {
+      const currentSectors = prev.sectorIds || [];
+      const newSectors = currentSectors.includes(sectorId)
+        ? currentSectors.filter(s => s !== sectorId)
+        : [...currentSectors, sectorId];
+
+      return {
+        ...prev,
+        sectorIds: newSectors.length > 0 ? newSectors : undefined
       };
     });
   }, []);
@@ -238,32 +263,65 @@ export function CutsFilterDrawerContent({
           </View>
         </View>
 
-        {/* Task Filter */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconBriefcase size={18} color={colors.mutedForeground} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Tarefa
-            </ThemedText>
-          </View>
+        {/* Sector Filter - Hidden for production/leader users who have automatic sector filtering */}
+        {!shouldHideSectorFilter && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <IconUsers size={18} color={colors.mutedForeground} />
+              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+                Setor da Tarefa
+              </ThemedText>
+            </View>
 
-          <Combobox
-            value={localFilters.taskId}
-            onValueChange={(value) => setLocalFilters(prev => ({
-              ...prev,
-              taskId: value || undefined
-            }))}
-            options={[
-              { value: "", label: "Todas as tarefas" },
-              ...tasks.map((task: any) => ({
-                value: task.id,
-                label: task.name
-              }))
-            ]}
-            placeholder="Selecione uma tarefa..."
-            searchable={false}
-          />
-        </View>
+            <View style={styles.statusGrid}>
+              {/* Indefinido option */}
+              <TouchableOpacity
+                key={UNDEFINED_SECTOR_VALUE}
+                style={[
+                  styles.statusChip,
+                  {
+                    backgroundColor: localFilters.sectorIds?.includes(UNDEFINED_SECTOR_VALUE) ? colors.primary : colors.card,
+                    borderColor: localFilters.sectorIds?.includes(UNDEFINED_SECTOR_VALUE) ? colors.primary : colors.border,
+                  }
+                ]}
+                onPress={() => toggleSector(UNDEFINED_SECTOR_VALUE)}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={[
+                  styles.statusChipText,
+                  { color: localFilters.sectorIds?.includes(UNDEFINED_SECTOR_VALUE) ? colors.primaryForeground : colors.foreground }
+                ]}>
+                  Indefinido
+                </ThemedText>
+              </TouchableOpacity>
+              {/* Production sectors */}
+              {sectors.map((sector: any) => {
+                const isSelected = localFilters.sectorIds?.includes(sector.id);
+                return (
+                  <TouchableOpacity
+                    key={sector.id}
+                    style={[
+                      styles.statusChip,
+                      {
+                        backgroundColor: isSelected ? colors.primary : colors.card,
+                        borderColor: isSelected ? colors.primary : colors.border,
+                      }
+                    ]}
+                    onPress={() => toggleSector(sector.id)}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText style={[
+                      styles.statusChipText,
+                      { color: isSelected ? colors.primaryForeground : colors.foreground }
+                    ]}>
+                      {sector.name}
+                    </ThemedText>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {/* Date Range Filter */}
         <View style={styles.section}>

@@ -1,10 +1,10 @@
-import { View, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, TouchableOpacity, StyleSheet, ScrollView, Platform, ToastAndroid, Alert } from 'react-native'
 import { Card } from '@/components/ui/card'
 import { Text } from '@/components/ui/text'
-import { Badge } from '@/components/ui/badge'
 import { Icon } from '@/components/ui/icon'
+import { Badge } from '@/components/ui/badge'
 import { useTheme } from '@/lib/theme'
-import { spacing, fontSize, borderRadius } from '@/constants/design-system'
+import { borderRadius } from '@/constants/design-system'
 import {
   PAINT_FINISH_LABELS,
   TRUCK_MANUFACTURER_LABELS,
@@ -12,14 +12,21 @@ import {
 } from '@/constants'
 import type { Paint } from '@/types'
 import * as Clipboard from 'expo-clipboard'
-import { toast } from 'sonner-native'
+import { PaintPreview } from '@/components/painting/preview/painting-preview'
+
+// Tag badge colors - inverted (dark in light mode, light in dark mode)
+const TAG_BADGE_COLORS = {
+  light: { bg: '#404040', text: '#f5f5f5' },  // neutral-700, neutral-100
+  dark: { bg: '#d4d4d4', text: '#262626' },   // neutral-300, neutral-800
+};
 
 interface PaintSpecificationsCardProps {
   paint: Paint
 }
 
 export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps) {
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme()
+  const tagBadgeStyle = isDark ? TAG_BADGE_COLORS.dark : TAG_BADGE_COLORS.light
 
   const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
@@ -74,9 +81,17 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await Clipboard.setStringAsync(text)
-      toast.success(`${label} copiado!`)
+      if (Platform.OS === 'android') {
+        ToastAndroid.show(`${label} copiado!`, ToastAndroid.SHORT)
+      } else {
+        Alert.alert('Copiado', `${label} copiado para área de transferência`)
+      }
     } catch (error) {
-      toast.error('Erro ao copiar')
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Erro ao copiar', ToastAndroid.SHORT)
+      } else {
+        Alert.alert('Erro', 'Erro ao copiar para área de transferência')
+      }
     }
   }
 
@@ -102,27 +117,34 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
 
         <View className="bg-muted/30 rounded-lg p-3">
           <View className="flex-row items-start gap-4">
-            {/* Color Preview */}
+            {/* Color Preview - uses stored image if available, falls back to hex */}
             <View
               style={[
                 styles.colorPreview,
-                { backgroundColor: paint.hex, borderColor: colors.border },
+                { borderColor: colors.border, overflow: 'hidden' },
               ]}
-            />
+            >
+              <PaintPreview
+                paint={paint}
+                baseColor={paint.hex}
+                width={96}
+                height={96}
+                borderRadius={0}
+                style={{ width: '100%', height: '100%' }}
+              />
+            </View>
 
             {/* Color Codes */}
-            <View className="flex-1 gap-2">
+            <View className="flex-1 gap-3">
               {/* HEX */}
               <View className="flex-row items-center justify-between">
                 <Text className="text-sm font-medium text-muted-foreground">HEX</Text>
                 <View className="flex-row items-center gap-2">
-                  <View className="bg-muted rounded px-2 py-1">
-                    <Text className="text-sm font-mono">{paint.hex.toUpperCase()}</Text>
-                  </View>
+                  <Text className="text-sm font-mono text-foreground">{paint.hex.toUpperCase()}</Text>
                   <TouchableOpacity
                     onPress={() => copyToClipboard(paint.hex.toUpperCase(), 'HEX')}
                   >
-                    <Icon name="copy" size={16} className="text-muted-foreground" />
+                    <Icon name="copy" size={16} style={{ color: colors.foreground, opacity: 0.5 }} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -132,15 +154,13 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
                 <View className="flex-row items-center justify-between">
                   <Text className="text-sm font-medium text-muted-foreground">RGB</Text>
                   <View className="flex-row items-center gap-2">
-                    <View className="bg-muted rounded px-2 py-1">
-                      <Text className="text-sm font-mono">{`${rgb.r}, ${rgb.g}, ${rgb.b}`}</Text>
-                    </View>
+                    <Text className="text-sm font-mono text-foreground">{`${rgb.r}, ${rgb.g}, ${rgb.b}`}</Text>
                     <TouchableOpacity
                       onPress={() =>
                         copyToClipboard(`${rgb.r}, ${rgb.g}, ${rgb.b}`, 'RGB')
                       }
                     >
-                      <Icon name="copy" size={16} className="text-muted-foreground" />
+                      <Icon name="copy" size={16} style={{ color: colors.foreground, opacity: 0.5 }} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -151,15 +171,13 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
                 <View className="flex-row items-center justify-between">
                   <Text className="text-sm font-medium text-muted-foreground">LAB</Text>
                   <View className="flex-row items-center gap-2">
-                    <View className="bg-muted rounded px-2 py-1">
-                      <Text className="text-sm font-mono">{`L:${lab.l} a:${lab.a} b:${lab.b}`}</Text>
-                    </View>
+                    <Text className="text-sm font-mono text-foreground">{`L:${lab.l} a:${lab.a} b:${lab.b}`}</Text>
                     <TouchableOpacity
                       onPress={() =>
                         copyToClipboard(`L:${lab.l} a:${lab.a} b:${lab.b}`, 'LAB')
                       }
                     >
-                      <Icon name="copy" size={16} className="text-muted-foreground" />
+                      <Icon name="copy" size={16} style={{ color: colors.foreground, opacity: 0.5 }} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -189,26 +207,20 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
 
         <View className="flex-row items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
           <Text className="text-sm text-muted-foreground">Acabamento</Text>
-          <Badge variant="secondary">
-            <Text className="text-xs">{PAINT_FINISH_LABELS[paint.finish]}</Text>
-          </Badge>
+          <Text className="text-sm font-medium">{PAINT_FINISH_LABELS[paint.finish]}</Text>
         </View>
 
         {paint.manufacturer && (
           <View className="flex-row items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
             <Text className="text-sm text-muted-foreground">Fabricante</Text>
-            <Badge variant="outline">
-              <Text className="text-xs">{TRUCK_MANUFACTURER_LABELS[paint.manufacturer]}</Text>
-            </Badge>
+            <Text className="text-sm font-medium">{TRUCK_MANUFACTURER_LABELS[paint.manufacturer]}</Text>
           </View>
         )}
 
         {paint.palette && (
           <View className="flex-row items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
             <Text className="text-sm text-muted-foreground">Paleta de Cor</Text>
-            <Badge variant="outline">
-              <Text className="text-xs">{COLOR_PALETTE_LABELS[paint.palette]}</Text>
-            </Badge>
+            <Text className="text-sm font-medium">{COLOR_PALETTE_LABELS[paint.palette]}</Text>
           </View>
         )}
 
@@ -221,15 +233,26 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
 
         {paint.tags && paint.tags.length > 0 && (
           <View className="bg-muted/30 rounded-lg px-3 py-2">
-            <View className="flex-row items-start justify-between">
-              <Text className="text-sm text-muted-foreground">Tags</Text>
-              <View className="flex-row flex-wrap gap-1 justify-end max-w-[60%]">
-                {paint.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
-                    <Text className="text-xs">{tag}</Text>
-                  </Badge>
-                ))}
-              </View>
+            <View className="flex-row items-center justify-between">
+              <Text className="text-sm text-muted-foreground mr-3">Tags</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ maxWidth: '70%' }}
+              >
+                <View className="flex-row gap-1">
+                  {paint.tags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      style={[styles.tagBadge, { backgroundColor: tagBadgeStyle.bg }]}
+                    >
+                      <Text style={[styles.tagBadgeText, { color: tagBadgeStyle.text }]}>
+                        {tag}
+                      </Text>
+                    </Badge>
+                  ))}
+                </View>
+              </ScrollView>
             </View>
           </View>
         )}
@@ -240,9 +263,19 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
 
 const styles = StyleSheet.create({
   colorPreview: {
-    width: 80,
-    height: 80,
+    width: 96,
+    height: 96,
     borderRadius: borderRadius.md,
-    borderWidth: 2,
+    borderWidth: 1,
+  },
+  tagBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    borderWidth: 0,
+  },
+  tagBadgeText: {
+    fontSize: 11,
+    fontWeight: '500',
   },
 })

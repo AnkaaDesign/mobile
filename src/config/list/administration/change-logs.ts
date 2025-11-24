@@ -89,6 +89,28 @@ export const changeLogsListConfig: ListConfig<ChangeLog> = {
         render: (log) => log.field || '-',
       },
       {
+        key: 'oldValue',
+        label: 'VALOR ANTERIOR',
+        sortable: false,
+        width: 2.0,
+        align: 'left',
+        render: (log) => {
+          if (log.oldValue === null || log.oldValue === undefined) return '-'
+          return typeof log.oldValue === 'object' ? JSON.stringify(log.oldValue) : String(log.oldValue)
+        },
+      },
+      {
+        key: 'newValue',
+        label: 'NOVO VALOR',
+        sortable: false,
+        width: 2.0,
+        align: 'left',
+        render: (log) => {
+          if (log.newValue === null || log.newValue === undefined) return '-'
+          return typeof log.newValue === 'object' ? JSON.stringify(log.newValue) : String(log.newValue)
+        },
+      },
+      {
         key: 'user',
         label: 'USUÁRIO',
         sortable: true,
@@ -114,96 +136,43 @@ export const changeLogsListConfig: ListConfig<ChangeLog> = {
         render: (log) => log.reason || '-',
       },
     ],
-    defaultVisible: ['action', 'entityType', 'user', 'createdAt'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver Detalhes',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (log, router) => {
-          router.push(`/servidor/registros-de-alteracoes/detalhes/${log.id}`)
-        },
-      },
-    ],
+    defaultVisible: ['action', 'user', 'createdAt'],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'action',
-        label: 'Ações',
-        icon: 'activity',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'actions',
-            label: 'Tipos de Ação',
-            type: 'select',
-            multiple: true,
-            options: Object.values(CHANGE_LOG_ACTION).map((action) => ({
-              label: ACTION_LABELS[action],
-              value: action,
-            })),
-            placeholder: 'Selecione as ações',
-          },
-        ],
+        key: 'actions',
+        type: 'select',
+        multiple: true,
+        options: Object.values(CHANGE_LOG_ACTION).map((action) => ({
+          label: ACTION_LABELS[action],
+          value: action,
+        })),
+        placeholder: 'Ações',
       },
       {
-        key: 'entity',
-        label: 'Entidades',
-        icon: 'database',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'entityTypes',
-            label: 'Tipos de Entidade',
-            type: 'select',
-            multiple: true,
-            options: Object.values(CHANGE_LOG_ENTITY_TYPE).map((type) => ({
-              label: ENTITY_TYPE_LABELS[type] || type,
-              value: type,
-            })),
-            placeholder: 'Selecione as entidades',
-          },
-        ],
+        key: 'entityTypes',
+        type: 'select',
+        multiple: true,
+        options: Object.values(CHANGE_LOG_ENTITY_TYPE).map((type) => ({
+          label: ENTITY_TYPE_LABELS[type] || type,
+          value: type,
+        })),
+        placeholder: 'Entidades',
       },
       {
-        key: 'users',
-        label: 'Usuários',
-        icon: 'users',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'userIds',
-            label: 'Usuários',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os usuários',
-          },
-        ],
+        key: 'userIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Usuários',
       },
       {
-        key: 'dates',
-        label: 'Período',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data da Alteração',
-            type: 'date-range',
-          },
-        ],
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data da Alteração',
       },
     ],
   },

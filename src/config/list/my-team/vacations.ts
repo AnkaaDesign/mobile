@@ -66,7 +66,7 @@ export const teamVacationsListConfig: ListConfig<Vacation> = {
         sortable: true,
         width: 1.3,
         align: 'center',
-        render: (vacation) => vacation.status,
+        render: (vacation) => STATUS_LABELS[vacation.status] || vacation.status,
         format: 'badge',
       },
       {
@@ -84,7 +84,7 @@ export const teamVacationsListConfig: ListConfig<Vacation> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (vacation) => vacation.startAt,
+        render: (vacation) => vacation.startAt || '-',
         format: 'date',
       },
       {
@@ -102,99 +102,51 @@ export const teamVacationsListConfig: ListConfig<Vacation> = {
         sortable: true,
         width: 0.8,
         align: 'center',
-        render: (vacation) => vacation.days || 0,
+        render: (vacation) => String(vacation.days || 0),
         format: 'number',
       },
     ],
-    defaultVisible: ['user.name', 'status', 'startAt', 'endAt', 'days'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (vacation, router) => {
-          router.push(`/meu-pessoal/ferias/detalhes/${vacation.id}`)
-        },
-      },
-    ],
+    defaultVisible: ['user.name', 'status', 'startAt'],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'status',
-        label: 'Status',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'statuses',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(VACATION_STATUS).map((status) => ({
-              label: STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        key: 'statuses',
+        type: 'select',
+        multiple: true,
+        options: Object.values(VACATION_STATUS).map((status) => ({
+          label: STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status',
       },
       {
-        key: 'type',
-        label: 'Tipo',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'types',
-            label: 'Tipo de Férias',
-            type: 'select',
-            multiple: true,
-            options: Object.values(VACATION_TYPE).map((type) => ({
-              label: TYPE_LABELS[type],
-              value: type,
-            })),
-            placeholder: 'Selecione os tipos',
-          },
-        ],
+        key: 'types',
+        type: 'select',
+        multiple: true,
+        options: Object.values(VACATION_TYPE).map((type) => ({
+          label: TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Tipo de Férias',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'startAt',
-            label: 'Data de Início',
-            type: 'date-range',
-          },
-          {
-            key: 'endAt',
-            label: 'Data de Fim',
-            type: 'date-range',
-          },
-        ],
+        key: 'startAt',
+        type: 'date-range',
+        placeholder: 'Data de Início',
       },
       {
-        key: 'options',
-        label: 'Opções',
-        icon: 'settings',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'showCurrentOnly',
-            label: 'Mostrar apenas férias ativas',
-            type: 'toggle',
-          },
-        ],
+        key: 'endAt',
+        type: 'date-range',
+        placeholder: 'Data de Fim',
+      },
+      {
+        key: 'showCurrentOnly',
+        type: 'toggle',
+        placeholder: 'Mostrar apenas férias ativas',
       },
     ],
   },

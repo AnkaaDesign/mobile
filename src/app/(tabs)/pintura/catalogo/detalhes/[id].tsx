@@ -1,9 +1,8 @@
 import React from "react";
-import { Stack, useLocalSearchParams } from "expo-router";
-import { ScrollView, View, RefreshControl, StyleSheet } from "react-native";
-import { usePaintDetail } from "@/hooks";
+import { Stack, useLocalSearchParams, router } from "expo-router";
+import { ScrollView, View, RefreshControl, StyleSheet, TouchableOpacity, Alert as RNAlert } from "react-native";
+import { usePaintDetail, usePaintMutations } from "@/hooks";
 import {
-  PaintCatalogCard,
   PaintFormulasCard,
   PaintTasksCard,
   PaintRelatedPaintsCard,
@@ -13,18 +12,28 @@ import {
 } from "@/components/painting/catalog/detail";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
-import { Text } from "@/components/ui/text";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { spacing } from "@/lib/constants";
+import { useAuth } from "@/contexts/auth-context";
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { SECTOR_PRIVILEGES } from "@/constants";
+import { hasPrivilege } from "@/utils";
+import { showToast } from "@/components/ui/toast";
+import { IconEdit, IconTrash, IconPaint } from "@tabler/icons-react-native";
 
 export default function CatalogDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { data: user } = useAuth();
+  const { delete: deletePaint } = usePaintMutations();
   const [refreshing, setRefreshing] = React.useState(false);
+
+  // Check user permissions
+  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
+  const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
   const {
     data: paintResponse,
@@ -43,31 +52,10 @@ export default function CatalogDetailsScreen() {
             },
           },
           paintProduction: true,
+          paint: true,
         },
-      },
-      generalPaintings: {
-        include: {
-          customer: true,
-          createdBy: true,
-          sector: true,
-          services: {
-            include: {
-              service: true,
-            },
-          },
-        },
-      },
-      logoTasks: {
-        include: {
-          customer: true,
-          createdBy: true,
-          sector: true,
-          services: {
-            include: {
-              service: true,
-            },
-          },
-        },
+        // Include calculated fields for pricePerLiter and density
+        // These should be computed by the backend
       },
       relatedPaints: true,
       relatedTo: true,
@@ -81,6 +69,22 @@ export default function CatalogDetailsScreen() {
           },
         },
       },
+      generalPaintings: {
+        include: {
+          customer: true,
+          createdBy: true,
+          sector: true,
+          services: true,
+        },
+      },
+      logoTasks: {
+        include: {
+          customer: true,
+          createdBy: true,
+          sector: true,
+          services: true,
+        },
+      },
     },
   });
 
@@ -91,6 +95,44 @@ export default function CatalogDetailsScreen() {
     await refetch();
     setRefreshing(false);
   }, [refetch]);
+
+  // Handle edit
+  const handleEdit = () => {
+    if (!canEdit) {
+      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      return;
+    }
+    router.push(`/pintura/catalogo/editar/${id}`);
+  };
+
+  // Handle delete
+  const handleDelete = () => {
+    if (!canDelete) {
+      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      return;
+    }
+
+    RNAlert.alert(
+      "Excluir Tinta",
+      `Tem certeza que deseja excluir "${paint?.name}"? Esta ação não pode ser desfeita.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deletePaint(id as string);
+              showToast({ message: "Tinta excluída com sucesso", type: "success" });
+              router.back();
+            } catch (error) {
+              showToast({ message: "Erro ao excluir tinta", type: "error" });
+            }
+          },
+        },
+      ]
+    );
+  };
 
   if (isLoading) {
     return (
@@ -191,8 +233,39 @@ export default function CatalogDetailsScreen() {
         }
       >
         <View style={styles.container}>
-          {/* Paint Info Card - Overview */}
-          <PaintCatalogCard paint={paint!} />
+          {/* Header Card with Paint Name and Actions */}
+          <Card style={styles.headerCard}>
+            <View style={styles.headerContent}>
+              <View style={[styles.headerIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                <IconPaint size={24} color={colors.primary} />
+              </View>
+              <View style={styles.headerLeft}>
+                <ThemedText style={[styles.paintTitle, { color: colors.foreground }]} numberOfLines={2}>
+                  {paint.name}
+                </ThemedText>
+              </View>
+              <View style={styles.headerActions}>
+                {canEdit && (
+                  <TouchableOpacity
+                    onPress={handleEdit}
+                    style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                    activeOpacity={0.7}
+                  >
+                    <IconEdit size={18} color={colors.primaryForeground} />
+                  </TouchableOpacity>
+                )}
+                {canDelete && (
+                  <TouchableOpacity
+                    onPress={handleDelete}
+                    style={[styles.actionButton, { backgroundColor: colors.destructive }]}
+                    activeOpacity={0.7}
+                  >
+                    <IconTrash size={18} color={colors.destructiveForeground} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </Card>
 
           {/* Specifications Card - Detailed info with color codes */}
           <PaintSpecificationsCard paint={paint!} />
@@ -211,62 +284,6 @@ export default function CatalogDetailsScreen() {
 
           {/* Related Paints Card */}
           <PaintRelatedPaintsCard paint={paint!} />
-
-          {/* Metrics Card */}
-          {metrics && (
-            <Card className="p-4">
-              <View className="flex-row items-center gap-2 mb-4">
-                <View className="p-2 rounded-lg bg-primary/10">
-                  <Icon name="bar-chart" size={20} className="text-primary" />
-                </View>
-                <Text className="text-lg font-semibold text-foreground">Análise de Medidas</Text>
-              </View>
-
-              <View className="gap-3">
-                <View className="bg-muted/30 rounded-lg p-3">
-                  <View className="flex-row items-center justify-between mb-3">
-                    <Text className="text-sm text-muted-foreground">Completude dos Dados</Text>
-                    <Badge variant={metrics.measureDataCompleteness >= 80 ? "default" : metrics.measureDataCompleteness >= 50 ? "secondary" : "destructive"}>
-                      <Text className="text-xs font-medium">{metrics.measureDataCompleteness.toFixed(0)}%</Text>
-                    </Badge>
-                  </View>
-
-                  <View className="flex-row justify-around">
-                    <View className="items-center">
-                      <Text className="text-xs text-muted-foreground mb-1">Peso</Text>
-                      <Text className="text-sm font-medium">
-                        {metrics.formulasWithWeightData}/{metrics.totalFormulas}
-                      </Text>
-                    </View>
-                    <View className="items-center">
-                      <Text className="text-xs text-muted-foreground mb-1">Volume</Text>
-                      <Text className="text-sm font-medium">
-                        {metrics.formulasWithVolumeData}/{metrics.totalFormulas}
-                      </Text>
-                    </View>
-                    <View className="items-center">
-                      <Text className="text-xs text-muted-foreground mb-1">Densidade</Text>
-                      <Text className="text-sm font-medium">
-                        {metrics.formulasWithDensityData}/{metrics.totalFormulas}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                {metrics.avgDensity && (
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-sm text-muted-foreground">Densidade Média:</Text>
-                    <Text className="text-sm font-medium">{metrics.avgDensity.toFixed(4)} g/ml</Text>
-                  </View>
-                )}
-
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-sm text-muted-foreground">Total de Componentes:</Text>
-                  <Text className="text-sm font-medium">{metrics.totalComponents}</Text>
-                </View>
-              </View>
-            </Card>
-          )}
 
           {/* Alerts */}
           {metrics && metrics.measureDataCompleteness < 50 && (
@@ -300,5 +317,86 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.xl,
     gap: spacing.lg,
+  },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.xs,
+    gap: spacing.sm,
+  },
+  headerIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerLeft: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  paintTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  previewContainer: {
+    position: "relative",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  hexBadge: {
+    position: "absolute",
+    bottom: 12,
+    right: 12,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  hexText: {
+    fontSize: 14,
+    fontFamily: "monospace",
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  headerInfo: {
+    gap: spacing.xs,
+  },
+  paintName: {
+    fontSize: 24,
+    fontWeight: "700",
+  },
+  paintCode: {
+    fontSize: 14,
+  },
+  finishBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    backgroundColor: "#3b82f6",
+  },
+  finishText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
 });

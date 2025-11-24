@@ -3,15 +3,14 @@ import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { SlideInPanel } from '@/components/ui/slide-in-panel'
 import { useTheme } from '@/lib/theme'
 import { IconFilter, IconX } from '@tabler/icons-react-native'
-import { Section } from './Section'
-import type { FiltersProps } from '../types'
+import { SelectField, DateRangeField, NumberRangeField, ToggleField, TextField } from './Fields'
+import type { FiltersProps, FilterField, FilterValue } from '../types'
 
 export const Filters = memo(function Filters({
-  sections,
+  fields,
   values,
   onChange,
   onClear,
@@ -43,20 +42,94 @@ export const Filters = memo(function Filters({
     onClose()
   }, [onClear, onClose])
 
+  const handleFieldChange = useCallback(
+    (fieldKey: string, value: any) => {
+      setLocalValues((prev) => ({
+        ...prev,
+        [fieldKey]: value,
+      }))
+    },
+    []
+  )
+
+  const renderField = useCallback(
+    (field: FilterField) => {
+      const fieldValue = localValues[field.key]
+
+      switch (field.type) {
+        case 'select':
+          return (
+            <SelectField
+              key={field.key}
+              field={field}
+              value={fieldValue}
+              onChange={(value) => handleFieldChange(field.key, value)}
+            />
+          )
+
+        case 'date-range':
+          return (
+            <DateRangeField
+              key={field.key}
+              field={field}
+              value={fieldValue}
+              onChange={(value) => handleFieldChange(field.key, value)}
+            />
+          )
+
+        case 'number-range':
+          return (
+            <NumberRangeField
+              key={field.key}
+              field={field}
+              value={fieldValue}
+              onChange={(value) => handleFieldChange(field.key, value)}
+            />
+          )
+
+        case 'toggle':
+          return (
+            <ToggleField
+              key={field.key}
+              field={field}
+              value={fieldValue}
+              onChange={(value) => handleFieldChange(field.key, value)}
+            />
+          )
+
+        case 'text':
+          return (
+            <TextField
+              key={field.key}
+              field={field}
+              value={fieldValue}
+              onChange={(value) => handleFieldChange(field.key, value)}
+            />
+          )
+
+        default:
+          return null
+      }
+    },
+    [localValues, handleFieldChange]
+  )
+
   return (
     <SlideInPanel isOpen={isOpen} onClose={onClose}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 16, borderBottomColor: colors.border }]}>
+        <View style={styles.header}>
           <View style={styles.headerContent}>
             <IconFilter size={24} color={colors.foreground} />
             <ThemedText style={[styles.title, { color: colors.foreground }]}>
               Filtros
             </ThemedText>
             {activeCount > 0 && (
-              <Badge variant="destructive" style={styles.badge}>
-                {activeCount}
-              </Badge>
+              <View style={[styles.badge, { backgroundColor: colors.destructive }]}>
+                <ThemedText style={[styles.badgeText, { color: '#fff' }]}>
+                  {activeCount}
+                </ThemedText>
+              </View>
             )}
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -64,19 +137,14 @@ export const Filters = memo(function Filters({
           </TouchableOpacity>
         </View>
 
-        {/* Sections */}
+        {/* Fields */}
         <ScrollView
           style={styles.content}
           contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
         >
-          {sections.map((section) => (
-            <Section
-              key={section.key}
-              section={section}
-              values={localValues}
-              onChange={setLocalValues}
-            />
-          ))}
+          <View style={styles.fieldsContainer}>
+            {fields.map(renderField)}
+          </View>
         </ScrollView>
 
         {/* Footer */}
@@ -86,7 +154,7 @@ export const Filters = memo(function Filters({
             onPress={handleClear}
             style={styles.button}
           >
-            Limpar {activeCount > 0 && `(${activeCount})`}
+            {activeCount > 0 ? `Limpar (${activeCount})` : 'Limpar'}
           </Button>
           <Button
             variant="default"
@@ -110,8 +178,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 16,
-    borderBottomWidth: 1,
   },
   headerContent: {
     flexDirection: 'row',
@@ -124,6 +192,16 @@ const styles = StyleSheet.create({
   },
   badge: {
     marginLeft: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    minWidth: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   closeButton: {
     padding: 4,
@@ -133,6 +211,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 8,
+  },
+  fieldsContainer: {
+    paddingHorizontal: 16,
+    gap: 8,
   },
   footer: {
     flexDirection: 'row',
@@ -151,6 +233,5 @@ const styles = StyleSheet.create({
 })
 
 // Export all sub-components
-export { Section } from './Section'
 export { Tags } from './Tags'
 export * from './Fields'

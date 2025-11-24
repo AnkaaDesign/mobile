@@ -24,7 +24,7 @@ export default function AddOrderItemScreen() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   // Check permissions
   const canCreate = user && hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
 

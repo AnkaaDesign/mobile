@@ -734,7 +734,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
     const { borderColor: _ignoredBorderColor, ...styleWithoutBorder } = (styleProp || {}) as any;
 
     const baseContainerViewStyles: ViewStyle = {
-      height: 40,
+      height: 42,
       borderRadius: borderRadius.md,
       borderWidth: 1,
       backgroundColor: transparent ? "transparent" : colors.input,

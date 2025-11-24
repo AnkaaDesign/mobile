@@ -19,18 +19,23 @@ const DEFAULT_SETTINGS: HapticSettings = {
 
 // Cached settings to avoid async calls on every haptic
 let cachedSettings: HapticSettings = DEFAULT_SETTINGS;
+let isInitialized = false;
 
 /**
  * Initialize haptic settings from storage
  */
 export const initializeHaptics = async (): Promise<void> => {
+  if (isInitialized) return;
+
   try {
     const storedSettings = await AsyncStorage.getItem(HAPTIC_SETTINGS_KEY);
     if (storedSettings) {
       cachedSettings = JSON.parse(storedSettings);
     }
+    isInitialized = true;
   } catch (error) {
     console.warn("Failed to load haptic settings:", error);
+    isInitialized = true; // Mark as initialized even on error to prevent repeated attempts
   }
 };
 
@@ -86,6 +91,9 @@ const getImpactStyle = (intensity: HapticSettings["intensity"]): Haptics.ImpactF
  * Execute haptic feedback if enabled and on supported platform
  */
 const executeHaptic = async (hapticFunction: () => Promise<void>, fallbackFunction?: () => Promise<void>): Promise<void> => {
+  // Lazy initialization on first use
+  await initializeHaptics();
+
   // Check if haptics are enabled
   if (!cachedSettings.enabled) {
     return;
@@ -297,5 +305,5 @@ export const useHaptics = () => {
   };
 };
 
-// Initialize haptic settings on module load
-initializeHaptics();
+// Don't initialize at module load - let it initialize lazily on first use
+// This prevents AsyncStorage errors during bundling

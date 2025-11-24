@@ -134,6 +134,21 @@ export const useSecullumCalculations = (params?: {
   });
 };
 
+// Personal calculations - automatically filtered by current user (no elevated privileges required)
+export const useMySecullumCalculations = (params?: {
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  take?: number;
+}) => {
+  return useQuery({
+    queryKey: [...secullumKeys.all, "my-calculations", params],
+    queryFn: () => secullumService.getMyCalculations(params),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!params?.startDate && !!params?.endDate,
+  });
+};
+
 // Time Entries hook (removed duplicate - see line 421)
 
 // Department & Position hooks

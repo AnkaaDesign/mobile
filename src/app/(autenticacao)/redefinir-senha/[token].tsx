@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert, Pressable } from "react-native";
+import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Pressable } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { passwordResetSchema} from '../../../schemas';
+import { passwordResetSchema, PasswordResetFormData } from '../../../schemas';
 import { authService } from '../../../api-client';
 
 import { ThemedView } from "@/components/ui/themed-view";
@@ -55,32 +55,19 @@ export default function ResetPasswordScreen() {
     try {
       await authService.resetPasswordWithCode(data);
 
-      Alert.alert("Senha redefinida com sucesso!", "Sua senha foi alterada. Faça login com sua nova senha.", [
-        {
-          text: "OK",
-          onPress: () => {
-            router.replace('/(autenticacao)/entrar' as any);
-          },
-        },
-      ]);
+      console.log("Senha redefinida com sucesso! Sua senha foi alterada. Faça login com sua nova senha.");
+      router.replace('/(autenticacao)/entrar' as any);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro ao redefinir sua senha";
 
       if (errorMessage.includes("código") || errorMessage.includes("expirou")) {
-        Alert.alert("Código inválido", "O código informado é inválido ou expirou. Solicite um novo código.", [
-          {
-            text: "Solicitar novo código",
-            onPress: () => {
-              router.replace({
-                pathname: '/(autenticacao)/recuperar-senha' as any,
-                params: { contact: contactValue },
-              });
-            },
-          },
-          { text: "Cancelar", style: "cancel" },
-        ]);
+        console.error("Código inválido: O código informado é inválido ou expirou. Solicite um novo código.");
+        router.replace({
+          pathname: '/(autenticacao)/recuperar-senha' as any,
+          params: { contact: contactValue },
+        });
       } else {
-        Alert.alert("Erro ao redefinir senha", errorMessage, [{ text: "OK" }]);
+        console.error("Erro ao redefinir senha:", errorMessage);
       }
     } finally {
       setIsLoading(false);

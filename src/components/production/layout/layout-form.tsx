@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image,Input } from "react-native";
+import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, TextInput } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -906,7 +906,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
                   </ThemedText>
                   <MeasurementInput
                     value={segment.width}
-                    onChange={(value) => updateSectionWidth(index, value)}
+                    onChange={(value) => updateSegmentWidth(index, value)}
                     placeholder="1,00"
                     disabled={disabled}
                     min={50}
@@ -924,7 +924,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
                   </ThemedText>
                   <MeasurementInput
                     value={segment.width}
-                    onChange={(value) => updateSectionWidth(index, value)}
+                    onChange={(value) => updateSegmentWidth(index, value)}
                     placeholder="1,00"
                     disabled={disabled}
                     min={50}

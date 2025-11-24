@@ -44,7 +44,7 @@ export default function AutomaticOrderDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const [showActionSheet, setShowActionSheet] = useState(false);
 
   // Check permissions

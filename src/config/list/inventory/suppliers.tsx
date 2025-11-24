@@ -1,6 +1,9 @@
+import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { Supplier } from '@/types'
 import { canEditSuppliers } from '@/utils/permissions/entity-permissions'
+import { formatBrazilianPhone, formatCNPJ } from '@/utils'
+import { Badge } from '@/components/ui/badge'
 
 export const suppliersListConfig: ListConfig<Supplier> = {
   key: 'inventory-suppliers',
@@ -45,7 +48,7 @@ export const suppliersListConfig: ListConfig<Supplier> = {
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (supplier) => supplier.cnpj || '-',
+        render: (supplier) => supplier.cnpj ? formatCNPJ(supplier.cnpj) : '-',
       },
       {
         key: 'email',
@@ -63,7 +66,8 @@ export const suppliersListConfig: ListConfig<Supplier> = {
         align: 'left',
         render: (supplier) => {
           if (!supplier.phones || supplier.phones.length === 0) return '-'
-          const phonesText = supplier.phones.slice(0, 2).join(', ')
+          const formattedPhones = supplier.phones.slice(0, 2).map(phone => formatBrazilianPhone(phone))
+          const phonesText = formattedPhones.join(', ')
           return supplier.phones.length > 2 ? `${phonesText} +${supplier.phones.length - 2}` : phonesText
         },
       },
@@ -115,10 +119,20 @@ export const suppliersListConfig: ListConfig<Supplier> = {
         key: 'itemsCount',
         label: 'PRODUTOS',
         sortable: false,
-        width: 0.8,
+        width: 1.0,
         align: 'center',
-        render: (supplier) => (supplier as any)._count?.items || 0,
-        format: 'badge',
+        render: (supplier) => {
+          const count = (supplier as any)._count?.items || 0
+          return (
+            <Badge
+              variant="muted"
+              size="sm"
+              style={{ alignSelf: 'center', minWidth: 40, justifyContent: 'center' }}
+            >
+              {String(count)}
+            </Badge>
+          )
+        },
       },
       {
         key: 'createdAt',
@@ -126,16 +140,16 @@ export const suppliersListConfig: ListConfig<Supplier> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (supplier) => supplier.createdAt,
+        render: (supplier) => supplier.createdAt || '-',
         format: 'date',
       },
     ],
-    defaultVisible: ['fantasyName', 'city', 'itemsCount'],
-    rowHeight: 60,
+    defaultVisible: ['fantasyName', 'itemsCount'],
+    rowHeight: 48,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (supplier, router) => {
@@ -168,163 +182,112 @@ export const suppliersListConfig: ListConfig<Supplier> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'location',
-        label: 'Localização',
-        icon: 'map-pin',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'state',
-            label: 'Estado',
-            type: 'select',
-            multiple: true,
-            options: [
-              { label: 'AC', value: 'AC' },
-              { label: 'AL', value: 'AL' },
-              { label: 'AP', value: 'AP' },
-              { label: 'AM', value: 'AM' },
-              { label: 'BA', value: 'BA' },
-              { label: 'CE', value: 'CE' },
-              { label: 'DF', value: 'DF' },
-              { label: 'ES', value: 'ES' },
-              { label: 'GO', value: 'GO' },
-              { label: 'MA', value: 'MA' },
-              { label: 'MT', value: 'MT' },
-              { label: 'MS', value: 'MS' },
-              { label: 'MG', value: 'MG' },
-              { label: 'PA', value: 'PA' },
-              { label: 'PB', value: 'PB' },
-              { label: 'PR', value: 'PR' },
-              { label: 'PE', value: 'PE' },
-              { label: 'PI', value: 'PI' },
-              { label: 'RJ', value: 'RJ' },
-              { label: 'RN', value: 'RN' },
-              { label: 'RS', value: 'RS' },
-              { label: 'RO', value: 'RO' },
-              { label: 'RR', value: 'RR' },
-              { label: 'SC', value: 'SC' },
-              { label: 'SP', value: 'SP' },
-              { label: 'SE', value: 'SE' },
-              { label: 'TO', value: 'TO' },
-            ],
-            placeholder: 'Selecione os estados',
-          },
-          {
-            key: 'city',
-            label: 'Cidade',
-            type: 'text',
-            placeholder: 'Digite o nome da cidade',
-          },
+        key: 'state',
+        type: 'select',
+        multiple: true,
+        options: [
+          { label: 'AC', value: 'AC' },
+          { label: 'AL', value: 'AL' },
+          { label: 'AP', value: 'AP' },
+          { label: 'AM', value: 'AM' },
+          { label: 'BA', value: 'BA' },
+          { label: 'CE', value: 'CE' },
+          { label: 'DF', value: 'DF' },
+          { label: 'ES', value: 'ES' },
+          { label: 'GO', value: 'GO' },
+          { label: 'MA', value: 'MA' },
+          { label: 'MT', value: 'MT' },
+          { label: 'MS', value: 'MS' },
+          { label: 'MG', value: 'MG' },
+          { label: 'PA', value: 'PA' },
+          { label: 'PB', value: 'PB' },
+          { label: 'PR', value: 'PR' },
+          { label: 'PE', value: 'PE' },
+          { label: 'PI', value: 'PI' },
+          { label: 'RJ', value: 'RJ' },
+          { label: 'RN', value: 'RN' },
+          { label: 'RS', value: 'RS' },
+          { label: 'RO', value: 'RO' },
+          { label: 'RR', value: 'RR' },
+          { label: 'SC', value: 'SC' },
+          { label: 'SP', value: 'SP' },
+          { label: 'SE', value: 'SE' },
+          { label: 'TO', value: 'TO' },
         ],
+        placeholder: 'Estado',
       },
       {
-        key: 'options',
-        label: 'Opções',
-        icon: 'settings',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'hasLogo',
-            label: 'Com Logo',
-            description: 'Apenas fornecedores com logo cadastrado',
-            type: 'toggle',
-          },
-          {
-            key: 'hasItems',
-            label: 'Com Produtos',
-            description: 'Apenas fornecedores que fornecem produtos',
-            type: 'toggle',
-          },
-          {
-            key: 'hasOrders',
-            label: 'Com Pedidos',
-            description: 'Apenas fornecedores com pedidos registrados',
-            type: 'toggle',
-          },
-          {
-            key: 'hasCnpj',
-            label: 'Com CNPJ',
-            description: 'Apenas fornecedores com CNPJ cadastrado',
-            type: 'toggle',
-          },
-          {
-            key: 'hasEmail',
-            label: 'Com Email',
-            description: 'Apenas fornecedores com email cadastrado',
-            type: 'toggle',
-          },
-          {
-            key: 'hasSite',
-            label: 'Com Website',
-            description: 'Apenas fornecedores com site cadastrado',
-            type: 'toggle',
-          },
-        ],
+        key: 'city',
+        type: 'text',
+        placeholder: 'Cidade',
       },
       {
-        key: 'contact',
-        label: 'Contato',
-        icon: 'phone',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'phoneContains',
-            label: 'Telefone',
-            type: 'text',
-            placeholder: 'Digite parte do telefone',
-          },
-          {
-            key: 'cnpj',
-            label: 'CNPJ',
-            type: 'text',
-            placeholder: 'Digite o CNPJ',
-          },
-        ],
+        key: 'hasLogo',
+        description: 'Apenas fornecedores com logo cadastrado',
+        type: 'toggle',
+        placeholder: 'Com Logo',
       },
       {
-        key: 'ranges',
-        label: 'Faixas de Valores',
-        icon: 'hash',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'itemCount',
-            label: 'Quantidade de Produtos',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-          {
-            key: 'orderCount',
-            label: 'Quantidade de Pedidos',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-        ],
+        key: 'hasItems',
+        description: 'Apenas fornecedores que fornecem produtos',
+        type: 'toggle',
+        placeholder: 'Com Produtos',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
-          {
-            key: 'updatedAt',
-            label: 'Data de Atualização',
-            type: 'date-range',
-          },
-        ],
+        key: 'hasOrders',
+        description: 'Apenas fornecedores com pedidos registrados',
+        type: 'toggle',
+        placeholder: 'Com Pedidos',
+      },
+      {
+        key: 'hasCnpj',
+        description: 'Apenas fornecedores com CNPJ cadastrado',
+        type: 'toggle',
+        placeholder: 'Com CNPJ',
+      },
+      {
+        key: 'hasEmail',
+        description: 'Apenas fornecedores com email cadastrado',
+        type: 'toggle',
+        placeholder: 'Com Email',
+      },
+      {
+        key: 'hasSite',
+        description: 'Apenas fornecedores com site cadastrado',
+        type: 'toggle',
+        placeholder: 'Com Website',
+      },
+      {
+        key: 'phoneContains',
+        type: 'text',
+        placeholder: 'Telefone',
+      },
+      {
+        key: 'cnpj',
+        type: 'text',
+        placeholder: 'CNPJ',
+      },
+      {
+        key: 'itemCount',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
+      },
+      {
+        key: 'orderCount',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Cadastro',
+      },
+      {
+        key: 'updatedAt',
+        type: 'date-range',
+        placeholder: 'Data de Atualização',
       },
     ],
   },

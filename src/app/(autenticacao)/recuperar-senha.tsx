@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert } from "react-native";
+import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from "react-native";
 import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { passwordRecoverySchema} from '../../schemas';
+import { passwordRecoverySchema, PasswordRecoveryFormData } from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
 
 import { ThemedView } from "@/components/ui/themed-view";
@@ -40,7 +40,7 @@ export default function RecoverPasswordScreen() {
     try {
       await recoverPassword(data);
 
-      Alert.alert("Código enviado!", "Você receberá um código de 6 dígitos para redefinir sua senha.", [{ text: "OK" }]);
+      console.log("Código enviado! Você receberá um código de 6 dígitos para redefinir sua senha.");
 
       // Redirect to verification page for password reset
       router.replace({
@@ -51,7 +51,7 @@ export default function RecoverPasswordScreen() {
         },
       });
     } catch (error) {
-      Alert.alert("Erro ao enviar código", error instanceof Error ? error.message : "Ocorreu um erro ao enviar o código de recuperação", [{ text: "OK" }]);
+      console.error("Erro ao enviar código:", error instanceof Error ? error.message : "Ocorreu um erro ao enviar o código de recuperação");
     } finally {
       setIsLoading(false);
     }

@@ -66,7 +66,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (schedule) => schedule.ppeItems?.length || 0,
+        render: (schedule) => String(schedule.ppeItems?.length || 0),
       },
       {
         key: 'isActive',
@@ -83,7 +83,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (schedule) => schedule.nextRun,
+        render: (schedule) => schedule.nextRun || '-',
         format: 'datetime',
       },
       {
@@ -101,7 +101,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (schedule) => schedule.deliveries?.length || 0,
+        render: (schedule) => String(schedule.deliveries?.length || 0),
       },
       {
         key: 'rescheduleCount',
@@ -109,7 +109,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (schedule) => schedule.rescheduleCount || 0,
+        render: (schedule) => String(schedule.rescheduleCount || 0),
       },
     ],
     defaultVisible: ['frequency', 'assignmentType', 'ppeItems', 'isActive'],
@@ -117,11 +117,11 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (schedule, router) => {
-          router.push(routeToMobilePath(routes.inventory.ppe.schedules.details(schedule.id)) as any)
+          router.push(routeToMobilePath(routes.inventory.ppe.schedules.detail(schedule.id)) as any)
         },
       },
       {
@@ -167,64 +167,33 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'isActive',
-        label: 'Status',
-        type: 'multi-select',
+        type: 'select',
+        multiple: true,
         options: [
           { label: 'Ativo', value: 'true' },
           { label: 'Inativo', value: 'false' },
         ],
-        mapToQuery: (values) => ({
-          where: {
-            isActive: { in: values.map((v) => v === 'true') },
-          },
-        }),
+        placeholder: 'Status',
       },
       {
         key: 'itemIds',
-        label: 'Itens EPI',
-        type: 'entity-multi-select',
-        entityType: 'item',
-        mapToQuery: (values) => ({
-          where: {
-            ppeItems: {
-              some: {
-                itemId: { in: values },
-              },
-            },
-          },
-        }),
+        type: 'select',
+        multiple: true,
+        placeholder: 'Itens EPI',
       },
       {
         key: 'userIds',
-        label: 'Usuários',
-        type: 'entity-multi-select',
-        entityType: 'user',
-        mapToQuery: (values) => ({
-          where: {
-            OR: [
-              {
-                assignmentType: ASSIGNMENT_TYPE.SPECIFIC,
-                includedUserIds: {
-                  hasSome: values,
-                },
-              },
-              {
-                assignmentType: ASSIGNMENT_TYPE.ALL_EXCEPT,
-                excludedUserIds: {
-                  hasSome: values,
-                },
-              },
-            ],
-          },
-        }),
+        type: 'select',
+        multiple: true,
+        placeholder: 'Usuários',
       },
       {
         key: 'frequency',
-        label: 'Frequência',
-        type: 'multi-select',
+        type: 'select',
+        multiple: true,
         options: [
           { label: FREQUENCY_LABELS.ONCE, value: SCHEDULE_FREQUENCY.ONCE },
           { label: FREQUENCY_LABELS.DAILY, value: SCHEDULE_FREQUENCY.DAILY },
@@ -236,52 +205,28 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
           { label: FREQUENCY_LABELS.SEMI_ANNUAL, value: SCHEDULE_FREQUENCY.SEMI_ANNUAL },
           { label: FREQUENCY_LABELS.ANNUAL, value: SCHEDULE_FREQUENCY.ANNUAL },
         ],
-        mapToQuery: (values) => ({
-          where: {
-            frequency: { in: values },
-          },
-        }),
+        placeholder: 'Frequência',
       },
       {
         key: 'assignmentType',
-        label: 'Tipo de Atribuição',
-        type: 'multi-select',
+        type: 'select',
+        multiple: true,
         options: [
           { label: ASSIGNMENT_TYPE_LABELS.ALL, value: ASSIGNMENT_TYPE.ALL },
           { label: ASSIGNMENT_TYPE_LABELS.ALL_EXCEPT, value: ASSIGNMENT_TYPE.ALL_EXCEPT },
           { label: ASSIGNMENT_TYPE_LABELS.SPECIFIC, value: ASSIGNMENT_TYPE.SPECIFIC },
         ],
-        mapToQuery: (values) => ({
-          where: {
-            assignmentType: { in: values },
-          },
-        }),
+        placeholder: 'Tipo de Atribuição',
       },
       {
         key: 'nextRunRange',
-        label: 'Próxima Execução',
         type: 'date-range',
-        mapToQuery: (value) => ({
-          where: {
-            nextRun: {
-              gte: value.start,
-              lte: value.end,
-            },
-          },
-        }),
+        placeholder: 'Próxima Execução',
       },
       {
         key: 'lastRunRange',
-        label: 'Última Execução',
         type: 'date-range',
-        mapToQuery: (value) => ({
-          where: {
-            lastRun: {
-              gte: value.start,
-              lte: value.end,
-            },
-          },
-        }),
+        placeholder: 'Última Execução',
       },
     ],
   },

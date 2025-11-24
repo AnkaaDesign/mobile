@@ -50,7 +50,7 @@ import {
 export default function PPEDeliveryDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const { update, delete: deleteAsync } = usePpeDeliveryMutations();
   const markAsDelivered = useMarkPpeDeliveryAsDelivered();
   const [refreshing, setRefreshing] = useState(false);

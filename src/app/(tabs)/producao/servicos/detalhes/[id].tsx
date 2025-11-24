@@ -18,7 +18,7 @@ import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 export default function ServiceDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const { delete: deleteService } = useServiceMutations();
 
   const {

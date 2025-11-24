@@ -94,23 +94,19 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services }) 
           return (
             <View
               key={service.id}
-              style={[
-                styles.serviceItem,
-                index < validServices.length - 1 && styles.serviceItemBorder,
-                { borderBottomColor: colors.border }
-              ]}
+              style={canEditStatus ? styles.serviceItemEditable : styles.serviceItem}
             >
-              <View style={styles.serviceInfo}>
+              <View style={canEditStatus ? styles.serviceInfoEditable : styles.serviceInfo}>
                 <ThemedText
                   style={[styles.serviceName, { color: colors.foreground }]}
-                  numberOfLines={1}
+                  numberOfLines={canEditStatus ? 2 : 1}
                   ellipsizeMode="tail"
                 >
                   {service.description}
                 </ThemedText>
               </View>
               {canEditStatus ? (
-                <View style={styles.statusCombobox}>
+                <View style={styles.statusComboboxEditable}>
                   <Combobox
                     key={`status-${service.id}`}
                     options={statusOptions}
@@ -126,19 +122,17 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services }) 
                   />
                 </View>
               ) : (
-                <View style={styles.statusCombobox}>
-                  <Badge
-                    variant={statusVariant}
-                    style={styles.statusBadge}
-                  >
-                    <ThemedText style={[
-                      styles.statusBadgeText,
-                      badgeColor?.text ? { color: badgeColor.text } : { color: colors.foreground }
-                    ]}>
-                      {statusLabel}
-                    </ThemedText>
-                  </Badge>
-                </View>
+                <Badge
+                  variant={statusVariant}
+                  style={styles.statusBadge}
+                >
+                  <ThemedText style={[
+                    styles.statusBadgeText,
+                    badgeColor?.text ? { color: badgeColor.text } : { color: colors.foreground }
+                  ]}>
+                    {statusLabel}
+                  </ThemedText>
+                </Badge>
               )}
             </View>
           );
@@ -183,13 +177,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: spacing.md,
-    gap: spacing.md,
+    paddingVertical: spacing.xs,
+    gap: spacing.sm,
   },
-  serviceItemBorder: {
-    borderBottomWidth: 1,
+  serviceItemEditable: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.xs,
+    gap: spacing.sm,
   },
   serviceInfo: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  serviceInfoEditable: {
     flex: 1,
     justifyContent: "center",
     alignItems: "flex-start",
@@ -203,9 +205,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     marginTop: 2,
   },
-  statusCombobox: {
-    flex: 1,
-    justifyContent: "center",
+  statusComboboxEditable: {
+    width: "50%",
   },
   statusBadge: {
     paddingHorizontal: 8,

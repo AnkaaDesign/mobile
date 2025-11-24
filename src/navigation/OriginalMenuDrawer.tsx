@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useMemo } from "react";
+import React, { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import {
   View,
   Text as RNText,
@@ -32,6 +32,7 @@ import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
 import { routeToMobilePath, normalizePath } from "@/lib/route-mapper";
 import { maskPhone } from '@/utils';
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
+import { useDrawerStatus } from "@react-navigation/drawer";
 
 // Spacing constants
 const SPACING = {
@@ -64,6 +65,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const insets = useSafeAreaInsets();
   const { navigation } = props;
   const isDarkMode = theme === "dark";
+  const drawerStatus = useDrawerStatus();
 
   // State
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
@@ -94,6 +96,26 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       animation.setValue(0);
     });
   }, []);
+
+  // Helper function to close user dropdown menu with animation
+  const closeUserMenu = useCallback(() => {
+    if (showUserMenu) {
+      setShowUserMenu(false);
+      Animated.timing(dropdownAnimation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showUserMenu, dropdownAnimation]);
+
+  // Close user menu when drawer is closed/minimized
+  useEffect(() => {
+    if (drawerStatus === 'closed') {
+      setShowUserMenu(false);
+      dropdownAnimation.setValue(0);
+    }
+  }, [drawerStatus, dropdownAnimation]);
 
   // Create user object for navigation
   const navUser = useMemo(() => {
@@ -254,42 +276,23 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       try {
         router.push(tabRoute as any);
         props.navigation?.closeDrawer?.();
-        // Close all expanded menus after navigation
-        setExpandedMenus({});
-        // Reset all chevron animations to collapsed state
-        resetAllChevronAnimations();
+        // Keep expanded menus open - don't reset them on navigation
+        // This allows users to stay in context when navigating within a domain
         // Close user dropdown menu if open
-        if (showUserMenu) {
-          setShowUserMenu(false);
-          Animated.timing(dropdownAnimation, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }).start();
-        }
+        closeUserMenu();
       } catch (error) {
         console.warn("Navigation failed for route:", tabRoute, error);
         try {
           router.push('/(tabs)/home' as any);
           props.navigation?.closeDrawer?.();
-          setExpandedMenus({});
-          // Reset all chevron animations to collapsed state
-          resetAllChevronAnimations();
           // Close user dropdown menu if open
-          if (showUserMenu) {
-            setShowUserMenu(false);
-            Animated.timing(dropdownAnimation, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }).start();
-          }
+          closeUserMenu();
         } catch (fallbackError) {
           console.error("Fallback navigation also failed:", fallbackError);
         }
       }
     },
-    [router, props.navigation, showUserMenu, dropdownAnimation, resetAllChevronAnimations],
+    [router, props.navigation, closeUserMenu],
   );
 
   // Get first submenu path for navigation
@@ -564,16 +567,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   );
 
   return (
-    <TouchableWithoutFeedback onPress={() => {
-      if (showUserMenu) {
-        setShowUserMenu(false);
-        Animated.timing(dropdownAnimation, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-      }
-    }}>
+    <TouchableWithoutFeedback onPress={closeUserMenu}>
       <View style={[styles.container, { flex: 1, backgroundColor: isDarkMode ? "#212121" : "#fafafa" }]}>
         {/* Header Section - User Profile & Theme Toggle */}
         <View style={[styles.header, { paddingTop: Platform.OS === "ios" ? Math.max(insets.top, 20) : Math.max(insets.top, 16) }]}>
@@ -681,7 +675,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
             ]}>
               <Pressable
                 onPress={() => {
-                  setShowUserMenu(false);
+                  closeUserMenu();
                   navigateToPath(routes.personal.myProfile.root);
                 }}
                 style={({ pressed }) => [
@@ -702,7 +696,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
 
               <Pressable
                 onPress={() => {
-                  setShowUserMenu(false);
+                  closeUserMenu();
                   navigateToPath(routes.personal.preferences.root);
                 }}
                 style={({ pressed }) => [
@@ -776,7 +770,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
 
               <Pressable
                 onPress={async () => {
-                  setShowUserMenu(false);
+                  closeUserMenu();
                   await logout();
                 }}
                 style={({ pressed }) => [

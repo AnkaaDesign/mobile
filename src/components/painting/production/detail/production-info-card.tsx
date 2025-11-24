@@ -63,7 +63,7 @@ export function ProductionInfoCard({ production }: ProductionInfoCardProps) {
                     {Math.round(totalWeightGrams)} g
                   </ThemedText>
                   <ThemedText style={StyleSheet.flatten([styles.fieldValueSmall, { color: colors.mutedForeground }])}>
-                    Densidade: {formula?.density ? Number(formula.density).toFixed(2) : "1.00"} g/ml
+                    {(totalWeightGrams / 1000).toFixed(2)} kg
                   </ThemedText>
                 </View>
               </View>

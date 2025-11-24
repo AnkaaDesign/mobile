@@ -123,15 +123,27 @@ export const createColumnDefinitions = (): TableColumn[] => [
   },
   {
     key: "createdAt",
-    header: "Emprestado",
+    header: "Data de empréstimo",
     align: "left",
     sortable: true,
     width: 0,
-    accessor: (borrow: Borrow) => (
-      <ThemedText style={styles.cellText} numberOfLines={1}>
-        {borrow.createdAt ? formatDate(new Date(borrow.createdAt)) : "-"}
-      </ThemedText>
-    ),
+    accessor: (borrow: Borrow) => {
+      if (!borrow.createdAt) {
+        return <ThemedText style={styles.cellText}>-</ThemedText>;
+      }
+      const date = new Date(borrow.createdAt);
+      const day = date.getDate();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return (
+        <View>
+          <ThemedText style={styles.cellText}>{`${day}/${month}/${year}`}</ThemedText>
+          <ThemedText style={[styles.cellText, { opacity: 0.7 }]}>{`${hours}:${minutes}`}</ThemedText>
+        </View>
+      );
+    },
   },
   {
     key: "returnedAt",
@@ -204,8 +216,8 @@ export const MyBorrowTable = React.memo<MyBorrowTableProps>(
       const columnWidthRatios: Record<string, number> = {
         item: 2.5,
         quantity: 0.8,
-        status: 1.2,
-        createdAt: 1.5,
+        status: 1.5,
+        createdAt: 1.8,
         returnedAt: 1.5,
         user: 1.5,
         category: 1.3,
@@ -638,6 +650,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
+    gap: spacing.xs,
   },
   checkboxCell: {
     width: 50,
@@ -652,13 +665,13 @@ const styles = StyleSheet.create({
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch",
-    minHeight: 36,
+    minHeight: 48,
   },
   cell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: 6,
     justifyContent: "center",
-    minHeight: 36,
+    minHeight: 48,
   },
   centerAlign: {
     alignItems: "center",

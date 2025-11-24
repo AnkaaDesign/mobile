@@ -53,7 +53,7 @@ export const paintsListConfig: ListConfig<Paint> = {
         sortable: true,
         width: 1.0,
         align: 'right',
-        render: (paint) => paint.quantity || 0,
+        render: (paint) => String(paint.quantity || 0),
         format: 'number',
       },
       {
@@ -90,12 +90,12 @@ export const paintsListConfig: ListConfig<Paint> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['task', 'catalogPaint', 'quantity'],
-    rowHeight: 60,
+    defaultVisible: ['task', 'color', 'quantity'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (paint, router) => {
@@ -128,77 +128,34 @@ export const paintsListConfig: ListConfig<Paint> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'taskId',
-            label: 'Tarefa',
-            type: 'select',
-            multiple: false,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione a tarefa',
-          },
-          {
-            key: 'customerId',
-            label: 'Cliente',
-            type: 'select',
-            multiple: false,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione o cliente',
-          },
-          {
-            key: 'catalogPaintId',
-            label: 'Tinta do Catálogo',
-            type: 'select',
-            multiple: false,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione a tinta do catálogo',
-          },
-        ],
+        key: 'taskId',
+        type: 'select',
+        multiple: false,
+        placeholder: 'Tarefa',
       },
       {
-        key: 'ranges',
-        label: 'Faixas',
-        icon: 'adjustments',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'quantityRange',
-            label: 'Quantidade',
-            type: 'number-range',
-            placeholder: { min: 'Mínimo', max: 'Máximo' },
-          },
-        ],
+        key: 'customerId',
+        type: 'select',
+        multiple: false,
+        placeholder: 'Cliente',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
-        ],
+        key: 'catalogPaintId',
+        type: 'select',
+        multiple: false,
+        placeholder: 'Tinta do Catálogo',
+      },
+      {
+        key: 'quantityRange',
+        type: 'number-range',
+        placeholder: { min: 'Mínimo', max: 'Máximo' },
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Cadastro',
       },
     ],
   },

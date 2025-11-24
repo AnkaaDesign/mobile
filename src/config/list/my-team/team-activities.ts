@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Activity } from '@/types'
-import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON, ACTIVITY_REASON_LABELS } from '@/constants/enums'
+import { ACTIVITY_OPERATION, ACTIVITY_REASON } from '@/constants/enums'
+import { ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '@/constants/enum-labels'
 
 export const teamActivitiesListConfig: ListConfig<Activity> = {
   key: 'my-team-activities',
@@ -46,7 +47,7 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
         sortable: true,
         width: 1.5,
         align: 'center',
-        render: (activity) => activity.operation,
+        render: (activity) => ACTIVITY_OPERATION_LABELS[activity.operation] || activity.operation,
         format: 'badge',
       },
       {
@@ -55,7 +56,7 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
         sortable: true,
         width: 1.2,
         align: 'right',
-        render: (activity) => activity.quantity,
+        render: (activity) => activityquantity || '-',
         format: 'number',
       },
       {
@@ -81,126 +82,58 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
         sortable: true,
         width: 1.8,
         align: 'left',
-        render: (activity) => activity.createdAt,
+        render: (activity) => activity.createdAt || '-',
         format: 'datetime',
       },
     ],
-    defaultVisible: ['item.uniCode', 'item.name', 'operation', 'quantity', 'user.name'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (activity, router) => {
-          router.push(`/estoque/movimentacoes/detalhes/${activity.id}`)
-        },
-      },
-    ],
+    defaultVisible: ['item.name', 'operation', 'quantity'],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'operation',
-        label: 'Operação',
-        icon: 'activity',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'operations',
-            label: 'Tipo de Operação',
-            type: 'select',
-            multiple: true,
-            options: Object.values(ACTIVITY_OPERATION).map((operation) => ({
-              label: ACTIVITY_OPERATION_LABELS[operation],
-              value: operation,
-            })),
-            placeholder: 'Selecione as operações',
-          },
-        ],
+        key: 'operations',
+        type: 'select',
+        multiple: true,
+        options: Object.values(ACTIVITY_OPERATION).map((operation) => ({
+          label: ACTIVITY_OPERATION_LABELS[operation],
+          value: operation,
+        })),
+        placeholder: 'Tipo de Operação',
       },
       {
-        key: 'reason',
-        label: 'Motivo',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'reasons',
-            label: 'Motivo da Movimentação',
-            type: 'select',
-            multiple: true,
-            options: Object.values(ACTIVITY_REASON).map((reason) => ({
-              label: ACTIVITY_REASON_LABELS[reason],
-              value: reason,
-            })),
-            placeholder: 'Selecione os motivos',
-          },
-        ],
+        key: 'reasons',
+        type: 'select',
+        multiple: true,
+        options: Object.values(ACTIVITY_REASON).map((reason) => ({
+          label: ACTIVITY_REASON_LABELS[reason],
+          value: reason,
+        })),
+        placeholder: 'Motivo da Movimentação',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'itemIds',
-            label: 'Produtos',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os produtos',
-          },
-          {
-            key: 'userIds',
-            label: 'Usuários',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os usuários',
-          },
-        ],
+        key: 'itemIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Produtos',
       },
       {
-        key: 'ranges',
-        label: 'Faixas',
-        icon: 'adjustments',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'quantityRange',
-            label: 'Quantidade',
-            type: 'number-range',
-            placeholder: { min: 'Mínimo', max: 'Máximo' },
-          },
-        ],
+        key: 'userIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Usuários',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Criação',
-            type: 'date-range',
-          },
-        ],
+        key: 'quantityRange',
+        type: 'number-range',
+        placeholder: { min: 'Mínimo', max: 'Máximo' },
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Criação',
       },
     ],
   },

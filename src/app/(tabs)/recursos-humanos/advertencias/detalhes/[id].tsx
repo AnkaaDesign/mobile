@@ -28,7 +28,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 export default function WarningDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const { delete: deleteAsync } = useWarningMutations();
   const [refreshing, setRefreshing] = useState(false);
 

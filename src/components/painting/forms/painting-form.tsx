@@ -1,22 +1,21 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Label } from "@/components/ui/label";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
+import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
+import { SimpleFormActionBar } from "@/components/forms";
 import { FormSteps, type FormStep } from "@/components/ui/form-steps";
-
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
+import { formSpacing } from "@/constants/form-styles";
+import { spacing } from "@/constants/design-system";
+
 import { paintCreateSchema, paintUpdateSchema, type PaintCreateFormData, type PaintUpdateFormData } from '../../../schemas';
 import { usePaintTypes, usePaintBrands, usePaints, usePaintType, useAvailableComponents } from "@/hooks";
 import { PAINT_FINISH, COLOR_PALETTE, TRUCK_MANUFACTURER } from "@/constants";
-import { IconLoader } from "@tabler/icons-react-native";
 import type { PaintFormula, Paint } from "../../../types";
 import { FormulaManager } from "../formula/formula-manager";
 
@@ -47,11 +46,12 @@ interface UpdateFormProps extends BaseFormProps {
 
 type PaintFormProps = CreateFormProps | UpdateFormProps;
 
-// Define steps (matching web version)
+// Define steps
 const steps: FormStep[] = [
   { id: 1, name: "Informações Básicas", description: "Dados principais da tinta" },
-  { id: 2, name: "Formulação", description: "Componentes e fórmulas (opcional)" },
-  { id: 3, name: "Fundo da Tinta", description: "Selecione os fundos necessários" },
+  { id: 2, name: "Preview", description: "Gerar imagem de visualização (opcional)" },
+  { id: 3, name: "Formulação", description: "Componentes e fórmulas (opcional)" },
+  { id: 4, name: "Fundo da Tinta", description: "Selecione os fundos necessários" },
 ];
 
 const FINISH_OPTIONS = [
@@ -92,7 +92,7 @@ export function PaintForm(props: PaintFormProps) {
   const { defaultValues, mode, onStepChange, onPaintTypeChange, isSubmitting, onCancel } = props;
   const { colors } = useTheme();
 
-  // Step management (matching web version)
+  // Step management
   const [currentStep, setCurrentStep] = useState(props.currentStep || 1);
   const [formulas, setFormulas] = useState<PaintFormula[]>([]);
 
@@ -126,7 +126,7 @@ export function PaintForm(props: PaintFormProps) {
   const form = useForm<PaintCreateFormData | PaintUpdateFormData>({
     resolver: zodResolver(mode === "create" ? paintCreateSchema : paintUpdateSchema),
     defaultValues: mode === "create" ? createDefaults : defaultValues,
-    mode: "onTouched", // Validate on blur
+    mode: "onTouched",
   });
 
   // Fetch paint types
@@ -147,35 +147,33 @@ export function PaintForm(props: PaintFormProps) {
     orderBy: { name: "asc" },
   });
 
-  // Watch paint type and paint brand selection for dual filtering (matching web)
+  // Watch paint type and paint brand selection
   const paintTypeId = form.watch("paintTypeId");
   const paintBrandId = form.watch("paintBrandId");
 
-  // Get paint type details for ground requirements (matching web)
+  // Get paint type details for ground requirements
   const { data: paintType } = usePaintType(paintTypeId || "", {
     enabled: !!paintTypeId,
   });
 
-  // Get component items filtered by intersection of paint brand and paint type (matching web)
+  // Get component items filtered by intersection of paint brand and paint type
   const { data: availableComponentsResponse } = useAvailableComponents({
     paintBrandId: paintBrandId || undefined,
     paintTypeId: paintTypeId || undefined,
-    enabled: !!paintBrandId && !!paintTypeId, // Only fetch when both are selected
+    enabled: !!paintBrandId && !!paintTypeId,
   });
 
-  // Notify parent when paint type changes (matching web)
+  // Notify parent when paint type changes
   useEffect(() => {
     if (paintTypeId && onPaintTypeChange) {
       onPaintTypeChange(paintTypeId);
     }
   }, [paintTypeId, onPaintTypeChange]);
 
-  // Sort component items returned from the backend (matching web)
+  // Sort component items returned from the backend
   const sortedComponentItems = useMemo(() => {
     if (!availableComponentsResponse?.data) return [];
 
-    // Backend returns items that exist in BOTH paint brand AND paint type
-    // Just sort them by unicode, then by name
     return [...availableComponentsResponse.data].sort((a, b) => {
       const aUnicode = a.uniCode || "";
       const bUnicode = b.uniCode || "";
@@ -186,7 +184,6 @@ export function PaintForm(props: PaintFormProps) {
       if (aUnicode && !bUnicode) return -1;
       if (!aUnicode && bUnicode) return 1;
 
-      // If both don't have unicode, sort by name
       return a.name.localeCompare(b.name, "pt-BR");
     });
   }, [availableComponentsResponse?.data]);
@@ -206,46 +203,38 @@ export function PaintForm(props: PaintFormProps) {
     label: paint.name,
   })) || [];
 
-  // Filter steps based on whether paint type needs ground (matching web)
+  // Filter steps based on whether paint type needs ground
   const availableSteps = useMemo(() => {
     if (paintType?.data?.needGround) {
       return steps;
     }
-    // If paint type doesn't need ground, exclude step 3
-    return steps.filter((step) => step.id !== 3);
+    return steps.filter((step) => step.id !== 4);
   }, [paintType?.data?.needGround]);
 
-  // Step validation (matching web)
+  // Step validation
   const validateCurrentStep = useCallback(async (): Promise<boolean> => {
     switch (currentStep) {
       case 1:
-        // Validate basic information fields
-        const step1Valid = await form.trigger(["name", "paintTypeId", "paintBrandId", "finish", "hex"]);
+        const step1Valid = await form.trigger(["name", "paintTypeId", "paintBrandId", "finish"]);
+        if (!step1Valid) return false;
 
-        if (!step1Valid) {
-          return false;
-        }
-
-        // Additional custom validation for name trimming
         const values = form.getValues();
         if (!values.name?.trim()) {
           form.setError("name", { type: "manual", message: "Nome da tinta não pode ser vazio" });
           return false;
         }
-
         return true;
 
       case 2:
-        // Formula step is optional, always allow progression
-        return true;
+        return await form.trigger(["hex"]);
 
       case 3:
-        // Ground selection validation
+        return true;
+
+      case 4:
         if (paintType?.data?.needGround) {
           const groundValid = await form.trigger("groundIds");
-          if (!groundValid) {
-            return false;
-          }
+          if (!groundValid) return false;
 
           const groundValues = form.getValues();
           if (!groundValues.groundIds || groundValues.groundIds.length === 0) {
@@ -260,12 +249,10 @@ export function PaintForm(props: PaintFormProps) {
     }
   }, [currentStep, form, paintType]);
 
-  // Navigation functions (matching web)
+  // Navigation functions
   const nextStep = useCallback(async () => {
     const isValid = await validateCurrentStep();
-    if (!isValid) {
-      return;
-    }
+    if (!isValid) return;
 
     const currentIndex = availableSteps.findIndex((step) => step.id === currentStep);
     if (currentIndex < availableSteps.length - 1) {
@@ -286,441 +273,372 @@ export function PaintForm(props: PaintFormProps) {
 
   const handleSubmit = async (data: PaintCreateFormData | PaintUpdateFormData) => {
     if (mode === "create") {
-      // Filter valid formulas to pass to the parent
       const validFormulas = formulas.filter((f) => f.components && f.components.length > 0 && f.components.some((c) => c.itemId && c.ratio > 0));
       await (props as CreateFormProps).onSubmit(data as PaintCreateFormData, validFormulas);
     } else {
-      // In update mode, also handle new formulas if any
       const validFormulas = formulas.filter((f) => f.components && f.components.length > 0 && f.components.some((c) => c.itemId && c.ratio > 0));
       await (props as UpdateFormProps).onSubmit(data as PaintUpdateFormData, validFormulas);
     }
   };
 
-  // Check if we're on the last step
   const isLastStep = currentStep === availableSteps[availableSteps.length - 1]?.id;
   const isFirstStep = currentStep === availableSteps[0]?.id;
 
   return (
     <FormProvider {...form}>
-      <ThemedScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Step Indicator */}
           <FormSteps steps={availableSteps} currentStep={currentStep} />
 
           {/* Step 1: Basic Information */}
           {currentStep === 1 && (
             <View>
-              <Card style={styles.card}>
-                <CardHeader>
-                  <CardTitle>Informações Básicas</CardTitle>
-                  <CardDescription>Preencha os dados principais da tinta</CardDescription>
-                </CardHeader>
-                <CardContent style={styles.cardContent}>
-                  {/* Name */}
+              <FormCard title="Informações Básicas">
+                {/* Name */}
+                <FormFieldGroup
+                  label="Nome da Tinta"
+                  required
+                  error={form.formState.errors.name?.message}
+                >
                   <Controller
-                control={form.control}
-                name="name"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Nome da Tinta *</Label>
-                    <Input
-                      value={value}
-                      onChangeText={onChange}
-                      placeholder="Ex: Vermelho Ferrari"
-                      disabled={isSubmitting}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
+                    control={form.control}
+                    name="name"
+                    render={({ field: { onChange, value } }) => (
+                      <Input
+                        value={value}
+                        onChangeText={onChange}
+                        placeholder="Ex: Vermelho Ferrari"
+                        editable={!isSubmitting}
+                        error={!!form.formState.errors.name}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
 
-              {/* Code */}
-              <Controller
-                control={form.control}
-                name="code"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Código</Label>
-                    <Input
-                      value={value || ""}
-                      onChangeText={onChange}
-                      placeholder="Ex: VW-123"
-                      disabled={isSubmitting}
-                      maxLength={20}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
+                {/* Code */}
+                <FormFieldGroup
+                  label="Código"
+                  error={form.formState.errors.code?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="code"
+                    render={({ field: { onChange, value } }) => (
+                      <Input
+                        value={value || ""}
+                        onChangeText={onChange}
+                        placeholder="Ex: VW-123"
+                        editable={!isSubmitting}
+                        maxLength={20}
+                        error={!!form.formState.errors.code}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
 
-              {/* Hex Color */}
-              <Controller
-                control={form.control}
-                name="hex"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Cor Hexadecimal *</Label>
+                {/* Finish */}
+                <FormFieldGroup
+                  label="Acabamento"
+                  required
+                  error={form.formState.errors.finish?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="finish"
+                    render={({ field: { onChange, value }, fieldState: { error } }) => (
+                      <Combobox
+                        value={value}
+                        onValueChange={onChange}
+                        options={FINISH_OPTIONS}
+                        placeholder="Selecione o acabamento"
+                        disabled={isSubmitting}
+                        searchable={false}
+                        clearable={false}
+                        error={error?.message}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+              </FormCard>
+
+              <FormCard title="Classificação">
+                {/* Paint Type */}
+                <FormFieldGroup
+                  label="Tipo de Tinta"
+                  required
+                  error={form.formState.errors.paintTypeId?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="paintTypeId"
+                    render={({ field: { onChange, value }, fieldState: { error } }) => (
+                      <Combobox
+                        value={value}
+                        onValueChange={onChange}
+                        options={paintTypeOptions}
+                        placeholder="Selecione o tipo"
+                        searchPlaceholder="Buscar tipo..."
+                        emptyText="Nenhum tipo encontrado"
+                        onSearchChange={setPaintTypeSearch}
+                        disabled={isSubmitting || isLoadingTypes}
+                        loading={isLoadingTypes}
+                        clearable={false}
+                        error={error?.message}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+
+                {/* Paint Brand */}
+                <FormFieldGroup
+                  label="Marca da Tinta"
+                  error={form.formState.errors.paintBrandId?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="paintBrandId"
+                    render={({ field: { onChange, value }, fieldState: { error } }) => (
+                      <Combobox
+                        value={value || ""}
+                        onValueChange={(val) => onChange(val || null)}
+                        options={paintBrandOptions}
+                        placeholder="Selecione a marca"
+                        searchPlaceholder="Buscar marca..."
+                        emptyText="Nenhuma marca encontrada"
+                        onSearchChange={setPaintBrandSearch}
+                        disabled={isSubmitting || isLoadingBrands}
+                        loading={isLoadingBrands}
+                        clearable
+                        error={error?.message}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+
+                {/* Manufacturer */}
+                <FormFieldGroup
+                  label="Montadora"
+                  error={form.formState.errors.manufacturer?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="manufacturer"
+                    render={({ field: { onChange, value }, fieldState: { error } }) => (
+                      <Combobox
+                        value={value || ""}
+                        onValueChange={(val) => onChange(val || null)}
+                        options={MANUFACTURER_OPTIONS}
+                        placeholder="Selecione a montadora"
+                        searchPlaceholder="Buscar montadora..."
+                        disabled={isSubmitting}
+                        clearable
+                        error={error?.message}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+              </FormCard>
+
+              <FormCard title="Paleta de Cores">
+                <FormRow>
+                  {/* Palette */}
+                  <FormFieldGroup
+                    label="Paleta"
+                    error={form.formState.errors.palette?.message}
+                  >
+                    <Controller
+                      control={form.control}
+                      name="palette"
+                      render={({ field: { onChange, value }, fieldState: { error } }) => (
+                        <Combobox
+                          value={value || ""}
+                          onValueChange={(val) => onChange(val || undefined)}
+                          options={PALETTE_OPTIONS}
+                          placeholder="Selecione a paleta"
+                          searchPlaceholder="Buscar paleta..."
+                          disabled={isSubmitting}
+                          clearable
+                          error={error?.message}
+                        />
+                      )}
+                    />
+                  </FormFieldGroup>
+
+                  {/* Palette Order */}
+                  <FormFieldGroup
+                    label="Ordem na Paleta"
+                    helper="1-14"
+                    error={form.formState.errors.paletteOrder?.message}
+                  >
+                    <Controller
+                      control={form.control}
+                      name="paletteOrder"
+                      render={({ field: { onChange, value } }) => (
+                        <Input
+                          value={value?.toString() || ""}
+                          onChangeText={(text) => {
+                            const num = parseInt(text, 10);
+                            onChange(isNaN(num) ? undefined : num);
+                          }}
+                          placeholder="Ex: 1"
+                          keyboardType="numeric"
+                          editable={!isSubmitting}
+                          error={!!form.formState.errors.paletteOrder}
+                        />
+                      )}
+                    />
+                  </FormFieldGroup>
+                </FormRow>
+              </FormCard>
+
+              <FormCard title="Tags">
+                <FormFieldGroup
+                  label="Tags da Tinta"
+                  helper="Separe as tags com vírgula"
+                  error={form.formState.errors.tags?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="tags"
+                    render={({ field: { onChange, value } }) => (
+                      <Input
+                        value={Array.isArray(value) ? value.join(', ') : ''}
+                        onChangeText={(text) => {
+                          const tags = text.split(',').map(t => t.trim()).filter(t => t.length > 0)
+                          onChange(tags)
+                        }}
+                        placeholder="Ex: metalizado, premium, importada"
+                        editable={!isSubmitting}
+                        multiline
+                        error={!!form.formState.errors.tags}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+              </FormCard>
+            </View>
+          )}
+
+          {/* Step 2: Color and Preview */}
+          {currentStep === 2 && (
+            <FormCard title="Cor Hexadecimal">
+              <FormFieldGroup
+                label="Cor Hexadecimal"
+                required
+                error={form.formState.errors.hex?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name="hex"
+                  render={({ field: { onChange, value } }) => (
                     <View style={styles.hexRow}>
                       <View style={styles.hexInputContainer}>
                         <Input
                           value={value}
                           onChangeText={onChange}
                           placeholder="#FF0000"
-                          disabled={isSubmitting}
+                          editable={!isSubmitting}
                           autoCapitalize="characters"
+                          error={!!form.formState.errors.hex}
                         />
                       </View>
                       {value && (
                         <View style={[styles.colorPreview, { backgroundColor: value }]} />
                       )}
                     </View>
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
-
-              {/* Finish */}
-              <Controller
-                control={form.control}
-                name="finish"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Acabamento *</Label>
-                    <Combobox
-                      value={value}
-                      onValueChange={onChange}
-                      options={FINISH_OPTIONS}
-                      placeholder="Selecione o acabamento"
-                      disabled={isSubmitting}
-                      searchable={false}
-                      clearable={false}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Classification */}
-          <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Classificação</CardTitle>
-            </CardHeader>
-            <CardContent style={styles.cardContent}>
-              {/* Paint Type */}
-              <Controller
-                control={form.control}
-                name="paintTypeId"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Tipo de Tinta *</Label>
-                    <Combobox
-                      value={value}
-                      onValueChange={onChange}
-                      options={paintTypeOptions}
-                      placeholder="Selecione o tipo"
-                      searchPlaceholder="Buscar tipo..."
-                      emptyText="Nenhum tipo encontrado"
-                      onSearchChange={setPaintTypeSearch}
-                      disabled={isSubmitting || isLoadingTypes}
-                      loading={isLoadingTypes}
-                      clearable={false}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
-
-              {/* Paint Brand */}
-              <Controller
-                control={form.control}
-                name="paintBrandId"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Marca da Tinta</Label>
-                    <Combobox
-                      value={value || ""}
-                      onValueChange={(val) => onChange(val || null)}
-                      options={paintBrandOptions}
-                      placeholder="Selecione a marca"
-                      searchPlaceholder="Buscar marca..."
-                      emptyText="Nenhuma marca encontrada"
-                      onSearchChange={setPaintBrandSearch}
-                      disabled={isSubmitting || isLoadingBrands}
-                      loading={isLoadingBrands}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
-
-              {/* Manufacturer */}
-              <Controller
-                control={form.control}
-                name="manufacturer"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Montadora</Label>
-                    <Combobox
-                      value={value || ""}
-                      onValueChange={(val) => onChange(val || null)}
-                      options={MANUFACTURER_OPTIONS}
-                      placeholder="Selecione a montadora"
-                      searchPlaceholder="Buscar montadora..."
-                      disabled={isSubmitting}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Color Palette */}
-          <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Paleta de Cores</CardTitle>
-            </CardHeader>
-            <CardContent style={styles.cardContent}>
-              {/* Palette */}
-              <Controller
-                control={form.control}
-                name="palette"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Paleta</Label>
-                    <Combobox
-                      value={value || ""}
-                      onValueChange={(val) => onChange(val || undefined)}
-                      options={PALETTE_OPTIONS}
-                      placeholder="Selecione a paleta"
-                      searchPlaceholder="Buscar paleta..."
-                      disabled={isSubmitting}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
-
-              {/* Palette Order */}
-              <Controller
-                control={form.control}
-                name="paletteOrder"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Ordem na Paleta (1-14)</Label>
-                    <Input
-                      value={value?.toString() || ""}
-                      onChangeText={(text) => {
-                        const num = parseInt(text, 10);
-                        onChange(isNaN(num) ? undefined : num);
-                      }}
-                      placeholder="Ex: 1"
-                      keyboardType="numeric"
-                      disabled={isSubmitting}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Tags */}
-          <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Tags</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Controller
-                control={form.control}
-                name="tags"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Tags da Tinta</Label>
-                    <Input
-                      value={Array.isArray(value) ? value.join(', ') : ''}
-                      onChangeText={(text) => {
-                        const tags = text.split(',').map(t => t.trim()).filter(t => t.length > 0)
-                        onChange(tags)
-                      }}
-                      placeholder="Ex: metalizado, premium, importada"
-                      disabled={isSubmitting}
-                      multiline
-                    />
-                    <ThemedText style={styles.helperText}>
-                      Separe as tags com vírgula
-                    </ThemedText>
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
-            </CardContent>
-          </Card>
-            </View>
-          )}
-
-          {/* Step 2: Formula Management */}
-          {currentStep === 2 && (
-            <View>
-              {/* Show existing formulas in update mode */}
-              {props.mode === "update" && props.existingFormulas && props.existingFormulas.length > 0 && (
-                <Card style={styles.card}>
-                  <CardHeader>
-                    <CardTitle>Fórmulas Existentes</CardTitle>
-                    <CardDescription>Estas são as fórmulas já cadastradas para esta tinta</CardDescription>
-                  </CardHeader>
-                  <CardContent style={{ maxHeight: 400 }}>
-                    <View style={{ gap: spacing.md }}>
-                      {props.existingFormulas.map((formula, index) => (
-                        <View key={formula.id} style={styles.existingFormulaCard}>
-                          <ThemedText style={styles.existingFormulaTitle}>
-                            {formula.description || `Fórmula ${index + 1}`}
-                          </ThemedText>
-                          {formula.components && formula.components.length > 0 && (
-                            <View style={{ gap: spacing.xs, marginTop: spacing.xs }}>
-                              {formula.components.map((component) => (
-                                <ThemedText key={component.id} style={styles.existingFormulaComponent}>
-                                  • {component.item?.name || component.itemId}: {component.ratio.toFixed(2)}%
-                                </ThemedText>
-                              ))}
-                            </View>
-                          )}
-                        </View>
-                      ))}
-                    </View>
-                  </CardContent>
-                </Card>
-              )}
-
-              <Card style={styles.card}>
-                <CardHeader>
-                  <CardTitle>{mode === "update" ? "Adicionar Nova Fórmula" : "Formulação da Tinta"}</CardTitle>
-                  <CardDescription>
-                    {mode === "update" ? "Adicione uma nova fórmula para esta tinta (opcional)" : "Gerencie as fórmulas e componentes da tinta (opcional)"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FormulaManager
-                    formulas={formulas}
-                    onFormulasChange={setFormulas}
-                    paintId={mode === "update" ? props.paintId : undefined}
-                    availableItems={sortedComponentItems}
-                  />
-                </CardContent>
-              </Card>
-            </View>
-          )}
-
-          {/* Step 3: Ground Paints (conditional) */}
-          {currentStep === 3 && paintType?.data?.needGround && (
-            <View>
-              <Card style={styles.card}>
-                <CardHeader>
-                  <CardTitle>Seleção de Fundo</CardTitle>
-                  <CardDescription>Selecione os fundos necessários para esta tinta</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Controller
-                    control={form.control}
-                    name="groundIds"
-                    render={({ field: { onChange, value }, fieldState: { error } }) => (
-                      <View>
-                        <Label>Selecionar Tintas de Fundo</Label>
-                        <Combobox
-                          mode="multiple"
-                          options={groundPaintOptions}
-                          selectedValues={Array.isArray(value) ? value : []}
-                          onValueChange={onChange}
-                          onCreate={() => {}}
-                          onSearchChange={setGroundPaintSearch}
-                          onEndReached={() => {}}
-                          placeholder="Selecione as tintas de fundo"
-                          selectedText="tintas selecionadas"
-                          searchPlaceholder="Buscar tintas..."
-                          disabled={isSubmitting || isLoadingPaints}
-                        />
-                        {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                      </View>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-            </View>
-          )}
-
-          {/* Navigation Actions */}
-          <View style={styles.actionsContainer}>
-            <View style={styles.actions}>
-              {/* Cancel / Back Button */}
-              <Button
-                variant="outline"
-                onPress={isFirstStep ? onCancel : prevStep}
-                disabled={isSubmitting}
-                style={styles.cancelButton}
-              >
-                <ThemedText>{isFirstStep ? "Cancelar" : "Voltar"}</ThemedText>
-              </Button>
-
-              {/* Next / Submit Button */}
-              {isLastStep ? (
-                <Button
-                  onPress={form.handleSubmit(handleSubmit)}
-                  disabled={isSubmitting}
-                  style={styles.submitButton}
-                >
-                  {isSubmitting ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <IconLoader size={20} color={colors.primaryForeground} />
-                      <ThemedText style={{ color: colors.primaryForeground }}>Salvando...</ThemedText>
-                    </View>
-                  ) : (
-                    <ThemedText style={{ color: colors.primaryForeground }}>
-                      {mode === "create" ? "Criar Tinta" : "Salvar Alterações"}
-                    </ThemedText>
                   )}
-                </Button>
-              ) : (
-                <Button
-                  onPress={nextStep}
-                  disabled={isSubmitting}
-                  style={styles.submitButton}
-                >
-                  <ThemedText style={{ color: colors.primaryForeground }}>Próximo</ThemedText>
-                </Button>
-              )}
-            </View>
-          </View>
-        </View>
-      </ThemedScrollView>
+                />
+              </FormFieldGroup>
+
+              {/* Color Preview */}
+              <View style={styles.previewContainer}>
+                <View
+                  style={[
+                    styles.colorPreviewLarge,
+                    { backgroundColor: form.watch("hex") || "#000000", borderColor: colors.border }
+                  ]}
+                />
+              </View>
+            </FormCard>
+          )}
+
+          {/* Step 3: Formula Management */}
+          {currentStep === 3 && (
+            <FormCard title={mode === "update" ? "Adicionar Nova Fórmula" : "Formulação da Tinta"}>
+              <FormulaManager
+                formulas={formulas}
+                onFormulasChange={setFormulas}
+                paintId={mode === "update" ? props.paintId : undefined}
+                availableItems={sortedComponentItems}
+              />
+            </FormCard>
+          )}
+
+          {/* Step 4: Ground Paints */}
+          {currentStep === 4 && paintType?.data?.needGround && (
+            <FormCard title="Seleção de Fundo">
+              <FormFieldGroup
+                label="Selecionar Tintas de Fundo"
+                required
+                error={form.formState.errors.groundIds?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name="groundIds"
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
+                    <Combobox
+                      mode="multiple"
+                      options={groundPaintOptions}
+                      selectedValues={Array.isArray(value) ? value : []}
+                      onValueChange={onChange}
+                      onCreate={() => {}}
+                      onSearchChange={setGroundPaintSearch}
+                      onEndReached={() => {}}
+                      placeholder="Selecione as tintas de fundo"
+                      selectedText="tintas selecionadas"
+                      searchPlaceholder="Buscar tintas..."
+                      disabled={isSubmitting || isLoadingPaints}
+                      error={error?.message}
+                    />
+                  )}
+                />
+              </FormFieldGroup>
+            </FormCard>
+          )}
+        </ScrollView>
+
+        {/* Action Bar */}
+        <SimpleFormActionBar
+          onCancel={isFirstStep ? onCancel : prevStep}
+          onSubmit={isLastStep ? form.handleSubmit(handleSubmit) : nextStep}
+          isSubmitting={isSubmitting}
+          canSubmit={form.formState.isValid}
+          cancelLabel={isFirstStep ? "Cancelar" : "Voltar"}
+          submitLabel={isLastStep ? (mode === "create" ? "Criar Tinta" : "Salvar Alterações") : "Próximo"}
+          showCancel={true}
+        />
+      </SafeAreaView>
     </FormProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
-    flexGrow: 1,
-  },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xl * 2,
-  },
-  card: {
-    marginBottom: spacing.lg,
-  },
-  cardContent: {
-    gap: spacing.lg,
-  },
-  errorText: {
-    fontSize: fontSize.xs,
-    color: "#ef4444",
-    marginTop: spacing.xs,
-  },
-  helperText: {
-    fontSize: fontSize.xs,
-    marginTop: spacing.xs,
-    opacity: 0.7,
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: formSpacing.containerPaddingVertical,
+    paddingBottom: spacing.xxl,
   },
   hexRow: {
     flexDirection: "row",
@@ -737,34 +655,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#d1d5db",
   },
-  actionsContainer: {
-    marginTop: spacing.lg,
+  previewContainer: {
+    alignItems: "center",
+    marginTop: spacing.md,
   },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: spacing.md,
-  },
-  cancelButton: {
-    minWidth: 100,
-  },
-  submitButton: {
-    minWidth: 120,
-  },
-  existingFormulaCard: {
-    padding: spacing.md,
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-    borderRadius: 8,
+  colorPreviewLarge: {
+    width: 200,
+    height: 150,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  existingFormulaTitle: {
-    fontWeight: '500',
-    fontSize: fontSize.sm,
-  },
-  existingFormulaComponent: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
-    paddingLeft: spacing.sm,
   },
 });

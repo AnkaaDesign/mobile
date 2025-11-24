@@ -3,13 +3,12 @@ import type { Customer } from '@/types'
 import {
   BRAZILIAN_STATES,
   BRAZILIAN_STATE_NAMES,
-  REGISTRATION_STATUS_OPTIONS,
 } from '@/constants'
 import { canEditCustomers } from '@/utils/permissions/entity-permissions'
 import { formatCNPJ, formatCPF, formatBrazilianPhone, getFileUrl } from '@/utils'
-import { extendedColors, badgeColors } from '@/lib/theme/extended-colors'
-import { fontSize, fontWeight } from '@/constants/design-system'
-import { View, Image, StyleSheet } from 'react-native'
+import { extendedColors } from '@/lib/theme/extended-colors'
+import { fontWeight } from '@/constants/design-system'
+import { View, Image, StyleSheet, Text } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Badge } from '@/components/ui/badge'
 
@@ -27,7 +26,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarText: {
-    fontSize: fontSize.xs,
+    fontSize: 12,
     fontWeight: fontWeight.semibold,
   },
   logoImage: {
@@ -39,13 +38,13 @@ const styles = StyleSheet.create({
   nameText: {
     flex: 1,
     fontWeight: fontWeight.medium,
-    fontSize: fontSize.xs,
+    fontSize: 12,
   },
   cellText: {
-    fontSize: fontSize.xs,
+    fontSize: 12,
   },
   mutedText: {
-    fontSize: fontSize.xs,
+    fontSize: 12,
     opacity: 0.5,
   },
   emailText: {
@@ -60,7 +59,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   badgeText: {
-    fontSize: fontSize.xs,
+    fontSize: 10,
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -68,7 +67,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   tagText: {
-    fontSize: fontSize.xs,
+    fontSize: 10,
   },
   centerAlign: {
     alignItems: 'center',
@@ -87,11 +86,7 @@ export const customersListConfig: ListConfig<Customer> = {
       logo: true,
       economicActivity: true,
       _count: {
-        select: {
-          tasks: true,
-          serviceOrders: true,
-          services: true,
-        },
+        tasks: true,
       },
     },
   },
@@ -121,7 +116,7 @@ export const customersListConfig: ListConfig<Customer> = {
                 </ThemedText>
               </View>
             )}
-            <ThemedText style={styles.nameText} numberOfLines={1}>
+            <ThemedText style={styles.nameText} numberOfLines={2}>
               {customer.fantasyName}
             </ThemedText>
           </View>
@@ -174,7 +169,7 @@ export const customersListConfig: ListConfig<Customer> = {
 
             return (
               <View style={styles.phonesContainer}>
-                <ThemedText style={styles.cellText} numberOfLines={1}>
+                <ThemedText style={styles.cellText} numberOfLines={2}>
                   {mainPhone}
                 </ThemedText>
                 {otherCount > 0 && (
@@ -256,39 +251,6 @@ export const customersListConfig: ListConfig<Customer> = {
         render: (customer: Customer) => customer.economicActivity?.name || '-',
       },
       {
-        key: 'taskCount',
-        label: 'TAREFAS',
-        sortable: false,
-        width: 0.8,
-        align: 'center',
-        render: (customer: Customer) => {
-          const count = customer._count?.tasks || 0
-          return (
-            <View style={styles.centerAlign}>
-              <Badge
-                variant={count > 0 ? 'default' : 'secondary'}
-                size="sm"
-                style={{
-                  backgroundColor: count > 0 ? badgeColors.info.background : badgeColors.muted.background,
-                  borderWidth: 0,
-                }}
-              >
-                <ThemedText
-                  style={{
-                    color: count > 0 ? badgeColors.info.text : badgeColors.muted.text,
-                    fontSize: fontSize.xs,
-                    fontWeight: fontWeight.medium,
-                  }}
-                >
-                  {count}
-                </ThemedText>
-              </Badge>
-            </View>
-          )
-        },
-        format: 'badge',
-      },
-      {
         key: 'createdAt',
         label: 'CRIADO EM',
         sortable: true,
@@ -306,13 +268,32 @@ export const customersListConfig: ListConfig<Customer> = {
         render: (customer: Customer) => customer.updatedAt,
         format: 'date',
       },
+      {
+        key: 'taskCount',
+        label: 'TAREFAS',
+        sortable: false,
+        width: 1.0,
+        align: 'center',
+        render: (customer: Customer) => {
+          const count = (customer as any)._count?.tasks || 0
+          return (
+            <Badge
+              variant="muted"
+              size="sm"
+              style={{ alignSelf: 'center', minWidth: 40, justifyContent: 'center' }}
+            >
+              {String(count)}
+            </Badge>
+          )
+        },
+      },
     ],
-    defaultVisible: ['fantasyName', 'cnpj', 'status'],
-    rowHeight: 60,
+    defaultVisible: ['fantasyName', 'cnpj', 'taskCount'],
+    rowHeight: 48,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (customer, router) => {
@@ -345,146 +326,29 @@ export const customersListConfig: ListConfig<Customer> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'location',
-        label: 'Localização',
-        icon: 'map-pin',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'states',
-            label: 'Estados',
-            type: 'select',
-            multiple: true,
-            options: BRAZILIAN_STATES.map((state) => ({
-              label: BRAZILIAN_STATE_NAMES[state],
-              value: state,
-            })),
-            placeholder: 'Selecione os estados',
-          },
-          {
-            key: 'city',
-            label: 'Cidade',
-            type: 'text',
-            placeholder: 'Digite a cidade',
-          },
-        ],
+        key: 'states',
+        type: 'select',
+        multiple: true,
+        options: BRAZILIAN_STATES.map((state) => ({
+          label: BRAZILIAN_STATE_NAMES[state],
+          value: state,
+        })),
+        placeholder: 'Estados',
       },
       {
-        key: 'status',
-        label: 'Status e Tipo',
-        icon: 'file-text',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'registrationStatus',
-            label: 'Status de Registro',
-            type: 'select',
-            multiple: true,
-            options: REGISTRATION_STATUS_OPTIONS.map((option) => ({
-              label: option.label,
-              value: option.value,
-            })),
-            placeholder: 'Selecione o status',
-          },
-          {
-            key: 'hasCNPJ',
-            label: 'Possui CNPJ',
-            description: 'Incluir apenas clientes com CNPJ',
-            type: 'toggle',
-          },
-          {
-            key: 'hasCPF',
-            label: 'Possui CPF',
-            description: 'Incluir apenas clientes com CPF',
-            type: 'toggle',
-          },
-        ],
+        key: 'taskCount',
+        type: 'number-range',
+        placeholder: {
+          min: 'Mínimo',
+          max: 'Máximo',
+        },
       },
       {
-        key: 'entities',
-        label: 'Atividade Econômica',
-        icon: 'briefcase',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'economicActivityIds',
-            label: 'Atividades Econômicas',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione as atividades',
-          },
-        ],
-      },
-      {
-        key: 'tags',
-        label: 'Tags',
-        icon: 'tags',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'tags',
-            label: 'Tags',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione as tags',
-          },
-        ],
-      },
-      {
-        key: 'tasks',
-        label: 'Tarefas',
-        icon: 'check-square',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'hasTasks',
-            label: 'Possui Tarefas',
-            description: 'Incluir apenas clientes com tarefas',
-            type: 'toggle',
-          },
-          {
-            key: 'taskCount',
-            label: 'Quantidade de Tarefas',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-        ],
-      },
-      {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Criação',
-            type: 'date-range',
-          },
-          {
-            key: 'updatedAt',
-            label: 'Data de Atualização',
-            type: 'date-range',
-          },
-        ],
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Cadastro',
       },
     ],
   },
@@ -512,7 +376,6 @@ export const customersListConfig: ListConfig<Customer> = {
       { key: 'status', label: 'Status', path: 'registrationStatus' },
       { key: 'economicActivity', label: 'Atividade Econômica', path: 'economicActivity.name' },
       { key: 'tags', label: 'Tags', path: 'tags', format: (value: string[]) => value?.join(', ') || '-' },
-      { key: 'taskCount', label: 'Tarefas', path: '_count.tasks', format: 'number' },
       { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
       { key: 'updatedAt', label: 'Atualizado Em', path: 'updatedAt', format: 'date' },
     ],

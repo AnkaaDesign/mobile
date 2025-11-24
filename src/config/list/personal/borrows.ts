@@ -5,12 +5,13 @@ import {
   BORROW_STATUS_LABELS,
 } from '@/constants'
 
+
 export const personalBorrowsListConfig: ListConfig<Borrow> = {
   key: 'personal-borrows',
   title: 'Meus Empréstimos',
 
   query: {
-    hook: 'useBorrowsInfiniteMobile',
+    hook: 'useMyBorrowsInfiniteMobile',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -45,9 +46,9 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
         key: 'status',
         label: 'STATUS',
         sortable: true,
-        width: 1.0,
+        width: 1.5,
         align: 'center',
-        render: (borrow) => borrow.status,
+        render: (borrow) => BORROW_STATUS_LABELS[borrow.status] || borrow.status,
         format: 'badge',
         component: 'status-badge',
       },
@@ -94,12 +95,12 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
       },
       {
         key: 'createdAt',
-        label: 'EMPRESTADO EM',
+        label: 'DATA DE EMPRÉSTIMO',
         sortable: true,
-        width: 1.3,
+        width: 1.5,
         align: 'left',
         render: (borrow) => borrow.createdAt,
-        format: 'date',
+        format: 'datetime-multiline',
       },
       {
         key: 'returnedAt',
@@ -116,7 +117,7 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (borrow) => borrow.quantityReturned || 0,
+        render: (borrow) => String(borrow.quantityReturned || 0),
         format: 'number',
       },
       {
@@ -154,116 +155,60 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
       },
     ],
     defaultVisible: ['item.name', 'status', 'createdAt'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (borrow, router) => {
-          router.push(`/pessoal/meus-emprestimos/detalhes/${borrow.id}` as any)
-        },
-      },
-    ],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'status',
-        label: 'Status',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'statuses',
-            label: 'Status do Empréstimo',
-            type: 'select',
-            multiple: true,
-            options: Object.values(BORROW_STATUS).map((status) => ({
-              label: BORROW_STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-          {
-            key: 'isOverdue',
-            label: 'Apenas Atrasados',
-            type: 'toggle',
-            description: 'Mostrar apenas empréstimos atrasados',
-          },
-        ],
+        key: 'statuses',
+        type: 'select',
+        multiple: true,
+        options: Object.values(BORROW_STATUS).map((status) => ({
+          label: BORROW_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Selecione os status',
       },
       {
-        key: 'entities',
-        label: 'Itens',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'itemIds',
-            label: 'Itens',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os itens',
-          },
-          {
-            key: 'categoryIds',
-            label: 'Categorias',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione as categorias',
-          },
-          {
-            key: 'brandIds',
-            label: 'Marcas',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione as marcas',
-          },
-        ],
+        key: 'isOverdue',
+        type: 'toggle',
+        placeholder: 'Apenas Atrasados',
+        description: 'Mostrar apenas empréstimos atrasados',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'borrowDate',
-            label: 'Data de Empréstimo',
-            type: 'date-range',
-          },
-          {
-            key: 'returnDate',
-            label: 'Data de Devolução',
-            type: 'date-range',
-          },
-          {
-            key: 'updatedAt',
-            label: 'Data de Atualização',
-            type: 'date-range',
-          },
-        ],
+        key: 'itemIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Selecione os itens',
+      },
+      {
+        key: 'categoryIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Selecione as categorias',
+      },
+      {
+        key: 'brandIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Selecione as marcas',
+      },
+      {
+        key: 'borrowDate',
+        type: 'date-range',
+        placeholder: 'Data de Empréstimo',
+      },
+      {
+        key: 'returnDate',
+        type: 'date-range',
+        placeholder: 'Data de Devolução',
+      },
+      {
+        key: 'updatedAt',
+        type: 'date-range',
+        placeholder: 'Data de Atualização',
       },
     ],
   },
@@ -286,7 +231,7 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
       { key: 'quantity', label: 'Quantidade', path: 'quantity', format: 'number' },
       { key: 'quantityReturned', label: 'Quantidade Devolvida', path: 'quantityReturned', format: 'number' },
       { key: 'status', label: 'Status', path: 'status', format: (value) => BORROW_STATUS_LABELS[value] || value },
-      { key: 'createdAt', label: 'Emprestado Em', path: 'createdAt', format: 'date' },
+      { key: 'createdAt', label: 'Data de Empréstimo', path: 'createdAt', format: 'date' },
       { key: 'returnedAt', label: 'Devolvido Em', path: 'returnedAt', format: 'date' },
       { key: 'reason', label: 'Motivo', path: 'reason' },
       { key: 'notes', label: 'Observações', path: 'notes' },

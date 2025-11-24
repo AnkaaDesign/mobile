@@ -1,5 +1,5 @@
-
-import { View, Text, StyleSheet} from "react-native";
+import React from "react";
+import { Badge, BadgeProps } from "@/components/ui/badge";
 import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 
 interface FrequencyBadgeProps {
@@ -7,37 +7,26 @@ interface FrequencyBadgeProps {
 }
 
 export function FrequencyBadge({ frequency }: FrequencyBadgeProps) {
-  const getFrequencyColor = () => {
+  const getFrequencyVariant = (): BadgeProps["variant"] => {
     switch (frequency) {
       case SCHEDULE_FREQUENCY.DAILY:
-        return "#3B82F6";
+        return "blue"; // Blue for daily
       case SCHEDULE_FREQUENCY.WEEKLY:
-        return "#06B6D4";
+        return "teal"; // Teal for weekly
       case SCHEDULE_FREQUENCY.MONTHLY:
-        return "#F59E0B";
+        return "warning"; // Orange/amber for monthly
       default:
-        return "#6B7280";
+        return "muted";
     }
   };
 
   return (
-    <View style={StyleSheet.flatten([styles.badge, { backgroundColor: getFrequencyColor() + "20" }])}>
-      <Text style={StyleSheet.flatten([styles.badgeText, { color: getFrequencyColor() }])}>
-        {SCHEDULE_FREQUENCY_LABELS[frequency as keyof typeof SCHEDULE_FREQUENCY_LABELS]}
-      </Text>
-    </View>
+    <Badge
+      variant={getFrequencyVariant()}
+      size="sm"
+      style={{ alignSelf: "flex-start" }}
+    >
+      {SCHEDULE_FREQUENCY_LABELS[frequency as keyof typeof SCHEDULE_FREQUENCY_LABELS]}
+    </Badge>
   );
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: "flex-start",
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-});

@@ -1,11 +1,14 @@
+import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
 import { canEditUsers } from '@/utils/permissions/entity-permissions'
 import { USER_STATUS } from '@/constants/enums'
+import { Badge } from '@/components/ui/badge'
+import { getBadgeVariant } from '@/constants/badge-colors'
 
 const STATUS_LABELS: Record<string, string> = {
-  EXPERIENCE_PERIOD_1: 'Experiência 1/2 (45 dias)',
-  EXPERIENCE_PERIOD_2: 'Experiência 2/2 (45 dias)',
+  EXPERIENCE_PERIOD_1: 'Experiência 1',
+  EXPERIENCE_PERIOD_2: 'Experiência 2',
   EFFECTED: 'Efetivado',
   DISMISSED: 'Desligado',
 }
@@ -62,10 +65,21 @@ export const collaboratorsListConfig: ListConfig<User> = {
         key: 'status',
         label: 'STATUS',
         sortable: true,
-        width: 1.2,
+        width: 1.8,
         align: 'center',
-        render: (user) => user.status,
-        format: 'badge',
+        render: (user) => {
+          const variant = getBadgeVariant(user.status, 'USER')
+          const label = STATUS_LABELS[user.status] || user.status || '-'
+          return (
+            <Badge
+              variant={variant}
+              size="sm"
+              style={{ alignSelf: 'center' }}
+            >
+              {label}
+            </Badge>
+          )
+        },
       },
       {
         key: 'position',
@@ -140,7 +154,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         sortable: true,
         width: 1.5,
         align: 'center',
-        render: (user) => user.performanceLevel || 0,
+        render: (user) => String(user.performanceLevel || 0),
         format: 'number',
       },
       {
@@ -158,7 +172,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         sortable: true,
         width: 1.6,
         align: 'left',
-        render: (user) => user.lastLoginAt,
+        render: (user) => user.lastLoginAt || '-',
         format: 'datetime',
       },
       {
@@ -230,7 +244,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (user) => user._count?.createdTasks || 0,
+        render: (user) => String(user._count?.createdTasks || 0),
         format: 'number',
       },
       {
@@ -239,7 +253,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (user) => user._count?.vacations || 0,
+        render: (user) => String(user._count?.vacations || 0),
         format: 'number',
       },
       {
@@ -261,12 +275,12 @@ export const collaboratorsListConfig: ListConfig<User> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['name', 'email', 'status', 'position', 'sector'],
-    rowHeight: 60,
+    defaultVisible: ['name', 'sector', 'status'],
+    rowHeight: 48,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (user, router) => {
@@ -299,81 +313,43 @@ export const collaboratorsListConfig: ListConfig<User> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'user-check',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(USER_STATUS).map((status) => ({
-              label: STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(USER_STATUS).map((status) => ({
+          label: STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'positionIds',
-            label: 'Cargos',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os cargos',
-          },
-          {
-            key: 'sectorIds',
-            label: 'Setores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os setores',
-          },
-        ],
+        key: 'positionIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Cargos',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'birth',
-            label: 'Data de Nascimento',
-            type: 'date-range',
-          },
-          {
-            key: 'dismissedAt',
-            label: 'Data de Demissão',
-            type: 'date-range',
-          },
-          {
-            key: 'exp1EndAt',
-            label: 'Data de Contratação',
-            type: 'date-range',
-          },
-        ],
+        key: 'sectorIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Setores',
+      },
+      {
+        key: 'birth',
+        type: 'date-range',
+        placeholder: 'Data de Nascimento',
+      },
+      {
+        key: 'dismissedAt',
+        type: 'date-range',
+        placeholder: 'Data de Demissão',
+      },
+      {
+        key: 'exp1EndAt',
+        type: 'date-range',
+        placeholder: 'Data de Contratação',
       },
     ],
   },

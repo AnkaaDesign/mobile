@@ -8,14 +8,21 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconLink } from "@tabler/icons-react-native";
 import { PAINT_FINISH_LABELS } from "@/constants";
 import type { Paint } from "@/types";
-import { PaintFinishPreview } from "@/components/painting/effects/paint-finish-preview";
+import { PaintPreview } from "@/components/painting/preview/painting-preview";
+
+// Badge colors - unified neutral, more subtle
+const BADGE_COLORS = {
+  light: { bg: 'rgba(229, 229, 229, 0.7)', text: '#525252' },  // neutral-200/70, neutral-600
+  dark: { bg: 'rgba(64, 64, 64, 0.5)', text: '#d4d4d4' },      // neutral-700/50, neutral-300
+};
 
 interface PaintRelatedPaintsCardProps {
   paint: Paint;
 }
 
 export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const badgeStyle = isDark ? BADGE_COLORS.dark : BADGE_COLORS.light;
 
   // Combine related paints and remove duplicates
   const allRelated = [
@@ -64,12 +71,13 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
             onPress={() => handlePaintPress(relatedPaint.id)}
             activeOpacity={0.7}
           >
-            {/* Color Preview with Effects */}
-            <PaintFinishPreview
+            {/* Color Preview - uses stored image if available, falls back to hex */}
+            <PaintPreview
+              paint={relatedPaint}
               baseColor={relatedPaint.hex}
-              finish={relatedPaint.finish || 'SOLID'}
               width={256}
               height={64}
+              borderRadius={0}
               style={styles.colorPreview}
             />
 
@@ -94,17 +102,15 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
                 </ThemedText>
               )}
 
-              {/* Badges Row */}
+              {/* Badges Row - unified gray/white style */}
               <View style={styles.badgesRow}>
                 {/* Paint Brand Badge */}
                 {relatedPaint.paintBrand?.name && (
                   <Badge
-                    variant="secondary"
-                    size="sm"
-                    style={[styles.badge, { borderColor: colors.border }]}
+                    style={[styles.badge, { backgroundColor: badgeStyle.bg }]}
                   >
                     <ThemedText
-                      style={[styles.badgeText, { color: colors.mutedForeground }]}
+                      style={[styles.badgeText, { color: badgeStyle.text }]}
                       numberOfLines={1}
                     >
                       {relatedPaint.paintBrand.name}
@@ -115,12 +121,10 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
                 {/* Finish Badge */}
                 {relatedPaint.finish && (
                   <Badge
-                    variant="outline"
-                    size="sm"
-                    style={[styles.badge, { borderColor: colors.border }]}
+                    style={[styles.badge, { backgroundColor: badgeStyle.bg }]}
                   >
                     <ThemedText
-                      style={[styles.badgeText, { color: colors.mutedForeground }]}
+                      style={[styles.badgeText, { color: badgeStyle.text }]}
                       numberOfLines={1}
                     >
                       {PAINT_FINISH_LABELS[relatedPaint.finish]}
@@ -195,6 +199,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xxs,
     maxWidth: 120,
+    borderWidth: 0,
   },
   badgeText: {
     fontSize: fontSize.xs,

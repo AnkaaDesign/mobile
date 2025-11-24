@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  getExternalWithdrawals,
   getExternalWithdrawalById,
   createExternalWithdrawal,
   updateExternalWithdrawal,
@@ -9,9 +10,11 @@ import {
   batchCreateExternalWithdrawals,
   batchUpdateExternalWithdrawals,
   batchDeleteExternalWithdrawals,
+  markExternalWithdrawalAsPartiallyReturned,
   markExternalWithdrawalAsFullyReturned,
   markExternalWithdrawalAsCharged,
   cancelExternalWithdrawal,
+  getExternalWithdrawalItems,
   getExternalWithdrawalItemById,
   createExternalWithdrawalItem,
   updateExternalWithdrawalItem,

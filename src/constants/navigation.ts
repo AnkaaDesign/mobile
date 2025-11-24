@@ -35,7 +35,7 @@ export const TABLER_ICONS = {
 
   // Paint/Painting
   paintBrush: "IconBrush", // More appropriate for paint brush functionality
-  paint: "IconPalette",
+  paint: "IconPaint",
 
   // Human Resources
   users: "IconUsers",
@@ -51,6 +51,7 @@ export const TABLER_ICONS = {
 
   // Analytics/Statistics
   barChart: "IconChartBar",
+  chartBar: "IconChartBar",
   analytics: "IconChartLine",
 
   // ==================== PRODUCTION MANAGEMENT ====================
@@ -70,7 +71,9 @@ export const TABLER_ICONS = {
   cutting: "IconScissors",
   garage: "IconBuildingWarehouse",
   truck: "IconTruck",
+  tool: "IconTool",
   serviceWrench: "IconTool",
+  tools: "IconTools",
   maintenance: "IconTools",
 
   // Documentation
@@ -78,6 +81,8 @@ export const TABLER_ICONS = {
   clipboardList: "IconClipboardList", // More consistent with clipboard concept
   note: "IconNote",
   history: "IconHistory", // Better represents historical data
+  hourglass: "IconHourglass",
+  file: "IconFile",
 
   // ==================== INVENTORY MANAGEMENT ====================
   // Products and Items
@@ -87,8 +92,10 @@ export const TABLER_ICONS = {
 
   // Categories and Organization
   tags: "IconTags",
+  tag: "IconTag",
   category: "IconFolder",
   brand: "IconBadge", // More appropriate for brand representation
+  packages: "IconPackages",
 
   // Suppliers and Orders
   suppliers: "IconUsers", // Better represents supplier relationships
@@ -100,6 +107,9 @@ export const TABLER_ICONS = {
   // Scheduling and Automation
   calendar: "IconCalendar",
   calendarTime: "IconCalendarTime",
+  calendarStats: "IconCalendarStats",
+  calendarWeek: "IconCalendarWeek",
+  calendarDollar: "IconCalendarDollar",
   schedule: "IconCalendarPlus",
   automation: "IconBolt",
 
@@ -132,6 +142,8 @@ export const TABLER_ICONS = {
   palette: "IconPalette",
   droplet: "IconDroplet",
   color: "IconColorSwatch",
+  brush: "IconBrush",
+  flask: "IconFlask",
 
   // Production and Formulas
   beaker: "IconFlask",
@@ -141,6 +153,7 @@ export const TABLER_ICONS = {
   // Catalog
   catalog: "IconBook",
   swatch: "IconColorPicker",
+  colorPicker: "IconColorPicker",
 
   // ==================== HUMAN RESOURCES ====================
   // People Management
@@ -151,6 +164,7 @@ export const TABLER_ICONS = {
 
   // Organization Structure
   building: "IconBuilding",
+  buildingSkyscraper: "IconBuildingSkyscraper",
   sector: "IconBuildingBank",
   position: "IconBadge",
   briefcaseUser: "IconBriefcase",
@@ -158,7 +172,9 @@ export const TABLER_ICONS = {
 
   // Time Management
   vacation: "IconBeach", // More appropriate for time off
+  beach: "IconBeach",
   holiday: "IconCalendarEvent", // Standard calendar for holidays
+  calendarEvent: "IconCalendarEvent",
   timeOff: "IconCalendarMinus",
 
   // Communication
@@ -169,7 +185,8 @@ export const TABLER_ICONS = {
   // Payments
   dollarSign: "IconCurrencyDollar",
   salary: "IconCurrencyDollar",
-  payroll: "IconReceipt", // Icon for payroll
+  payroll: "IconCalendarDollar",
+  deviceIpadDollar: "IconDeviceIpadDollar",
 
   // Job Openings
   jobOpening: "IconBriefcase",
@@ -185,6 +202,7 @@ export const TABLER_ICONS = {
   files: "IconFolders",
   folders: "IconFolders",
   document: "IconFileText",
+  fileInvoice: "IconFileInvoice",
   archive: "IconArchive",
   databaseImport: "IconDatabaseImport",
 
@@ -241,6 +259,8 @@ export const TABLER_ICONS = {
   profit: "IconTrendingUp",
   cost: "IconCalculator",
   financial: "IconCurrencyDollar",
+  coins: "IconCoins",
+  receipt: "IconReceipt",
 
   // ==================== COMMON ACTIONS ====================
   // CRUD Operations
@@ -285,6 +305,7 @@ export const TABLER_ICONS = {
 
   // Warnings and Errors
   warningTriangle: "IconAlertTriangle",
+  alertTriangle: "IconAlertTriangle",
   error: "IconAlertCircle",
 
   // ==================== FORM AND INPUT ====================
@@ -310,6 +331,9 @@ export const TABLER_ICONS = {
   // ==================== LOADING AND STATES ====================
   loader: "IconLoader",
   loading: "IconLoader",
+
+  // Biometrics
+  fingerprint: "IconFingerprint",
 
   // ==================== AUTENTICAÇÃO ====================
   login: "IconLogin",
@@ -363,6 +387,7 @@ export const TABLER_ICONS = {
 
   // File Types
   fileText: "IconFileText",
+  fileSpreadsheet: "IconFileSpreadsheet",
   image: "IconPhoto",
   video: "IconVideo",
 
@@ -405,6 +430,11 @@ export const TABLER_ICONS = {
   statusEnabled: "IconCheck",
   statusDisabled: "IconX",
 
+  // Awards and Achievements
+  award: "IconAward",
+  medal: "IconMedal",
+  trophy: "IconTrophy",
+
   // Priority Levels
   priorityLow: "IconArrowDown",
   priorityMedium: "IconMinus",
@@ -441,19 +471,19 @@ export const TABLER_ICONS = {
 } as const;
 
 export const NAVIGATION_MENU: MenuItem[] = [
-  // HOME - Página Inicial (Exceção - sempre primeiro)
+  // HOME - Pagina Inicial (Excecao - sempre primeiro)
   {
     id: "home",
-    title: "Início",
+    title: "Inicio",
     icon: "home",
     path: "/",
   },
 
-  // ADMINISTRAÇÃO
+  // ADMINISTRACAO
   {
     id: "administracao",
-    title: "Administração",
-    icon: "cog",
+    title: "Administracao",
+    icon: "briefcase",
     path: "/administracao",
     requiredPrivilege: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
     children: [
@@ -468,7 +498,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "clientes-editar", title: "Editar", icon: "edit", path: "/administracao/clientes/editar/:id", isDynamic: true },
         ],
       },
-
       {
         id: "colaboradores",
         title: "Colaboradores",
@@ -480,11 +509,9 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "colaboradores-editar", title: "Editar", icon: "edit", path: "/administracao/colaboradores/editar/:id", isDynamic: true },
         ],
       },
-
-
       {
         id: "notificacoes-admin",
-        title: "Notificações",
+        title: "Notificacoes",
         icon: "notification",
         path: "/administracao/notificacoes",
         children: [
@@ -493,7 +520,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "notificacoes-admin-editar", title: "Editar", icon: "edit", path: "/administracao/notificacoes/editar/:id", isDynamic: true },
         ],
       },
-
       {
         id: "setores",
         title: "Setores",
@@ -508,10 +534,11 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
+  // CATALOGO
   {
     id: "catalogo",
-    title: "Catálogo",
-    icon: "catalog",
+    title: "Catalogo",
+    icon: "palette",
     path: "/pintura/catalogo-basico",
     requiredPrivilege: [SECTOR_PRIVILEGES.LEADER],
     children: [{ id: "catalogo-detalhes", title: "Detalhes", icon: "eye", path: "/pintura/catalogo-basico/detalhes/:id", isDynamic: true }],
@@ -521,13 +548,13 @@ export const NAVIGATION_MENU: MenuItem[] = [
   {
     id: "estoque",
     title: "Estoque",
-    icon: "box",
+    icon: "packages",
     path: "/estoque",
     requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
     children: [
       {
         id: "emprestimos",
-        title: "Empréstimos",
+        title: "Emprestimos",
         icon: "borrowing",
         path: "/estoque/emprestimos",
         children: [
@@ -536,11 +563,10 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "emprestimos-editar-lote", title: "Editar em Lote", icon: "edit", path: "/estoque/emprestimos/editar-lote" },
         ],
       },
-
       {
         id: "epi-estoque",
         title: "EPI",
-        icon: "shield",
+        icon: "helmet",
         path: "/estoque/epi",
         children: [
           {
@@ -549,22 +575,9 @@ export const NAVIGATION_MENU: MenuItem[] = [
             icon: "schedule",
             path: "/estoque/epi/agendamentos",
             children: [
-              {
-                id: "agendamentos-cadastrar",
-                title: "Cadastrar",
-                icon: "plus",
-                path: "/estoque/epi/agendamentos/cadastrar",
-                requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-              },
+              { id: "agendamentos-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/epi/agendamentos/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
               { id: "agendamentos-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/epi/agendamentos/detalhes/:id", isDynamic: true },
-              {
-                id: "agendamentos-editar",
-                title: "Editar",
-                icon: "edit",
-                path: "/estoque/epi/agendamentos/editar/:id",
-                isDynamic: true,
-                requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-              },
+              { id: "agendamentos-editar", title: "Editar", icon: "edit", path: "/estoque/epi/agendamentos/editar/:id", isDynamic: true, requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
             ],
           },
           { id: "epi-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/epi/cadastrar" },
@@ -576,25 +589,13 @@ export const NAVIGATION_MENU: MenuItem[] = [
             icon: "truck",
             path: "/estoque/epi/entregas",
             children: [
-              {
-                id: "epi-entregas-cadastrar",
-                title: "Cadastrar",
-                icon: "plus",
-                path: "/estoque/epi/entregas/cadastrar",
-              },
+              { id: "epi-entregas-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/epi/entregas/cadastrar" },
               { id: "epi-entregas-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/epi/entregas/detalhes/:id", isDynamic: true },
-              {
-                id: "v-entregas-editar",
-                title: "Editar",
-                icon: "edit",
-                path: "/estoque/epi/entregas/editar/:id",
-                isDynamic: true,
-              },
+              { id: "v-entregas-editar", title: "Editar", icon: "edit", path: "/estoque/epi/entregas/editar/:id", isDynamic: true },
             ],
           },
         ],
       },
-
       {
         id: "fornecedores",
         title: "Fornecedores",
@@ -606,10 +607,9 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "fornecedores-editar", title: "Editar", icon: "edit", path: "/estoque/fornecedores/editar/:id", isDynamic: true },
         ],
       },
-
       {
         id: "manutencao",
-        title: "Manutenção",
+        title: "Manutencao",
         icon: "maintenance",
         path: "/estoque/manutencao",
         children: [
@@ -629,10 +629,9 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "manutencao-editar", title: "Editar", icon: "edit", path: "/estoque/manutencao/editar/:id", isDynamic: true },
         ],
       },
-
       {
         id: "movimentacoes",
-        title: "Movimentações",
+        title: "Movimentacoes",
         icon: "movement",
         path: "/estoque/movimentacoes",
         children: [
@@ -642,7 +641,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "movimentacoes-editar-lote", title: "Editar em Lote", icon: "edit", path: "/estoque/movimentacoes/editar-lote" },
         ],
       },
-
       {
         id: "pedidos",
         title: "Pedidos",
@@ -655,38 +653,18 @@ export const NAVIGATION_MENU: MenuItem[] = [
             icon: "schedule",
             path: "/estoque/pedidos/agendamentos",
             children: [
-              {
-                id: "agendamentos-cadastrar",
-                title: "Cadastrar",
-                icon: "plus",
-                path: "/estoque/pedidos/agendamentos/cadastrar",
-                requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-              },
+              { id: "agendamentos-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/pedidos/agendamentos/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
               { id: "agendamentos-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/pedidos/agendamentos/detalhes/:id", isDynamic: true },
-              {
-                id: "agendamentos-editar",
-                title: "Editar",
-                icon: "edit",
-                path: "/estoque/pedidos/agendamentos/editar/:id",
-                isDynamic: true,
-                requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-              },
+              { id: "agendamentos-editar", title: "Editar", icon: "edit", path: "/estoque/pedidos/agendamentos/editar/:id", isDynamic: true, requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
             ],
           },
-
           {
             id: "pedidos-automaticos",
-            title: "Automáticos",
+            title: "Automaticos",
             icon: "automation",
             path: "/estoque/pedidos/automaticos",
             children: [
-              {
-                id: "automaticos-configurar",
-                title: "Configurar",
-                icon: "cog",
-                path: "/estoque/pedidos/automaticos/configurar",
-                requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-              },
+              { id: "automaticos-configurar", title: "Configurar", icon: "cog", path: "/estoque/pedidos/automaticos/configurar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
             ],
           },
           { id: "pedidos-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/pedidos/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
@@ -694,7 +672,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "pedidos-editar", title: "Editar", icon: "edit", path: "/estoque/pedidos/editar/:id", isDynamic: true, requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
         ],
       },
-
       {
         id: "produtos",
         title: "Produtos",
@@ -702,7 +679,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
         path: "/estoque/produtos",
         children: [
           { id: "produtos-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/produtos/cadastrar" },
-
           {
             id: "produtos-categorias",
             title: "Categorias",
@@ -715,15 +691,13 @@ export const NAVIGATION_MENU: MenuItem[] = [
               { id: "categorias-editar-em-lote", title: "Editar em Lote", icon: "edit", path: "/estoque/produtos/categorias/editar-em-lote" },
             ],
           },
-
           { id: "produtos-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/produtos/detalhes/:id", isDynamic: true },
           { id: "produtos-editar", title: "Editar", icon: "edit", path: "/estoque/produtos/editar/:id", isDynamic: true },
           { id: "produtos-editar-em-lote", title: "Editar em Lote", icon: "edit", path: "/estoque/produtos/editar-em-lote" },
-
           {
             id: "produtos-marcas",
             title: "Marcas",
-            icon: "brand", // Marca
+            icon: "brand",
             path: "/estoque/produtos/marcas",
             children: [
               { id: "marcas-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/produtos/marcas/cadastrar" },
@@ -734,7 +708,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
           },
         ],
       },
-
       {
         id: "retiradas-externas",
         title: "Retiradas Externas",
@@ -749,10 +722,10 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // MANUTENÇÃO
+  // MANUTENCAO
   {
     id: "manutencao",
-    title: "Manutenção",
+    title: "Manutencao",
     icon: "maintenance",
     path: "/manutencao",
     requiredPrivilege: [SECTOR_PRIVILEGES.MAINTENANCE],
@@ -763,7 +736,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // MEU PESSOAL - Gestão de colaboradores do setor (apenas para LEADER)
+  // MEU PESSOAL
   {
     id: "meu-pessoal",
     title: "Meu Pessoal",
@@ -771,65 +744,71 @@ export const NAVIGATION_MENU: MenuItem[] = [
     path: "/meu-pessoal",
     requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
     children: [
-      {
-        id: "avisos-equipe",
-        title: "Advertências",
-        icon: "warning",
-        path: "/meu-pessoal/avisos",
-        requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
-      },
-      {
-        id: "emprestimos-equipe",
-        title: "Empréstimos",
-        icon: "loan",
-        path: "/meu-pessoal/emprestimos",
-        requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
-      },
-      {
-        id: "ferias-equipe",
-        title: "Férias",
-        icon: "vacation",
-        path: "/meu-pessoal/ferias",
-        requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
-      },
+      { id: "advertencias-equipe", title: "Advertencias", icon: "alertTriangle", path: "/meu-pessoal/advertencias", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
+      { id: "atividades-equipe", title: "Atividades", icon: "activity", path: "/meu-pessoal/atividades", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
+      { id: "usuarios-equipe", title: "Colaboradores", icon: "users", path: "/meu-pessoal/usuarios", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
+      { id: "emprestimos-equipe", title: "Emprestimos", icon: "loan", path: "/meu-pessoal/emprestimos", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
+      { id: "epis-equipe", title: "EPIs", icon: "helmet", path: "/meu-pessoal/epis", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
+      { id: "ferias-equipe", title: "Ferias", icon: "calendarWeek", path: "/meu-pessoal/ferias", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
     ],
   },
 
-  // PESSOAL - Personal section (items accessible to all users)
+  // PESSOAL
   {
     id: "pessoal",
     title: "Pessoal",
     icon: "userCircle",
     path: "/pessoal",
-    // No requiredPrivilege - available to all users
     children: [
+      { id: "meus-feriados", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
       {
-        id: "meus-feriados",
-        title: "Feriados",
-        icon: "calendar",
-        path: "/pessoal/meus-feriados",
-        // Public holidays - available to all
+        id: "meus-bonus",
+        title: "Meus Bônus",
+        icon: "dollarSign",
+        path: "/pessoal/meus-bonus",
+        children: [
+          { id: "meus-bonus-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/meus-bonus/detalhes/:id", isDynamic: true },
+          { id: "simulacao-bonus", title: "Simulação", icon: "calculator", path: "/pessoal/simulacao-bonus" },
+        ],
+      },
+      {
+        id: "meus-emprestimos",
+        title: "Meus Emprestimos",
+        icon: "loan",
+        path: "/pessoal/meus-emprestimos",
+        children: [{ id: "meus-emprestimos-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/meus-emprestimos/detalhes/:id", isDynamic: true }],
       },
       {
         id: "meus-epis",
         title: "Meus EPIs",
-        icon: "shield",
+        icon: "helmet",
         path: "/pessoal/meus-epis",
-        // Available to all users
+        children: [
+          { id: "meus-epis-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/meus-epis/detalhes/:id", isDynamic: true },
+          { id: "meus-epis-solicitar", title: "Solicitar EPI", icon: "plus", path: "/pessoal/meus-epis/request", isDynamic: true },
+        ],
+      },
+      { id: "meus-pontos", title: "Meus Pontos", icon: "fingerprint", path: "/pessoal/meus-pontos" },
+      {
+        id: "minhas-advertencias",
+        title: "Minhas Advertencias",
+        icon: "alertTriangle",
+        path: "/pessoal/minhas-advertencias",
+        children: [{ id: "minhas-advertencias-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-advertencias/detalhes/:id", isDynamic: true }],
       },
       {
-        id: "minhas-notificacoes",
-        title: "Notificações",
-        icon: "bell",
-        path: "/pessoal/minhas-notificacoes",
-        // Available to all users
+        id: "minhas-ferias",
+        title: "Minhas Férias",
+        icon: "calendarWeek",
+        path: "/pessoal/minhas-ferias",
+        children: [{ id: "minhas-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-ferias/detalhes/:id", isDynamic: true }],
       },
       {
-        id: "preferencias",
-        title: "Preferências",
-        icon: "settings",
-        path: "/pessoal/preferencias",
-        // Available to all users
+        id: "minhas-movimentacoes",
+        title: "Minhas Movimentacoes",
+        icon: "movement",
+        path: "/pessoal/minhas-movimentacoes",
+        children: [{ id: "minhas-movimentacoes-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-movimentacoes/detalhes/:id", isDynamic: true }],
       },
     ],
   },
@@ -838,19 +817,11 @@ export const NAVIGATION_MENU: MenuItem[] = [
   {
     id: "pintura",
     title: "Pintura",
-    icon: "palette",
+    icon: "paint",
     path: "/pintura",
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
     children: [
-      {
-        id: "catalogo",
-        title: "Catálogo",
-        icon: "catalog",
-        path: "/pintura/catalogo",
-        // No requiredPrivilege - inherits from parent (Pintura menu)
-        // No children - direct link to catalog page (dynamic routes handled by React Router)
-      },
-
+      { id: "catalogo", title: "Catalogo", icon: "palette", path: "/pintura/catalogo" },
       {
         id: "marcas-de-tinta",
         title: "Marcas de Tinta",
@@ -862,16 +833,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "marcas-tinta-editar", title: "Editar", icon: "edit", path: "/pintura/marcas-de-tinta/editar/:id", isDynamic: true },
         ],
       },
-
       {
         id: "producoes-pintura",
-        title: "Produções",
-        icon: "building",
+        title: "Producoes",
+        icon: "colorPicker",
         path: "/pintura/producoes",
         requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
         children: [{ id: "producoes-detalhes", title: "Detalhes", icon: "eye", path: "/pintura/producoes/detalhes/:id", isDynamic: true }],
       },
-
       {
         id: "tipos-de-tinta",
         title: "Tipos de Tinta",
@@ -886,10 +855,10 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // PRODUÇÃO (Only for PRODUCTION, WAREHOUSE, LEADER, HUMAN_RESOURCES, ADMIN - others see direct menu items)
+  // PRODUCAO
   {
     id: "producao",
-    title: "Produção",
+    title: "Producao",
     icon: "factory",
     path: "/producao",
     requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
@@ -901,99 +870,36 @@ export const NAVIGATION_MENU: MenuItem[] = [
         path: "/producao/aerografia",
         requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN],
         children: [
-          {
-            id: "aerografia-cadastrar",
-            title: "Cadastrar",
-            icon: "plus",
-            path: "/producao/aerografia/cadastrar",
-            requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-          },
+          { id: "aerografia-cadastrar", title: "Cadastrar", icon: "plus", path: "/producao/aerografia/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
           { id: "aerografia-detalhes", title: "Detalhes", icon: "eye", path: "/producao/aerografia/detalhes/:id", isDynamic: true },
-          {
-            id: "aerografia-editar",
-            title: "Editar",
-            icon: "edit",
-            path: "/producao/aerografia/editar/:id",
-            isDynamic: true,
-            requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-          },
+          { id: "aerografia-editar", title: "Editar", icon: "edit", path: "/producao/aerografia/editar/:id", isDynamic: true, requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
         ],
       },
-
       {
         id: "cronograma",
         title: "Cronograma",
-        icon: "clock",
+        icon: "calendarStats",
         path: "/producao/cronograma",
         children: [
-          {
-            id: "cronograma-detalhes",
-            title: "Detalhes",
-            icon: "eye",
-            path: "/producao/cronograma/detalhes/:id",
-            isDynamic: true,
-          },
-          {
-            id: "cronograma-editar",
-            title: "Editar",
-            icon: "edit",
-            path: "/producao/cronograma/editar/:id",
-            isDynamic: true,
-            requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-          },
-          {
-            id: "cronograma-cadastrar",
-            title: "Nova Tarefa",
-            icon: "plus",
-            path: "/producao/cronograma/cadastrar",
-            requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-          },
+          { id: "cronograma-detalhes", title: "Detalhes", icon: "eye", path: "/producao/cronograma/detalhes/:id", isDynamic: true },
+          { id: "cronograma-editar", title: "Editar", icon: "edit", path: "/producao/cronograma/editar/:id", isDynamic: true, requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
+          { id: "cronograma-cadastrar", title: "Nova Tarefa", icon: "plus", path: "/producao/cronograma/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
         ],
       },
-
-      {
-        id: "cronograma-em-espera",
-        title: "Em Espera",
-        icon: "pause",
-        path: "/producao/em-espera",
-        requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
-      },
-
-
-      {
-        id: "historico",
-        title: "Histórico",
-        icon: "history",
-        path: "/producao/historico",
-        // No requiredPrivilege - inherits from parent (Production menu)
-      },
-
+      { id: "cronograma-em-espera", title: "Em Espera", icon: "pause", path: "/producao/em-espera", requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] },
+      { id: "historico", title: "Historico", icon: "history", path: "/producao/historico" },
       {
         id: "observacoes",
-        title: "Observações",
+        title: "Observacoes",
         icon: "note",
         path: "/producao/observacoes",
         requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
         children: [
-          {
-            id: "observacoes-cadastrar",
-            title: "Cadastrar",
-            icon: "plus",
-            path: "/producao/observacoes/cadastrar",
-            requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-          },
+          { id: "observacoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/producao/observacoes/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
           { id: "observacoes-detalhes", title: "Detalhes", icon: "eye", path: "/producao/observacoes/detalhes/:id", isDynamic: true },
-          {
-            id: "observacoes-editar",
-            title: "Editar",
-            icon: "edit",
-            path: "/producao/observacoes/editar/:id",
-            isDynamic: true,
-            requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-          },
+          { id: "observacoes-editar", title: "Editar", icon: "edit", path: "/producao/observacoes/editar/:id", isDynamic: true, requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
         ],
       },
-
       {
         id: "recorte",
         title: "Recorte",
@@ -1007,54 +913,20 @@ export const NAVIGATION_MENU: MenuItem[] = [
             icon: "clipboard",
             path: "/producao/recorte/plano-de-recorte/listar",
             children: [
-              {
-                id: "plano-de-recorte-cadastrar",
-                title: "Cadastrar",
-                icon: "plus",
-                path: "/producao/recorte/plano-de-recorte/cadastrar",
-              },
-              {
-                id: "plano-de-recorte-detalhes",
-                title: "Detalhes",
-                icon: "eye",
-                path: "/producao/recorte/plano-de-recorte/detalhes/:id",
-                isDynamic: true,
-              },
-              {
-                id: "plano-de-recorte-editar",
-                title: "Editar",
-                icon: "edit",
-                path: "/producao/recorte/plano-de-recorte/editar/:id",
-                isDynamic: true,
-              },
+              { id: "plano-de-recorte-cadastrar", title: "Cadastrar", icon: "plus", path: "/producao/recorte/plano-de-recorte/cadastrar" },
+              { id: "plano-de-recorte-detalhes", title: "Detalhes", icon: "eye", path: "/producao/recorte/plano-de-recorte/detalhes/:id", isDynamic: true },
+              { id: "plano-de-recorte-editar", title: "Editar", icon: "edit", path: "/producao/recorte/plano-de-recorte/editar/:id", isDynamic: true },
             ],
           },
           {
             id: "requisicao-de-recorte",
-            title: "Requisição de Recorte",
+            title: "Requisicao de Recorte",
             icon: "clipboard",
             path: "/producao/recorte/requisicao-de-recorte/listar",
             children: [
-              {
-                id: "requisicao-de-recorte-cadastrar",
-                title: "Cadastrar",
-                icon: "plus",
-                path: "/producao/recorte/requisicao-de-recorte/cadastrar",
-              },
-              {
-                id: "requisicao-de-recorte-detalhes",
-                title: "Detalhes",
-                icon: "eye",
-                path: "/producao/recorte/requisicao-de-recorte/detalhes/:id",
-                isDynamic: true,
-              },
-              {
-                id: "requisicao-de-recorte-editar",
-                title: "Editar",
-                icon: "edit",
-                path: "/producao/recorte/requisicao-de-recorte/editar/:id",
-                isDynamic: true,
-              },
+              { id: "requisicao-de-recorte-cadastrar", title: "Cadastrar", icon: "plus", path: "/producao/recorte/requisicao-de-recorte/cadastrar" },
+              { id: "requisicao-de-recorte-detalhes", title: "Detalhes", icon: "eye", path: "/producao/recorte/requisicao-de-recorte/detalhes/:id", isDynamic: true },
+              { id: "requisicao-de-recorte-editar", title: "Editar", icon: "edit", path: "/producao/recorte/requisicao-de-recorte/editar/:id", isDynamic: true },
             ],
           },
         ],
@@ -1062,15 +934,179 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
+  // RECURSOS HUMANOS
+  {
+    id: "recursos-humanos",
+    title: "Recursos Humanos",
+    icon: "users",
+    path: "/recursos-humanos",
+    requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES],
+    children: [
+      {
+        id: "warnings",
+        title: "Advertencias",
+        icon: "alertTriangle",
+        path: "/recursos-humanos/avisos",
+        children: [
+          { id: "warnings-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/avisos/cadastrar" },
+          { id: "warnings-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/avisos/detalhes/:id", isDynamic: true },
+          { id: "warnings-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/avisos/editar/:id", isDynamic: true },
+        ],
+      },
+      { id: "calculos", title: "Calculos", icon: "deviceIpadDollar", path: "/recursos-humanos/calculos" },
+      {
+        id: "cargos",
+        title: "Cargos",
+        icon: "briefcase",
+        path: "/recursos-humanos/cargos",
+        children: [
+          { id: "cargos-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/cargos/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
+          { id: "cargos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/cargos/detalhes/:id", isDynamic: true },
+          { id: "cargos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/cargos/editar/:id", isDynamic: true },
+        ],
+      },
+      { id: "controle-ponto", title: "Controle de Ponto", icon: "fingerprint", path: "/recursos-humanos/controle-ponto" },
+      {
+        id: "epi-rh",
+        title: "EPI",
+        icon: "helmet",
+        path: "/recursos-humanos/epi",
+        children: [
+          {
+            id: "epi-rh-agendamentos",
+            title: "Agendamentos",
+            icon: "schedule",
+            path: "/recursos-humanos/epi/agendamentos",
+            children: [
+              { id: "epi-rh-agendamentos-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/epi/agendamentos/cadastrar" },
+              { id: "epi-rh-agendamentos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/agendamentos/detalhes/:id", isDynamic: true },
+              { id: "epi-rh-agendamentos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/agendamentos/editar/:id", isDynamic: true },
+            ],
+          },
+          { id: "epi-rh-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/epi/cadastrar" },
+          { id: "epi-rh-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/detalhes/:id", isDynamic: true },
+          { id: "epi-rh-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/editar/:id", isDynamic: true },
+          {
+            id: "epi-rh-entregas",
+            title: "Entregas",
+            icon: "truck",
+            path: "/recursos-humanos/epi/entregas",
+            children: [
+              { id: "epi-rh-entregas-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/epi/entregas/cadastrar" },
+              { id: "epi-rh-entregas-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/entregas/detalhes/:id", isDynamic: true },
+              { id: "epi-rh-entregas-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/entregas/editar/:id", isDynamic: true },
+            ],
+          },
+        ],
+      },
+      {
+        id: "feriados",
+        title: "Feriados",
+        icon: "holiday",
+        path: "/recursos-humanos/feriados",
+        children: [
+          { id: "feriados-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/feriados/cadastrar" },
+          { id: "feriados-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/feriados/editar/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "ferias",
+        title: "Ferias",
+        icon: "calendarWeek",
+        path: "/recursos-humanos/ferias",
+        children: [
+          { id: "ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/ferias/cadastrar" },
+          { id: "ferias-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/ferias/detalhes/:id", isDynamic: true },
+        ],
+      },
+      { id: "folha-de-pagamento", title: "Folha de Pagamento", icon: "payroll", path: "/recursos-humanos/folha-de-pagamento" },
+      { id: "niveis-desempenho", title: "Niveis de Desempenho", icon: "trendingUp", path: "/recursos-humanos/niveis-desempenho" },
+      { id: "requisicoes", title: "Requisicoes", icon: "clipboardList", path: "/recursos-humanos/requisicoes" },
+      { id: "simulacao-bonus", title: "Simulacao de Bonus", icon: "calculator", path: "/recursos-humanos/simulacao-bonus" },
+    ],
+  },
+
+  // SERVIDOR
+  {
+    id: "servidor",
+    title: "Servidor",
+    icon: "server",
+    path: "/servidor",
+    requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
+    children: [
+      { id: "servidor-backup", title: "Backup do Sistema", icon: "databaseImport", path: "/servidor/backup" },
+      {
+        id: "servidor-implantacoes",
+        title: "Implantacoes",
+        icon: "rocket",
+        path: "/servidor/implantacoes",
+        children: [
+          { id: "servidor-implantacoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/servidor/implantacoes/cadastrar" },
+          { id: "servidor-implantacoes-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/implantacoes/detalhes/:id", isDynamic: true },
+        ],
+      },
+      { id: "servidor-logs", title: "Logs do Sistema", icon: "systemLogs", path: "/servidor/logs" },
+      { id: "servidor-metricas", title: "Metricas do Sistema", icon: "systemMetrics", path: "/servidor/metricas" },
+      { id: "servidor-pastas-compartilhadas", title: "Pastas Compartilhadas", icon: "sharedFolders", path: "/servidor/pastas-compartilhadas" },
+      { id: "servidor-rate-limiting", title: "Rate Limiting", icon: "shield", path: "/servidor/rate-limiting" },
+      {
+        id: "registros-de-alteracoes",
+        title: "Registros de Alteracoes",
+        icon: "auditLog",
+        path: "/servidor/registros-de-alteracoes",
+        children: [
+          { id: "registros-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/registros-de-alteracoes/detalhes/:id", isDynamic: true },
+        ],
+      },
+      { id: "servidor-servicos", title: "Servicos do Sistema", icon: "services", path: "/servidor/servicos" },
+      { id: "servidor-sincronizacao-bd", title: "Sincronizacao BD", icon: "repeat", path: "/servidor/sincronizacao-bd", onlyInStaging: true },
+      {
+        id: "servidor-usuarios",
+        title: "Usuarios do Sistema",
+        icon: "systemUsers",
+        path: "/servidor/usuarios",
+        children: [{ id: "servidor-usuarios-cadastrar", title: "Criar Usuario", icon: "plus", path: "/servidor/usuarios/cadastrar" }],
+      },
+    ],
+  },
+
   // ============================================================
   // TOP-LEVEL MENU ITEMS FOR DESIGNER, FINANCIAL, AND LOGISTIC
+  // (Direct access shortcuts - kept at end after main menu items)
   // ============================================================
+
+  // Aerografia - Direct access for FINANCIAL only
+  {
+    id: "aerografia-direct",
+    title: "Aerografia",
+    icon: "paintBrush",
+    path: "/producao/aerografia",
+    requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL],
+  },
+
+  // Catalogo de Tintas - Direct access for DESIGNER only
+  {
+    id: "catalogo-tintas-direct",
+    title: "Catalogo de Tintas",
+    icon: "palette",
+    path: "/pintura/catalogo",
+    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER],
+  },
+
+  // Clientes - Direct access for FINANCIAL only
+  {
+    id: "clientes-direct",
+    title: "Clientes",
+    icon: "users",
+    path: "/financeiro/clientes",
+    requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL],
+  },
 
   // Cronograma - Direct access for DESIGNER, FINANCIAL, LOGISTIC
   {
     id: "cronograma-direct",
     title: "Cronograma",
-    icon: "clock",
+    icon: "calendarStats",
     path: "/producao/cronograma",
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC],
   },
@@ -1084,10 +1120,10 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC],
   },
 
-  // Histórico - Direct access for DESIGNER, FINANCIAL, LOGISTIC
+  // Historico - Direct access for DESIGNER, FINANCIAL, LOGISTIC
   {
     id: "historico-direct",
-    title: "Histórico",
+    title: "Historico",
     icon: "history",
     path: "/producao/historico",
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC],
@@ -1107,319 +1143,20 @@ export const NAVIGATION_MENU: MenuItem[] = [
         icon: "clipboard",
         path: "/producao/recorte/plano-de-recorte/listar",
         children: [
-          {
-            id: "plano-de-recorte-cadastrar-direct",
-            title: "Cadastrar",
-            icon: "plus",
-            path: "/producao/recorte/plano-de-recorte/cadastrar",
-          },
-          {
-            id: "plano-de-recorte-detalhes-direct",
-            title: "Detalhes",
-            icon: "eye",
-            path: "/producao/recorte/plano-de-recorte/detalhes/:id",
-            isDynamic: true,
-          },
-          {
-            id: "plano-de-recorte-editar-direct",
-            title: "Editar",
-            icon: "edit",
-            path: "/producao/recorte/plano-de-recorte/editar/:id",
-            isDynamic: true,
-          },
+          { id: "plano-de-recorte-cadastrar-direct", title: "Cadastrar", icon: "plus", path: "/producao/recorte/plano-de-recorte/cadastrar" },
+          { id: "plano-de-recorte-detalhes-direct", title: "Detalhes", icon: "eye", path: "/producao/recorte/plano-de-recorte/detalhes/:id", isDynamic: true },
+          { id: "plano-de-recorte-editar-direct", title: "Editar", icon: "edit", path: "/producao/recorte/plano-de-recorte/editar/:id", isDynamic: true },
         ],
       },
       {
         id: "requisicao-de-recorte-direct",
-        title: "Requisição de Recorte",
+        title: "Requisicao de Recorte",
         icon: "clipboard",
         path: "/producao/recorte/requisicao-de-recorte/listar",
         children: [
-          {
-            id: "requisicao-de-recorte-cadastrar-direct",
-            title: "Cadastrar",
-            icon: "plus",
-            path: "/producao/recorte/requisicao-de-recorte/cadastrar",
-          },
-          {
-            id: "requisicao-de-recorte-detalhes-direct",
-            title: "Detalhes",
-            icon: "eye",
-            path: "/producao/recorte/requisicao-de-recorte/detalhes/:id",
-            isDynamic: true,
-          },
-          {
-            id: "requisicao-de-recorte-editar-direct",
-            title: "Editar",
-            icon: "edit",
-            path: "/producao/recorte/requisicao-de-recorte/editar/:id",
-            isDynamic: true,
-          },
-        ],
-      },
-    ],
-  },
-
-
-  // Aerografia - Direct access for FINANCIAL only
-  {
-    id: "aerografia-direct",
-    title: "Aerografia",
-    icon: "paintBrush",
-    path: "/producao/aerografia",
-    requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL],
-  },
-
-  // Catálogo de Tintas - Direct access for DESIGNER only
-  {
-    id: "catalogo-tintas-direct",
-    title: "Catálogo de Tintas",
-    icon: "palette",
-    path: "/pintura/catalogo",
-    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER],
-  },
-
-  // Clientes - Direct access for FINANCIAL only
-  {
-    id: "clientes-direct",
-    title: "Clientes",
-    icon: "users",
-    path: "/financeiro/clientes",
-    requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL],
-  },
-
-  // RECURSOS HUMANOS
-  {
-    id: "recursos-humanos",
-    title: "Recursos Humanos",
-    icon: "users",
-    path: "/recursos-humanos",
-    requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES],
-    children: [
-      {
-        id: "warnings",
-        title: "Advertências",
-        icon: "announcement",
-        path: "/recursos-humanos/advertencias",
-        children: [
-          { id: "warnings-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/advertencias/cadastrar" },
-          { id: "warnings-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/advertencias/detalhes/:id", isDynamic: true },
-          { id: "warnings-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/advertencias/editar/:id", isDynamic: true },
-        ],
-      },
-      {
-        id: "cargos",
-        title: "Cargos",
-        icon: "briefcase",
-        path: "/recursos-humanos/cargos",
-        children: [
-          { id: "cargos-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/cargos/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
-          { id: "cargos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/cargos/detalhes/:id", isDynamic: true },
-          { id: "cargos-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/cargos/editar/:id", isDynamic: true },
-        ],
-      },
-      {
-        id: "epi-rh",
-        title: "EPI",
-        icon: "safety",
-        path: "/recursos-humanos/epi",
-        children: [
-          {
-            id: "epi-rh-agendamentos",
-            title: "Agendamentos",
-            icon: "schedule",
-            path: "/recursos-humanos/epi/agendamentos",
-            children: [
-              {
-                id: "epi-rh-agendamentos-cadastrar",
-                title: "Cadastrar",
-                icon: "plus",
-                path: "/recursos-humanos/epi/agendamentos/cadastrar",
-              },
-              { id: "epi-rh-agendamentos-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/agendamentos/detalhes/:id", isDynamic: true },
-              {
-                id: "epi-rh-agendamentos-editar",
-                title: "Editar",
-                icon: "edit",
-                path: "/recursos-humanos/epi/agendamentos/editar/:id",
-                isDynamic: true,
-              },
-            ],
-          },
-          { id: "epi-rh-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/epi/cadastrar" },
-          { id: "epi-rh-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/detalhes/:id", isDynamic: true },
-          { id: "epi-rh-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/editar/:id", isDynamic: true },
-
-          {
-            id: "epi-rh-entregas",
-            title: "Entregas",
-            icon: "truck",
-            path: "/recursos-humanos/epi/entregas",
-            children: [
-              {
-                id: "epi-rh-entregas-cadastrar",
-                title: "Cadastrar",
-                icon: "plus",
-                path: "/recursos-humanos/epi/entregas/cadastrar",
-              },
-              { id: "epi-rh-entregas-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/epi/entregas/detalhes/:id", isDynamic: true },
-              { id: "epi-rh-entregas-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/epi/entregas/editar/:id", isDynamic: true },
-            ],
-          },
-        ],
-      },
-
-      {
-        id: "feriados",
-        title: "Feriados",
-        icon: "calendar",
-        path: "/recursos-humanos/feriados",
-        children: [
-          { id: "feriados-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/feriados/cadastrar" },
-          { id: "feriados-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/feriados/editar/:id", isDynamic: true },
-        ],
-      },
-
-      {
-        id: "ferias",
-        title: "Férias",
-        icon: "calendar",
-        path: "/recursos-humanos/ferias",
-        children: [
-          { id: "ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/ferias/cadastrar" },
-          { id: "ferias-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/ferias/detalhes/:id", isDynamic: true },
-        ],
-      },
-
-      {
-        id: "folha-de-pagamento",
-        title: "Folha de Pagamento",
-        icon: "payroll",
-        path: "/recursos-humanos/folha-de-pagamento",
-      },
-      {
-        id: "niveis-desempenho",
-        title: "Níveis de Desempenho",
-        icon: "trendingUp",
-        path: "/recursos-humanos/niveis-desempenho",
-      },
-      {
-        id: "simulacao-bonus",
-        title: "Simulação de Bônus",
-        icon: "calculator",
-        path: "/recursos-humanos/simulacao-bonus",
-      },
-      {
-        id: "recursos-humanos-calculos-ponto",
-        title: "Cálculos de Ponto",
-        icon: "calculator",
-        path: "/recursos-humanos/calculos-ponto",
-      },
-      {
-        id: "recursos-humanos-registros-ponto",
-        title: "Registros de Ponto",
-        icon: "clock",
-        path: "/recursos-humanos/registros-ponto",
-        children: [
-          {
-            id: "recursos-humanos-registros-ponto-detalhes",
-            title: "Detalhes",
-            icon: "eye",
-            path: "/recursos-humanos/registros-ponto/detalhes/:id",
-            isDynamic: true,
-          },
-        ],
-      },
-      {
-        id: "recursos-humanos-requisicoes-ponto",
-        title: "Requisições de Ponto",
-        icon: "clipboardList",
-        path: "/recursos-humanos/requisicoes-ponto",
-      },
-      {
-        id: "recursos-humanos-status-sincronizacao-ponto",
-        title: "Status de Sincronização",
-        icon: "refresh",
-        path: "/recursos-humanos/status-sincronizacao-ponto",
-      },
-    ],
-  },
-
-  // SERVIDOR
-  {
-    id: "servidor",
-    title: "Servidor",
-    icon: "server",
-    path: "/servidor",
-    requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
-    children: [
-      {
-        id: "servidor-backup",
-        title: "Backup do Sistema",
-        icon: "databaseImport",
-        path: "/servidor/backup",
-      },
-      {
-        id: "servidor-sincronizacao-bd",
-        title: "Sincronização BD",
-        icon: "repeat",
-        path: "/servidor/sincronizacao-bd",
-        onlyInStaging: true,
-      },
-      {
-        id: "servidor-implantacoes",
-        title: "Implantações",
-        icon: "rocket",
-        path: "/servidor/implantacoes",
-        children: [
-          { id: "servidor-implantacoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/servidor/implantacoes/cadastrar" },
-          { id: "servidor-implantacoes-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/implantacoes/detalhes/:id", isDynamic: true },
-        ],
-      },
-      {
-        id: "servidor-logs",
-        title: "Logs do Sistema",
-        icon: "systemLogs",
-        path: "/servidor/logs",
-      },
-      {
-        id: "servidor-metricas",
-        title: "Métricas do Sistema",
-        icon: "systemMetrics",
-        path: "/servidor/metricas",
-      },
-      {
-        id: "servidor-pastas-compartilhadas",
-        title: "Pastas Compartilhadas",
-        icon: "sharedFolders",
-        path: "/servidor/pastas-compartilhadas",
-      },
-      {
-        id: "servidor-servicos",
-        title: "Serviços do Sistema",
-        icon: "services",
-        path: "/servidor/servicos",
-      },
-      {
-        id: "servidor-usuarios",
-        title: "Usuários do Sistema",
-        icon: "systemUsers",
-        path: "/servidor/usuarios",
-        children: [{ id: "servidor-usuarios-cadastrar", title: "Criar Usuário", icon: "plus", path: "/servidor/usuarios/cadastrar" }],
-      },
-      {
-        id: "servidor-rate-limiting",
-        title: "Rate Limiting",
-        icon: "shield",
-        path: "/servidor/rate-limiting",
-      },
-      {
-        id: "registros-de-alteracoes",
-        title: "Registros de Alterações",
-        icon: "auditLog",
-        path: "/servidor/registros-de-alteracoes",
-        children: [
-          { id: "registros-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/registros-de-alteracoes/detalhes/:id", isDynamic: true },
+          { id: "requisicao-de-recorte-cadastrar-direct", title: "Cadastrar", icon: "plus", path: "/producao/recorte/requisicao-de-recorte/cadastrar" },
+          { id: "requisicao-de-recorte-detalhes-direct", title: "Detalhes", icon: "eye", path: "/producao/recorte/requisicao-de-recorte/detalhes/:id", isDynamic: true },
+          { id: "requisicao-de-recorte-editar-direct", title: "Editar", icon: "edit", path: "/producao/recorte/requisicao-de-recorte/editar/:id", isDynamic: true },
         ],
       },
     ],

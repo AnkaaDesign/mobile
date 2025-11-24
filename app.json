@@ -21,10 +21,7 @@
       "package": "com.ankaadesign.management",
       "jsEngine": "hermes"
     },
-    "web": {
-      "bundler": "metro",
-      "output": "static"
-    },
+    "platforms": ["ios", "android"],
     "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true

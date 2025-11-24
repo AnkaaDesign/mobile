@@ -1,9 +1,10 @@
-import React, { memo } from 'react'
+import React, { memo, useCallback } from 'react'
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native'
-import { IconPlus, IconFilter } from '@tabler/icons-react-native'
+import { IconFilter } from '@tabler/icons-react-native'
 import { useRouter } from 'expo-router'
 import { ThemedView } from '@/components/ui/themed-view'
 import { ThemedText } from '@/components/ui/themed-text'
+import { Icon } from '@/components/ui/icon'
 import { FAB } from '@/components/ui/fab'
 import { ErrorScreen } from '@/components/ui/error-screen'
 import { useTheme } from '@/lib/theme'
@@ -12,9 +13,8 @@ import { useAuth } from '@/contexts/auth-context'
 import { Table } from '../Table'
 import { Search } from '../Search'
 import { Filters } from '../Filters'
-import { Export } from '../Export'
 import { BulkActions } from '../BulkActions'
-import { ColumnVisibility } from '../ColumnVisibility'
+import { ColumnVisibilityButton, ColumnVisibilityPanel } from '../ColumnVisibility'
 import type { ListConfig } from '../types'
 
 interface LayoutProps {
@@ -39,6 +39,42 @@ export const Layout = memo(function Layout({
       router.push(config.actions.create.route as any)
     }
   }
+
+  // Handle row click - use config's onRowPress if defined, otherwise use 'view' action or first non-destructive action
+  const handleRowPress = useCallback((item: any) => {
+    // If config has a custom onRowPress handler, use it
+    if (config.table.onRowPress) {
+      config.table.onRowPress(item, router)
+      return
+    }
+
+    // Otherwise fall back to action-based navigation
+    if (!config.table.actions || config.table.actions.length === 0) return
+
+    // Try to find a 'view' action first
+    let action = config.table.actions.find(action => action.key === 'view')
+
+    // If no 'view' action, use the first non-destructive action (usually 'edit')
+    if (!action) {
+      action = config.table.actions.find(action => action.variant !== 'destructive')
+    }
+
+    // If still no action, use the first available action
+    if (!action) {
+      action = config.table.actions[0]
+    }
+
+    // Check if action is visible (if visibility function is defined)
+    if (action.visible && !action.visible(item)) return
+
+    // Execute the action
+    if (action.onPress) {
+      action.onPress(item, router, {})
+    } else if (action.route) {
+      const route = typeof action.route === 'function' ? action.route(item) : action.route
+      router.push(route as any)
+    }
+  }, [config.table.actions, config.table.onRowPress, router])
 
   // Check if user can create (using permission function if provided)
   const canCreate = config.actions?.create?.canCreate
@@ -87,25 +123,47 @@ export const Layout = memo(function Layout({
         </View>
 
         <View style={styles.actions}>
-          {/* Column Visibility */}
-          <ColumnVisibility
+          {/* Custom Toolbar Actions */}
+          {config.actions?.toolbar?.map((action) => (
+            <TouchableOpacity
+              key={action.key}
+              onPress={() => action.onPress(router)}
+              style={[
+                styles.actionButton,
+                {
+                  backgroundColor: action.variant === 'primary' ? colors.primary : colors.card,
+                  borderColor: action.variant === 'primary' ? colors.primary : colors.border,
+                  paddingHorizontal: action.label ? 12 : 10,
+                },
+              ]}
+              activeOpacity={0.7}
+            >
+              {action.icon && (
+                <View style={{ marginRight: action.label ? 6 : 0 }}>
+                  <Icon
+                    name={action.icon}
+                    size={18}
+                    color={action.variant === 'primary' ? 'white' : colors.foreground}
+                  />
+                </View>
+              )}
+              {action.label && (
+                <ThemedText style={[
+                  styles.actionButtonText,
+                  { color: action.variant === 'primary' ? 'white' : colors.foreground }
+                ]}>
+                  {action.label}
+                </ThemedText>
+              )}
+            </TouchableOpacity>
+          ))}
+
+          {/* Column Visibility Button */}
+          <ColumnVisibilityButton
             columns={list.table.columns}
             visibleColumns={list.table.visibleColumns}
-            onToggleColumn={list.table.onToggleColumn}
-            onResetColumns={list.table.onResetColumns}
+            onOpen={list.table.onOpenColumnPanel}
           />
-
-          {config.export && (
-            <Export
-              onExport={list.export.onExport}
-              isExporting={list.export.isExporting}
-              disabled={list.export.disabled}
-              formats={list.export.formats}
-              hasSelection={list.export.hasSelection}
-              selectedCount={list.export.selectedCount}
-              totalCount={list.export.totalCount}
-            />
-          )}
 
           {config.filters && (
             <TouchableOpacity
@@ -113,7 +171,7 @@ export const Layout = memo(function Layout({
               style={[
                 styles.actionButton,
                 {
-                  backgroundColor: colors.background,
+                  backgroundColor: colors.card,
                   borderColor: colors.border,
                 },
               ]}
@@ -169,22 +227,35 @@ export const Layout = memo(function Layout({
         refreshing={list.pagination.refreshing}
         actions={list.table.actions}
         rowHeight={list.table.rowHeight}
+        onRowPress={handleRowPress}
         emptyState={config.emptyState}
+        totalCount={list.totalCount}
+        getRowStyle={list.table.getRowStyle}
       />
 
       {/* FAB for Create */}
       {config.actions?.create && canCreate && (
         <FAB
-          icon={<IconPlus size={24} color="#fff" />}
-          label={config.actions.create.label}
+          icon="plus"
           onPress={handleCreate}
         />
       )}
 
+      {/* Column Visibility Panel */}
+      <ColumnVisibilityPanel
+        columns={list.table.columns}
+        visibleColumns={list.table.visibleColumns}
+        onToggleColumn={list.table.onToggleColumn}
+        onResetColumns={list.table.onResetColumns}
+        isOpen={list.table.isColumnPanelOpen}
+        onClose={list.table.onCloseColumnPanel}
+        defaultVisible={config.table.defaultVisible}
+      />
+
       {/* Filter Drawer */}
       {config.filters && (
         <Filters
-          sections={list.filters.sections}
+          fields={list.filters.fields}
           values={list.filters.values}
           onChange={list.filters.onChange}
           onClear={list.filters.onClear}
@@ -216,13 +287,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actionButton: {
-    width: 40,
+    minWidth: 40,
     height: 40,
     borderRadius: 8,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    flexDirection: 'row',
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   badge: {
     position: 'absolute',

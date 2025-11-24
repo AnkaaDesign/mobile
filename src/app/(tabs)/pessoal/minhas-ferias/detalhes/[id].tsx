@@ -25,7 +25,7 @@ import { VacationDetailSkeleton } from "@/components/personal/vacation/skeleton/
 export default function MyVacationDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";

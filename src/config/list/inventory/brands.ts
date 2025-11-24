@@ -37,7 +37,7 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
         sortable: false,
         width: 0.8,
         align: 'center',
-        render: (brand) => (brand as any)._count?.items || 0,
+        render: (brand) => String((brand as any)._count?.items || 0),
         format: 'badge',
       },
       {
@@ -46,16 +46,16 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (brand) => brand.createdAt,
+        render: (brand) => brand.createdAt || '-',
         format: 'date',
       },
     ],
-    defaultVisible: ['name', 'itemCount'],
-    rowHeight: 60,
+    defaultVisible: ['name', 'itemCount', 'createdAt'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (brand, router) => {
@@ -88,35 +88,17 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'options',
-        label: 'Opções',
-        icon: 'settings',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'hasItems',
-            label: 'Com Produtos',
-            description: 'Apenas marcas que possuem produtos',
-            type: 'toggle',
-          },
-        ],
+        key: 'hasItems',
+        description: 'Apenas marcas que possuem produtos',
+        type: 'toggle',
+        placeholder: 'Com Produtos',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
-        ],
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Cadastro',
       },
     ],
   },

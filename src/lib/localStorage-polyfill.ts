@@ -2,26 +2,47 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // In-memory storage for synchronous localStorage behavior
 let memoryStorage: { [key: string]: string } = {};
+let isInitialized = false;
+let initializationPromise: Promise<void> | null = null;
 
 // Initialize memory storage from AsyncStorage
 const initializeMemoryStorage = async () => {
-  try {
-    const keys = await AsyncStorage.getAllKeys();
-    const items = await AsyncStorage.multiGet(keys);
-    // Clear existing memory first
-    const existingKeys = Object.keys(memoryStorage);
-    existingKeys.forEach(key => delete memoryStorage[key]);
-    memoryStorage = {};
-
-    items.forEach(([key, value]) => {
-      if (value !== null) {
-        memoryStorage[key] = value;
-      }
-    });
-    console.log("[LOCALSTORAGE POLYFILL] Memory storage initialized with", Object.keys(memoryStorage).length, "keys");
-  } catch (error) {
-    console.error("Failed to initialize memory storage:", error);
+  // Return existing promise if initialization is in progress
+  if (initializationPromise) {
+    return initializationPromise;
   }
+
+  // Return immediately if already initialized
+  if (isInitialized) {
+    return Promise.resolve();
+  }
+
+  // Create and store initialization promise
+  initializationPromise = (async () => {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const items = await AsyncStorage.multiGet(keys);
+      // Clear existing memory first
+      const existingKeys = Object.keys(memoryStorage);
+      existingKeys.forEach(key => delete memoryStorage[key]);
+      memoryStorage = {};
+
+      items.forEach(([key, value]) => {
+        if (value !== null) {
+          memoryStorage[key] = value;
+        }
+      });
+      console.log("[LOCALSTORAGE POLYFILL] Memory storage initialized with", Object.keys(memoryStorage).length, "keys");
+      isInitialized = true;
+    } catch (error) {
+      console.error("Failed to initialize memory storage:", error);
+      isInitialized = true; // Mark as initialized even on error to prevent repeated attempts
+    } finally {
+      initializationPromise = null;
+    }
+  })();
+
+  return initializationPromise;
 };
 
 // Export function to manually sync memory storage (useful after clearing AsyncStorage)
@@ -90,8 +111,9 @@ if (typeof localStorage === "undefined") {
       console.error("Failed to polyfill localStorage:", fallbackError);
     }
   }
-  // Initialize memory storage
-  initializeMemoryStorage();
+  // Don't initialize at module load - this will be done lazily when the app starts
+  // This prevents AsyncStorage errors during bundling
 }
 
 export default localStoragePolyfill;
+export { initializeMemoryStorage };

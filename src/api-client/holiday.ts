@@ -30,7 +30,7 @@ import type {
 // =====================
 
 export class HolidayService {
-  private readonly basePath = "/holidays";
+  private readonly basePath = "/personal/my-holidays";
 
   // =====================
   // Query Operations

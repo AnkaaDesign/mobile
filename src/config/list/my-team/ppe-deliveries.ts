@@ -3,6 +3,7 @@ import type { PpeDelivery } from '@/types'
 import { PPE_DELIVERY_STATUS } from '@/constants/enums'
 import { PPE_DELIVERY_STATUS_LABELS } from '@/constants/enum-labels'
 
+
 export const myTeamPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
   key: 'my-team-ppe-deliveries',
   title: 'Entregas de EPI - Minha Equipe',
@@ -62,7 +63,7 @@ export const myTeamPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (delivery) => delivery.status,
+        render: (delivery) => PPE_DELIVERY_STATUS_LABELS[delivery.status] || delivery.status,
         format: 'badge',
       },
       {
@@ -71,7 +72,7 @@ export const myTeamPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (delivery) => delivery.scheduledDate,
+        render: (delivery) => delivery.scheduledDate || '-',
         format: 'date',
       },
       {
@@ -92,94 +93,44 @@ export const myTeamPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         render: (delivery) => delivery.reviewedByUser?.name || '-',
       },
     ],
-    defaultVisible: ['user', 'item', 'status', 'scheduledDate'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (delivery, router) => {
-          router.push(`/recursos-humanos/epi/entregas/detalhes/${delivery.id}`)
-        },
-      },
-    ],
+    defaultVisible: ['user', 'item', 'status'],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(PPE_DELIVERY_STATUS).map((status) => ({
-              label: PPE_DELIVERY_STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(PPE_DELIVERY_STATUS).map((status) => ({
+          label: PPE_DELIVERY_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'userIds',
-            label: 'Funcionários',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // TODO: Load team members
-              return []
-            },
-            placeholder: 'Selecione os funcionários',
-          },
-          {
-            key: 'itemIds',
-            label: 'Itens EPI',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // TODO: Load PPE items
-              return []
-            },
-            placeholder: 'Selecione os itens',
-          },
-        ],
+        key: 'userIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Funcionários',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'scheduledDate',
-            label: 'Data Agendada',
-            type: 'date-range',
-          },
-          {
-            key: 'actualDeliveryDate',
-            label: 'Data de Entrega',
-            type: 'date-range',
-          },
-        ],
+        key: 'itemIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Itens EPI',
+      },
+      {
+        key: 'scheduledDate',
+        type: 'date-range',
+        placeholder: 'Data Agendada',
+      },
+      {
+        key: 'actualDeliveryDate',
+        type: 'date-range',
+        placeholder: 'Data de Entrega',
       },
     ],
   },

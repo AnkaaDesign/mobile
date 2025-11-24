@@ -59,7 +59,7 @@ export const deploymentsListConfig: ListConfig<Deployment> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (deployment) => deployment.status,
+        render: (deployment) => STATUS_LABELS[deployment.status] || deployment.status,
         format: 'badge',
       },
       {
@@ -106,81 +106,42 @@ export const deploymentsListConfig: ListConfig<Deployment> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['environment', 'version', 'status', 'startedAt'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (deployment, router) => {
-          router.push(`/servidor/implantacoes/detalhes/${deployment.id}`)
-        },
-      },
-    ],
+    defaultVisible: ['environment', 'status', 'startedAt'],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'activity',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(DEPLOYMENT_STATUS).map((status) => ({
-              label: STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(DEPLOYMENT_STATUS).map((status) => ({
+          label: STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status',
       },
       {
         key: 'environment',
-        label: 'Ambiente',
-        icon: 'server',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'environment',
-            label: 'Ambiente',
-            type: 'select',
-            multiple: true,
-            options: Object.values(DEPLOYMENT_ENVIRONMENT).map((env) => ({
-              label: ENVIRONMENT_LABELS[env],
-              value: env,
-            })),
-            placeholder: 'Selecione os ambientes',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(DEPLOYMENT_ENVIRONMENT).map((env) => ({
+          label: ENVIRONMENT_LABELS[env],
+          value: env,
+        })),
+        placeholder: 'Ambiente',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'startedAt',
-            label: 'Data de Início',
-            type: 'date-range',
-          },
-          {
-            key: 'completedAt',
-            label: 'Data de Conclusão',
-            type: 'date-range',
-          },
-        ],
+        key: 'startedAt',
+        type: 'date-range',
+        placeholder: 'Data de Início',
+      },
+      {
+        key: 'completedAt',
+        type: 'date-range',
+        placeholder: 'Data de Conclusão',
       },
     ],
   },

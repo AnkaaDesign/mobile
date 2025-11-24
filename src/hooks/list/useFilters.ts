@@ -1,12 +1,12 @@
 import { useState, useCallback, useMemo } from 'react'
-import type { FilterSection, FilterValue } from '@/components/list/types'
+import type { FilterField, FilterValue } from '@/components/list/types'
 
 interface UseFiltersOptions {
-  sections: FilterSection[]
+  fields: FilterField[]
   defaultValues?: FilterValue
 }
 
-export function useFilters({ sections, defaultValues = {} }: UseFiltersOptions) {
+export function useFilters({ fields, defaultValues = {} }: UseFiltersOptions) {
   const [values, setValues] = useState<FilterValue>(defaultValues)
   const [isOpen, setIsOpen] = useState(false)
 
@@ -81,7 +81,7 @@ export function useFilters({ sections, defaultValues = {} }: UseFiltersOptions) 
   }, [values])
 
   return {
-    sections,
+    fields,
     values,
     onChange,
     onClear,
@@ -90,5 +90,6 @@ export function useFilters({ sections, defaultValues = {} }: UseFiltersOptions) 
     onRemove,
     activeCount,
     apiParams,
+    isOpen,
   }
 }

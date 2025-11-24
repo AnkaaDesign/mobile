@@ -1,8 +1,6 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import { View, StyleSheet } from 'react-native'
-import { ThemedText } from '@/components/ui/themed-text'
 import { Combobox } from '@/components/ui/combobox'
-import { useTheme } from '@/lib/theme'
 import type { FilterField } from '../../types'
 
 interface SelectFieldProps {
@@ -18,12 +16,11 @@ export const SelectField = memo(function SelectField({
   onChange,
   options: providedOptions,
 }: SelectFieldProps) {
-  const { colors } = useTheme()
-
   // Prepare options
   const options = useMemo(() => {
     if (providedOptions) return providedOptions
     if (field.options?.data) return field.options.data
+    if (field.options) return field.options
     return []
   }, [providedOptions, field.options])
 
@@ -42,17 +39,19 @@ export const SelectField = memo(function SelectField({
     return value ? [value] : []
   }, [value, field.multiple])
 
+  // Use placeholder as the main identifier (clean approach)
+  const placeholder = typeof field.placeholder === 'string'
+    ? field.placeholder
+    : field.label || 'Selecione...'
+
   return (
     <View style={styles.container}>
-      <ThemedText style={[styles.label, { color: colors.foreground }]}>
-        {field.label}
-      </ThemedText>
       <Combobox
         options={options}
         selectedValues={currentValue}
         onValueChange={handleChange}
-        placeholder={field.placeholder || `Selecione ${field.label.toLowerCase()}`}
-        searchPlaceholder="Buscar..."
+        placeholder={placeholder}
+        searchPlaceholder={`Buscar ${field.label?.toLowerCase() || ''}...`.trim()}
         emptyText="Nenhuma opção encontrada"
         mode={field.multiple ? 'multiple' : 'single'}
       />
@@ -62,11 +61,6 @@ export const SelectField = memo(function SelectField({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
+    marginBottom: 12,
   },
 })

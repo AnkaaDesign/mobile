@@ -232,7 +232,7 @@ export function DatePicker({
       width: "100%",
     },
     touchable: {
-      height: 48,
+      height: 42,
       borderRadius: borderRadius.md,
       flexDirection: "row",
       alignItems: "center",
@@ -244,6 +244,7 @@ export function DatePicker({
     },
     displayText: {
       color: value ? colors.foreground : colors.mutedForeground,
+      flex: 1,
     },
     icon: {
       color: colors.mutedForeground,
@@ -288,7 +289,7 @@ export function DatePicker({
         activeOpacity={disabled ? 1 : 0.7}
         disabled={disabled}
       >
-        <Text style={styles.displayText}>{displayValue}</Text>
+        <Text style={styles.displayText} numberOfLines={1} ellipsizeMode="tail">{displayValue}</Text>
         <IconCalendar size={20} color={colors.mutedForeground} />
       </TouchableOpacity>
 

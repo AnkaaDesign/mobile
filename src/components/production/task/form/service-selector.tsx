@@ -165,35 +165,33 @@ export function ServiceSelector({
               />
             </View>
 
-            {/* Action Buttons */}
-            <View style={styles.actionButtons}>
-              {/* Remove Button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onPress={() => handleRemoveService(index)}
-                disabled={disabled}
-                style={styles.actionButton}
-              >
-                <Icon name="trash" size={18} color={colors.destructive} />
-              </Button>
-
-              {/* Add Button (only on last row) */}
-              {index === services.length - 1 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onPress={handleAddService}
-                  disabled={disabled}
-                  style={styles.actionButton}
-                >
-                  <Icon name="plus" size={18} color={colors.primary} />
-                </Button>
-              )}
-            </View>
+            {/* Remove Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => handleRemoveService(index)}
+              disabled={disabled}
+              style={styles.actionButton}
+            >
+              <Icon name="trash" size={18} color={colors.destructive} />
+            </Button>
           </View>
         ))}
       </View>
+
+      {/* Add Service Button - full width at bottom (matching web) */}
+      <Button
+        variant="outline"
+        size="sm"
+        onPress={handleAddService}
+        disabled={disabled}
+        style={styles.addButton}
+      >
+        <Icon name="plus" size={16} color={colors.foreground} />
+        <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.sm, color: colors.foreground }}>
+          Adicionar
+        </ThemedText>
+      </Button>
 
       {error && (
         <ThemedText style={[styles.error, { color: colors.destructive }]}>
@@ -219,14 +217,16 @@ const styles = StyleSheet.create({
   comboboxContainer: {
     flex: 1,
   },
-  actionButtons: {
-    flexDirection: "row",
-    gap: 2,
-    paddingTop: 4,
-  },
   actionButton: {
     minWidth: 0,
     paddingHorizontal: spacing.xs,
+    marginTop: 6,
+  },
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.xs,
   },
   error: {
     fontSize: fontSize.xs,

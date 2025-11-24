@@ -5,17 +5,24 @@ import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconPalette, IconDroplet } from "@tabler/icons-react-native";
-import { PAINT_FINISH_LABELS, PAINT_FINISH } from "@/constants";
+import { IconLayers } from "@tabler/icons-react-native";
+import { PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from "@/constants";
 import type { Paint } from "@/types";
-import { PaintFinishPreview } from "@/components/painting/effects/paint-finish-preview";
+import { PaintPreview } from "@/components/painting/preview/painting-preview";
+
+// Badge colors - unified neutral, more subtle
+const BADGE_COLORS = {
+  light: { bg: 'rgba(229, 229, 229, 0.7)', text: '#525252' },  // neutral-200/70, neutral-600
+  dark: { bg: 'rgba(64, 64, 64, 0.5)', text: '#d4d4d4' },      // neutral-700/50, neutral-300
+};
 
 interface TaskGroundPaintsCardProps {
   groundPaints: Paint[];
 }
 
 export function TaskGroundPaintsCard({ groundPaints }: TaskGroundPaintsCardProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const badgeStyle = isDark ? BADGE_COLORS.dark : BADGE_COLORS.light;
 
   if (!groundPaints || groundPaints.length === 0) {
     return null;
@@ -25,28 +32,11 @@ export function TaskGroundPaintsCard({ groundPaints }: TaskGroundPaintsCardProps
     router.push(`/(tabs)/catalogo/detalhes/${paintId}`);
   };
 
-  const getFinishIcon = (finish: PAINT_FINISH) => {
-    switch (finish) {
-      case PAINT_FINISH.METALLIC:
-        return "✦";
-      case PAINT_FINISH.PEARL:
-        return "◆";
-      case PAINT_FINISH.MATTE:
-        return "▪";
-      case PAINT_FINISH.GLOSSY:
-        return "●";
-      case PAINT_FINISH.SATIN:
-        return "◐";
-      default:
-        return "●";
-    }
-  };
-
   return (
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
-          <IconDroplet size={20} color={colors.primary} />
+          <IconLayers size={20} color={colors.primary} />
           <ThemedText style={styles.title}>Fundos Recomendados</ThemedText>
           <Badge variant="secondary" size="sm" style={{ marginLeft: spacing.xs }}>
             {groundPaints.length}
@@ -72,12 +62,13 @@ export function TaskGroundPaintsCard({ groundPaints }: TaskGroundPaintsCardProps
             onPress={() => handlePaintPress(groundPaint.id)}
             activeOpacity={0.7}
           >
-            {/* Color Preview with Finish Effects */}
-            <PaintFinishPreview
+            {/* Color Preview - uses stored image if available, falls back to hex */}
+            <PaintPreview
+              paint={groundPaint}
               baseColor={groundPaint.hex}
-              finish={groundPaint.finish || PAINT_FINISH.SOLID}
               width={280}
               height={48}
+              borderRadius={borderRadius.md}
               style={styles.colorPreview}
             />
 
@@ -102,18 +93,13 @@ export function TaskGroundPaintsCard({ groundPaints }: TaskGroundPaintsCardProps
                 </ThemedText>
               )}
 
-              {/* Badges Row */}
+              {/* Badges Row - unified gray/white style */}
               <View style={styles.badgesRow}>
                 {/* Paint Type Badge */}
                 {groundPaint.paintType && (
-                  <Badge
-                    variant="outline"
-                    size="sm"
-                    style={[styles.badge, { borderColor: colors.border }]}
-                  >
-                    <IconPalette size={10} color={colors.mutedForeground} />
+                  <Badge style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
                     <ThemedText
-                      style={[styles.badgeText, { color: colors.mutedForeground }]}
+                      style={[styles.badgeText, { color: badgeStyle.text }]}
                       numberOfLines={1}
                     >
                       {groundPaint.paintType.name}
@@ -121,44 +107,42 @@ export function TaskGroundPaintsCard({ groundPaints }: TaskGroundPaintsCardProps
                   </Badge>
                 )}
 
+                {/* Brand Badge */}
+                {groundPaint.paintBrand && (
+                  <Badge style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
+                    <ThemedText
+                      style={[styles.badgeText, { color: badgeStyle.text }]}
+                      numberOfLines={1}
+                    >
+                      {groundPaint.paintBrand.name}
+                    </ThemedText>
+                  </Badge>
+                )}
+
                 {/* Finish Badge */}
                 {groundPaint.finish && (
-                  <Badge
-                    variant="outline"
-                    size="sm"
-                    style={[styles.badge, { borderColor: colors.border }]}
-                  >
+                  <Badge style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
                     <ThemedText
-                      style={[styles.finishIcon, { color: colors.mutedForeground }]}
-                    >
-                      {getFinishIcon(groundPaint.finish)}
-                    </ThemedText>
-                    <ThemedText
-                      style={[styles.badgeText, { color: colors.mutedForeground }]}
+                      style={[styles.badgeText, { color: badgeStyle.text }]}
                       numberOfLines={1}
                     >
                       {PAINT_FINISH_LABELS[groundPaint.finish]}
                     </ThemedText>
                   </Badge>
                 )}
-              </View>
 
-              {/* Brand */}
-              {groundPaint.paintBrand && (
-                <View style={styles.brandRow}>
-                  <ThemedText
-                    style={[styles.brandLabel, { color: colors.mutedForeground }]}
-                  >
-                    Marca:
-                  </ThemedText>
-                  <ThemedText
-                    style={[styles.brandValue, { color: colors.foreground }]}
-                    numberOfLines={1}
-                  >
-                    {groundPaint.paintBrand.name}
-                  </ThemedText>
-                </View>
-              )}
+                {/* Manufacturer Badge */}
+                {groundPaint.manufacturer && (
+                  <Badge style={[styles.badge, styles.manufacturerBadge, { backgroundColor: badgeStyle.bg }]}>
+                    <ThemedText
+                      style={[styles.badgeText, { color: badgeStyle.text }]}
+                      numberOfLines={1}
+                    >
+                      {TRUCK_MANUFACTURER_LABELS[groundPaint.manufacturer] || groundPaint.manufacturer}
+                    </ThemedText>
+                  </Badge>
+                )}
+              </View>
             </View>
           </TouchableOpacity>
         ))}
@@ -224,34 +208,16 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxs,
   },
   badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xxs,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xxs,
-    maxWidth: 120,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    borderWidth: 0,
+  },
+  manufacturerBadge: {
+    maxWidth: 100,
   },
   badgeText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
-  },
-  finishIcon: {
-    fontSize: fontSize.xs,
-    lineHeight: fontSize.xs,
-  },
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    marginTop: spacing.xxs,
-  },
-  brandLabel: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
-  },
-  brandValue: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
-    flex: 1,
+    fontSize: 11,
+    fontWeight: "500",
   },
 });

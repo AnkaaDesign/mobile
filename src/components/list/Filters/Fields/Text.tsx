@@ -1,8 +1,6 @@
 import { memo } from 'react'
 import { View, StyleSheet } from 'react-native'
-import { ThemedText } from '@/components/ui/themed-text'
 import { Input } from '@/components/ui/input'
-import { useTheme } from '@/lib/theme'
 import type { FilterField } from '../../types'
 
 interface TextFieldProps {
@@ -16,21 +14,21 @@ export const TextField = memo(function TextField({
   value,
   onChange,
 }: TextFieldProps) {
-  const { colors } = useTheme()
-
   const handleChange = (text: string) => {
     onChange(text || undefined)
   }
 
+  // Use placeholder as the main identifier (clean approach)
+  const placeholder = typeof field.placeholder === 'string'
+    ? field.placeholder
+    : field.label || 'Digite...'
+
   return (
     <View style={styles.container}>
-      <ThemedText style={[styles.label, { color: colors.foreground }]}>
-        {field.label}
-      </ThemedText>
       <Input
         value={value || ''}
         onChangeText={handleChange}
-        placeholder={field.placeholder || field.label}
+        placeholder={placeholder}
       />
     </View>
   )
@@ -38,11 +36,6 @@ export const TextField = memo(function TextField({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
+    marginBottom: 12,
   },
 })

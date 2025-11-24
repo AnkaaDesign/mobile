@@ -81,7 +81,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
         sortable: true,
         width: 1.0,
         align: 'center',
-        render: (orderItem) => orderItem.orderedQuantity || 0,
+        render: (orderItem) => String(orderItem.orderedQuantity || 0),
         format: 'number',
       },
       {
@@ -90,7 +90,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
         sortable: true,
         width: 1.0,
         align: 'center',
-        render: (orderItem) => orderItem.receivedQuantity || 0,
+        render: (orderItem) => String(orderItem.receivedQuantity || 0),
         format: 'number',
         component: 'quantity-with-status', // Special component for received/pending status
       },
@@ -100,7 +100,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
         sortable: true,
         width: 1.2,
         align: 'right',
-        render: (orderItem) => orderItem.price || 0,
+        render: (orderItem) => String(orderItem.price || 0),
         format: 'currency',
       },
       {
@@ -119,7 +119,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
         sortable: false,
         width: 0.8,
         align: 'center',
-        render: (orderItem) => orderItem.icms || 0,
+        render: (orderItem) => String(orderItem.icms || 0),
         format: 'percentage',
       },
       {
@@ -128,7 +128,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
         sortable: false,
         width: 0.8,
         align: 'center',
-        render: (orderItem) => orderItem.ipi || 0,
+        render: (orderItem) => String(orderItem.ipi || 0),
         format: 'percentage',
       },
       {
@@ -154,7 +154,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (orderItem) => orderItem.receivedAt,
+        render: (orderItem) => orderItem.receivedAt || '-',
         format: 'date',
       },
       {
@@ -172,11 +172,10 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (orderItem, router) => {
-          // Extract orderId from the orderItem
           router.push(`/estoque/pedidos/${orderItem.orderId}/items/detalhes/${orderItem.id}`)
         },
       },
@@ -207,67 +206,37 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'status',
-        label: 'Status',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'receivedStatus',
-            label: 'Status de Recebimento',
-            type: 'select',
-            multiple: true,
-            options: [
-              { label: 'Pendente', value: 'pending' },
-              { label: 'Parcial', value: 'partial' },
-              { label: 'Recebido', value: 'received' },
-            ],
-            placeholder: 'Selecione os status',
-          },
+        key: 'receivedStatus',
+        type: 'select',
+        multiple: true,
+        options: [
+          { label: 'Pendente', value: 'pending' },
+          { label: 'Parcial', value: 'partial' },
+          { label: 'Recebido', value: 'received' },
         ],
+        placeholder: 'Status de Recebimento',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'receivedAt',
-            label: 'Data de Recebimento',
-            type: 'date-range',
-          },
-          {
-            key: 'fulfilledAt',
-            label: 'Data de Atendimento',
-            type: 'date-range',
-          },
-        ],
+        key: 'receivedAt',
+        type: 'date-range',
+        placeholder: 'Data de Recebimento',
       },
       {
-        key: 'ranges',
-        label: 'Faixas de Valores',
-        icon: 'coins',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'priceRange',
-            label: 'Preço Unitário (R$)',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-          {
-            key: 'quantityRange',
-            label: 'Quantidade',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-        ],
+        key: 'fulfilledAt',
+        type: 'date-range',
+        placeholder: 'Data de Atendimento',
+      },
+      {
+        key: 'priceRange',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
+      },
+      {
+        key: 'quantityRange',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
       },
     ],
   },

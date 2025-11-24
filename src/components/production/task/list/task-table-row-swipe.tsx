@@ -1,13 +1,13 @@
 import React, { useRef, useCallback, useEffect } from "react";
 import { View, StyleSheet, ViewStyle, Alert, StyleProp } from "react-native";
-import { IconEdit, IconTrash, IconBuildingFactory2, IconProgressCheck } from "@tabler/icons-react-native";
+import { IconEdit, IconTrash, IconPlayerPlay, IconCheck } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
-import { TASK_STATUS } from "@/constants";
+import { TASK_STATUS, SECTOR_PRIVILEGES } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
-import { canEditTasks, canDeleteTasks } from "@/utils/permissions/entity-permissions";
+import { canEditTasks, canDeleteTasks, canLeaderManageTask } from "@/utils/permissions/entity-permissions";
 
 const ACTION_WIDTH = 80;
 
@@ -16,10 +16,11 @@ interface TaskTableRowSwipeProps {
   taskId: string;
   taskName: string;
   taskStatus: TASK_STATUS;
+  taskSectorId: string;
   onEdit?: (taskId: string) => void;
   onDelete?: (taskId: string) => void;
-  onSetSector?: (taskId: string) => void;
-  onSetStatus?: (taskId: string) => void;
+  onStart?: (taskId: string) => void;
+  onFinish?: (taskId: string) => void;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
 }
@@ -29,10 +30,11 @@ const TaskTableRowSwipeComponent = ({
   taskId,
   taskName,
   taskStatus,
+  taskSectorId,
   onEdit,
   onDelete,
-  onSetSector,
-  onSetStatus,
+  onStart,
+  onFinish,
   style,
   disabled = false
 }: TaskTableRowSwipeProps) => {
@@ -41,16 +43,21 @@ const TaskTableRowSwipeComponent = ({
   const swipeableRef = useRef<Swipeable>(null);
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useAuth();
-  const canEdit = canEditTasks(user);
-  const canDelete = canDeleteTasks(user);
 
   // Early return if colors are not available yet (during theme initialization)
   if (!colors || !children) {
     return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
   }
 
-  // Return early if no permissions
-  if (!canEdit && !canDelete) {
+  // Permission checks
+  const isAdmin = user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN;
+  const isLeader = user?.sector?.privileges === SECTOR_PRIVILEGES.LEADER;
+  const canEdit = canEditTasks(user); // ADMIN, DESIGNER, FINANCIAL, LOGISTIC
+  const canDelete = canDeleteTasks(user); // ADMIN only
+  const canLeaderManage = isLeader && canLeaderManageTask(user, taskSectorId);
+
+  // Return early if no permissions at all
+  if (!canEdit && !canDelete && !canLeaderManage) {
     return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
   }
 
@@ -96,10 +103,11 @@ const TaskTableRowSwipeComponent = ({
     ]);
   }, [taskId, taskName, onDelete]);
 
-  // Build actions array based on available handlers
+  // Build actions array based on user role and task status
   const rightActions: SwipeAction[] = [];
 
-  // Edit action if user has permission
+  // Edit action - available to ADMIN, DESIGNER, FINANCIAL, LOGISTIC
+  // Note: Form will filter which fields they can edit based on their role
   if (onEdit && canEdit) {
     rightActions.push({
       key: "edit",
@@ -111,7 +119,7 @@ const TaskTableRowSwipeComponent = ({
     });
   }
 
-  // Delete action if user has permission
+  // Delete action - ADMIN only
   if (onDelete && canDelete) {
     rightActions.push({
       key: "delete",
@@ -119,38 +127,41 @@ const TaskTableRowSwipeComponent = ({
       icon: <IconTrash size={20} color="white" />,
       backgroundColor: "#b91c1c", // red-700
       onPress: handleDeletePress,
-      closeOnPress: false, // Don't close automatically for delete confirmation
+      closeOnPress: false,
     });
   }
 
-  // Set Sector action
-  if (onSetSector) {
-    rightActions.push({
-      key: "setSector",
-      label: "Setor",
-      icon: <IconBuildingFactory2 size={20} color="white" />,
-      backgroundColor: "#7c3aed", // purple-600
-      onPress: () => {
-        swipeableRef.current?.close();
-        setTimeout(() => onSetSector(taskId), 300);
-      },
-      closeOnPress: true,
-    });
-  }
+  // LEADER: Can start/finish tasks in their sector OR tasks without sector
+  if (canLeaderManage) {
+    // Show "Start" button if task is PENDING
+    if (taskStatus === TASK_STATUS.PENDING && onStart) {
+      rightActions.push({
+        key: "start",
+        label: "Iniciar",
+        icon: <IconPlayerPlay size={20} color="white" />,
+        backgroundColor: "#059669", // emerald-600
+        onPress: () => {
+          swipeableRef.current?.close();
+          setTimeout(() => onStart(taskId), 300);
+        },
+        closeOnPress: true,
+      });
+    }
 
-  // Set Status action
-  if (onSetStatus) {
-    rightActions.push({
-      key: "setStatus",
-      label: "Status",
-      icon: <IconProgressCheck size={20} color="white" />,
-      backgroundColor: "#059669", // emerald-600
-      onPress: () => {
-        swipeableRef.current?.close();
-        setTimeout(() => onSetStatus(taskId), 300);
-      },
-      closeOnPress: true,
-    });
+    // Show "Finish" button if task is IN_PRODUCTION
+    if (taskStatus === TASK_STATUS.IN_PRODUCTION && onFinish) {
+      rightActions.push({
+        key: "finish",
+        label: "Finalizar",
+        icon: <IconCheck size={20} color="white" />,
+        backgroundColor: "#16a34a", // green-600
+        onPress: () => {
+          swipeableRef.current?.close();
+          setTimeout(() => onFinish(taskId), 300);
+        },
+        closeOnPress: true,
+      });
+    }
   }
 
   const handleWillOpen = useCallback(

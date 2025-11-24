@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Dimensions, Animated, Pressable } from 'react-native';
 import { useTheme } from '@/lib/theme';
 
@@ -27,42 +27,53 @@ export function SlideInPanel({ isOpen, onClose, children }: SlideInPanelProps) {
   const { colors } = useTheme();
   const translateX = useRef(new Animated.Value(SCREEN_WIDTH)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      // Animate panel sliding in from right
-      Animated.parallel([
-        Animated.spring(translateX, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 65,
-          friction: 11,
-        }),
-        Animated.timing(overlayOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      // Make visible immediately
+      setIsVisible(true);
+      // Start with panel off-screen and overlay transparent
+      translateX.setValue(SCREEN_WIDTH);
+      overlayOpacity.setValue(0);
+
+      // Animate in after a brief delay for layout
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 65,
+            friction: 11,
+          }),
+          Animated.timing(overlayOpacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }, 10);
     } else {
-      // Animate panel sliding out to right
+      // Animate out
       Animated.parallel([
         Animated.timing(translateX, {
           toValue: SCREEN_WIDTH,
-          duration: 200,
+          duration: 250,
           useNativeDriver: true,
         }),
         Animated.timing(overlayOpacity, {
           toValue: 0,
-          duration: 200,
+          duration: 250,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]).start(() => {
+        setIsVisible(false);
+      });
     }
-  }, [isOpen, translateX, overlayOpacity]);
+  }, [isOpen]);
 
-  // Don't render when closed to save memory
-  if (!isOpen) {
+  // Don't render if not visible
+  if (!isVisible) {
     return null;
   }
 
@@ -74,6 +85,7 @@ export function SlideInPanel({ isOpen, onClose, children }: SlideInPanelProps) {
           styles.overlay,
           { opacity: overlayOpacity }
         ]}
+        pointerEvents={isOpen ? "auto" : "none"}
       >
         <Pressable
           style={styles.overlayPressable}
@@ -90,8 +102,11 @@ export function SlideInPanel({ isOpen, onClose, children }: SlideInPanelProps) {
             transform: [{ translateX }],
           },
         ]}
+        pointerEvents="box-none"
       >
-        {children}
+        <View style={{ flex: 1 }} pointerEvents="auto">
+          {children}
+        </View>
       </Animated.View>
     </View>
   );
@@ -100,11 +115,13 @@ export function SlideInPanel({ isOpen, onClose, children }: SlideInPanelProps) {
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 1000,
+    zIndex: 9999,
+    elevation: 999,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 9998,
   },
   overlayPressable: {
     flex: 1,
@@ -115,10 +132,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: PANEL_WIDTH,
-    elevation: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: -2, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    zIndex: 9999,
+    elevation: 999,
   },
 });

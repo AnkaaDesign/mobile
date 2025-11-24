@@ -72,7 +72,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (delivery) => delivery.status,
+        render: (delivery) => delivery.status || '-',
         format: 'badge',
       },
       {
@@ -81,7 +81,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (delivery) => delivery.scheduledDate,
+        render: (delivery) => delivery.scheduledDate || '-',
         format: 'date',
       },
       {
@@ -115,11 +115,11 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (delivery, router) => {
-          router.push(routeToMobilePath(routes.inventory.ppe.deliveries.details(delivery.id)) as any)
+          router.push(routeToMobilePath(routes.inventory.ppe.deliveries.detail(delivery.id)) as any)
         },
       },
       {
@@ -152,11 +152,11 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        type: 'multi-select',
+        type: 'select',
+        multiple: true,
         options: [
           { label: STATUS_LABELS.PENDING, value: PPE_DELIVERY_STATUS.PENDING },
           { label: STATUS_LABELS.APPROVED, value: PPE_DELIVERY_STATUS.APPROVED },
@@ -164,59 +164,29 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
           { label: STATUS_LABELS.REPROVED, value: PPE_DELIVERY_STATUS.REPROVED },
           { label: STATUS_LABELS.CANCELLED, value: PPE_DELIVERY_STATUS.CANCELLED },
         ],
-        mapToQuery: (values) => ({
-          where: {
-            status: { in: values },
-          },
-        }),
+        placeholder: 'Status',
       },
       {
         key: 'userIds',
-        label: 'Funcionários',
-        type: 'entity-multi-select',
-        entityType: 'user',
-        mapToQuery: (values) => ({
-          where: {
-            userId: { in: values },
-          },
-        }),
+        type: 'select',
+        multiple: true,
+        placeholder: 'Funcionários',
       },
       {
         key: 'itemIds',
-        label: 'Itens EPI',
-        type: 'entity-multi-select',
-        entityType: 'item',
-        mapToQuery: (values) => ({
-          where: {
-            itemId: { in: values },
-          },
-        }),
+        type: 'select',
+        multiple: true,
+        placeholder: 'Itens EPI',
       },
       {
         key: 'scheduledDateRange',
-        label: 'Data Agendada',
         type: 'date-range',
-        mapToQuery: (value) => ({
-          where: {
-            scheduledDate: {
-              gte: value.start,
-              lte: value.end,
-            },
-          },
-        }),
+        placeholder: 'Data Agendada',
       },
       {
         key: 'actualDeliveryDateRange',
-        label: 'Data de Entrega',
         type: 'date-range',
-        mapToQuery: (value) => ({
-          where: {
-            actualDeliveryDate: {
-              gte: value.start,
-              lte: value.end,
-            },
-          },
-        }),
+        placeholder: 'Data de Entrega',
       },
     ],
   },

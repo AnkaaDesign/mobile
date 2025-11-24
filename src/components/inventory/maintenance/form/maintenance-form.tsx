@@ -1,0 +1,334 @@
+import React from "react";
+import { View, ScrollView, StyleSheet, Alert } from "react-native";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { DatePicker } from "@/components/ui/date-picker";
+import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
+import { SimpleFormActionBar } from "@/components/forms";
+import { useTheme } from "@/lib/theme";
+import { formSpacing } from "@/constants/form-styles";
+import { spacing } from "@/constants/design-system";
+
+import { maintenanceCreateSchema, maintenanceUpdateSchema } from "@/schemas/maintenance";
+import type { MaintenanceCreateFormData, MaintenanceUpdateFormData } from "@/schemas/maintenance";
+import type { Maintenance } from "@/types";
+import { useMaintenanceMutations } from "@/hooks/useMaintenance";
+import { useItems } from "@/hooks/useItem";
+import { MAINTENANCE_STATUS } from "@/constants";
+import { MAINTENANCE_STATUS_LABELS } from "@/constants/enum-labels";
+
+interface MaintenanceFormProps {
+  mode: "create" | "update";
+  maintenance?: Maintenance;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: MaintenanceFormProps) {
+  const router = useRouter();
+  const { colors } = useTheme();
+  const { createAsync, updateAsync, createMutation, updateMutation } = useMaintenanceMutations();
+
+  const { data: items } = useItems({
+    orderBy: { name: "asc" },
+    limit: 100,
+  });
+
+  const form = useForm<MaintenanceCreateFormData | MaintenanceUpdateFormData>({
+    resolver: zodResolver(mode === "create" ? maintenanceCreateSchema : maintenanceUpdateSchema),
+    defaultValues:
+      mode === "create"
+        ? {
+            name: "",
+            description: "",
+            status: MAINTENANCE_STATUS.PENDING,
+            itemId: "",
+            scheduledFor: new Date(),
+          }
+        : {
+            name: maintenance?.name || "",
+            description: maintenance?.description || "",
+            status: maintenance?.status || MAINTENANCE_STATUS.PENDING,
+            itemId: maintenance?.itemId || "",
+            maintenanceScheduleId: maintenance?.maintenanceScheduleId || undefined,
+            scheduledFor: maintenance?.scheduledFor ? new Date(maintenance.scheduledFor) : undefined,
+            startedAt: maintenance?.startedAt ? new Date(maintenance.startedAt) : undefined,
+            finishedAt: maintenance?.finishedAt ? new Date(maintenance.finishedAt) : undefined,
+            timeTaken: maintenance?.timeTaken || undefined,
+          },
+  });
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const watchedStatus = form.watch("status");
+
+  const handleSubmit = async (data: MaintenanceCreateFormData | MaintenanceUpdateFormData) => {
+    try {
+      if (mode === "create") {
+        await createAsync(data as MaintenanceCreateFormData);
+      } else if (maintenance) {
+        await updateAsync({
+          id: maintenance.id,
+          data: data as MaintenanceUpdateFormData,
+        });
+      }
+      onSuccess?.();
+      router.back();
+    } catch (error: any) {
+      Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar a manutenção");
+    }
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      router.back();
+    }
+  };
+
+  const itemOptions: ComboboxOption[] =
+    items?.data?.map((item) => ({
+      value: item.id,
+      label: item.name,
+    })) || [];
+
+  const statusOptions: ComboboxOption[] = Object.entries(MAINTENANCE_STATUS_LABELS).map(
+    ([value, label]) => ({
+      value,
+      label,
+    })
+  );
+
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Basic Information */}
+        <FormCard
+          title="Informações da Manutenção"
+          subtitle="Dados básicos da manutenção"
+        >
+          {/* Name */}
+          <FormFieldGroup
+            label="Nome"
+            required
+            error={form.formState.errors.name?.message}
+          >
+            <Controller
+              control={form.control}
+              name="name"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Digite o nome da manutenção"
+                  editable={!isLoading}
+                  error={!!form.formState.errors.name}
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          {/* Description */}
+          <FormFieldGroup
+            label="Descrição"
+            error={form.formState.errors.description?.message}
+          >
+            <Controller
+              control={form.control}
+              name="description"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Textarea
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Descreva os detalhes da manutenção"
+                  editable={!isLoading}
+                  numberOfLines={3}
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          {/* Item and Status Row */}
+          <FormRow>
+            <FormFieldGroup
+              label="Item"
+              required
+              error={form.formState.errors.itemId?.message}
+            >
+              <Controller
+                control={form.control}
+                name="itemId"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <Combobox
+                    options={itemOptions}
+                    value={value}
+                    onValueChange={onChange}
+                    placeholder="Selecione o item"
+                    disabled={isLoading}
+                    searchable
+                    clearable={false}
+                    error={error?.message}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+
+            <FormFieldGroup
+              label="Status"
+              required
+              error={form.formState.errors.status?.message}
+            >
+              <Controller
+                control={form.control}
+                name="status"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <Combobox
+                    options={statusOptions}
+                    value={value}
+                    onValueChange={onChange}
+                    placeholder="Selecione o status"
+                    disabled={isLoading}
+                    searchable={false}
+                    clearable={false}
+                    error={error?.message}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+          </FormRow>
+        </FormCard>
+
+        {/* Scheduling */}
+        <FormCard
+          title="Agendamento"
+          subtitle="Datas e prazos da manutenção"
+        >
+          {/* Scheduled For */}
+          <FormFieldGroup
+            label="Data Agendada"
+            required
+            error={form.formState.errors.scheduledFor?.message}
+          >
+            <Controller
+              control={form.control}
+              name="scheduledFor"
+              render={({ field: { onChange, value } }) => (
+                <DatePicker
+                  value={value}
+                  onChange={onChange}
+                  placeholder="Selecione a data"
+                  disabled={isLoading}
+                  mode="datetime"
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          {/* Only show in update mode and when status is IN_PROGRESS or COMPLETED */}
+          {mode === "update" && (watchedStatus === MAINTENANCE_STATUS.IN_PROGRESS || watchedStatus === MAINTENANCE_STATUS.COMPLETED) && (
+            <FormRow>
+              <FormFieldGroup
+                label="Data de Início"
+                error={form.formState.errors.startedAt?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name="startedAt"
+                  render={({ field: { onChange, value } }) => (
+                    <DatePicker
+                      value={value}
+                      onChange={onChange}
+                      placeholder="Selecione a data"
+                      disabled={isLoading}
+                      mode="datetime"
+                    />
+                  )}
+                />
+              </FormFieldGroup>
+
+              {watchedStatus === MAINTENANCE_STATUS.COMPLETED && (
+                <FormFieldGroup
+                  label="Data de Conclusão"
+                  error={form.formState.errors.finishedAt?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="finishedAt"
+                    render={({ field: { onChange, value } }) => (
+                      <DatePicker
+                        value={value}
+                        onChange={onChange}
+                        placeholder="Selecione a data"
+                        disabled={isLoading}
+                        mode="datetime"
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+              )}
+            </FormRow>
+          )}
+
+          {/* Time Taken - only for completed */}
+          {mode === "update" && watchedStatus === MAINTENANCE_STATUS.COMPLETED && (
+            <FormFieldGroup
+              label="Tempo Gasto (minutos)"
+              error={form.formState.errors.timeTaken?.message}
+            >
+              <Controller
+                control={form.control}
+                name="timeTaken"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    value={value?.toString() || ""}
+                    onChangeText={(val) => onChange(val ? Number(val) : null)}
+                    onBlur={onBlur}
+                    placeholder="Tempo em minutos"
+                    keyboardType="numeric"
+                    editable={!isLoading}
+                    error={!!form.formState.errors.timeTaken}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+          )}
+        </FormCard>
+      </ScrollView>
+
+      <SimpleFormActionBar
+        onCancel={handleCancel}
+        onSubmit={form.handleSubmit(handleSubmit)}
+        isSubmitting={isLoading}
+        canSubmit={form.formState.isValid}
+        submitLabel={mode === "create" ? "Criar" : "Salvar"}
+      />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: formSpacing.containerPaddingVertical,
+    paddingBottom: 0, // No spacing - action bar has its own margin
+  },
+});

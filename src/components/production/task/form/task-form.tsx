@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
@@ -15,25 +15,23 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
-import { SimpleFormField, FileUploadField } from "@/components/ui";
-import type { FileWithPreview } from "@/components/ui/file-upload-field";
+import { SimpleFormField, FormFieldGroup } from "@/components/ui";
+import { MediaPicker, type MediaPickerResult } from "@/components/ui/media-picker";
+import { FileUploadField, type FileWithPreview } from "@/components/ui/file-upload-field";
+import { SimpleFormActionBar } from "@/components/forms";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius, fontWeight } from "@/constants/design-system";
 import { useSectors } from "@/hooks";
-import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES, CUT_TYPE } from "@/constants";
-import { IconLoader, IconX, IconDeviceFloppy, IconTrash, IconPlus } from "@tabler/icons-react-native";
+import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES } from "@/constants";
+import { IconX } from "@tabler/icons-react-native";
 import { CustomerSelector } from "./customer-selector";
 import { ServiceSelector } from "./service-selector";
 import { GeneralPaintingSelector, LogoPaintsSelector } from "./paint-selector";
-import { BudgetSelector, type BudgetSelectorRef } from "./budget-selector";
-import { MultiCutSelector, type MultiCutSelectorRef } from "./multi-cut-selector";
-import { MultiAirbrushingSelector, type MultiAirbrushingSelectorRef } from "./multi-airbrushing-selector";
 import { LayoutForm } from "@/components/production/layout/layout-form";
 import { useAuth } from "@/hooks/useAuth";
-import { getCustomerById } from "@/api-client";
 import type { LayoutCreateFormData } from "@/schemas";
 import type { Customer } from "@/types";
 
@@ -55,6 +53,7 @@ const taskFormSchema = z.object({
       .refine((val) => !val || /^[A-Z0-9-]+$/.test(val), {
         message: "Placa deve conter apenas letras maiúsculas, números e hífens",
       }),
+    // Use 'chassisNumber' to match Prisma schema (source of truth)
     chassisNumber: z.string()
       .nullable()
       .optional()
@@ -128,6 +127,15 @@ const taskFormSchema = z.object({
     });
   }
 
+  // Cross-field validation: startedAt must be >= entryDate (aligned with web)
+  if (data.entryDate && data.startedAt && data.startedAt < data.entryDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Data de início deve ser igual ou posterior à data de entrada",
+      path: ["startedAt"],
+    });
+  }
+
   // Status-dependent validation: IN_PRODUCTION requires startedAt
   if (data.status === TASK_STATUS.IN_PRODUCTION && !data.startedAt) {
     ctx.addIssue({
@@ -180,10 +188,14 @@ const TASK_STATUS_OPTIONS = [
   { value: TASK_STATUS.CANCELLED, label: "Cancelada" },
 ];
 
-export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, onSubmit, onCancel, isSubmitting }: TaskFormProps) {
+export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, onSubmit, onCancel, isSubmitting: isSubmittingProp }: TaskFormProps) {
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [sectorSearch, setSectorSearch] = useState("");
+  const [isSubmittingInternal, setIsSubmittingInternal] = useState(false);
+
+  // Combine external and internal submitting states
+  const isSubmitting = isSubmittingProp || isSubmittingInternal;
 
   // Get user role/privileges for field restrictions
   const userPrivilege = user?.sector?.privileges;
@@ -195,27 +207,9 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
   // File upload state
   const [artworkFiles, setArtworkFiles] = useState<FileWithPreview[]>([]);
   const [observationFiles, setObservationFiles] = useState<FileWithPreview[]>([]);
-  const [budgetFile, setBudgetFile] = useState<FileWithPreview[]>([]);
-  const [nfeFile, setNfeFile] = useState<FileWithPreview[]>([]);
-  const [receiptFile, setReceiptFile] = useState<FileWithPreview[]>([]);
-
-  // Component refs for imperative methods
-  const multiCutSelectorRef = useRef<MultiCutSelectorRef>(null);
-  const multiAirbrushingSelectorRef = useRef<MultiAirbrushingSelectorRef>(null);
-  const budgetSelectorRef = useRef<BudgetSelectorRef>(null);
-
-  // Count states for UI feedback
-  const [cutsCount, setCutsCount] = useState(0);
-  const [airbrushingsCount, setAirbrushingsCount] = useState(0);
-  const [budgetCount, setBudgetCount] = useState(0);
 
   // Observation section state
   const [isObservationOpen, setIsObservationOpen] = useState(false);
-
-  // Debug logging for cuts count changes (matching web implementation)
-  const handleSetCutsCount = useCallback((count: number) => {
-    setCutsCount(count);
-  }, []);
 
   // Layout state - Initialize with existingLayouts if available (edit mode)
   const [selectedLayoutSide, setSelectedLayoutSide] = useState<"left" | "right" | "back">("left");
@@ -310,28 +304,19 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
     label: sector.name,
   })) || [];
 
-  // File picking functions for artwork
-  const pickArtworkFiles = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: "*/*",
-        multiple: true,
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.canceled && result.assets) {
-        const newFiles: FileWithPreview[] = result.assets.map((asset) => ({
-          uri: asset.uri,
-          name: asset.name,
-          type: asset.mimeType || "application/octet-stream",
-          size: asset.size || 0,
-        }));
-        setArtworkFiles([...artworkFiles, ...newFiles]);
-      }
-    } catch (error) {
-      console.error("Error picking artwork files:", error);
-      Alert.alert("Erro", "Não foi possível selecionar os arquivos");
+  // Handle artwork file selection from MediaPickerCard
+  const handleArtworkSelect = (result: MediaPickerResult) => {
+    if (artworkFiles.length >= 5) {
+      Alert.alert("Limite atingido", "Máximo de 5 arquivos de arte permitidos.");
+      return;
     }
+    const newFile: FileWithPreview = {
+      uri: result.uri,
+      name: result.name,
+      type: result.type,
+      size: result.size || 0,
+    };
+    setArtworkFiles([...artworkFiles, newFile]);
   };
 
   const removeArtworkFile = (index: number) => {
@@ -367,16 +352,27 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
   };
 
   const handleSubmit = async (data: TaskFormData) => {
-    // Validate observation if section is open
-    if (isObservationOpen) {
-      if (!data.observation?.description || observationFiles.length === 0) {
-        Alert.alert(
-          "Observação Incompleta",
-          "Por favor, adicione uma descrição e pelo menos um arquivo para a observação."
-        );
-        return;
-      }
+    // Prevent double submission
+    if (isSubmitting) {
+      console.log('[TaskForm] Submission blocked - already submitting');
+      return;
     }
+
+    setIsSubmittingInternal(true);
+    console.log('[TaskForm] Starting submission with data:', JSON.stringify(data, null, 2));
+
+    try {
+      // Validate observation if section is open
+      if (isObservationOpen) {
+        if (!data.observation?.description || observationFiles.length === 0) {
+          Alert.alert(
+            "Observação Incompleta",
+            "Por favor, adicione uma descrição e pelo menos um arquivo para a observação."
+          );
+          setIsSubmittingInternal(false);
+          return;
+        }
+      }
 
     // If we have files, convert to FormData with context for proper file organization
     if (artworkFiles.length > 0 || observationFiles.length > 0) {
@@ -468,6 +464,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
       );
 
       await onSubmit(formData as any);
+      console.log('[TaskForm] FormData submission completed');
     } else {
       // No files - submit as regular JSON with proper formatting
       const cleanedData: any = {
@@ -516,6 +513,16 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
       }
 
       await onSubmit(cleanedData);
+      console.log('[TaskForm] JSON submission completed');
+    }
+    } catch (error) {
+      console.error('[TaskForm] Submission error:', error);
+      Alert.alert(
+        "Erro ao salvar",
+        "Ocorreu um erro ao salvar a tarefa. Por favor, tente novamente."
+      );
+    } finally {
+      setIsSubmittingInternal(false);
     }
   };
 
@@ -532,24 +539,12 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.container}>
-            {/* Task Header Card */}
-            <Card style={styles.headerCard}>
-              <View style={styles.headerContent}>
-                <View style={[styles.headerLeft, { flex: 1 }]}>
-                  <Icon name="clipboard-list" size={24} color={colors.primary} />
-                  <ThemedText style={StyleSheet.flatten([styles.taskName, { color: colors.foreground }])}>
-                    {mode === "create" ? "Cadastrar Tarefa" : "Editar Tarefa"}
-                  </ThemedText>
-                </View>
-                <View style={styles.headerActions}>
-                  {/* Empty placeholder to match detail page structure */}
-                </View>
-              </View>
-            </Card>
-
             {/* Basic Information */}
             <Card style={styles.card}>
-              <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
+              <View style={styles.cardTitleRow}>
+                <Icon name="clipboard-list" size={20} color={colors.foreground} />
+                <ThemedText style={styles.cardTitleText}>Informações Básicas</ThemedText>
+              </View>
               <View style={styles.cardContent}>
               {/* Name - Disabled for financial, warehouse, designer, logistic */}
               <SimpleFormField label="Nome da Tarefa" required error={errors.name}>
@@ -571,20 +566,22 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
               </SimpleFormField>
 
               {/* Customer - Disabled for financial, warehouse, designer */}
-              <Controller
-                control={form.control}
-                name="customerId"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <CustomerSelector
-                    value={value}
-                    onValueChange={onChange}
-                    initialCustomer={initialCustomer}
-                    disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector}
-                    error={error?.message}
-                    required={true}
-                  />
-                )}
-              />
+              <FormFieldGroup label="Cliente" required error={errors.customerId?.message}>
+                <Controller
+                  control={form.control}
+                  name="customerId"
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
+                    <CustomerSelector
+                      value={value}
+                      onValueChange={onChange}
+                      initialCustomer={initialCustomer}
+                      disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector}
+                      error={error?.message}
+                      required={false}
+                    />
+                  )}
+                />
+              </FormFieldGroup>
 
               {/* Serial Number */}
               <SimpleFormField label="Número de Série" error={errors.serialNumber}>
@@ -723,14 +720,8 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                   )}
                 />
               </SimpleFormField>
-              </View>
-            </Card>
 
-          {/* Dates */}
-          <Card style={styles.card}>
-            <ThemedText style={styles.sectionTitle}>Datas</ThemedText>
-            <View style={styles.cardContent}>
-              {/* Entry Date */}
+              {/* Entry Date - in Basic Info for create mode */}
               <Controller
                 control={form.control}
                 name="entryDate"
@@ -749,7 +740,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                 )}
               />
 
-              {/* Term/Deadline */}
+              {/* Term/Deadline - in Basic Info for create mode */}
               <Controller
                 control={form.control}
                 name="term"
@@ -767,104 +758,91 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                   </View>
                 )}
               />
-
-              {/* Started At (edit only) */}
-              {mode === "edit" && (
-                <Controller
-                  control={form.control}
-                  name="startedAt"
-                  render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <View style={styles.fieldGroup}>
-                      <Label>Data de Início</Label>
-                      <DatePicker
-                        value={value ?? undefined}
-                        onChange={onChange}
-                        type="datetime"
-                        placeholder="Selecione a data de início"
-                        disabled={isSubmitting}
-                      />
-                      {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                    </View>
-                  )}
-                />
-              )}
-
-              {/* Finished At (edit only) */}
-              {mode === "edit" && (
-                <Controller
-                  control={form.control}
-                  name="finishedAt"
-                  render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <View style={styles.fieldGroup}>
-                      <Label>Data de Conclusão</Label>
-                      <DatePicker
-                        value={value ?? undefined}
-                        onChange={onChange}
-                        type="datetime"
-                        placeholder="Selecione a data de conclusão"
-                        disabled={isSubmitting}
-                      />
-                      {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                    </View>
-                  )}
-                />
-              )}
-            </View>
-          </Card>
-
-          {/* Artworks - Hidden for warehouse, financial, logistic users */}
-          {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
-            <Card style={styles.card}>
-              <ThemedText style={styles.sectionTitle}>Artes</ThemedText>
-              <View style={styles.cardContent}>
-                <ThemedText style={styles.sectionNote}>
-                  Arquivos de arte gerais (Máximo 5 arquivos)
-                </ThemedText>
-                <FileUploadField
-                  files={artworkFiles}
-                  onRemove={removeArtworkFile}
-                  onAdd={pickArtworkFiles}
-                  maxFiles={5}
-                  label="Adicionar Artes"
-                  disabled={isSubmitting}
-                />
               </View>
             </Card>
+
+          {/* Additional Dates (edit mode only) */}
+          {mode === "edit" && (
+          <Card style={styles.card}>
+            <View style={styles.cardTitleRow}>
+              <Icon name="calendar-event" size={20} color={colors.foreground} />
+              <ThemedText style={styles.cardTitleText}>Datas Adicionais</ThemedText>
+            </View>
+            <View style={styles.cardContent}>
+              {/* Started At */}
+              <Controller
+                control={form.control}
+                name="startedAt"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <View style={styles.fieldGroup}>
+                    <Label>Data de Início</Label>
+                    <DatePicker
+                      value={value ?? undefined}
+                      onChange={onChange}
+                      type="datetime"
+                      placeholder="Selecione a data de início"
+                      disabled={isSubmitting}
+                    />
+                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
+                  </View>
+                )}
+              />
+
+              {/* Finished At */}
+              <Controller
+                control={form.control}
+                name="finishedAt"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <View style={styles.fieldGroup}>
+                    <Label>Data de Conclusão</Label>
+                    <DatePicker
+                      value={value ?? undefined}
+                      onChange={onChange}
+                      type="datetime"
+                      placeholder="Selecione a data de conclusão"
+                      disabled={isSubmitting}
+                    />
+                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
+                  </View>
+                )}
+              />
+            </View>
+          </Card>
           )}
 
-          {/* Observation Section - Hidden for warehouse, financial, designer, logistic users */}
-          {!isWarehouseSector && !isFinancialSector && !isDesignerSector && !isLogisticSector && (
+          {/* Observation Section - Only in edit mode, hidden for warehouse, financial, designer, logistic users */}
+          {mode === "edit" && !isWarehouseSector && !isFinancialSector && !isDesignerSector && !isLogisticSector && (
             <Card style={styles.card}>
-              <View style={[styles.cardHeaderRow, { justifyContent: 'space-between' }]}>
-                <ThemedText style={styles.sectionTitle}>Observação</ThemedText>
-                <View style={{ flexDirection: 'row', gap: spacing.xs, alignItems: 'center' }}>
-                  {!isObservationOpen && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onPress={() => setIsObservationOpen(true)}
-                      disabled={isSubmitting}
-                    >
-                      <Icon name="plus" size={16} color={colors.foreground} />
-                      <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.sm }}>
-                        Adicionar
-                      </ThemedText>
-                    </Button>
-                  )}
-                  {isObservationOpen && (
-                    <TouchableOpacity
-                      style={{ padding: spacing.xs }}
-                      onPress={() => {
-                        setIsObservationOpen(false);
-                        setObservationFiles([]);
-                        form.setValue('observation', null);
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      <IconTrash size={18} color={colors.destructive} />
-                    </TouchableOpacity>
-                  )}
+              <View style={styles.collapsibleCardHeader}>
+                <View style={styles.collapsibleCardTitleRow}>
+                  <Icon name="file-text" size={20} color={colors.foreground} />
+                  <ThemedText style={styles.collapsibleCardTitle}>Observação</ThemedText>
                 </View>
+                {!isObservationOpen ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onPress={() => setIsObservationOpen(true)}
+                    disabled={isSubmitting}
+                  >
+                    <Icon name="plus" size={16} color={colors.foreground} />
+                    <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.sm }}>
+                      Adicionar
+                    </ThemedText>
+                  </Button>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => {
+                      setIsObservationOpen(false);
+                      setObservationFiles([]);
+                      form.setValue('observation', null);
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    <IconX size={18} color={colors.destructive} />
+                  </TouchableOpacity>
+                )}
               </View>
 
               {isObservationOpen && (
@@ -906,26 +884,34 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
 
           {/* Services */}
           <Card style={styles.card}>
-            <ThemedText style={styles.sectionTitle}>Serviços</ThemedText>
-            <View>
-              <Controller
-                control={form.control}
-                name="services"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <ServiceSelector
-                    services={value}
-                    onChange={onChange}
-                    disabled={isSubmitting}
-                    error={error?.message}
-                  />
-                )}
-              />
+            <View style={styles.cardTitleRow}>
+              <Icon name="clipboard-list" size={20} color={colors.foreground} />
+              <ThemedText style={styles.cardTitleText}>Serviços</ThemedText>
+            </View>
+            <View style={styles.cardContent}>
+              <FormFieldGroup label="Serviços" required error={errors.services?.message}>
+                <Controller
+                  control={form.control}
+                  name="services"
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
+                    <ServiceSelector
+                      services={value}
+                      onChange={onChange}
+                      disabled={isSubmitting}
+                      error={error?.message}
+                    />
+                  )}
+                />
+              </FormFieldGroup>
             </View>
           </Card>
 
           {/* Paints */}
           <Card style={styles.card}>
-            <ThemedText style={styles.sectionTitle}>Tintas</ThemedText>
+            <View style={styles.cardTitleRow}>
+              <Icon name="palette" size={20} color={colors.foreground} />
+              <ThemedText style={styles.cardTitleText}>Tintas</ThemedText>
+            </View>
             <View style={styles.cardContent}>
               {/* General Painting */}
               <Controller
@@ -960,42 +946,40 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           {/* Truck Layout Section - Hidden for financial and warehouse users */}
           {!isFinancialSector && !isWarehouseSector && (
           <Card style={styles.card}>
-            <View style={[styles.cardHeaderRow, { justifyContent: 'space-between' }]}>
-              <ThemedText style={styles.sectionTitle}>Layout do Caminhão</ThemedText>
-              <View style={{ flexDirection: 'row', gap: spacing.xs, alignItems: 'center' }}>
-                {!isLayoutOpen && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onPress={() => setIsLayoutOpen(true)}
-                    disabled={isSubmitting}
-                  >
-                    <Icon name="plus" size={16} color={colors.foreground} />
-                    <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.sm }}>
-                      Adicionar
-                    </ThemedText>
-                  </Button>
-                )}
-                {isLayoutOpen && (
-                  <TouchableOpacity
-                    style={{ padding: spacing.xs }}
-                    onPress={() => {
-                      setIsLayoutOpen(false);
-                      setLayouts({
-                        left: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
-                        right: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
-                        back: { height: 2.42, sections: [{ width: 2.42, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
-                      });
-                      // Clear modified sides when layout section is removed
-                      setModifiedLayoutSides(new Set());
-                      console.log('[TaskForm] Layout section closed - cleared modified sides');
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    <Icon name="trash-2" size={18} color={colors.destructive} />
-                  </TouchableOpacity>
-                )}
+            <View style={styles.collapsibleCardHeader}>
+              <View style={styles.collapsibleCardTitleRow}>
+                <Icon name="ruler" size={20} color={colors.foreground} />
+                <ThemedText style={styles.collapsibleCardTitle}>Layout do Caminhão</ThemedText>
               </View>
+              {!isLayoutOpen ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onPress={() => setIsLayoutOpen(true)}
+                  disabled={isSubmitting}
+                >
+                  <Icon name="plus" size={16} color={colors.foreground} />
+                  <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.sm }}>
+                    Adicionar
+                  </ThemedText>
+                </Button>
+              ) : (
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={() => {
+                    setIsLayoutOpen(false);
+                    setLayouts({
+                      left: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+                      right: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+                      back: { height: 2.42, sections: [{ width: 2.42, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+                    });
+                    setModifiedLayoutSides(new Set());
+                  }}
+                  disabled={isSubmitting}
+                >
+                  <IconX size={18} color={colors.destructive} />
+                </TouchableOpacity>
+              )}
             </View>
 
             {isLayoutOpen && (
@@ -1051,17 +1035,11 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                   selectedSide={selectedLayoutSide}
                   layouts={layouts}
                   onChange={(side, layoutData) => {
-                    console.log('[TaskForm] Layout onChange received:', { side, layoutData });
-
-                    // Mark this side as modified (following web implementation)
                     setModifiedLayoutSides((prev) => {
                       const newSet = new Set(prev);
                       newSet.add(side);
-                      console.log('[TaskForm] Modified sides:', Array.from(newSet));
                       return newSet;
                     });
-
-                    // Update layout state
                     setLayouts((prev) => ({
                       ...prev,
                       [side]: layoutData,
@@ -1074,6 +1052,63 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           </Card>
           )}
 
+          {/* Artworks - Last section, hidden for warehouse, financial, logistic users */}
+          {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
+            <Card style={styles.card}>
+              <View style={styles.cardTitleRow}>
+                <Icon name="file" size={20} color={colors.foreground} />
+                <ThemedText style={styles.cardTitleText}>Artes (Opcional)</ThemedText>
+              </View>
+              <View style={styles.cardContent}>
+                <MediaPicker
+                  onSelect={handleArtworkSelect}
+                  disabled={isSubmitting || artworkFiles.length >= 5}
+                  placeholder="Toque para adicionar arte"
+                  helperText={`${artworkFiles.length}/5 arquivos`}
+                  showCamera={true}
+                  showGallery={true}
+                  showFilePicker={true}
+                  multiple={true}
+                />
+                {artworkFiles.length > 0 && (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={{ marginTop: spacing.md }}
+                    contentContainerStyle={{ gap: spacing.sm }}
+                  >
+                    {artworkFiles.map((file, index) => (
+                      <View key={index} style={styles.artworkPreviewContainer}>
+                        {file.type?.startsWith('image/') ? (
+                          <View style={[styles.artworkImagePreview, { backgroundColor: colors.muted }]}>
+                            <Icon name="photo" size={32} color={colors.mutedForeground} />
+                            <ThemedText style={styles.artworkFileName} numberOfLines={1}>
+                              {file.name}
+                            </ThemedText>
+                          </View>
+                        ) : (
+                          <View style={[styles.artworkImagePreview, { backgroundColor: colors.muted }]}>
+                            <Icon name="file" size={32} color={colors.mutedForeground} />
+                            <ThemedText style={styles.artworkFileName} numberOfLines={1}>
+                              {file.name}
+                            </ThemedText>
+                          </View>
+                        )}
+                        <TouchableOpacity
+                          onPress={() => removeArtworkFile(index)}
+                          style={[styles.artworkRemoveButton, { backgroundColor: colors.destructive }]}
+                          disabled={isSubmitting}
+                        >
+                          <IconX size={14} color="white" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            </Card>
+          )}
+
           {/* Bottom spacing */}
           <View style={{ height: spacing.md }} />
         </View>
@@ -1081,55 +1116,84 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
       </KeyboardAvoidingView>
 
       {/* Action Buttons */}
-      <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.card }}>
-        <View
-          style={[
-            styles.actionBar,
-            {
-              backgroundColor: colors.card,
-              borderTopColor: colors.border,
-              paddingBottom: spacing.xl,
-            },
-          ]}
-        >
-          <Button
-            variant="outline"
-            onPress={onCancel}
-            disabled={isSubmitting}
-            style={{ flex: 1, minHeight: 40 }}
-          >
-            <>
-              <IconX size={20} color={colors.foreground} />
-              <ThemedText style={{ color: colors.foreground, marginLeft: 8 }}>Cancelar</ThemedText>
-            </>
-          </Button>
+      <SimpleFormActionBar
+        onCancel={onCancel}
+        onSubmit={() => {
+          console.log('[TaskForm] Submit button pressed');
+          console.log('[TaskForm] Form state:', {
+            isValid: form.formState.isValid,
+            isDirty: form.formState.isDirty,
+            errors: form.formState.errors,
+            isSubmitting: form.formState.isSubmitting,
+          });
 
-          <Button
-            variant="default"
-            onPress={(form as any).handleSubmit?.(handleSubmit) || handleSubmit}
-            disabled={isSubmitting}
-            style={{ flex: 1, minHeight: 40 }}
-          >
-            <>
-              {isSubmitting ? (
-                <>
-                  <IconLoader size={20} color={colors.primaryForeground} />
-                  <ThemedText style={{ color: colors.primaryForeground, marginLeft: 8 }}>
-                    Salvando...
-                  </ThemedText>
-                </>
-              ) : (
-                <>
-                  <IconDeviceFloppy size={20} color={colors.primaryForeground} />
-                  <ThemedText style={{ color: colors.primaryForeground, marginLeft: 8 }}>
-                    {mode === "create" ? "Salvar Tarefa" : "Salvar Alterações"}
-                  </ThemedText>
-                </>
-              )}
-            </>
-          </Button>
-        </View>
-      </SafeAreaView>
+          // Trigger form validation and submission
+          form.handleSubmit(
+            // onValid - called when validation passes
+            (data) => {
+              console.log('[TaskForm] Validation passed, submitting...');
+              handleSubmit(data);
+            },
+            // onInvalid - called when validation fails
+            (errors) => {
+              console.log('[TaskForm] Validation failed:', errors);
+
+              // Get first error message to show to user
+              const errorMessages: string[] = [];
+
+              if (errors.name) {
+                errorMessages.push(`Nome: ${errors.name.message}`);
+              }
+              if (errors.customerId) {
+                errorMessages.push(`Cliente: ${errors.customerId.message}`);
+              }
+              if (errors.services) {
+                const servicesError = errors.services as any;
+                if (servicesError.message) {
+                  errorMessages.push(`Serviços: ${servicesError.message}`);
+                } else if (servicesError.root?.message) {
+                  errorMessages.push(`Serviços: ${servicesError.root.message}`);
+                } else {
+                  errorMessages.push('Serviços: Pelo menos um serviço é obrigatório');
+                }
+              }
+              if (errors.term) {
+                errorMessages.push(`Prazo: ${errors.term.message}`);
+              }
+              if (errors.startedAt) {
+                errorMessages.push(`Data de início: ${errors.startedAt.message}`);
+              }
+              if (errors.finishedAt) {
+                errorMessages.push(`Data de conclusão: ${errors.finishedAt.message}`);
+              }
+
+              // Add other field errors
+              const handledFields = ['name', 'customerId', 'services', 'term', 'startedAt', 'finishedAt'];
+              Object.entries(errors).forEach(([key, value]) => {
+                if (!handledFields.includes(key) && value && typeof value === 'object' && 'message' in value) {
+                  errorMessages.push(`${key}: ${(value as any).message}`);
+                }
+              });
+
+              if (errorMessages.length > 0) {
+                Alert.alert(
+                  "Campos obrigatórios",
+                  errorMessages.join('\n'),
+                  [{ text: "OK" }]
+                );
+              } else {
+                Alert.alert(
+                  "Erro de validação",
+                  "Por favor, preencha todos os campos obrigatórios corretamente.",
+                  [{ text: "OK" }]
+                );
+              }
+            }
+          )();
+        }}
+        isSubmitting={isSubmitting}
+        submitLabel={mode === "create" ? "Salvar Tarefa" : "Salvar Alterações"}
+      />
     </ThemedView>
   );
 }
@@ -1259,33 +1323,85 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
     minWidth: 0,
   },
-  actionBar: {
-    flexDirection: "row",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    gap: spacing.md,
-  },
   layoutSideSelector: {
     flexDirection: "row",
     gap: spacing.xs,
     marginBottom: spacing.md,
   },
-  totalLengthContainer: {
+  layoutHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+    gap: spacing.sm,
     marginBottom: spacing.md,
   },
+  totalLengthBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+  },
   totalLengthLabel: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
+    fontSize: fontSize.xs,
   },
   totalLengthValue: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
+  },
+  collapsibleCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
+  },
+  collapsibleCardTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  collapsibleCardTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+  },
+  cardTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  cardTitleText: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+  },
+  artworkPreviewContainer: {
+    width: 100,
+    height: 100,
+    position: 'relative',
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  artworkImagePreview: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xs,
+    borderRadius: borderRadius.md,
+  },
+  artworkFileName: {
+    fontSize: fontSize.xs,
+    marginTop: spacing.xs,
+    textAlign: 'center',
+  },
+  artworkRemoveButton: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

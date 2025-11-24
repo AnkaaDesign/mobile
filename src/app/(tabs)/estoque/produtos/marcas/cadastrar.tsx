@@ -1,6 +1,5 @@
 import { useRouter } from "expo-router";
 import { showToast } from "@/components/ui/toast";
-import { ThemedView } from "@/components/ui/themed-view";
 import { ItemBrandForm } from "@/components/inventory/item/brand/form/brand-form";
 import { useItemBrandMutations } from "@/hooks";
 import { itemBrandCreateSchema} from '../../../../../schemas';
@@ -35,9 +34,5 @@ export default function BrandCreateScreen() {
     router.replace(routeToMobilePath(routes.inventory.products.brands.root) as any);
   };
 
-  return (
-    <ThemedView className="flex-1">
-      <ItemBrandForm mode="create" onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending} />
-    </ThemedView>
-  );
+  return <ItemBrandForm mode="create" onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending} />;
 }

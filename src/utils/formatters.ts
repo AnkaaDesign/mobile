@@ -196,3 +196,69 @@ export const formatChassis = (chassis: string): string => {
 
 // Alias for formatBrazilianPhone (for backwards compatibility)
 export const formatPhoneNumber = formatBrazilianPhone;
+
+/**
+ * Format a date value to Brazilian format
+ */
+export function formatDate(value: string | Date | null | undefined): string {
+  if (!value) return '-'
+
+  try {
+    const date = typeof value === 'string' ? new Date(value) : value
+
+    // Check if valid date
+    if (isNaN(date.getTime())) return '-'
+
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(date)
+  } catch {
+    return '-'
+  }
+}
+
+/**
+ * Format a datetime value to Brazilian format
+ */
+export function formatDateTime(value: string | Date | null | undefined): string {
+  if (!value) return '-'
+
+  try {
+    const date = typeof value === 'string' ? new Date(value) : value
+
+    // Check if valid date
+    if (isNaN(date.getTime())) return '-'
+
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date)
+  } catch {
+    return '-'
+  }
+}
+
+/**
+ * Format a currency value to Brazilian Real
+ */
+export function formatCurrency(value: number | string | null | undefined): string {
+  if (value === null || value === undefined) return '-'
+
+  try {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value
+
+    if (isNaN(numValue)) return '-'
+
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(numValue)
+  } catch {
+    return '-'
+  }
+}

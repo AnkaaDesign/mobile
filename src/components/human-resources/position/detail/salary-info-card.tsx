@@ -16,12 +16,12 @@ interface SalaryInfoCardProps {
 export function SalaryInfoCard({ position }: SalaryInfoCardProps) {
   const { colors, isDark } = useTheme();
 
-  // Get current remuneration from monetaryValues (prioritize new field over deprecated)
-  const currentMonetaryValue = position.monetaryValues?.find(mv => mv.current);
+  // Get current remuneration from remunerations relation (MonetaryValue entities)
+  const currentMonetaryValue = position.remunerations?.find(mv => mv.current);
   const currentRemuneration = currentMonetaryValue?.value || position.remunerations?.[0]?.value || position.remuneration || 0;
 
   // Show card only if there's remuneration data
-  if (!currentRemuneration && (!position.monetaryValues || position.monetaryValues.length === 0) && (!position.remunerations || position.remunerations.length === 0)) {
+  if (!currentRemuneration && (!position.remunerations || position.remunerations.length === 0)) {
     return null;
   }
 

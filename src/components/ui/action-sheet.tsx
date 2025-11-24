@@ -1,5 +1,5 @@
 import * as React from "react";
-import { BackHandler, Platform, Pressable, StyleSheet, Text, TextStyle, View, ViewStyle } from "react-native";
+import { BackHandler, Platform, Pressable, StyleSheet, Text, TextStyle, View, ViewStyle, Modal } from "react-native";
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from "react-native-reanimated";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, spacing, fontSize, fontWeight, transitions } from "@/constants/design-system";
@@ -159,28 +159,35 @@ const ActionSheet: React.FC<ActionSheetProps> = ({
   if (!visible) return null;
 
   return (
-    <Animated.View
-      style={{ ...StyleSheet.absoluteFillObject }}
-      entering={FadeIn.duration(transitions.fast)}
-      exiting={FadeOut.duration(transitions.fast)}
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={onClose}
     >
-      {/* Backdrop */}
       <Animated.View
-        style={backdropStyle}
+        style={{ ...StyleSheet.absoluteFillObject }}
         entering={FadeIn.duration(transitions.fast)}
         exiting={FadeOut.duration(transitions.fast)}
-      />
-
-      {/* Container */}
-      <Pressable
-        style={containerStyle}
-        onPress={closeOnBackdropPress ? onClose : undefined}
       >
-        <Pressable onPress={(e) => e.stopPropagation()}>
-          <Animated.View
-            entering={SlideInDown.duration(transitions.normal)}
-            exiting={SlideOutDown.duration(transitions.normal)}
-          >
+        {/* Backdrop */}
+        <Animated.View
+          style={backdropStyle}
+          entering={FadeIn.duration(transitions.fast)}
+          exiting={FadeOut.duration(transitions.fast)}
+        />
+
+        {/* Container */}
+        <Pressable
+          style={containerStyle}
+          onPress={closeOnBackdropPress ? onClose : undefined}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <Animated.View
+              entering={SlideInDown.duration(transitions.normal)}
+              exiting={SlideOutDown.duration(transitions.normal)}
+            >
             {/* Action Sheet */}
             <View style={sheetStyle}>
               {/* Header */}
@@ -246,26 +253,27 @@ const ActionSheet: React.FC<ActionSheetProps> = ({
               </View>
             </View>
 
-            {/* Cancel Button */}
-            <Pressable
-              style={({ pressed }) => [
-                cancelButtonStyle,
-                {
-                  backgroundColor: pressed ? colors.muted : colors.card,
-                },
-              ]}
-              onPress={onClose}
-              android_ripple={{
-                color: colors.muted,
-                borderless: false,
-              }}
-            >
-              <Text style={cancelLabelStyle}>{cancelLabel}</Text>
-            </Pressable>
-          </Animated.View>
+              {/* Cancel Button */}
+              <Pressable
+                style={({ pressed }) => [
+                  cancelButtonStyle,
+                  {
+                    backgroundColor: pressed ? colors.muted : colors.card,
+                  },
+                ]}
+                onPress={onClose}
+                android_ripple={{
+                  color: colors.muted,
+                  borderless: false,
+                }}
+              >
+                <Text style={cancelLabelStyle}>{cancelLabel}</Text>
+              </Pressable>
+            </Animated.View>
+          </Pressable>
         </Pressable>
-      </Pressable>
-    </Animated.View>
+      </Animated.View>
+    </Modal>
   );
 };
 

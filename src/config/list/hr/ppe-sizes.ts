@@ -103,12 +103,12 @@ export const ppeSizesListConfig: ListConfig<PpeSize> = {
         },
       },
     ],
-    defaultVisible: ['user', 'shirts', 'pants', 'boots', 'completeness'],
-    rowHeight: 60,
+    defaultVisible: ['user', 'shirts', 'pants'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (size, router) => {
@@ -141,55 +141,32 @@ export const ppeSizesListConfig: ListConfig<PpeSize> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'completeness',
-        label: 'Completude',
-        icon: 'checkbox',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'hasAllSizes',
-            label: 'Completo (todos os tamanhos)',
-            type: 'toggle',
-          },
-          {
-            key: 'missingShirts',
-            label: 'Sem tamanho de camisa',
-            type: 'toggle',
-          },
-          {
-            key: 'missingPants',
-            label: 'Sem tamanho de calça',
-            type: 'toggle',
-          },
-          {
-            key: 'missingBoots',
-            label: 'Sem tamanho de bota',
-            type: 'toggle',
-          },
-        ],
+        key: 'hasAllSizes',
+        type: 'toggle',
+        placeholder: 'Completo (todos os tamanhos)',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'userIds',
-            label: 'Funcionários',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os funcionários',
-          },
-        ],
+        key: 'missingShirts',
+        type: 'toggle',
+        placeholder: 'Sem tamanho de camisa',
+      },
+      {
+        key: 'missingPants',
+        type: 'toggle',
+        placeholder: 'Sem tamanho de calça',
+      },
+      {
+        key: 'missingBoots',
+        type: 'toggle',
+        placeholder: 'Sem tamanho de bota',
+      },
+      {
+        key: 'userIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Funcionários',
       },
     ],
   },

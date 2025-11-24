@@ -2,6 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { PpeDelivery } from '@/types'
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '@/constants'
 
+
 export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
   key: 'personal-ppe-deliveries',
   title: 'Meus EPIs',
@@ -40,12 +41,31 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         style: { fontWeight: '500' },
       },
       {
+        key: 'status',
+        label: 'STATUS',
+        sortable: true,
+        width: 1.5,
+        align: 'center',
+        render: (delivery) => PPE_DELIVERY_STATUS_LABELS[delivery.status] || delivery.status,
+        format: 'badge',
+        component: 'status-badge',
+      },
+      {
+        key: 'createdAt',
+        label: 'DATA REQUISIÇÃO',
+        sortable: true,
+        width: 1.5,
+        align: 'left',
+        render: (delivery) => delivery.createdAt,
+        format: 'datetime-multiline',
+      },
+      {
         key: 'quantity',
         label: 'QUANTIDADE',
         sortable: true,
         width: 1.0,
         align: 'center',
-        render: (delivery) => delivery.quantity || 0,
+        render: (delivery) => String(delivery.quantity || 0),
         format: 'number',
       },
       {
@@ -56,16 +76,6 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         align: 'left',
         render: (delivery) => delivery.actualDeliveryDate || delivery.scheduledDate,
         format: 'date',
-      },
-      {
-        key: 'status',
-        label: 'STATUS',
-        sortable: true,
-        width: 1.2,
-        align: 'center',
-        render: (delivery) => delivery.status,
-        format: 'badge',
-        component: 'status-badge',
       },
       {
         key: 'reviewedByUser.name',
@@ -109,87 +119,34 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         align: 'left',
         render: (delivery) => delivery.notes || '-',
       },
-      {
-        key: 'createdAt',
-        label: 'CRIADO EM',
-        sortable: true,
-        width: 1.3,
-        align: 'left',
-        render: (delivery) => delivery.createdAt,
-        format: 'date',
-      },
     ],
-    defaultVisible: ['item.name', 'quantity', 'actualDeliveryDate', 'status'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (delivery, router) => {
-          router.push(`/pessoal/meus-epis/detalhes/${delivery.id}` as any)
-        },
-      },
-    ],
+    defaultVisible: ['item.name', 'status', 'createdAt'],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'check-circle',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status da Entrega',
-            type: 'select',
-            multiple: true,
-            options: Object.values(PPE_DELIVERY_STATUS).map((status) => ({
-              label: PPE_DELIVERY_STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(PPE_DELIVERY_STATUS).map((status) => ({
+          label: PPE_DELIVERY_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Selecione os status',
       },
       {
-        key: 'item',
-        label: 'Item',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'ppeTypes',
-            label: 'Tipos de EPI',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load PPE types from API
-              return []
-            },
-            placeholder: 'Selecione os tipos',
-          },
-        ],
+        key: 'ppeTypes',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Selecione os tipos',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'deliveryDateRange',
-            label: 'Período de Entrega',
-            type: 'date-range',
-          },
-        ],
+        key: 'deliveryDateRange',
+        type: 'date-range',
+        placeholder: 'Período de Entrega',
       },
     ],
   },
@@ -213,12 +170,17 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
       { key: 'ca', label: 'CA', path: 'item.ca' },
       { key: 'validity', label: 'Validade', path: 'item.validity', format: 'date' },
       { key: 'notes', label: 'Observações', path: 'notes' },
-      { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
+      { key: 'createdAt', label: 'Data Requisição', path: 'createdAt', format: 'date' },
     ],
   },
 
-  // No create/edit/delete for personal PPE deliveries - read-only view
-  actions: undefined,
+  // Allow users to request PPE
+  actions: {
+    create: {
+      label: 'Solicitar EPI',
+      route: '/(tabs)/pessoal/meus-epis/request',
+    },
+  },
 
   emptyState: {
     icon: 'package',

@@ -1,3 +1,4 @@
+import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { Borrow } from '@/types'
 import {
@@ -5,6 +6,9 @@ import {
   BORROW_STATUS_LABELS,
 } from '@/constants'
 import { canEditBorrows } from '@/utils/permissions/entity-permissions'
+import { Badge } from '@/components/ui/badge'
+import { getBadgeVariant } from '@/constants/badge-colors'
+
 
 export const borrowsListConfig: ListConfig<Borrow> = {
   key: 'inventory-borrows',
@@ -82,11 +86,21 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         key: 'status',
         label: 'STATUS',
         sortable: true,
-        width: 1.0,
+        width: 1.5,
         align: 'center',
-        render: (borrow) => borrow.status,
-        format: 'badge',
-        component: 'status-badge',
+        render: (borrow) => {
+          const variant = getBadgeVariant(borrow.status, 'BORROW')
+          const label = BORROW_STATUS_LABELS[borrow.status as keyof typeof BORROW_STATUS_LABELS] || borrow.status
+          return (
+            <Badge
+              variant={variant}
+              size="sm"
+              style={{ alignSelf: 'center' }}
+            >
+              {label}
+            </Badge>
+          )
+        },
       },
       {
         key: 'createdAt',
@@ -94,7 +108,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         sortable: true,
         width: 1.3,
         align: 'left',
-        render: (borrow) => borrow.createdAt,
+        render: (borrow) => borrow.createdAt || '-',
         format: 'date',
       },
       {
@@ -112,7 +126,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (borrow) => borrow.quantityReturned || 0,
+        render: (borrow) => String(borrow.quantityReturned || 0),
         format: 'number',
       },
       {
@@ -149,12 +163,12 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['user.name', 'item.name', 'status'],
-    rowHeight: 60,
+    defaultVisible: ['item.name', 'user.name', 'status'],
+    rowHeight: 48,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (borrow, router) => {
@@ -228,122 +242,60 @@ export const borrowsListConfig: ListConfig<Borrow> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'package',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'statusIds',
-            label: 'Status do Empréstimo',
-            type: 'select',
-            multiple: true,
-            options: Object.values(BORROW_STATUS).map((status) => ({
-              label: BORROW_STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: false,
+        options: Object.values(BORROW_STATUS).map((status) => ({
+          label: BORROW_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status do Empréstimo',
       },
       {
-        key: 'entities',
-        label: 'Usuários e Itens',
-        icon: 'users',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'userIds',
-            label: 'Usuários',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os usuários',
-          },
-          {
-            key: 'itemIds',
-            label: 'Itens',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os itens',
-          },
-          {
-            key: 'categoryIds',
-            label: 'Categorias',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione as categorias',
-          },
-          {
-            key: 'brandIds',
-            label: 'Marcas',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione as marcas',
-          },
-        ],
+        key: 'userIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Usuários',
       },
       {
-        key: 'ranges',
-        label: 'Faixas de Valores',
-        icon: 'sliders',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'quantityRange',
-            label: 'Quantidade',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-        ],
+        key: 'itemIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Itens',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Empréstimo',
-            type: 'date-range',
-          },
-          {
-            key: 'returnedAt',
-            label: 'Data de Devolução',
-            type: 'date-range',
-          },
-          {
-            key: 'updatedAt',
-            label: 'Data de Atualização',
-            type: 'date-range',
-          },
-        ],
+        key: 'categoryIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Categorias',
+      },
+      {
+        key: 'brandIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Marcas',
+      },
+      {
+        key: 'quantityRange',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Empréstimo',
+      },
+      {
+        key: 'returnedAt',
+        type: 'date-range',
+        placeholder: 'Data de Devolução',
+      },
+      {
+        key: 'updatedAt',
+        type: 'date-range',
+        placeholder: 'Data de Atualização',
       },
     ],
   },

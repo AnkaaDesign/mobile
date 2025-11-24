@@ -8,16 +8,16 @@ import { numberUtils } from "./number";
 // Tailwind color equivalents for React Native
 const TASK_ROW_COLORS = {
   light: {
-    neutral: '#f5f5f5',      // bg-neutral-100
-    red: '#fca5a5',          // bg-red-300 (darker for better visibility)
+    neutral: '#e5e5e5',      // bg-neutral-200
+    red: '#fecaca',          // bg-red-200
     green: '#bbf7d0',        // bg-green-200
-    orange: '#fed7aa',       // bg-orange-200
+    orange: '#fde68a',       // bg-amber-200
   },
   dark: {
-    neutral: '#262626',      // bg-neutral-800
-    red: 'rgba(127, 29, 29, 0.5)',   // bg-red-900/50
-    green: 'rgba(20, 83, 45, 0.5)',  // bg-green-900/50
-    orange: 'rgba(124, 45, 18, 0.5)', // bg-orange-900/50
+    neutral: '#404040',      // bg-neutral-700
+    red: '#991b1b',          // bg-red-800
+    green: '#166534',        // bg-green-800
+    orange: '#b45309',       // bg-amber-700
   },
 };
 
@@ -187,7 +187,7 @@ export function getDaysUntilDeadline(task: Task): number | null {
  */
 export function formatTaskIdentifier(task: Task): string {
   if (task.serialNumber) return task.serialNumber;
-  if (task.plate) return task.plate;
+  if ((task as any).truck?.plate) return (task as any).truck.plate;
   return `#${task.id.slice(-6).toUpperCase()}`;
 }
 
@@ -396,3 +396,53 @@ export function getTaskRowColor(task: Task, isDark: boolean = false): string {
 
 // Re-export getHoursBetween from date utils to avoid duplication
 export { getHoursBetween } from "./date";
+
+/**
+ * Validation result for service order checks
+ */
+export interface ServiceOrderValidationResult {
+  isValid: boolean;
+  errorMessage?: string;
+  incompleteOrders?: Array<{ id: string; name: string; status: string }>;
+}
+
+/**
+ * Validate that all service orders for a task are finished
+ * Used before allowing a LEADER to mark a task as COMPLETED
+ *
+ * @param task - The task to validate
+ * @returns Validation result with error details if any service orders are incomplete
+ */
+export function validateAllServiceOrdersCompleted(task: Task): ServiceOrderValidationResult {
+  // Check if task has service orders
+  if (!task.serviceOrders || task.serviceOrders.length === 0) {
+    // No service orders to validate - task can be finished
+    return { isValid: true };
+  }
+
+  // Find incomplete service orders
+  const incompleteOrders = task.serviceOrders.filter((order: any) => {
+    // Service order statuses: PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+    // Only COMPLETED orders are considered finished
+    return order.status !== 'COMPLETED';
+  });
+
+  if (incompleteOrders.length > 0) {
+    const orderNames = incompleteOrders
+      .map((order: any) => order.name || `OS #${order.id}`)
+      .join(', ');
+
+    return {
+      isValid: false,
+      errorMessage: `Não é possível finalizar a tarefa. As seguintes ordens de serviço ainda não foram concluídas: ${orderNames}`,
+      incompleteOrders: incompleteOrders.map((order: any) => ({
+        id: order.id,
+        name: order.name || `OS #${order.id}`,
+        status: order.status,
+      })),
+    };
+  }
+
+  // All service orders are completed
+  return { isValid: true };
+}

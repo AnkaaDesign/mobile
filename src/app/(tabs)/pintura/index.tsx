@@ -1,49 +1,401 @@
-
-import { View, StyleSheet } from "react-native";
-import { ThemedView } from "@/components/ui/themed-view";
-import { ThemedText } from "@/components/ui/themed-text";
-import { IconTools } from "@tabler/icons-react-native";
+import { View, Text, ScrollView, Pressable, RefreshControl } from "react-native";
+import { useTheme } from "@/lib/theme";
+import { Icon } from "@/components/ui/icon";
+import { useRouter } from "expo-router";
+import { routes, DASHBOARD_TIME_PERIOD, PAINT_FINISH_LABELS, PAINT_FINISH } from "@/constants";
+import { routeToMobilePath } from "@/lib/route-mapper";
+import { usePaintDashboard } from "@/hooks/dashboard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useCallback } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function PinturaScreen() {
+  const { colors } = useTheme();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const [timePeriod] = useState(DASHBOARD_TIME_PERIOD.THIS_MONTH);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const { data: dashboard, isLoading, error, refetch } = usePaintDashboard({ timePeriod });
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
+  if (isLoading && !refreshing) {
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: 16, gap: 16 }}>
+          <View style={{ gap: 12 }}>
+            <Skeleton style={{ height: 24, width: 150, borderRadius: 4 }} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+              {[1, 2, 3, 4].map((i) => (
+                <View key={i} style={{ width: "47%", minWidth: 150 }}>
+                  <Skeleton style={{ height: 80, borderRadius: 8 }} />
+                </View>
+              ))}
+            </View>
+          </View>
+          <View style={{ gap: 12 }}>
+            <Skeleton style={{ height: 24, width: 200, borderRadius: 4 }} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <View key={i} style={{ width: "47%", minWidth: 150 }}>
+                  <Skeleton style={{ height: 100, borderRadius: 8 }} />
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  if (error) {
+    return (
+      <ScrollView
+        style={{ flex: 1, backgroundColor: colors.background }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        <View style={{ padding: 16, alignItems: "center", gap: 12 }}>
+          <Icon name="alert-circle" size="xl" color={colors.destructive} />
+          <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: "600" }}>
+            Erro ao carregar dashboard
+          </Text>
+          <Text style={{ color: colors.mutedForeground, textAlign: "center" }}>
+            {(error as Error).message || "Tente novamente mais tarde"}
+          </Text>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  const data = dashboard?.data;
+
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.content}>
-        <IconTools size={64} color="#9ca3af" style={styles.icon} />
-        <ThemedText style={styles.title}>Em Construção</ThemedText>
-        <ThemedText style={styles.subtitle}>
-          Esta página está em desenvolvimento.
-        </ThemedText>
-        <ThemedText style={styles.subtitle}>
-          Use o menu lateral para acessar as funcionalidades disponíveis.
-        </ThemedText>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
+      <View style={{ padding: 16, gap: 20 }}>
+        {/* Quick Access */}
+        <View style={{ gap: 12 }}>
+          <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+            Acesso Rápido
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            <Pressable
+              onPress={() => router.push(routeToMobilePath(routes.painting.catalog.list) as any)}
+              style={{
+                flex: 1,
+                minWidth: "45%",
+                backgroundColor: colors.card,
+                padding: 10,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: colors.border,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <Icon name="palette" size={24} color="#3b82f6" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.foreground, fontWeight: "500", fontSize: 12 }}>Catálogo</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>
+                  {data?.colorAnalysis?.totalColors || 0}
+                </Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push(routeToMobilePath(routes.painting.productions.list) as any)}
+              style={{
+                flex: 1,
+                minWidth: "45%",
+                backgroundColor: colors.card,
+                padding: 10,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: colors.border,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <Icon name="droplet" size={24} color="#22c55e" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.foreground, fontWeight: "500", fontSize: 12 }}>Produções</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>
+                  {data?.productionOverview?.totalProductions || 0}
+                </Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push(routeToMobilePath(routes.painting.types.list) as any)}
+              style={{
+                flex: 1,
+                minWidth: "45%",
+                backgroundColor: colors.card,
+                padding: 10,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: colors.border,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <Icon name="color-swatch" size={24} color="#a855f7" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.foreground, fontWeight: "500", fontSize: 12 }}>Tipos de Tinta</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>
+                  -
+                </Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push(routeToMobilePath(routes.painting.brands.list) as any)}
+              style={{
+                flex: 1,
+                minWidth: "45%",
+                backgroundColor: colors.card,
+                padding: 10,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: colors.border,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <Icon name="badge" size={24} color="#f97316" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.foreground, fontWeight: "500", fontSize: 12 }}>Marcas</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>
+                  -
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Metrics */}
+        <View style={{ gap: 12 }}>
+          <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+            Métricas de Pintura
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {[
+              { title: "Tintas no Catálogo", value: data?.colorAnalysis?.totalColors || 0, icon: "palette", color: "#3b82f6" },
+              { title: "Produções", value: data?.productionOverview?.totalProductions || 0, icon: "droplet", color: "#22c55e" },
+              { title: "Fórmulas", value: data?.formulaMetrics?.totalFormulas || 0, icon: "flask", color: "#a855f7" },
+              { title: "Componentes", value: data?.componentInventory?.totalComponents || 0, icon: "package", color: "#f97316" },
+              { title: "Volume (L)", value: (data?.productionOverview?.totalVolumeLiters || 0).toFixed(1), icon: "beaker", color: "#06b6d4" },
+              { title: "Peso (kg)", value: (data?.productionOverview?.totalWeightKg || 0).toFixed(1), icon: "package", color: "#8b5cf6" },
+            ].map((metric) => (
+              <View
+                key={metric.title}
+                style={{
+                  width: "48%",
+                  backgroundColor: colors.card,
+                  padding: 10,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 11, flex: 1 }} numberOfLines={1}>
+                    {metric.title}
+                  </Text>
+                  <Icon name={metric.icon} size={14} color={metric.color} />
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>
+                    {typeof metric.value === 'number' ? metric.value.toLocaleString('pt-BR') : metric.value}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Production Status */}
+        <View style={{ gap: 12 }}>
+          <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+            Status de Produção
+          </Text>
+          <View style={{ gap: 8 }}>
+            {[
+              {
+                label: "Total Produções",
+                value: data?.productionOverview?.totalProductions || 0,
+                color: "#3b82f6"
+              },
+              {
+                label: "Volume Total (L)",
+                value: data?.productionOverview?.totalVolumeLiters?.toFixed(1) || "0",
+                color: "#22c55e"
+              },
+              {
+                label: "Média por Produção (L)",
+                value: data?.productionOverview?.averageVolumePerProduction?.toFixed(1) || "0",
+                color: "#a855f7"
+              },
+              {
+                label: "Peso Total (kg)",
+                value: data?.productionOverview?.totalWeightKg?.toFixed(1) || "0",
+                color: "#f97316"
+              },
+            ].map((status) => (
+              <View
+                key={status.label}
+                style={{
+                  backgroundColor: colors.card,
+                  padding: 12,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <View style={{ width: 4, height: 24, backgroundColor: status.color, borderRadius: 2 }} />
+                  <Text style={{ color: colors.foreground, fontWeight: "500" }}>{status.label}</Text>
+                </View>
+                <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 16 }}>
+                  {status.value}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Top Used Paints */}
+        {data?.formulaMetrics?.mostUsedFormulas && data.formulaMetrics.mostUsedFormulas.length > 0 && (
+          <View style={{ gap: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+              Tintas Mais Usadas
+            </Text>
+            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
+              {data.formulaMetrics.mostUsedFormulas.slice(0, 5).map((formula) => {
+                const maxValue = Math.max(...data.formulaMetrics!.mostUsedFormulas.map(f => f.productionCount));
+                return (
+                  <View key={formula.id} style={{ gap: 4 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <Text style={{ color: colors.foreground, flex: 1 }} numberOfLines={1}>
+                        {formula.paintName}
+                      </Text>
+                      <Text style={{ color: colors.mutedForeground }}>{formula.productionCount}</Text>
+                    </View>
+                    <View style={{ height: 6, backgroundColor: colors.muted, borderRadius: 3, overflow: "hidden" }}>
+                      <View
+                        style={{
+                          height: 6,
+                          backgroundColor: "#3b82f6",
+                          borderRadius: 3,
+                          width: `${Math.min((formula.productionCount / maxValue) * 100, 100)}%`,
+                        }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Distribuição por Acabamento */}
+        {data?.colorAnalysis?.colorsByFinish && data.colorAnalysis.colorsByFinish.length > 0 && (
+          <View style={{ gap: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+              Distribuição por Acabamento
+            </Text>
+            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
+              {data.colorAnalysis.colorsByFinish.map((finish) => {
+                const normalizedFinish = finish.finish.toUpperCase() as keyof typeof PAINT_FINISH_LABELS;
+                const finishLabel = PAINT_FINISH_LABELS[normalizedFinish] || finish.finish;
+                const colorMap: Record<string, string> = {
+                  [PAINT_FINISH.MATTE]: "#6b7280",
+                  [PAINT_FINISH.SATIN]: "#eab308",
+                  [PAINT_FINISH.METALLIC]: "#3b82f6",
+                  [PAINT_FINISH.PEARL]: "#a855f7",
+                  [PAINT_FINISH.SOLID]: "#22c55e",
+                };
+                const barColor = colorMap[normalizedFinish] || "#f97316";
+                return (
+                  <View key={finish.finish} style={{ gap: 4 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <Text style={{ color: colors.foreground, flex: 1 }} numberOfLines={1}>
+                        {finishLabel}
+                      </Text>
+                      <Text style={{ color: colors.mutedForeground }}>
+                        {finish.count} ({finish.percentage.toFixed(0)}%)
+                      </Text>
+                    </View>
+                    <View style={{ height: 6, backgroundColor: colors.muted, borderRadius: 3, overflow: "hidden" }}>
+                      <View
+                        style={{
+                          height: 6,
+                          backgroundColor: barColor,
+                          borderRadius: 3,
+                          width: `${Math.min(finish.percentage, 100)}%`,
+                        }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Low Stock Components */}
+        {data?.componentInventory?.lowStockComponents && data.componentInventory.lowStockComponents.length > 0 && (
+          <View style={{ gap: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
+              Componentes Baixo Estoque
+            </Text>
+            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
+              {data.componentInventory.lowStockComponents.slice(0, 5).map((component) => {
+                const maxValue = Math.max(...data.componentInventory!.lowStockComponents.map(c => c.currentQuantity));
+                const componentLabel = component.code ? `${component.code} - ${component.name}` : component.name;
+                return (
+                  <View key={component.id} style={{ gap: 4 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <Text style={{ color: colors.foreground, flex: 1, fontSize: 12 }} numberOfLines={1}>
+                        {componentLabel}
+                      </Text>
+                      <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>
+                        {Math.round(component.currentQuantity * 100) / 100}
+                      </Text>
+                    </View>
+                    <View style={{ height: 6, backgroundColor: colors.muted, borderRadius: 3, overflow: "hidden" }}>
+                      <View
+                        style={{
+                          height: 6,
+                          backgroundColor: "#a855f7",
+                          borderRadius: 3,
+                          width: `${Math.min((component.currentQuantity / maxValue) * 100, 100)}%`,
+                        }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
       </View>
-    </ThemedView>
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  content: {
-    alignItems: "center",
-    gap: 16,
-  },
-  icon: {
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: "center",
-    opacity: 0.7,
-    maxWidth: 400,
-  },
-});

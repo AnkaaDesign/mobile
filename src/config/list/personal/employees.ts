@@ -2,6 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { User } from '@/types'
 import { USER_STATUS } from '@/constants/enums'
 
+
 const STATUS_LABELS: Record<string, string> = {
   EXPERIENCE_PERIOD_1: 'Experiência 1/2 (45 dias)',
   EXPERIENCE_PERIOD_2: 'Experiência 2/2 (45 dias)',
@@ -56,7 +57,7 @@ export const personalEmployeesListConfig: ListConfig<User> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (user) => user.status,
+        render: (user) => STATUS_LABELS[user.status] || user.status,
         format: 'badge',
       },
       {
@@ -76,73 +77,49 @@ export const personalEmployeesListConfig: ListConfig<User> = {
         render: (user) => user.email || '-',
       },
     ],
-    defaultVisible: ['name', 'position', 'sector', 'status'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (user, router) => {
-          router.push(`/pessoal/funcionarios/detalhes/${user.id}`)
-        },
-      },
-    ],
+    defaultVisible: ['name', 'position', 'status'],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'user-check',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(USER_STATUS).map((status) => ({
-              label: STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(USER_STATUS).map((status) => ({
+          label: STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Selecione os status',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'positionIds',
-            label: 'Cargos',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os cargos',
-          },
-          {
-            key: 'sectorIds',
-            label: 'Setores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os setores',
-          },
-        ],
+        key: 'positionIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Selecione os cargos',
+      },
+      {
+        key: 'sectorIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Selecione os setores',
+      },
+      {
+        key: 'birth',
+        type: 'date-range',
+        placeholder: 'Data de Nascimento',
+      },
+      {
+        key: 'dismissedAt',
+        type: 'date-range',
+        placeholder: 'Data de Demissão',
+      },
+      {
+        key: 'exp1EndAt',
+        type: 'date-range',
+        placeholder: 'Data de Contratação',
       },
     ],
   },

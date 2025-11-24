@@ -33,7 +33,7 @@ export default function MinhaEquipeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
 
   const teamMenuItems: TeamMenuItem[] = [
     {

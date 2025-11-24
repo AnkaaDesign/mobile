@@ -705,7 +705,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     vehicle_movement: "Movimentação de Veículo",
     parking_position: "Posição de Estacionamento",
     // Related task fields
-    "task.plate": "Placa",
+    "truck.plate": "Placa do Caminhão",
     "task.name": "Nome da Tarefa",
     "task.serialNumber": "Número de Série",
     "task.status": "Status da Tarefa",
@@ -726,7 +726,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     // Nested relationship fields
     "file.filename": "Nome do Arquivo",
     "task.serialNumber": "Número de Série da Tarefa",
-    "task.plate": "Placa da Tarefa",
+    "truck.plate": "Placa do Caminhão",
     "task.title": "Título da Tarefa",
     "parentCut.id": "ID do Corte Pai",
   },

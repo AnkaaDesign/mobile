@@ -1,321 +1,291 @@
-import { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
-import { useAuth } from "@/contexts/auth-context";
-import { ThemedView } from "@/components/ui/themed-view";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Card } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
-import { ErrorScreen } from "@/components/ui/error-screen";
-import { Badge } from "@/components/ui/badge";
-import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
-import {
-  IconClock,
-  IconCalendar,
-  IconLogin,
-  IconLogout,
-  IconCoffee,
-  IconAlertCircle,
-} from "@tabler/icons-react-native";
+import React, { useState, useMemo, useCallback } from "react";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { IconChevronLeft, IconChevronRight, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { formatDate, formatTime } from "@/utils";
+import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { useTheme } from "@/lib/theme";
+import { useMySecullumCalculations } from "@/hooks/secullum";
+import { getBonusPeriod } from "@/utils";
+import { CalculationsTable, CalculationsColumnDrawer } from "@/components/personal/calculations";
 
-// Time record types
-const RECORD_TYPE_ICONS = {
-  ENTRY: IconLogin,
-  EXIT: IconLogout,
-  BREAK_START: IconCoffee,
-  BREAK_END: IconCoffee,
-};
+interface CalculationRow {
+  id: string;
+  date: string;
+  entrada1?: string;
+  saida1?: string;
+  entrada2?: string;
+  saida2?: string;
+  entrada3?: string;
+  saida3?: string;
+  normais?: string;
+  faltas?: string;
+  ex50?: string;
+  ex100?: string;
+  ex150?: string;
+  dsr?: string;
+  dsrDeb?: string;
+  not?: string;
+  exNot?: string;
+  ajuste?: string;
+  abono2?: string;
+  abono3?: string;
+  abono4?: string;
+  atras?: string;
+  adian?: string;
+  folga?: string;
+  carga?: string;
+  justPa?: string;
+  tPlusMinus?: string;
+  exInt?: string;
+  notTot?: string;
+  refeicao?: string;
+}
 
-const RECORD_TYPE_LABELS = {
-  ENTRY: "Entrada",
-  EXIT: "Saída",
-  BREAK_START: "Início Intervalo",
-  BREAK_END: "Fim Intervalo",
-};
+const COLUMN_DEFINITIONS = [
+  { key: "date", label: "Data" },
+  { key: "entrada1", label: "Entrada 1" },
+  { key: "saida1", label: "Saída 1" },
+  { key: "entrada2", label: "Entrada 2" },
+  { key: "saida2", label: "Saída 2" },
+  { key: "entrada3", label: "Entrada 3" },
+  { key: "saida3", label: "Saída 3" },
+  { key: "normais", label: "Normais" },
+  { key: "faltas", label: "Faltas" },
+  { key: "ex50", label: "Ex 50%" },
+  { key: "ex100", label: "Ex 100%" },
+  { key: "ex150", label: "Ex 150%" },
+  { key: "dsr", label: "DSR" },
+  { key: "dsrDeb", label: "DSR Déb" },
+  { key: "not", label: "Noturno" },
+  { key: "exNot", label: "Ex Not." },
+  { key: "ajuste", label: "Ajuste" },
+  { key: "abono2", label: "Abono 2" },
+  { key: "abono3", label: "Abono 3" },
+  { key: "abono4", label: "Abono 4" },
+  { key: "atras", label: "Atraso" },
+  { key: "adian", label: "Adiant." },
+  { key: "folga", label: "Folga" },
+  { key: "carga", label: "Carga" },
+  { key: "justPa", label: "Just. PA" },
+  { key: "tPlusMinus", label: "T +/-" },
+  { key: "exInt", label: "Ex Int" },
+  { key: "notTot", label: "Not. Tot." },
+  { key: "refeicao", label: "Refeição" },
+];
+
+const DEFAULT_VISIBLE_COLUMNS = [
+  "date", "entrada1", "saida1", "entrada2", "saida2",
+  "normais", "ex50", "ex100", "dsr", "ajuste"
+];
 
 export default function MeusPontosScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user: currentUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
-  const selectedMonth = new Date(); // Current month as default
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
-  // Build query parameters for user's own time records
-  const queryParams = useMemo(() => {
-    if (!currentUser?.id) return null;
+  // Month navigation state (start with current month)
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-    const startOfMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
-    const endOfMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0);
+  // Visible columns state
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
+    () => new Set(DEFAULT_VISIBLE_COLUMNS)
+  );
 
-    return {
-      where: {
-        userId: currentUser.id,
-        recordTime: {
-          gte: startOfMonth,
-          lte: endOfMonth,
-        },
-      },
-      orderBy: { recordTime: "desc" },
-      include: {
-        adjustments: true,
-      },
-    };
-  }, [currentUser?.id, selectedMonth]);
+  // Calculate period dates (25th to 25th)
+  const periodDates = useMemo(() => {
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth() + 1;
+    return getBonusPeriod(year, month);
+  }, [selectedDate]);
 
-  // TODO: Implement time records fetching when API is available
-  // For now, using empty array as placeholder
-  const isLoading = false;
-  const error = null;
-  const records: any[] = [];
+  // Format dates for API (YYYY-MM-DD)
+  const startDate = periodDates.startDate.toISOString().split("T")[0];
+  const endDate = periodDates.endDate.toISOString().split("T")[0];
+
+  // Fetch calculations
+  const {
+    data: calculationsData,
+    isLoading,
+    error,
+    refetch,
+  } = useMySecullumCalculations({
+    startDate,
+    endDate,
+  });
+
+  // Parse calculation data (same approach as web version)
+  const calculations: CalculationRow[] = useMemo(() => {
+    const apiResponse = calculationsData?.data || calculationsData;
+
+    if (apiResponse?.success === false) {
+      return [];
+    }
+
+    const secullumData = apiResponse?.data;
+    if (!secullumData) return [];
+
+    const { Colunas = [], Linhas = [] } = secullumData;
+
+    if (!Array.isArray(Colunas) || !Array.isArray(Linhas)) {
+      return [];
+    }
+
+    // Create a mapping of column names to indices
+    const columnMap = new Map<string, number>();
+    Colunas.forEach((col: any, index: number) => {
+      if (col?.Nome) {
+        columnMap.set(col.Nome, index);
+      }
+    });
+
+    // Map rows using column indices
+    return Linhas.map((row: any[], rowIndex: number) => ({
+      id: `calc-${rowIndex}`,
+      date: row[columnMap.get("Data") ?? 0] || "",
+      entrada1: row[columnMap.get("Entrada 1") ?? 1] || "",
+      saida1: row[columnMap.get("Saída 1") ?? 2] || "",
+      entrada2: row[columnMap.get("Entrada 2") ?? 3] || "",
+      saida2: row[columnMap.get("Saída 2") ?? 4] || "",
+      entrada3: row[columnMap.get("Entrada 3") ?? 5] || "",
+      saida3: row[columnMap.get("Saída 3") ?? 6] || "",
+      normais: row[columnMap.get("Normais") ?? 7] || "",
+      faltas: row[columnMap.get("Faltas") ?? 8] || "",
+      ex50: row[columnMap.get("Ex50%") ?? 9] || "",
+      ex100: row[columnMap.get("Ex100%") ?? 10] || "",
+      ex150: row[columnMap.get("Ex150%") ?? 11] || "",
+      dsr: row[columnMap.get("DSR") ?? 12] || "",
+      dsrDeb: row[columnMap.get("DSR.Deb") ?? 13] || "",
+      not: row[columnMap.get("Not.") ?? 14] || "",
+      exNot: row[columnMap.get("ExNot") ?? 15] || "",
+      ajuste: row[columnMap.get("Ajuste") ?? 16] || "",
+      abono2: row[columnMap.get("Abono2") ?? 17] || "",
+      abono3: row[columnMap.get("Abono3") ?? 18] || "",
+      abono4: row[columnMap.get("Abono4") ?? 19] || "",
+      atras: row[columnMap.get("Atras.") ?? 20] || "",
+      adian: row[columnMap.get("Adian.") ?? 21] || "",
+      folga: row[columnMap.get("Folga") ?? 22] || "",
+      carga: row[columnMap.get("Carga") ?? 23] || "",
+      justPa: row[columnMap.get("JustPa.") ?? 24] || "",
+      tPlusMinus: row[columnMap.get("T+/-") ?? 25] || "",
+      exInt: row[columnMap.get("ExInt") ?? 26] || "",
+      notTot: row[columnMap.get("Not.Tot.") ?? 27] || "",
+      refeicao: row[columnMap.get("Refeição") ?? 28] || "",
+    }));
+  }, [calculationsData]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      // TODO: Implement refresh when API is available
-      // await refetch();
+      await refetch();
     } finally {
       setRefreshing(false);
     }
+  }, [refetch]);
+
+  const handlePreviousMonth = useCallback(() => {
+    setSelectedDate((prev) => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() - 1);
+      return newDate;
+    });
   }, []);
 
-  // Group records by date
-  const groupedRecords = useMemo(() => {
-    const groups: Record<string, any[]> = {};
-
-    records.forEach((record: any) => {
-      const date = formatDate(record.recordTime);
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(record);
+  const handleNextMonth = useCallback(() => {
+    setSelectedDate((prev) => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() + 1);
+      return newDate;
     });
+  }, []);
 
-    // Sort records within each day by time
-    Object.keys(groups).forEach((date) => {
-      groups[date].sort((a, b) =>
-        new Date(a.recordTime).getTime() - new Date(b.recordTime).getTime()
-      );
-    });
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumns(newColumns);
+  }, []);
 
-    return groups;
-  }, [records]);
+  // Handle API errors
+  if (error) {
+    const errorMessage = (error as any)?.response?.data?.message
+      || (error as any)?.message
+      || 'Erro ao carregar seus pontos';
 
-  // Calculate daily work hours
-  const calculateDailyHours = (dayRecords: any[]) => {
-    let totalMinutes = 0;
-    let entryTime: Date | null = null;
-    let breakStartTime: Date | null = null;
-
-    dayRecords.forEach((record) => {
-      const recordTime = new Date(record.recordTime);
-
-      switch (record.type) {
-        case "ENTRY":
-          entryTime = recordTime;
-          break;
-        case "EXIT":
-          if (entryTime) {
-            totalMinutes += (recordTime.getTime() - entryTime.getTime()) / (1000 * 60);
-            entryTime = null;
-          }
-          break;
-        case "BREAK_START":
-          if (entryTime) {
-            totalMinutes += (recordTime.getTime() - entryTime.getTime()) / (1000 * 60);
-            entryTime = null;
-          }
-          breakStartTime = recordTime;
-          break;
-        case "BREAK_END":
-          if (breakStartTime) {
-            entryTime = recordTime;
-            breakStartTime = null;
-          }
-          break;
-      }
-    });
-
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = Math.round(totalMinutes % 60);
-    return `${hours}h ${minutes}min`;
-  };
-
-  if (!currentUser) {
     return (
-      <ThemedView style={styles.container}>
-        <View style={styles.emptyContainer}>
-          <Card style={styles.loadingCard}>
-            <IconAlertCircle size={48} color={colors.mutedForeground} />
-            <ThemedText style={[styles.title, { color: colors.foreground, textAlign: "center", marginTop: spacing.md }]}>
-              Usuário não autenticado
-            </ThemedText>
-          </Card>
-        </View>
-      </ThemedView>
-    );
-  }
-
-  if (isLoading && records.length === 0) {
-    return (
-      <ThemedView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Card style={styles.loadingCard}>
-            <ThemedText style={{ color: colors.mutedForeground }}>
-              Carregando seus registros de ponto...
-            </ThemedText>
-          </Card>
-        </View>
-      </ThemedView>
-    );
-  }
-
-  if (error && records.length === 0) {
-    return (
-      <ThemedView style={styles.container}>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
         <ErrorScreen
-          message="Erro ao carregar registros"
-          detail={error.message}
+          message="Erro ao carregar pontos"
+          detail={errorMessage}
           onRetry={handleRefresh}
         />
       </ThemedView>
     );
   }
 
-  const hasRecords = Object.keys(groupedRecords).length > 0;
-
   return (
-    <ThemedView style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>
-            Meus Pontos
-          </ThemedText>
-          <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            {selectedMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
-          </ThemedText>
+    <>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        {/* Header: Month Navigator + Column Button */}
+        <View style={styles.headerContainer}>
+          {/* Month Navigator */}
+          <View style={[styles.monthSelector, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <TouchableOpacity
+              style={[styles.navButton, { backgroundColor: colors.muted }]}
+              onPress={handlePreviousMonth}
+            >
+              <IconChevronLeft size={20} color={colors.foreground} />
+            </TouchableOpacity>
+
+            <View style={styles.monthDisplay}>
+              <ThemedText style={styles.monthLabel}>
+                {selectedDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
+              </ThemedText>
+              <ThemedText style={[styles.periodLabel, { color: colors.mutedForeground }]}>
+                {periodDates.startDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} - {periodDates.endDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+              </ThemedText>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.navButton, { backgroundColor: colors.muted }]}
+              onPress={handleNextMonth}
+            >
+              <IconChevronRight size={20} color={colors.foreground} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Column Visibility Button - matches month selector height */}
+          <TouchableOpacity
+            style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setIsColumnPanelOpen(true)}
+          >
+            <IconList size={20} color={colors.foreground} />
+            <View style={[styles.columnBadge, { backgroundColor: colors.primary }]}>
+              <ThemedText style={styles.columnBadgeText}>{visibleColumns.size}</ThemedText>
+            </View>
+          </TouchableOpacity>
         </View>
 
-        {/* Summary Card */}
-        <Card style={styles.summaryCard}>
-          <View style={styles.summaryHeader}>
-            <IconClock size={20} color={colors.primary} />
-            <ThemedText style={[styles.summaryTitle, { color: colors.foreground }]}>
-              Resumo do Mês
-            </ThemedText>
-          </View>
-          <View style={styles.summaryContent}>
-            <View style={styles.summaryItem}>
-              <ThemedText style={[styles.summaryValue, { color: colors.foreground }]}>
-                {records.length}
-              </ThemedText>
-              <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
-                Registros
-              </ThemedText>
-            </View>
-            <View style={styles.summaryItem}>
-              <ThemedText style={[styles.summaryValue, { color: colors.foreground }]}>
-                {Object.keys(groupedRecords).length}
-              </ThemedText>
-              <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
-                Dias Trabalhados
-              </ThemedText>
-            </View>
-          </View>
-        </Card>
+        {/* Table */}
+        <CalculationsTable
+          data={calculations}
+          columns={COLUMN_DEFINITIONS}
+          visibleColumns={visibleColumns}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
+          loading={isLoading && !refreshing}
+        />
+      </ThemedView>
 
-        {hasRecords ? (
-          <View style={styles.recordsContainer}>
-            {Object.entries(groupedRecords)
-              .sort((a, b) => b[0].localeCompare(a[0])) // Sort dates descending
-              .map(([date, dayRecords]) => (
-                <Card key={date} style={styles.dayCard}>
-                  <View style={styles.dayHeader}>
-                    <View style={styles.dayInfo}>
-                      <IconCalendar size={16} color={colors.primary} />
-                      <ThemedText style={[styles.dayDate, { color: colors.foreground }]}>
-                        {date}
-                      </ThemedText>
-                    </View>
-                    <Badge variant="secondary">
-                      <ThemedText style={[styles.dayHours, { color: colors.primary }]}>
-                        {calculateDailyHours(dayRecords)}
-                      </ThemedText>
-                    </Badge>
-                  </View>
-
-                  <View style={styles.recordsList}>
-                    {dayRecords.map((record: any, index: number) => {
-                      const Icon = RECORD_TYPE_ICONS[record.type as keyof typeof RECORD_TYPE_ICONS] || IconClock;
-                      const isAdjusted = record.adjustments && record.adjustments.length > 0;
-
-                      return (
-                        <View
-                          key={record.id}
-                          style={[
-                            styles.recordItem,
-                            index !== dayRecords.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
-                          ]}
-                        >
-                          <View style={styles.recordLeft}>
-                            <Icon size={18} color={colors.mutedForeground} />
-                            <View style={styles.recordInfo}>
-                              <ThemedText style={[styles.recordType, { color: colors.foreground }]}>
-                                {RECORD_TYPE_LABELS[record.type as keyof typeof RECORD_TYPE_LABELS] || record.type}
-                              </ThemedText>
-                              <ThemedText style={[styles.recordTime, { color: colors.mutedForeground }]}>
-                                {formatTime(record.recordTime)}
-                              </ThemedText>
-                            </View>
-                          </View>
-                          {isAdjusted && (
-                            <Badge variant="outline" style={{ borderColor: colors.warning }}>
-                              <ThemedText style={[styles.adjustedText, { color: colors.warning }]}>
-                                Ajustado
-                              </ThemedText>
-                            </Badge>
-                          )}
-                        </View>
-                      );
-                    })}
-                  </View>
-                </Card>
-              ))}
-          </View>
-        ) : (
-          <View style={styles.emptyContainer}>
-            <EmptyState
-              icon="clock"
-              title="Sem registros de ponto"
-              description={`Não há registros de ponto para ${selectedMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}`}
-            />
-          </View>
-        )}
-
-        {/* Info Card */}
-        <Card style={[styles.infoCard, { backgroundColor: colors.muted }]}>
-          <IconAlertCircle size={20} color={colors.mutedForeground} />
-          <ThemedText style={[styles.infoText, { color: colors.mutedForeground }]}>
-            Os registros de ponto são sincronizados com o sistema Secullum.
-            Para ajustes ou correções, entre em contato com o RH.
-          </ThemedText>
-        </Card>
-      </ScrollView>
-    </ThemedView>
+      {/* Column Visibility Panel */}
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={() => setIsColumnPanelOpen(false)}>
+        <CalculationsColumnDrawer
+          columns={COLUMN_DEFINITIONS}
+          visibleColumns={visibleColumns}
+          onVisibilityChange={handleColumnsChange}
+          onClose={() => setIsColumnPanelOpen(false)}
+          defaultColumns={DEFAULT_VISIBLE_COLUMNS}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 
@@ -323,134 +293,68 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
+  headerContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 8,
+    alignItems: "stretch",
+  },
+  monthSelector: {
     flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.md,
-  },
-  header: {
-    marginBottom: spacing.lg,
-  },
-  title: {
-    fontSize: fontSize.xl,
-    fontWeight: "700",
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    fontSize: fontSize.sm,
-  },
-  summaryCard: {
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  summaryHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.md,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 8,
+    minHeight: 56,
   },
-  summaryTitle: {
-    fontSize: fontSize.base,
-    fontWeight: "600",
-    marginLeft: spacing.sm,
-  },
-  summaryContent: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  summaryItem: {
+  navButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: "center",
     alignItems: "center",
   },
-  summaryValue: {
-    fontSize: fontSize.xxl,
-    fontWeight: "700",
-  },
-  summaryLabel: {
-    fontSize: fontSize.xs,
-    marginTop: spacing.xs,
-  },
-  recordsContainer: {
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  dayCard: {
-    padding: 0,
-    overflow: "hidden",
-  },
-  dayHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  monthDisplay: {
+    flex: 1,
     alignItems: "center",
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.1)",
-  },
-  dayInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  dayDate: {
-    fontSize: fontSize.base,
-    fontWeight: "600",
-  },
-  dayHours: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-  },
-  recordsList: {
-    padding: spacing.sm,
-  },
-  recordItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-  },
-  recordLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  recordInfo: {
     gap: 2,
   },
-  recordType: {
-    fontSize: fontSize.sm,
+  monthLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  periodLabel: {
+    fontSize: 11,
     fontWeight: "500",
   },
-  recordTime: {
-    fontSize: fontSize.xs,
-  },
-  adjustedText: {
-    fontSize: fontSize.xs,
-    fontWeight: "500",
-  },
-  infoCard: {
-    flexDirection: "row",
-    padding: spacing.md,
-    alignItems: "flex-start",
-    marginTop: spacing.md,
-  },
-  infoText: {
-    fontSize: fontSize.sm,
-    lineHeight: fontSize.sm * 1.5,
-    marginLeft: spacing.sm,
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
+  columnButton: {
+    width: 56,
+    minHeight: 56,
+    borderRadius: 12,
+    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
+    position: "relative",
   },
-  loadingCard: {
-    padding: spacing.lg,
-  },
-  emptyContainer: {
-    flex: 1,
+  columnBadge: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
     justifyContent: "center",
     alignItems: "center",
-    minHeight: 200,
+    paddingHorizontal: 4,
+  },
+  columnBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
   },
 });

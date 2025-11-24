@@ -50,11 +50,11 @@ export const holidaysListConfig: ListConfig<Holiday> = {
       },
     ],
     defaultVisible: ['name', 'date', 'type'],
-    rowHeight: 60,
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (holiday, router) => {
@@ -87,40 +87,49 @@ export const holidaysListConfig: ListConfig<Holiday> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'type',
-        label: 'Tipo',
-        icon: 'calendar-event',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'type',
-            label: 'Tipo de Feriado',
-            type: 'select',
-            multiple: true,
-            options: Object.values(HOLIDAY_TYPE).map((type) => ({
-              label: TYPE_LABELS[type],
-              value: type,
-            })),
-            placeholder: 'Selecione os tipos',
-          },
-        ],
+        key: 'year',
+        type: 'select',
+        multiple: false,
+        options: (() => {
+          const currentYear = new Date().getFullYear()
+          return Array.from({ length: 5 }, (_, i) => {
+            const year = currentYear - 2 + i
+            return { label: String(year), value: year }
+          })
+        })(),
+        placeholder: 'Ano',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'date',
-            label: 'Data do Feriado',
-            type: 'date-range',
-          },
+        key: 'month',
+        type: 'select',
+        multiple: false,
+        options: [
+          { label: 'Janeiro', value: 1 },
+          { label: 'Fevereiro', value: 2 },
+          { label: 'Março', value: 3 },
+          { label: 'Abril', value: 4 },
+          { label: 'Maio', value: 5 },
+          { label: 'Junho', value: 6 },
+          { label: 'Julho', value: 7 },
+          { label: 'Agosto', value: 8 },
+          { label: 'Setembro', value: 9 },
+          { label: 'Outubro', value: 10 },
+          { label: 'Novembro', value: 11 },
+          { label: 'Dezembro', value: 12 },
         ],
+        placeholder: 'Mês',
+      },
+      {
+        key: 'type',
+        type: 'select',
+        multiple: true,
+        options: Object.values(HOLIDAY_TYPE).map((type) => ({
+          label: TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Tipo de feriado',
       },
     ],
   },

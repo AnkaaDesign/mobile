@@ -28,7 +28,7 @@ import {
 export default function PaintTypeDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const { delete: deleteAsync } = usePaintTypeMutations();
   const [refreshing, setRefreshing] = useState(false);
 

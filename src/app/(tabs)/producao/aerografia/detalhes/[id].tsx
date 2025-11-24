@@ -27,7 +27,7 @@ import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 export default function AirbrushingDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const { deleteAsync } = useAirbrushingMutations();
   const [refreshing, setRefreshing] = useState(false);
 

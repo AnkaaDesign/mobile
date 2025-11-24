@@ -24,7 +24,7 @@ import {
 export default function ObservationDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const { delete: deleteAsync } = useObservationMutations();
   const [refreshing, setRefreshing] = useState(false);
 

@@ -12,7 +12,7 @@ export const personalVacationsListConfig: ListConfig<Vacation> = {
   title: 'Minhas Férias',
 
   query: {
-    hook: 'useVacationsInfiniteMobile',
+    hook: 'useMyVacationsInfiniteMobile',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
@@ -46,7 +46,7 @@ export const personalVacationsListConfig: ListConfig<Vacation> = {
         sortable: true,
         width: 1.0,
         align: 'center',
-        render: (vacation) => vacation.daysRequested || 0,
+        render: (vacation) => String(vacation.daysRequested || 0),
         format: 'number',
       },
       {
@@ -55,7 +55,7 @@ export const personalVacationsListConfig: ListConfig<Vacation> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (vacation) => vacation.status,
+        render: (vacation) => VACATION_STATUS_LABELS[vacation.status] || vacation.status,
         format: 'badge',
         component: 'status-badge',
       },
@@ -104,87 +104,47 @@ export const personalVacationsListConfig: ListConfig<Vacation> = {
       },
     ],
     defaultVisible: ['period', 'daysRequested', 'status'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (vacation, router) => {
-          router.push(`/pessoal/minhas-ferias/detalhes/${vacation.id}` as any)
-        },
-      },
-    ],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'check-circle',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: false,
-            options: Object.values(VACATION_STATUS).map((status) => ({
-              label: VACATION_STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione o status',
-          },
-        ],
+        type: 'select',
+        multiple: false,
+        options: Object.values(VACATION_STATUS).map((status) => ({
+          label: VACATION_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Selecione o status',
       },
       {
         key: 'type',
-        label: 'Tipo',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'type',
-            label: 'Tipo de Férias',
-            type: 'select',
-            multiple: true,
-            options: Object.values(VACATION_TYPE).map((type) => ({
-              label: VACATION_TYPE_LABELS[type],
-              value: type,
-            })),
-            placeholder: 'Selecione os tipos',
-          },
-          {
-            key: 'isCollective',
-            label: 'Apenas Férias Coletivas',
-            type: 'toggle',
-            description: 'Mostrar apenas férias coletivas',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(VACATION_TYPE).map((type) => ({
+          label: VACATION_TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Selecione os tipos',
       },
       {
-        key: 'dates',
-        label: 'Período',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'year',
-            label: 'Ano',
-            type: 'select',
-            multiple: false,
-            options: Array.from({ length: 5 }, (_, i) => {
-              const year = new Date().getFullYear() - 2 + i
-              return { label: year.toString(), value: year }
-            }),
-            placeholder: 'Selecione o ano',
-          },
-        ],
+        key: 'isCollective',
+        type: 'toggle',
+        placeholder: 'Apenas Férias Coletivas',
+        description: 'Mostrar apenas férias coletivas',
+      },
+      {
+        key: 'year',
+        type: 'select',
+        multiple: false,
+        options: Array.from({ length: 5 }, (_, i) => {
+          const year = new Date().getFullYear() - 2 + i
+          return { label: year.toString(), value: year }
+        }),
+        placeholder: 'Selecione o ano',
       },
     ],
   },

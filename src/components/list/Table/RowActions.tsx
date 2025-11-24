@@ -25,9 +25,9 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
   const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow()
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Filter visible actions
+  // Filter visible actions, excluding 'view' since it's handled by row click
   const visibleActions = actions.filter(
-    (action) => !action.visible || action.visible(item)
+    (action) => action.key !== 'view' && (!action.visible || action.visible(item))
   )
 
   const handleOpen = useCallback(() => {
@@ -171,16 +171,19 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
 const styles = StyleSheet.create({
   actionsContainer: {
     flexDirection: 'row',
+    height: '100%',
   },
   actionButton: {
-    width: 70,
+    width: 50,
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 4,
+    gap: 1,
+    paddingHorizontal: 2,
   },
   actionText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
   },
 })

@@ -2,13 +2,14 @@ import type { ListConfig } from '@/components/list/types'
 import type { Paint } from '@/types'
 import { canEditPaints } from '@/utils/permissions/entity-permissions'
 
+
 export const catalogListConfig: ListConfig<Paint> = {
   key: 'painting-catalog',
   title: 'Catálogo de Tintas',
 
   query: {
     hook: 'usePaintsInfiniteMobile',
-    defaultSort: { field: 'name', direction: 'asc' },
+    defaultSort: { field: 'colorOrder', direction: 'asc' },
     pageSize: 25,
     include: {
       paintType: true,
@@ -36,9 +37,9 @@ export const catalogListConfig: ListConfig<Paint> = {
         style: { fontWeight: '500' },
       },
       {
-        key: 'color',
+        key: 'colorOrder',
         label: 'COR',
-        sortable: false,
+        sortable: true,
         width: 0.8,
         align: 'center',
         render: (paint) => paint.hex,
@@ -55,7 +56,7 @@ export const catalogListConfig: ListConfig<Paint> = {
       {
         key: 'paintType',
         label: 'TIPO',
-        sortable: false,
+        sortable: true,
         width: 1.5,
         align: 'left',
         render: (paint) => paint.paintType?.name || '-',
@@ -63,7 +64,7 @@ export const catalogListConfig: ListConfig<Paint> = {
       {
         key: 'paintBrand',
         label: 'MARCA',
-        sortable: false,
+        sortable: true,
         width: 1.5,
         align: 'left',
         render: (paint) => paint.paintBrand?.name || '-',
@@ -80,7 +81,7 @@ export const catalogListConfig: ListConfig<Paint> = {
       {
         key: 'manufacturer',
         label: 'MONTADORA',
-        sortable: false,
+        sortable: true,
         width: 1.2,
         align: 'left',
         render: (paint) => paint.manufacturer || '-',
@@ -101,7 +102,7 @@ export const catalogListConfig: ListConfig<Paint> = {
         sortable: false,
         width: 0.8,
         align: 'center',
-        render: (paint) => (paint as any)._count?.formulas || 0,
+        render: (paint) => String((paint as any)._count?.formulas || 0),
         format: 'badge',
       },
       {
@@ -134,12 +135,12 @@ export const catalogListConfig: ListConfig<Paint> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['name', 'color', 'paintType', 'finish'],
-    rowHeight: 60,
+    defaultVisible: ['name', 'color', 'code'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (paint, router) => {
@@ -172,149 +173,88 @@ export const catalogListConfig: ListConfig<Paint> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'type',
-        label: 'Tipo e Marca',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'paintTypeIds',
-            label: 'Tipos de Tinta',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os tipos',
-          },
-          {
-            key: 'paintBrandIds',
-            label: 'Marcas de Tinta',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione as marcas',
-          },
-        ],
+        key: 'paintTypeIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Tipos de Tinta',
       },
       {
-        key: 'finish',
-        label: 'Acabamento e Características',
-        icon: 'sparkles',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'finishes',
-            label: 'Acabamento',
-            type: 'select',
-            multiple: true,
-            options: [
-              { label: 'Sólido', value: 'SOLID' },
-              { label: 'Metálico', value: 'METALLIC' },
-              { label: 'Perolizado', value: 'PEARL' },
-              { label: 'Fosco', value: 'MATTE' },
-              { label: 'Acetinado', value: 'SATIN' },
-              { label: 'Semi-brilho', value: 'SEMI_GLOSS' },
-              { label: 'Brilhante', value: 'GLOSS' },
-              { label: 'Alto Brilho', value: 'HIGH_GLOSS' },
-            ],
-            placeholder: 'Selecione os acabamentos',
-          },
-          {
-            key: 'hasFormulas',
-            label: 'Apenas com fórmulas',
-            type: 'boolean',
-            description: 'Mostrar apenas tintas que possuem fórmulas cadastradas',
-          },
-        ],
+        key: 'paintBrandIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Marcas de Tinta',
       },
       {
-        key: 'manufacturer',
-        label: 'Montadora',
-        icon: 'truck',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'manufacturers',
-            label: 'Montadoras',
-            type: 'select',
-            multiple: true,
-            options: [
-              { label: 'Volkswagen', value: 'VOLKSWAGEN' },
-              { label: 'Mercedes-Benz', value: 'MERCEDES_BENZ' },
-              { label: 'Scania', value: 'SCANIA' },
-              { label: 'Volvo', value: 'VOLVO' },
-              { label: 'Iveco', value: 'IVECO' },
-              { label: 'DAF', value: 'DAF' },
-              { label: 'MAN', value: 'MAN' },
-              { label: 'Ford', value: 'FORD' },
-              { label: 'Agrale', value: 'AGRALE' },
-              { label: 'Outro', value: 'OTHER' },
-            ],
-            placeholder: 'Selecione as montadoras',
-          },
+        key: 'finishes',
+        type: 'select',
+        multiple: true,
+        options: [
+          { label: 'Lisa', value: 'SOLID' },
+          { label: 'Metálico', value: 'METALLIC' },
+          { label: 'Perolizado', value: 'PEARL' },
+          { label: 'Fosco', value: 'MATTE' },
+          { label: 'Semi Brilho', value: 'SATIN' },
         ],
+        placeholder: 'Acabamento',
       },
       {
-        key: 'palette',
-        label: 'Paleta de Cores',
-        icon: 'palette',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'palettes',
-            label: 'Paletas',
-            type: 'select',
-            multiple: true,
-            options: [
-              { label: 'Branco', value: 'WHITE' },
-              { label: 'Preto', value: 'BLACK' },
-              { label: 'Cinza', value: 'GRAY' },
-              { label: 'Prata', value: 'SILVER' },
-              { label: 'Vermelho', value: 'RED' },
-              { label: 'Azul', value: 'BLUE' },
-              { label: 'Verde', value: 'GREEN' },
-              { label: 'Amarelo', value: 'YELLOW' },
-              { label: 'Laranja', value: 'ORANGE' },
-              { label: 'Marrom', value: 'BROWN' },
-              { label: 'Bege', value: 'BEIGE' },
-              { label: 'Dourado', value: 'GOLDEN' },
-              { label: 'Rosa', value: 'PINK' },
-              { label: 'Roxo', value: 'PURPLE' },
-            ],
-            placeholder: 'Selecione as paletas',
-          },
-        ],
+        key: 'hasFormulas',
+        type: 'boolean',
+        placeholder: 'Apenas com fórmulas',
+        description: 'Mostrar apenas tintas que possuem fórmulas cadastradas',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
+        key: 'manufacturers',
+        type: 'select',
+        multiple: true,
+        options: [
+          { label: 'Volkswagen', value: 'VOLKSWAGEN' },
+          { label: 'Mercedes-Benz', value: 'MERCEDES_BENZ' },
+          { label: 'Scania', value: 'SCANIA' },
+          { label: 'Volvo', value: 'VOLVO' },
+          { label: 'Iveco', value: 'IVECO' },
+          { label: 'DAF', value: 'DAF' },
+          { label: 'MAN', value: 'MAN' },
+          { label: 'Ford', value: 'FORD' },
+          { label: 'Agrale', value: 'AGRALE' },
+          { label: 'Outro', value: 'OTHER' },
         ],
+        placeholder: 'Montadora',
+      },
+      {
+        key: 'palettes',
+        type: 'select',
+        multiple: true,
+        options: [
+          { label: 'Branco', value: 'WHITE' },
+          { label: 'Preto', value: 'BLACK' },
+          { label: 'Cinza', value: 'GRAY' },
+          { label: 'Prata', value: 'SILVER' },
+          { label: 'Vermelho', value: 'RED' },
+          { label: 'Azul', value: 'BLUE' },
+          { label: 'Verde', value: 'GREEN' },
+          { label: 'Amarelo', value: 'YELLOW' },
+          { label: 'Laranja', value: 'ORANGE' },
+          { label: 'Marrom', value: 'BROWN' },
+          { label: 'Bege', value: 'BEIGE' },
+          { label: 'Dourado', value: 'GOLDEN' },
+          { label: 'Rosa', value: 'PINK' },
+          { label: 'Roxo', value: 'PURPLE' },
+        ],
+        placeholder: 'Paleta de Cores',
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Cadastro',
       },
     ],
   },
 
   search: {
-    placeholder: 'Buscar tintas...',
+    placeholder: 'Buscar por nome, código hex, marca, tags...',
     debounce: 300,
   },
 

@@ -33,7 +33,7 @@ export const Cell = memo(function Cell({
 const styles = StyleSheet.create({
   cell: {
     paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingVertical: 4,
     justifyContent: 'center',
   },
   centerAlign: {

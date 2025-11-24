@@ -21,7 +21,7 @@ import type {
 } from '@/schemas';
 
 // Import payroll-specific types from api-client
-import type { BonusPayrollParams, PayrollData, BonusDiscountCreateFormData } from '@/api-client';
+import type { BonusPayrollParams, PayrollData, BonusDiscountCreateFormData, BonusCalculationResult } from '@/api-client';
 
 // =====================================================
 // Re-export types for convenience

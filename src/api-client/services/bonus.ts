@@ -115,10 +115,36 @@ export const bonusService = {
   batchDelete: (ids: string[]) =>
     apiClient.delete<BatchOperationResult<Bonus>>('/bonus/batch', { data: { ids } }),
 
-  // Live bonus calculation and payroll data
+  // Personal bonus operations (no admin privileges required)
+  /**
+   * Get current user's saved bonuses
+   * Returns only bonuses belonging to the authenticated user
+   * No admin/HR privileges required - accessible to all users
+   */
+  getMyBonuses: (params?: BonusGetManyParamsType) =>
+    apiClient.get<BonusGetManyResponseType>('/bonuses/my-bonuses', { params }),
+
+  /**
+   * Get current user's bonus detail
+   * Returns only if the bonus belongs to the authenticated user
+   * No admin/HR privileges required - accessible to all users
+   */
+  getMyBonusDetail: (id: string, params?: BonusGetByIdParams) =>
+    apiClient.get<Bonus>(`/bonuses/my-bonuses/${id}`, { params }),
+
+  /**
+   * Get current user's live bonus calculation
+   * Returns real-time bonus calculation for the authenticated user
+   * No admin/HR privileges required - accessible to all users
+   */
+  getMyLiveBonus: (params?: BonusPayrollParams) =>
+    apiClient.get<{ success: boolean; message: string; data: any | null }>('/bonuses/my-live-bonus', { params }),
+
+  // Live bonus calculation and payroll data (admin-only)
   /**
    * Get live bonus calculations for a specific period (calculated on-demand)
    * This provides real-time bonus calculations without saving to database
+   * @deprecated For personal use, use getMyLiveBonus instead
    */
   getLivePayrollData: (filters?: BonusPayrollFilters) =>
     apiClient.get<PayrollData>('/bonus/payroll-data', { params: filters }),
@@ -127,6 +153,7 @@ export const bonusService = {
    * Alias for getLivePayrollData - Get live bonuses by year/month
    * @param year - Year for calculation
    * @param month - Month for calculation
+   * @deprecated For personal use, use getMyLiveBonus instead
    */
   getLiveBonuses: (year: number, month: number) =>
     apiClient.get<PayrollData>('/bonus/payroll-data', { params: { year: year.toString(), month: month.toString() } }),

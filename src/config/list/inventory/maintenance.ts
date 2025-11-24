@@ -3,6 +3,7 @@ import type { Maintenance } from '@/types'
 import { MAINTENANCE_STATUS } from '@/constants/enums'
 import { canEditMaintenance } from '@/utils/permissions/entity-permissions'
 
+
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
   IN_PROGRESS: 'Em Andamento',
@@ -50,7 +51,7 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (maintenance) => maintenance.status,
+        render: (maintenance) => STATUS_LABELS[maintenance.status] || maintenance.status,
         format: 'badge',
       },
       {
@@ -59,7 +60,7 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (maintenance) => maintenance.scheduledFor,
+        render: (maintenance) => maintenance.scheduledFor || '-',
         format: 'date',
       },
       {
@@ -97,12 +98,12 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
         render: (maintenance) => maintenance.description || '-',
       },
     ],
-    defaultVisible: ['name', 'item', 'status', 'scheduledFor'],
-    rowHeight: 60,
+    defaultVisible: ['item', 'status', 'scheduledFor'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (maintenance, router) => {
@@ -135,70 +136,37 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'tool',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(MAINTENANCE_STATUS).map((status) => ({
-              label: STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(MAINTENANCE_STATUS).map((status) => ({
+          label: STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'itemIds',
-            label: 'Itens',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione os itens',
-          },
-        ],
+        key: 'itemIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Itens',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'scheduledFor',
-            label: 'Agendado Para',
-            type: 'date-range',
-          },
-          {
-            key: 'startedAt',
-            label: 'Data de Início',
-            type: 'date-range',
-          },
-          {
-            key: 'finishedAt',
-            label: 'Data de Conclusão',
-            type: 'date-range',
-          },
-        ],
+        key: 'scheduledFor',
+        type: 'date-range',
+        placeholder: 'Agendado Para',
+      },
+      {
+        key: 'startedAt',
+        type: 'date-range',
+        placeholder: 'Data de Início',
+      },
+      {
+        key: 'finishedAt',
+        type: 'date-range',
+        placeholder: 'Data de Conclusão',
       },
     ],
   },

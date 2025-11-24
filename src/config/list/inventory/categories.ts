@@ -45,7 +45,7 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
         sortable: false,
         width: 0.8,
         align: 'center',
-        render: (category) => (category as any)._count?.items || 0,
+        render: (category) => String((category as any)._count?.items || 0),
         format: 'badge',
       },
       {
@@ -54,16 +54,16 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (category) => category.createdAt,
+        render: (category) => category.createdAt || '-',
         format: 'date',
       },
     ],
-    defaultVisible: ['name', 'type', 'itemCount'],
-    rowHeight: 60,
+    defaultVisible: ['name', 'itemCount', 'createdAt'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (category, router) => {
@@ -96,35 +96,17 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'options',
-        label: 'Opções',
-        icon: 'settings',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'hasItems',
-            label: 'Com Produtos',
-            description: 'Apenas categorias que possuem produtos',
-            type: 'toggle',
-          },
-        ],
+        key: 'hasItems',
+        description: 'Apenas categorias que possuem produtos',
+        type: 'toggle',
+        placeholder: 'Com Produtos',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
-        ],
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Cadastro',
       },
     ],
   },

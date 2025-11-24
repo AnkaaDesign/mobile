@@ -124,7 +124,11 @@ export default function EditScheduleScreen() {
     if (!id) return;
 
     try {
+      console.log('[EditSchedule] Starting task update for id:', id);
+      console.log('[EditSchedule] Update data:', JSON.stringify(data, null, 2));
+
       const result = await updateAsync({ id, data });
+      console.log('[EditSchedule] API result:', result);
 
       if (result.success) {
         showToast({
@@ -132,9 +136,22 @@ export default function EditScheduleScreen() {
           type: "success",
         });
         router.replace(routeToMobilePath(routes.production.schedule.root) as any);
+      } else {
+        // API returned failure
+        console.error('[EditSchedule] Task update failed:', result);
+        showToast({
+          title: "Erro ao atualizar tarefa",
+          message: result?.message || "Não foi possível atualizar a tarefa. Tente novamente.",
+          type: "error",
+        });
       }
-    } catch (error) {
-      console.error("Error updating task:", error);
+    } catch (error: any) {
+      console.error("[EditSchedule] Error updating task:", error);
+      showToast({
+        title: "Erro ao atualizar tarefa",
+        message: error?.message || "Ocorreu um erro inesperado. Por favor, tente novamente.",
+        type: "error",
+      });
     }
   };
 
@@ -196,8 +213,11 @@ export default function EditScheduleScreen() {
           customerId: task.customerId || "",
           sectorId: task.sectorId ?? undefined,
           serialNumber: task.serialNumber ?? undefined,
-          chassisNumber: task.chassisNumber ?? undefined,
-          plate: task.plate ?? undefined,
+          // truck object matches Prisma schema field names
+          truck: {
+            plate: task.truck?.plate ?? null,
+            chassisNumber: task.truck?.chassisNumber ?? null,
+          },
           details: task.details ?? undefined,
           entryDate: task.entryDate ? new Date(task.entryDate) : undefined,
           term: task.term ? new Date(task.term) : undefined,

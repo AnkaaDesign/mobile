@@ -73,10 +73,21 @@ export function ThemeProvider({ children, defaultTheme = "system", storageKey = 
   return <ThemeProviderContext.Provider value={value}>{children}</ThemeProviderContext.Provider>;
 }
 
+// Default theme values for when context is not available
+const defaultThemeContext: ThemeProviderState = {
+  theme: "light",
+  setTheme: async () => {},
+  colors: themeColors.light,
+  spacing: themeSpacing,
+  isDark: false,
+};
+
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext);
   if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
+    // Return default values instead of throwing to prevent crashes
+    console.warn("useTheme called outside ThemeProvider, using defaults");
+    return defaultThemeContext;
   }
   return context;
 };

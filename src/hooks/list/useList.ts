@@ -4,8 +4,8 @@ import { useSort } from './useSort'
 import { useSelection } from './useSelection'
 import { useFilters } from './useFilters'
 import { useTable } from './useTable'
-import { useExport } from './useExport'
 import type { ListConfig, UseListReturn } from '@/components/list/types'
+import { useAuth } from '@/contexts/auth-context'
 import * as hooks from '@/hooks'
 
 /**
@@ -18,6 +18,9 @@ export function useList<T extends { id: string }>(
   // Get the infinite query hook dynamically
   const useInfiniteQuery = getInfiniteQueryHook(config.query.hook)
 
+  // Get current user for permission checks
+  const { user } = useAuth()
+
   // Core state hooks
   const search = useSearch({
     debounce: config.search?.debounce,
@@ -29,7 +32,7 @@ export function useList<T extends { id: string }>(
   })
 
   const filters = useFilters({
-    sections: config.filters?.sections || [],
+    fields: config.filters?.fields || [],
   })
 
   const selection = useSelection()
@@ -57,12 +60,6 @@ export function useList<T extends { id: string }>(
     storageKey: config.key,
   })
 
-  // Export management
-  const exportHook = useExport({
-    data: query.items || [],
-    config: config.export,
-    selection: selection.selectedIds,
-  })
 
   // Refresh handler
   const [refreshing, setRefreshing] = useState(false)
@@ -88,12 +85,12 @@ export function useList<T extends { id: string }>(
     () => ({
       values: filters.values,
       searchText: search.text,
-      sections: filters.sections,
+      fields: filters.fields,
       onRemove: filters.onRemove,
       onClearSearch: search.onClear,
       onClearAll: reset,
     }),
-    [filters.values, filters.sections, filters.onRemove, search.text, search.onClear, reset]
+    [filters.values, filters.fields, filters.onRemove, search.text, search.onClear, reset]
   )
 
   // Return organized API
@@ -115,10 +112,17 @@ export function useList<T extends { id: string }>(
       visibleColumns: table.visibleColumns,
       onToggleColumn: table.onToggleColumn,
       onResetColumns: table.onResetColumns,
+      isColumnPanelOpen: table.isColumnPanelOpen,
+      onOpenColumnPanel: table.onOpenColumnPanel,
+      onCloseColumnPanel: table.onCloseColumnPanel,
       sort: sort.config,
       onSort: sort.onSort,
-      rowHeight: config.table.rowHeight || 48,
-      actions: config.table.actions || [],
+      rowHeight: config.table.rowHeight || 72,
+      // Filter actions based on user permissions (canPerform check)
+      actions: (config.table.actions || []).filter(
+        (action) => !action.canPerform || action.canPerform(user)
+      ),
+      getRowStyle: config.table.getRowStyle,
     },
 
     // Search
@@ -134,7 +138,7 @@ export function useList<T extends { id: string }>(
 
     // Filters
     filters: {
-      sections: filters.sections,
+      fields: filters.fields,
       values: filters.values,
       onChange: filters.onChange,
       onClear: filters.onClear,
@@ -159,16 +163,6 @@ export function useList<T extends { id: string }>(
       onDisable: selection.onDisable,
     },
 
-    // Export
-    export: {
-      onExport: exportHook.onExport,
-      isExporting: exportHook.isExporting,
-      disabled: exportHook.disabled,
-      formats: config.export?.formats || [],
-      hasSelection: selection.selectedIds.size > 0,
-      selectedCount: selection.selectedIds.size,
-      totalCount: query.items?.length || 0,
-    },
 
     // Pagination
     pagination: {

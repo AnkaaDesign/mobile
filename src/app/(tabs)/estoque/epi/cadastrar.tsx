@@ -1,8 +1,6 @@
-
-import { UnderConstruction } from "@/components/ui/under-construction";
+import React from "react";
+import { PPEForm } from "@/components/inventory/ppe/form/ppe-form";
 
 export default function CreatePPEScreen() {
-  return (
-    <UnderConstruction title="Cadastrar PPE" description="Cadastro de novos equipamentos de proteção individual com informações de segurança e validade." icon="shield-plus" />
-  );
+  return <PPEForm mode="create" />;
 }

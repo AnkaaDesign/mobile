@@ -13,13 +13,8 @@ export const positionsListConfig: ListConfig<Position> = {
       _count: {
         select: {
           users: true,
-          monetaryValues: true,
           remunerations: true,
         },
-      },
-      monetaryValues: {
-        orderBy: { createdAt: 'desc' as const },
-        take: 5,
       },
       remunerations: {
         take: 1,
@@ -45,7 +40,7 @@ export const positionsListConfig: ListConfig<Position> = {
         sortable: true,
         width: 1.0,
         align: 'center',
-        render: (position) => position.hierarchy || 0,
+        render: (position) => String(position.hierarchy || 0),
         format: 'number',
       },
       {
@@ -64,12 +59,6 @@ export const positionsListConfig: ListConfig<Position> = {
         width: 1.3,
         align: 'right',
         render: (position) => {
-          // Try to get remuneration from monetaryValues first (new approach)
-          const monetaryValues = (position as any).monetaryValues
-          if (monetaryValues && monetaryValues.length > 0) {
-            return monetaryValues[0].value
-          }
-          // Fallback to deprecated remunerations
           const remunerations = (position as any).remunerations
           if (remunerations && remunerations.length > 0) {
             return remunerations[0].value
@@ -84,7 +73,7 @@ export const positionsListConfig: ListConfig<Position> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (position) => (position as any)._count?.users || 0,
+        render: (position) => String((position as any)._count?.users || 0),
         format: 'badge',
       },
       {
@@ -105,12 +94,12 @@ export const positionsListConfig: ListConfig<Position> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['name', 'hierarchy', 'remuneration', 'users'],
-    rowHeight: 60,
+    defaultVisible: ['name', 'hierarchy', 'remuneration'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (position, router) => {
@@ -143,62 +132,31 @@ export const positionsListConfig: ListConfig<Position> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'options',
-        label: 'Opções',
-        icon: 'settings',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'bonifiable',
-            label: 'Bonificáveis',
-            description: 'Apenas cargos bonificáveis',
-            type: 'toggle',
-          },
-          {
-            key: 'hasUsers',
-            label: 'Com Colaboradores',
-            description: 'Apenas cargos com colaboradores',
-            type: 'toggle',
-          },
-        ],
+        key: 'bonifiable',
+        type: 'toggle',
+        placeholder: 'Apenas bonificáveis',
       },
       {
-        key: 'ranges',
-        label: 'Faixas',
-        icon: 'adjustments',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'hierarchyRange',
-            label: 'Hierarquia',
-            type: 'number-range',
-            placeholder: { min: 'Mínimo', max: 'Máximo' },
-          },
-          {
-            key: 'remunerationRange',
-            label: 'Remuneração (R$)',
-            type: 'number-range',
-            placeholder: { min: 'Mínimo', max: 'Máximo' },
-          },
-        ],
+        key: 'hasUsers',
+        type: 'toggle',
+        placeholder: 'Com colaboradores',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
-        ],
+        key: 'hierarchyRange',
+        type: 'number-range',
+        placeholder: { min: 'Hierarquia mínima', max: 'Hierarquia máxima' },
+      },
+      {
+        key: 'remunerationRange',
+        type: 'number-range',
+        placeholder: { min: 'Remuneração mínima', max: 'Remuneração máxima' },
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: { from: 'Cadastro de', to: 'Cadastro até' },
       },
     ],
   },

@@ -115,122 +115,52 @@ export const teamCommissionsListConfig: ListConfig<Task> = {
     ],
     defaultVisible: ['createdBy.name', 'name', 'customer.fantasyName', 'commission', 'price', 'createdAt'],
     rowHeight: 72,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (task, router) => {
-          router.push(`/(tabs)/producao/cronograma/detalhes/${task.id}`)
-        },
-      },
-    ],
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'commission',
-        label: 'Status da Comissão',
-        icon: 'currency-dollar',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'commission',
-            label: 'Status da Comissão',
-            type: 'select',
-            multiple: true,
-            options: Object.values(COMMISSION_STATUS).map((status) => ({
-              label: COMMISSION_STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(COMMISSION_STATUS).map((status) => ({
+          label: COMMISSION_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status da Comissão',
       },
       {
-        key: 'task-status',
-        label: 'Status da Tarefa',
-        icon: 'list-checks',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(TASK_STATUS).map((status) => ({
-              label: TASK_STATUS_LABELS[status as keyof typeof TASK_STATUS_LABELS] || status,
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        key: 'status',
+        type: 'select',
+        multiple: true,
+        options: Object.values(TASK_STATUS).map((status) => ({
+          label: TASK_STATUS_LABELS[status as keyof typeof TASK_STATUS_LABELS] || status,
+          value: status,
+        })),
+        placeholder: 'Status da Tarefa',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdByIds',
-            label: 'Colaboradores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // This would load team members from API
-              return []
-            },
-            placeholder: 'Selecione os colaboradores',
-          },
-          {
-            key: 'customerIds',
-            label: 'Clientes',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // This would load customers from API
-              return []
-            },
-            placeholder: 'Selecione os clientes',
-          },
-        ],
+        key: 'createdByIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Colaboradores',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAtRange',
-            label: 'Data de Criação',
-            type: 'date-range',
-          },
-        ],
+        key: 'customerIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Clientes',
       },
       {
-        key: 'ranges',
-        label: 'Faixas de Valores',
-        icon: 'coins',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'priceRange',
-            label: 'Valor (R$)',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-        ],
+        key: 'createdAtRange',
+        type: 'date-range',
+        placeholder: 'Data de Criação',
+      },
+      {
+        key: 'priceRange',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
       },
     ],
   },

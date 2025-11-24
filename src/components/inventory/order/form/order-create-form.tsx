@@ -1,52 +1,86 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'expo-router';
-import * as DocumentPicker from 'expo-document-picker';
-import { orderCreateSchema } from '@/schemas';
-import type { OrderCreateFormData } from '@/schemas';
-import { useOrderMutations, useItems, useFile } from '@/hooks';
-import { ORDER_STATUS } from '@/constants';
-import { ThemedText } from '@/components/ui/themed-text';
-import { ThemedView } from '@/components/ui/themed-view';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { Combobox } from '@/components/ui/combobox';
-import { RadioGroup } from '@/components/ui/radio-group';
-import { DateTimePicker } from '@/components/ui/date-time-picker';
-import { FileUploadField } from '@/components/ui/file-upload-field';
-import type { FileWithPreview } from '@/components/ui/file-upload-field';
-import { useTheme } from '@/lib/theme';
-import { routeToMobilePath } from '@/lib/route-mapper';
-import { showToast } from '@/lib/toast';
-import { getSuppliers } from '@/api-client';
-import type { Supplier } from '@/types';
+import React, { useCallback, useMemo, useState } from "react";
+import { View, StyleSheet, Alert } from "react-native";
+import { useForm, Controller, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useRouter } from "expo-router";
+import * as DocumentPicker from "expo-document-picker";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { FileUploadField } from "@/components/ui/file-upload-field";
+import type { FileWithPreview } from "@/components/ui/file-upload-field";
+import { useTheme } from "@/lib/theme";
+import { showToast } from "@/lib/toast";
+import { spacing, fontSize } from "@/constants/design-system";
+import { useSuppliers, useItems, useOrderMutations, useFileUploadManager } from "@/hooks";
+import { useMultiStepForm } from "@/hooks";
+import { ORDER_STATUS } from "@/constants";
+import { formatCurrency } from "@/utils";
+import type { FormStep } from "@/components/ui/form-steps";
+import {
+  MultiStepFormContainer,
+  ItemSelectorTableV2,
+} from "@/components/forms";
+import {
+  IconPackage,
+  IconBox,
+  IconTruck,
+  IconCalendar,
+  IconFileText,
+  IconPlus,
+  IconTrash,
+} from "@tabler/icons-react-native";
+
+// Form schema for order creation
+const orderCreateFormSchema = z.object({
+  description: z.string().min(1, "Descrição é obrigatória"),
+  supplierId: z.string().uuid("Selecione um fornecedor válido").optional().nullable(),
+  forecast: z.date().optional().nullable(),
+  notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
+  itemMode: z.enum(["inventory", "temporary"]).default("inventory"),
+});
+
+type OrderCreateFormData = z.infer<typeof orderCreateFormSchema>;
 
 interface OrderCreateFormProps {
   onSuccess?: () => void;
 }
 
-export const OrderCreateForm: React.FC<OrderCreateFormProps> = ({ onSuccess }) => {
-  const theme = useTheme();
-  const router = useRouter();
-  const [orderItemMode, setOrderItemMode] = useState<'inventory' | 'temporary'>('inventory');
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
-  const [itemPrices, setItemPrices] = useState<Record<string, number>>({});
-  const [itemIcms, setItemIcms] = useState<Record<string, number>>({});
-  const [itemIpi, setItemIpi] = useState<Record<string, number>>({});
-  const [temporaryItems, setTemporaryItems] = useState<Array<{
-    temporaryItemDescription: string;
-    orderedQuantity: number;
-    price: number | null;
-    icms: number;
-    ipi: number;
-  }>>([{ temporaryItemDescription: '', orderedQuantity: 1, price: null, icms: 0, ipi: 0 }]);
+// Temporary item interface
+interface TemporaryItem {
+  id: string;
+  description: string;
+  quantity: number;
+  price: number;
+  icms: number;
+  ipi: number;
+}
 
-  // File upload state for all 5 types
+// Steps configuration
+const STEPS: FormStep[] = [
+  { id: 1, name: "Informações", description: "Dados do pedido" },
+  { id: 2, name: "Itens", description: "Selecione os itens" },
+  { id: 3, name: "Revisão", description: "Confirme os dados" },
+];
+
+export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
+  const { colors } = useTheme();
+  const router = useRouter();
+
+  // Local state for date (since it's a Date object)
+  const [forecastDate, setForecastDate] = useState<Date | undefined>(undefined);
+
+  // Temporary items state (for temporary item mode)
+  const [temporaryItems, setTemporaryItems] = useState<TemporaryItem[]>([]);
+
+  // File upload states
   const [budgetFiles, setBudgetFiles] = useState<FileWithPreview[]>([]);
   const [invoiceFiles, setInvoiceFiles] = useState<FileWithPreview[]>([]);
   const [receiptFiles, setReceiptFiles] = useState<FileWithPreview[]>([]);
@@ -54,143 +88,207 @@ export const OrderCreateForm: React.FC<OrderCreateFormProps> = ({ onSuccess }) =
   const [reimbursementInvoiceFiles, setReimbursementInvoiceFiles] = useState<FileWithPreview[]>([]);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
-  const form = useForm<OrderCreateFormData>({
-    resolver: zodResolver(orderCreateSchema),
-    defaultValues: {
-      description: '',
-      status: ORDER_STATUS.CREATED,
-      supplierId: undefined,
-      forecast: undefined,
-      notes: '',
-      items: [],
-      temporaryItems: [],
+  // Mutations
+  const { createAsync, isLoading: isMutating } = useOrderMutations();
+
+  // File upload hooks
+  const budgetUpload = useFileUploadManager({ entityType: "order", fileContext: "budget" });
+  const invoiceUpload = useFileUploadManager({ entityType: "order", fileContext: "invoice" });
+  const receiptUpload = useFileUploadManager({ entityType: "order", fileContext: "receipt" });
+  const reimbursementUpload = useFileUploadManager({ entityType: "order", fileContext: "reimbursement" });
+  const reimbursementInvoiceUpload = useFileUploadManager({ entityType: "order", fileContext: "reimbursementInvoice" });
+
+  // Multi-step form state management
+  const multiStepForm = useMultiStepForm<OrderCreateFormData>({
+    storageKey: "@order_create_form",
+    totalSteps: 3,
+    defaultFormData: {
+      description: "",
+      supplierId: null,
+      forecast: null,
+      notes: "",
+      itemMode: "inventory",
     },
-    mode: 'onTouched',
+    defaultQuantity: 1,
+    defaultPrice: 0,
+    validateOnStepChange: true,
+    validateStep: (step, state) => {
+      if (step === 1) {
+        // Description is required
+        return !!state.formData.description?.trim();
+      }
+      if (step === 2) {
+        // At least one item selected (inventory mode) or temporary items added
+        if (state.formData.itemMode === "inventory") {
+          return state.selectedItems.length > 0;
+        } else {
+          return temporaryItems.length > 0 && temporaryItems.every(
+            item => item.description.trim() && item.quantity > 0 && item.price >= 0
+          );
+        }
+      }
+      return true;
+    },
+    getStepErrors: (step, state) => {
+      const errors: Record<string, string> = {};
+      if (step === 1) {
+        if (!state.formData.description?.trim()) {
+          errors.description = "Descrição é obrigatória";
+        }
+      }
+      if (step === 2) {
+        if (state.formData.itemMode === "inventory" && state.selectedItems.length === 0) {
+          errors.items = "Selecione pelo menos um item";
+        }
+        if (state.formData.itemMode === "temporary" && temporaryItems.length === 0) {
+          errors.items = "Adicione pelo menos um item temporário";
+        }
+      }
+      return errors;
+    },
   });
 
-  const { createAsync, isLoading } = useOrderMutations();
-
-  // Setup file upload hooks for each file type
-  const budgetUpload = useFile({
-    entityType: 'order',
-    fileContext: 'budget',
+  // React Hook Form for form fields
+  const form = useForm<OrderCreateFormData>({
+    resolver: zodResolver(orderCreateFormSchema),
+    defaultValues: multiStepForm.formData,
+    mode: "onChange",
   });
 
-  const invoiceUpload = useFile({
-    entityType: 'order',
-    fileContext: 'invoice',
-  });
-
-  const receiptUpload = useFile({
-    entityType: 'order',
-    fileContext: 'receipt',
-  });
-
-  const reimbursementUpload = useFile({
-    entityType: 'order',
-    fileContext: 'reimbursement',
-  });
-
-  const reimbursementInvoiceUpload = useFile({
-    entityType: 'order',
-    fileContext: 'reimbursementInvoice',
-  });
-
-  // Async search function for suppliers
-  const searchSuppliers = useCallback(async (
-    search: string,
-    page: number = 1
-  ): Promise<{
-    data: Supplier[];
-    hasMore: boolean;
-  }> => {
-    const params: any = {
-      orderBy: { fantasyName: "asc" },
-      page: page,
-      take: 50,
-    };
-
-    if (search && search.trim()) {
-      params.searchingFor = search.trim();
-    }
-
-    try {
-      const response = await getSuppliers(params);
-      return {
-        data: response.data || [],
-        hasMore: response.meta?.hasNextPage || false,
-      };
-    } catch (error) {
-      console.error('[OrderCreateForm] Error fetching suppliers:', error);
-      return { data: [], hasMore: false };
-    }
-  }, []);
-
-  // Fetch all items for selection (simplified - should use paginated selector)
-  const { data: itemsResponse } = useItems({
-    orderBy: { name: 'asc' },
-    take: 100,
-    where: { isActive: true },
-    include: { brand: true, category: true },
-  });
-  const items = itemsResponse?.data || [];
-
-  const itemOptions = useMemo(
-    () =>
-      items.map((item) => ({
-        label: `${item.name}${item.uniCode ? ` (${item.uniCode})` : ''}`,
-        value: item.id,
-      })),
-    [items]
+  // Sync form data to multi-step state
+  const handleFormChange = useCallback(
+    (field: keyof OrderCreateFormData, value: string | null) => {
+      form.setValue(field, value as never);
+      multiStepForm.updateFormData({ [field]: value });
+    },
+    [form, multiStepForm],
   );
 
+  // Fetch suppliers for selection
+  const { data: suppliers, isLoading: isLoadingSuppliers } = useSuppliers({
+    where: { isActive: true },
+    orderBy: { fantasyName: "asc" },
+    take: 100,
+  });
+
+  const supplierOptions = useMemo(
+    () =>
+      suppliers?.data?.map((supplier) => ({
+        value: supplier.id,
+        label: supplier.fantasyName || supplier.corporateName || supplier.id,
+      })) || [],
+    [suppliers],
+  );
+
+  // Get selected supplier name for review
+  const selectedSupplierName = useMemo(() => {
+    const supplier = suppliers?.data?.find((s) => s.id === multiStepForm.formData.supplierId);
+    return supplier?.fantasyName || supplier?.corporateName || "Não selecionado";
+  }, [suppliers, multiStepForm.formData.supplierId]);
+
+  // Fetch selected items for review step (only when on step 3)
+  const selectedItemIds = useMemo(
+    () => Array.from(multiStepForm.selectedItems),
+    [multiStepForm.selectedItems],
+  );
+
+  const { data: selectedItemsData } = useItems(
+    {
+      where: { id: { in: selectedItemIds } },
+      include: { brand: true, category: true },
+    },
+    { enabled: multiStepForm.currentStep === 3 && selectedItemIds.length > 0 },
+  );
+
+  // Map items with their names for review
+  const selectedItemsWithNames = useMemo(() => {
+    const itemsMap = new Map(
+      selectedItemsData?.data?.map((item) => [item.id, item]) || [],
+    );
+    return multiStepForm.getSelectedItemsWithData().map((item) => ({
+      ...item,
+      name: itemsMap.get(item.id)?.name || `Item ${item.id.slice(0, 8)}`,
+      brand: itemsMap.get(item.id)?.brand?.name,
+      uniCode: itemsMap.get(item.id)?.uniCode,
+    }));
+  }, [selectedItemsData, multiStepForm]);
+
+  // Calculate totals for review
+  const totals = useMemo(() => {
+    if (multiStepForm.formData.itemMode === "inventory") {
+      const items = multiStepForm.getSelectedItemsWithData();
+      const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+      const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+      return {
+        itemCount: items.length,
+        totalQuantity,
+        subtotal,
+      };
+    } else {
+      const subtotal = temporaryItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const totalQuantity = temporaryItems.reduce((sum, item) => sum + item.quantity, 0);
+      return {
+        itemCount: temporaryItems.length,
+        totalQuantity,
+        subtotal,
+      };
+    }
+  }, [multiStepForm, temporaryItems]);
+
+  // Temporary item handlers
   const handleAddTemporaryItem = useCallback(() => {
     setTemporaryItems((prev) => [
       ...prev,
-      { temporaryItemDescription: '', orderedQuantity: 1, price: null, icms: 0, ipi: 0 },
+      {
+        id: `temp-${Date.now()}`,
+        description: "",
+        quantity: 1,
+        price: 0,
+        icms: 0,
+        ipi: 0,
+      },
     ]);
   }, []);
 
-  const handleRemoveTemporaryItem = useCallback((index: number) => {
-    setTemporaryItems((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveTemporaryItem = useCallback((id: string) => {
+    setTemporaryItems((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
   const handleUpdateTemporaryItem = useCallback(
-    (index: number, field: string, value: any) => {
+    (id: string, field: keyof TemporaryItem, value: string | number) => {
       setTemporaryItems((prev) =>
-        prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+        prev.map((item) =>
+          item.id === id ? { ...item, [field]: value } : item
+        ),
       );
     },
-    []
+    [],
   );
 
   // File picker handlers
   const handlePickFiles = useCallback(async (
-    fileType: 'budget' | 'invoice' | 'receipt' | 'reimbursement' | 'reimbursementInvoice',
     setFiles: React.Dispatch<React.SetStateAction<FileWithPreview[]>>
   ) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/*'],
+        type: ["application/pdf", "image/*"],
         multiple: true,
         copyToCacheDirectory: true,
       });
 
-      if (result.canceled) {
-        return;
-      }
+      if (result.canceled) return;
 
       const newFiles: FileWithPreview[] = result.assets.map((asset) => ({
         uri: asset.uri,
         name: asset.name,
-        type: asset.mimeType || 'application/octet-stream',
+        type: asset.mimeType || "application/octet-stream",
         size: asset.size,
       }));
 
       setFiles((prev) => [...prev, ...newFiles]);
     } catch (error) {
-      console.error('Error picking files:', error);
-      Alert.alert('Erro', 'Falha ao selecionar arquivos');
+      console.error("Error picking files:", error);
+      Alert.alert("Erro", "Falha ao selecionar arquivos");
     }
   }, []);
 
@@ -201,622 +299,1033 @@ export const OrderCreateForm: React.FC<OrderCreateFormProps> = ({ onSuccess }) =
     setFiles((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  const handleSubmit = useCallback(
-    async (data: OrderCreateFormData) => {
-      try {
-        let itemsData: any[] = [];
+  // Handle form submission
+  const handleFormSubmit = useCallback(async () => {
+    try {
+      let itemsData: Array<{
+        itemId?: string;
+        temporaryItemDescription?: string;
+        orderedQuantity: number;
+        price: number;
+        icms: number;
+        ipi: number;
+      }> = [];
 
-        if (orderItemMode === 'inventory') {
-          // Validate selection
-          if (selectedItems.size === 0) {
-            Alert.alert('Erro', 'Selecione pelo menos um item');
-            return;
-          }
+      if (multiStepForm.formData.itemMode === "inventory") {
+        const items = multiStepForm.getSelectedItemsWithData();
+        const invalidItems = items.filter((item) => item.quantity <= 0 || (item.price || 0) < 0);
 
-          // Validate prices
-          const itemsWithoutPrice = Array.from(selectedItems).filter(
-            (id) => !itemPrices[id] || itemPrices[id] <= 0
-          );
-          if (itemsWithoutPrice.length > 0) {
-            Alert.alert('Erro', 'Todos os itens devem ter preço definido');
-            return;
-          }
-
-          itemsData = Array.from(selectedItems).map((itemId) => ({
-            itemId,
-            orderedQuantity: itemQuantities[itemId] || 1,
-            price: itemPrices[itemId] || 0,
-            icms: itemIcms[itemId] || 0,
-            ipi: itemIpi[itemId] || 0,
-          }));
-        } else {
-          // Validate temporary items
-          if (temporaryItems.length === 0) {
-            Alert.alert('Erro', 'Adicione pelo menos um item temporário');
-            return;
-          }
-
-          const hasIncomplete = temporaryItems.some(
-            (item) =>
-              !item.temporaryItemDescription ||
-              !item.orderedQuantity ||
-              item.orderedQuantity <= 0 ||
-              item.price === null ||
-              item.price < 0
-          );
-
-          if (hasIncomplete) {
-            Alert.alert('Erro', 'Todos os itens devem ter descrição, quantidade e preço');
-            return;
-          }
-
-          itemsData = temporaryItems;
+        if (invalidItems.length > 0) {
+          Alert.alert("Erro", "Todos os itens devem ter quantidade maior que zero");
+          return;
         }
 
-        // Upload files and collect IDs
-        setIsUploadingFiles(true);
+        itemsData = items.map((item) => ({
+          itemId: item.id,
+          orderedQuantity: item.quantity,
+          price: item.price || 0,
+          icms: 0,
+          ipi: 0,
+        }));
+      } else {
+        // Temporary items validation
+        const invalidTempItems = temporaryItems.filter(
+          (item) => !item.description.trim() || item.quantity <= 0 || item.price < 0
+        );
 
-        try {
-          // Upload budget files
-          for (const filePreview of budgetFiles) {
-            await budgetUpload.addFile({
-              uri: filePreview.uri,
-              name: filePreview.name,
-              type: filePreview.type,
-              size: filePreview.size || 0,
-            });
+        if (invalidTempItems.length > 0) {
+          Alert.alert("Erro", "Todos os itens temporários devem ter descrição, quantidade e preço válidos");
+          return;
+        }
+
+        itemsData = temporaryItems.map((item) => ({
+          temporaryItemDescription: item.description,
+          orderedQuantity: item.quantity,
+          price: item.price,
+          icms: item.icms,
+          ipi: item.ipi,
+        }));
+      }
+
+      // Upload files
+      setIsUploadingFiles(true);
+
+      try {
+        // Upload all file types
+        for (const file of budgetFiles) {
+          await budgetUpload.addFile({ uri: file.uri, name: file.name, type: file.type, size: file.size || 0 });
+        }
+        for (const file of invoiceFiles) {
+          await invoiceUpload.addFile({ uri: file.uri, name: file.name, type: file.type, size: file.size || 0 });
+        }
+        for (const file of receiptFiles) {
+          await receiptUpload.addFile({ uri: file.uri, name: file.name, type: file.type, size: file.size || 0 });
+        }
+        for (const file of reimbursementFiles) {
+          await reimbursementUpload.addFile({ uri: file.uri, name: file.name, type: file.type, size: file.size || 0 });
+        }
+        for (const file of reimbursementInvoiceFiles) {
+          await reimbursementInvoiceUpload.addFile({ uri: file.uri, name: file.name, type: file.type, size: file.size || 0 });
+        }
+
+        // Collect uploaded file IDs
+        const budgetIds = budgetUpload.getUploadedIds();
+        const invoiceIds = invoiceUpload.getUploadedIds();
+        const receiptIds = receiptUpload.getUploadedIds();
+        const reimbursementIds = reimbursementUpload.getUploadedIds();
+        const reimbursementInvoiceIds = reimbursementInvoiceUpload.getUploadedIds();
+
+        const orderData = {
+          description: multiStepForm.formData.description,
+          status: ORDER_STATUS.CREATED,
+          supplierId: multiStepForm.formData.supplierId || undefined,
+          forecast: forecastDate || undefined,
+          notes: multiStepForm.formData.notes || undefined,
+          items: itemsData,
+          budgetIds: budgetIds.length > 0 ? budgetIds : undefined,
+          invoiceIds: invoiceIds.length > 0 ? invoiceIds : undefined,
+          receiptIds: receiptIds.length > 0 ? receiptIds : undefined,
+          reimbursementIds: reimbursementIds.length > 0 ? reimbursementIds : undefined,
+          reimbursementInvoiceIds: reimbursementInvoiceIds.length > 0 ? reimbursementInvoiceIds : undefined,
+        };
+
+        const result = await createAsync(orderData);
+
+        if (result.success && result.data) {
+          showToast({ type: "success", message: "Pedido criado com sucesso!" });
+
+          // Clear form state
+          await multiStepForm.resetForm();
+          setForecastDate(undefined);
+          setTemporaryItems([]);
+          setBudgetFiles([]);
+          setInvoiceFiles([]);
+          setReceiptFiles([]);
+          setReimbursementFiles([]);
+          setReimbursementInvoiceFiles([]);
+
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            router.push(`/(tabs)/estoque/pedidos/detalhes/${result.data.id}` as never);
           }
-
-          // Upload invoice files
-          for (const filePreview of invoiceFiles) {
-            await invoiceUpload.addFile({
-              uri: filePreview.uri,
-              name: filePreview.name,
-              type: filePreview.type,
-              size: filePreview.size || 0,
-            });
-          }
-
-          // Upload receipt files
-          for (const filePreview of receiptFiles) {
-            await receiptUpload.addFile({
-              uri: filePreview.uri,
-              name: filePreview.name,
-              type: filePreview.type,
-              size: filePreview.size || 0,
-            });
-          }
-
-          // Upload reimbursement files
-          for (const filePreview of reimbursementFiles) {
-            await reimbursementUpload.addFile({
-              uri: filePreview.uri,
-              name: filePreview.name,
-              type: filePreview.type,
-              size: filePreview.size || 0,
-            });
-          }
-
-          // Upload reimbursement invoice files
-          for (const filePreview of reimbursementInvoiceFiles) {
-            await reimbursementInvoiceUpload.addFile({
-              uri: filePreview.uri,
-              name: filePreview.name,
-              type: filePreview.type,
-              size: filePreview.size || 0,
-            });
-          }
-
-          // Collect uploaded file IDs
-          const budgetIds = budgetUpload.uploadedFiles
-            .filter((f) => f.status === 'completed' && f.id)
-            .map((f) => f.id!);
-
-          const invoiceIds = invoiceUpload.uploadedFiles
-            .filter((f) => f.status === 'completed' && f.id)
-            .map((f) => f.id!);
-
-          const receiptIds = receiptUpload.uploadedFiles
-            .filter((f) => f.status === 'completed' && f.id)
-            .map((f) => f.id!);
-
-          const reimbursementIds = reimbursementUpload.uploadedFiles
-            .filter((f) => f.status === 'completed' && f.id)
-            .map((f) => f.id!);
-
-          const reimbursementInvoiceIds = reimbursementInvoiceUpload.uploadedFiles
-            .filter((f) => f.status === 'completed' && f.id)
-            .map((f) => f.id!);
-
-          const orderData: OrderCreateFormData = {
-            ...data,
-            items: orderItemMode === 'inventory' ? itemsData : [],
-            temporaryItems: orderItemMode === 'temporary' ? itemsData : [],
-            budgetIds: budgetIds.length > 0 ? budgetIds : undefined,
-            invoiceIds: invoiceIds.length > 0 ? invoiceIds : undefined,
-            receiptIds: receiptIds.length > 0 ? receiptIds : undefined,
-            reimbursementIds: reimbursementIds.length > 0 ? reimbursementIds : undefined,
-            reimbursementInvoiceIds: reimbursementInvoiceIds.length > 0 ? reimbursementInvoiceIds : undefined,
-          };
-
-          const result = await createAsync(orderData);
-
-          if (result.success && result.data) {
-            showToast({
-              type: 'success',
-              message: 'Pedido criado com sucesso!',
-            });
-
-            if (onSuccess) {
-              onSuccess();
-            } else {
-              router.push(routeToMobilePath(`/inventory/orders/details/${result.data.id}`));
-            }
-          }
-        } catch (error) {
-          console.error('Error uploading files or creating order:', error);
-          Alert.alert('Erro', 'Falha ao fazer upload dos arquivos ou criar pedido');
-        } finally {
-          setIsUploadingFiles(false);
         }
       } catch (error) {
-        console.error('Error creating order:', error);
-        Alert.alert('Erro', 'Falha ao criar pedido');
+        console.error("Error uploading files or creating order:", error);
+        Alert.alert("Erro", "Falha ao fazer upload dos arquivos ou criar pedido");
+      } finally {
+        setIsUploadingFiles(false);
       }
-    },
-    [
-      orderItemMode,
-      selectedItems,
-      itemQuantities,
-      itemPrices,
-      itemIcms,
-      itemIpi,
-      temporaryItems,
-      budgetFiles,
-      invoiceFiles,
-      receiptFiles,
-      reimbursementFiles,
-      reimbursementInvoiceFiles,
-      uploadFile,
-      createAsync,
-      onSuccess,
-      router,
-    ]
-  );
+    } catch (error) {
+      console.error("Error creating order:", error);
+      Alert.alert("Erro", "Falha ao criar pedido");
+    }
+  }, [
+    multiStepForm,
+    temporaryItems,
+    forecastDate,
+    budgetFiles,
+    invoiceFiles,
+    receiptFiles,
+    reimbursementFiles,
+    reimbursementInvoiceFiles,
+    budgetUpload,
+    invoiceUpload,
+    receiptUpload,
+    reimbursementUpload,
+    reimbursementInvoiceUpload,
+    createAsync,
+    onSuccess,
+    router,
+  ]);
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    scrollView: {
-      flex: 1,
-    },
-    content: {
-      padding: theme.spacing.md,
-    },
-    section: {
-      marginBottom: theme.spacing.lg,
-    },
-    sectionTitle: {
-      fontSize: theme.fontSize.lg,
-      fontWeight: theme.fontWeight.semibold as any,
-      marginBottom: theme.spacing.md,
-      color: theme.colors.text,
-    },
-    field: {
-      marginBottom: theme.spacing.md,
-    },
-    label: {
-      fontSize: theme.fontSize.sm,
-      fontWeight: theme.fontWeight.medium as any,
-      marginBottom: theme.spacing.xs,
-      color: theme.colors.textSecondary,
-    },
-    required: {
-      color: theme.colors.error,
-    },
-    radioGroup: {
-      gap: theme.spacing.sm,
-    },
-    radioOption: {
-      padding: theme.spacing.md,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: theme.borderRadius.md,
-      marginBottom: theme.spacing.sm,
-    },
-    radioOptionSelected: {
-      borderColor: theme.colors.primary,
-      backgroundColor: theme.colors.primaryForeground + '10',
-    },
-    itemList: {
-      gap: theme.spacing.sm,
-    },
-    itemCard: {
-      padding: theme.spacing.md,
-      marginBottom: theme.spacing.sm,
-    },
-    itemRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: theme.spacing.xs,
-    },
-    tempItemRow: {
-      flexDirection: 'row',
-      gap: theme.spacing.sm,
-      marginBottom: theme.spacing.md,
-    },
-    actions: {
-      flexDirection: 'row',
-      gap: theme.spacing.sm,
-      padding: theme.spacing.md,
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.border,
-    },
-    actionButton: {
-      flex: 1,
-    },
-  });
+  // Handle cancel with confirmation if form has data
+  const handleCancel = useCallback(() => {
+    const hasData = multiStepForm.selectionCount > 0 ||
+      multiStepForm.formData.description?.trim() ||
+      temporaryItems.length > 0;
+
+    if (hasData) {
+      Alert.alert(
+        "Descartar alterações?",
+        "Você tem dados não salvos. Deseja descartá-los?",
+        [
+          { text: "Continuar editando", style: "cancel" },
+          {
+            text: "Descartar",
+            style: "destructive",
+            onPress: async () => {
+              await multiStepForm.resetForm();
+              setForecastDate(undefined);
+              setTemporaryItems([]);
+              setBudgetFiles([]);
+              setInvoiceFiles([]);
+              setReceiptFiles([]);
+              setReimbursementFiles([]);
+              setReimbursementInvoiceFiles([]);
+              router.back();
+            },
+          },
+        ],
+      );
+    } else {
+      router.back();
+    }
+  }, [multiStepForm, temporaryItems, router]);
+
+  // Loading state
+  if (multiStepForm.isLoading) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ThemedText>Carregando...</ThemedText>
+      </View>
+    );
+  }
+
+  const isSubmitting = isMutating || isUploadingFiles;
+  const isInventoryMode = multiStepForm.formData.itemMode === "inventory";
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Basic Information */}
-        <Card style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
+    <FormProvider {...form}>
+      <MultiStepFormContainer
+        steps={STEPS}
+        currentStep={multiStepForm.currentStep}
+        onPrevStep={multiStepForm.goToPrevStep}
+        onNextStep={multiStepForm.goToNextStep}
+        onSubmit={handleFormSubmit}
+        onCancel={handleCancel}
+        isSubmitting={isSubmitting}
+        canProceed={multiStepForm.validation.canProceedToNext}
+        canSubmit={multiStepForm.validation.canSubmit}
+        submitLabel={isUploadingFiles ? "Enviando arquivos..." : "Criar Pedido"}
+        cancelLabel="Cancelar"
+        scrollable={multiStepForm.currentStep !== 2 || !isInventoryMode}
+      >
+        {/* Step 1: Order Information */}
+        {multiStepForm.currentStep === 1 && (
+          <View style={styles.step1Container}>
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Informações do Pedido</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Description */}
+                <Controller
+                  control={form.control}
+                  name="description"
+                  render={({ field: { value }, fieldState: { error } }) => (
+                    <View style={styles.fieldGroup}>
+                      <Label>Descrição *</Label>
+                      <Input
+                        value={value || ""}
+                        onChangeText={(val) => handleFormChange("description", val)}
+                        placeholder="Ex: Pedido de materiais de escritório"
+                        editable={!isSubmitting}
+                      />
+                      {error && (
+                        <ThemedText style={styles.errorText}>{error.message}</ThemedText>
+                      )}
+                      {multiStepForm.formTouched && multiStepForm.validation.errors.description && (
+                        <ThemedText style={styles.errorText}>
+                          {multiStepForm.validation.errors.description}
+                        </ThemedText>
+                      )}
+                    </View>
+                  )}
+                />
 
-          <View style={styles.field}>
-            <ThemedText style={styles.label}>
-              Descrição <ThemedText style={styles.required}>*</ThemedText>
-            </ThemedText>
-            <Controller
-              control={form.control}
-              name="description"
-              render={({ field, fieldState }) => (
-                <>
-                  <Input
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    placeholder="Ex: Pedido de materiais de escritório"
-                    error={fieldState.error?.message}
+                {/* Supplier Selection */}
+                <Controller
+                  control={form.control}
+                  name="supplierId"
+                  render={({ field: { value }, fieldState: { error } }) => (
+                    <View style={styles.fieldGroup}>
+                      <Label>Fornecedor</Label>
+                      <Combobox
+                        value={value || ""}
+                        onValueChange={(val) => handleFormChange("supplierId", val || null)}
+                        options={supplierOptions}
+                        placeholder="Selecione o fornecedor (opcional)"
+                        searchPlaceholder="Buscar fornecedor..."
+                        emptyText="Nenhum fornecedor encontrado"
+                        disabled={isSubmitting || isLoadingSuppliers}
+                        loading={isLoadingSuppliers}
+                        clearable
+                        searchable
+                      />
+                      {error && (
+                        <ThemedText style={styles.errorText}>{error.message}</ThemedText>
+                      )}
+                      <ThemedText style={styles.helpText}>
+                        Selecione um fornecedor para este pedido
+                      </ThemedText>
+                    </View>
+                  )}
+                />
+
+                {/* Delivery Date */}
+                <View style={styles.fieldGroup}>
+                  <Label>Previsão de Entrega</Label>
+                  <DateTimePicker
+                    value={forecastDate}
+                    onChange={setForecastDate}
+                    mode="date"
+                    placeholder="Selecione a data"
+                    minimumDate={new Date()}
+                    disabled={isSubmitting}
                   />
-                </>
-              )}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <ThemedText style={styles.label}>Fornecedor</ThemedText>
-            <Controller
-              control={form.control}
-              name="supplierId"
-              render={({ field }) => (
-                <Combobox<Supplier>
-                  value={field.value || ""}
-                  onValueChange={field.onChange}
-                  async={true}
-                  queryKey={["suppliers", "order-create"]}
-                  queryFn={searchSuppliers}
-                  getOptionLabel={(supplier) => supplier.fantasyName}
-                  getOptionValue={(supplier) => supplier.id}
-                  placeholder="Selecione um fornecedor (opcional)"
-                  searchPlaceholder="Buscar fornecedor..."
-                  emptyText="Nenhum fornecedor encontrado"
-                  minSearchLength={0}
-                  pageSize={50}
-                  debounceMs={300}
-                  clearable={true}
-                />
-              )}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <ThemedText style={styles.label}>Previsão de Entrega</ThemedText>
-            <Controller
-              control={form.control}
-              name="forecast"
-              render={({ field }) => (
-                <DateTimePicker
-                  value={field.value}
-                  onChange={field.onChange}
-                  mode="date"
-                  placeholder="Selecione uma data"
-                />
-              )}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <ThemedText style={styles.label}>Observações</ThemedText>
-            <Controller
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <Input
-                  value={field.value || ''}
-                  onChangeText={field.onChange}
-                  placeholder="Observações sobre o pedido (opcional)"
-                  multiline
-                  numberOfLines={4}
-                />
-              )}
-            />
-          </View>
-        </Card>
-
-        {/* Documents Section */}
-        <Card style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Documentos</ThemedText>
-
-          <FileUploadField
-            files={budgetFiles}
-            onRemove={(index) => handleRemoveFile(index, setBudgetFiles)}
-            onAdd={() => handlePickFiles('budget', setBudgetFiles)}
-            maxFiles={10}
-            label="Orçamentos"
-          />
-
-          <FileUploadField
-            files={invoiceFiles}
-            onRemove={(index) => handleRemoveFile(index, setInvoiceFiles)}
-            onAdd={() => handlePickFiles('invoice', setInvoiceFiles)}
-            maxFiles={10}
-            label="Notas Fiscais"
-          />
-
-          <FileUploadField
-            files={receiptFiles}
-            onRemove={(index) => handleRemoveFile(index, setReceiptFiles)}
-            onAdd={() => handlePickFiles('receipt', setReceiptFiles)}
-            maxFiles={10}
-            label="Recibos"
-          />
-
-          <FileUploadField
-            files={reimbursementFiles}
-            onRemove={(index) => handleRemoveFile(index, setReimbursementFiles)}
-            onAdd={() => handlePickFiles('reimbursement', setReimbursementFiles)}
-            maxFiles={10}
-            label="Reembolsos"
-          />
-
-          <FileUploadField
-            files={reimbursementInvoiceFiles}
-            onRemove={(index) => handleRemoveFile(index, setReimbursementInvoiceFiles)}
-            onAdd={() => handlePickFiles('reimbursementInvoice', setReimbursementInvoiceFiles)}
-            maxFiles={10}
-            label="Notas Fiscais de Reembolso"
-          />
-        </Card>
-
-        {/* Item Mode Selection */}
-        <Card style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Tipo de Itens</ThemedText>
-
-          <View style={styles.radioGroup}>
-            <Button
-              onPress={() => setOrderItemMode('inventory')}
-              variant={orderItemMode === 'inventory' ? 'default' : 'outline'}
-              style={styles.radioOption}
-            >
-              <ThemedText>Itens do Estoque</ThemedText>
-            </Button>
-            <Button
-              onPress={() => setOrderItemMode('temporary')}
-              variant={orderItemMode === 'temporary' ? 'default' : 'outline'}
-              style={styles.radioOption}
-            >
-              <ThemedText>Itens Temporários</ThemedText>
-            </Button>
-          </View>
-        </Card>
-
-        {/* Item Selection or Temporary Items */}
-        {orderItemMode === 'inventory' ? (
-          <Card style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>Seleção de Itens</ThemedText>
-            <ThemedText style={{ color: theme.colors.textSecondary, marginBottom: theme.spacing.md }}>
-              Nota: Interface simplificada. Para seleção avançada, use a versão web.
-            </ThemedText>
-
-            <Select
-              value=""
-              onValueChange={(itemId) => {
-                if (itemId && !selectedItems.has(itemId)) {
-                  setSelectedItems((prev) => new Set([...prev, itemId]));
-                  setItemQuantities((prev) => ({ ...prev, [itemId]: 1 }));
-                  setItemPrices((prev) => ({ ...prev, [itemId]: 0 }));
-                  setItemIcms((prev) => ({ ...prev, [itemId]: 0 }));
-                  setItemIpi((prev) => ({ ...prev, [itemId]: 0 }));
-                }
-              }}
-              options={itemOptions.filter((opt) => !selectedItems.has(opt.value))}
-              placeholder="Adicionar item..."
-            />
-
-            <Separator style={{ marginVertical: theme.spacing.md }} />
-
-            {Array.from(selectedItems).map((itemId) => {
-              const item = items.find((i) => i.id === itemId);
-              if (!item) return null;
-
-              return (
-                <Card key={itemId} style={styles.itemCard}>
-                  <ThemedText style={{ fontWeight: theme.fontWeight.semibold as any, marginBottom: theme.spacing.sm }}>
-                    {item.name}
+                  <ThemedText style={styles.helpText}>
+                    Data prevista para entrega do pedido
                   </ThemedText>
+                </View>
 
-                  <View style={styles.field}>
-                    <ThemedText style={styles.label}>Quantidade</ThemedText>
-                    <Input
-                      value={String(itemQuantities[itemId] || 1)}
-                      onChangeText={(value) =>
-                        setItemQuantities((prev) => ({ ...prev, [itemId]: Number(value) || 1 }))
-                      }
-                      keyboardType="numeric"
-                    />
-                  </View>
-
-                  <View style={styles.field}>
-                    <ThemedText style={styles.label}>Preço Unitário</ThemedText>
-                    <Input
-                      value={String(itemPrices[itemId] || 0)}
-                      onChangeText={(value) =>
-                        setItemPrices((prev) => ({ ...prev, [itemId]: Number(value) || 0 }))
-                      }
-                      keyboardType="decimal-pad"
-                    />
-                  </View>
-
-                  <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
-                    <View style={{ flex: 1 }}>
-                      <ThemedText style={styles.label}>ICMS (%)</ThemedText>
+                {/* Notes */}
+                <Controller
+                  control={form.control}
+                  name="notes"
+                  render={({ field: { value }, fieldState: { error } }) => (
+                    <View style={styles.fieldGroup}>
+                      <Label>Observações</Label>
                       <Input
-                        value={String(itemIcms[itemId] || 0)}
-                        onChangeText={(value) =>
-                          setItemIcms((prev) => ({ ...prev, [itemId]: Number(value) || 0 }))
-                        }
-                        keyboardType="numeric"
+                        value={value || ""}
+                        onChangeText={(val) => handleFormChange("notes", val)}
+                        placeholder="Observações sobre o pedido (opcional)"
+                        editable={!isSubmitting}
+                        multiline
+                        numberOfLines={3}
+                        style={styles.textArea}
                       />
+                      {error && (
+                        <ThemedText style={styles.errorText}>{error.message}</ThemedText>
+                      )}
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <ThemedText style={styles.label}>IPI (%)</ThemedText>
-                      <Input
-                        value={String(itemIpi[itemId] || 0)}
-                        onChangeText={(value) =>
-                          setItemIpi((prev) => ({ ...prev, [itemId]: Number(value) || 0 }))
-                        }
-                        keyboardType="numeric"
-                      />
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Item Mode Selection */}
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Tipo de Itens</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <View style={styles.modeButtonsContainer}>
+                  <Button
+                    onPress={() => handleFormChange("itemMode", "inventory")}
+                    variant={isInventoryMode ? "default" : "outline"}
+                    style={styles.modeButton}
+                    disabled={isSubmitting}
+                  >
+                    <View style={styles.modeButtonContent}>
+                      <IconPackage size={20} color={isInventoryMode ? colors.primaryForeground : colors.foreground} />
+                      <ThemedText style={[
+                        styles.modeButtonText,
+                        isInventoryMode && { color: colors.primaryForeground }
+                      ]}>
+                        Itens do Estoque
+                      </ThemedText>
                     </View>
-                  </View>
-
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onPress={() => {
-                      setSelectedItems((prev) => {
-                        const next = new Set(prev);
-                        next.delete(itemId);
-                        return next;
-                      });
-                    }}
-                    style={{ marginTop: theme.spacing.sm }}
-                  >
-                    <ThemedText>Remover</ThemedText>
                   </Button>
-                </Card>
-              );
-            })}
-          </Card>
-        ) : (
-          <Card style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>Itens Temporários</ThemedText>
-
-            {temporaryItems.map((item, index) => (
-              <Card key={index} style={styles.itemCard}>
-                <View style={styles.field}>
-                  <ThemedText style={styles.label}>Descrição</ThemedText>
-                  <Input
-                    value={item.temporaryItemDescription}
-                    onChangeText={(value) =>
-                      handleUpdateTemporaryItem(index, 'temporaryItemDescription', value)
-                    }
-                    placeholder="Descrição do item"
-                  />
-                </View>
-
-                <View style={styles.field}>
-                  <ThemedText style={styles.label}>Quantidade</ThemedText>
-                  <Input
-                    value={String(item.orderedQuantity)}
-                    onChangeText={(value) =>
-                      handleUpdateTemporaryItem(index, 'orderedQuantity', Number(value) || 1)
-                    }
-                    keyboardType="numeric"
-                  />
-                </View>
-
-                <View style={styles.field}>
-                  <ThemedText style={styles.label}>Preço Unitário</ThemedText>
-                  <Input
-                    value={item.price !== null ? String(item.price) : ''}
-                    onChangeText={(value) =>
-                      handleUpdateTemporaryItem(index, 'price', value ? Number(value) : null)
-                    }
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-
-                <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
-                  <View style={{ flex: 1 }}>
-                    <ThemedText style={styles.label}>ICMS (%)</ThemedText>
-                    <Input
-                      value={String(item.icms)}
-                      onChangeText={(value) =>
-                        handleUpdateTemporaryItem(index, 'icms', Number(value) || 0)
-                      }
-                      keyboardType="numeric"
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <ThemedText style={styles.label}>IPI (%)</ThemedText>
-                    <Input
-                      value={String(item.ipi)}
-                      onChangeText={(value) =>
-                        handleUpdateTemporaryItem(index, 'ipi', Number(value) || 0)
-                      }
-                      keyboardType="numeric"
-                    />
-                  </View>
-                </View>
-
-                {temporaryItems.length > 1 && (
                   <Button
-                    variant="destructive"
-                    size="sm"
-                    onPress={() => handleRemoveTemporaryItem(index)}
-                    style={{ marginTop: theme.spacing.sm }}
+                    onPress={() => handleFormChange("itemMode", "temporary")}
+                    variant={!isInventoryMode ? "default" : "outline"}
+                    style={styles.modeButton}
+                    disabled={isSubmitting}
                   >
-                    <ThemedText>Remover</ThemedText>
+                    <View style={styles.modeButtonContent}>
+                      <IconFileText size={20} color={!isInventoryMode ? colors.primaryForeground : colors.foreground} />
+                      <ThemedText style={[
+                        styles.modeButtonText,
+                        !isInventoryMode && { color: colors.primaryForeground }
+                      ]}>
+                        Itens Temporários
+                      </ThemedText>
+                    </View>
                   </Button>
-                )}
-              </Card>
-            ))}
+                </View>
+                <ThemedText style={styles.helpText}>
+                  {isInventoryMode
+                    ? "Selecione itens cadastrados no estoque"
+                    : "Adicione itens avulsos que não estão no estoque"}
+                </ThemedText>
+              </CardContent>
+            </Card>
 
-            <Button variant="outline" onPress={handleAddTemporaryItem}>
-              <ThemedText>Adicionar Item</ThemedText>
-            </Button>
-          </Card>
+            {/* Documents Section */}
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Documentos (Opcional)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FileUploadField
+                  files={budgetFiles}
+                  onRemove={(index) => handleRemoveFile(index, setBudgetFiles)}
+                  onAdd={() => handlePickFiles(setBudgetFiles)}
+                  maxFiles={10}
+                  label="Orçamentos"
+                />
+                <View style={styles.fieldSpacer} />
+                <FileUploadField
+                  files={invoiceFiles}
+                  onRemove={(index) => handleRemoveFile(index, setInvoiceFiles)}
+                  onAdd={() => handlePickFiles(setInvoiceFiles)}
+                  maxFiles={10}
+                  label="Notas Fiscais"
+                />
+                <View style={styles.fieldSpacer} />
+                <FileUploadField
+                  files={receiptFiles}
+                  onRemove={(index) => handleRemoveFile(index, setReceiptFiles)}
+                  onAdd={() => handlePickFiles(setReceiptFiles)}
+                  maxFiles={10}
+                  label="Recibos"
+                />
+                <View style={styles.fieldSpacer} />
+                <FileUploadField
+                  files={reimbursementFiles}
+                  onRemove={(index) => handleRemoveFile(index, setReimbursementFiles)}
+                  onAdd={() => handlePickFiles(setReimbursementFiles)}
+                  maxFiles={10}
+                  label="Reembolsos"
+                />
+                <View style={styles.fieldSpacer} />
+                <FileUploadField
+                  files={reimbursementInvoiceFiles}
+                  onRemove={(index) => handleRemoveFile(index, setReimbursementInvoiceFiles)}
+                  onAdd={() => handlePickFiles(setReimbursementInvoiceFiles)}
+                  maxFiles={10}
+                  label="Notas de Reembolso"
+                />
+              </CardContent>
+            </Card>
+          </View>
         )}
-      </ScrollView>
 
-      {/* Actions */}
-      <View style={styles.actions}>
-        <Button
-          variant="outline"
-          onPress={() => router.back()}
-          style={styles.actionButton}
-          disabled={isLoading || isUploadingFiles}
-        >
-          <ThemedText>Cancelar</ThemedText>
-        </Button>
-        <Button
-          onPress={form.handleSubmit(handleSubmit)}
-          style={styles.actionButton}
-          disabled={isLoading || isUploadingFiles}
-          loading={isLoading || isUploadingFiles}
-        >
-          <ThemedText>
-            {isUploadingFiles ? 'Enviando arquivos...' : 'Criar Pedido'}
-          </ThemedText>
-        </Button>
-      </View>
-    </KeyboardAvoidingView>
+        {/* Step 2: Item Selection */}
+        {multiStepForm.currentStep === 2 && (
+          <View style={styles.itemSelectorContainer}>
+            {isInventoryMode ? (
+              <ItemSelectorTableV2
+                selectedItems={multiStepForm.selectedItems}
+                quantities={multiStepForm.quantities}
+                prices={multiStepForm.prices}
+                onSelectItem={multiStepForm.toggleItemSelection}
+                onQuantityChange={multiStepForm.setItemQuantity}
+                onPriceChange={multiStepForm.setItemPrice}
+                showQuantityInput
+                showPriceInput
+                minQuantity={1}
+                quantityDecimals={0}
+                showSelectedOnly={multiStepForm.showSelectedOnly}
+                searchTerm={multiStepForm.searchTerm}
+                showInactive={multiStepForm.showInactive}
+                categoryIds={multiStepForm.categoryIds}
+                brandIds={multiStepForm.brandIds}
+                supplierIds={multiStepForm.supplierIds}
+                onShowSelectedOnlyChange={multiStepForm.setShowSelectedOnly}
+                onSearchTermChange={multiStepForm.setSearchTerm}
+                onShowInactiveChange={multiStepForm.setShowInactive}
+                onCategoryIdsChange={multiStepForm.setCategoryIds}
+                onBrandIdsChange={multiStepForm.setBrandIds}
+                onSupplierIdsChange={multiStepForm.setSupplierIds}
+                allowZeroStock
+                emptyMessage="Nenhum item encontrado"
+              />
+            ) : (
+              <View style={styles.temporaryItemsContainer}>
+                <Card style={styles.card}>
+                  <CardHeader style={styles.temporaryItemsHeader}>
+                    <CardTitle>Itens Temporários</CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onPress={handleAddTemporaryItem}
+                      disabled={isSubmitting}
+                    >
+                      <IconPlus size={16} color={colors.foreground} />
+                      <ThemedText style={styles.addButtonText}>Adicionar</ThemedText>
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    {temporaryItems.length === 0 ? (
+                      <View style={styles.emptyState}>
+                        <IconBox size={48} color={colors.mutedForeground} />
+                        <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                          Nenhum item adicionado
+                        </ThemedText>
+                        <Button
+                          variant="default"
+                          onPress={handleAddTemporaryItem}
+                          disabled={isSubmitting}
+                        >
+                          <IconPlus size={16} color={colors.primaryForeground} />
+                          <ThemedText style={{ color: colors.primaryForeground, marginLeft: spacing.xs }}>
+                            Adicionar Item
+                          </ThemedText>
+                        </Button>
+                      </View>
+                    ) : (
+                      temporaryItems.map((item, index) => (
+                        <Card
+                          key={item.id}
+                          style={[
+                            styles.temporaryItemCard,
+                            index < temporaryItems.length - 1 && styles.temporaryItemCardSpaced,
+                          ]}
+                        >
+                          <View style={styles.temporaryItemHeader}>
+                            <ThemedText style={styles.temporaryItemTitle}>
+                              Item #{index + 1}
+                            </ThemedText>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onPress={() => handleRemoveTemporaryItem(item.id)}
+                              disabled={isSubmitting}
+                            >
+                              <IconTrash size={16} color={colors.destructive} />
+                            </Button>
+                          </View>
+
+                          <View style={styles.fieldGroup}>
+                            <Label>Descrição *</Label>
+                            <Input
+                              value={item.description}
+                              onChangeText={(val) => handleUpdateTemporaryItem(item.id, "description", val)}
+                              placeholder="Descrição do item"
+                              editable={!isSubmitting}
+                            />
+                          </View>
+
+                          <View style={styles.rowFields}>
+                            <View style={styles.halfField}>
+                              <Label>Quantidade *</Label>
+                              <Input
+                                value={String(item.quantity)}
+                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "quantity", Number(val) || 0)}
+                                keyboardType="numeric"
+                                editable={!isSubmitting}
+                              />
+                            </View>
+                            <View style={styles.halfField}>
+                              <Label>Preço Unitário *</Label>
+                              <Input
+                                value={String(item.price)}
+                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "price", Number(val) || 0)}
+                                keyboardType="decimal-pad"
+                                editable={!isSubmitting}
+                              />
+                            </View>
+                          </View>
+
+                          <View style={styles.rowFields}>
+                            <View style={styles.halfField}>
+                              <Label>ICMS (%)</Label>
+                              <Input
+                                value={String(item.icms)}
+                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "icms", Number(val) || 0)}
+                                keyboardType="numeric"
+                                editable={!isSubmitting}
+                              />
+                            </View>
+                            <View style={styles.halfField}>
+                              <Label>IPI (%)</Label>
+                              <Input
+                                value={String(item.ipi)}
+                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "ipi", Number(val) || 0)}
+                                keyboardType="numeric"
+                                editable={!isSubmitting}
+                              />
+                            </View>
+                          </View>
+                        </Card>
+                      ))
+                    )}
+                  </CardContent>
+                </Card>
+
+                {multiStepForm.formTouched && multiStepForm.validation.errors.items && (
+                  <View style={styles.errorContainer}>
+                    <ThemedText style={styles.errorText}>
+                      {multiStepForm.validation.errors.items}
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Step 3: Review */}
+        {multiStepForm.currentStep === 3 && (
+          <View style={styles.reviewContainer}>
+            {/* Summary Metrics */}
+            <Card style={styles.card}>
+              <CardContent style={styles.metricsContent}>
+                <View style={styles.metricsRow}>
+                  {/* Supplier */}
+                  <View style={styles.metricItem}>
+                    <View style={styles.metricHeader}>
+                      <IconTruck size={16} color={colors.mutedForeground} />
+                      <ThemedText style={[styles.metricLabel, { color: colors.mutedForeground }]}>
+                        FORNECEDOR
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={[styles.metricValue, { color: colors.foreground }]} numberOfLines={1}>
+                      {multiStepForm.formData.supplierId ? selectedSupplierName : "Não definido"}
+                    </ThemedText>
+                  </View>
+
+                  {/* Items Count */}
+                  <View style={styles.metricItem}>
+                    <View style={styles.metricHeader}>
+                      <IconPackage size={16} color={colors.mutedForeground} />
+                      <ThemedText style={[styles.metricLabel, { color: colors.mutedForeground }]}>
+                        ITENS
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={[styles.metricValueLarge, { color: colors.foreground }]}>
+                      {totals.itemCount}
+                    </ThemedText>
+                  </View>
+
+                  {/* Delivery Date */}
+                  <View style={styles.metricItem}>
+                    <View style={styles.metricHeader}>
+                      <IconCalendar size={16} color={colors.mutedForeground} />
+                      <ThemedText style={[styles.metricLabel, { color: colors.mutedForeground }]}>
+                        ENTREGA
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={[styles.metricValue, { color: colors.foreground }]} numberOfLines={1}>
+                      {forecastDate ? forecastDate.toLocaleDateString("pt-BR") : "Não definida"}
+                    </ThemedText>
+                  </View>
+                </View>
+              </CardContent>
+            </Card>
+
+            {/* Order Details */}
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Detalhes do Pedido</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <View style={styles.detailRow}>
+                  <ThemedText style={styles.detailLabel}>Descrição</ThemedText>
+                  <ThemedText style={styles.detailValue}>{multiStepForm.formData.description}</ThemedText>
+                </View>
+                {multiStepForm.formData.notes && (
+                  <View style={styles.detailRow}>
+                    <ThemedText style={styles.detailLabel}>Observações</ThemedText>
+                    <ThemedText style={styles.detailValue}>{multiStepForm.formData.notes}</ThemedText>
+                  </View>
+                )}
+                <View style={styles.detailRow}>
+                  <ThemedText style={styles.detailLabel}>Tipo</ThemedText>
+                  <Badge variant={isInventoryMode ? "default" : "secondary"}>
+                    <ThemedText>{isInventoryMode ? "Estoque" : "Temporário"}</ThemedText>
+                  </Badge>
+                </View>
+              </CardContent>
+            </Card>
+
+            {/* Items Table */}
+            <Card style={[styles.card, styles.itemsCard]}>
+              <CardHeader style={styles.itemsHeader}>
+                <CardTitle>Itens do Pedido</CardTitle>
+              </CardHeader>
+              <CardContent style={styles.itemsContent}>
+                {/* Table Header */}
+                <View style={[styles.tableHeaderRow, { borderBottomColor: colors.border }]}>
+                  <ThemedText style={[styles.tableHeaderText, { color: colors.mutedForeground, flex: 3 }]}>
+                    ITEM
+                  </ThemedText>
+                  <ThemedText style={[styles.tableHeaderText, { color: colors.mutedForeground, width: 50, textAlign: "center" }]}>
+                    QTD
+                  </ThemedText>
+                  <ThemedText style={[styles.tableHeaderText, { color: colors.mutedForeground, width: 80, textAlign: "right" }]}>
+                    PREÇO
+                  </ThemedText>
+                </View>
+
+                {/* Table Body */}
+                {isInventoryMode ? (
+                  selectedItemsWithNames.map((item, index) => (
+                    <View
+                      key={item.id}
+                      style={[
+                        styles.tableRow,
+                        { backgroundColor: index % 2 === 0 ? colors.background : colors.card },
+                        index === selectedItemsWithNames.length - 1 && styles.tableRowLast,
+                      ]}
+                    >
+                      <View style={styles.itemInfo}>
+                        <ThemedText style={[styles.itemCode, { color: colors.mutedForeground }]}>
+                          {item.uniCode || "-"}
+                        </ThemedText>
+                        <ThemedText style={[styles.itemName, { color: colors.foreground }]} numberOfLines={1}>
+                          {item.name}
+                        </ThemedText>
+                        {item.brand && (
+                          <ThemedText style={[styles.itemBrand, { color: colors.mutedForeground }]}>
+                            {item.brand}
+                          </ThemedText>
+                        )}
+                      </View>
+                      <View style={styles.itemQuantity}>
+                        <ThemedText style={[styles.quantityText, { color: colors.foreground }]}>
+                          {item.quantity}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.itemPrice}>
+                        <ThemedText style={[styles.priceText, { color: colors.foreground }]}>
+                          {formatCurrency(item.price || 0)}
+                        </ThemedText>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  temporaryItems.map((item, index) => (
+                    <View
+                      key={item.id}
+                      style={[
+                        styles.tableRow,
+                        { backgroundColor: index % 2 === 0 ? colors.background : colors.card },
+                        index === temporaryItems.length - 1 && styles.tableRowLast,
+                      ]}
+                    >
+                      <View style={styles.itemInfo}>
+                        <ThemedText style={[styles.itemName, { color: colors.foreground }]} numberOfLines={1}>
+                          {item.description || "Sem descrição"}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.itemQuantity}>
+                        <ThemedText style={[styles.quantityText, { color: colors.foreground }]}>
+                          {item.quantity}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.itemPrice}>
+                        <ThemedText style={[styles.priceText, { color: colors.foreground }]}>
+                          {formatCurrency(item.price)}
+                        </ThemedText>
+                      </View>
+                    </View>
+                  ))
+                )}
+
+                {/* Table Footer */}
+                <View style={[styles.tableFooterRow, { borderTopColor: colors.border, backgroundColor: colors.muted }]}>
+                  <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
+                    Total ({totals.totalQuantity} unidades)
+                  </ThemedText>
+                  <ThemedText style={[styles.tableFooterValue, { color: colors.primary }]}>
+                    {formatCurrency(totals.subtotal)}
+                  </ThemedText>
+                </View>
+              </CardContent>
+            </Card>
+
+            {/* Documents Summary */}
+            {(budgetFiles.length > 0 || invoiceFiles.length > 0 || receiptFiles.length > 0 ||
+              reimbursementFiles.length > 0 || reimbursementInvoiceFiles.length > 0) && (
+              <Card style={styles.card}>
+                <CardHeader>
+                  <CardTitle>Documentos Anexados</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {budgetFiles.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Orçamentos</ThemedText>
+                      <Badge variant="secondary">
+                        <ThemedText>{budgetFiles.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {invoiceFiles.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Notas Fiscais</ThemedText>
+                      <Badge variant="secondary">
+                        <ThemedText>{invoiceFiles.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {receiptFiles.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Recibos</ThemedText>
+                      <Badge variant="secondary">
+                        <ThemedText>{receiptFiles.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {reimbursementFiles.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Reembolsos</ThemedText>
+                      <Badge variant="secondary">
+                        <ThemedText>{reimbursementFiles.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {reimbursementInvoiceFiles.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Notas de Reembolso</ThemedText>
+                      <Badge variant="secondary">
+                        <ThemedText>{reimbursementInvoiceFiles.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </View>
+        )}
+      </MultiStepFormContainer>
+    </FormProvider>
   );
-};
+}
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  step1Container: {
+    flex: 1,
+  },
+  card: {
+    marginBottom: spacing.lg,
+  },
+  fieldGroup: {
+    marginBottom: spacing.lg,
+  },
+  fieldSpacer: {
+    height: spacing.md,
+  },
+  errorText: {
+    fontSize: fontSize.xs,
+    color: "#ef4444",
+    marginTop: spacing.xs,
+  },
+  helpText: {
+    fontSize: fontSize.xs,
+    color: "#6b7280",
+    marginTop: spacing.xs,
+  },
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  modeButtonsContainer: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  modeButton: {
+    flex: 1,
+  },
+  modeButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  modeButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+  },
+  itemSelectorContainer: {
+    flex: 1,
+  },
+  temporaryItemsContainer: {
+    flex: 1,
+  },
+  temporaryItemsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  addButtonText: {
+    marginLeft: spacing.xs,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: spacing.xl,
+    gap: spacing.md,
+  },
+  emptyText: {
+    fontSize: fontSize.md,
+    textAlign: "center",
+  },
+  temporaryItemCard: {
+    padding: spacing.md,
+  },
+  temporaryItemCardSpaced: {
+    marginBottom: spacing.md,
+  },
+  temporaryItemHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  temporaryItemTitle: {
+    fontSize: fontSize.md,
+    fontWeight: "600",
+  },
+  rowFields: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  halfField: {
+    flex: 1,
+    marginBottom: spacing.md,
+  },
+  errorContainer: {
+    padding: spacing.md,
+  },
+  reviewContainer: {
+    flex: 1,
+  },
+  metricsContent: {
+    paddingVertical: spacing.md,
+  },
+  metricsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  metricItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  metricHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 4,
+  },
+  metricLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  metricValue: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+  },
+  metricValueLarge: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#e5e7eb",
+  },
+  detailLabel: {
+    fontSize: fontSize.sm,
+    color: "#6b7280",
+  },
+  detailValue: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+    flex: 1,
+    textAlign: "right",
+    marginLeft: spacing.md,
+  },
+  itemsCard: {
+    flex: 1,
+  },
+  itemsHeader: {
+    paddingBottom: spacing.xs,
+  },
+  itemsContent: {
+    flex: 1,
+    paddingTop: 0,
+  },
+  tableHeaderRow: {
+    flexDirection: "row",
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    borderBottomWidth: 1,
+  },
+  tableHeaderText: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  tableRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    minHeight: 44,
+  },
+  tableRowLast: {
+    borderBottomWidth: 0,
+  },
+  itemInfo: {
+    flex: 3,
+  },
+  itemCode: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  itemName: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+    marginTop: 1,
+  },
+  itemBrand: {
+    fontSize: fontSize.xs,
+    marginTop: 1,
+  },
+  itemQuantity: {
+    width: 50,
+    alignItems: "center",
+  },
+  quantityText: {
+    fontSize: fontSize.md,
+    fontWeight: "600",
+  },
+  itemPrice: {
+    width: 80,
+    alignItems: "flex-end",
+  },
+  priceText: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+  },
+  tableFooterRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    borderTopWidth: 1,
+    marginTop: spacing.xs,
+  },
+  tableFooterText: {
+    fontSize: fontSize.sm,
+    fontWeight: "600",
+  },
+  tableFooterValue: {
+    fontSize: fontSize.lg,
+    fontWeight: "700",
+  },
+  docSummaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.xs,
+  },
+  docLabel: {
+    fontSize: fontSize.sm,
+  },
+});
+
+export default OrderCreateForm;

@@ -18,7 +18,7 @@ import { routeToMobilePath } from "@/lib/route-mapper";
 export default function EditObservationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { updateAsync } = useObservationMutations();
 
@@ -244,7 +244,7 @@ export default function EditObservationScreen() {
       </KeyboardAvoidingView>
 
       {/* Action Buttons */}
-      <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.card }}>
+      <SafeAreaView edges={[]} style={{ backgroundColor: colors.card }}>
         <View
           style={[
             styles.actionBar,

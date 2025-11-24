@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { View, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useEditForm } from "@/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Separator } from "@/components/ui/separator";
-import { IconLoader } from "@tabler/icons-react-native";
 import { itemUpdateSchema} from '../../../../schemas';
 import type { Item } from '../../../../types';
 import { useItemCategories } from "@/hooks";
 import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { FormProvider } from "react-hook-form";
-
+import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
+import { formSpacing } from "@/constants/form-styles";
+import { FormCard } from "@/components/ui/form-section";
+import { SimpleFormActionBar } from "@/components/forms";
 
 // Import all form components
 import { NameInput } from "./name-input";
@@ -43,6 +41,7 @@ interface ItemEditFormProps {
 }
 
 export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEditFormProps) {
+  const { colors } = useTheme();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(item.categoryId);
   const [isPPE, setIsPPE] = useState(false);
 
@@ -124,137 +123,103 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
 
   return (
     <FormProvider {...formWithHandleSubmit}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
-        <ThemedScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-          <View style={styles.content}>
-            {/* Basic Information */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Informações Básicas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.fieldGroup}>
-                  <NameInput disabled={isSubmitting} required={false} />
-                  <UnicodeInput disabled={isSubmitting} />
-                </View>
-              </CardContent>
-            </Card>
-
-            {/* Categorization */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Classificação</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.fieldGroup}>
-                  <BrandSelector disabled={isSubmitting} required={false} initialBrand={item.brand} />
-                  <CategorySelector disabled={isSubmitting} required={false} initialCategory={item.category} onCategoryChange={setSelectedCategoryId} />
-                  <SupplierSelector disabled={isSubmitting} initialSupplier={item.supplier} />
-                </View>
-              </CardContent>
-            </Card>
-
-            {/* Inventory */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Controle de Estoque</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.fieldGroup}>
-                  <QuantityInput disabled={isSubmitting} required={false} />
-                  <MaxQuantityInput disabled={isSubmitting} />
-                  <BoxQuantityInput disabled={isSubmitting} />
-                  <LeadTimeInput disabled={isSubmitting} />
-                </View>
-              </CardContent>
-            </Card>
-
-            {/* Pricing */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Preço e Impostos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.fieldGroup}>
-                  <PriceInput disabled={isSubmitting} />
-                  <View style={styles.fieldRow}>
-                    <View style={styles.halfField}>
-                      <IcmsInput disabled={isSubmitting} required={false} priceFieldName="price" />
-                    </View>
-                    <View style={styles.halfField}>
-                      <IpiInput disabled={isSubmitting} required={false} priceFieldName="price" />
-                    </View>
-                  </View>
-                </View>
-              </CardContent>
-            </Card>
-
-            {/* Measures */}
-            <MeasuresManager disabled={isSubmitting} />
-
-            {/* Tracking */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Rastreamento</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.fieldGroup}>
-                  <BarcodeManager disabled={isSubmitting} />
-                  <Separator style={styles.separator} />
-                  <AssignToUserToggle disabled={isSubmitting} />
-                  <StatusToggle disabled={isSubmitting} />
-                </View>
-              </CardContent>
-            </Card>
-
-            {/* PPE Configuration */}
-            {isPPE && (
-              <Card style={styles.card}>
-                <CardHeader>
-                  <CardTitle>Configuração de EPI</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <PpeConfigSection disabled={isSubmitting} />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Actions */}
-            <View style={styles.actions}>
-              <Button variant="outline" onPress={onCancel} disabled={isSubmitting} style={styles.actionButton}>
-                <ThemedText>Cancelar</ThemedText>
-              </Button>
-              <Button onPress={handleSubmit} disabled={isSubmitting} style={styles.actionButton}>
-                {isSubmitting ? (
-                  <View style={styles.buttonContent}>
-                    <IconLoader size={20} color="white" />
-                    <ThemedText style={styles.buttonText}>Salvando...</ThemedText>
-                  </View>
-                ) : (
-                  <ThemedText style={styles.buttonText}>Atualizar Item</ThemedText>
-                )}
-              </Button>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView} keyboardVerticalOffset={0}>
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+          {/* Basic Information */}
+          <FormCard title="Informações Básicas">
+            <View style={styles.fieldGroup}>
+              <NameInput disabled={isSubmitting} required={false} />
+              <UnicodeInput disabled={isSubmitting} />
             </View>
-          </View>
-        </ThemedScrollView>
-      </KeyboardAvoidingView>
+          </FormCard>
+
+          {/* Categorization */}
+          <FormCard title="Classificação">
+            <View style={styles.fieldGroup}>
+              <BrandSelector disabled={isSubmitting} required={false} initialBrand={item.brand} />
+              <CategorySelector disabled={isSubmitting} required={false} initialCategory={item.category} onCategoryChange={setSelectedCategoryId} />
+              <SupplierSelector disabled={isSubmitting} initialSupplier={item.supplier} />
+            </View>
+          </FormCard>
+
+          {/* Inventory */}
+          <FormCard title="Controle de Estoque">
+            <View style={styles.fieldGroup}>
+              <QuantityInput disabled={isSubmitting} required={false} />
+              <MaxQuantityInput disabled={isSubmitting} />
+              <BoxQuantityInput disabled={isSubmitting} />
+              <LeadTimeInput disabled={isSubmitting} />
+            </View>
+          </FormCard>
+
+          {/* Pricing */}
+          <FormCard title="Preço e Impostos">
+            <View style={styles.fieldGroup}>
+              <PriceInput disabled={isSubmitting} />
+              <View style={styles.fieldRow}>
+                <View style={styles.halfField}>
+                  <IcmsInput disabled={isSubmitting} required={false} priceFieldName="price" />
+                </View>
+                <View style={styles.halfField}>
+                  <IpiInput disabled={isSubmitting} required={false} priceFieldName="price" />
+                </View>
+              </View>
+            </View>
+          </FormCard>
+
+          {/* Measures */}
+          <MeasuresManager disabled={isSubmitting} />
+
+          {/* Tracking */}
+          <FormCard title="Rastreamento">
+            <View style={styles.fieldGroup}>
+              <BarcodeManager disabled={isSubmitting} />
+              <AssignToUserToggle disabled={isSubmitting} />
+              <StatusToggle disabled={isSubmitting} />
+            </View>
+          </FormCard>
+
+          {/* PPE Configuration */}
+          {isPPE && (
+            <FormCard title="Configuração de EPI">
+              <PpeConfigSection disabled={isSubmitting} />
+            </FormCard>
+          )}
+          </ScrollView>
+
+          <SimpleFormActionBar
+            onCancel={onCancel}
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            canSubmit={!isSubmitting}
+            submitLabel="Salvar"
+          />
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </FormProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
     flex: 1,
   },
   scrollView: {
     flex: 1,
   },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
-  },
-  card: {
-    marginBottom: spacing.lg,
+  scrollContent: {
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: formSpacing.containerPaddingVertical,
+    paddingBottom: 0, // No spacing - action bar has its own margin
   },
   fieldGroup: {
     gap: spacing.lg,
@@ -265,24 +230,5 @@ const styles = StyleSheet.create({
   },
   halfField: {
     flex: 1,
-  },
-  separator: {
-    marginVertical: spacing.md,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: spacing.md,
-    marginTop: spacing.xl,
-  },
-  actionButton: {
-    flex: 1,
-  },
-  buttonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  buttonText: {
-    color: "white",
   },
 });

@@ -114,11 +114,11 @@ export const ppeItemsListConfig: ListConfig<Item> = {
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (item, router) => {
-          router.push(routeToMobilePath(routes.inventory.ppe.details(item.id)) as any)
+          router.push(routeToMobilePath(routes.inventory.ppe.detail(item.id)) as any)
         },
       },
       {
@@ -149,83 +149,56 @@ export const ppeItemsListConfig: ListConfig<Item> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        type: 'multi-select',
+        type: 'select',
+        multiple: true,
         options: [
           { label: 'Ativo', value: 'true' },
           { label: 'Inativo', value: 'false' },
         ],
-        mapToQuery: (values) => ({
-          where: {
-            isActive: { in: values.map((v) => v === 'true') },
-          },
-        }),
+        placeholder: 'Status',
       },
       {
         key: 'categoryIds',
-        label: 'Categorias',
-        type: 'entity-multi-select',
-        entityType: 'item-category',
-        mapToQuery: (values) => ({
-          where: {
-            categoryId: { in: values },
-          },
-        }),
+        type: 'select',
+        multiple: true,
+        placeholder: 'Categorias',
       },
       {
         key: 'brandIds',
-        label: 'Marcas',
-        type: 'entity-multi-select',
-        entityType: 'brand',
-        mapToQuery: (values) => ({
-          where: {
-            brandId: { in: values },
-          },
-        }),
+        type: 'select',
+        multiple: true,
+        placeholder: 'Marcas',
       },
       {
         key: 'supplierIds',
-        label: 'Fornecedores',
-        type: 'entity-multi-select',
-        entityType: 'supplier',
-        mapToQuery: (values) => ({
-          where: {
-            supplierId: { in: values },
-          },
-        }),
+        type: 'select',
+        multiple: true,
+        placeholder: 'Fornecedores',
       },
       {
         key: 'shouldAssignToUser',
-        label: 'Atribuição ao Usuário',
-        type: 'multi-select',
+        type: 'select',
+        multiple: true,
         options: [
           { label: 'Sim', value: 'true' },
           { label: 'Não', value: 'false' },
         ],
-        mapToQuery: (values) => ({
-          where: {
-            shouldAssignToUser: { in: values.map((v) => v === 'true') },
-          },
-        }),
+        placeholder: 'Atribuição ao Usuário',
       },
       {
         key: 'stockLevel',
-        label: 'Nível de Estoque',
-        type: 'multi-select',
+        type: 'select',
+        multiple: true,
         options: [
           { label: 'Normal', value: 'NORMAL' },
           { label: 'Baixo', value: 'LOW' },
           { label: 'Crítico', value: 'CRITICAL' },
           { label: 'Sem Estoque', value: 'OUT_OF_STOCK' },
         ],
-        mapToQuery: (values) => ({
-          where: {
-            stockLevel: { in: values },
-          },
-        }),
+        placeholder: 'Nível de Estoque',
       },
     ],
   },

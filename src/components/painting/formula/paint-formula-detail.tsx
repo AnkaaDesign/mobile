@@ -2,13 +2,10 @@
 import { View, ScrollView } from "react-native";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
-import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { PaintFormulaComponentCard } from "./paint-formula-component-card";
-import { measureUtils } from "@/utils";
-import { MEASURE_UNIT } from "@/constants";
 import type { PaintFormula } from '../../../types';
 
 interface PaintFormulaDetailProps {
@@ -133,75 +130,10 @@ export function PaintFormulaDetail({ formula, showComponents = true, showCalcula
           <View className="flex-row items-start justify-between mb-3">
             <View className="flex-1">
               <Text className="text-lg font-bold text-foreground mb-1">{formula.description || "Fórmula sem descrição"}</Text>
-              <View className="flex-row items-center gap-2">
-                <Badge variant="secondary">
-                  {metrics.totalComponents} componente{metrics.totalComponents !== 1 ? "s" : ""}
-                </Badge>
-                {formula.pricePerLiter && <Badge variant="outline">R$ {formula.pricePerLiter.toFixed(2)}/L</Badge>}
-              </View>
             </View>
 
             <Icon name="flask" size={24} className="text-primary" />
           </View>
-
-          {/* Quick Stats */}
-          {showCalculations && metrics.totalComponents > 0 && (
-            <View className="bg-muted/30 rounded-lg p-3">
-              <View className="grid grid-cols-2 gap-4">
-                {/* Total Weight */}
-                {metrics.totalWeight && (
-                  <View>
-                    <Text className="text-xs text-muted-foreground mb-1">Peso Total</Text>
-                    <Text className="text-sm font-medium">
-                      {measureUtils.formatMeasure({
-                        value: metrics.totalWeight,
-                        unit: MEASURE_UNIT.GRAM,
-                      })}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Total Volume */}
-                {metrics.totalVolume && (
-                  <View>
-                    <Text className="text-xs text-muted-foreground mb-1">Volume Total</Text>
-                    <Text className="text-sm font-medium">
-                      {measureUtils.formatMeasure({
-                        value: metrics.totalVolume,
-                        unit: MEASURE_UNIT.MILLILITER,
-                      })}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Density Comparison */}
-                <View>
-                  <Text className="text-xs text-muted-foreground mb-1">Densidade</Text>
-                  <View className="space-y-1">
-                    {formula.density && <Text className="text-sm font-medium text-primary">Fórmula: {formula.density.toFixed(4)} g/ml</Text>}
-                    {metrics.calculatedDensity && <Text className="text-sm text-muted-foreground">Calculada: {metrics.calculatedDensity.toFixed(4)} g/ml</Text>}
-                    {metrics.averageDensity && <Text className="text-sm text-muted-foreground">Média: {metrics.averageDensity.toFixed(4)} g/ml</Text>}
-                  </View>
-                </View>
-
-                {/* Data Completeness */}
-                <View>
-                  <Text className="text-xs text-muted-foreground mb-1">Completude</Text>
-                  <View className="space-y-1">
-                    <Text className="text-xs">
-                      Peso: {metrics.componentStats.withWeight}/{metrics.totalComponents}
-                    </Text>
-                    <Text className="text-xs">
-                      Volume: {metrics.componentStats.withVolume}/{metrics.totalComponents}
-                    </Text>
-                    <Text className="text-xs">
-                      Densidade: {metrics.componentStats.withDensity}/{metrics.totalComponents}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          )}
         </Card>
 
         {/* Quality Issues */}
@@ -217,33 +149,6 @@ export function PaintFormulaDetail({ formula, showComponents = true, showCalcula
               ))}
             </AlertDescription>
           </Alert>
-        )}
-
-        {/* Enhanced Measure Analysis */}
-        {showCalculations && metrics.densityConsistency !== null && (
-          <Card className="p-4">
-            <View className="flex-row items-center gap-2 mb-3">
-              <Icon name="trending-up" size={16} className="text-primary" />
-              <Text className="text-base font-medium text-foreground">Análise de Consistência</Text>
-            </View>
-
-            <View className="space-y-3">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-sm text-muted-foreground">Variação de densidade:</Text>
-                <Badge variant={metrics.densityConsistency < 10 ? "default" : metrics.densityConsistency < 20 ? "secondary" : "destructive"}>
-                  {metrics.densityConsistency.toFixed(1)}%
-                </Badge>
-              </View>
-
-              <Text className="text-xs text-muted-foreground">
-                {metrics.densityConsistency < 10
-                  ? "Excelente consistência entre componentes"
-                  : metrics.densityConsistency < 20
-                    ? "Boa consistência entre componentes"
-                    : "Alta variação pode indicar erro nos dados"}
-              </Text>
-            </View>
-          </Card>
         )}
 
         {/* Component List */}

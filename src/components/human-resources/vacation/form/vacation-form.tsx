@@ -1,17 +1,19 @@
 import React from "react";
-import { View, ScrollView, StyleSheet, Alert } from "react-native";
+import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { Card } from "@/components/ui/card";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Switch } from "@/components/ui/switch";
-import { spacing } from "@/constants/design-system";
+import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
+import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
+import { formSpacing, formTypography } from "@/constants/form-styles";
+import { spacing } from "@/constants/design-system";
 
 import { vacationCreateSchema, vacationUpdateSchema } from "@/schemas/vacation";
 import type { VacationCreateFormData, VacationUpdateFormData } from "@/schemas/vacation";
@@ -119,25 +121,22 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
   }));
 
   return (
-    <ScrollView style={styles.container}>
-      <Card style={[styles.card, { backgroundColor: colors.card }]}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Informações das Férias</Text>
-          <Text style={[styles.cardDescription, { color: colors.mutedForeground }]}>
-            Preencha as informações do período de férias
-          </Text>
-        </View>
-
-        <View style={styles.cardContent}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView} keyboardVerticalOffset={0}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+        {/* Main Form Card */}
+        <FormCard
+          title="Informações das Férias"
+          subtitle="Preencha as informações do período de férias"
+        >
           {/* Collective Toggle */}
-          <View style={styles.formField}>
+          <FormFieldGroup label="Férias Coletivas" helper="Férias aplicadas a todos os colaboradores">
             <View style={styles.switchRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.label, { color: colors.foreground }]}>Férias Coletivas</Text>
-                <Text style={[styles.helpText, { color: colors.mutedForeground }]}>
-                  Férias aplicadas a todos os colaboradores
-                </Text>
-              </View>
               <Controller
                 control={form.control}
                 name="isCollective"
@@ -146,96 +145,90 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
                 )}
               />
             </View>
-          </View>
+          </FormFieldGroup>
 
           {/* User Selection - Only if not collective */}
           {!isCollective && (
-            <View style={styles.formField}>
-              <Text style={[styles.label, { color: colors.foreground }]}>
-                Colaborador <Text style={{ color: colors.destructive }}>*</Text>
-              </Text>
+            <FormFieldGroup
+              label="Colaborador"
+              required
+              error={form.formState.errors.userId?.message}
+            >
               <Controller
                 control={form.control}
                 name="userId"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Combobox
-                      options={userOptions}
-                      value={value || undefined}
-                      onValueChange={onChange}
-                      placeholder="Selecione o colaborador"
-                      disabled={isLoading}
-                      searchable
-                      clearable={false}
-                      error={error?.message}
-                    />
-                  </View>
+                  <Combobox
+                    options={userOptions}
+                    value={value || undefined}
+                    onValueChange={onChange}
+                    placeholder="Selecione o colaborador"
+                    disabled={isLoading}
+                    searchable
+                    clearable={false}
+                    error={error?.message}
+                  />
                 )}
               />
-            </View>
+            </FormFieldGroup>
           )}
 
-          {/* Start Date */}
-          <View style={styles.formField}>
-            <Text style={[styles.label, { color: colors.foreground }]}>
-              Data de Início <Text style={{ color: colors.destructive }}>*</Text>
-            </Text>
-            <Controller
-              control={form.control}
-              name="startAt"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <View>
+          {/* Date Row - Start and End on same row */}
+          <FormRow>
+            {/* Start Date */}
+            <FormFieldGroup
+              label="Data de Início"
+              required
+              error={form.formState.errors.startAt?.message}
+            >
+              <Controller
+                control={form.control}
+                name="startAt"
+                render={({ field: { onChange, value } }) => (
                   <DatePicker
                     value={value}
                     onChange={onChange}
-                    placeholder="Selecione a data de início"
+                    placeholder="Selecione a data"
                     disabled={isLoading}
                   />
-                  {error && (
-                    <Text style={[styles.errorText, { color: colors.destructive }]}>{error.message}</Text>
-                  )}
-                </View>
-              )}
-            />
-          </View>
+                )}
+              />
+            </FormFieldGroup>
 
-          {/* End Date */}
-          <View style={styles.formField}>
-            <Text style={[styles.label, { color: colors.foreground }]}>
-              Data de Término <Text style={{ color: colors.destructive }}>*</Text>
-            </Text>
-            <Controller
-              control={form.control}
-              name="endAt"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <View>
+            {/* End Date */}
+            <FormFieldGroup
+              label="Data de Término"
+              required
+              helper="Deve ser posterior à data de início"
+              error={form.formState.errors.endAt?.message}
+            >
+              <Controller
+                control={form.control}
+                name="endAt"
+                render={({ field: { onChange, value } }) => (
                   <DatePicker
                     value={value}
                     onChange={onChange}
-                    placeholder="Selecione a data de término"
+                    placeholder="Selecione a data"
                     disabled={isLoading}
                   />
-                  {error && (
-                    <Text style={[styles.errorText, { color: colors.destructive }]}>{error.message}</Text>
-                  )}
-                  <Text style={[styles.helpText, { color: colors.mutedForeground }]}>
-                    Deve ser posterior à data de início
-                  </Text>
-                </View>
-              )}
-            />
-          </View>
+                )}
+              />
+            </FormFieldGroup>
+          </FormRow>
 
-          {/* Type */}
-          <View style={styles.formField}>
-            <Text style={[styles.label, { color: colors.foreground }]}>
-              Tipo <Text style={{ color: colors.destructive }}>*</Text>
-            </Text>
-            <Controller
-              control={form.control}
-              name="type"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <View>
+          {/* Type and Status Row */}
+          <FormRow>
+            {/* Type */}
+            <FormFieldGroup
+              label="Tipo"
+              required
+              error={form.formState.errors.type?.message}
+            >
+              <Controller
+                control={form.control}
+                name="type"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
                   <Combobox
                     options={typeOptions}
                     value={value}
@@ -246,21 +239,20 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
                     clearable={false}
                     error={error?.message}
                   />
-                </View>
-              )}
-            />
-          </View>
+                )}
+              />
+            </FormFieldGroup>
 
-          {/* Status */}
-          <View style={styles.formField}>
-            <Text style={[styles.label, { color: colors.foreground }]}>
-              Status <Text style={{ color: colors.destructive }}>*</Text>
-            </Text>
-            <Controller
-              control={form.control}
-              name="status"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <View>
+            {/* Status */}
+            <FormFieldGroup
+              label="Status"
+              required
+              error={form.formState.errors.status?.message}
+            >
+              <Controller
+                control={form.control}
+                name="status"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
                   <Combobox
                     options={statusOptions}
                     value={value}
@@ -271,78 +263,44 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
                     clearable={false}
                     error={error?.message}
                   />
-                </View>
-              )}
-            />
-          </View>
-        </View>
-      </Card>
+                )}
+              />
+            </FormFieldGroup>
+          </FormRow>
+        </FormCard>
+        </ScrollView>
 
-      {/* Action Buttons */}
-      <View style={styles.buttonRow}>
-        <Button variant="outline" onPress={handleCancel} disabled={isLoading} style={{ flex: 1 }}>
-          <Text>Cancelar</Text>
-        </Button>
-        <Button
-          onPress={form.handleSubmit(handleSubmit)}
-          disabled={isLoading || !form.formState.isValid}
-          style={{ flex: 1 }}
-        >
-          <Text>{isLoading ? "Salvando..." : mode === "create" ? "Criar" : "Salvar"}</Text>
-        </Button>
-      </View>
-    </ScrollView>
+        {/* Standardized Action Bar */}
+        <SimpleFormActionBar
+          onCancel={handleCancel}
+          onSubmit={form.handleSubmit(handleSubmit)}
+          isSubmitting={isLoading}
+          canSubmit={form.formState.isValid}
+          submitLabel={mode === "create" ? "Criar" : "Salvar"}
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    padding: spacing.md,
   },
-  card: {
-    marginBottom: spacing.lg,
+  keyboardView: {
+    flex: 1,
   },
-  cardHeader: {
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.1)",
+  scrollView: {
+    flex: 1,
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: spacing.xs,
-  },
-  cardDescription: {
-    fontSize: 14,
-  },
-  cardContent: {
-    padding: spacing.lg,
-  },
-  formField: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: spacing.xs,
-  },
-  errorText: {
-    fontSize: 12,
-    marginTop: spacing.xs,
-  },
-  helpText: {
-    fontSize: 12,
-    marginTop: spacing.xs,
+  scrollContent: {
+    paddingHorizontal: formSpacing.containerPaddingHorizontal, // 16px
+    paddingTop: formSpacing.containerPaddingVertical, // 16px
+    paddingBottom: 0, // No spacing - action bar has its own margin
   },
   switchRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: spacing.md,
-    marginBottom: spacing.xl,
+    justifyContent: "flex-end",
   },
 });

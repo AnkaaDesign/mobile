@@ -2,6 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { PaintFormulaComponent } from '@/types'
 import { canEditPaintFormulas } from '@/utils/permissions/entity-permissions'
 
+
 /**
  * Factory function for Paint Formula Components list config
  * Accepts formulaId as parameter for nested route support
@@ -96,12 +97,12 @@ export function createFormulaComponentsListConfig(
           format: 'date',
         },
       ],
-      defaultVisible: ['itemName', 'itemCode', 'ratio', 'weight'],
-      rowHeight: 60,
+      defaultVisible: ['itemName', 'ratio', 'weight'],
+      rowHeight: 72,
       actions: [
         {
           key: 'view',
-          label: 'Ver',
+          label: 'Visualizar',
           icon: 'eye',
           variant: 'default',
           onPress: (component, router) => {
@@ -137,88 +138,38 @@ export function createFormulaComponentsListConfig(
     },
 
     filters: {
-      sections: [
+      fields: [
         {
-          key: 'item',
-          label: 'Item',
-          icon: 'package',
-          collapsible: true,
-          defaultOpen: true,
-          fields: [
-            {
-              key: 'brandIds',
-              label: 'Marcas',
-              type: 'select',
-              multiple: true,
-              async: true,
-              loadOptions: async () => {
-                // TODO: Load brands from API
-                return []
-              },
-              placeholder: 'Selecione as marcas',
-            },
-            {
-              key: 'categoryIds',
-              label: 'Categorias',
-              type: 'select',
-              multiple: true,
-              async: true,
-              loadOptions: async () => {
-                // TODO: Load categories from API
-                return []
-              },
-              placeholder: 'Selecione as categorias',
-            },
-          ],
+          key: 'brandIds',
+          type: 'select',
+          multiple: true,
+          placeholder: 'Marcas',
+        },
+        {
+          key: 'categoryIds',
+          type: 'select',
+          multiple: true,
+          placeholder: 'Categorias',
         },
         {
           key: 'ratio',
-          label: 'Proporção',
-          icon: 'percentage',
-          collapsible: true,
-          defaultOpen: false,
-          fields: [
-            {
-              key: 'ratio',
-              label: 'Proporção (%)',
-              type: 'number-range',
-              placeholder: { min: 'Mínimo', max: 'Máximo' },
-              min: 0,
-              max: 100,
-              step: 0.1,
-            },
-          ],
+          type: 'number-range',
+          placeholder: { min: 'Proporção Mín (%)', max: 'Proporção Máx (%)' },
+          min: 0,
+          max: 100,
+          step: 0.1,
         },
         {
           key: 'weight',
-          label: 'Peso',
-          icon: 'weight',
-          collapsible: true,
-          defaultOpen: false,
-          fields: [
-            {
-              key: 'weight',
-              label: 'Peso (g)',
-              type: 'number-range',
-              placeholder: { min: 'Mínimo', max: 'Máximo' },
-              min: 0,
-              step: 0.1,
-            },
-          ],
+          type: 'number-range',
+          placeholder: { min: 'Peso Mín (g)', max: 'Peso Máx (g)' },
+          min: 0,
+          step: 0.1,
         },
         {
-          key: 'dates',
-          label: 'Datas',
-          icon: 'calendar',
-          collapsible: true,
-          defaultOpen: false,
-          fields: [
-            {
-              key: 'createdAt',
-              label: 'Data de Adição',
-              type: 'date-range',
-            },
-          ],
+          key: 'createdAt',
+          type: 'date-range',
+          placeholder: 'Data de Adição',
         },
       ],
     },

@@ -78,7 +78,7 @@ export const personalNotificationsListConfig: ListConfig<Notification> = {
         sortable: true,
         width: 1.3,
         align: 'left',
-        render: (notification) => notification.createdAt,
+        render: (notification) => notification.createdAt || '-',
         format: 'date',
       },
       {
@@ -92,90 +92,42 @@ export const personalNotificationsListConfig: ListConfig<Notification> = {
       },
     ],
     defaultVisible: ['title', 'type', 'createdAt'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (notification, router) => {
-          router.push(`/pessoal/minhas-notificacoes/detalhes/${notification.id}` as any)
-        },
-      },
-    ],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'type',
-        label: 'Tipo',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'types',
-            label: 'Tipo de Notificação',
-            type: 'select',
-            multiple: true,
-            options: Object.values(NOTIFICATION_TYPE).map((type) => ({
-              label: NOTIFICATION_TYPE_LABELS[type],
-              value: type,
-            })),
-            placeholder: 'Selecione os tipos',
-          },
-        ],
+        key: 'types',
+        type: 'select',
+        multiple: true,
+        options: Object.values(NOTIFICATION_TYPE).map((type) => ({
+          label: NOTIFICATION_TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Selecione os tipos',
       },
       {
         key: 'importance',
-        label: 'Importância',
-        icon: 'alert-triangle',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'importance',
-            label: 'Importância',
-            type: 'select',
-            multiple: true,
-            options: Object.values(NOTIFICATION_IMPORTANCE).map((importance) => ({
-              label: NOTIFICATION_IMPORTANCE_LABELS[importance],
-              value: importance,
-            })),
-            placeholder: 'Selecione as importâncias',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(NOTIFICATION_IMPORTANCE).map((importance) => ({
+          label: NOTIFICATION_IMPORTANCE_LABELS[importance],
+          value: importance,
+        })),
+        placeholder: 'Selecione as importâncias',
       },
       {
-        key: 'status',
-        label: 'Status',
-        icon: 'check-circle',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'unreadOnly',
-            label: 'Apenas Não Lidas',
-            type: 'toggle',
-            description: 'Mostrar apenas notificações não lidas',
-          },
-        ],
+        key: 'unreadOnly',
+        type: 'toggle',
+        placeholder: 'Apenas Não Lidas',
+        description: 'Mostrar apenas notificações não lidas',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'dateRange',
-            label: 'Período',
-            type: 'date-range',
-          },
-        ],
+        key: 'dateRange',
+        type: 'date-range',
+        placeholder: 'Período',
       },
     ],
   },

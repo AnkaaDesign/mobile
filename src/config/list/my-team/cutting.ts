@@ -26,7 +26,7 @@ export const teamCuttingListConfig: ListConfig<Cut> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (cut) => cut.status,
+        render: (cut) => CUT_STATUS_LABELS[cut.status] || cut.status,
         format: 'badge',
       },
       {
@@ -90,121 +90,58 @@ export const teamCuttingListConfig: ListConfig<Cut> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['status', 'type', 'task', 'file', 'origin'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (cut, router) => {
-          router.push(`/producao/recorte/detalhes/${cut.id}`)
-        },
-      },
-    ],
+    defaultVisible: ['status', 'type', 'task'],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'scissors',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: Object.values(CUT_STATUS).map((status) => ({
-              label: CUT_STATUS_LABELS[status],
-              value: status,
-            })),
-            placeholder: 'Selecione os status',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(CUT_STATUS).map((status) => ({
+          label: CUT_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Status',
       },
       {
         key: 'type',
-        label: 'Tipo',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'type',
-            label: 'Tipo de Corte',
-            type: 'select',
-            multiple: true,
-            options: Object.values(CUT_TYPE).map((type) => ({
-              label: CUT_TYPE_LABELS[type],
-              value: type,
-            })),
-            placeholder: 'Selecione os tipos',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(CUT_TYPE).map((type) => ({
+          label: CUT_TYPE_LABELS[type],
+          value: type,
+        })),
+        placeholder: 'Tipo de Corte',
       },
       {
         key: 'origin',
-        label: 'Origem',
-        icon: 'map-pin',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'origin',
-            label: 'Origem do Corte',
-            type: 'select',
-            multiple: true,
-            options: Object.values(CUT_ORIGIN).map((origin) => ({
-              label: CUT_ORIGIN_LABELS[origin],
-              value: origin,
-            })),
-            placeholder: 'Selecione as origens',
-          },
-        ],
+        type: 'select',
+        multiple: true,
+        options: Object.values(CUT_ORIGIN).map((origin) => ({
+          label: CUT_ORIGIN_LABELS[origin],
+          value: origin,
+        })),
+        placeholder: 'Origem do Corte',
       },
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'taskIds',
-            label: 'Tarefas',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              return []
-            },
-            placeholder: 'Selecione as tarefas',
-          },
-        ],
+        key: 'taskIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Tarefas',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'startedAt',
-            label: 'Data de Início',
-            type: 'date-range',
-          },
-          {
-            key: 'completedAt',
-            label: 'Data de Conclusão',
-            type: 'date-range',
-          },
-        ],
+        key: 'startedAt',
+        type: 'date-range',
+        placeholder: 'Data de Início',
+      },
+      {
+        key: 'completedAt',
+        type: 'date-range',
+        placeholder: 'Data de Conclusão',
       },
     ],
   },

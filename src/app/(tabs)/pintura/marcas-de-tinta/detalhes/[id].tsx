@@ -19,7 +19,7 @@ import {
 
 export default function PaintBrandDetailsScreen() {
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   // Check user permissions

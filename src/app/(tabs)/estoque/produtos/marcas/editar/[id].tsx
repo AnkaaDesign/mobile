@@ -1,18 +1,17 @@
-import { View } from "react-native";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { showToast } from "@/components/ui/toast";
-import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ItemBrandForm } from "@/components/inventory/item/brand/form/brand-form";
-import { SkeletonCard } from "@/components/ui/loading";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { useItemBrand, useItemBrandMutations } from "@/hooks";
 import { type ItemBrandUpdateFormData } from '../../../../../../schemas';
 import { routeToMobilePath } from "@/lib/route-mapper";
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
-import { StyleSheet } from "react-native";
 import { spacing } from "@/constants/design-system";
+import { useTheme } from "@/lib/theme";
 
 export default function BrandEditScreenWrapper() {
   return (
@@ -24,6 +23,7 @@ export default function BrandEditScreenWrapper() {
 
 function BrandEditScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { updateAsync } = useItemBrandMutations();
 
@@ -67,42 +67,38 @@ function BrandEditScreen() {
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.container}>
-        <View style={styles.skeletonContainer}>
-          <SkeletonCard style={styles.skeleton} />
-          <SkeletonCard style={styles.skeleton} />
-          <SkeletonCard style={styles.skeleton} />
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["bottom"]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      </ThemedView>
+      </SafeAreaView>
     );
   }
 
   if (error || !brand) {
     return (
-      <ThemedView className="flex-1">
-        <View className="flex-1 items-center justify-center px-4">
-          <ThemedText className="text-2xl font-semibold mb-2 text-center">Marca não encontrada</ThemedText>
-          <ThemedText className="text-muted-foreground mb-4 text-center">A marca que você está procurando não existe ou foi removida.</ThemedText>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["bottom"]}>
+        <View style={styles.errorContainer}>
+          <ThemedText style={styles.errorTitle}>Marca não encontrada</ThemedText>
+          <ThemedText style={styles.errorMessage}>A marca que você está procurando não existe ou foi removida.</ThemedText>
           <Button onPress={handleCancel}>
-            <ThemedText className="text-white">Voltar para lista</ThemedText>
+            <ThemedText style={styles.buttonText}>Voltar para lista</ThemedText>
           </Button>
         </View>
-      </ThemedView>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ThemedView className="flex-1">
-      <ItemBrandForm
-        mode="update"
-        defaultValues={{
-          name: brand.name,
-        }}
-        onSubmit={handleFormSubmit}
-        onCancel={handleCancel}
-        isSubmitting={false}
-      />
-    </ThemedView>
+    <ItemBrandForm
+      mode="update"
+      defaultValues={{
+        name: brand.name,
+      }}
+      onSubmit={handleFormSubmit}
+      onCancel={handleCancel}
+      isSubmitting={false}
+    />
   );
 }
 
@@ -110,11 +106,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  skeletonContainer: {
-    padding: spacing.lg,
-    gap: spacing.lg,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  skeleton: {
-    height: 200,
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  errorMessage: {
+    marginBottom: spacing.lg,
+    textAlign: "center",
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: "white",
   },
 });

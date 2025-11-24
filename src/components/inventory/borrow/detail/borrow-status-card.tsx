@@ -2,6 +2,8 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { Badge } from "@/components/ui/badge";
+import { getBadgeVariant } from "@/constants/badge-colors";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
@@ -20,19 +22,6 @@ interface BorrowStatusCardProps {
 
 export const BorrowStatusCard: React.FC<BorrowStatusCardProps> = ({ borrow }) => {
   const { colors } = useTheme();
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case BORROW_STATUS.ACTIVE:
-        return "#3b82f6";
-      case BORROW_STATUS.RETURNED:
-        return "#10b981";
-      case BORROW_STATUS.LOST:
-        return "#ef4444";
-      default:
-        return colors.mutedForeground;
-    }
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -62,8 +51,9 @@ export const BorrowStatusCard: React.FC<BorrowStatusCardProps> = ({ borrow }) =>
 
       <View style={styles.content}>
         <View style={styles.statusContainer}>
-          <View
-            style={[styles.statusBadge, { backgroundColor: getStatusColor(borrow.status) }]}
+          <Badge
+            variant={getBadgeVariant(borrow.status, 'BORROW')}
+            size="default"
           >
             <View style={styles.badgeContent}>
               {getStatusIcon(borrow.status)}
@@ -71,7 +61,7 @@ export const BorrowStatusCard: React.FC<BorrowStatusCardProps> = ({ borrow }) =>
                 {BORROW_STATUS_LABELS[borrow.status]}
               </ThemedText>
             </View>
-          </View>
+          </Badge>
         </View>
 
         {borrow.status === BORROW_STATUS.ACTIVE && (
@@ -133,10 +123,6 @@ const styles = StyleSheet.create({
   },
   statusContainer: {
     alignItems: "flex-start",
-  },
-  statusBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
   },
   badgeContent: {
     flexDirection: "row",

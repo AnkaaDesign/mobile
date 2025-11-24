@@ -44,14 +44,14 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({ title, value, unit
   };
 
   const cardContentStyles: ViewStyle = {
-    padding: 16,
+    padding: 10,
   };
 
   const headerContainerStyles: ViewStyle = {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: 4,
   };
 
   const titleContainerStyles: ViewStyle = {
@@ -61,21 +61,21 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({ title, value, unit
   };
 
   const titleStyles: TextStyle = {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: "500",
     color: "#737373",
     flex: 1,
   };
 
   const valueStyles: TextStyle = {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "700",
     color: "#171717",
   };
 
   const changeStyles: TextStyle = {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 10,
+    marginTop: 2,
     color: getTrendColor(),
   };
 
@@ -93,8 +93,8 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({ title, value, unit
           <View style={headerContainerStyles}>
             <View style={titleContainerStyles}>
               {icon && (
-                <View style={{ marginRight: 8 }}>
-                  <Icon name={icon} size={20} color="#737373" />
+                <View style={{ marginRight: 6 }}>
+                  <Icon name={icon} size={14} color="#737373" />
                 </View>
               )}
               <Text style={titleStyles} numberOfLines={1}>

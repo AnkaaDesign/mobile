@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
@@ -32,21 +32,30 @@ export function PrivilegeGuard({
   fallbackScreen = '/(autenticacao)/entrar',
   showUnauthorized = true,
 }: PrivilegeGuardProps) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isAuthReady } = useAuth();
+  const hasRedirected = useRef(false);
+
+  // Handle redirect in useEffect, NOT during render
+  // This prevents flashing and race conditions
+  useEffect(() => {
+    if (hasRedirected.current) return;
+    if (isLoading || !isAuthReady) return;
+
+    // Only redirect to login if user is null and auth is ready
+    if (!user) {
+      hasRedirected.current = true;
+      console.log("[PrivilegeGuard] No user after auth ready, redirecting to login");
+      router.replace('/(autenticacao)/entrar' as any);
+    }
+  }, [user, isLoading, isAuthReady]);
 
   // Show loading state while auth is being determined
-  if (isLoading) {
+  if (isLoading || !isAuthReady || !user) {
     return (
       <ThemedView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ThemedText>Carregando...</ThemedText>
       </ThemedView>
     );
-  }
-
-  // If user is not authenticated, redirect to login
-  if (!user) {
-    router.replace('/(autenticacao)/entrar' as any);
-    return null;
   }
 
   // If no privilege required, render children
@@ -61,9 +70,12 @@ export function PrivilegeGuard({
     if (showUnauthorized) {
       return <UnauthorizedScreen requiredPrivilege={requiredPrivilege} fallbackScreen={fallbackScreen} />;
     } else {
-      // Silent redirect
-      router.replace(fallbackScreen as any);
-      return null;
+      // Silent redirect - show loading
+      return (
+        <ThemedView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ThemedText>Carregando...</ThemedText>
+        </ThemedView>
+      );
     }
   }
 

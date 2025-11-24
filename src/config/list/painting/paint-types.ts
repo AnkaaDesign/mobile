@@ -14,6 +14,7 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
       _count: {
         select: {
           paints: true,
+          componentItems: true,
         },
       },
     },
@@ -45,7 +46,16 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
         sortable: false,
         width: 0.8,
         align: 'center',
-        render: (paintType) => (paintType as any)._count?.paints || 0,
+        render: (paintType) => String((paintType as any)._count?.paints || 0),
+        format: 'badge',
+      },
+      {
+        key: 'componentItemsCount',
+        label: 'COMPONENTES',
+        sortable: false,
+        width: 1.0,
+        align: 'center',
+        render: (paintType) => String((paintType as any)._count?.componentItems || 0),
         format: 'badge',
       },
       {
@@ -54,16 +64,16 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (paintType) => paintType.createdAt,
+        render: (paintType) => paintType.createdAt || '-',
         format: 'date',
       },
     ],
-    defaultVisible: ['name', 'needGround'],
-    rowHeight: 60,
+    defaultVisible: ['name', 'needGround', 'paintsCount'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (paintType, router) => {
@@ -96,41 +106,23 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'options',
-        label: 'Opções',
-        icon: 'settings',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'needGround',
-            label: 'Necessita Primer',
-            description: 'Apenas tipos que necessitam primer',
-            type: 'toggle',
-          },
-          {
-            key: 'hasPaints',
-            label: 'Com Tintas',
-            description: 'Apenas tipos com tintas cadastradas',
-            type: 'toggle',
-          },
-        ],
+        key: 'needGround',
+        type: 'toggle',
+        placeholder: 'Necessita Primer',
+        description: 'Apenas tipos que necessitam primer',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Cadastro',
-            type: 'date-range',
-          },
-        ],
+        key: 'hasPaints',
+        type: 'toggle',
+        placeholder: 'Com Tintas',
+        description: 'Apenas tipos com tintas cadastradas',
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Cadastro',
       },
     ],
   },
@@ -148,6 +140,7 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
       { key: 'name', label: 'Nome', path: 'name' },
       { key: 'needGround', label: 'Necessita Primer', path: 'needGround', format: 'boolean' },
       { key: 'paintsCount', label: 'Tintas', path: '_count.paints' },
+      { key: 'componentItemsCount', label: 'Componentes', path: '_count.componentItems' },
       { key: 'createdAt', label: 'Cadastrado em', path: 'createdAt', format: 'date' },
     ],
   },

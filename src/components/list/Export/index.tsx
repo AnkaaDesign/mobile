@@ -45,7 +45,7 @@ export const Export = memo(function Export({
         style={[
           styles.button,
           {
-            backgroundColor: colors.background,
+            backgroundColor: colors.card,
             borderColor: colors.border,
           },
           disabled && styles.buttonDisabled,

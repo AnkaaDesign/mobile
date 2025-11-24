@@ -6,8 +6,7 @@ export interface RequestPpeDeliveryData {
   itemId: string;
   quantity: number;
   scheduledDate?: Date;
-  notes?: string;
-  reason?: string;
+  reason: string;
 }
 
 export const useRequestPpeDelivery = () => {
@@ -20,14 +19,12 @@ export const useRequestPpeDelivery = () => {
       const apiData: any = {
         itemId: data.itemId,
         quantity: data.quantity,
+        reason: data.reason,
       };
 
       if (data.scheduledDate) {
         apiData.scheduledDate = data.scheduledDate;
       }
-
-      // Note: notes and reason might need to be stored elsewhere or added to the API
-      // For now, we'll include them if the API supports them
 
       return requestPpeDelivery(apiData);
     },

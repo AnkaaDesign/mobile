@@ -1,6 +1,6 @@
 // packages/hooks/src/useVacation.ts
 
-import { getVacations, getVacationById, createVacation, updateVacation, deleteVacation, batchCreateVacations, batchUpdateVacations, batchDeleteVacations } from '@/api-client';
+import { getVacations, getMyVacations, getVacationById, createVacation, updateVacation, deleteVacation, batchCreateVacations, batchUpdateVacations, batchDeleteVacations } from '@/api-client';
 import type {
   VacationGetManyFormData,
   VacationCreateFormData,
@@ -69,6 +69,53 @@ export const useVacations = baseVacationHooks.useList;
 export const useVacation = baseVacationHooks.useDetail;
 export const useVacationMutations = baseVacationHooks.useMutations;
 export const useVacationBatchMutations = baseVacationHooks.useBatchMutations;
+
+// =====================================================
+// My Vacations Hook (for personal vacations page)
+// =====================================================
+
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+
+export function useMyVacationsInfinite(
+  params?: Partial<VacationGetManyFormData>,
+  options?: { enabled?: boolean },
+) {
+  const queryClient = useQueryClient();
+  const { enabled = true } = options || {};
+
+  const query = useInfiniteQuery({
+    queryKey: [...vacationKeys.all, 'my-vacations', params],
+    queryFn: async ({ pageParam = 1 }) => {
+      const queryParams = {
+        ...params,
+        page: pageParam,
+        limit: params?.limit || 40,
+      } as VacationGetManyFormData;
+      return getMyVacations(queryParams);
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.meta) return undefined;
+      return lastPage.meta.hasNextPage ? lastPage.meta.page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 1000 * 60 * 5,
+    placeholderData: (previousData) => previousData,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    enabled,
+  });
+
+  const refresh = () => {
+    queryClient.invalidateQueries({
+      queryKey: [...vacationKeys.all, 'my-vacations'],
+    });
+  };
+
+  return {
+    ...query,
+    refresh,
+  };
+}
 
 // =====================================================
 // Specialized Vacation Hooks

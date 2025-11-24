@@ -1,5 +1,6 @@
-import { UnderConstruction } from "@/components/ui/under-construction";
+import React from "react";
+import { MaintenanceForm } from "@/components/inventory/maintenance/form/maintenance-form";
 
-export default function InventoryMaintenanceCreateScreen() {
-  return <UnderConstruction title="Manutenção - Cadastrar" />;
+export default function CreateMaintenanceScreen() {
+  return <MaintenanceForm mode="create" />;
 }

@@ -10,7 +10,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { Vacation } from '@/types'
 
 function MyTeamVacationsContent() {
-  const { user } = useAuth()
+  const { data: user } = useAuth()
 
   // Create a modified config that filters vacations by user's sector team members
   const config = useMemo((): ListConfig<Vacation> => {

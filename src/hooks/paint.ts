@@ -29,7 +29,9 @@ import {
   batchCreatePaintGrounds,
   batchUpdatePaintGrounds,
   batchDeletePaintGrounds,
+  getAvailableComponents,
 } from '@/api-client';
+import { useQuery } from '@tanstack/react-query';
 import type {
   PaintGroundCreateFormData,
   PaintGroundUpdateFormData,
@@ -107,3 +109,24 @@ export const usePaintGroundBatchMutations = basePaintGroundHooks.useBatchMutatio
 // Re-export mutations with legacy names if needed
 export { usePaintGroundMutations as usePaintGroundCrud };
 export { usePaintGroundBatchMutations as usePaintGroundBatchOperations };
+
+// =====================================================
+// Available Components Hook
+// =====================================================
+
+interface UseAvailableComponentsOptions {
+  paintBrandId?: string;
+  paintTypeId?: string;
+  enabled?: boolean;
+}
+
+export function useAvailableComponents(options: UseAvailableComponentsOptions) {
+  const { paintBrandId, paintTypeId, enabled = true } = options;
+
+  return useQuery({
+    queryKey: ['availableComponents', paintBrandId, paintTypeId],
+    queryFn: () => getAvailableComponents(paintBrandId!, paintTypeId!),
+    enabled: enabled && !!paintBrandId && !!paintTypeId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}

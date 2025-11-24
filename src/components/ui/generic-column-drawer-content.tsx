@@ -4,6 +4,7 @@ import { IconColumns, IconSearch, IconX } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
+import { Button } from "@/components/ui/button";
 
 export interface ColumnDefinition {
   key: string;
@@ -71,26 +72,26 @@ export function GenericColumnDrawerContent({
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, {
-        backgroundColor: colors.background,
-        borderBottomColor: colors.border,
-        paddingTop: 18
-      }]}>
+      <View style={styles.header}>
         <View style={styles.headerContent}>
           <IconColumns size={24} color={colors.foreground} />
-          <ThemedText style={styles.title}>{title}</ThemedText>
-          <View style={[styles.countBadge, { backgroundColor: colors.muted }]}>
-            <ThemedText style={styles.countText}>
-              {visibleCount}/{totalCount}
-            </ThemedText>
-          </View>
+          <ThemedText style={[styles.title, { color: colors.foreground }]}>
+            {title}
+          </ThemedText>
+          {visibleCount < totalCount && (
+            <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+              <ThemedText style={[styles.badgeText, { color: colors.primaryForeground }]}>
+                {visibleCount}/{totalCount}
+              </ThemedText>
+            </View>
+          )}
         </View>
-        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
           <IconX size={24} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>
 
-      {/* Search */}
+      {/* Search Bar */}
       <View style={styles.searchWrapper}>
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <IconSearch size={18} color={colors.mutedForeground} />
@@ -109,29 +110,31 @@ export function GenericColumnDrawerContent({
         </View>
       </View>
 
-      {/* List */}
+      {/* Columns List */}
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 90 }]}
+        style={styles.content}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={true}
       >
         {filteredColumns.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>Nenhuma coluna encontrada</ThemedText>
+            <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
+              Nenhuma coluna encontrada
+            </ThemedText>
           </View>
         ) : (
           filteredColumns.map((column) => {
             const isVisible = localVisible.has(column.key);
             return (
-              <View
-                key={column.key}
-                style={styles.columnItem}
-              >
+              <View key={column.key} style={styles.columnItem}>
                 <TouchableOpacity
                   style={styles.columnTouchable}
                   onPress={() => handleToggle(column.key)}
                   activeOpacity={0.7}
                 >
-                  <ThemedText style={styles.columnTitle}>{column.header}</ThemedText>
+                  <ThemedText style={[styles.columnTitle, { color: colors.foreground }]}>
+                    {column.header}
+                  </ThemedText>
                 </TouchableOpacity>
 
                 <RNSwitch
@@ -149,24 +152,24 @@ export function GenericColumnDrawerContent({
 
       {/* Footer */}
       <View style={[styles.footer, {
-        backgroundColor: colors.background,
+        paddingBottom: insets.bottom + 16,
         borderTopColor: colors.border,
-        paddingBottom: Math.max(insets.bottom, 16)
+        backgroundColor: colors.background
       }]}>
-        <TouchableOpacity
-          style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+        <Button
+          variant="outline"
           onPress={handleRestore}
-          activeOpacity={0.7}
+          style={styles.button}
         >
-          <ThemedText style={styles.footerBtnText}>Restaurar</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.footerBtn, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+          Restaurar
+        </Button>
+        <Button
+          variant="default"
           onPress={handleApply}
-          activeOpacity={0.7}
+          style={styles.button}
         >
-          <ThemedText style={[styles.footerBtnText, { color: colors.primaryForeground }]}>Aplicar</ThemedText>
-        </TouchableOpacity>
+          Aplicar
+        </Button>
       </View>
     </View>
   );
@@ -178,34 +181,41 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
   },
   title: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "700",
   },
-  countBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  badge: {
     marginLeft: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    minWidth: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  countText: {
+  badgeText: {
     fontSize: 12,
     fontWeight: "600",
   },
+  closeButton: {
+    padding: 4,
+  },
   searchWrapper: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   searchBar: {
     flexDirection: "row",
@@ -219,20 +229,21 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    paddingVertical: 4,
+    paddingVertical: 0,
+  },
+  content: {
+    flex: 1,
   },
   scrollContent: {
-    paddingTop: 16,
-    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   columnItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingVertical: 14,
-    minHeight: 60,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 56,
   },
   columnTouchable: {
     flex: 1,
@@ -244,27 +255,18 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   footer: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
   },
-  footerBtn: {
+  button: {
     flex: 1,
-    height: 48,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  footerBtnText: {
-    fontSize: 16,
-    fontWeight: "600",
   },
   emptyContainer: {
     paddingVertical: 48,

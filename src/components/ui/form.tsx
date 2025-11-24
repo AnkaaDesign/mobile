@@ -4,7 +4,7 @@ import { Controller, FormProvider, useFormContext } from "react-hook-form";
 import type { ControllerProps, FieldPath, FieldValues } from "react-hook-form";
 import { useTheme } from "@/lib/theme";
 
-import { fontSize, spacing, fontWeight } from "@/constants/design-system";
+import { formSpacing, formTypography, formStyles as standardFormStyles } from "@/constants/form-styles";
 
 const Form = FormProvider;
 
@@ -80,27 +80,53 @@ FormItem.displayName = "FormItem";
 interface FormLabelProps {
   children: React.ReactNode;
   style?: any;
+  /** Whether the field is required (shows red asterisk) */
+  required?: boolean;
+  /** Whether to show the label inline with icon */
+  withIcon?: boolean;
 }
 
-const FormLabel = React.forwardRef<Text, FormLabelProps>(({ style, children, ...props }, ref) => {
-  const { error, formItemId } = useFormField();
-  const { colors } = useTheme();
+const FormLabel = React.forwardRef<Text, FormLabelProps>(
+  ({ style, children, required, withIcon, ...props }, ref) => {
+    const { error, formItemId } = useFormField();
+    const { colors } = useTheme();
 
-  return (
-    <Text
-      ref={ref}
-      nativeID={formItemId}
-      style={[
-        styles.formLabel,
-        { color: error ? colors.destructive : colors.foreground },
-        style,
-      ]}
-      {...props}
-    >
-      {children}
-    </Text>
-  );
-});
+    const labelColor = error ? colors.destructive : colors.foreground;
+
+    // If required, wrap children with asterisk
+    const labelContent = required ? (
+      <Text
+        ref={ref}
+        nativeID={formItemId}
+        style={[styles.formLabel, { color: labelColor }, style]}
+        {...props}
+      >
+        {children}
+        <Text style={[styles.requiredAsterisk, { color: colors.destructive }]}> *</Text>
+      </Text>
+    ) : (
+      <Text
+        ref={ref}
+        nativeID={formItemId}
+        style={[styles.formLabel, { color: labelColor }, style]}
+        {...props}
+      >
+        {children}
+      </Text>
+    );
+
+    // If withIcon is true, wrap in a row layout
+    if (withIcon) {
+      return (
+        <View style={styles.labelRow}>
+          {labelContent}
+        </View>
+      );
+    }
+
+    return labelContent;
+  }
+);
 FormLabel.displayName = "FormLabel";
 
 interface FormControlProps {
@@ -177,21 +203,29 @@ FormMessage.displayName = "FormMessage";
 
 const styles = StyleSheet.create({
   formItem: {
-    marginBottom: spacing.md,
+    marginBottom: formSpacing.fieldGap, // 16px - consistent spacing between fields
   },
   formLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    marginBottom: spacing.xs,
+    fontSize: formTypography.label.fontSize, // 14px
+    fontWeight: formTypography.label.fontWeight as any, // 500 (medium)
+    marginBottom: formSpacing.labelInputGap, // 4px
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  requiredAsterisk: {
+    fontSize: formTypography.requiredAsterisk.fontSize,
+    fontWeight: formTypography.requiredAsterisk.fontWeight as any,
   },
   formDescription: {
-    fontSize: fontSize.xs,
-    marginTop: spacing.xs,
+    fontSize: formTypography.helper.fontSize, // 12px
+    marginTop: formSpacing.helperGap, // 4px
   },
   formMessage: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
-    marginTop: spacing.xs,
+    fontSize: formTypography.error.fontSize, // 12px
+    fontWeight: formTypography.error.fontWeight as any, // 500
+    marginTop: formSpacing.errorGap, // 4px
   },
 });
 

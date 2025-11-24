@@ -1,6 +1,5 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Holiday } from '@/types'
-import { HOLIDAY_TYPE, HOLIDAY_TYPE_LABELS } from '@/constants'
 
 export const personalHolidaysListConfig: ListConfig<Holiday> = {
   key: 'personal-holidays',
@@ -38,7 +37,7 @@ export const personalHolidaysListConfig: ListConfig<Holiday> = {
         label: 'DIA DA SEMANA',
         sortable: false,
         width: 1.5,
-        align: 'center',
+        align: 'left',
         render: (holiday) => {
           if (!holiday.date) return '-'
           const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
@@ -46,30 +45,33 @@ export const personalHolidaysListConfig: ListConfig<Holiday> = {
         },
       },
       {
-        key: 'type',
-        label: 'TIPO',
-        sortable: true,
-        width: 1.2,
-        align: 'center',
-        render: (holiday) => holiday.type ? HOLIDAY_TYPE_LABELS[holiday.type] : '-',
-        format: 'badge',
-      },
-      {
-        key: 'isRecurring',
-        label: 'RECORRENTE',
-        sortable: true,
-        width: 1.0,
-        align: 'center',
-        render: (holiday) => holiday.isRecurring ? 'Sim' : 'Não',
-        format: 'badge',
-      },
-      {
-        key: 'description',
-        label: 'DESCRIÇÃO',
+        key: 'status',
+        label: 'STATUS',
         sortable: false,
-        width: 2.5,
-        align: 'left',
-        render: (holiday) => holiday.description || '-',
+        width: 1.5,
+        align: 'center',
+        render: (holiday) => {
+          if (!holiday.date) return '-'
+
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          const holidayDate = new Date(holiday.date)
+          holidayDate.setHours(0, 0, 0, 0)
+
+          const diffTime = holidayDate.getTime() - today.getTime()
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+          if (diffDays < 0) return 'Passado'
+          if (diffDays === 0) return 'Hoje'
+          if (diffDays === 1) return 'Amanhã'
+          if (diffDays < 7) return `Em ${diffDays} dias`
+          if (diffDays < 30) {
+            const weeks = Math.floor(diffDays / 7)
+            return weeks === 1 ? 'Em 1 semana' : `Em ${weeks} semanas`
+          }
+          const months = Math.floor(diffDays / 30)
+          return months === 1 ? 'Em 1 mês' : `Em ${months} meses`
+        },
       },
       {
         key: 'createdAt',
@@ -81,89 +83,42 @@ export const personalHolidaysListConfig: ListConfig<Holiday> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['name', 'date', 'dayOfWeek', 'type'],
-    rowHeight: 60,
-    actions: [
-      {
-        key: 'view',
-        label: 'Ver',
-        icon: 'eye',
-        variant: 'default',
-        onPress: (holiday, router) => {
-          router.push(`/pessoal/meus-feriados/detalhes/${holiday.id}` as any)
-        },
-      },
-    ],
+    defaultVisible: ['name', 'date', 'dayOfWeek'],
+    rowHeight: 72,
+    actions: [],
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'type',
-        label: 'Tipo',
-        icon: 'tag',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'type',
-            label: 'Tipo de Feriado',
-            type: 'select',
-            multiple: true,
-            options: Object.values(HOLIDAY_TYPE).map((type) => ({
-              label: HOLIDAY_TYPE_LABELS[type],
-              value: type,
-            })),
-            placeholder: 'Selecione os tipos',
-          },
-          {
-            key: 'isRecurring',
-            label: 'Apenas Recorrentes',
-            type: 'toggle',
-            description: 'Mostrar apenas feriados recorrentes',
-          },
-        ],
+        key: 'year',
+        type: 'select',
+        multiple: false,
+        options: Array.from({ length: 5 }, (_, i) => {
+          const year = new Date().getFullYear() - 1 + i
+          return { label: year.toString(), value: year }
+        }),
+        placeholder: 'Selecione o ano',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'year',
-            label: 'Ano',
-            type: 'select',
-            multiple: false,
-            options: Array.from({ length: 5 }, (_, i) => {
-              const year = new Date().getFullYear() - 1 + i
-              return { label: year.toString(), value: year }
-            }),
-            placeholder: 'Selecione o ano',
-          },
-          {
-            key: 'month',
-            label: 'Mês',
-            type: 'select',
-            multiple: false,
-            options: [
-              { label: 'Janeiro', value: 1 },
-              { label: 'Fevereiro', value: 2 },
-              { label: 'Março', value: 3 },
-              { label: 'Abril', value: 4 },
-              { label: 'Maio', value: 5 },
-              { label: 'Junho', value: 6 },
-              { label: 'Julho', value: 7 },
-              { label: 'Agosto', value: 8 },
-              { label: 'Setembro', value: 9 },
-              { label: 'Outubro', value: 10 },
-              { label: 'Novembro', value: 11 },
-              { label: 'Dezembro', value: 12 },
-            ],
-            placeholder: 'Selecione o mês',
-          },
+        key: 'month',
+        type: 'select',
+        multiple: false,
+        options: [
+          { label: 'Janeiro', value: 1 },
+          { label: 'Fevereiro', value: 2 },
+          { label: 'Março', value: 3 },
+          { label: 'Abril', value: 4 },
+          { label: 'Maio', value: 5 },
+          { label: 'Junho', value: 6 },
+          { label: 'Julho', value: 7 },
+          { label: 'Agosto', value: 8 },
+          { label: 'Setembro', value: 9 },
+          { label: 'Outubro', value: 10 },
+          { label: 'Novembro', value: 11 },
+          { label: 'Dezembro', value: 12 },
         ],
+        placeholder: 'Selecione o mês',
       },
     ],
   },
@@ -180,10 +135,6 @@ export const personalHolidaysListConfig: ListConfig<Holiday> = {
     columns: [
       { key: 'name', label: 'Nome', path: 'name' },
       { key: 'date', label: 'Data', path: 'date', format: 'date' },
-      { key: 'type', label: 'Tipo', path: 'type', format: (value) => value ? HOLIDAY_TYPE_LABELS[value] : '-' },
-      { key: 'isRecurring', label: 'Recorrente', path: 'isRecurring', format: (value) => value ? 'Sim' : 'Não' },
-      { key: 'description', label: 'Descrição', path: 'description' },
-      { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
     ],
   },
 

@@ -52,7 +52,7 @@ import {
 export default function CuttingRequestDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { data: user } = useAuth();
   const { update, delete: deleteAsync } = useCutMutations();
   const [refreshing, setRefreshing] = useState(false);
   const [requestModalVisible, setRequestModalVisible] = useState(false);

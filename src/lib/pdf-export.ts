@@ -1,4 +1,4 @@
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Alert } from 'react-native';
 
@@ -138,21 +138,18 @@ export async function exportToPDF<T extends Record<string, any>>(
     // Generate HTML content
     const htmlContent = generateHTMLTable(data, headers, title);
 
-    // Generate PDF
-    const options = {
+    // Generate PDF using Expo Print
+    const { uri } = await Print.printToFileAsync({
       html: htmlContent,
-      fileName: filename,
-      directory: 'Documents',
-    };
+      base64: false,
+    });
 
-    const file = await RNHTMLtoPDF.convert(options);
-
-    if (!file.filePath) {
+    if (!uri) {
       throw new Error('Falha ao gerar PDF');
     }
 
     // Share PDF
-    await Sharing.shareAsync(file.filePath, {
+    await Sharing.shareAsync(uri, {
       mimeType: 'application/pdf',
       dialogTitle: 'Exportar PDF',
       UTI: 'com.adobe.pdf',

@@ -34,33 +34,34 @@ export const NumberRangeField = memo(function NumberRangeField({
     })
   }
 
+  // Get placeholder labels - use field.placeholder if object, otherwise defaults
+  const placeholders = typeof field.placeholder === 'object' && field.placeholder
+    ? { min: field.placeholder.min || 'Mínimo', max: field.placeholder.max || 'Máximo' }
+    : { min: 'Mínimo', max: 'Máximo' }
+
   return (
     <View style={styles.container}>
-      <ThemedText style={[styles.label, { color: colors.foreground }]}>
-        {field.label}
-      </ThemedText>
-
       <View style={styles.row}>
         <View style={styles.inputField}>
           <ThemedText style={[styles.subLabel, { color: colors.mutedForeground }]}>
-            Mínimo
+            {placeholders.min}
           </ThemedText>
           <Input
             value={value?.min?.toString() || ''}
             onChangeText={handleMinChange}
-            placeholder={field.min?.toString() || '0'}
+            placeholder="0"
             keyboardType="numeric"
           />
         </View>
 
         <View style={styles.inputField}>
           <ThemedText style={[styles.subLabel, { color: colors.mutedForeground }]}>
-            Máximo
+            {placeholders.max}
           </ThemedText>
           <Input
             value={value?.max?.toString() || ''}
             onChangeText={handleMaxChange}
-            placeholder={field.max?.toString() || '∞'}
+            placeholder="∞"
             keyboardType="numeric"
           />
         </View>
@@ -71,12 +72,7 @@ export const NumberRangeField = memo(function NumberRangeField({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   row: {
     flexDirection: 'row',
@@ -87,6 +83,7 @@ const styles = StyleSheet.create({
   },
   subLabel: {
     fontSize: 12,
+    fontWeight: '500',
     marginBottom: 4,
   },
 })

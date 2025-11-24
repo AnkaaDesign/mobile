@@ -1,9 +1,15 @@
+import React from 'react'
+import { View } from 'react-native'
+import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig } from '@/components/list/types'
-import type { Task } from '@/types'
+import type { Task, User } from '@/types'
 import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
 } from '@/constants'
+import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
+import { PaintPreview } from '@/components/painting/preview/painting-preview'
+import { PAINT_FINISH } from '@/constants/enums'
 
 export const historyListConfig: ListConfig<Task> = {
   key: 'production-history',
@@ -16,7 +22,12 @@ export const historyListConfig: ListConfig<Task> = {
     include: {
       customer: true,
       sector: true,
-      generalPainting: true,
+      generalPainting: {
+        include: {
+          paintType: true,
+          paintBrand: true,
+        },
+      },
       updatedBy: {
         select: {
           id: true,
@@ -30,7 +41,7 @@ export const historyListConfig: ListConfig<Task> = {
         },
       },
     },
-    defaultWhere: {
+    where: {
       status: {
         in: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED],
       },
@@ -41,11 +52,30 @@ export const historyListConfig: ListConfig<Task> = {
     columns: [
       {
         key: 'name',
-        label: 'NOME',
+        label: 'LOGOMARCA',
         sortable: true,
         width: 2.0,
         align: 'left',
-        render: (task) => task.name,
+        render: (task: Task) => {
+          if (task.generalPainting?.hex) {
+            return React.createElement(
+              View,
+              { style: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 } },
+              React.createElement(
+                ThemedText,
+                { style: { flex: 1, marginRight: 8, fontSize: 12, fontWeight: '500' } },
+                task.name
+              ),
+              React.createElement(PaintPreview, {
+                paint: task.generalPainting,
+                width: 24,
+                height: 24,
+                borderRadius: 4,
+              })
+            )
+          }
+          return task.name
+        },
         style: { fontWeight: '500' },
       },
       {
@@ -68,7 +98,7 @@ export const historyListConfig: ListConfig<Task> = {
         key: 'sector.name',
         label: 'SETOR',
         sortable: true,
-        width: 1.2,
+        width: 1.4,
         align: 'left',
         render: (task) => task.sector?.name || '-',
         format: 'badge',
@@ -77,7 +107,7 @@ export const historyListConfig: ListConfig<Task> = {
         key: 'status',
         label: 'STATUS',
         sortable: true,
-        width: 1.2,
+        width: 1.6,
         align: 'center',
         render: (task) => TASK_STATUS_LABELS[task.status as keyof typeof TASK_STATUS_LABELS] || task.status,
         format: 'badge',
@@ -93,18 +123,18 @@ export const historyListConfig: ListConfig<Task> = {
       {
         key: 'plate',
         label: 'PLACA',
-        sortable: true,
+        sortable: false, // Removed sorting - plate is on Truck entity
         width: 1.0,
         align: 'left',
-        render: (task) => task.plate?.toUpperCase() || '-',
+        render: (task) => task.truck?.plate?.toUpperCase() || '-',
       },
       {
         key: 'chassisNumber',
         label: 'Nº CHASSI',
-        sortable: true,
+        sortable: false, // Removed sorting - chassisNumber is on Truck entity
         width: 1.5,
         align: 'left',
-        render: (task) => task.chassisNumber || '-',
+        render: (task) => task.truck?.chassisNumber || '-',
       },
       {
         key: 'entryDate',
@@ -128,7 +158,7 @@ export const historyListConfig: ListConfig<Task> = {
         key: 'finishedAt',
         label: 'FINALIZADO',
         sortable: true,
-        width: 1.2,
+        width: 1.1,
         align: 'left',
         render: (task) => task.finishedAt,
         format: 'date',
@@ -148,7 +178,7 @@ export const historyListConfig: ListConfig<Task> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (task) => task.services?.length || 0,
+        render: (task) => String(task.services?.length || 0),
         format: 'badge',
       },
       {
@@ -168,12 +198,12 @@ export const historyListConfig: ListConfig<Task> = {
         render: (task) => task.observation?.description || '-',
       },
     ],
-    defaultVisible: ['name', 'customer.fantasyName', 'status', 'finishedAt'],
-    rowHeight: 60,
+    defaultVisible: ['name', 'sector.name', 'finishedAt'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (task, router) => {
@@ -185,6 +215,7 @@ export const historyListConfig: ListConfig<Task> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
+        canPerform: canEditTasks,
         onPress: (task, router) => {
           router.push(`/producao/cronograma/editar/${task.id}`)
         },
@@ -194,6 +225,7 @@ export const historyListConfig: ListConfig<Task> = {
         label: 'Excluir',
         icon: 'trash',
         variant: 'destructive',
+        canPerform: canDeleteTasks,
         confirm: {
           title: 'Confirmar Exclusão',
           message: (task) => `Deseja excluir a tarefa "${task.name}"?`,
@@ -206,134 +238,69 @@ export const historyListConfig: ListConfig<Task> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
         key: 'status',
-        label: 'Status',
-        icon: 'list-checks',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
+        type: 'select',
+        multiple: true,
+        options: [
           {
-            key: 'status',
-            label: 'Status',
-            type: 'select',
-            multiple: true,
-            options: [
-              {
-                label: TASK_STATUS_LABELS[TASK_STATUS.COMPLETED],
-                value: TASK_STATUS.COMPLETED,
-              },
-              {
-                label: TASK_STATUS_LABELS[TASK_STATUS.CANCELLED],
-                value: TASK_STATUS.CANCELLED,
-              },
-              {
-                label: TASK_STATUS_LABELS[TASK_STATUS.INVOICED],
-                value: TASK_STATUS.INVOICED,
-              },
-              {
-                label: TASK_STATUS_LABELS[TASK_STATUS.SETTLED],
-                value: TASK_STATUS.SETTLED,
-              },
-            ],
-            placeholder: 'Selecione os status',
-            defaultValue: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED],
+            label: TASK_STATUS_LABELS[TASK_STATUS.COMPLETED],
+            value: TASK_STATUS.COMPLETED,
+          },
+          {
+            label: TASK_STATUS_LABELS[TASK_STATUS.CANCELLED],
+            value: TASK_STATUS.CANCELLED,
+          },
+          {
+            label: TASK_STATUS_LABELS[TASK_STATUS.INVOICED],
+            value: TASK_STATUS.INVOICED,
+          },
+          {
+            label: TASK_STATUS_LABELS[TASK_STATUS.SETTLED],
+            value: TASK_STATUS.SETTLED,
           },
         ],
+        placeholder: 'Status',
+        defaultValue: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED],
       },
       {
-        key: 'entities',
-        label: 'Clientes e Setores',
-        icon: 'users',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'customerIds',
-            label: 'Clientes',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os clientes',
-          },
-          {
-            key: 'sectorIds',
-            label: 'Setores',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os setores',
-          },
-        ],
+        key: 'customerIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Clientes',
       },
       {
-        key: 'assignee',
-        label: 'Finalizador',
-        icon: 'user',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'assigneeIds',
-            label: 'Finalizado por',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // Load from API
-              return []
-            },
-            placeholder: 'Selecione os usuários',
-          },
-        ],
+        key: 'sectorIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Setores',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'finishedDateRange',
-            label: 'Data de Finalização',
-            type: 'date-range',
-          },
-          {
-            key: 'entryDateRange',
-            label: 'Data de Entrada',
-            type: 'date-range',
-          },
-          {
-            key: 'startedDateRange',
-            label: 'Data de Início',
-            type: 'date-range',
-          },
-        ],
+        key: 'assigneeIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Finalizado por',
       },
       {
-        key: 'ranges',
-        label: 'Faixas de Valores',
-        icon: 'coins',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'priceRange',
-            label: 'Preço (R$)',
-            type: 'number-range',
-            placeholder: { min: 'Mín', max: 'Máx' },
-          },
-        ],
+        key: 'finishedDateRange',
+        type: 'date-range',
+        placeholder: 'Data de Finalização',
+      },
+      {
+        key: 'entryDateRange',
+        type: 'date-range',
+        placeholder: 'Data de Entrada',
+      },
+      {
+        key: 'startedDateRange',
+        type: 'date-range',
+        placeholder: 'Data de Início',
+      },
+      {
+        key: 'priceRange',
+        type: 'number-range',
+        placeholder: { min: 'Mín', max: 'Máx' },
       },
     ],
   },
@@ -354,8 +321,8 @@ export const historyListConfig: ListConfig<Task> = {
       { key: 'sector', label: 'Setor', path: 'sector.name' },
       { key: 'status', label: 'Status', path: 'status' },
       { key: 'serialNumber', label: 'Nº Série', path: 'serialNumber' },
-      { key: 'plate', label: 'Placa', path: 'plate' },
-      { key: 'chassisNumber', label: 'Nº Chassi', path: 'chassisNumber' },
+      { key: 'plate', label: 'Placa', path: 'truck.plate' },
+      { key: 'chassisNumber', label: 'Nº Chassi', path: 'truck.chassisNumber' },
       { key: 'entryDate', label: 'Data de Entrada', path: 'entryDate', format: 'date' },
       { key: 'startedAt', label: 'Iniciado Em', path: 'startedAt', format: 'date' },
       { key: 'finishedAt', label: 'Finalizado Em', path: 'finishedAt', format: 'date' },

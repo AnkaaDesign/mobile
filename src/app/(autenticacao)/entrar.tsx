@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert, Pressable } from "react-native";
+import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signInSchema} from '../../schemas';
+import { signInSchema, SignInFormData } from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
@@ -61,33 +61,25 @@ export default function LoginScreen() {
 
       // Check if this is a verification redirect
       if (errorMessage === "VERIFICATION_REDIRECT") {
-        Alert.alert("Verificação necessária", "Sua conta precisa ser verificada antes de continuar.", [{ text: "OK" }]);
         // Don't navigate or show error - AuthContext already redirected
+        console.log("[Login] Account needs verification - redirected by AuthContext");
         return;
       }
 
       // Check if this is a verification error message
       if (errorMessage.includes("Conta não verificada") || errorMessage.includes("Conta ainda não verificada") || errorMessage.includes("verificação")) {
-        Alert.alert("Verificação necessária", "Sua conta precisa ser verificada antes de continuar.", [
-          {
-            text: "OK",
-            onPress: () => {
-              // Redirect to verification page
-              router.push({
-                pathname: '/(autenticacao)/verificar-codigo' as any,
-                params: {
-                  contact: data.contact,
-                  returnTo: '/(autenticacao)/entrar',
-                },
-              });
-            },
+        console.log("[Login] Account not verified - redirecting to verification");
+        // Redirect to verification page directly without alert (API client already showed error)
+        router.push({
+          pathname: '/(autenticacao)/verificar-codigo' as any,
+          params: {
+            contact: data.contact,
+            returnTo: '/(autenticacao)/entrar',
           },
-        ]);
+        });
       } else {
-        // Show detailed error using the enhanced toast
-        const detailedMessage = errorDetails.length > 0 ? [errorMessage, ...errorDetails] : errorMessage;
-
-        showError(errorTitle, detailedMessage);
+        // Error is already handled by API client notification system
+        console.error("[Login] Login error:", errorMessage, errorDetails);
       }
     } finally {
       setIsLoading(false);

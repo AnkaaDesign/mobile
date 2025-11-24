@@ -86,12 +86,12 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['paintName', 'volumeLiters', 'formula', 'createdAt'],
-    rowHeight: 60,
+    defaultVisible: ['paintName', 'volumeLiters', 'createdAt'],
+    rowHeight: 72,
     actions: [
       {
         key: 'view',
-        label: 'Ver',
+        label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
         onPress: (production, router) => {
@@ -127,112 +127,61 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
   },
 
   filters: {
-    sections: [
+    fields: [
       {
-        key: 'entities',
-        label: 'Relacionamentos',
-        icon: 'link',
-        collapsible: true,
-        defaultOpen: true,
-        fields: [
-          {
-            key: 'paintTypeIds',
-            label: 'Tipos de Tinta',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // TODO: Implement paint types loading
-              return []
-            },
-            placeholder: 'Selecione os tipos',
-          },
-          {
-            key: 'paintFinishes',
-            label: 'Acabamentos',
-            type: 'select',
-            multiple: true,
-            options: [
-              { value: 'SOLID', label: 'Lisa' },
-              { value: 'METALLIC', label: 'Metálico' },
-              { value: 'PEARL', label: 'Perolizado' },
-              { value: 'MATTE', label: 'Fosco' },
-              { value: 'SATIN', label: 'Semi Brilho' },
-            ],
-            placeholder: 'Selecione os acabamentos',
-          },
-          {
-            key: 'paintBrands',
-            label: 'Marcas de Tinta (Legacy)',
-            type: 'select',
-            multiple: true,
-            options: [
-              { value: 'PPG', label: 'PPG' },
-              { value: 'FARBEN', label: 'Farben' },
-              { value: 'LAZZURIL', label: 'Lazzuril' },
-            ],
-            placeholder: 'Selecione as marcas',
-          },
-          {
-            key: 'paintBrandIds',
-            label: 'Marcas de Tinta',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // TODO: Implement paint brands loading
-              return []
-            },
-            placeholder: 'Selecione as marcas',
-          },
-          {
-            key: 'formulaIds',
-            label: 'Fórmulas',
-            type: 'select',
-            multiple: true,
-            async: true,
-            loadOptions: async () => {
-              // TODO: Implement formulas loading
-              return []
-            },
-            placeholder: 'Selecione as fórmulas',
-          },
-        ],
+        key: 'paintTypeIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Tipos de Tinta',
       },
       {
-        key: 'volume',
-        label: 'Volume',
-        icon: 'droplet',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'volumeRange.min',
-            label: 'Volume Mínimo (L)',
-            type: 'number',
-            placeholder: 'Volume mínimo em litros',
-          },
-          {
-            key: 'volumeRange.max',
-            label: 'Volume Máximo (L)',
-            type: 'number',
-            placeholder: 'Volume máximo em litros',
-          },
+        key: 'paintFinishes',
+        type: 'select',
+        multiple: true,
+        options: [
+          { value: 'SOLID', label: 'Lisa' },
+          { value: 'METALLIC', label: 'Metálico' },
+          { value: 'PEARL', label: 'Perolizado' },
+          { value: 'MATTE', label: 'Fosco' },
+          { value: 'SATIN', label: 'Semi Brilho' },
         ],
+        placeholder: 'Acabamentos',
       },
       {
-        key: 'dates',
-        label: 'Datas',
-        icon: 'calendar',
-        collapsible: true,
-        defaultOpen: false,
-        fields: [
-          {
-            key: 'createdAt',
-            label: 'Data de Produção',
-            type: 'date-range',
-          },
+        key: 'paintBrands',
+        type: 'select',
+        multiple: true,
+        options: [
+          { value: 'PPG', label: 'PPG' },
+          { value: 'FARBEN', label: 'Farben' },
+          { value: 'LAZZURIL', label: 'Lazzuril' },
         ],
+        placeholder: 'Marcas de Tinta (Legacy)',
+      },
+      {
+        key: 'paintBrandIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Marcas de Tinta',
+      },
+      {
+        key: 'formulaIds',
+        type: 'select',
+        multiple: true,
+        placeholder: 'Fórmulas',
+      },
+      {
+        key: 'volumeRange',
+        type: 'number-range',
+        placeholder: {
+          min: 'Volume Mín (L)',
+          max: 'Volume Máx (L)',
+        },
+      },
+      {
+        key: 'createdAt',
+        type: 'date-range',
+        placeholder: 'Data de Produção',
       },
     ],
   },

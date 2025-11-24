@@ -1,6 +1,7 @@
 // packages/hooks/src/useWarning.ts
 
-import { createWarning, deleteWarning, getWarningById, getWarnings, updateWarning, batchCreateWarnings, batchUpdateWarnings, batchDeleteWarnings } from '@/api-client';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { createWarning, deleteWarning, getWarningById, getWarnings, getMyWarnings, updateWarning, batchCreateWarnings, batchUpdateWarnings, batchDeleteWarnings } from '@/api-client';
 import type {
   WarningCreateFormData,
   WarningUpdateFormData,
@@ -101,6 +102,52 @@ export const usePendingFollowUpWarnings = createSpecializedQueryHook<Partial<War
   queryFn: (filters) => getWarnings({ ...filters, hasFollowUp: true, isActive: true }),
   staleTime: 1000 * 60 * 5,
 });
+
+// Hook for user's own warnings (personal warnings page)
+export const useMyWarnings = createSpecializedQueryHook<Partial<WarningGetManyFormData>, WarningGetManyResponse>({
+  queryKeyFn: (filters) => [...warningKeys.all, 'my-warnings', filters],
+  queryFn: (filters) => getMyWarnings(filters),
+  staleTime: 1000 * 60 * 5,
+});
+
+// Hook for infinite query of user's own warnings
+export function useMyWarningsInfinite(params?: Partial<WarningGetManyFormData> & { enabled?: boolean }) {
+  const queryClient = useQueryClient();
+  const { enabled, ...restParams } = params || {};
+
+  const query = useInfiniteQuery({
+    queryKey: [...warningKeys.all, 'my-warnings', 'infinite', restParams],
+    queryFn: async ({ pageParam = 1 }) => {
+      const queryParams = {
+        ...restParams,
+        page: pageParam,
+        limit: restParams.limit || 40,
+      } as WarningGetManyFormData;
+      return getMyWarnings(queryParams);
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.meta) return undefined;
+      return lastPage.meta.hasNextPage ? lastPage.meta.page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 1000 * 60 * 5,
+    placeholderData: (previousData) => previousData,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    enabled: enabled !== false,
+  });
+
+  const refresh = () => {
+    queryClient.invalidateQueries({
+      queryKey: [...warningKeys.all, 'my-warnings', 'infinite', restParams],
+    });
+  };
+
+  return {
+    ...query,
+    refresh,
+  };
+}
 
 // =====================================================
 // Legacy Exports (for backwards compatibility)
