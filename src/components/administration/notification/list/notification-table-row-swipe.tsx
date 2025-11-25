@@ -1,58 +1,59 @@
 import React from "react";
-import { Alert } from "react-native";
-import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row";
+import { ViewStyle, StyleProp } from "react-native";
 import { IconTrash } from "@tabler/icons-react-native";
-import { useTheme } from "@/lib/theme";
+import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
 
 interface NotificationTableRowSwipeProps {
+  children: React.ReactNode | ((isActive: boolean) => React.ReactNode);
   notificationId: string;
   notificationTitle: string;
   onDelete?: (notificationId: string) => void;
+  style?: StyleProp<ViewStyle>;
   disabled?: boolean;
-  children: React.ReactNode;
 }
 
-export function NotificationTableRowSwipe({ notificationId, notificationTitle, onDelete, disabled = false, children }: NotificationTableRowSwipeProps) {
-  const { colors } = useTheme();
-
-  const handleDelete = () => {
-    Alert.alert("Excluir notificação", `Tem certeza que deseja excluir a notificação "${notificationTitle}"?`, [
-      {
-        text: "Cancelar",
-        style: "cancel",
-      },
-      {
-        text: "Excluir",
-        style: "destructive",
-        onPress: () => onDelete?.(notificationId),
-      },
-    ]);
-  };
-
-  const rightActions = onDelete
-    ? [
-        {
-          key: "delete",
-          label: "Excluir",
-          icon: <IconTrash size={20} color="white" />,
-          backgroundColor: colors.destructive,
-          onPress: handleDelete,
-        },
-      ]
-    : [];
+const NotificationTableRowSwipeComponent = ({
+  children,
+  notificationId,
+  notificationTitle,
+  onDelete,
+  style,
+  disabled = false,
+}: NotificationTableRowSwipeProps) => {
+  // Build actions array - notifications typically only have delete action
+  // Delete button uses red (#b91c1c)
+  const actions: GenericSwipeAction[] = [
+    ...(onDelete
+      ? [
+          {
+            key: "delete",
+            label: "Excluir",
+            icon: <IconTrash size={20} color="white" />,
+            backgroundColor: "#b91c1c", // red-700
+            onPress: () => onDelete(notificationId),
+            closeOnPress: false,
+            confirmDelete: true,
+          },
+        ]
+      : []),
+  ];
 
   return (
-    <ReanimatedSwipeableRow
-      rightActions={rightActions}
-      enabled={!disabled}
-      overshootRight={false}
-      overshootLeft={false}
-      friction={2}
-      rightThreshold={40}
-      leftThreshold={40}
+    <GenericTableRowSwipe
+      entityId={notificationId}
+      entityName={notificationTitle}
+      actions={actions}
+      confirmDeleteTitle="Excluir notificação"
+      confirmDeleteMessage={`Tem certeza que deseja excluir a notificação "${notificationTitle}"?`}
+      style={style}
+      disabled={disabled}
     >
       {children}
-    </ReanimatedSwipeableRow>
+    </GenericTableRowSwipe>
   );
-}
+};
 
+// Set displayName before memoization for React 19 compatibility
+NotificationTableRowSwipeComponent.displayName = "NotificationTableRowSwipe";
+
+export const NotificationTableRowSwipe = React.memo(NotificationTableRowSwipeComponent);

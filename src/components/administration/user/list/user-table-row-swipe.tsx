@@ -1,190 +1,94 @@
-import React, { useCallback, useRef, useEffect } from "react";
-import { View, Animated, StyleSheet, Alert, Pressable } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
-import { Icon } from "@/components/ui/icon";
-import { ThemedText } from "@/components/ui/themed-text";
-import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import React from "react";
+import { ViewStyle, StyleProp } from "react-native";
+import { IconEdit, IconTrash, IconEye } from "@tabler/icons-react-native";
+import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditUsers, canDeleteUsers } from "@/utils/permissions/entity-permissions";
 
 interface UserTableRowSwipeProps {
+  children: React.ReactNode | ((isActive: boolean) => React.ReactNode);
   userId: string;
   userName: string;
   onEdit?: (userId: string) => void;
   onDelete?: (userId: string) => void;
   onView?: (userId: string) => void;
+  style?: StyleProp<ViewStyle>;
   disabled?: boolean;
-  children: (isActive: boolean) => React.ReactNode;
 }
 
-export function UserTableRowSwipe({ userId, userName, onEdit, onDelete, onView, disabled = false, children }: UserTableRowSwipeProps) {
-  const { colors } = useTheme();
-  const swipeableRef = useRef<Swipeable>(null);
-  const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow();
-  const isActive = activeRowId === userId;
+const UserTableRowSwipeComponent = ({
+  children,
+  userId,
+  userName,
+  onEdit,
+  onDelete,
+  onView,
+  style,
+  disabled = false,
+}: UserTableRowSwipeProps) => {
   const { user } = useAuth();
   const canEdit = canEditUsers(user);
   const canDelete = canDeleteUsers(user);
 
-  // Return early if no permissions
-  if (!canEdit && !canDelete && !onView) {
-    return <>{children(false)}</>;
-  }
-
-  // Close this row when another row becomes active
-  useEffect(() => {
-    if (activeRowId !== userId && swipeableRef.current) {
-      swipeableRef.current.close();
-    }
-  }, [activeRowId, userId]);
-
-  const handleSwipeOpen = useCallback(
-    (_direction: "left" | "right") => {
-      if (!disabled) {
-        setActiveRowId(userId);
-      }
-    },
-    [userId, setActiveRowId, disabled],
-  );
-
-  const handleSwipeClose = useCallback(() => {
-    if (activeRowId === userId) {
-      closeActiveRow();
-    }
-  }, [activeRowId, userId, closeActiveRow]);
-
-  const handleEdit = useCallback(() => {
-    swipeableRef.current?.close();
-    setTimeout(() => onEdit?.(userId), 100);
-  }, [userId, onEdit]);
-
-  const handleView = useCallback(() => {
-    swipeableRef.current?.close();
-    setTimeout(() => onView?.(userId), 100);
-  }, [userId, onView]);
-
-  const handleDelete = useCallback(() => {
-    Alert.alert("Confirmar exclusão", `Tem certeza que deseja excluir ${userName}?`, [
-      {
-        text: "Cancelar",
-        style: "cancel",
-        onPress: () => swipeableRef.current?.close(),
-      },
-      {
-        text: "Excluir",
-        style: "destructive",
-        onPress: () => {
-          swipeableRef.current?.close();
-          setTimeout(() => onDelete?.(userId), 100);
-        },
-      },
-    ]);
-  }, [userId, userName, onDelete]);
-
-  const renderRightActions = useCallback(
-    (_progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
-      const trans = dragX.interpolate({
-        inputRange: [-200, 0],
-        outputRange: [0, 200],
-        extrapolate: "clamp",
-      });
-
-      return (
-        <View style={styles.actionsContainer}>
-          {onView && (
-            <Animated.View
-              style={[
-                styles.actionButton,
-                {
-                  backgroundColor: colors.primary,
-                  transform: [{ translateX: trans }],
-                },
-              ]}
-            >
-              <Pressable onPress={handleView} style={styles.actionTouchable}>
-                <Icon name="eye" size="md" color="white" />
-                <ThemedText style={styles.actionText}>Ver</ThemedText>
-              </Pressable>
-            </Animated.View>
-          )}
-          {onEdit && canEdit && (
-            <Animated.View
-              style={[
-                styles.actionButton,
-                {
-                  backgroundColor: "#3b82f6", // blue-500
-                  transform: [{ translateX: trans }],
-                },
-              ]}
-            >
-              <Pressable onPress={handleEdit} style={styles.actionTouchable}>
-                <Icon name="edit" size="md" color="white" />
-                <ThemedText style={styles.actionText}>Editar</ThemedText>
-              </Pressable>
-            </Animated.View>
-          )}
-          {onDelete && canDelete && (
-            <Animated.View
-              style={[
-                styles.actionButton,
-                {
-                  backgroundColor: "#ef4444", // red-500
-                  transform: [{ translateX: trans }],
-                },
-              ]}
-            >
-              <Pressable onPress={handleDelete} style={styles.actionTouchable}>
-                <Icon name="trash" size="md" color="white" />
-                <ThemedText style={styles.actionText}>Excluir</ThemedText>
-              </Pressable>
-            </Animated.View>
-          )}
-        </View>
-      );
-    },
-    [colors.primary, onEdit, onDelete, onView, handleEdit, handleDelete, handleView],
-  );
-
-  if (disabled || (!onEdit && !onDelete && !onView)) {
-    return <>{children(false)}</>;
-  }
+  // Build actions array with consistent colors
+  // View button uses primary color (blue)
+  // Edit button uses blue (#3b82f6)
+  // Delete button uses red (#ef4444)
+  const actions: GenericSwipeAction[] = [
+    ...(onView
+      ? [
+          {
+            key: "view",
+            label: "Ver",
+            icon: <IconEye size={20} color="white" />,
+            backgroundColor: "#3b82f6", // blue-500
+            onPress: () => onView(userId),
+            closeOnPress: true,
+          },
+        ]
+      : []),
+    ...(onEdit && canEdit
+      ? [
+          {
+            key: "edit",
+            label: "Editar",
+            icon: <IconEdit size={20} color="white" />,
+            backgroundColor: "#15803d", // green-700
+            onPress: () => onEdit(userId),
+            closeOnPress: true,
+          },
+        ]
+      : []),
+    ...(onDelete && canDelete
+      ? [
+          {
+            key: "delete",
+            label: "Excluir",
+            icon: <IconTrash size={20} color="white" />,
+            backgroundColor: "#b91c1c", // red-700
+            onPress: () => onDelete(userId),
+            closeOnPress: false,
+            confirmDelete: true,
+          },
+        ]
+      : []),
+  ];
 
   return (
-    <Swipeable
-      ref={swipeableRef}
-      renderRightActions={renderRightActions}
-      onSwipeableWillOpen={(direction) => handleSwipeOpen(direction as "left" | "right")}
-      onSwipeableClose={handleSwipeClose}
-      overshootRight={false}
-      friction={2}
-      rightThreshold={40}
+    <GenericTableRowSwipe
+      entityId={userId}
+      entityName={userName}
+      actions={actions}
+      canPerformActions={(user) => canEditUsers(user) || canDeleteUsers(user) || !!onView}
+      style={style}
+      disabled={disabled}
     >
-      {children(isActive)}
-    </Swipeable>
+      {children}
+    </GenericTableRowSwipe>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  actionsContainer: {
-    flexDirection: "row",
-    alignItems: "stretch",
-  },
-  actionButton: {
-    width: 70,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  actionTouchable: {
-    flex: 1,
-    width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 4,
-  },
-  actionText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-});
+// Set displayName before memoization for React 19 compatibility
+UserTableRowSwipeComponent.displayName = "UserTableRowSwipe";
+
+export const UserTableRowSwipe = React.memo(UserTableRowSwipeComponent);

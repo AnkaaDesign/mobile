@@ -1,12 +1,7 @@
-import React, { useCallback, useRef, ReactNode } from "react";
-import { View, StyleSheet, Alert, Animated, Dimensions } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
-import { TouchableOpacity } from "react-native";
-import { Icon } from "@/components/ui/icon";
-import { ThemedText } from "@/components/ui/themed-text";
-import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
-import { spacing } from "@/constants/design-system";
+import React, { ReactNode } from "react";
+import { ViewStyle, StyleProp } from "react-native";
+import { IconEdit, IconTrash } from "@tabler/icons-react-native";
+import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditAirbrushings, canDeleteAirbrushings } from "@/utils/permissions/entity-permissions";
 
@@ -17,157 +12,67 @@ interface AirbrushingTableRowSwipeProps {
   onDelete?: (airbrushingId: string) => void;
   children: (isActive: boolean) => ReactNode;
   disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const SWIPE_ACTION_WIDTH = 80;
-
-export const AirbrushingTableRowSwipe: React.FC<AirbrushingTableRowSwipeProps> = ({
+const AirbrushingTableRowSwipeComponent = ({
   airbrushingId,
   airbrushingName,
   onEdit,
   onDelete,
   children,
   disabled = false,
-}) => {
-  const { colors } = useTheme();
-  const swipeableRef = useRef<Swipeable>(null);
-  const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow();
-  const isActive = activeRowId === airbrushingId;
+  style,
+}: AirbrushingTableRowSwipeProps) => {
   const { user } = useAuth();
   const canEdit = canEditAirbrushings(user);
   const canDelete = canDeleteAirbrushings(user);
 
-  // Return early if no permissions
-  if (!canEdit && !canDelete) {
-    return <>{children(isActive)}</>;
-  }
-
-  const handleEdit = useCallback(() => {
-    swipeableRef.current?.close();
-    onEdit?.(airbrushingId);
-  }, [airbrushingId, onEdit]);
-
-  const handleDelete = useCallback(() => {
-    Alert.alert("Excluir Airbrushing", `Tem certeza que deseja excluir "${airbrushingName}"?`, [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Excluir",
-        style: "destructive",
-        onPress: () => {
-          swipeableRef.current?.close();
-          onDelete?.(airbrushingId);
-        },
-      },
-    ]);
-  }, [airbrushingId, airbrushingName, onDelete]);
-
-  const handleSwipeOpen = useCallback(() => {
-    // Close previously active row if different
-    if (activeRowId && activeRowId !== airbrushingId) {
-      closeActiveRow();
-    }
-    setActiveRowId(airbrushingId);
-  }, [airbrushingId, activeRowId, setActiveRowId, closeActiveRow]);
-
-  const handleSwipeClose = useCallback(() => {
-    if (activeRowId === airbrushingId) {
-      setActiveRowId(null);
-    }
-  }, [airbrushingId, activeRowId, setActiveRowId]);
-
-  // Close this row when another becomes active
-  React.useEffect(() => {
-    if (activeRowId !== null && activeRowId !== airbrushingId) {
-      swipeableRef.current?.close();
-    }
-  }, [activeRowId, airbrushingId]);
-
-  const renderRightActions = useCallback(
-    (_progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
-      // Calculate number of actions
-      const actionsCount = [onEdit, onDelete].filter(Boolean).length;
-      const totalWidth = actionsCount * SWIPE_ACTION_WIDTH;
-
-      const trans = dragX.interpolate({
-        inputRange: [-totalWidth, 0],
-        outputRange: [0, totalWidth],
-        extrapolate: "clamp",
-      });
-
-      return (
-        <Animated.View
-          style={[
-            styles.actionsContainer,
-            {
-              transform: [{ translateX: trans }],
-              width: totalWidth,
-            },
-          ]}
-        >
-          {onEdit && canEdit && (
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={handleEdit} activeOpacity={0.7}>
-              <Icon name="edit" size="md" color="white" />
-              <ThemedText style={styles.actionText}>Editar</ThemedText>
-            </TouchableOpacity>
-          )}
-          {onDelete && canDelete && (
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.destructive }]} onPress={handleDelete} activeOpacity={0.7}>
-              <Icon name="trash" size="md" color="white" />
-              <ThemedText style={styles.actionText}>Excluir</ThemedText>
-            </TouchableOpacity>
-          )}
-        </Animated.View>
-      );
-    },
-    [colors, onEdit, onDelete, handleEdit, handleDelete],
-  );
-
-  if (disabled || (!onEdit && !onDelete)) {
-    return <View style={styles.container}>{children(isActive)}</View>;
-  }
+  // Build actions array
+  const actions: GenericSwipeAction[] = [
+    ...(onEdit && canEdit
+      ? [
+          {
+            key: "edit",
+            label: "Editar",
+            icon: <IconEdit size={20} color="white" />,
+            backgroundColor: "#15803d", // green-700
+            onPress: () => onEdit(airbrushingId),
+            closeOnPress: true,
+          },
+        ]
+      : []),
+    ...(onDelete && canDelete
+      ? [
+          {
+            key: "delete",
+            label: "Excluir",
+            icon: <IconTrash size={20} color="white" />,
+            backgroundColor: "#b91c1c", // red-700
+            onPress: () => onDelete(airbrushingId),
+            closeOnPress: false,
+            confirmDelete: true,
+          },
+        ]
+      : []),
+  ];
 
   return (
-    <Swipeable
-      ref={swipeableRef}
-      renderRightActions={renderRightActions}
-      onSwipeableOpen={handleSwipeOpen}
-      onSwipeableClose={handleSwipeClose}
-      rightThreshold={40}
-      overshootRight={false}
-      containerStyle={styles.swipeableContainer}
-      childrenContainerStyle={styles.childrenContainer}
-      enableTrackpadTwoFingerGesture
+    <GenericTableRowSwipe
+      entityId={airbrushingId}
+      entityName={airbrushingName}
+      actions={actions}
+      canPerformActions={(user) => canEditAirbrushings(user) || canDeleteAirbrushings(user)}
+      style={style}
+      disabled={disabled}
+      confirmDeleteTitle="Excluir Airbrushing"
     >
-      {children(isActive)}
-    </Swipeable>
+      {children}
+    </GenericTableRowSwipe>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-  },
-  swipeableContainer: {
-    width: "100%",
-  },
-  childrenContainer: {
-    flex: 1,
-  },
-  actionsContainer: {
-    flexDirection: "row",
-    alignItems: "stretch",
-  },
-  actionButton: {
-    width: SWIPE_ACTION_WIDTH,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: spacing.xs,
-    gap: spacing.xxs,
-  },
-  actionText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-});
+// Set displayName before memoization for React 19 compatibility
+AirbrushingTableRowSwipeComponent.displayName = "AirbrushingTableRowSwipe";
+
+export const AirbrushingTableRowSwipe = React.memo(AirbrushingTableRowSwipeComponent);

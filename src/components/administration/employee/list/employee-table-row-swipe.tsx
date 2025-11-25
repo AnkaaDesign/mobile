@@ -1,12 +1,10 @@
-import React, { useRef, useCallback, useEffect } from "react";
-import { View, StyleSheet, ViewStyle, Alert, StyleProp } from "react-native";
+import React from "react";
+import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconEye } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
-import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
-import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
-
-const ACTION_WIDTH = 80;
+import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { useAuth } from "@/contexts/auth-context";
+import { canEditHrEntities, canDeleteHrEntities } from "@/utils/permissions/entity-permissions";
 
 interface CustomSwipeAction {
   key: string;
@@ -37,65 +35,17 @@ const EmployeeTableRowSwipeComponent = ({
   onView,
   customActions = [],
   style,
-  disabled = false
+  disabled = false,
 }: EmployeeTableRowSwipeProps) => {
-  const { colors } = useTheme();
-  const { activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow } = useSwipeRow();
-  const swipeableRef = useRef<Swipeable>(null);
-  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Early return if colors are not available yet (during theme initialization)
-  if (!colors || !children) {
-    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
-  }
-
-  const isThisRowActive = activeRowId === employeeId;
-
-  // Watch for changes in activeRowId to close this row if another row becomes active
-  useEffect(() => {
-    if (!isThisRowActive && activeRowId !== null) {
-      // Another row became active, close this one immediately
-      swipeableRef.current?.close();
-    }
-  }, [activeRowId, isThisRowActive]);
-
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (autoCloseTimerRef.current) {
-        clearTimeout(autoCloseTimerRef.current);
-        autoCloseTimerRef.current = null;
-      }
-      // Clean up if this row was active
-      if (activeRowId === employeeId) {
-        setActiveRowId(null);
-      }
-    };
-  }, [activeRowId, employeeId, setActiveRowId]);
-
-  const handleDeletePress = useCallback(() => {
-    Alert.alert("Confirmar exclusão", `Tem certeza que deseja excluir "${employeeName}"?`, [
-      {
-        text: "Cancelar",
-        style: "cancel",
-        onPress: () => swipeableRef.current?.close(),
-      },
-      {
-        text: "Excluir",
-        style: "destructive",
-        onPress: () => {
-          swipeableRef.current?.close();
-          setTimeout(() => onDelete?.(employeeId), 300);
-        },
-      },
-    ]);
-  }, [employeeId, employeeName, onDelete]);
+  const { user } = useAuth();
+  const canEdit = canEditHrEntities(user);
+  const canDelete = canDeleteHrEntities(user);
 
   // Build actions array with consistent colors
   // View button uses blue (#3b82f6)
   // Edit button uses green (#15803d from optimal stock color)
   // Delete button uses red (#b91c1c from critical/out-of-stock color)
-  const rightActions: SwipeAction[] = [
+  const actions: GenericSwipeAction[] = [
     ...(onView
       ? [
           {
@@ -108,7 +58,7 @@ const EmployeeTableRowSwipeComponent = ({
           },
         ]
       : []),
-    ...(onEdit
+    ...(onEdit && canEdit
       ? [
           {
             key: "edit",
@@ -125,92 +75,32 @@ const EmployeeTableRowSwipeComponent = ({
       icon: <Icon name={action.icon} size={20} color="white" />,
       closeOnPress: true,
     })),
-    ...(onDelete
+    ...(onDelete && canDelete
       ? [
           {
             key: "delete",
             label: "Excluir",
             icon: <IconTrash size={20} color="white" />,
             backgroundColor: "#b91c1c", // red-700 (out of stock/critical color)
-            onPress: handleDeletePress,
-            closeOnPress: false, // Don't close automatically for delete confirmation
+            onPress: () => onDelete(employeeId),
+            closeOnPress: false,
+            confirmDelete: true,
           },
         ]
       : []),
   ];
 
-  const handleWillOpen = useCallback(
-    (_direction: "left" | "right") => {
-      // Clear any existing timer
-      if (autoCloseTimerRef.current) {
-        clearTimeout(autoCloseTimerRef.current);
-        autoCloseTimerRef.current = null;
-      }
-
-      // Close any other active row first
-      if (activeRowId && activeRowId !== employeeId) {
-        closeActiveRow();
-        closeOpenRow(); // Also close legacy rows
-      }
-    },
-    [activeRowId, employeeId, closeActiveRow, closeOpenRow],
-  );
-
-  const handleOpen = useCallback(
-    (_direction: "left" | "right", swipeable: Swipeable) => {
-      setActiveRowId(employeeId);
-
-      // Register the close function for legacy compatibility
-      setOpenRow(() => swipeable.close());
-
-      // Auto-close after 5 seconds
-      autoCloseTimerRef.current = setTimeout(() => {
-        swipeable.close();
-      }, 5000);
-    },
-    [employeeId, setActiveRowId, setOpenRow],
-  );
-
-  const handleClose = useCallback(() => {
-    // Clear any auto-close timer
-    if (autoCloseTimerRef.current) {
-      clearTimeout(autoCloseTimerRef.current);
-      autoCloseTimerRef.current = null;
-    }
-
-    // Clear active row state if this was the active row
-    if (isThisRowActive) {
-      setActiveRowId(null);
-    }
-  }, [isThisRowActive, setActiveRowId]);
-
-  // Ensure children is always defined and is a valid React element or function
-  if (!children || (typeof children !== "object" && typeof children !== "string" && typeof children !== "number" && typeof children !== "function")) {
-    console.warn("EmployeeTableRowSwipe: children prop is invalid or undefined:", typeof children);
-    return <View style={style} />;
-  }
-
-  if (disabled || rightActions.length === 0) {
-    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
-  }
-
   return (
-    <ReanimatedSwipeableRow
-      ref={swipeableRef}
-      rightActions={rightActions}
-      enabled={!disabled}
-      friction={2}
-      rightThreshold={40}
-      overshootRight={false}
-      onWillOpen={handleWillOpen}
-      onOpen={handleOpen}
-      onClose={handleClose}
-      containerStyle={StyleSheet.flatten([styles.container, style])}
-      childrenContainerStyle={styles.rowContainer}
-      actionWidth={ACTION_WIDTH}
+    <GenericTableRowSwipe
+      entityId={employeeId}
+      entityName={employeeName}
+      actions={actions}
+      canPerformActions={(user) => canEditHrEntities(user) || canDeleteHrEntities(user) || !!onView}
+      style={style}
+      disabled={disabled}
     >
-      <View style={{ flex: 1 }}>{typeof children === "function" ? children(isThisRowActive) : children}</View>
-    </ReanimatedSwipeableRow>
+      {children}
+    </GenericTableRowSwipe>
   );
 };
 
@@ -218,13 +108,3 @@ const EmployeeTableRowSwipeComponent = ({
 EmployeeTableRowSwipeComponent.displayName = "EmployeeTableRowSwipe";
 
 export const EmployeeTableRowSwipe = React.memo(EmployeeTableRowSwipeComponent);
-
-const styles = StyleSheet.create({
-  container: {
-    position: "relative",
-    overflow: "hidden",
-  },
-  rowContainer: {
-    // The row content container - no special styles needed
-  },
-});

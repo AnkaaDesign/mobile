@@ -1,13 +1,13 @@
 import React from "react";
 import { StyleSheet, Pressable } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
-import { useTheme } from "@/lib/theme";
-import { ReanimatedSwipeableRow} from "@/components/ui/reanimated-swipeable-row";
+import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditOrders, canDeleteOrders } from "@/utils/permissions/entity-permissions";
 
 interface OrderScheduleTableRowSwipeProps {
   scheduleId: string;
+  scheduleName?: string;
   onEdit?: () => void;
   onDelete?: () => void;
   onPress?: () => void;
@@ -17,70 +17,60 @@ interface OrderScheduleTableRowSwipeProps {
 }
 
 export function OrderScheduleTableRowSwipe({
-  // scheduleId removed
+  scheduleId,
+  scheduleName = "este agendamento",
   onEdit,
   onDelete,
   onPress,
   children,
-  isOpen: _isOpen = false,
-  // onOpenChange removed
 }: OrderScheduleTableRowSwipeProps) {
-  const { colors } = useTheme();
   const { user } = useAuth();
   const canEdit = canEditOrders(user);
   const canDelete = canDeleteOrders(user);
 
-  // Return early if no permissions
-  if (!canEdit && !canDelete) {
-    return (
-      <Pressable onPress={onPress} style={styles.content}>
-        {children}
-      </Pressable>
-    );
-  }
-
-  const rightActions: SwipeAction[] = [];
+  // Build actions array
+  const actions: GenericSwipeAction[] = [];
 
   if (onEdit && canEdit) {
-    rightActions.push({
+    actions.push({
       key: "edit",
       label: "Editar",
       icon: <IconEdit size={20} color="white" />,
-      backgroundColor: colors.primary,
+      backgroundColor: "#007AFF", // blue
       onPress: onEdit,
       closeOnPress: true,
     });
   }
 
   if (onDelete && canDelete) {
-    rightActions.push({
+    actions.push({
       key: "delete",
       label: "Excluir",
       icon: <IconTrash size={20} color="white" />,
-      backgroundColor: colors.destructive,
+      backgroundColor: "#FF3B30", // red
       onPress: onDelete,
-      closeOnPress: true,
+      closeOnPress: false,
+      confirmDelete: true,
     });
   }
 
-  if (rightActions.length === 0) {
-    return (
-      <Pressable onPress={onPress} style={styles.content}>
-        {children}
-      </Pressable>
-    );
-  }
+  // Wrap children in Pressable to preserve onPress functionality
+  const content = (
+    <Pressable onPress={onPress} style={styles.content}>
+      {children}
+    </Pressable>
+  );
 
   return (
-    <ReanimatedSwipeableRow
-      rightActions={rightActions}
-      enabled={true}
-      containerStyle={styles.container}
+    <GenericTableRowSwipe
+      entityId={scheduleId}
+      entityName={scheduleName}
+      actions={actions}
+      canPerformActions={(user) => canEditOrders(user) || canDeleteOrders(user)}
+      style={styles.container}
     >
-      <Pressable onPress={onPress} style={styles.content}>
-        {children}
-      </Pressable>
-    </ReanimatedSwipeableRow>
+      {content}
+    </GenericTableRowSwipe>
   );
 }
 

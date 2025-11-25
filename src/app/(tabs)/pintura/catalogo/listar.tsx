@@ -13,7 +13,7 @@ import { SECTOR_PRIVILEGES, PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } fro
 import { hasAnyPrivilege } from '../../../../utils';
 import type { Paint } from '../../../../types';
 import { useDebounce } from "@/hooks/useDebouncedSearch";
-import { useToast } from "@/lib/toast/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { showToast } from "@/components/ui/toast";
 import { SortSelector, type SortOption } from "@/components/painting/catalog/list/sort-selector";
 import { PaintFilterDrawer } from "@/components/painting/catalog/list/paint-filter-drawer";

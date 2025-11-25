@@ -19,7 +19,7 @@ import type { PaintTypeCreateFormData } from '../../../../schemas';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
-import { showToast } from "@/lib/toast/use-toast";
+import { showToast } from "@/components/ui/toast";
 import {
   IconTag,
   IconDroplet,

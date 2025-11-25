@@ -1,6 +1,8 @@
 import React from "react";
 import { View, StyleSheet, ViewStyle } from "react-native";
-import { Button, Badge, ThemedText } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import type { BadgeProps } from "@/components/ui/badge";
 

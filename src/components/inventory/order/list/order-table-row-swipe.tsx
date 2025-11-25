@@ -1,14 +1,10 @@
-import React, { useRef, useCallback, useEffect } from "react";
-import { View, StyleSheet, ViewStyle, Alert, StyleProp } from "react-native";
+import React from "react";
+import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconCopy } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
-import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
-import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
+import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditOrders, canDeleteOrders } from "@/utils/permissions/entity-permissions";
-
-const ACTION_WIDTH = 80;
 
 interface CustomSwipeAction {
   key: string;
@@ -30,72 +26,26 @@ interface OrderTableRowSwipeProps {
   disabled?: boolean;
 }
 
-const OrderTableRowSwipeComponent = ({ children, orderId, orderName, onEdit, onDelete, onDuplicate, customActions = [], style, disabled = false }: OrderTableRowSwipeProps) => {
-  const { colors } = useTheme();
-  const { activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow } = useSwipeRow();
-  const swipeableRef = useRef<Swipeable>(null);
-  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+const OrderTableRowSwipeComponent = ({
+  children,
+  orderId,
+  orderName,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  customActions = [],
+  style,
+  disabled = false,
+}: OrderTableRowSwipeProps) => {
   const { user } = useAuth();
   const canEdit = canEditOrders(user);
   const canDelete = canDeleteOrders(user);
-
-  // Early return if colors are not available yet (during theme initialization)
-  if (!colors || !children) {
-    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
-  }
-
-  // Return early if no permissions
-  if (!canEdit && !canDelete) {
-    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
-  }
-
-  const isThisRowActive = activeRowId === orderId;
-
-  // Watch for changes in activeRowId to close this row if another row becomes active
-  useEffect(() => {
-    if (!isThisRowActive && activeRowId !== null) {
-      // Another row became active, close this one immediately
-      swipeableRef.current?.close();
-    }
-  }, [activeRowId, isThisRowActive]);
-
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (autoCloseTimerRef.current) {
-        clearTimeout(autoCloseTimerRef.current);
-        autoCloseTimerRef.current = null;
-      }
-      // Clean up if this row was active
-      if (activeRowId === orderId) {
-        setActiveRowId(null);
-      }
-    };
-  }, [activeRowId, orderId, setActiveRowId]);
-
-  const handleDeletePress = useCallback(() => {
-    Alert.alert("Confirmar exclusão", `Tem certeza que deseja excluir "${orderName}"?`, [
-      {
-        text: "Cancelar",
-        style: "cancel",
-        onPress: () => swipeableRef.current?.close(),
-      },
-      {
-        text: "Excluir",
-        style: "destructive",
-        onPress: () => {
-          swipeableRef.current?.close();
-          setTimeout(() => onDelete?.(orderId), 300);
-        },
-      },
-    ]);
-  }, [orderId, orderName, onDelete]);
 
   // Build actions array with colors matching order status
   // Edit button uses blue (#007AFF)
   // Duplicate button uses orange (#FF9500)
   // Delete button uses red (#FF3B30)
-  const rightActions: SwipeAction[] = [
+  const actions: GenericSwipeAction[] = [
     ...(onEdit && canEdit
       ? [
           {
@@ -132,85 +82,25 @@ const OrderTableRowSwipeComponent = ({ children, orderId, orderName, onEdit, onD
             label: "Excluir",
             icon: <IconTrash size={20} color="white" />,
             backgroundColor: "#FF3B30", // red
-            onPress: handleDeletePress,
-            closeOnPress: false, // Don't close automatically for delete confirmation
+            onPress: () => onDelete(orderId),
+            closeOnPress: false,
+            confirmDelete: true,
           },
         ]
       : []),
   ];
 
-  const handleWillOpen = useCallback(
-    (_direction: "left" | "right") => {
-      // Clear any existing timer
-      if (autoCloseTimerRef.current) {
-        clearTimeout(autoCloseTimerRef.current);
-        autoCloseTimerRef.current = null;
-      }
-
-      // Close any other active row first
-      if (activeRowId && activeRowId !== orderId) {
-        closeActiveRow();
-        closeOpenRow(); // Also close legacy rows
-      }
-    },
-    [activeRowId, orderId, closeActiveRow, closeOpenRow],
-  );
-
-  const handleOpen = useCallback(
-    (_direction: "left" | "right", swipeable: Swipeable) => {
-      setActiveRowId(orderId);
-
-      // Register the close function for legacy compatibility
-      setOpenRow(() => swipeable.close());
-
-      // Auto-close after 5 seconds
-      autoCloseTimerRef.current = setTimeout(() => {
-        swipeable.close();
-      }, 5000);
-    },
-    [orderId, setActiveRowId, setOpenRow],
-  );
-
-  const handleClose = useCallback(() => {
-    // Clear any auto-close timer
-    if (autoCloseTimerRef.current) {
-      clearTimeout(autoCloseTimerRef.current);
-      autoCloseTimerRef.current = null;
-    }
-
-    // Clear active row state if this was the active row
-    if (isThisRowActive) {
-      setActiveRowId(null);
-    }
-  }, [isThisRowActive, setActiveRowId]);
-
-  // Ensure children is always defined and is a valid React element or function
-  if (!children || (typeof children !== "object" && typeof children !== "string" && typeof children !== "number" && typeof children !== "function")) {
-    console.warn("OrderTableRowSwipe: children prop is invalid or undefined:", typeof children);
-    return <View style={style} />;
-  }
-
-  if (disabled || rightActions.length === 0) {
-    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
-  }
-
   return (
-    <ReanimatedSwipeableRow
-      ref={swipeableRef}
-      rightActions={rightActions}
-      enabled={!disabled}
-      friction={2}
-      rightThreshold={40}
-      overshootRight={false}
-      onWillOpen={handleWillOpen}
-      onOpen={handleOpen}
-      onClose={handleClose}
-      containerStyle={StyleSheet.flatten([styles.container, style])}
-      childrenContainerStyle={styles.rowContainer}
-      actionWidth={ACTION_WIDTH}
+    <GenericTableRowSwipe
+      entityId={orderId}
+      entityName={orderName}
+      actions={actions}
+      canPerformActions={(user) => canEditOrders(user) || canDeleteOrders(user)}
+      style={style}
+      disabled={disabled}
     >
-      <View style={{ flex: 1 }}>{typeof children === "function" ? children(isThisRowActive) : children}</View>
-    </ReanimatedSwipeableRow>
+      {children}
+    </GenericTableRowSwipe>
   );
 };
 
@@ -218,13 +108,3 @@ const OrderTableRowSwipeComponent = ({ children, orderId, orderName, onEdit, onD
 OrderTableRowSwipeComponent.displayName = "OrderTableRowSwipe";
 
 export const OrderTableRowSwipe = React.memo(OrderTableRowSwipeComponent);
-
-const styles = StyleSheet.create({
-  container: {
-    position: "relative",
-    overflow: "hidden",
-  },
-  rowContainer: {
-    // The row content container - no special styles needed
-  },
-});

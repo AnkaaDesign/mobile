@@ -1,13 +1,9 @@
-import React, { useRef, useCallback, useEffect } from "react";
-import { View, StyleSheet, ViewStyle, StyleProp, Alert } from "react-native";
+import React from "react";
+import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
-import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
-import { ReanimatedSwipeableRow,} from "@/components/ui/reanimated-swipeable-row";
+import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditBorrows, canDeleteBorrows } from "@/utils/permissions/entity-permissions";
-
-const ACTION_WIDTH = 80;
 
 interface MyBorrowTableRowSwipeProps {
   children: React.ReactNode | ((isActive: boolean) => React.ReactNode);
@@ -20,168 +16,52 @@ interface MyBorrowTableRowSwipeProps {
 }
 
 const MyBorrowTableRowSwipeComponent = ({ children, borrowId, borrowName, onEdit, onDelete, style, disabled = false }: MyBorrowTableRowSwipeProps) => {
-  const { colors } = useTheme();
-  const { activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow } = useSwipeRow();
-  const swipeableRef = useRef<Swipeable>(null);
-  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useAuth();
   const canEdit = canEditBorrows(user);
   const canDelete = canDeleteBorrows(user);
 
-  // Early return if colors are not available yet (during theme initialization)
-  if (!colors || !children) {
-    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
-  }
-
-  // Return early if no permissions
-  if (!canEdit && !canDelete) {
-    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
-  }
-
-  const isThisRowActive = activeRowId === borrowId;
-
-  // Watch for changes in activeRowId to close this row if another row becomes active
-  useEffect(() => {
-    if (!isThisRowActive && activeRowId !== null) {
-      // Another row became active, close this one immediately
-      swipeableRef.current?.close();
-    }
-  }, [activeRowId, isThisRowActive]);
-
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (autoCloseTimerRef.current) {
-        clearTimeout(autoCloseTimerRef.current);
-        autoCloseTimerRef.current = null;
-      }
-      // Clean up if this row was active
-      if (activeRowId === borrowId) {
-        setActiveRowId(null);
-      }
-    };
-  }, [activeRowId, borrowId, setActiveRowId]);
-
-  const handleDeletePress = useCallback(() => {
-    Alert.alert("Confirmar exclusão", `Tem certeza que deseja excluir o empréstimo de "${borrowName}"?`, [
-      {
-        text: "Cancelar",
-        style: "cancel",
-        onPress: () => swipeableRef.current?.close(),
-      },
-      {
-        text: "Excluir",
-        style: "destructive",
-        onPress: () => {
-          swipeableRef.current?.close();
-          setTimeout(() => onDelete?.(borrowId), 300);
-        },
-      },
-    ]);
-  }, [borrowId, borrowName, onDelete]);
-
   // Build actions array with colors matching theme
   // Edit button uses green (#15803d)
   // Delete button uses red (#b91c1c)
-  const rightActions: SwipeAction[] = [
-    ...(onEdit && canEdit
-      ? [
-          {
-            key: "edit",
-            label: "Editar",
-            icon: <IconEdit size={20} color="white" />,
-            backgroundColor: "#15803d", // green-700
-            onPress: () => onEdit(borrowId),
-            closeOnPress: true,
-          },
-        ]
-      : []),
-    ...(onDelete && canDelete
-      ? [
-          {
-            key: "delete",
-            label: "Excluir",
-            icon: <IconTrash size={20} color="white" />,
-            backgroundColor: "#b91c1c", // red-700
-            onPress: handleDeletePress,
-            closeOnPress: false, // Don't close automatically for delete confirmation
-          },
-        ]
-      : []),
-  ];
+  const actions: GenericSwipeAction[] = [];
 
-  const handleWillOpen = useCallback(
-    (_direction: "left" | "right") => {
-      // Clear any existing timer
-      if (autoCloseTimerRef.current) {
-        clearTimeout(autoCloseTimerRef.current);
-        autoCloseTimerRef.current = null;
-      }
-
-      // Close any other active row first
-      if (activeRowId && activeRowId !== borrowId) {
-        closeActiveRow();
-        closeOpenRow(); // Also close legacy rows
-      }
-    },
-    [activeRowId, borrowId, closeActiveRow, closeOpenRow],
-  );
-
-  const handleOpen = useCallback(
-    (_direction: "left" | "right", swipeable: Swipeable) => {
-      setActiveRowId(borrowId);
-
-      // Register the close function for legacy compatibility
-      setOpenRow(() => swipeable.close());
-
-      // Auto-close after 5 seconds
-      autoCloseTimerRef.current = setTimeout(() => {
-        swipeable.close();
-      }, 5000);
-    },
-    [borrowId, setActiveRowId, setOpenRow],
-  );
-
-  const handleClose = useCallback(() => {
-    // Clear any auto-close timer
-    if (autoCloseTimerRef.current) {
-      clearTimeout(autoCloseTimerRef.current);
-      autoCloseTimerRef.current = null;
-    }
-
-    // Clear active row state if this was the active row
-    if (isThisRowActive) {
-      setActiveRowId(null);
-    }
-  }, [isThisRowActive, setActiveRowId]);
-
-  // Ensure children is always defined and is a valid React element or function
-  if (!children || (typeof children !== "object" && typeof children !== "string" && typeof children !== "number" && typeof children !== "function")) {
-    console.warn("MyBorrowTableRowSwipe: children prop is invalid or undefined:", typeof children);
-    return <View style={style} />;
+  // Add edit action if provided and user has permission
+  if (onEdit && canEdit) {
+    actions.push({
+      key: "edit",
+      label: "Editar",
+      icon: <IconEdit size={20} color="white" />,
+      backgroundColor: "#15803d", // green-700
+      onPress: () => onEdit(borrowId),
+      closeOnPress: true,
+    });
   }
 
-  if (disabled || rightActions.length === 0) {
-    return <View style={style}>{typeof children === "function" ? children(false) : children}</View>;
+  // Add delete action if provided and user has permission
+  if (onDelete && canDelete) {
+    actions.push({
+      key: "delete",
+      label: "Excluir",
+      icon: <IconTrash size={20} color="white" />,
+      backgroundColor: "#b91c1c", // red-700
+      onPress: () => onDelete(borrowId),
+      closeOnPress: false,
+      confirmDelete: true,
+    });
   }
 
   return (
-    <ReanimatedSwipeableRow
-      ref={swipeableRef}
-      rightActions={rightActions}
-      enabled={!disabled}
-      friction={2}
-      rightThreshold={40}
-      overshootRight={false}
-      onWillOpen={handleWillOpen}
-      onOpen={handleOpen}
-      onClose={handleClose}
-      containerStyle={StyleSheet.flatten([styles.container, style])}
-      childrenContainerStyle={styles.rowContainer}
-      actionWidth={ACTION_WIDTH}
+    <GenericTableRowSwipe
+      entityId={borrowId}
+      entityName={borrowName}
+      actions={actions}
+      canPerformActions={(user) => canEditBorrows(user) || canDeleteBorrows(user)}
+      style={style}
+      disabled={disabled}
+      confirmDeleteMessage={`Tem certeza que deseja excluir o empréstimo de "${borrowName}"?`}
     >
-      <View style={{ flex: 1 }}>{typeof children === "function" ? children(isThisRowActive) : children}</View>
-    </ReanimatedSwipeableRow>
+      {children}
+    </GenericTableRowSwipe>
   );
 };
 
@@ -189,13 +69,3 @@ const MyBorrowTableRowSwipeComponent = ({ children, borrowId, borrowName, onEdit
 MyBorrowTableRowSwipeComponent.displayName = "MyBorrowTableRowSwipe";
 
 export const MyBorrowTableRowSwipe = React.memo(MyBorrowTableRowSwipeComponent);
-
-const styles = StyleSheet.create({
-  container: {
-    position: "relative",
-    overflow: "hidden",
-  },
-  rowContainer: {
-    // The row content container - no special styles needed
-  },
-});
