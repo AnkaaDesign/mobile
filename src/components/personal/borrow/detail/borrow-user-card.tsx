@@ -9,7 +9,7 @@ import { formatBrazilianPhone } from "@/utils";
 import { showToast } from "@/components/ui/toast";
 import { router } from "expo-router";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 
 interface BorrowUserCardProps {
   borrow: Borrow;

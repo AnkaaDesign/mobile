@@ -144,7 +144,6 @@ const ALL_ROUTES = [
 
   // Production
   { name: "producao/index", title: "Produção" },
-  { name: "producao/em-espera", title: "Em Espera" },
   { name: "producao/cronograma/index", title: "Cronograma" },
   { name: "producao/cronograma/cadastrar", title: "Cadastrar Cronograma" },
   { name: "producao/cronograma/em-espera", title: "Cronograma Em Espera" },
@@ -401,7 +400,7 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     }
     if (userPrivileges.includes(SECTOR_PRIVILEGES.PRODUCTION) && path.startsWith('producao/')) {
       // Production sector has limited access - exclude aerografia, em espera, and garagens
-      const restrictedPaths = ['producao/aerografia/', 'producao/em-espera', 'producao/garagens/'];
+      const restrictedPaths = ['producao/aerografia/', 'producao/cronograma/em-espera', 'producao/garagens/'];
       const isRestricted = restrictedPaths.some(restricted => path.startsWith(restricted) || path === restricted);
       if (!isRestricted) {
         return true;

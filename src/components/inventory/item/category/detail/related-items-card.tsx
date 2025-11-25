@@ -7,7 +7,7 @@ import { IconPackage, IconChevronRight, IconLayoutList } from "@tabler/icons-rea
 import type { ItemCategory } from '../../../../../types';
 import { router } from "expo-router";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";

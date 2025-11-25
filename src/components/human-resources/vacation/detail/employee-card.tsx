@@ -8,7 +8,7 @@ import type { Vacation } from '../../../../types';
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { router } from "expo-router";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 
 interface EmployeeCardProps {

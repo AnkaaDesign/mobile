@@ -16,7 +16,7 @@ import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section"
 import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
 import { PhoneManager } from "@/components/administration/customer/form/phone-manager";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";

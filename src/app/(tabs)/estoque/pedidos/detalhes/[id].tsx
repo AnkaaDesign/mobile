@@ -19,7 +19,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { routes, ORDER_STATUS, SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { spacing } from "@/constants/design-system";

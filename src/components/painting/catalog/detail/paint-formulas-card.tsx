@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from '../../../../utils';
 import type { Paint, Formula } from '../../../../types';
 import { routes } from '@/constants';
-import { routeToMobilePath } from '@/lib/route-mapper';
+import { routeToMobilePath } from '@/utils/route-mapper';
 import * as Clipboard from 'expo-clipboard';
 import { showToast } from '@/components/ui/toast';
 import { useTheme } from '@/lib/theme';

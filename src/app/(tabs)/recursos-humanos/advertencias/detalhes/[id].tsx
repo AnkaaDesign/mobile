@@ -11,7 +11,7 @@ import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconEdit, IconTrash, IconHistory } from "@tabler/icons-react-native";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { showToast } from "@/components/ui/toast";
 
 // Import modular components

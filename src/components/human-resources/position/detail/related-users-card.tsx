@@ -7,7 +7,7 @@ import { IconUsers, IconChevronRight, IconSearch } from "@tabler/icons-react-nat
 import type { Position, User } from '../../../../types';
 import type { UserGetManyFormData } from '../../../../schemas';
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { UserTableWithData } from "@/components/administration/user/list/user-table-with-data";

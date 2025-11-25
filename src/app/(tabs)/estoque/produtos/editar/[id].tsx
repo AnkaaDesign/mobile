@@ -9,7 +9,7 @@ import { ItemEditSkeleton } from "@/components/inventory/item/skeleton/item-edit
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { useItem, useItemMutations } from "@/hooks";
 import { type ItemUpdateFormData } from '../../../../../schemas';
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";

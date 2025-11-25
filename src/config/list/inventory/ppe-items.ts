@@ -2,7 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { Item } from '@/types'
 import { ITEM_CATEGORY_TYPE} from '@/constants'
 import { routes } from '@/constants'
-import { routeToMobilePath } from '@/lib/route-mapper'
+import { routeToMobilePath } from '@/utils/route-mapper'
 import { canEditItems } from '@/utils/permissions/entity-permissions'
 
 export const ppeItemsListConfig: ListConfig<Item> = {

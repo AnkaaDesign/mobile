@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { View, Image, Text, StyleSheet } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { fontWeight } from "@/constants/design-system";
-import { getFileUrl } from "@/utils/file";
+import { getFileUrl } from "@/utils/file-utils";
 import type { File as AnkaaFile } from "@/types";
 
 export interface CustomerLogoDisplayProps {

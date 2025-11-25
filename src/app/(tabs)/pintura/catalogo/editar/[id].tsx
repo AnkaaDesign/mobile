@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { SkeletonCard } from "@/components/ui/loading";
 import { usePaint, usePaintMutations } from "@/hooks";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 import { spacing } from "@/constants/design-system";
 

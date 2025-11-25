@@ -27,7 +27,7 @@ import {
   
   IconPackage,
 } from "@tabler/icons-react-native";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { showToast } from "@/components/ui/toast";
 import { EmployeeDetailSkeleton } from "@/components/administration/employee/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";

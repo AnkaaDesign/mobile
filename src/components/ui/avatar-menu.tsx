@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { useRouter } from "expo-router";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { Icon } from "./icon";
 
 interface AvatarMenuProps {

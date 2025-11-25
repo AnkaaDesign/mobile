@@ -10,12 +10,12 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { IconClipboardList, IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
-import { useDebounce } from "@/hooks/use-debounce";
+import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { useTasks } from "@/hooks";
 
 interface TasksTableProps {

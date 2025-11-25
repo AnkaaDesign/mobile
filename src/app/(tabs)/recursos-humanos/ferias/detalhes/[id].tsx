@@ -12,7 +12,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { TouchableOpacity } from "react-native";
 import { showToast } from "@/components/ui/toast";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 
 // Import modular components
 import { SpecificationsCard } from "@/components/human-resources/vacation/detail";

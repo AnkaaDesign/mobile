@@ -1,8 +1,162 @@
 /**
  * ItemSelectorTableV2
  *
- * A table component for selecting items in multi-step forms.
- * Matches the design of the produtos table (estoque/produtos).
+ * An advanced item selection component with table-style layout and infinite scroll.
+ * Uses infinite scroll for data fetching (`useItemsInfiniteMobile` hook).
+ *
+ * ## Purpose
+ * Provides a data-dense, table-style interface for selecting items from large datasets.
+ * Optimized for scenarios where pagination isn't ideal and users need to browse/filter
+ * through hundreds or thousands of items.
+ *
+ * ## When to Use
+ * - **Large datasets:** 500+ items (optimized for thousands)
+ * - **Infinite scroll preferred:** Better UX than pagination for browsing
+ * - **Table features needed:** Column visibility, sorting, table-style layout
+ * - **Category-specific filtering:** Filter by item category type (e.g., TOOL, CONSUMABLE)
+ * - **Data-dense view:** When you need to show more items on screen
+ *
+ * ## When NOT to Use
+ * - **Small datasets (< 200 items):** Use ItemSelectorTable (simpler, pagination)
+ * - **Simple requirements:** Use ItemSelectorTable if you don't need table features
+ * - **Card-based UI preferred:** ItemSelectorTable has better card layouts
+ *
+ * ## Key Differences from ItemSelectorTable
+ *
+ * | Feature | ItemSelectorTable | ItemSelectorTableV2 |
+ * |---------|------------------|---------------------|
+ * | **Data Loading** | Pagination | Infinite Scroll |
+ * | **Layout** | Card-based (mobile) | Table-style (always) |
+ * | **Dataset Size** | 20-500 items | 500-10000+ items |
+ * | **Column Visibility** | No | Yes |
+ * | **Sorting** | No (server-side only) | Yes (client-side) |
+ * | **Category Type Filter** | No | Yes |
+ * | **Hook Used** | `useItems` | `useItemsInfiniteMobile` |
+ * | **Complexity** | Simpler | More advanced |
+ *
+ * ## Features
+ * - **Infinite Scroll:** Automatically loads more as you scroll down
+ * - **Table Layout:** Compact, data-dense table design matching product list
+ * - **Column Visibility:** Show/hide columns (code, name, brand, category, stock)
+ * - **Sorting:** Click column headers to sort (ascending/descending)
+ * - **Category Type Filter:** Filter items by category type (TOOL, CONSUMABLE, etc.)
+ * - **Search:** Debounced search on name and code
+ * - **Stock Level Indicators:** Color-coded stock level icons
+ * - **Quantity Input:** Inline quantity input when item selected
+ * - **Performance Optimized:** Virtual rendering, efficient re-renders
+ *
+ * ## Usage Example
+ *
+ * ### Basic Implementation (Tool Borrowing)
+ * ```tsx
+ * import { ItemSelectorTableV2 } from "@/components/forms";
+ * import { ITEM_CATEGORY_TYPE } from "@/constants";
+ *
+ * export default function BorrowToolsStep() {
+ *   const [selectedItems, setSelectedItems] = useState(new Set<string>());
+ *   const [quantities, setQuantities] = useState<Record<string, number>>({});
+ *   const [searchTerm, setSearchTerm] = useState("");
+ *
+ *   const toggleItem = (itemId: string) => {
+ *     const newSelected = new Set(selectedItems);
+ *     if (newSelected.has(itemId)) {
+ *       newSelected.delete(itemId);
+ *     } else {
+ *       newSelected.add(itemId);
+ *       setQuantities({ ...quantities, [itemId]: 1 });
+ *     }
+ *     setSelectedItems(newSelected);
+ *   };
+ *
+ *   return (
+ *     <ItemSelectorTableV2
+ *       // Selection state
+ *       selectedItems={selectedItems}
+ *       quantities={quantities}
+ *       onSelectItem={toggleItem}
+ *       onQuantityChange={(id, qty) => setQuantities({ ...quantities, [id]: qty })}
+ *
+ *       // Configuration
+ *       showQuantityInput
+ *       minQuantity={1}
+ *       maxQuantity={10}
+ *       allowZeroStock={false}
+ *
+ *       // Category type filter (only show tools)
+ *       categoryType={ITEM_CATEGORY_TYPE.TOOL}
+ *
+ *       // Search
+ *       searchTerm={searchTerm}
+ *       onSearchTermChange={setSearchTerm}
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * ### With Advanced Filtering
+ * ```tsx
+ * <ItemSelectorTableV2
+ *   // ... selection props
+ *   searchTerm={searchTerm}
+ *   showInactive={showInactive}
+ *   categoryIds={categoryIds}
+ *   brandIds={brandIds}
+ *   supplierIds={supplierIds}
+ *   onSearchTermChange={setSearchTerm}
+ *   onShowInactiveChange={setShowInactive}
+ *   onCategoryIdsChange={setCategoryIds}
+ *   onBrandIdsChange={setBrandIds}
+ *   onSupplierIdsChange={setSupplierIds}
+ * />
+ * ```
+ *
+ * ## Column Configuration
+ *
+ * Default columns (can be toggled by user):
+ * 1. **Código (uniCode):** Item unique code
+ * 2. **Nome (name):** Item name
+ * 3. **Marca (brand):** Brand name
+ * 4. **Categoria (category):** Category name
+ * 5. **Estoque (quantity):** Stock quantity with level indicator
+ *
+ * Default visible: Code, Name, Stock
+ *
+ * Users can show/hide columns via the column visibility panel.
+ *
+ * ## Stock Level Indicators
+ *
+ * Color-coded icons show stock status:
+ * - **Gray:** Negative stock
+ * - **Red:** Out of stock
+ * - **Orange:** Critical stock
+ * - **Yellow:** Low stock
+ * - **Green:** Optimal stock
+ * - **Purple:** Overstocked
+ *
+ * Based on `determineStockLevel` util and item's reorder/max points.
+ *
+ * ## Performance Optimizations
+ *
+ * - **Virtual Rendering:** Only renders visible rows
+ * - **Infinite Scroll:** Loads data in chunks (not all at once)
+ * - **Memoized Components:** Prevents unnecessary re-renders
+ * - **Debounced Search:** Reduces API calls (300ms)
+ * - **FlatList Optimizations:** `removeClippedSubviews`, `windowSize`, `maxToRenderPerBatch`
+ *
+ * ## Accessibility
+ * - Column headers are sortable with keyboard
+ * - Checkboxes have proper labels
+ * - Screen reader announces selection state
+ * - Focus management for better navigation
+ *
+ * ## Styling Notes
+ * - Matches product list table design
+ * - Responsive column widths based on screen size
+ * - Theme-aware colors
+ * - Compact row height for data density
+ *
+ * @see {@link ItemSelectorTable} For simpler pagination-based selection
+ * @see {@link useItemsInfiniteMobile} For the data fetching hook used
  */
 
 import React, { useState, useCallback, useMemo, memo, useEffect } from "react";

@@ -29,7 +29,7 @@ import {
 import { useRouter, usePathname } from "expo-router";
 import { MENU_ITEMS, routes, MenuItem} from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
-import { routeToMobilePath, normalizePath } from "@/lib/route-mapper";
+import { routeToMobilePath, normalizePath } from '@/utils/route-mapper';
 import { maskPhone } from '@/utils';
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { useDrawerStatus } from "@react-navigation/drawer";

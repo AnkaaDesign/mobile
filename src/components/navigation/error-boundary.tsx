@@ -41,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
       console.warn("Authentication error detected in error boundary");
       // Clear any stored auth data to force clean login
       try {
-        import("@/lib/storage").then(({ removeStoredToken, removeUserData }) => {
+        import("@/utils/storage").then(({ removeStoredToken, removeUserData }) => {
           removeStoredToken();
           removeUserData();
         });

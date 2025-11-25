@@ -13,7 +13,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES, routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 
 export default function EditObservationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

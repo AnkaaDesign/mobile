@@ -12,7 +12,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconClipboardList, IconCalendar, IconChevronRight } from "@tabler/icons-react-native";
 import { getBadgeVariant } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 
 interface TasksCardProps {
   employee: User;

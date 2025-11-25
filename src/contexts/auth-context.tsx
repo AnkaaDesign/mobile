@@ -1,6 +1,6 @@
 import { createContext, useEffect, useState, useContext, ReactNode, useCallback, useRef } from "react";
 import { authService, setAuthToken, setTokenProvider, setAuthErrorHandler, removeAuthErrorHandler, cancelAllRequests, setIsLoggingOut } from '../api-client';
-import { storeToken, getStoredToken, removeStoredToken, storeUserData, getUserData, removeUserData } from "@/lib/storage";
+import { storeToken, getStoredToken, removeStoredToken, storeUserData, getUserData, removeUserData } from "@/utils/storage";
 import { useRouter } from "expo-router";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Alert, View, Text, AppState, AppStateStatus } from "react-native";

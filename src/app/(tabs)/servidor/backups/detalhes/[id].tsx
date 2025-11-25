@@ -10,7 +10,7 @@ import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { useBackup, useBackupMutations } from "@/hooks/useBackup";
 import { formatDate } from "@/utils/date";
-import { formatFileSize } from "@/utils/file";
+import { formatFileSize } from "@/utils/file-utils";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 

@@ -183,7 +183,7 @@ export function getPageIconName(path: string): string {
     // Produção
     "/producao/cronograma": "clipboard-list",
     "/producao/cronograma/cadastrar": "clipboard-list",
-    "/producao/em-espera": "hourglass",
+    "/producao/cronograma/em-espera": "hourglass",
     "/producao/historico": "history",
     "/producao/recorte": "scissors",
     "/producao/garagens": "building-warehouse",

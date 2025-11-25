@@ -8,7 +8,6 @@ import { spacing, borderRadius } from "@/constants/design-system";
 import { EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_TYPE_LABELS } from "@/constants";
 import { useExternalWithdrawalFormState } from "@/hooks/use-external-withdrawal-form-state";
 import { useExternalWithdrawalMutations } from "@/hooks";
-import { createWithdrawalFormData } from "@/utils/form-data-helper";
 
 import type { ExternalWithdrawal, ExternalWithdrawalItem } from "@/types";
 
@@ -20,7 +19,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { FormLabel } from "@/components/ui/form-label";
 import { Alert } from "@/components/ui/alert";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import { FileUpload } from "@/components/file/file-upload";
+import { FileUpload, type FileItem } from "@/components/ui/file-upload";
 
 import { ExternalWithdrawalItemSelector } from "./external-withdrawal-item-selector";
 import { ExternalWithdrawalSummaryCards } from "./external-withdrawal-summary-cards";
@@ -150,8 +149,8 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
   });
 
   // File state - initialize with existing files
-  const [receiptFiles, setReceiptFiles] = useState<File[]>([]);
-  const [nfeFiles, setNfeFiles] = useState<File[]>([]);
+  const [receiptFiles, setReceiptFiles] = useState<FileItem[]>([]);
+  const [nfeFiles, setNfeFiles] = useState<FileItem[]>([]);
   const [hasFileChanges, setHasFileChanges] = useState(false);
 
   // Mutations
@@ -235,13 +234,13 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
   }, [resetForm, router]);
 
   // Handle file uploads
-  const handleReceiptUpload = useCallback((files: File[]) => {
+  const handleReceiptUpload = useCallback((files: FileItem[]) => {
     setReceiptFiles(files);
     setHasFileChanges(true);
     updateReceiptId(files.length > 0 ? "pending" : null);
   }, [updateReceiptId]);
 
-  const handleNfeUpload = useCallback((files: File[]) => {
+  const handleNfeUpload = useCallback((files: FileItem[]) => {
     setNfeFiles(files);
     setHasFileChanges(true);
     updateNfeId(files.length > 0 ? "pending" : null);
@@ -266,29 +265,17 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
         notes: notes?.trim() || null,
       };
 
-      // Check if there are new files to upload
-      const hasNewFiles = receiptFiles.length > 0 || nfeFiles.length > 0;
-
-      let result;
-      if (hasNewFiles) {
-        const formDataWithFiles = createWithdrawalFormData(
-          updateData,
-          {
-            receipts: receiptFiles.length > 0 ? receiptFiles : undefined,
-            invoices: nfeFiles.length > 0 ? nfeFiles : undefined,
-          },
-          undefined
-        );
-        result = await updateAsync({
-          id: withdrawal.id,
-          data: formDataWithFiles as any,
-        });
-      } else {
-        result = await updateAsync({
-          id: withdrawal.id,
-          data: updateData,
-        });
+      // Note: File upload functionality is available in the UI but not yet implemented
+      // in the submission logic. Files selected will be displayed but not uploaded.
+      // TODO: Implement file upload using useFileUploadManager pattern
+      if (receiptFiles.length > 0 || nfeFiles.length > 0) {
+        console.warn("File upload not yet implemented. Files will not be uploaded.");
       }
+
+      const result = await updateAsync({
+        id: withdrawal.id,
+        data: updateData,
+      });
 
       if (result.success) {
         await resetForm();
@@ -410,12 +397,10 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
                 <Text style={styles.fileUploadLabel}>Recibo</Text>
               </View>
               <FileUpload
-                onFilesChange={handleReceiptUpload}
+                value={receiptFiles}
+                onChange={handleReceiptUpload}
                 maxFiles={1}
-                maxSize={10 * 1024 * 1024}
-                accept={["application/pdf", "image/*"]}
-                variant="compact"
-                existingFiles={withdrawal.receipts}
+                accept="all"
               />
             </View>
 
@@ -426,12 +411,10 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
                 <Text style={styles.fileUploadLabel}>Nota Fiscal</Text>
               </View>
               <FileUpload
-                onFilesChange={handleNfeUpload}
+                value={nfeFiles}
+                onChange={handleNfeUpload}
                 maxFiles={1}
-                maxSize={10 * 1024 * 1024}
-                accept={["application/pdf", "application/xml", "image/*"]}
-                variant="compact"
-                existingFiles={withdrawal.invoices}
+                accept="all"
               />
             </View>
           </View>

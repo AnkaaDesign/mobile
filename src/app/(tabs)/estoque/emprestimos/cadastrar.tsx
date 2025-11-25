@@ -1,9 +1,9 @@
 import { useRouter } from "expo-router";
 import { Alert } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
-import { BorrowBatchCreateFormV2 } from "@/components/inventory/borrow/form";
+import { BorrowBatchCreateForm } from "@/components/inventory/borrow/form";
 import { useBorrowMutations } from "@/hooks";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 
 export default function EstoqueEmprestimosCadastrarScreen() {
@@ -73,7 +73,7 @@ export default function EstoqueEmprestimosCadastrarScreen() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <BorrowBatchCreateFormV2
+      <BorrowBatchCreateForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         isSubmitting={isBatchCreating}

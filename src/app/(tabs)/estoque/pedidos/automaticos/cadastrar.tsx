@@ -25,7 +25,7 @@ import { FrequencySelector } from "@/components/inventory/order/schedule/frequen
 import { ScheduleConfigurationForm } from "@/components/inventory/order/schedule/schedule-configuration-form";
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";

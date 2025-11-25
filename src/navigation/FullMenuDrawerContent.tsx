@@ -18,7 +18,7 @@ import { Icon } from '@/components/ui/icon';
 import { IconChevronRight, IconStar, IconStarFilled } from '@tabler/icons-react-native';
 import { MENU_ITEMS, MenuItem} from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
-import { routeToMobilePath, normalizePath } from '@/lib/route-mapper';
+import { routeToMobilePath, normalizePath } from '@/utils/route-mapper';
 import { useFavorites } from '@/contexts/favorites-context';
 import { useAuth } from '@/contexts/auth-context';
 import { SECTOR_PRIVILEGES } from '@/constants/enums';

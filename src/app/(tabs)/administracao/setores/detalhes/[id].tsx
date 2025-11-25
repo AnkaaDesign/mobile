@@ -14,7 +14,7 @@ import {
   IconTrash,
   IconHistory,
 } from "@tabler/icons-react-native";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { TouchableOpacity } from "react-native";
 import { showToast } from "@/components/ui/toast";
 import { LoadingScreen } from "@/components/ui/loading-screen";

@@ -7,7 +7,7 @@ import { IconBox, IconExternalLink } from "@tabler/icons-react-native";
 import type { Borrow } from "@/types";
 import { router } from "expo-router";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 
 interface BorrowItemCardProps {
   borrow: Borrow;

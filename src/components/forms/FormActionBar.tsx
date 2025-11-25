@@ -10,17 +10,109 @@ import { Text } from "@/components/ui/text";
 /**
  * FormActionBar
  *
- * A fixed bottom action bar for multi-step forms.
- * Adapts layout for mobile vs tablet:
- * - Mobile: Stacked buttons (cancel on top, navigation below)
- * - Tablet: Horizontal layout with cancel on left, navigation on right
+ * A fixed bottom action bar for multi-step forms with responsive layouts.
  *
- * Features:
- * - Previous/Next navigation
- * - Submit button on last step
- * - Cancel button (optional)
- * - Loading state during submission
- * - Disabled state management
+ * ## Purpose
+ * Provides standardized navigation controls for forms with multiple steps/stages.
+ * Automatically adapts layout based on device type and current step position.
+ *
+ * ## Responsive Layouts
+ *
+ * ### Mobile Layout (< 768px)
+ * - Stacked vertical layout for better thumb reach
+ * - Cancel/Previous button on left (if applicable)
+ * - Next/Submit button on right
+ * - Full-width buttons for easy tapping
+ *
+ * ### Tablet Layout (>= 768px)
+ * - Horizontal layout with better space utilization
+ * - Cancel button on far left
+ * - Navigation buttons (Previous/Next/Submit) on far right
+ * - Grouped for visual clarity
+ *
+ * ## Features
+ * - **Step Navigation:** Previous/Next buttons with automatic visibility
+ * - **Submit on Last Step:** Automatically shows submit instead of next
+ * - **Cancel Support:** Optional cancel button (shown on first step in mobile)
+ * - **Loading States:** Built-in spinner and disabled state during submission
+ * - **Validation Support:** Disable next/submit based on validation state
+ * - **Customizable Labels:** All button labels can be customized
+ * - **Accessibility:** Full keyboard and screen reader support
+ *
+ * ## Usage Examples
+ *
+ * ### Basic Multi-Step Form
+ * ```tsx
+ * const [stage, setStage] = useState(1);
+ * const [isSubmitting, setIsSubmitting] = useState(false);
+ *
+ * <FormActionBar
+ *   onPrev={() => setStage(stage - 1)}
+ *   onNext={() => setStage(stage + 1)}
+ *   onSubmit={handleSubmit}
+ *   onCancel={() => router.back()}
+ *   isFirstStep={stage === 1}
+ *   isLastStep={stage === 3}
+ *   isSubmitting={isSubmitting}
+ *   canProceed={isCurrentStageValid}
+ *   canSubmit={isFormValid}
+ *   isTablet={width >= 768}
+ * />
+ * ```
+ *
+ * ### With Custom Labels
+ * ```tsx
+ * <FormActionBar
+ *   // ... other props
+ *   prevLabel="Voltar"
+ *   nextLabel="Continuar"
+ *   submitLabel="Finalizar"
+ *   cancelLabel="Sair"
+ * />
+ * ```
+ *
+ * ### Without Cancel Button
+ * ```tsx
+ * <FormActionBar
+ *   // ... other props
+ *   onCancel={undefined} // Cancel button won't show
+ * />
+ * ```
+ *
+ * ## State Management Pattern
+ *
+ * Recommended pattern for managing multi-step form state:
+ *
+ * ```tsx
+ * const [stage, setStage] = useState(1);
+ * const [formData, setFormData] = useState({});
+ * const [validation, setValidation] = useState({ errors: {}, canProceed: {} });
+ *
+ * const handleNext = () => {
+ *   if (validation.canProceed[stage]) {
+ *     setStage(stage + 1);
+ *   }
+ * };
+ *
+ * const handlePrev = () => {
+ *   setStage(stage - 1);
+ * };
+ *
+ * const handleSubmit = async () => {
+ *   if (validation.isFormValid) {
+ *     await submitForm(formData);
+ *   }
+ * };
+ * ```
+ *
+ * ## Styling Notes
+ * - Uses theme colors for consistency
+ * - Matches button styling from Button component
+ * - Safe area aware (bottom inset handled)
+ * - Fixed positioning at bottom of screen
+ *
+ * @see {@link SimpleFormActionBar} For single-step forms
+ * @see {@link Button} For button component styling
  */
 
 export interface FormActionBarProps {

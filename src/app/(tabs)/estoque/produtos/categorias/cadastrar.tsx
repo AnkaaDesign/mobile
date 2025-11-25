@@ -3,7 +3,7 @@ import { showToast } from "@/components/ui/toast";
 import { ItemCategoryForm } from "@/components/inventory/item/category/form/category-form";
 import { useItemCategoryMutations } from "@/hooks";
 import { itemCategoryCreateSchema} from '../../../../../schemas';
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 
 export default function CategoryCreateScreen() {

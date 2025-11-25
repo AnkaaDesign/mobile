@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocalSearchParams, router } from "expo-router";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 
 export default function EditMovementPage() {

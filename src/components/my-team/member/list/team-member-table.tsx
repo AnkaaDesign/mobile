@@ -10,7 +10,7 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TeamMemberTableRowSwipe } from "./team-member-table-row-swipe";
 import { formatBrazilianPhone, formatDate } from "@/utils";
-import { getFileUrl } from '@/utils/file';
+import { getFileUrl } from '@/utils/file-utils';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { USER_STATUS } from "@/constants";
 

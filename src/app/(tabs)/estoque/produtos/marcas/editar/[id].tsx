@@ -8,7 +8,7 @@ import { ItemBrandForm } from "@/components/inventory/item/brand/form/brand-form
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { useItemBrand, useItemBrandMutations } from "@/hooks";
 import { type ItemBrandUpdateFormData } from '../../../../../../schemas';
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";

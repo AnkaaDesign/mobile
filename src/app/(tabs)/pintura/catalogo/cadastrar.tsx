@@ -3,7 +3,7 @@ import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { usePaintMutations } from "@/hooks";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 
 export default function CreateCatalogScreen() {

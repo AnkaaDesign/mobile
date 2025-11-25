@@ -12,7 +12,7 @@ import { spacing } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES, PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from '../../../../constants';
 import { hasAnyPrivilege } from '../../../../utils';
 import type { Paint } from '../../../../types';
-import { useDebounce } from "@/hooks/use-debounce";
+import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { useToast } from "@/lib/toast/use-toast";
 import { showToast } from "@/components/ui/toast";
 import { SortSelector, type SortOption } from "@/components/painting/catalog/list/sort-selector";

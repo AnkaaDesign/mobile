@@ -3,7 +3,7 @@ import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import { useRouter } from "expo-router";
 import { routes, DASHBOARD_TIME_PERIOD } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { useProductionDashboard } from "@/hooks/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback } from "react";

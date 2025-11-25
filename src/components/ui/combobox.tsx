@@ -5,7 +5,7 @@ import { Icon } from "./icon";
 import { Badge } from "./badge";
 import { Checkbox } from "./checkbox";
 import { useTheme } from "@/lib/theme";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useDebouncedValue } from "@/hooks/useDebouncedSearch";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
 export interface ComboboxOption {

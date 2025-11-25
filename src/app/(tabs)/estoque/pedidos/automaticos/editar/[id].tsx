@@ -28,7 +28,7 @@ import { ItemMultiSelector } from "@/components/inventory/item/item-multi-select
 import { FrequencySelector } from "@/components/inventory/order/schedule/frequency-selector";
 import { ScheduleConfigurationForm } from "@/components/inventory/order/schedule/schedule-configuration-form";
 import { useTheme } from "@/lib/theme";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 
 export default function EditAutomaticOrderScreen() {
   const router = useRouter();

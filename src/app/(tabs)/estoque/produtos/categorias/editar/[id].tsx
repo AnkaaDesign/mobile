@@ -8,7 +8,7 @@ import { ItemCategoryForm } from "@/components/inventory/item/category/form/cate
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { useItemCategory, useItemCategoryMutations } from "@/hooks";
 import { type ItemCategoryUpdateFormData } from '../../../../../../schemas';
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";

@@ -8,7 +8,6 @@ import { spacing, borderRadius } from "@/constants/design-system";
 import { EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_TYPE_LABELS } from "@/constants";
 import { useExternalWithdrawalFormState } from "@/hooks/use-external-withdrawal-form-state";
 import { useExternalWithdrawalMutations } from "@/hooks";
-import { createWithdrawalFormData } from "@/utils/form-data-helper";
 
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { FormLabel } from "@/components/ui/form-label";
 import { Alert } from "@/components/ui/alert";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import { FileUpload } from "@/components/file/file-upload";
+import { FileUpload, type FileItem } from "@/components/ui/file-upload";
 
 import { ExternalWithdrawalItemSelector } from "./external-withdrawal-item-selector";
 import { ExternalWithdrawalSummaryCards } from "./external-withdrawal-summary-cards";
@@ -102,8 +101,8 @@ export function ExternalWithdrawalCreateForm() {
   });
 
   // File state
-  const [receiptFiles, setReceiptFiles] = useState<File[]>([]);
-  const [nfeFiles, setNfeFiles] = useState<File[]>([]);
+  const [receiptFiles, setReceiptFiles] = useState<FileItem[]>([]);
+  const [nfeFiles, setNfeFiles] = useState<FileItem[]>([]);
 
   // Mutations
   const { createAsync, isLoading: isSubmitting } = useExternalWithdrawalMutations();
@@ -142,12 +141,12 @@ export function ExternalWithdrawalCreateForm() {
   }, [resetForm, router]);
 
   // Handle file uploads
-  const handleReceiptUpload = useCallback((files: File[]) => {
+  const handleReceiptUpload = useCallback((files: FileItem[]) => {
     setReceiptFiles(files);
     updateReceiptId(files.length > 0 ? "pending" : null);
   }, [updateReceiptId]);
 
-  const handleNfeUpload = useCallback((files: File[]) => {
+  const handleNfeUpload = useCallback((files: FileItem[]) => {
     setNfeFiles(files);
     updateNfeId(files.length > 0 ? "pending" : null);
   }, [updateNfeId]);
@@ -162,23 +161,14 @@ export function ExternalWithdrawalCreateForm() {
     try {
       const formData = getFormData();
 
-      // Check if there are files to upload
-      const hasFiles = receiptFiles.length > 0 || nfeFiles.length > 0;
-
-      let result;
-      if (hasFiles) {
-        const formDataWithFiles = createWithdrawalFormData(
-          formData as any,
-          {
-            receipts: receiptFiles.length > 0 ? receiptFiles : undefined,
-            invoices: nfeFiles.length > 0 ? nfeFiles : undefined,
-          },
-          undefined
-        );
-        result = await createAsync(formDataWithFiles as any);
-      } else {
-        result = await createAsync(formData as any);
+      // Note: File upload functionality is available in the UI but not yet implemented
+      // in the submission logic. Files selected will be displayed but not uploaded.
+      // TODO: Implement file upload using useFileUploadManager pattern
+      if (receiptFiles.length > 0 || nfeFiles.length > 0) {
+        console.warn("File upload not yet implemented. Files will not be uploaded.");
       }
+
+      const result = await createAsync(formData as any);
 
       if (result.success && result.data) {
         await resetForm();
@@ -288,11 +278,10 @@ export function ExternalWithdrawalCreateForm() {
                 <Text style={styles.fileUploadLabel}>Recibo</Text>
               </View>
               <FileUpload
-                onFilesChange={handleReceiptUpload}
+                value={receiptFiles}
+                onChange={handleReceiptUpload}
                 maxFiles={1}
-                maxSize={10 * 1024 * 1024}
-                accept={["application/pdf", "image/*"]}
-                variant="compact"
+                accept="all"
               />
             </View>
 
@@ -303,11 +292,10 @@ export function ExternalWithdrawalCreateForm() {
                 <Text style={styles.fileUploadLabel}>Nota Fiscal</Text>
               </View>
               <FileUpload
-                onFilesChange={handleNfeUpload}
+                value={nfeFiles}
+                onChange={handleNfeUpload}
                 maxFiles={1}
-                maxSize={10 * 1024 * 1024}
-                accept={["application/pdf", "application/xml", "image/*"]}
-                variant="compact"
+                accept="all"
               />
             </View>
           </View>

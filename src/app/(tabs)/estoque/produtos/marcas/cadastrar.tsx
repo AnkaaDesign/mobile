@@ -3,7 +3,7 @@ import { showToast } from "@/components/ui/toast";
 import { ItemBrandForm } from "@/components/inventory/item/brand/form/brand-form";
 import { useItemBrandMutations } from "@/hooks";
 import { itemBrandCreateSchema} from '../../../../../schemas';
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 
 export default function BrandCreateScreen() {

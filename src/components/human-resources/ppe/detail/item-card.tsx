@@ -10,7 +10,7 @@ import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconBox, IconPackage, IconCurrencyDollar, IconArrowRight, IconAlertTriangle } from "@tabler/icons-react-native";
 import { routes, MEASURE_UNIT_LABELS } from "@/constants";
 import { formatCurrency, itemUtils } from "@/utils";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import type { Item } from '../../../../types';
 
 interface ItemCardProps {

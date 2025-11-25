@@ -2,7 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { PpeDeliverySchedule } from '@/types'
 import { SCHEDULE_FREQUENCY, ASSIGNMENT_TYPE } from '@/constants/enums'
 import { routes } from '@/constants'
-import { routeToMobilePath } from '@/lib/route-mapper'
+import { routeToMobilePath } from '@/utils/route-mapper'
 import { canEditPpeDeliveries } from '@/utils/permissions/entity-permissions'
 
 const FREQUENCY_LABELS: Record<string, string> = {

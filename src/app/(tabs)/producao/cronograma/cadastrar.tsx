@@ -8,7 +8,7 @@ import { TaskForm } from "@/components/production/task/form/task-form";
 import { useTaskMutations, useLayoutMutations } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
 
 export default function CreateScheduleScreen() {

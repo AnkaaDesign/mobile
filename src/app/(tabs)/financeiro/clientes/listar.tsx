@@ -1,6 +1,6 @@
 import { Redirect } from "expo-router";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 
 // Customers are managed in the Administration section, redirect there
 export default function FinancialCustomerListScreen() {

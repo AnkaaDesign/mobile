@@ -9,7 +9,7 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconPaint, IconCurrencyDollar, IconWeight, IconFlask } from "@tabler/icons-react-native";
 import type { PaintProduction } from '../../../../types';
 import { PAINT_FINISH_LABELS, routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatCurrency } from "@/utils";
 
 interface PaintFormulaCardProps {

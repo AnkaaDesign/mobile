@@ -12,7 +12,7 @@ import { IconTruck, IconCalendar, IconUser, IconPlus, IconPackage } from "@table
 import { PPE_DELIVERY_STATUS_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import type { Item, PpeDelivery } from '../../../../types';
 
 interface DeliveriesCardProps {

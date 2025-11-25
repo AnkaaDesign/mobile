@@ -1,9 +1,9 @@
 import { useRouter } from "expo-router";
 import { Alert } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
-import { ActivityBatchCreateFormV2 } from "@/components/inventory/activity/form";
+import { ActivityBatchCreateForm } from "@/components/inventory/activity/form";
 import { useActivityBatchMutations } from "@/hooks";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, ACTIVITY_OPERATION } from "@/constants";
 
 export default function InventoryMovementsCreateScreen() {
@@ -77,7 +77,7 @@ export default function InventoryMovementsCreateScreen() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <ActivityBatchCreateFormV2
+      <ActivityBatchCreateForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         isSubmitting={isBatchCreating}

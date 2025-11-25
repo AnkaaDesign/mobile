@@ -13,7 +13,7 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import { BORROW_STATUS, SECTOR_PRIVILEGES, routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { hasPrivilege } from "@/utils";
 import { showToast } from "@/components/ui/toast";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { BorrowStatusCard } from "@/components/inventory/borrow/detail/borrow-status-card";
 import { BorrowItemInfoCard } from "@/components/inventory/borrow/detail/borrow-item-info-card";
 import { BorrowUserInfoCard } from "@/components/inventory/borrow/detail/borrow-user-info-card";

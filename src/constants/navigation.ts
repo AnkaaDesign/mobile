@@ -886,7 +886,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "cronograma-cadastrar", title: "Nova Tarefa", icon: "plus", path: "/producao/cronograma/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
         ],
       },
-      { id: "cronograma-em-espera", title: "Em Espera", icon: "pause", path: "/producao/em-espera", requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] },
+      { id: "cronograma-em-espera", title: "Em Espera", icon: "pause", path: "/producao/cronograma/em-espera", requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] },
       { id: "historico", title: "Historico", icon: "history", path: "/producao/historico" },
       {
         id: "observacoes",
@@ -1116,7 +1116,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     id: "em-espera-direct",
     title: "Em Espera",
     icon: "pause",
-    path: "/producao/em-espera",
+    path: "/producao/cronograma/em-espera",
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC],
   },
 

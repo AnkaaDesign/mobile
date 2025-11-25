@@ -5,7 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { useRouter } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { getStoredToken } from "@/lib/storage";
+import { getStoredToken } from "@/utils/storage";
 
 export default function Index() {
   const { user, isAuthReady } = useAuth();

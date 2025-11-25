@@ -2,7 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { Bonus } from '@/types'
 import { BONUS_STATUS, BONUS_STATUS_LABELS } from '@/constants'
 import { routes } from '@/constants'
-import { routeToMobilePath } from '@/lib/route-mapper'
+import { routeToMobilePath } from '@/utils/route-mapper'
 
 // Helper function to get Portuguese month name from month number (1-12)
 const getMonthLabel = (month: number): string => {

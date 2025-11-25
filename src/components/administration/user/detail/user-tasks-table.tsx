@@ -10,7 +10,7 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconClipboardList, IconAlertCircle, IconChevronRight, IconChevronLeft } from "@tabler/icons-react-native";
 import type { User } from '../../../../types';
 import { routes, TASK_STATUS } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { TaskStatusBadge } from "@/components/production/task/list/task-status-badge";
 

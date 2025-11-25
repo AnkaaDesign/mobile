@@ -32,31 +32,149 @@ import { ItemSelectorFilters } from "./ItemSelectorFilters";
  * ItemSelectorTable
  *
  * A standardized, responsive item selection component for multi-step forms.
- * Used across Borrow, Activity, Order, and External Withdrawal forms.
+ * Uses pagination for data fetching (standard `useItems` hook).
  *
- * Features:
- * - Checkbox-based multi-select
- * - Search with debouncing (300ms)
- * - Advanced filtering (categories, brands, suppliers, inactive)
- * - Pagination support
- * - Quantity and price inputs (configurable)
- * - Show selected only toggle
- * - Select all current page
- * - Responsive: Card layout on mobile, denser table on tablet
+ * ## Purpose
+ * Provides a consistent interface for selecting inventory items across different
+ * form types (borrows, orders, activities, external withdrawals). Handles search,
+ * filtering, pagination, and quantity/price management in a unified way.
  *
- * Usage:
+ * ## When to Use
+ * - **Small to medium datasets:** 20-500 items (recommended)
+ * - **Standard pagination:** When you need page-based navigation
+ * - **Simple requirements:** Basic search, filter, quantity selection
+ * - **Forms:** Borrow forms, Order forms, Activity forms, External Withdrawal forms
+ *
+ * ## When NOT to Use
+ * - **Large datasets (1000+ items):** Use ItemSelectorTableV2 with infinite scroll
+ * - **Advanced table features needed:** Use ItemSelectorTableV2 for column visibility, sorting
+ * - **Category-specific filtering:** Use ItemSelectorTableV2 for categoryType filter
+ *
+ * ## Features
+ * - **Multi-Select:** Checkbox-based selection with select all (current page)
+ * - **Search:** Debounced search (300ms) for name and code
+ * - **Advanced Filtering:** Categories, brands, suppliers, inactive items
+ * - **Pagination:** Page-based navigation with customizable page size
+ * - **Quantity Input:** Configurable number input with min/max/decimals
+ * - **Price Input:** Optional currency input (for chargeable items)
+ * - **Show Selected Toggle:** Filter view to show only selected items
+ * - **Responsive Layout:** Card-based on mobile, denser on tablet
+ * - **Stock Display:** Color-coded stock levels with customizable renderer
+ * - **Zero Stock Handling:** Optional allow/prevent selection of out-of-stock items
+ *
+ * ## Usage Example
+ *
+ * ### Basic Implementation
+ * ```tsx
+ * import { ItemSelectorTable } from "@/components/forms";
+ *
+ * export default function MyFormStep2() {
+ *   // State management (typically from custom hook)
+ *   const [selectedItems, setSelectedItems] = useState(new Set<string>());
+ *   const [quantities, setQuantities] = useState<Record<string, number>>({});
+ *   const [prices, setPrices] = useState<Record<string, number>>({});
+ *
+ *   // Filter state
+ *   const [searchTerm, setSearchTerm] = useState("");
+ *   const [categoryIds, setCategoryIds] = useState<string[]>([]);
+ *   const [page, setPage] = useState(1);
+ *
+ *   const toggleItemSelection = (itemId: string, quantity?: number, price?: number) => {
+ *     const newSelected = new Set(selectedItems);
+ *     if (newSelected.has(itemId)) {
+ *       newSelected.delete(itemId);
+ *     } else {
+ *       newSelected.add(itemId);
+ *       setQuantities({ ...quantities, [itemId]: quantity || 1 });
+ *       if (price) setPrices({ ...prices, [itemId]: price });
+ *     }
+ *     setSelectedItems(newSelected);
+ *   };
+ *
+ *   return (
+ *     <ItemSelectorTable
+ *       // Selection state
+ *       selectedItems={selectedItems}
+ *       quantities={quantities}
+ *       prices={prices}
+ *       onSelectItem={toggleItemSelection}
+ *       onQuantityChange={(id, qty) => setQuantities({ ...quantities, [id]: qty })}
+ *       onPriceChange={(id, price) => setPrices({ ...prices, [id]: price })}
+ *
+ *       // Input configuration
+ *       showQuantityInput
+ *       showPriceInput={withdrawalType === "CHARGEABLE"}
+ *       minQuantity={0.01}
+ *       maxQuantity={999999}
+ *       quantityDecimals={2}
+ *
+ *       // Filter state (controlled)
+ *       searchTerm={searchTerm}
+ *       categoryIds={categoryIds}
+ *       onSearchTermChange={setSearchTerm}
+ *       onCategoryIdsChange={setCategoryIds}
+ *
+ *       // Pagination (controlled)
+ *       page={page}
+ *       pageSize={20}
+ *       onPageChange={setPage}
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * ### With Custom Stock Display
  * ```tsx
  * <ItemSelectorTable
- *   selectedItems={selectedItems}
- *   quantities={quantities}
- *   prices={prices}
- *   onSelectItem={toggleItemSelection}
- *   onQuantityChange={setItemQuantity}
- *   onPriceChange={setItemPrice}
- *   showQuantityInput
- *   showPriceInput={withdrawalType === "CHARGEABLE"}
+ *   // ... other props
+ *   renderStock={(item) => (
+ *     <Text>
+ *       {item.quantity} / {item.maxQuantity}
+ *     </Text>
+ *   )}
  * />
  * ```
+ *
+ * ## State Management Hook Pattern
+ *
+ * For complex forms, consider creating a custom hook:
+ *
+ * ```tsx
+ * // hooks/use-my-form-state.ts
+ * export function useMyFormState() {
+ *   const [selectedItems, setSelectedItems] = useState(new Set<string>());
+ *   const [quantities, setQuantities] = useState({});
+ *   // ... more state
+ *
+ *   const toggleItemSelection = (itemId: string, quantity?: number, price?: number) => {
+ *     // ... logic
+ *   };
+ *
+ *   return {
+ *     selectedItems,
+ *     quantities,
+ *     toggleItemSelection,
+ *     // ... more methods
+ *   };
+ * }
+ * ```
+ *
+ * See `useExternalWithdrawalFormState` for a complete example.
+ *
+ * ## Performance Notes
+ * - Debounced search reduces API calls
+ * - Pagination limits data load
+ * - Memoized calculations for totals
+ * - FlatList optimizations (removeClippedSubviews, windowSize)
+ *
+ * ## Accessibility
+ * - All interactive elements are keyboard accessible
+ * - Screen reader support for selection state
+ * - Clear labels for all inputs
+ * - Focus management for better navigation
+ *
+ * @see {@link ItemSelectorTableV2} For infinite scroll and advanced table features
+ * @see {@link useExternalWithdrawalFormState} For state management example
  */
 
 export interface ItemSelectorTableProps {

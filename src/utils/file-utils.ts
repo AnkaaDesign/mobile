@@ -1,8 +1,365 @@
 // packages/utils/src/file-utils.ts
-// Enhanced file utilities with Brazilian formatting and MIME type support
+// Consolidated file utilities with Brazilian formatting and MIME type support
 
 import { formatNumberWithDecimals } from "./number";
-import { getFileExtension, formatFileSize as formatFileSizeLegacy } from "./file";
+import type { File as AnkaaFile } from '../types';
+
+// =====================
+// Basic File Utilities (from utils/file.ts)
+// =====================
+
+/**
+ * Extracts the file extension from a filename
+ * @param filename Filename or path
+ * @returns File extension (without the dot) or empty string
+ */
+export const getFileExtension = (filename: string): string => {
+  const lastDot = filename.lastIndexOf(".");
+  return lastDot !== -1 ? filename.substring(lastDot + 1).toLowerCase() : "";
+};
+
+/**
+ * Gets the filename without extension
+ * @param filename Filename or path
+ * @returns Filename without extension
+ */
+export const getFileNameWithoutExtension = (filename: string): string => {
+  const lastDot = filename.lastIndexOf(".");
+  return lastDot !== -1 ? filename.substring(0, lastDot) : filename;
+};
+
+/**
+ * Formats file size into a human-readable string (legacy format)
+ * @param bytes File size in bytes
+ * @returns Formatted string (e.g., "2.5 MB")
+ */
+export const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return "0 Bytes";
+  if (!bytes || isNaN(bytes)) return "Unknown size";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
+
+/**
+ * Formats file size into a compact string
+ * @param bytes File size in bytes
+ * @returns Formatted compact string (e.g., "2.5MB")
+ */
+export const formatFileSizeCompact = (bytes: number): string => {
+  if (bytes === 0) return "0B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + sizes[i];
+};
+
+// Size conversion utilities
+export const bytesToMB = (bytes: number): number => bytes / (1024 * 1024);
+export const bytesToKB = (bytes: number): number => bytes / 1024;
+export const mbToBytes = (mb: number): number => mb * 1024 * 1024;
+export const kbToBytes = (kb: number): number => kb * 1024;
+
+// =====================
+// File Type Category (from lib/file.ts)
+// =====================
+
+export type FileTypeCategory = 'image' | 'video' | 'pdf' | 'document';
+
+/**
+ * Gets a MIME type based on file extension (from lib/file.ts)
+ * @param filename Filename with extension
+ * @returns Mime type or application/octet-stream if unknown
+ */
+export const getMimeTypeFromFilename = (filename: string): string => {
+  const ext = getFileExtension(filename);
+  const mimeTypes: Record<string, string> = {
+    // Images
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    webp: "image/webp",
+    bmp: "image/bmp",
+    heic: "image/heic",
+    heif: "image/heif",
+    // Videos
+    mp4: "video/mp4",
+    mov: "video/quicktime",
+    avi: "video/x-msvideo",
+    wmv: "video/x-ms-wmv",
+    flv: "video/x-flv",
+    mkv: "video/x-matroska",
+    webm: "video/webm",
+    m4v: "video/x-m4v",
+    "3gp": "video/3gpp",
+    // Documents
+    pdf: "application/pdf",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xls: "application/vnd.ms-excel",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    txt: "text/plain",
+  };
+  return mimeTypes[ext] || "application/octet-stream";
+};
+
+// =====================
+// API URL Utilities (from utils/file.ts)
+// =====================
+
+export const getApiBaseUrl = (): string => {
+  // Check for global __ANKAA_API_URL__ (set by the app)
+  if (typeof global !== "undefined" && (global as any).__ANKAA_API_URL__) {
+    return (global as any).__ANKAA_API_URL__;
+  }
+
+  // Check for process.env in React Native/Expo environments
+  if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+
+  // Default fallback
+  return "http://localhost:3030";
+};
+
+/**
+ * Normalizes a thumbnail URL to ensure it's a complete URL
+ * If the URL is relative (starts with /files), it prepends the API base URL
+ * If it's already a complete URL (starts with http), it returns it as-is
+ */
+export const normalizeThumbnailUrl = (thumbnailUrl: string | undefined | null): string | undefined => {
+  if (!thumbnailUrl) return undefined;
+
+  // If already a complete URL, return as-is
+  if (thumbnailUrl.startsWith('http://') || thumbnailUrl.startsWith('https://')) {
+    return thumbnailUrl;
+  }
+
+  const apiBaseUrl = getApiBaseUrl();
+
+  // Remove leading /api if present (old format)
+  const cleanPath = thumbnailUrl.startsWith('/api/')
+    ? thumbnailUrl.substring(4) // Remove '/api'
+    : thumbnailUrl;
+
+  // Ensure path starts with /
+  const path = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+
+  return `${apiBaseUrl}${path}`;
+};
+
+/**
+ * Gets the URL to serve/view a file (from utils/file.ts)
+ * @param file File object with id
+ * @param baseUrl Optional API base URL
+ * @returns Complete file URL
+ */
+export const getFileUrl = (file: AnkaaFile, baseUrl?: string): string => {
+  const apiUrl = baseUrl || getApiBaseUrl();
+  // NOTE: No /api prefix! Backend routes are /files/serve/{id}
+  return `${apiUrl}/files/serve/${file.id}`;
+};
+
+/**
+ * Gets the download URL for a file (from utils/file.ts)
+ * @param file File object with id
+ * @param baseUrl Optional API base URL
+ * @returns Complete download URL
+ */
+export const getFileDownloadUrl = (file: AnkaaFile, baseUrl?: string): string => {
+  const apiUrl = baseUrl || getApiBaseUrl();
+  // NOTE: No /api prefix! Backend routes are /files/{id}/download
+  return `${apiUrl}/files/${file.id}/download`;
+};
+
+/**
+ * Gets the thumbnail URL for an image file (from utils/file.ts)
+ * @param file File object with id
+ * @param size Thumbnail size
+ * @param baseUrl Optional API base URL
+ * @returns Complete thumbnail URL or empty string for non-images
+ */
+export const getFileThumbnailUrl = (file: AnkaaFile, size: "small" | "medium" | "large" = "medium", baseUrl?: string): string => {
+  const apiUrl = baseUrl || getApiBaseUrl();
+  // NOTE: No /api prefix! Backend routes are /files/thumbnail/{id}
+  return `${apiUrl}/files/thumbnail/${file.id}?size=${size}`;
+};
+
+// =====================
+// File Category Detection (from utils/file.ts)
+// =====================
+
+export const getFileCategoryFromExtension = (extension: string): string => {
+  const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "svg", "webp", "ico"];
+  const documentExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "odt", "ods", "odp"];
+  const videoExtensions = ["mp4", "avi", "mov", "wmv", "flv", "webm", "mkv", "m4v"];
+  const audioExtensions = ["mp3", "wav", "flac", "aac", "ogg", "wma", "m4a"];
+  const archiveExtensions = ["zip", "rar", "7z", "tar", "gz", "bz2", "xz"];
+
+  const ext = extension.toLowerCase();
+
+  if (imageExtensions.includes(ext)) return "image";
+  if (documentExtensions.includes(ext)) return "document";
+  if (videoExtensions.includes(ext)) return "video";
+  if (audioExtensions.includes(ext)) return "audio";
+  if (archiveExtensions.includes(ext)) return "archive";
+
+  return "other";
+};
+
+export const getFileCategory = (file: AnkaaFile): string => {
+  return getFileCategoryFromExtension(getFileExtension(file.filename));
+};
+
+// =====================
+// File Icon Utilities (from utils/file.ts)
+// =====================
+
+export const getFileIcon = (file: AnkaaFile): string => {
+  const category = getFileCategory(file);
+  return getFileCategoryIcon(category);
+};
+
+export const getFileCategoryIcon = (category: string): string => {
+  const icons: Record<string, string> = {
+    image: "🖼️",
+    document: "📄",
+    video: "🎥",
+    audio: "🎵",
+    archive: "📦",
+    other: "📎",
+  };
+  return icons[category] || icons.other;
+};
+
+export const getFileIconClass = (file: AnkaaFile): string => {
+  const category = getFileCategory(file);
+  const classes: Record<string, string> = {
+    image: "file-image",
+    document: "file-document",
+    video: "file-video",
+    audio: "file-audio",
+    archive: "file-archive",
+    other: "file-other",
+  };
+  return classes[category] || classes.other;
+};
+
+// =====================
+// File Validation Utilities (from utils/file.ts)
+// =====================
+
+export const isFileSizeValid = (file: AnkaaFile, maxSizeMB: number = 10): boolean => {
+  return bytesToMB(file.size) <= maxSizeMB;
+};
+
+export const isFileTypeAllowed = (file: AnkaaFile, allowedTypes: string[]): boolean => {
+  const extension = getFileExtension(file.filename);
+  return allowedTypes.includes(extension);
+};
+
+export const validateFileUpload = (
+  file: AnkaaFile,
+  options: {
+    maxSizeMB?: number;
+    allowedTypes?: string[];
+    allowedCategories?: string[];
+  } = {},
+): { valid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  const { maxSizeMB = 10, allowedTypes, allowedCategories } = options;
+
+  // Size validation
+  if (!isFileSizeValid(file, maxSizeMB)) {
+    errors.push(`Arquivo muito grande. Tamanho máximo: ${maxSizeMB}MB`);
+  }
+
+  // Type validation
+  if (allowedTypes && !isFileTypeAllowed(file, allowedTypes)) {
+    errors.push(`Tipo de arquivo não permitido. Tipos aceitos: ${allowedTypes.join(", ")}`);
+  }
+
+  // Category validation
+  if (allowedCategories) {
+    const category = getFileCategory(file);
+    if (!allowedCategories.includes(category)) {
+      errors.push(`Categoria de arquivo não permitida. Categorias aceitas: ${allowedCategories.join(", ")}`);
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+};
+
+// =====================
+// File Display Utilities (from utils/file.ts)
+// =====================
+
+export const formatFileDisplay = (file: AnkaaFile): string => {
+  return `${file.filename} (${formatFileSize(file.size)})`;
+};
+
+export const formatFileFullDisplay = (file: AnkaaFile): string => {
+  const category = getFileCategory(file);
+  const icon = getFileIcon(file);
+  return `${icon} ${file.filename} - ${formatFileSize(file.size)} - ${category}`;
+};
+
+export const formatFileInfo = (file: AnkaaFile): { name: string; size: string; type: string; category: string; icon: string } => {
+  return {
+    name: file.filename,
+    size: formatFileSize(file.size),
+    type: file.mimetype,
+    category: getFileCategory(file),
+    icon: getFileIcon(file),
+  };
+};
+
+export const getFileDisplayName = (file: AnkaaFile, maxLength: number = 50): string => {
+  if (file.filename.length <= maxLength) return file.filename;
+  const extension = getFileExtension(file.filename);
+  const nameWithoutExt = getFileNameWithoutExtension(file.filename);
+  const truncatedName = nameWithoutExt.substring(0, maxLength - extension.length - 4) + "...";
+  return extension ? `${truncatedName}.${extension}` : truncatedName;
+};
+
+// =====================
+// File Operations (from utils/file.ts)
+// =====================
+
+export const groupFilesByDate = (files: AnkaaFile[], groupBy: "day" | "week" | "month" = "day"): Record<string, AnkaaFile[]> => {
+  const grouped: Record<string, AnkaaFile[]> = {};
+
+  files.forEach((file) => {
+    const date = new Date(file.createdAt);
+    let key: string;
+
+    switch (groupBy) {
+      case "day":
+        key = date.toISOString().split("T")[0];
+        break;
+      case "week":
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        key = weekStart.toISOString().split("T")[0];
+        break;
+      case "month":
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        break;
+    }
+
+    if (!grouped[key]) {
+      grouped[key] = [];
+    }
+    grouped[key].push(file);
+  });
+
+  return grouped;
+};
 
 // =====================
 // Enhanced MIME Type Detection
@@ -86,45 +443,128 @@ export const formatFileSizeCompactBrazilian = (bytes: number): string => {
 // Enhanced File Type Validation with MIME Support
 // =====================
 
-export const isImageFile = (filename: string, mimeType?: string): boolean => {
+/**
+ * Determines if a file is an image
+ * Supports both standalone parameters and File objects
+ * @param filenameOrFile Filename string or File object
+ * @param mimeType Optional MIME type (ignored if first param is File object)
+ * @returns True if the file is an image
+ */
+export function isImageFile(filenameOrFile: string | AnkaaFile, mimeType?: string): boolean {
+  // Handle File object
+  if (typeof filenameOrFile === 'object' && 'filename' in filenameOrFile) {
+    const file = filenameOrFile as AnkaaFile;
+    if (file.mimetype && file.mimetype.startsWith("image/")) return true;
+    const ext = getFileExtension(file.filename);
+    return ["jpg", "jpeg", "png", "gif", "bmp", "svg", "webp", "ico", "tiff", "tif", "avif", "heic", "heif"].includes(ext);
+  }
+
+  // Handle standalone parameters (filename first, mimeType second - standardized)
+  const filename = filenameOrFile as string;
   if (mimeType) {
-    return getFileTypeFromMime(mimeType) === "image";
+    if (mimeType.startsWith("image/")) return true;
+    // Also check filename extension as fallback
   }
 
   const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "svg", "webp", "ico", "tiff", "tif", "avif", "heic", "heif"];
   const extension = getFileExtension(filename);
   return imageExtensions.includes(extension);
-};
+}
 
-export const isPdfFile = (filename: string, mimeType?: string): boolean => {
-  if (mimeType) {
-    return mimeType.toLowerCase().includes("pdf");
+/**
+ * Determines if a file is a PDF
+ * Supports both standalone parameters and File objects
+ * @param filenameOrFile Filename string or File object
+ * @param mimeType Optional MIME type (ignored if first param is File object)
+ * @returns True if the file is a PDF
+ */
+export function isPdfFile(filenameOrFile: string | AnkaaFile, mimeType?: string): boolean {
+  // Handle File object
+  if (typeof filenameOrFile === 'object' && 'filename' in filenameOrFile) {
+    const file = filenameOrFile as AnkaaFile;
+    if (file.mimetype && file.mimetype.toLowerCase().includes("pdf")) return true;
+    return getFileExtension(file.filename) === "pdf";
+  }
+
+  // Handle standalone parameters (filename first, mimeType second - standardized)
+  const filename = filenameOrFile as string;
+  if (mimeType && mimeType.toLowerCase().includes("pdf")) {
+    return true;
   }
 
   return getFileExtension(filename) === "pdf";
-};
+}
 
-export const isVideoFile = (filename: string, mimeType?: string): boolean => {
-  if (mimeType) {
-    return getFileTypeFromMime(mimeType) === "video";
+/**
+ * Determines if a file is a video
+ * Supports both standalone parameters and File objects
+ * @param filenameOrFile Filename string or File object
+ * @param mimeType Optional MIME type (ignored if first param is File object)
+ * @returns True if the file is a video
+ */
+export function isVideoFile(filenameOrFile: string | AnkaaFile, mimeType?: string): boolean {
+  // Handle File object
+  if (typeof filenameOrFile === 'object' && 'filename' in filenameOrFile) {
+    const file = filenameOrFile as AnkaaFile;
+    if (file.mimetype && file.mimetype.startsWith("video/")) return true;
+    const ext = getFileExtension(file.filename);
+    return ["mp4", "avi", "mov", "wmv", "flv", "webm", "mkv", "m4v", "3gp", "ogv", "m2v", "mpg", "mpeg"].includes(ext);
+  }
+
+  // Handle standalone parameters (filename first, mimeType second - standardized)
+  const filename = filenameOrFile as string;
+  if (mimeType && mimeType.startsWith("video/")) {
+    return true;
   }
 
   const videoExtensions = ["mp4", "avi", "mov", "wmv", "flv", "webm", "mkv", "m4v", "3gp", "ogv", "m2v", "mpg", "mpeg"];
   const extension = getFileExtension(filename);
   return videoExtensions.includes(extension);
-};
+}
 
-export const isAudioFile = (filename: string, mimeType?: string): boolean => {
-  if (mimeType) {
-    return getFileTypeFromMime(mimeType) === "audio";
+/**
+ * Determines if a file is audio
+ * Supports both standalone parameters and File objects
+ * @param filenameOrFile Filename string or File object
+ * @param mimeType Optional MIME type (ignored if first param is File object)
+ * @returns True if the file is audio
+ */
+export function isAudioFile(filenameOrFile: string | AnkaaFile, mimeType?: string): boolean {
+  // Handle File object
+  if (typeof filenameOrFile === 'object' && 'filename' in filenameOrFile) {
+    const file = filenameOrFile as AnkaaFile;
+    if (file.mimetype && file.mimetype.startsWith("audio/")) return true;
+    const ext = getFileExtension(file.filename);
+    return ["mp3", "wav", "flac", "aac", "ogg", "wma", "m4a", "opus", "aiff", "au"].includes(ext);
+  }
+
+  // Handle standalone parameters (filename first, mimeType second - standardized)
+  const filename = filenameOrFile as string;
+  if (mimeType && mimeType.startsWith("audio/")) {
+    return true;
   }
 
   const audioExtensions = ["mp3", "wav", "flac", "aac", "ogg", "wma", "m4a", "opus", "aiff", "au"];
   const extension = getFileExtension(filename);
   return audioExtensions.includes(extension);
-};
+}
 
-export const isDocumentFile = (filename: string, mimeType?: string): boolean => {
+/**
+ * Determines if a file is a document
+ * Supports both standalone parameters and File objects
+ * @param filenameOrFile Filename string or File object
+ * @param mimeType Optional MIME type (ignored if first param is File object)
+ * @returns True if the file is a document
+ */
+export function isDocumentFile(filenameOrFile: string | AnkaaFile, mimeType?: string): boolean {
+  // Handle File object
+  if (typeof filenameOrFile === 'object' && 'filename' in filenameOrFile) {
+    const file = filenameOrFile as AnkaaFile;
+    return getFileCategory(file) === "document";
+  }
+
+  // Handle standalone parameters (filename first, mimeType second - standardized)
+  const filename = filenameOrFile as string;
   if (mimeType) {
     return getFileTypeFromMime(mimeType) === "document";
   }
@@ -132,9 +572,24 @@ export const isDocumentFile = (filename: string, mimeType?: string): boolean => 
   const documentExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "odt", "ods", "odp", "csv", "pages", "numbers", "key"];
   const extension = getFileExtension(filename);
   return documentExtensions.includes(extension);
-};
+}
 
-export const isArchiveFile = (filename: string, mimeType?: string): boolean => {
+/**
+ * Determines if a file is an archive
+ * Supports both standalone parameters and File objects
+ * @param filenameOrFile Filename string or File object
+ * @param mimeType Optional MIME type (ignored if first param is File object)
+ * @returns True if the file is an archive
+ */
+export function isArchiveFile(filenameOrFile: string | AnkaaFile, mimeType?: string): boolean {
+  // Handle File object
+  if (typeof filenameOrFile === 'object' && 'filename' in filenameOrFile) {
+    const file = filenameOrFile as AnkaaFile;
+    return getFileCategory(file) === "archive";
+  }
+
+  // Handle standalone parameters (filename first, mimeType second - standardized)
+  const filename = filenameOrFile as string;
   if (mimeType) {
     return getFileTypeFromMime(mimeType) === "archive";
   }
@@ -142,7 +597,20 @@ export const isArchiveFile = (filename: string, mimeType?: string): boolean => {
   const archiveExtensions = ["zip", "rar", "7z", "tar", "gz", "bz2", "xz", "lzma", "z"];
   const extension = getFileExtension(filename);
   return archiveExtensions.includes(extension);
-};
+}
+
+/**
+ * Gets the file type category (from lib/file.ts)
+ * @param mimetype File MIME type
+ * @param filename Filename with extension
+ * @returns File type category: 'image', 'video', 'pdf', or 'document'
+ */
+export function getFileTypeCategory(mimetype: string, filename?: string): FileTypeCategory {
+  if (isImageFile(filename || '', mimetype)) return "image";
+  if (isVideoFile(filename || '', mimetype)) return "video";
+  if (isPdfFile(filename || '', mimetype)) return "pdf";
+  return "document";
+}
 
 // =====================
 // Enhanced Filename Generation and Sanitization
@@ -192,6 +660,21 @@ export const generateUniqueFilename = (
   return uniqueName;
 };
 
+/**
+ * Simple filename sanitization (from lib/file.ts)
+ * @param filename Original filename
+ * @returns Sanitized filename (simple version)
+ */
+export function sanitizeFilenameSimple(filename: string): string {
+  return filename.replace(/[^a-zA-Z0-9.-]/g, "_");
+}
+
+/**
+ * Advanced filename sanitization with options
+ * @param filename Original filename
+ * @param options Sanitization options
+ * @returns Sanitized filename
+ */
 export const sanitizeFilename = (
   filename: string,
   options: {
@@ -321,7 +804,7 @@ export const validateFileSize = (
   const { maxSizeInMB = 100, minSizeInBytes = 1, useBrazilianFormat = true } = constraints;
 
   if (sizeInBytes < minSizeInBytes) {
-    const minSizeFormatted = useBrazilianFormat ? formatFileSizeBrazilian(minSizeInBytes) : formatFileSizeLegacy(minSizeInBytes);
+    const minSizeFormatted = useBrazilianFormat ? formatFileSizeBrazilian(minSizeInBytes) : formatFileSize(minSizeInBytes);
 
     return {
       valid: false,
@@ -331,7 +814,7 @@ export const validateFileSize = (
 
   const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
   if (sizeInBytes > maxSizeInBytes) {
-    const maxSizeFormatted = useBrazilianFormat ? formatFileSizeBrazilian(maxSizeInBytes) : formatFileSizeLegacy(maxSizeInBytes);
+    const maxSizeFormatted = useBrazilianFormat ? formatFileSizeBrazilian(maxSizeInBytes) : formatFileSize(maxSizeInBytes);
 
     return {
       valid: false,
@@ -526,7 +1009,7 @@ export const getFileMetadata = (
     isAudio: isAudioFile(file.name, file.type),
     isDocument: isDocumentFile(file.name, file.type),
     isArchive: isArchiveFile(file.name, file.type),
-    formattedSize: formatFileSizeLegacy(file.size),
+    formattedSize: formatFileSize(file.size),
     formattedSizeBrazilian: formatFileSizeBrazilian(file.size),
   };
 };
@@ -582,18 +1065,42 @@ export const validateFile = (
 };
 
 // =====================
-// Export Enhanced File Utils Object
+// Export Comprehensive File Utils Object
 // =====================
 
-export const fileUtilsEnhanced = {
-  // MIME type detection
-  getFileTypeFromMime,
+// Consolidated export object with all utilities
+export const fileUtils = {
+  // Basic utilities
+  getFileExtension,
+  getFileNameWithoutExtension,
 
-  // Size formatting (Brazilian)
+  // Size formatting
+  formatFileSize,
+  formatFileSizeCompact,
   formatFileSizeBrazilian,
   formatFileSizeCompactBrazilian,
+  bytesToMB,
+  bytesToKB,
+  mbToBytes,
+  kbToBytes,
 
-  // Enhanced type detection
+  // MIME type utilities
+  getMimeTypeFromFilename,
+  getFileTypeFromMime,
+  getFileTypeCategory,
+
+  // API URL utilities
+  getApiBaseUrl,
+  normalizeThumbnailUrl,
+  getFileUrl,
+  getFileDownloadUrl,
+  getFileThumbnailUrl,
+
+  // File category detection
+  getFileCategoryFromExtension,
+  getFileCategory,
+
+  // File type validation
   isImageFile,
   isPdfFile,
   isVideoFile,
@@ -601,22 +1108,38 @@ export const fileUtilsEnhanced = {
   isDocumentFile,
   isArchiveFile,
 
-  // Enhanced filename handling
-  generateUniqueFilename,
-  sanitizeFilename,
-
-  // Enhanced validation
-  validateFileType,
-  validateFileSize,
-  validateFile,
-
-  // Icon and color mapping
+  // File icons
+  getFileIcon,
+  getFileCategoryIcon,
+  getFileIconClass,
   getFileIconFromMime,
   getFileColorFromType,
   getIconForMimeType,
   MIME_TYPE_ICONS,
 
-  // URL builders
+  // Validation
+  isFileSizeValid,
+  isFileTypeAllowed,
+  validateFileUpload,
+  validateFileType,
+  validateFileSize,
+  validateFile,
+
+  // Filename handling
+  sanitizeFilename,
+  sanitizeFilenameSimple,
+  generateUniqueFilename,
+
+  // Display utilities
+  formatFileDisplay,
+  formatFileFullDisplay,
+  formatFileInfo,
+  getFileDisplayName,
+
+  // File operations
+  groupFilesByDate,
+
+  // URL builders (enhanced)
   buildThumbnailUrl,
   buildFileDownloadUrl,
   buildFilePreviewUrl,
@@ -626,3 +1149,6 @@ export const fileUtilsEnhanced = {
   createFileHash,
   generateUploadId,
 };
+
+// Legacy export for backward compatibility
+export const fileUtilsEnhanced = fileUtils;

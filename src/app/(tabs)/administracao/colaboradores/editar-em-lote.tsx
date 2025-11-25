@@ -7,7 +7,7 @@ import { useUsers, useUserBatchMutations } from "@/hooks";
 import { ThemedView, ThemedText, Button, ErrorScreen, LoadingScreen } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { toast } from "@/lib/toast";
 
 export default function CollaboratorBatchEditScreen() {

@@ -33,7 +33,7 @@ import { ScheduleInfoCard } from "@/components/inventory/order/schedule/schedule
 import { ScheduleHistory } from "@/components/inventory/order/schedule/schedule-history";
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege, formatDateTime, formatDate } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";

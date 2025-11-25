@@ -9,7 +9,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { IconShield, IconRefresh, IconEdit, IconHistory } from "@tabler/icons-react-native";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { showToast } from "@/components/ui/toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

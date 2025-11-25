@@ -12,7 +12,7 @@ import { IconCalendarEvent, IconUser, IconPlus, IconCalendar, IconClock, IconCir
 import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import type { Item, PpeDeliverySchedule } from '../../../../types';
 
 interface SchedulesCardProps {

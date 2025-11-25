@@ -5,7 +5,7 @@ import { Icon } from "@/components/ui/icon";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 

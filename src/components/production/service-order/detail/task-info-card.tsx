@@ -14,7 +14,7 @@ import {
 import type { ServiceOrder } from "@/types";
 import { formatDate } from "@/utils";
 import { router } from "expo-router";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 
 interface TaskInfoCardProps {

@@ -11,7 +11,7 @@ import { USER_STATUS_LABELS, getBadgeVariant, routes } from "@/constants";
 import { formatCPF, formatPhoneNumber } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 
 interface UserCardProps {
   commission: Commission;

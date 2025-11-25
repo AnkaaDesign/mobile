@@ -15,7 +15,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconPackage, IconRefresh, IconEdit, IconHistory, IconBox, IconCurrencyDollar } from "@tabler/icons-react-native";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { TouchableOpacity } from "react-native";
 import { showToast } from "@/components/ui/toast";
 

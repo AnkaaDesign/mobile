@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { TaskForm } from "@/components/production/task/form/task-form";
 import { useTaskDetail, useTaskMutations } from "@/hooks";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { ErrorScreen, Skeleton, ThemedScrollView, Card, CardContent } from "@/components/ui";
 import { spacing } from "@/constants/design-system";
 

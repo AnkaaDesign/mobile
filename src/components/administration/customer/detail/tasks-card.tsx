@@ -10,7 +10,7 @@ import { IconClipboardList, IconChevronRight, IconCalendar } from "@tabler/icons
 import type { Customer } from '../../../../types';
 import { routes, TASK_STATUS_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
-import { routeToMobilePath } from "@/lib/route-mapper";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { extendedColors } from "@/lib/theme/extended-colors";
 
 interface TasksCardProps {

@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { TaskTable } from "@/components/production/task/list/task-table";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, fontSize, fontWeight, spacing } from "@/lib/constants";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { useTasks } from "@/hooks/useTask";
 import { Task } from "@/types/task";
 import { Paint } from "@/types/paint";

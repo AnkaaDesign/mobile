@@ -16,3 +16,6 @@ export type {
 
 export { DateRangeFilter } from './filters/DateRangeFilter';
 export type { DateRange, DateRangeFilterProps } from './filters/DateRangeFilter';
+
+export { GenericTableRowSwipe } from './generic-table-row-swipe';
+export type { GenericSwipeAction } from './generic-table-row-swipe';
