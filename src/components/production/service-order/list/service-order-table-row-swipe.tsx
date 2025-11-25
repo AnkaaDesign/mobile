@@ -2,7 +2,7 @@ import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 
 interface CustomSwipeAction {
   key: string;
@@ -36,7 +36,7 @@ const ServiceOrderTableRowSwipeComponent = ({
   // Build actions array with colors
   // Edit button uses green (#15803d)
   // Delete button uses red (#b91c1c)
-  const actions: GenericSwipeAction[] = [
+  const actions: SwipeAction[] = [
     ...(onEdit
       ? [
           {
@@ -70,7 +70,7 @@ const ServiceOrderTableRowSwipeComponent = ({
   ];
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={serviceOrderId}
       entityName={serviceOrderDescription}
       actions={actions}
@@ -78,7 +78,7 @@ const ServiceOrderTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

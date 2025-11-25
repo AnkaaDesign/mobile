@@ -2,7 +2,7 @@ import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import type { Commission } from "@/types";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasAnyPrivilege } from "@/utils";
@@ -31,7 +31,7 @@ const CommissionTableRowSwipeComponent = ({
   // Build actions array with consistent colors
   // Edit button uses green (#15803d)
   // Delete button uses red (#b91c1c)
-  const actions: GenericSwipeAction[] = [
+  const actions: SwipeAction[] = [
     ...(onEdit && canEdit
       ? [
           {
@@ -60,7 +60,7 @@ const CommissionTableRowSwipeComponent = ({
   ];
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={commission.id}
       entityName={`Comissão`}
       actions={actions}
@@ -69,7 +69,7 @@ const CommissionTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

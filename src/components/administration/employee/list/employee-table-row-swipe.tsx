@@ -2,7 +2,7 @@ import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconEye } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditHrEntities, canDeleteHrEntities } from "@/utils/permissions/entity-permissions";
 
@@ -45,7 +45,7 @@ const EmployeeTableRowSwipeComponent = ({
   // View button uses blue (#3b82f6)
   // Edit button uses green (#15803d from optimal stock color)
   // Delete button uses red (#b91c1c from critical/out-of-stock color)
-  const actions: GenericSwipeAction[] = [
+  const actions: SwipeAction[] = [
     ...(onView
       ? [
           {
@@ -91,7 +91,7 @@ const EmployeeTableRowSwipeComponent = ({
   ];
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={employeeId}
       entityName={employeeName}
       actions={actions}
@@ -100,7 +100,7 @@ const EmployeeTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

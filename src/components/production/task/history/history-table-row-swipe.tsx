@@ -1,7 +1,7 @@
 import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconBuildingFactory2, IconProgressCheck } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { TASK_STATUS, SECTOR_PRIVILEGES } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditTasks, canDeleteTasks } from "@/utils/permissions/entity-permissions";
@@ -39,7 +39,7 @@ const HistoryTableRowSwipeComponent = ({
   const canDelete = canDeleteTasks(user); // ADMIN only
 
   // Build actions array based on user permissions
-  const actions: GenericSwipeAction[] = [];
+  const actions: SwipeAction[] = [];
 
   // Edit action - available to ADMIN, DESIGNER, FINANCIAL, LOGISTIC
   // Note: Form will filter which fields they can edit based on their role
@@ -95,7 +95,7 @@ const HistoryTableRowSwipeComponent = ({
   }
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={taskId}
       entityName={taskName}
       actions={actions}
@@ -104,7 +104,7 @@ const HistoryTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

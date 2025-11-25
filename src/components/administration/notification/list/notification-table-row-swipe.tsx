@@ -1,7 +1,7 @@
 import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconTrash } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 
 interface NotificationTableRowSwipeProps {
   children: React.ReactNode | ((isActive: boolean) => React.ReactNode);
@@ -22,7 +22,7 @@ const NotificationTableRowSwipeComponent = ({
 }: NotificationTableRowSwipeProps) => {
   // Build actions array - notifications typically only have delete action
   // Delete button uses red (#b91c1c)
-  const actions: GenericSwipeAction[] = [
+  const actions: SwipeAction[] = [
     ...(onDelete
       ? [
           {
@@ -39,7 +39,7 @@ const NotificationTableRowSwipeComponent = ({
   ];
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={notificationId}
       entityName={notificationTitle}
       actions={actions}
@@ -49,7 +49,7 @@ const NotificationTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditHrEntities, canDeleteHrEntities } from "@/utils/permissions/entity-permissions";
 
@@ -23,7 +23,7 @@ const MyVacationTableRowSwipeComponent = ({ children, vacationId, vacationPeriod
   // Build actions array with colors matching theme
   // Edit button uses green (#15803d)
   // Delete button uses red (#b91c1c)
-  const actions: GenericSwipeAction[] = [];
+  const actions: SwipeAction[] = [];
 
   // Add edit action if provided and user has permission
   if (onEdit && canEdit) {
@@ -51,7 +51,7 @@ const MyVacationTableRowSwipeComponent = ({ children, vacationId, vacationPeriod
   }
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={vacationId}
       entityName={vacationPeriod}
       actions={actions}
@@ -61,7 +61,7 @@ const MyVacationTableRowSwipeComponent = ({ children, vacationId, vacationPeriod
       confirmDeleteMessage={`Tem certeza que deseja excluir as férias do período "${vacationPeriod}"?`}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

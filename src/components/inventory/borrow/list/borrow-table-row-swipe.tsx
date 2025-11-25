@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { ViewStyle, StyleProp, Alert } from "react-native";
 import { IconEdit, IconTrash, IconCheck, IconAlertTriangle } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { BORROW_STATUS } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditBorrows, canDeleteBorrows } from "@/utils/permissions/entity-permissions";
@@ -70,7 +70,7 @@ const BorrowTableRowSwipeComponent = ({
   // Lost button uses warning amber (#f59e0b)
   // Edit button uses optimal stock green (#15803d from items)
   // Delete button uses critical/out-of-stock red (#b91c1c from items)
-  const actions: GenericSwipeAction[] = [];
+  const actions: SwipeAction[] = [];
 
   // Add return and mark as lost actions only for active borrows
   if (status === BORROW_STATUS.ACTIVE) {
@@ -123,7 +123,7 @@ const BorrowTableRowSwipeComponent = ({
   }
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={borrowId}
       entityName={borrowDescription}
       actions={actions}
@@ -132,7 +132,7 @@ const BorrowTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

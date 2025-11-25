@@ -1,7 +1,7 @@
 import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconCheck, IconX, IconTrash } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canDeleteUsers } from "@/utils/permissions/entity-permissions";
 
@@ -30,7 +30,7 @@ const NotificationTableRowSwipeComponent = ({
   const canDelete = canDeleteUsers(user);
 
   // Build actions array with colors matching theme
-  const actions: GenericSwipeAction[] = [];
+  const actions: SwipeAction[] = [];
 
   // Add mark as read action if provided
   if (onMarkAsRead) {
@@ -70,7 +70,7 @@ const NotificationTableRowSwipeComponent = ({
   }
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={notificationId}
       entityName={notificationTitle}
       actions={actions}
@@ -79,7 +79,7 @@ const NotificationTableRowSwipeComponent = ({
       confirmDeleteMessage={`Tem certeza que deseja excluir a notificação "${notificationTitle}"?`}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

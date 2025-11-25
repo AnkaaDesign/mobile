@@ -1,7 +1,7 @@
 import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconPlayerPlay, IconCheck } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { CUT_STATUS } from "@/constants";
 
 interface CuttingPlanTableRowSwipeProps {
@@ -26,7 +26,7 @@ const CuttingPlanTableRowSwipeComponent = ({
   disabled = false,
 }: CuttingPlanTableRowSwipeProps) => {
   // Build actions array based on cut status and available handlers
-  const actions: GenericSwipeAction[] = [];
+  const actions: SwipeAction[] = [];
 
   // Status change actions based on current status
   if (onStatusChange) {
@@ -82,7 +82,7 @@ const CuttingPlanTableRowSwipeComponent = ({
   }
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={cutId}
       entityName="este corte"
       actions={actions}
@@ -90,7 +90,7 @@ const CuttingPlanTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

@@ -8,7 +8,7 @@ import type { User } from "@/types/user";
 
 const ACTION_WIDTH = 80;
 
-export interface GenericSwipeAction {
+export interface SwipeAction {
   key: string;
   label: string;
   icon: React.ReactNode;
@@ -18,11 +18,11 @@ export interface GenericSwipeAction {
   confirmDelete?: boolean;
 }
 
-interface GenericTableRowSwipeProps {
+interface TableRowSwipeProps {
   children: React.ReactNode | ((isActive: boolean) => React.ReactNode);
   entityId: string;
   entityName: string;
-  actions: GenericSwipeAction[];
+  actions: SwipeAction[];
   canPerformActions?: (user: User | null) => boolean;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
@@ -30,7 +30,7 @@ interface GenericTableRowSwipeProps {
   confirmDeleteMessage?: string;
 }
 
-const GenericTableRowSwipeComponent = ({
+const TableRowSwipeComponent = ({
   children,
   entityId,
   entityName,
@@ -40,7 +40,7 @@ const GenericTableRowSwipeComponent = ({
   disabled = false,
   confirmDeleteTitle = "Confirmar exclusão",
   confirmDeleteMessage,
-}: GenericTableRowSwipeProps) => {
+}: TableRowSwipeProps) => {
   const { colors } = useTheme();
   const { activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow } = useSwipeRow();
   const swipeableRef = useRef<Swipeable>(null);
@@ -200,9 +200,9 @@ const GenericTableRowSwipeComponent = ({
 };
 
 // Set displayName before memoization for React 19 compatibility
-GenericTableRowSwipeComponent.displayName = "GenericTableRowSwipe";
+TableRowSwipeComponent.displayName = "TableRowSwipe";
 
-export const GenericTableRowSwipe = React.memo(GenericTableRowSwipeComponent);
+export const TableRowSwipe = React.memo(TableRowSwipeComponent);
 
 const styles = StyleSheet.create({
   container: {

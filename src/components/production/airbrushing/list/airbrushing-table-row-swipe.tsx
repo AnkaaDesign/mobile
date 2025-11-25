@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditAirbrushings, canDeleteAirbrushings } from "@/utils/permissions/entity-permissions";
 
@@ -29,7 +29,7 @@ const AirbrushingTableRowSwipeComponent = ({
   const canDelete = canDeleteAirbrushings(user);
 
   // Build actions array
-  const actions: GenericSwipeAction[] = [
+  const actions: SwipeAction[] = [
     ...(onEdit && canEdit
       ? [
           {
@@ -58,7 +58,7 @@ const AirbrushingTableRowSwipeComponent = ({
   ];
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={airbrushingId}
       entityName={airbrushingName}
       actions={actions}
@@ -68,7 +68,7 @@ const AirbrushingTableRowSwipeComponent = ({
       confirmDeleteTitle="Excluir Airbrushing"
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconScissors } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditCuts, canDeleteCuts } from "@/utils/permissions/entity-permissions";
 
@@ -31,7 +31,7 @@ const CutsTableRowSwipeComponent = ({
   const canDelete = canDeleteCuts(user);
 
   // Build actions array
-  const actions: GenericSwipeAction[] = [
+  const actions: SwipeAction[] = [
     ...(onRequest
       ? [
           {
@@ -72,7 +72,7 @@ const CutsTableRowSwipeComponent = ({
   ];
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={cutId}
       entityName={cutName}
       actions={actions}
@@ -82,7 +82,7 @@ const CutsTableRowSwipeComponent = ({
       confirmDeleteTitle="Excluir Corte"
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

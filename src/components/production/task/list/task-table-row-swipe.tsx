@@ -1,7 +1,7 @@
 import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconPlayerPlay, IconCheck } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { TASK_STATUS, SECTOR_PRIVILEGES } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditTasks, canDeleteTasks, canLeaderManageTask } from "@/utils/permissions/entity-permissions";
@@ -42,7 +42,7 @@ const TaskTableRowSwipeComponent = ({
   const canLeaderManage = isLeader && canLeaderManageTask(user, taskSectorId);
 
   // Build actions array based on user role and task status
-  const actions: GenericSwipeAction[] = [];
+  const actions: SwipeAction[] = [];
 
   // Edit action - available to ADMIN, DESIGNER, FINANCIAL, LOGISTIC
   // Note: Form will filter which fields they can edit based on their role
@@ -98,7 +98,7 @@ const TaskTableRowSwipeComponent = ({
   }
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={taskId}
       entityName={taskName}
       actions={actions}
@@ -107,7 +107,7 @@ const TaskTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

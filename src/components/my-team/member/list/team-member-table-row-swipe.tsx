@@ -1,7 +1,7 @@
 import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconEye } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 
 interface TeamMemberTableRowSwipeProps {
   children: React.ReactNode | ((isActive: boolean) => React.ReactNode);
@@ -28,7 +28,7 @@ const TeamMemberTableRowSwipeComponent = ({
   // View button uses blue (#1d4ed8)
   // Edit button uses green (#15803d)
   // Delete button uses red (#b91c1c)
-  const actions: GenericSwipeAction[] = [
+  const actions: SwipeAction[] = [
     ...(onView
       ? [
           {
@@ -69,7 +69,7 @@ const TeamMemberTableRowSwipeComponent = ({
   ];
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={memberId}
       entityName={memberName}
       actions={actions}
@@ -77,7 +77,7 @@ const TeamMemberTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

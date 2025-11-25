@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, Pressable } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditOrders, canDeleteOrders } from "@/utils/permissions/entity-permissions";
 
@@ -29,7 +29,7 @@ export function OrderScheduleTableRowSwipe({
   const canDelete = canDeleteOrders(user);
 
   // Build actions array
-  const actions: GenericSwipeAction[] = [];
+  const actions: SwipeAction[] = [];
 
   if (onEdit && canEdit) {
     actions.push({
@@ -62,7 +62,7 @@ export function OrderScheduleTableRowSwipe({
   );
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={scheduleId}
       entityName={scheduleName}
       actions={actions}
@@ -70,7 +70,7 @@ export function OrderScheduleTableRowSwipe({
       style={styles.container}
     >
       {content}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 }
 

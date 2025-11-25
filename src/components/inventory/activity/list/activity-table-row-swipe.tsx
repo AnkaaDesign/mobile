@@ -1,7 +1,7 @@
 import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconTrash } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 
 interface ActivityTableRowSwipeProps {
   children: React.ReactNode | ((isActive: boolean) => React.ReactNode);
@@ -22,7 +22,7 @@ const ActivityTableRowSwipeComponent = ({
 }: ActivityTableRowSwipeProps) => {
   // Build actions array with colors matching the activity operations
   // Delete button uses critical/out-of-stock red (#ef4444)
-  const actions: GenericSwipeAction[] = [
+  const actions: SwipeAction[] = [
     ...(onDelete
       ? [
           {
@@ -40,7 +40,7 @@ const ActivityTableRowSwipeComponent = ({
   ];
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={activityId}
       entityName={activityDescription}
       actions={actions}
@@ -48,7 +48,7 @@ const ActivityTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

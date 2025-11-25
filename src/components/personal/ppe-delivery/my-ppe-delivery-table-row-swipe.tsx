@@ -1,7 +1,7 @@
 import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditPpeDeliveries, canDeletePpeDeliveries } from "@/utils/permissions/entity-permissions";
 
@@ -23,7 +23,7 @@ const MyPpeDeliveryTableRowSwipeComponent = ({ children, deliveryId, deliveryNam
   // Build actions array with colors matching theme
   // Edit button uses green (#15803d)
   // Delete button uses red (#b91c1c)
-  const actions: GenericSwipeAction[] = [];
+  const actions: SwipeAction[] = [];
 
   // Add edit action if provided and user has permission
   if (onEdit && canEdit) {
@@ -51,7 +51,7 @@ const MyPpeDeliveryTableRowSwipeComponent = ({ children, deliveryId, deliveryNam
   }
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={deliveryId}
       entityName={deliveryName}
       actions={actions}
@@ -62,7 +62,7 @@ const MyPpeDeliveryTableRowSwipeComponent = ({ children, deliveryId, deliveryNam
       confirmDeleteMessage={`Tem certeza que deseja excluir a entrega "${deliveryName}"?`}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

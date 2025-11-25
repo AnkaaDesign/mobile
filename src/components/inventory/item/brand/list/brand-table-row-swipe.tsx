@@ -2,7 +2,7 @@ import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconCopy, IconTrash } from "@tabler/icons-react-native";
 import type { ItemBrand } from "../../../../../types";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditItems, canDeleteItems } from "@/utils/permissions/entity-permissions";
 import { useTheme } from "@/lib/theme";
@@ -43,7 +43,7 @@ const BrandTableRowSwipeComponent = ({
   const canDelete = canDeleteItems(user);
 
   // Build actions array
-  const actions: GenericSwipeAction[] = [];
+  const actions: SwipeAction[] = [];
 
   if (onEdit && canEdit) {
     actions.push({
@@ -94,7 +94,7 @@ const BrandTableRowSwipeComponent = ({
   }
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={brand.id}
       entityName={brand.name}
       actions={actions}
@@ -104,7 +104,7 @@ const BrandTableRowSwipeComponent = ({
       confirmDeleteMessage={`Tem certeza que deseja excluir a marca "${brand.name}"?`}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

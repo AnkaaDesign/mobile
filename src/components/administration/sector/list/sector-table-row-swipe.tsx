@@ -1,7 +1,7 @@
 import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasAnyPrivilege } from "@/utils";
@@ -32,7 +32,7 @@ const SectorTableRowSwipeComponent = ({
   // Build actions array with colors matching item table pattern
   // Edit button uses optimal stock green (#15803d from STOCK_LEVEL.OPTIMAL)
   // Delete button uses critical/out-of-stock red (#b91c1c from STOCK_LEVEL.OUT_OF_STOCK)
-  const actions: GenericSwipeAction[] = [
+  const actions: SwipeAction[] = [
     ...(onEdit && canEdit
       ? [
           {
@@ -61,7 +61,7 @@ const SectorTableRowSwipeComponent = ({
   ];
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={sectorId}
       entityName={sectorName}
       actions={actions}
@@ -71,7 +71,7 @@ const SectorTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

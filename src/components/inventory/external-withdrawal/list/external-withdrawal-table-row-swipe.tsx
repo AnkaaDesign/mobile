@@ -1,7 +1,7 @@
 import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconEye } from "@tabler/icons-react-native";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { EXTERNAL_WITHDRAWAL_STATUS } from "@/constants";
 
 interface ExternalWithdrawalTableRowSwipeProps {
@@ -34,7 +34,7 @@ const ExternalWithdrawalTableRowSwipeComponent = ({
   // View button uses blue (#007AFF)
   // Edit button uses green (#34C759) - only for PENDING
   // Delete button uses red (#FF3B30)
-  const actions: GenericSwipeAction[] = [
+  const actions: SwipeAction[] = [
     ...(onView
       ? [
           {
@@ -75,7 +75,7 @@ const ExternalWithdrawalTableRowSwipeComponent = ({
   ];
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={withdrawalId}
       entityName={withdrawalName}
       actions={actions}
@@ -84,7 +84,7 @@ const ExternalWithdrawalTableRowSwipeComponent = ({
       confirmDeleteMessage={`Tem certeza que deseja excluir a retirada de "${withdrawalName}"?`}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

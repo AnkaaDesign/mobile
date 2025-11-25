@@ -2,7 +2,7 @@ import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditSuppliers, canDeleteSuppliers } from "@/utils/permissions/entity-permissions";
 
@@ -42,7 +42,7 @@ const SupplierTableRowSwipeComponent = ({
   // Build actions array with colors matching stock status indicators
   // Edit button uses optimal stock green (#15803d from STOCK_LEVEL.OPTIMAL)
   // Delete button uses critical/out-of-stock red (#b91c1c from STOCK_LEVEL.OUT_OF_STOCK)
-  const actions: GenericSwipeAction[] = [
+  const actions: SwipeAction[] = [
     ...(onEdit && canEdit
       ? [
           {
@@ -76,7 +76,7 @@ const SupplierTableRowSwipeComponent = ({
   ];
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={supplierId}
       entityName={supplierName}
       actions={actions}
@@ -85,7 +85,7 @@ const SupplierTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

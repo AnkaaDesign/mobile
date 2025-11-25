@@ -2,7 +2,7 @@ import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconCopy } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditOrders, canDeleteOrders } from "@/utils/permissions/entity-permissions";
 
@@ -45,7 +45,7 @@ const OrderTableRowSwipeComponent = ({
   // Edit button uses blue (#007AFF)
   // Duplicate button uses orange (#FF9500)
   // Delete button uses red (#FF3B30)
-  const actions: GenericSwipeAction[] = [
+  const actions: SwipeAction[] = [
     ...(onEdit && canEdit
       ? [
           {
@@ -91,7 +91,7 @@ const OrderTableRowSwipeComponent = ({
   ];
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={orderId}
       entityName={orderName}
       actions={actions}
@@ -100,7 +100,7 @@ const OrderTableRowSwipeComponent = ({
       disabled={disabled}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 

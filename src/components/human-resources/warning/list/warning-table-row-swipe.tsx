@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
-import { GenericTableRowSwipe, GenericSwipeAction } from "@/components/common/generic-table-row-swipe";
+import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 
 interface CustomSwipeAction {
   key: string;
@@ -36,7 +36,7 @@ const WarningTableRowSwipeComponent = ({
   // Build actions array with colors matching stock status indicators
   // Edit button uses optimal stock green (#15803d from STOCK_LEVEL.OPTIMAL)
   // Delete button uses critical/out-of-stock red (#b91c1c from STOCK_LEVEL.OUT_OF_STOCK)
-  const actions: GenericSwipeAction[] = [];
+  const actions: SwipeAction[] = [];
 
   // Add edit action if provided
   if (onEdit) {
@@ -73,7 +73,7 @@ const WarningTableRowSwipeComponent = ({
   }
 
   return (
-    <GenericTableRowSwipe
+    <TableRowSwipe
       entityId={warningId}
       entityName={collaboratorName}
       actions={actions}
@@ -82,7 +82,7 @@ const WarningTableRowSwipeComponent = ({
       confirmDeleteMessage={`Tem certeza que deseja excluir a advertência de "${collaboratorName}"?`}
     >
       {children}
-    </GenericTableRowSwipe>
+    </TableRowSwipe>
   );
 };
 
