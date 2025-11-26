@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEditForm } from "@/hooks";
+import { useEditForm, useKeyboardAwareScroll } from "@/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { itemUpdateSchema} from '../../../../schemas';
+import { itemUpdateSchema, type ItemUpdateFormData } from '../../../../schemas';
 import type { Item } from '../../../../types';
 import { useItemCategories } from "@/hooks";
 import { ITEM_CATEGORY_TYPE } from "@/constants";
@@ -13,6 +13,7 @@ import { spacing } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
 import { FormCard } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 // Import all form components
 import { NameInput } from "./name-input";
@@ -44,6 +45,17 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
   const { colors } = useTheme();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(item.categoryId);
   const [isPPE, setIsPPE] = useState(false);
+
+  // Keyboard-aware scrolling (same pattern as task form)
+  const { handlers, refs } = useKeyboardAwareScroll();
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   // Map API data to form data
   const mapDataToForm = React.useCallback((apiData: Item): ItemUpdateFormData => {
@@ -124,13 +136,22 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
   return (
     <FormProvider {...formWithHandleSubmit}>
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView} keyboardVerticalOffset={0}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardView}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+        >
           <ScrollView
+            ref={refs.scrollViewRef}
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            onLayout={handlers.handleScrollViewLayout}
+            onScroll={handlers.handleScroll}
+            scrollEventThrottle={16}
           >
+            <KeyboardAwareFormProvider value={keyboardContextValue}>
           {/* Basic Information */}
           <FormCard title="Informações Básicas">
             <View style={styles.fieldGroup}>
@@ -191,6 +212,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
               <PpeConfigSection disabled={isSubmitting} />
             </FormCard>
           )}
+            </KeyboardAwareFormProvider>
           </ScrollView>
 
           <SimpleFormActionBar

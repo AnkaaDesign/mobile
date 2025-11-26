@@ -282,8 +282,8 @@ export const ObservationTable = React.memo<ObservationTableProps>(
             style={StyleSheet.flatten([
               styles.headerContainer,
               {
-                backgroundColor: isDark ? extendedColors.neutral[800] : extendedColors.neutral[100],
-                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                backgroundColor: colors.card,
+                borderBottomColor: colors.border,
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
@@ -359,8 +359,8 @@ export const ObservationTable = React.memo<ObservationTableProps>(
             style={StyleSheet.flatten([
               styles.row,
               {
-                backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                backgroundColor: isEven ? colors.background : colors.card,
+                borderBottomColor: "rgba(0,0,0,0.05)",
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
@@ -443,7 +443,7 @@ export const ObservationTable = React.memo<ObservationTableProps>(
 
     return (
       <View style={styles.wrapper}>
-        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])} onPress={handleContainerPress}>
+        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: "transparent", borderColor: colors.border }])} onPress={handleContainerPress}>
           {renderHeader()}
           <FlatList
             ref={flatListRef}
@@ -486,8 +486,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "transparent",
     borderRadius: 8,
+    borderWidth: 1,
     overflow: "hidden",
     elevation: 2,
     shadowColor: "#000",

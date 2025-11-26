@@ -1,7 +1,6 @@
-
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { IconUser, IconBell, IconPalette, IconLock, IconChevronRight } from "@tabler/icons-react-native";
+import { IconUser, IconCalendar, IconPackage, IconActivity, IconChevronRight } from "@tabler/icons-react-native";
 import { ThemedSafeAreaView } from "@/components/ui/themed-safe-area-view";
 import { useColorScheme } from "nativewind";
 import { routes } from "@/constants";
@@ -13,32 +12,32 @@ export default function SettingsScreen() {
 
   const settingsItems = [
     {
-      id: "profile",
-      title: "Meu Perfil",
-      subtitle: "Editar informações pessoais",
+      id: "vacations",
+      title: "Minhas Férias",
+      subtitle: "Visualizar férias agendadas",
+      icon: IconCalendar,
+      route: `/(tabs)${routes.personal.myVacations.root}`,
+    },
+    {
+      id: "borrows",
+      title: "Meus Empréstimos",
+      subtitle: "Ferramentas emprestadas",
+      icon: IconPackage,
+      route: `/(tabs)${routes.personal.myBorrows.root}`,
+    },
+    {
+      id: "activities",
+      title: "Minhas Atividades",
+      subtitle: "Histórico de atividades",
+      icon: IconActivity,
+      route: `/(tabs)${routes.personal.myActivities.root}`,
+    },
+    {
+      id: "ppes",
+      title: "Meus EPIs",
+      subtitle: "Equipamentos de proteção",
       icon: IconUser,
-      route: `/(tabs)${routes.personal.myProfile.root}`,
-    },
-    {
-      id: "notifications",
-      title: "Notificações",
-      subtitle: "Configurar preferências de notificação",
-      icon: IconBell,
-      route: `/(tabs)${routes.personal.preferences.root}/notifications`,
-    },
-    {
-      id: "theme",
-      title: "Tema",
-      subtitle: "Aparência do aplicativo",
-      icon: IconPalette,
-      route: `/(tabs)${routes.personal.preferences.root}/theme`,
-    },
-    {
-      id: "privacy",
-      title: "Privacidade",
-      subtitle: "Configurações de privacidade",
-      icon: IconLock,
-      route: `/(tabs)${routes.personal.preferences.root}/privacy`,
+      route: `/(tabs)${routes.personal.myPpes.root}`,
     },
   ];
 
@@ -70,7 +69,7 @@ export default function SettingsScreen() {
                     backgroundColor: isDarkMode ? "rgba(34, 197, 94, 0.2)" : "rgba(34, 197, 94, 0.1)",
                   }}
                 >
-                  <item.icon size={20} color="#22c55e" />
+                  {item.icon && <item.icon size={20} color="#22c55e" />}
                 </View>
                 <View className="flex-1 ml-3">
                   <Text className="text-base font-medium text-foreground">{item.title}</Text>

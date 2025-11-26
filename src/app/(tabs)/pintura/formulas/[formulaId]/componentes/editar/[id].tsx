@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintFormulaComponent, usePaintFormulaComponentMutations } from "@/hooks";
+import { usePaintFormulaComponent, usePaintFormulaComponentMutations, useKeyboardAwareScroll } from "@/hooks";
 import { useItems } from "@/hooks";
 import { paintFormulaComponentUpdateSchema } from '../../../../../../../schemas';
 import type { PaintFormulaComponentUpdateFormData } from '../../../../../../../schemas';
@@ -19,6 +19,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
 import { showToast } from "@/components/ui/toast";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import {
   IconFlask,
   IconPercentage,
@@ -31,6 +32,17 @@ export default function EditComponentScreen() {
   const { data: user } = useAuth();
   const { id } = useLocalSearchParams<{ formulaId: string; id: string }>();
   const { update: updateComponent, isLoading: isUpdating } = usePaintFormulaComponentMutations();
+
+  // Keyboard-aware scrolling
+  const { handlers, refs } = useKeyboardAwareScroll();
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   // Check permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
@@ -189,12 +201,19 @@ export default function EditComponentScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
         <ScrollView
+          ref={refs.scrollViewRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
         >
+        <KeyboardAwareFormProvider value={keyboardContextValue}>
           {/* Header Card */}
           <Card style={styles.headerCard}>
             <View style={styles.headerContent}>
@@ -327,6 +346,7 @@ export default function EditComponentScreen() {
               <ThemedText style={styles.helperText}>• 50% = base da fórmula</ThemedText>
             </View>
           </Card>
+        </KeyboardAwareFormProvider>
         </ScrollView>
 
         {/* Action Buttons */}
@@ -360,7 +380,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.md,
-    paddingBottom: 100,
+    paddingBottom: 0, // No spacing - action bar has its own margin
   },
   centerContainer: {
     flex: 1,

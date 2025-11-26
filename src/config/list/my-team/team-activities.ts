@@ -120,6 +120,31 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
         label: 'Produtos',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['items', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getItems } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getItems({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((item: any) => ({
+                label: `${item.name} (${item.uniCode || '-'})`,
+                value: item.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Item Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os produtos',
       },
       {
@@ -127,6 +152,31 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
         label: 'Usuários',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['users', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getUsers } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getUsers({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((user: any) => ({
+                label: user.name,
+                value: user.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[User Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os usuários',
       },
       {

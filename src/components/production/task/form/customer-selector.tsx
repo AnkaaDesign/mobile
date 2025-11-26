@@ -164,7 +164,6 @@ export function CustomerSelector({
         onValueChange?.(newValue as string | undefined);
       }}
       placeholder={placeholder}
-      label={required ? `${label} *` : label}
       searchPlaceholder="Buscar cliente..."
       emptyText="Nenhum cliente encontrado"
       disabled={disabled}
@@ -180,7 +179,6 @@ export function CustomerSelector({
       minSearchLength={0}
       pageSize={50}
       debounceMs={300}
-      preferFullScreen={true}
     />
   );
 }

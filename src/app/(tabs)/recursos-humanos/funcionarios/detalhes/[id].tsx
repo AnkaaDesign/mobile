@@ -30,6 +30,12 @@ import {
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { showToast } from "@/components/ui/toast";
 import { EmployeeDetailSkeleton } from "@/components/administration/employee/skeleton";
+import {
+  VacationsTable,
+  WarningsTable,
+  BorrowsTable,
+  PpeDeliveriesTable,
+} from "@/components/administration/employee/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -495,92 +501,11 @@ export default function EmployeeDetailScreen() {
           </CardContent>
         </Card>
 
-        {/* Recent Activities Card */}
-        {employee.tasks && employee.tasks.length > 0 && (
-          <Card>
-            <CardContent>
-              <View style={styles.sectionHeader}>
-                <IconClipboardList size={20} color={colors.primary} />
-                <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
-                  Tarefas Recentes
-                </ThemedText>
-                <Badge variant="secondary" size="sm">
-                  <ThemedText style={{ fontSize: 11 }}>
-                    {employee.tasks.length}
-                  </ThemedText>
-                </Badge>
-              </View>
-              <View style={styles.listContainer}>
-                {employee.tasks.map((task, index) => (
-                  <TouchableOpacity
-                    key={task.id}
-                    style={[
-                      styles.listItem,
-                      index !== employee.tasks!.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
-                    ]}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.listItemContent}>
-                      <ThemedText style={StyleSheet.flatten([styles.listItemTitle, { color: colors.foreground }])}>
-                        {task.customer?.fantasyName || "Cliente não informado"}
-                      </ThemedText>
-                      <ThemedText style={StyleSheet.flatten([styles.listItemSubtitle, { color: colors.mutedForeground }])}>
-                        {format(new Date(task.createdAt), "dd/MM/yyyy", { locale: ptBR })}
-                      </ThemedText>
-                    </View>
-                    <Badge variant="outline" size="sm">
-                      <ThemedText style={{ fontSize: 11 }}>
-                        {task.status}
-                      </ThemedText>
-                    </Badge>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Active Borrows Card */}
-        {employee.borrows && employee.borrows.length > 0 && (
-          <Card>
-            <CardContent>
-              <View style={styles.sectionHeader}>
-                <IconPackage size={20} color={colors.primary} />
-                <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
-                  Empréstimos Ativos
-                </ThemedText>
-                <Badge variant="secondary" size="sm">
-                  <ThemedText style={{ fontSize: 11 }}>
-                    {employee.borrows.length}
-                  </ThemedText>
-                </Badge>
-              </View>
-              <View style={styles.listContainer}>
-                {employee.borrows.map((borrow, index) => (
-                  <View
-                    key={borrow.id}
-                    style={[
-                      styles.listItem,
-                      index !== employee.borrows!.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
-                    ]}
-                  >
-                    <View style={styles.listItemContent}>
-                      <ThemedText style={StyleSheet.flatten([styles.listItemTitle, { color: colors.foreground }])}>
-                        {borrow.item?.name || "Item não informado"}
-                      </ThemedText>
-                      <ThemedText style={StyleSheet.flatten([styles.listItemSubtitle, { color: colors.mutedForeground }])}>
-                        Qtd: {borrow.quantity}
-                      </ThemedText>
-                    </View>
-                    <ThemedText style={StyleSheet.flatten([styles.listItemDate, { color: colors.mutedForeground }])}>
-                      {format(new Date(borrow.createdAt), "dd/MM", { locale: ptBR })}
-                    </ThemedText>
-                  </View>
-                ))}
-              </View>
-            </CardContent>
-          </Card>
-        )}
+        {/* Relation Tables */}
+        <VacationsTable employee={employee} maxHeight={400} />
+        <WarningsTable employee={employee} maxHeight={400} />
+        <BorrowsTable employee={employee} maxHeight={400} />
+        <PpeDeliveriesTable employee={employee} maxHeight={400} />
 
         {/* Changelog Timeline */}
         <Card>

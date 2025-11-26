@@ -1,7 +1,7 @@
 /**
- * Standardized Form Components
+ * Form Components
  *
- * This module exports reusable form components for multi-step workflows
+ * This module exports reusable form components for single-step and multi-step workflows
  * with item selection capabilities. Used across:
  * - Borrow forms
  * - Activity forms
@@ -9,21 +9,23 @@
  * - External Withdrawal forms
  * - Paint forms
  *
- * STANDARDIZED COMPONENTS (NEW):
- * - StandardizedFormContainer: Single-step form wrapper with consistent layout
- * - SimpleFormActionBar: Cancel/Submit buttons for single-step forms
+ * FORM CONTAINERS:
+ * - FormContainer: Single-step form wrapper with consistent layout and keyboard handling
+ * - MultiStepFormContainer: Multi-step form wrapper with progress indicator
+ *
+ * Both containers include intelligent keyboard handling via KeyboardAwareFormProvider.
  *
  * Usage:
  * ```tsx
- * import { StandardizedFormContainer, SimpleFormActionBar } from "@/components/forms";
+ * import { FormContainer, MultiStepFormContainer } from "@/components/forms";
  * ```
  */
 
-// Standardized Container for Single-Step Forms (NEW)
-export { StandardizedFormContainer } from "./StandardizedFormContainer";
-export type { StandardizedFormContainerProps } from "./StandardizedFormContainer";
+// Single-Step Form Container
+export { FormContainer } from "./FormContainer";
+export type { FormContainerProps } from "./FormContainer";
 
-// Standardized Action Bar for Single-Step Forms (NEW)
+// Action Bar for Single-Step Forms
 export { SimpleFormActionBar } from "./SimpleFormActionBar";
 export type { SimpleFormActionBarProps } from "./SimpleFormActionBar";
 
@@ -38,8 +40,6 @@ export type { FormActionBarProps } from "./FormActionBar";
 // Item Selection
 export { ItemSelectorTable } from "./ItemSelectorTable";
 export type { ItemSelectorTableProps } from "./ItemSelectorTable";
-
-export { ItemSelectorTableV2 } from "./ItemSelectorTableV2";
 
 export { ItemSelectorFilters } from "./ItemSelectorFilters";
 export type { ItemSelectorFiltersProps } from "./ItemSelectorFilters";

@@ -1,4 +1,5 @@
-import { View, ScrollView, StyleSheet } from "react-native";
+import { useMemo } from "react";
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +10,8 @@ import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
+import { useKeyboardAwareScroll } from "@/hooks";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 import { type Service } from '../../../../types';
 import { serviceCreateSchema, serviceUpdateSchema } from '../../../../schemas';
@@ -23,6 +26,17 @@ interface ServiceFormProps {
 export function ServiceForm({ service, onSubmit, onCancel, isSubmitting }: ServiceFormProps) {
   const { colors } = useTheme();
   const isEditing = !!service;
+
+  // Keyboard-aware scrolling
+  const { handlers, refs } = useKeyboardAwareScroll();
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   const form = useForm<ServiceCreateFormData | ServiceUpdateFormData>({
     resolver: zodResolver(isEditing ? serviceUpdateSchema : serviceCreateSchema),
@@ -42,50 +56,65 @@ export function ServiceForm({ service, onSubmit, onCancel, isSubmitting }: Servi
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
-        <FormCard title={isEditing ? "Editar Serviço" : "Cadastrar Serviço"}>
-          <FormFieldGroup
-            label="Descrição do Serviço"
-            required
-            helper="Esta descrição será exibida ao selecionar serviços para uma tarefa"
-            error={form.formState.errors.description?.message}
-          >
-            <Controller
-              control={form.control}
-              name="description"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Textarea
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="Digite a descrição detalhada do serviço"
-                  numberOfLines={4}
-                  error={!!form.formState.errors.description}
+        <ScrollView
+          ref={refs.scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
+        >
+          <KeyboardAwareFormProvider value={keyboardContextValue}>
+            <FormCard title={isEditing ? "Editar Serviço" : "Cadastrar Serviço"}>
+              <FormFieldGroup
+                label="Descrição do Serviço"
+                required
+                helper="Esta descrição será exibida ao selecionar serviços para uma tarefa"
+                error={form.formState.errors.description?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name="description"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Textarea
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      placeholder="Digite a descrição detalhada do serviço"
+                      numberOfLines={4}
+                      error={!!form.formState.errors.description}
+                    />
+                  )}
                 />
-              )}
-            />
-          </FormFieldGroup>
-        </FormCard>
-      </ScrollView>
+              </FormFieldGroup>
+            </FormCard>
+          </KeyboardAwareFormProvider>
+        </ScrollView>
 
-      <SimpleFormActionBar
-        onCancel={onCancel}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        canSubmit={form.formState.isValid}
-        submitLabel={isEditing ? "Salvar" : "Criar"}
-      />
+        <SimpleFormActionBar
+          onCancel={onCancel}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          canSubmit={form.formState.isValid}
+          submitLabel={isEditing ? "Salvar" : "Criar"}
+        />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
     flex: 1,
   },
   scrollView: {

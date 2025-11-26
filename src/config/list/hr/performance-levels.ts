@@ -160,6 +160,31 @@ export const performanceLevelsListConfig: ListConfig<User> = {
         label: 'Cargos',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['positions', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getPositions } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getPositions({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((position: any) => ({
+                label: position.name,
+                value: position.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Position Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os cargos',
       },
       {
@@ -167,6 +192,31 @@ export const performanceLevelsListConfig: ListConfig<User> = {
         label: 'Setores',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['sectors', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getSectors } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getSectors({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((sector: any) => ({
+                label: sector.name,
+                value: sector.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Sector Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os setores',
       },
     ],

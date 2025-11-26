@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, ScrollView, StyleSheet, Alert, TouchableOpacity } from "react-native";
+import { useState, useMemo } from "react";
+import { View, ScrollView, StyleSheet, Alert, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -12,6 +12,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { useKeyboardAwareScroll } from "@/hooks";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import {
   CUT_REQUEST_REASON,
   CUT_ORIGIN,
@@ -61,6 +63,17 @@ export function CutRequestModal({
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { batchCreate } = useCutMutations();
+
+  // Keyboard-aware scrolling
+  const { handlers, refs } = useKeyboardAwareScroll();
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   const {
     control,
@@ -187,11 +200,21 @@ export function CutRequestModal({
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardView}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
         >
+          <ScrollView
+            ref={refs.scrollViewRef}
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            onLayout={handlers.handleScrollViewLayout}
+            onScroll={handlers.handleScroll}
+            scrollEventThrottle={16}
+          >
+            <KeyboardAwareFormProvider value={keyboardContextValue}>
           {/* Cut Information Card */}
           {cutItem && (
             <Card style={styles.card}>
@@ -396,9 +419,10 @@ export function CutRequestModal({
           )}
 
           <View style={{ height: spacing.xl }} />
-        </ScrollView>
+            </KeyboardAwareFormProvider>
+          </ScrollView>
 
-        {/* Footer Buttons */}
+          {/* Footer Buttons */}
         <View
           style={StyleSheet.flatten([
             styles.footer,
@@ -422,6 +446,7 @@ export function CutRequestModal({
             {isSubmitting ? "Solicitando..." : "Solicitar"}
           </Button>
         </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -429,6 +454,9 @@ export function CutRequestModal({
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  keyboardView: {
     flex: 1,
   },
   header: {
@@ -458,6 +486,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.lg,
     gap: spacing.lg,
+    paddingBottom: 0,
   },
   card: {
     padding: 0,

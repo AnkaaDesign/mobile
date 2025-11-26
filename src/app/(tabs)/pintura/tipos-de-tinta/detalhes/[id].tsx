@@ -8,7 +8,7 @@ import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { usePaintType, usePaintTypeMutations } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from "@/constants";
+import { SECTOR_PRIVILEGES, PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from "@/constants";
 import { hasPrivilege, formatDate } from "@/utils";
 import { showToast } from "@/components/ui/toast";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +24,7 @@ import {
   IconBrush,
   IconCalendar,
 } from "@tabler/icons-react-native";
+import { ComponentsTable } from "@/components/painting/paint-type/detail";
 
 export default function PaintTypeDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -179,7 +180,7 @@ export default function PaintTypeDetailsScreen() {
 
         {/* Basic Information Card */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
             <IconInfoCircle size={20} color={colors.primary} />
             <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
           </View>
@@ -199,7 +200,7 @@ export default function PaintTypeDetailsScreen() {
 
         {/* Statistics Card */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
             <IconSettings size={20} color={colors.primary} />
             <ThemedText style={styles.sectionTitle}>Estatísticas</ThemedText>
           </View>
@@ -220,62 +221,70 @@ export default function PaintTypeDetailsScreen() {
         {/* Related Paints Section */}
         {paintType.paints && paintType.paints.length > 0 ? (
           <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
+            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
               <IconBrush size={20} color={colors.primary} />
               <ThemedText style={styles.sectionTitle}>Tintas Relacionadas</ThemedText>
-              <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                {paintType.paints.length}
-              </Badge>
             </View>
-            <View style={styles.paintsList}>
-              {paintType.paints.map((paint: any) => (
-                <TouchableOpacity
-                  key={paint.id}
-                  style={StyleSheet.flatten([
-                    styles.paintItem,
-                    {
-                      backgroundColor: colors.card,
-                      borderColor: colors.border,
-                    }
-                  ])}
-                  onPress={() => router.push(`/pintura/catalogo/detalhes/${paint.id}`)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.paintItemLeft}>
-                    <View
-                      style={StyleSheet.flatten([
-                        styles.colorPreview,
-                        {
-                          backgroundColor: paint.hex || colors.muted,
-                          borderColor: colors.border,
-                        }
-                      ])}
-                    />
-                    <View style={styles.paintInfo}>
-                      <ThemedText style={styles.paintName} numberOfLines={1}>
-                        {paint.name}
-                      </ThemedText>
-                      {paint.paintBrand?.name && (
-                        <ThemedText style={styles.paintBrand} numberOfLines={1}>
-                          {paint.paintBrand.name}
+            <ScrollView
+              style={{ maxHeight: 400 }}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={true}
+            >
+              <View style={styles.paintsList}>
+                {paintType.paints.map((paint: any) => (
+                  <TouchableOpacity
+                    key={paint.id}
+                    style={StyleSheet.flatten([
+                      styles.paintItem,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                      }
+                    ])}
+                    onPress={() => router.push(`/pintura/catalogo/detalhes/${paint.id}`)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.paintItemLeft}>
+                      <View
+                        style={StyleSheet.flatten([
+                          styles.colorPreview,
+                          {
+                            backgroundColor: paint.hex || colors.muted,
+                            borderColor: colors.border,
+                          }
+                        ])}
+                      />
+                      <View style={styles.paintInfo}>
+                        <ThemedText style={styles.paintName} numberOfLines={1}>
+                          {paint.name}
                         </ThemedText>
-                      )}
+                        <View style={styles.paintBadges}>
+                          {paint.finish && (
+                            <Badge variant="secondary" size="sm">
+                              {PAINT_FINISH_LABELS[paint.finish] || paint.finish}
+                            </Badge>
+                          )}
+                          {paint.paintBrand?.name && (
+                            <Badge variant="outline" size="sm">
+                              {paint.paintBrand.name}
+                            </Badge>
+                          )}
+                          {paint.manufacturer && (
+                            <Badge variant="outline" size="sm">
+                              {TRUCK_MANUFACTURER_LABELS[paint.manufacturer] || paint.manufacturer}
+                            </Badge>
+                          )}
+                        </View>
+                      </View>
                     </View>
-                  </View>
-                  <View style={styles.paintItemRight}>
-                    {paint.formulas && paint.formulas.length > 0 && (
-                      <Badge variant="outline" size="sm">
-                        {paint.formulas.length} fórmula(s)
-                      </Badge>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
           </Card>
         ) : (
           <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
+            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
               <IconBrush size={20} color={colors.primary} />
               <ThemedText style={styles.sectionTitle}>Tintas Relacionadas</ThemedText>
             </View>
@@ -288,67 +297,12 @@ export default function PaintTypeDetailsScreen() {
           </Card>
         )}
 
-        {/* Components Section */}
-        {paintType.componentItems && paintType.componentItems.length > 0 ? (
-          <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconComponents size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Componentes</ThemedText>
-              <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                {paintType.componentItems.length}
-              </Badge>
-            </View>
-            <View style={styles.componentsList}>
-              {paintType.componentItems.map((component: any) => (
-                <View
-                  key={component.id}
-                  style={StyleSheet.flatten([
-                    styles.componentItem,
-                    {
-                      backgroundColor: colors.muted,
-                      borderColor: colors.border,
-                    }
-                  ])}
-                >
-                  <View style={styles.componentInfo}>
-                    <ThemedText style={styles.componentName} numberOfLines={1}>
-                      {component.name}
-                    </ThemedText>
-                    <View style={styles.componentMeta}>
-                      {component.brand?.name && (
-                        <Badge variant="outline" size="sm">
-                          {component.brand.name}
-                        </Badge>
-                      )}
-                      {component.category?.name && (
-                        <Badge variant="outline" size="sm">
-                          {component.category.name}
-                        </Badge>
-                      )}
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </Card>
-        ) : (
-          <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconComponents size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Componentes</ThemedText>
-            </View>
-            <View style={styles.emptyState}>
-              <IconComponents size={48} color={colors.mutedForeground} style={{ opacity: 0.5 }} />
-              <ThemedText style={styles.emptyStateText}>
-                Nenhum componente configurado para este tipo
-              </ThemedText>
-            </View>
-          </Card>
-        )}
+        {/* Components Table */}
+        <ComponentsTable paintType={paintType} maxHeight={400} />
 
         {/* Metadata Card */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
             <IconCalendar size={20} color={colors.primary} />
             <ThemedText style={styles.sectionTitle}>Metadados</ThemedText>
           </View>
@@ -420,7 +374,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
@@ -496,33 +450,14 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: "500",
   },
-  paintBrand: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
-    marginTop: 2,
+  paintBadges: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
   paintItemRight: {
     marginLeft: spacing.sm,
-  },
-  componentsList: {
-    gap: spacing.sm,
-  },
-  componentItem: {
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-  },
-  componentInfo: {
-    gap: spacing.xs,
-  },
-  componentName: {
-    fontSize: fontSize.md,
-    fontWeight: "500",
-  },
-  componentMeta: {
-    flexDirection: "row",
-    gap: spacing.xs,
-    flexWrap: "wrap",
   },
   emptyState: {
     alignItems: "center",

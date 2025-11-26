@@ -144,6 +144,31 @@ export function createFormulaComponentsListConfig(
           label: 'Marcas',
           type: 'select',
           multiple: true,
+          async: true,
+          queryKey: ['brands', 'filter'],
+          queryFn: async (searchTerm: string, page: number = 1) => {
+            try {
+              const { getBrands } = await import('@/api-client')
+              const pageSize = 20
+              const response = await getBrands({
+                where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+                orderBy: { name: 'asc' },
+                limit: pageSize,
+                page: page,
+              })
+              return {
+                data: (response.data || []).map((brand: any) => ({
+                  label: brand.name,
+                  value: brand.id,
+                })),
+                hasMore: response.meta?.hasNextPage ?? false,
+                total: response.meta?.totalRecords,
+              }
+            } catch (error) {
+              console.error('[Brand Filter] Error:', error)
+              return { data: [], hasMore: false }
+            }
+          },
           placeholder: 'Selecione as marcas',
         },
         {
@@ -151,6 +176,31 @@ export function createFormulaComponentsListConfig(
           label: 'Categorias',
           type: 'select',
           multiple: true,
+          async: true,
+          queryKey: ['categories', 'filter'],
+          queryFn: async (searchTerm: string, page: number = 1) => {
+            try {
+              const { getCategories } = await import('@/api-client')
+              const pageSize = 20
+              const response = await getCategories({
+                where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+                orderBy: { name: 'asc' },
+                limit: pageSize,
+                page: page,
+              })
+              return {
+                data: (response.data || []).map((category: any) => ({
+                  label: category.name,
+                  value: category.id,
+                })),
+                hasMore: response.meta?.hasNextPage ?? false,
+                total: response.meta?.totalRecords,
+              }
+            } catch (error) {
+              console.error('[Category Filter] Error:', error)
+              return { data: [], hasMore: false }
+            }
+          },
           placeholder: 'Selecione as categorias',
         },
         {

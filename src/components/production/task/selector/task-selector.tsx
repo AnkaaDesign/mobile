@@ -37,7 +37,6 @@ export function TaskSelector({
       searchable={true}
       clearable={!required}
       emptyText="Nenhuma tarefa encontrada"
-      preferFullScreen={true}
     />
   );
 }

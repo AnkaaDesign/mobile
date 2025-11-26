@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, FormProvider, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { itemCreateSchema, itemUpdateSchema,} from '../../../../schemas';
-import { useItemCategories } from "@/hooks";
+import { itemCreateSchema, itemUpdateSchema, type ItemCreateFormData, type ItemUpdateFormData } from '../../../../schemas';
+import { useItemCategories, useKeyboardAwareScroll } from "@/hooks";
 import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { spacing } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
 import { useTheme } from "@/lib/theme";
 import { FormCard } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import type { Supplier, ItemBrand, ItemCategory } from '../../../../types';
 
 // Import all form components
@@ -61,6 +62,17 @@ export function ItemForm(props: ItemFormProps) {
   const { isSubmitting, defaultValues, mode, onFormStateChange, onDirtyChange, onCancel, initialCategory: _initialCategory, initialBrand: _initialBrand, initialSupplier: _initialSupplier } = props;
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(defaultValues?.categoryId || undefined);
   const [isPPE, setIsPPE] = useState(false);
+
+  // Keyboard-aware scrolling (same pattern as task form)
+  const { handlers, refs } = useKeyboardAwareScroll();
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   // Default values for create mode
   const createDefaults: ItemCreateFormData = {
@@ -187,76 +199,86 @@ export function ItemForm(props: ItemFormProps) {
   return (
     <FormProvider {...form}>
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView} keyboardVerticalOffset={0}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardView}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+        >
           <ScrollView
+            ref={refs.scrollViewRef}
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            onLayout={handlers.handleScrollViewLayout}
+            onScroll={handlers.handleScroll}
+            scrollEventThrottle={16}
           >
-          {/* Basic Information & Classification */}
-          <FormCard title="Informações Básicas">
-            <View style={styles.fieldGroup}>
-              <UnicodeInput disabled={isSubmitting} />
-              <NameInput disabled={isSubmitting} required={isRequired} />
-              <CategorySelector
-                disabled={isSubmitting}
-                onCategoryChange={setSelectedCategoryId}
-              />
-              <BrandSelector
-                disabled={isSubmitting}
-              />
-              <SupplierSelector
-                disabled={isSubmitting}
-              />
-            </View>
-          </FormCard>
+            <KeyboardAwareFormProvider value={keyboardContextValue}>
+            {/* Basic Information & Classification */}
+            <FormCard title="Informações Básicas">
+              <View style={styles.fieldGroup}>
+                <UnicodeInput disabled={isSubmitting} />
+                <NameInput disabled={isSubmitting} required={isRequired} />
+                <CategorySelector
+                  disabled={isSubmitting}
+                  onCategoryChange={setSelectedCategoryId}
+                />
+                <BrandSelector
+                  disabled={isSubmitting}
+                />
+                <SupplierSelector
+                  disabled={isSubmitting}
+                />
+              </View>
+            </FormCard>
 
-          {/* Inventory */}
-          <FormCard title="Controle de Estoque">
-            <View style={styles.fieldGroup}>
-              <QuantityInput disabled={isSubmitting} required={isRequired} />
-              <MaxQuantityInput disabled={isSubmitting} />
-              <BoxQuantityInput disabled={isSubmitting} />
-              <LeadTimeInput disabled={isSubmitting} />
-            </View>
-          </FormCard>
+            {/* Inventory */}
+            <FormCard title="Controle de Estoque">
+              <View style={styles.fieldGroup}>
+                <QuantityInput disabled={isSubmitting} required={isRequired} />
+                <MaxQuantityInput disabled={isSubmitting} />
+                <BoxQuantityInput disabled={isSubmitting} />
+                <LeadTimeInput disabled={isSubmitting} />
+              </View>
+            </FormCard>
 
-          {/* Pricing */}
-          <FormCard title="Preço e Taxas">
-            <View style={styles.fieldGroup}>
-              <PriceInput disabled={isSubmitting} />
-              <View style={styles.fieldRow}>
-                <View style={styles.halfField}>
-                  <IcmsInput disabled={isSubmitting} required={isRequired} priceFieldName="price" />
-                </View>
-                <View style={styles.halfField}>
-                  <IpiInput disabled={isSubmitting} required={isRequired} priceFieldName="price" />
+            {/* Pricing */}
+            <FormCard title="Preço e Taxas">
+              <View style={styles.fieldGroup}>
+                <PriceInput disabled={isSubmitting} />
+                <View style={styles.fieldRow}>
+                  <View style={styles.halfField}>
+                    <IcmsInput disabled={isSubmitting} required={isRequired} priceFieldName="price" />
+                  </View>
+                  <View style={styles.halfField}>
+                    <IpiInput disabled={isSubmitting} required={isRequired} priceFieldName="price" />
+                  </View>
                 </View>
               </View>
-            </View>
-          </FormCard>
+            </FormCard>
 
-          {/* Multiple Measures - Only show for non-PPE categories */}
-          {!isPPE && <MeasuresManager disabled={isSubmitting} />}
+            {/* Multiple Measures - Only show for non-PPE categories */}
+            {!isPPE && <MeasuresManager disabled={isSubmitting} />}
 
-          {/* PPE Configuration - Only show for PPE categories */}
-          {isPPE && <PpeConfigSection disabled={isSubmitting} required={isRequired} />}
+            {/* PPE Configuration - Only show for PPE categories */}
+            {isPPE && <PpeConfigSection disabled={isSubmitting} required={isRequired} />}
 
-          {/* Tracking */}
-          <FormCard title="Rastreamento">
-            <View style={styles.fieldGroup}>
-              <BarcodeManager disabled={isSubmitting} />
-            </View>
-          </FormCard>
+            {/* Tracking */}
+            <FormCard title="Rastreamento">
+              <View style={styles.fieldGroup}>
+                <BarcodeManager disabled={isSubmitting} />
+              </View>
+            </FormCard>
 
-          {/* Extra Configurations */}
-          <FormCard title="Configurações Extras">
-            <View style={styles.fieldGroup}>
-              <AssignToUserToggle disabled={isSubmitting} />
-              <StatusToggle disabled={isSubmitting} />
-            </View>
-          </FormCard>
+            {/* Extra Configurations */}
+            <FormCard title="Configurações Extras">
+              <View style={styles.fieldGroup}>
+                <AssignToUserToggle disabled={isSubmitting} />
+                <StatusToggle disabled={isSubmitting} />
+              </View>
+            </FormCard>
+            </KeyboardAwareFormProvider>
           </ScrollView>
 
           <SimpleFormActionBar

@@ -6,20 +6,23 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { useTaskDetail, useTaskMutations, useLayoutsByTruck, useCutsByTask } from "@/hooks";
+import { useTaskDetail, useTaskMutations, useLayoutsByTruck } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE, AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from "@/constants";
+import { SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { hasPrivilege, formatCurrency, formatDate } from "@/utils";
 import { useMemo } from "react";
 import { showToast } from "@/components/ui/toast";
 import { TaskInfoCard } from "@/components/production/task/detail/task-info-card";
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
-import { TaskServicesCard } from "@/components/production/task/detail/task-services-card";
 import { TruckLayoutPreview } from "@/components/production/layout/truck-layout-preview";
 
 import { TaskPaintCard } from "@/components/production/task/detail/task-paint-card";
 import { TaskGroundPaintsCard } from "@/components/production/task/detail/task-ground-paints-card";
-import { Card } from "@/components/ui/card";
+import { ObservationsTable } from "@/components/production/task/detail/observations-table";
+import { CutsTable } from "@/components/production/task/detail/cuts-table";
+import { ServicesTable } from "@/components/production/task/detail/services-table";
+import { AirbrushingsTable } from "@/components/production/task/detail/airbrushings-table";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TouchableOpacity } from "react-native";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
@@ -33,17 +36,11 @@ import {
 
   IconEdit,
   IconTrash,
-  IconCut,
   IconHistory,
   IconFiles,
   IconLayoutGrid,
-  IconList,
-  IconDownload,
   IconCurrencyReal,
   IconFile,
-  IconSpray,
-  IconClock,
-  IconCheck,
   IconAlertCircle
 } from "@tabler/icons-react-native";
 
@@ -134,29 +131,6 @@ export default function ScheduleDetailsScreen() {
   });
 
   const task = response?.data;
-
-  // Fetch cuts related to this task
-  const { data: cutsResponse } = useCutsByTask(
-    {
-      taskId: id as string,
-      filters: {
-        include: {
-          file: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      },
-    },
-    {
-      enabled: !!id,
-    },
-  );
-
-  const cuts = cutsResponse?.data || [];
-
-  // Get airbrushings directly from task (they're included in the task query)
-  const airbrushings = (task as any)?.airbrushings || [];
 
   // Fetch layouts for truck dimensions
   const { data: layouts } = useLayoutsByTruck((task as any)?.truck?.id || '', {
@@ -299,19 +273,23 @@ export default function ScheduleDetailsScreen() {
 
           {/* Truck Layout - Only for Admin, Logistic, and Leader */}
           {canViewTruckLayout && (task as any)?.truck && (
-            <Card style={styles.card}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconLayoutGrid size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Layout do Caminhão</ThemedText>
-              </View>
-              <TruckLayoutPreview truckId={(task as any).truck.id} taskName={task.name} />
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <View style={styles.titleRow}>
+                    <IconLayoutGrid size={20} color={colors.primary} />
+                    <ThemedText style={styles.titleText}>Layout do Caminhão</ThemedText>
+                  </View>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TruckLayoutPreview truckId={(task as any).truck.id} taskName={task.name} />
+              </CardContent>
             </Card>
           )}
 
-          {/* Services */}
-          {task.services && task.services.length > 0 && (
-            <TaskServicesCard services={task.services} />
-          )}
+          {/* Services Table */}
+          <ServicesTable taskId={id as string} maxHeight={400} />
 
           {/* Paints - Tintas */}
           {((task as any)?.generalPainting || ((task as any)?.logoPaints && (task as any).logoPaints.length > 0)) && (
@@ -337,14 +315,19 @@ export default function ScheduleDetailsScreen() {
 
           {/* Artworks Section */}
           {(task as any)?.artworks && (task as any).artworks.length > 0 && (
-            <Card style={styles.card}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconFiles size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Artes</ThemedText>
-                <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                  {(task as any).artworks.length}
-                </Badge>
-              </View>
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <View style={styles.titleRow}>
+                    <IconFiles size={20} color={colors.primary} />
+                    <ThemedText style={styles.titleText}>Artes</ThemedText>
+                    <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
+                      {(task as any).artworks.length}
+                    </Badge>
+                  </View>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
               <View style={styles.viewModeControls}>
                 {(task as any).artworks.length > 1 && (
                   <TouchableOpacity
@@ -403,19 +386,25 @@ export default function ScheduleDetailsScreen() {
                   />
                 ))}
               </View>
+              </CardContent>
             </Card>
           )}
 
           {/* Documents Section - Only for Admin and Financial */}
           {canViewDocuments && ((task as any)?.budgets || (task as any)?.invoices || (task as any)?.receipts) && (
-            <Card style={styles.card}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconFileText size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Documentos</ThemedText>
-                <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                  {[...((task as any).budgets || []), ...((task as any).invoices || []), ...((task as any).receipts || [])].length}
-                </Badge>
-              </View>
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <View style={styles.titleRow}>
+                    <IconFileText size={20} color={colors.primary} />
+                    <ThemedText style={styles.titleText}>Documentos</ThemedText>
+                    <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
+                      {[...((task as any).budgets || []), ...((task as any).invoices || []), ...((task as any).receipts || [])].length}
+                    </Badge>
+                  </View>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
               <View style={styles.viewModeControls}>
                 <View style={styles.viewModeButtons}>
                   <TouchableOpacity
@@ -503,17 +492,22 @@ export default function ScheduleDetailsScreen() {
                   </View>
                 </View>
               )}
+              </CardContent>
             </Card>
           )}
 
           {/* Budget Table - Only for Admin and Financial */}
           {canViewDocuments && (task as any)?.budget && (task as any).budget.items && (task as any).budget.items.length > 0 && (
-            <Card style={styles.card}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconCurrencyReal size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Orçamento Detalhado</ThemedText>
-              </View>
-
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <View style={styles.titleRow}>
+                    <IconCurrencyReal size={20} color={colors.primary} />
+                    <ThemedText style={styles.titleText}>Orçamento Detalhado</ThemedText>
+                  </View>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
               {/* Budget Expiry Date */}
               {(task as any).budget.expiresIn && (
                 <View style={[styles.budgetExpiryContainer, { backgroundColor: colors.muted, borderColor: colors.border }]}>
@@ -572,91 +566,48 @@ export default function ScheduleDetailsScreen() {
                   </ThemedText>
                 </View>
               </View>
+              </CardContent>
             </Card>
           )}
 
           {/* Financial summary - Only for Admin and Financial */}
           {canViewDocuments && task.price && (
-            <Card style={styles.card}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <ThemedText style={styles.sectionTitle}>Valor Total</ThemedText>
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.summaryValue, { color: colors.primary }])}>
-                {formatCurrency(task.price)}
-              </ThemedText>
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <View style={styles.titleRow}>
+                    <ThemedText style={styles.titleText}>Valor Total</ThemedText>
+                  </View>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ThemedText style={StyleSheet.flatten([styles.summaryValue, { color: colors.primary }])}>
+                  {formatCurrency(task.price)}
+                </ThemedText>
+              </CardContent>
             </Card>
           )}
 
-          {/* Cuts Card - Hidden for Financial sector users */}
-          {!isFinancialSector && cuts.length > 0 && (
-            <Card style={styles.card}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconCut size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Recortes</ThemedText>
-                <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                  {cuts.length}
-                </Badge>
-              </View>
-              {cuts.length > 1 && (
-                <TouchableOpacity
-                  style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
-                  onPress={async () => {
-                    for (const cut of cuts) {
-                      if (cut.file) {
-                        try {
-                          await fileViewer.actions.downloadFile(cut.file);
-                        } catch (error) {
-                          console.error("Error downloading file:", error);
-                        }
-                      }
-                    }
-                    showToast({ message: `${cuts.length} arquivos baixados`, type: "success" });
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <IconDownload size={16} color={colors.primaryForeground} />
-                  <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
-                    Baixar Todos
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cutsScroll}>
-                <View style={styles.cutsContainer}>
-                  {cuts.map((cut: any, index: number) =>
-                    cut.file ? (
-                      <FileItem
-                        key={cut.id}
-                        file={cut.file}
-                        viewMode="grid"
-                        baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                        onPress={() => {
-                          const allFiles = cuts.map(c => c.file);
-                          const cutFiles = allFiles.filter((f): f is NonNullable<typeof f> => f !== undefined && f !== null);
-                          fileViewer.actions.viewFiles(cutFiles, index);
-                        }}
-                        showFilename={true}
-                        showFileSize={true}
-                        showRelativeTime={false}
-                      />
-                    ) : null
-                  )}
-                </View>
-              </ScrollView>
-            </Card>
-          )}
+          {/* Cuts Table - Hidden for Financial sector users */}
+          {!isFinancialSector && <CutsTable taskId={id as string} maxHeight={400} />}
 
           {/* Observation Card */}
           {(task as any)?.observation && (
-            <Card style={styles.card}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconAlertCircle size={20} color="#f59e0b" />
-                <ThemedText style={styles.sectionTitle}>Observação</ThemedText>
-                {(task as any).observation.files && (task as any).observation.files.length > 0 && (
-                  <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                    {(task as any).observation.files.length}
-                  </Badge>
-                )}
-              </View>
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <View style={styles.titleRow}>
+                    <IconAlertCircle size={20} color="#f59e0b" />
+                    <ThemedText style={styles.titleText}>Observação</ThemedText>
+                    {(task as any).observation.files && (task as any).observation.files.length > 0 && (
+                      <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
+                        {(task as any).observation.files.length}
+                      </Badge>
+                    )}
+                  </View>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
               <View style={[styles.observationContent, { backgroundColor: colors.mutedForeground + '10', borderRadius: borderRadius.md, padding: spacing.md }]}>
                 <ThemedText style={{ fontSize: fontSize.sm, color: colors.foreground }}>
                   {(task as any).observation.description}
@@ -689,107 +640,28 @@ export default function ScheduleDetailsScreen() {
                   </View>
                 </View>
               )}
+              </CardContent>
             </Card>
           )}
 
-          {/* Airbrushings Card - Only show if task has airbrushings */}
-          {airbrushings.length > 0 && (
-            <Card style={styles.card}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconSpray size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Aerografias</ThemedText>
-                <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                  {airbrushings.length}
-                </Badge>
-              </View>
-              <View style={styles.itemDetails}>
-                {airbrushings.map((airbrushing: any, index: number) => (
-                  <View key={airbrushing.id} style={[styles.relatedTaskItem, { paddingVertical: spacing.md, borderBottomColor: colors.border }]}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.sm }}>
-                      <View style={{ flex: 1 }}>
-                        <ThemedText style={styles.relatedTaskName}>
-                          {airbrushing.price ? formatCurrency(airbrushing.price) : `Aerografia #${index + 1}`}
-                        </ThemedText>
-                      </View>
-                      <Badge
-                        variant={airbrushing.status === 'COMPLETED' ? 'success' : airbrushing.status === 'IN_PROGRESS' ? 'warning' : 'default'}
-                        style={{ marginLeft: spacing.sm }}
-                      >
-                        {AIRBRUSHING_STATUS_LABELS[airbrushing.status as AIRBRUSHING_STATUS] || airbrushing.status}
-                      </Badge>
-                    </View>
+          {/* Airbrushings Table */}
+          <AirbrushingsTable taskId={id as string} maxHeight={400} />
 
-                    {(airbrushing.startDate || airbrushing.finishDate || airbrushing.createdAt) && (
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.xs }}>
-                        {airbrushing.startDate && (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                            <IconClock size={12} color={colors.mutedForeground} />
-                            <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
-                              Data de início: {formatDate(airbrushing.startDate)}
-                            </ThemedText>
-                          </View>
-                        )}
-                        {airbrushing.finishDate && (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                            <IconCheck size={12} color="#10b981" />
-                            <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
-                              Data de finalização: {formatDate(airbrushing.finishDate)}
-                            </ThemedText>
-                          </View>
-                        )}
-                        {!airbrushing.startDate && !airbrushing.finishDate && airbrushing.createdAt && (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                            <IconCalendarEvent size={12} color={colors.mutedForeground} />
-                            <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
-                              Criado: {formatDate(airbrushing.createdAt)}
-                            </ThemedText>
-                          </View>
-                        )}
-                      </View>
-                    )}
-
-                    {/* Files count */}
-                    {((airbrushing.receipts?.length ?? 0) > 0 || (airbrushing.invoices?.length ?? 0) > 0) && (
-                      <View style={{
-                        flexDirection: 'row',
-                        gap: spacing.md,
-                        marginTop: spacing.sm,
-                        paddingTop: spacing.sm,
-                        borderTopWidth: StyleSheet.hairlineWidth,
-                        borderTopColor: colors.border
-                      }}>
-                        {(airbrushing.receipts?.length ?? 0) > 0 && (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                            <IconFile size={12} color={colors.mutedForeground} />
-                            <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
-                              {airbrushing.receipts?.length ?? 0} recibo(s)
-                            </ThemedText>
-                          </View>
-                        )}
-                        {(airbrushing.invoices?.length ?? 0) > 0 && (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                            <IconFileText size={12} color={colors.mutedForeground} />
-                            <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
-                              {airbrushing.invoices?.length ?? 0} NFe(s)
-                            </ThemedText>
-                          </View>
-                        )}
-                      </View>
-                    )}
-                  </View>
-                ))}
-              </View>
-            </Card>
-          )}
+          {/* Observations Table */}
+          <ObservationsTable taskId={id as string} maxHeight={400} />
 
           {/* Changelog History - Only for Admin/Financial (all changes) or Leader (sector changes) */}
           {(canViewDocuments || hasPrivilege(user, SECTOR_PRIVILEGES.LEADER)) && (
-            <Card style={styles.card}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconHistory size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
-              </View>
-              <View style={{ paddingHorizontal: spacing.md }}>
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <View style={styles.titleRow}>
+                    <IconHistory size={20} color={colors.primary} />
+                    <ThemedText style={styles.titleText}>Histórico de Alterações</ThemedText>
+                  </View>
+                </CardTitle>
+              </CardHeader>
+              <CardContent style={{ paddingHorizontal: 0 }}>
                 <ChangelogTimeline
                   entityType={CHANGE_LOG_ENTITY_TYPE.TASK}
                   entityId={task.id}
@@ -797,7 +669,7 @@ export default function ScheduleDetailsScreen() {
                   entityCreatedAt={task.createdAt}
                   maxHeight={400}
                 />
-              </View>
+              </CardContent>
             </Card>
           )}
 
@@ -852,21 +724,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
+  titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
+    gap: spacing.sm,
   },
-  sectionTitle: {
+  titleText: {
     fontSize: fontSize.lg,
-    fontWeight: "600",
-    marginLeft: spacing.sm,
-    flex: 1,
+    fontWeight: fontWeight.semibold,
   },
   detailRow: {
     flexDirection: "row",

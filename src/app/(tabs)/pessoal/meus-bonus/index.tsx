@@ -1,6 +1,6 @@
-import { Layout } from '@/components/list/Layout'
-import { personalBonusesListConfig } from '@/config/list/personal'
+import { Redirect } from 'expo-router';
 
-export default function MyBonusesScreen() {
-  return <Layout config={personalBonusesListConfig} />
+// Redirect to new meu-bonus route
+export default function MyBonusesRedirect() {
+  return <Redirect href="/(tabs)/pessoal/meu-bonus" />;
 }

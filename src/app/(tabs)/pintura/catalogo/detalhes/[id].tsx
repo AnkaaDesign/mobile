@@ -295,12 +295,6 @@ export default function CatalogDetailsScreen() {
             </Alert>
           )}
 
-          {(!paint?.formulas || paint.formulas.length === 0) && (
-            <Alert>
-              <Icon name="info" size={16} />
-              <AlertDescription>Esta tinta ainda não possui fórmulas cadastradas. Adicione fórmulas para habilitar cálculos de produção.</AlertDescription>
-            </Alert>
-          )}
         </View>
       </ScrollView>
     </>

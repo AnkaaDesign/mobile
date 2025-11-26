@@ -158,7 +158,9 @@ export const Table = memo(function Table<T extends { id: string }>({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 8,
+    paddingHorizontal: 12,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   tableCard: {
     flex: 1,

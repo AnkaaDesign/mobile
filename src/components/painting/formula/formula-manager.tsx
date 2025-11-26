@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
+import { useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
 
 interface FormulaManagerProps {
   formulas: PaintFormula[];
@@ -21,6 +22,7 @@ interface FormulaManagerProps {
 
 export function FormulaManager({ formulas, onFormulasChange, paintId, availableItems = [] }: FormulaManagerProps) {
   const { colors } = useTheme();
+  const keyboardContext = useKeyboardAwareForm();
 
   // Ensure we always have at least one formula ready
   useEffect(() => {
@@ -87,7 +89,10 @@ export function FormulaManager({ formulas, onFormulasChange, paintId, availableI
     <FormProvider {...form}>
       <View style={styles.container}>
         {/* Formula Description */}
-        <View style={styles.section}>
+        <View
+          style={styles.section}
+          onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout('formulaDescription', e) : undefined}
+        >
           <Label>
             Descrição da Fórmula <Text style={{ color: colors.destructive }}>*</Text>
           </Label>
@@ -96,6 +101,7 @@ export function FormulaManager({ formulas, onFormulasChange, paintId, availableI
             value={form.watch("description")}
             onChangeText={(value) => form.setValue("description", value)}
             style={form.formState.errors.description ? styles.inputError : undefined}
+            onFocus={() => keyboardContext?.onFieldFocus('formulaDescription')}
           />
           {form.formState.errors.description && (
             <Text style={[styles.errorText, { color: colors.destructive }]}>

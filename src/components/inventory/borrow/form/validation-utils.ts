@@ -243,50 +243,6 @@ export function validateReturnDate(returnedAt: Date | null | undefined, borrowDa
 }
 
 /**
- * Validate expected return date if provided
- */
-export function validateExpectedReturnDate(expectedReturnDate: Date | null | undefined, borrowDate?: Date): ValidationError | null {
-  if (!expectedReturnDate) {
-    return null; // Expected return date is optional
-  }
-
-  const now = new Date();
-
-  // Expected return date should be in the future
-  if (expectedReturnDate < now) {
-    return {
-      field: "expectedReturnDate",
-      message: "Data esperada de devolução deve ser no futuro",
-      type: "data",
-    };
-  }
-
-  // Expected return date cannot be before borrow date
-  if (borrowDate && expectedReturnDate < borrowDate) {
-    return {
-      field: "expectedReturnDate",
-      message: "Data esperada não pode ser anterior à data do empréstimo",
-      type: "data",
-    };
-  }
-
-  // Could add maximum borrow duration validation here
-  const maxBorrowDays = 365; // 1 year
-  const maxReturnDate = new Date();
-  maxReturnDate.setDate(maxReturnDate.getDate() + maxBorrowDays);
-
-  if (expectedReturnDate > maxReturnDate) {
-    return {
-      field: "expectedReturnDate",
-      message: `Data esperada não pode exceder ${maxBorrowDays} dias`,
-      type: "business",
-    };
-  }
-
-  return null;
-}
-
-/**
  * Main validation function that runs all checks
  */
 export function validateBorrowRequest(
@@ -295,7 +251,6 @@ export function validateBorrowRequest(
     user: User | null;
     quantity: number;
     returnedAt?: Date | null;
-    expectedReturnDate?: Date | null;
   },
   context: {
     userActiveBorrows: Borrow[];
@@ -352,12 +307,6 @@ export function validateBorrowRequest(
   const returnDateError = validateReturnDate(data.returnedAt);
   if (returnDateError) {
     errors.push(returnDateError);
-  }
-
-  // Validate expected return date
-  const expectedReturnDateError = validateExpectedReturnDate(data.expectedReturnDate);
-  if (expectedReturnDateError) {
-    errors.push(expectedReturnDateError);
   }
 
   return {
@@ -462,39 +411,6 @@ export function getBorrowStatusMessage(borrow: Borrow): string {
     return "Item perdido";
   }
 
-  if (borrow.expectedReturnDate && new Date(borrow.expectedReturnDate) < new Date()) {
-    return "Atrasado para devolução";
-  }
-
   return "Ativo";
 }
 
-/**
- * Validate quantity returned
- */
-export function validateQuantityReturned(
-  quantityReturned: number | null | undefined,
-  quantityBorrowed: number
-): ValidationError | null {
-  if (quantityReturned === null || quantityReturned === undefined) {
-    return null; // Quantity returned is optional
-  }
-
-  if (quantityReturned < 0) {
-    return {
-      field: "quantityReturned",
-      message: "Quantidade devolvida não pode ser negativa",
-      type: "data",
-    };
-  }
-
-  if (quantityReturned > quantityBorrowed) {
-    return {
-      field: "quantityReturned",
-      message: `Quantidade devolvida (${quantityReturned}) não pode exceder a quantidade emprestada (${quantityBorrowed})`,
-      type: "data",
-    };
-  }
-
-  return null;
-}

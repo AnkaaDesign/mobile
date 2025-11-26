@@ -306,13 +306,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
     children: [
       { id: "meus-feriados", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
       {
-        id: "meus-bonus",
-        title: "Meus Bônus",
+        id: "meu-bonus",
+        title: "Meu Bônus",
         icon: "dollarSign",
-        path: "/pessoal/meus-bonus",
+        path: "/pessoal/meu-bonus",
         children: [
-          { id: "meus-bonus-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/meus-bonus/detalhes/:id", isDynamic: true },
-          { id: "simulacao-bonus", title: "Simulação", icon: "calculator", path: "/pessoal/simulacao-bonus" },
+          { id: "meu-bonus-historico", title: "Histórico", icon: "history", path: "/pessoal/meu-bonus/historico" },
+          { id: "meu-bonus-simulacao", title: "Simulação", icon: "calculator", path: "/pessoal/meu-bonus/simulacao" },
+          { id: "meu-bonus-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/meu-bonus/detalhes/:id", isDynamic: true },
         ],
       },
       {

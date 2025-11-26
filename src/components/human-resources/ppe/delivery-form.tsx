@@ -1,23 +1,26 @@
 import { useEffect, useState, useMemo } from "react";
-import { View, ScrollView } from "react-native";
-import { useForm } from "react-hook-form";
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Text } from "@/components/ui/text";
-import { Input } from "@/components/ui/input";
-import { TextArea } from "@/components/ui/textarea";
-import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
-import { usePpeDeliveryMutations, useUsers, useItems } from "@/hooks";
+import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
+import { SimpleFormActionBar } from "@/components/forms";
+
+import { usePpeDeliveryMutations, useUsers, useItems, useKeyboardAwareScroll } from "@/hooks";
 import { ppeDeliveryCreateSchema } from '../../../schemas';
 import type { PpeDeliveryCreateFormData } from '../../../schemas';
 import type { User, Item } from '../../../types';
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, USER_STATUS, PPE_TYPE } from "@/constants";
-import { Controller } from "react-hook-form";
 import { getItemPpeSize } from "@/utils/ppe-size-mapping";
-
-import { cn } from "@/lib/utils";
+import { useTheme } from "@/lib/theme";
+import { formSpacing } from "@/constants/form-styles";
+import { spacing } from "@/constants/design-system";
+import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 interface PpeDeliveryFormProps {
   preselectedUser?: User;
@@ -27,6 +30,8 @@ interface PpeDeliveryFormProps {
 }
 
 export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, onCancel }: PpeDeliveryFormProps) {
+  const { colors } = useTheme();
+  const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, createMutation } = usePpeDeliveryMutations();
   const [_selectedItem, _setSelectedItem] = useState<Item | null>(preselectedItem || null);
 
@@ -71,27 +76,48 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
 
   const isLoading = createMutation.isPending;
 
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
+
   return (
-    <ScrollView className="flex-1">
-      <View className="p-4 gap-4">
-        <Text className="text-lg font-semibold">Registrar Entrega de EPI</Text>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      >
+        <ScrollView
+          ref={refs.scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
+        >
+          <KeyboardAwareFormProvider value={keyboardContextValue}>
+          <FormCard title="Registrar Entrega de EPI">
+          <FormFieldGroup
+            label="Funcionário"
+            required
+            error={form.formState.errors.userId?.message}
+          >
+            <Controller
+              control={form.control}
+              name="userId"
+              render={({ field: { onChange, value }, fieldState: { error } }) => {
+                const userOptions: ComboboxOption[] =
+                  users?.data?.map((user) => ({
+                    value: user.id,
+                    label: user.name,
+                  })) || [];
 
-        <View className="gap-4">
-          <Controller
-            control={form.control}
-            name="userId"
-            render={({ field: { onChange, value }, fieldState: { error } }) => {
-              const userOptions: ComboboxOption[] =
-                users?.data?.map((user) => ({
-                  value: user.id,
-                  label: user.name,
-                })) || [];
-
-              return (
-                <View className="gap-2">
-                  <Text className="text-sm font-medium text-foreground">
-                    Funcionário <Text className="text-destructive">*</Text>
-                  </Text>
+                return (
                   <Combobox
                     options={userOptions}
                     value={value}
@@ -100,81 +126,77 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
                     disabled={isLoading || !!preselectedUser}
                     searchable={true}
                     clearable={false}
-                    error={error ? error.message : undefined}
+                    error={error?.message}
                   />
-                </View>
-              );
-            }}
-          />
+                );
+              }}
+            />
+          </FormFieldGroup>
 
-          <Controller
-            control={form.control}
-            name="itemId"
-            render={({ field: { onChange, value }, fieldState: { error } }) => {
-              // Get selected user to filter items by size
-              const selectedUserId = form.watch("userId");
-              const selectedUser = users?.data?.find(u => u.id === selectedUserId);
+          <FormFieldGroup
+            label="EPI"
+            required
+            error={form.formState.errors.itemId?.message}
+          >
+            <Controller
+              control={form.control}
+              name="itemId"
+              render={({ field: { onChange, value }, fieldState: { error } }) => {
+                // Get selected user to filter items by size
+                const selectedUserId = form.watch("userId");
+                const selectedUser = users?.data?.find(u => u.id === selectedUserId);
 
-              // Filter items based on user's PPE size configuration
-              const filteredItems = useMemo(() => {
-                if (!items?.data) return [];
+                // Filter items based on user's PPE size configuration
+                const filteredItems = useMemo(() => {
+                  if (!items?.data) return [];
 
-                // If no user selected or user has no ppeSize config, show all items
-                if (!selectedUser?.ppeSize) return items.data;
+                  // If no user selected or user has no ppeSize config, show all items
+                  if (!selectedUser?.ppeSize) return items.data;
 
-                return items.data.filter((item) => {
-                  // If item has no ppeType, include it (not a sized PPE)
-                  if (!item.ppeType) return true;
+                  return items.data.filter((item) => {
+                    // If item has no ppeType, include it (not a sized PPE)
+                    if (!item.ppeType) return true;
 
-                  // For OTHERS type, sizes are optional
-                  if (item.ppeType === PPE_TYPE.OTHERS) return true;
+                    // For OTHERS type, sizes are optional
+                    if (item.ppeType === PPE_TYPE.OTHERS) return true;
 
-                  // Get item size from measures
-                  const itemSize = getItemPpeSize(item);
+                    // Get item size from measures
+                    const itemSize = getItemPpeSize(item);
 
-                  // If item has no size, include it (size is optional)
-                  if (!itemSize) return true;
+                    // If item has no size, include it (size is optional)
+                    if (!itemSize) return true;
 
-                  // Get user's size for this PPE type
-                  let userSize: string | null = null;
-                  if (item.ppeType === PPE_TYPE.SHIRT || item.ppeType === PPE_TYPE.SLEEVES) {
-                    userSize = selectedUser.ppeSize.shirts || selectedUser.ppeSize.sleeves;
-                  } else if (item.ppeType === PPE_TYPE.PANTS) {
-                    userSize = selectedUser.ppeSize.pants;
-                  } else if (item.ppeType === PPE_TYPE.BOOTS) {
-                    userSize = selectedUser.ppeSize.boots;
-                  } else if (item.ppeType === PPE_TYPE.GLOVES) {
-                    userSize = selectedUser.ppeSize.gloves;
-                  } else if (item.ppeType === PPE_TYPE.MASK) {
-                    userSize = selectedUser.ppeSize.mask;
-                  } else if (item.ppeType === PPE_TYPE.RAIN_BOOTS) {
-                    userSize = selectedUser.ppeSize.rainBoots;
-                  }
+                    // Get user's size for this PPE type
+                    let userSize: string | null = null;
+                    if (item.ppeType === PPE_TYPE.SHIRT || item.ppeType === PPE_TYPE.SLEEVES) {
+                      userSize = selectedUser.ppeSize.shirts || selectedUser.ppeSize.sleeves;
+                    } else if (item.ppeType === PPE_TYPE.PANTS) {
+                      userSize = selectedUser.ppeSize.pants;
+                    } else if (item.ppeType === PPE_TYPE.BOOTS) {
+                      userSize = selectedUser.ppeSize.boots;
+                    } else if (item.ppeType === PPE_TYPE.GLOVES) {
+                      userSize = selectedUser.ppeSize.gloves;
+                    } else if (item.ppeType === PPE_TYPE.MASK) {
+                      userSize = selectedUser.ppeSize.mask;
+                    } else if (item.ppeType === PPE_TYPE.RAIN_BOOTS) {
+                      userSize = selectedUser.ppeSize.rainBoots;
+                    }
 
-                  // If user has no size configured for this type, include all items
-                  if (!userSize) return true;
+                    // If user has no size configured for this type, include all items
+                    if (!userSize) return true;
 
-                  // Match item size with user size
-                  return itemSize === userSize;
-                });
-              }, [items?.data, selectedUser]);
+                    // Match item size with user size
+                    return itemSize === userSize;
+                  });
+                }, [items?.data, selectedUser]);
 
-              const itemOptions: ComboboxOption[] =
-                filteredItems.map((item) => ({
-                  value: item.id,
-                  label: `${item.name}${item.ppeSize ? ` • ${item.ppeSize}` : ""}${item.ppeCA ? ` - CA: ${item.ppeCA}` : ""}`,
-                }));
+                const itemOptions: ComboboxOption[] =
+                  filteredItems.map((item) => ({
+                    value: item.id,
+                    label: `${item.name}${item.ppeSize ? ` • ${item.ppeSize}` : ""}${item.ppeCA ? ` - CA: ${item.ppeCA}` : ""}`,
+                  }));
 
-              return (
-                <View className="gap-2">
-                  <Text className="text-sm font-medium text-foreground">
-                    EPI <Text className="text-destructive">*</Text>
-                  </Text>
-                  {selectedUser?.ppeSize && (
-                    <Text className="text-xs text-muted-foreground">
-                      Mostrando apenas EPIs compatíveis com o tamanho do colaborador
-                    </Text>
-                  )}
+                return (
                   <Combobox
                     options={itemOptions}
                     value={value}
@@ -183,63 +205,69 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
                     disabled={isLoading || !!preselectedItem}
                     searchable={true}
                     clearable={false}
-                    error={error ? error.message : undefined}
+                    error={error?.message}
                   />
-                </View>
-              );
-            }}
-          />
+                );
+              }}
+            />
+          </FormFieldGroup>
 
-          <Controller
-            control={form.control}
-            name="quantity"
-            render={({ field: { onChange, value, onBlur }, fieldState: { error } }) => (
-              <View className="gap-2">
-                <Text className="text-sm font-medium text-foreground">
-                  Quantidade <Text className="text-destructive">*</Text>
-                </Text>
+          <FormFieldGroup
+            label="Quantidade"
+            required
+            error={form.formState.errors.quantity?.message}
+          >
+            <Controller
+              control={form.control}
+              name="quantity"
+              render={({ field: { onChange, value } }) => (
                 <Input
-                  value={value?.toString()}
-                  onChangeText={(text) => onChange(parseInt(text) || 1)}
-                  onBlur={onBlur}
+                  type="integer"
+                  value={value ?? undefined}
+                  onChange={onChange}
                   placeholder="1"
-                  keyboardType="numeric"
+                  min={1}
                   editable={!isLoading}
-                  className={cn(error && "border-destructive")}
+                  error={!!form.formState.errors.quantity}
                 />
-                {error && <Text className="text-sm text-destructive">{error.message}</Text>}
-              </View>
-            )}
-          />
+              )}
+            />
+          </FormFieldGroup>
 
-          <Controller
-            control={form.control}
-            name="actualDeliveryDate"
-            render={({ field: { onChange, value }, fieldState: { error } }) => (
-              <View className="gap-2">
-                <Text className="text-sm font-medium text-foreground">
-                  Data de Entrega <Text className="text-destructive">*</Text>
-                </Text>
-                <DatePicker value={value ?? undefined} onChange={onChange} placeholder="Selecione a data" disabled={isLoading} />
-                {error && <Text className="text-sm text-destructive">{error.message}</Text>}
-              </View>
-            )}
-          />
+          <FormFieldGroup
+            label="Data de Entrega"
+            required
+            error={form.formState.errors.actualDeliveryDate?.message}
+          >
+            <Controller
+              control={form.control}
+              name="actualDeliveryDate"
+              render={({ field: { onChange, value } }) => (
+                <DatePicker
+                  value={value ?? undefined}
+                  onChange={onChange}
+                  placeholder="Selecione a data"
+                  disabled={isLoading}
+                />
+              )}
+            />
+          </FormFieldGroup>
 
-          <Controller
-            control={form.control}
-            name="status"
-            render={({ field: { onChange, value }, fieldState: { error } }) => {
-              const statusOptions: ComboboxOption[] = Object.entries(PPE_DELIVERY_STATUS_LABELS).map(([key, label]) => ({
-                value: key,
-                label: label,
-              }));
+          <FormFieldGroup
+            label="Status"
+            required
+            error={form.formState.errors.status?.message}
+          >
+            <Controller
+              control={form.control}
+              name="status"
+              render={({ field: { onChange, value }, fieldState: { error } }) => {
+                const statusOptions: ComboboxOption[] = Object.entries(PPE_DELIVERY_STATUS_LABELS).map(([key, label]) => ({
+                  value: key,
+                  label: label,
+                }));
 
-              return (
-                <View className="gap-2">
-                  <Text className="text-sm font-medium text-foreground">
-                    Status <Text className="text-destructive">*</Text>
-                  </Text>
+                return (
                   <Combobox
                     options={statusOptions}
                     value={value}
@@ -248,46 +276,64 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
                     disabled={isLoading}
                     searchable={false}
                     clearable={false}
-                    error={error ? error.message : undefined}
+                    error={error?.message}
                   />
-                </View>
-              );
-            }}
-          />
+                );
+              }}
+            />
+          </FormFieldGroup>
 
-          <Controller
-            control={form.control}
-            name="reason"
-            render={({ field: { onChange, value, onBlur }, fieldState: { error } }) => (
-              <View className="gap-2">
-                <Text className="text-sm font-medium text-foreground">
-                  Justificativa (Opcional)
-                </Text>
-                <TextArea
+          <FormFieldGroup
+            label="Justificativa"
+            error={form.formState.errors.reason?.message}
+          >
+            <Controller
+              control={form.control}
+              name="reason"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Textarea
                   value={value || ""}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   placeholder="Motivo da solicitação ou entrega"
-                  editable={!isLoading}
                   numberOfLines={3}
-                  className={cn(error && "border-destructive")}
+                  editable={!isLoading}
                 />
-                {error && <Text className="text-xs text-destructive">{error.message}</Text>}
-              </View>
-            )}
-          />
+              )}
+            />
+          </FormFieldGroup>
+          </FormCard>
+          </KeyboardAwareFormProvider>
+        </ScrollView>
 
-        </View>
-
-        <View className="flex-row gap-3 pt-4">
-          <Button variant="outline" onPress={onCancel} disabled={isLoading} className="flex-1">
-            <Text>Cancelar</Text>
-          </Button>
-          <Button onPress={form.handleSubmit(handleSubmit)} disabled={isLoading} className="flex-1">
-            <Text>{isLoading ? "Salvando..." : "Registrar Entrega"}</Text>
-          </Button>
-        </View>
-      </View>
-    </ScrollView>
+        <SimpleFormActionBar
+          onCancel={onCancel}
+          onSubmit={form.handleSubmit(handleSubmit)}
+          isSubmitting={isLoading}
+          canSubmit={form.formState.isValid}
+          submitLabel="Registrar Entrega"
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: formSpacing.containerPaddingVertical,
+    paddingBottom: 0, // No spacing - action bar has its own margin
+  },
+  fieldGroup: {
+    gap: spacing.lg,
+  },
+});

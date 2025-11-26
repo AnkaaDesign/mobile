@@ -195,7 +195,7 @@ export function ExternalWithdrawalCreateForm() {
 
   // Stage 1: Basic Info
   const renderStage1 = () => (
-    <ScrollView style={styles.stageContainer} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.stageContainer} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       <Card style={styles.card}>
         <CardHeader>
           <View style={styles.cardHeaderContent}>
@@ -339,7 +339,7 @@ export function ExternalWithdrawalCreateForm() {
 
   // Stage 3: Review
   const renderStage3 = () => (
-    <ScrollView style={styles.stageContainer} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.stageContainer} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       <ExternalWithdrawalSummaryCards
         withdrawerName={withdrawerName}
         type={type}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,8 @@ import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
+import { useKeyboardAwareScroll } from "@/hooks";
+import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 import { sectorCreateSchema, sectorUpdateSchema } from "@/schemas/sector";
 import type { SectorCreateFormData, SectorUpdateFormData } from "@/schemas/sector";
@@ -35,6 +37,7 @@ const PRIVILEGE_LABELS: Record<string, string> = {
 export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useSectorMutations();
 
   const form = useForm<SectorCreateFormData | SectorUpdateFormData>({
@@ -52,6 +55,13 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
   });
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   const handleSubmit = async (data: SectorCreateFormData | SectorUpdateFormData) => {
     try {
@@ -87,64 +97,74 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView} keyboardVerticalOffset={0}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      >
         <ScrollView
+          ref={refs.scrollViewRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
         >
-        <FormCard
-          title="Informações do Setor"
-          subtitle="Preencha os dados do setor"
-        >
-          {/* Name */}
-          <FormFieldGroup
-            label="Nome"
-            required
-            error={form.formState.errors.name?.message}
-          >
-            <Controller
-              control={form.control}
-              name="name"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  value={value || ""}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="Digite o nome do setor"
-                  editable={!isLoading}
-                  error={!!form.formState.errors.name}
+          <KeyboardAwareFormProvider value={keyboardContextValue}>
+            <FormCard
+              title="Informações do Setor"
+              subtitle="Preencha os dados do setor"
+            >
+              {/* Name */}
+              <FormFieldGroup
+                label="Nome"
+                required
+                error={form.formState.errors.name?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name="name"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      value={value || ""}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      placeholder="Digite o nome do setor"
+                      editable={!isLoading}
+                      error={!!form.formState.errors.name}
+                    />
+                  )}
                 />
-              )}
-            />
-          </FormFieldGroup>
+              </FormFieldGroup>
 
-          {/* Privileges */}
-          <FormFieldGroup
-            label="Privilégios"
-            required
-            helper="Define o nível de acesso do setor no sistema"
-            error={form.formState.errors.privileges?.message}
-          >
-            <Controller
-              control={form.control}
-              name="privileges"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <Combobox
-                  options={privilegeOptions}
-                  value={value}
-                  onValueChange={onChange}
-                  placeholder="Selecione o nível de privilégio"
-                  disabled={isLoading}
-                  searchable={false}
-                  clearable={false}
-                  error={error?.message}
+              {/* Privileges */}
+              <FormFieldGroup
+                label="Privilégios"
+                required
+                helper="Define o nível de acesso do setor no sistema"
+                error={form.formState.errors.privileges?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name="privileges"
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
+                    <Combobox
+                      options={privilegeOptions}
+                      value={value}
+                      onValueChange={onChange}
+                      placeholder="Selecione o nível de privilégio"
+                      disabled={isLoading}
+                      searchable={false}
+                      clearable={false}
+                      error={error?.message}
+                    />
+                  )}
                 />
-              )}
-            />
-          </FormFieldGroup>
-        </FormCard>
+              </FormFieldGroup>
+            </FormCard>
+          </KeyboardAwareFormProvider>
         </ScrollView>
 
         <SimpleFormActionBar

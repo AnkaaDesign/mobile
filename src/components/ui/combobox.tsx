@@ -7,6 +7,7 @@ import { Checkbox } from "./checkbox";
 import { useTheme } from "@/lib/theme";
 import { useDebouncedValue } from "@/hooks/useDebouncedSearch";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
 
 export interface ComboboxOption {
   value: string;
@@ -86,7 +87,13 @@ interface ComboboxProps<TData = ComboboxOption> {
 
   // UI behavior
   hideDescription?: boolean;
-  preferFullScreen?: boolean;
+
+  // Scroll behavior - callback to notify parent when combobox opens
+  // Parent can use this to scroll the combobox into view
+  // Returns true if scrolling was performed
+  onOpen?: (measurements: { inputY: number; inputHeight: number; requiredHeight: number }) => boolean | void;
+  // Callback when combobox closes
+  onClose?: () => void;
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -135,9 +142,18 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   showCount = true,
   hideDefaultBadges = false,
   hideDescription = false,
-  preferFullScreen = false,
+  onOpen,
+  onClose: onCloseProp,
 }: ComboboxProps<TData>) {
   const { colors } = useTheme();
+  const keyboardContext = useKeyboardAwareForm();
+
+  // Auto-integrate with keyboard context when available
+  // This allows Combobox to work seamlessly within form containers
+  // without requiring explicit onOpen/onClose props
+  const effectiveOnOpen = onOpen ?? keyboardContext?.onComboboxOpen;
+  const effectiveOnClose = onCloseProp ?? keyboardContext?.onComboboxClose;
+
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -153,6 +169,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
     width: 0,
     height: 0,
   });
+  const inputLayoutRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
   const selectRef = useRef<View>(null);
 
   // Use refs for getter functions and initialOptions to prevent infinite loops
@@ -215,13 +232,19 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
     refetchOnWindowFocus: false,
   });
 
-  // Refetch when dropdown opens for async mode (only if no data)
+  // Reset pagination when dropdown opens for async mode
+  // Note: We don't refetch on every open to avoid resetting accumulated options
+  // The first page is already loaded via useQuery, and hasMore is set from that response
   useEffect(() => {
-    if (open && async && queryKey && queryFn && allAsyncOptions.length === 0 && !isLoadingOptions) {
-      console.log('[Combobox] Refetching data on open (no existing data)');
-      refetch();
+    if (open && async && queryKey && queryFn) {
+      // Only reset if we have no data yet
+      if (allAsyncOptions.length === 0) {
+        console.log('[Combobox] Refetching data on open (no existing data)');
+        setCurrentPage(1);
+        refetch();
+      }
     }
-  }, [open, async, queryKey, queryFn, refetch, allAsyncOptions.length, isLoadingOptions]);
+  }, [open, async, queryKey, queryFn, refetch, allAsyncOptions.length]);
 
   // Initialize with initialOptions on mount
   useEffect(() => {
@@ -297,10 +320,12 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
       console.log('[Combobox] Setting allAsyncOptions', {
         count: deduplicatedData.length,
         queryKey: JSON.stringify(queryKey),
+        hasMore: asyncResponse.hasMore,
         sampleItem: deduplicatedData[0]
       });
       setAllAsyncOptions(deduplicatedData);
       setHasMore(asyncResponse.hasMore || false);
+      console.log('[Combobox] hasMore set to:', asyncResponse.hasMore || false);
     } else if (asyncResponse === null) {
       console.log('[Combobox] Clearing allAsyncOptions (asyncResponse is null)');
       setAllAsyncOptions([]);
@@ -310,11 +335,13 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
 
   // Load more function
   const loadMore = useCallback(async () => {
+    console.log('[Combobox] loadMore called', { hasMore, isLoadingMore, currentPage });
     if (!queryFn || isLoadingMore || !hasMore) return;
 
     setIsLoadingMore(true);
     try {
       const nextPage = currentPage + 1;
+      console.log('[Combobox] Loading page', nextPage);
       const result = await queryFn(debouncedSearch, nextPage);
 
       // Handle backward compatibility
@@ -336,6 +363,11 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         });
         setHasMore(false);
       } else {
+        console.log('[Combobox] Loaded page result', {
+          dataLength: result.data?.length,
+          hasMore: result.hasMore,
+          total: result.total
+        });
         (result.data || []).forEach(item => {
           const itemValue = getOptionValue(item);
           allItemsCacheRef.current.set(itemValue, item);
@@ -344,12 +376,14 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         setAllAsyncOptions((prev) => {
           const combined = [...prev, ...(result.data || [])];
           const seen = new Set();
-          return combined.filter((item) => {
+          const deduplicated = combined.filter((item) => {
             const value = getOptionValue(item);
             if (seen.has(value)) return false;
             seen.add(value);
             return true;
           });
+          console.log('[Combobox] Accumulating options:', { prevCount: prev.length, newCount: result.data?.length, combinedCount: deduplicated.length });
+          return deduplicated;
         });
         setHasMore(result.hasMore || false);
       }
@@ -413,50 +447,61 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
 
   // Measure input position for precise dropdown positioning
   const measureSelect = useCallback(() => {
-    selectRef.current?.measureInWindow((x, y, width, height) => {
-      console.log('[Combobox] Measured input layout:', { x, y, width, height });
-      setInputLayout({ x, y, width, height });
+    return new Promise<{ x: number; y: number; width: number; height: number }>((resolve) => {
+      selectRef.current?.measureInWindow((x, y, width, height) => {
+        console.log('[Combobox] Measured input layout:', { x, y, width, height });
+        const layout = { x, y, width, height };
+        inputLayoutRef.current = layout;
+        setInputLayout(layout);
+        resolve(layout);
+      });
     });
   }, []);
 
-  // Calculate dropdown position
-  const spaceBelow = SCREEN_HEIGHT - (inputLayout.y + inputLayout.height);
-  const spaceAbove = inputLayout.y;
-  const requiredSpace = Math.min(LIST_MAX_HEIGHT, filteredOptions.length * 48 + 56);
 
-  console.log('[Combobox] Space calculation:', {
-    spaceBelow,
-    spaceAbove,
-    requiredSpace,
-    SCREEN_HEIGHT,
-    inputLayoutY: inputLayout.y,
-    inputLayoutHeight: inputLayout.height
-  });
-
-  // Use full screen mode if:
-  // 1. preferFullScreen is true, OR
-  // 2. There's not enough space below AND not enough space above
-  const useFullScreenMode = preferFullScreen || (spaceBelow < requiredSpace && spaceAbove < requiredSpace);
-  const shouldShowBelow = spaceBelow >= requiredSpace;
-
-  console.log('[Combobox] Mode decision:', { useFullScreenMode, shouldShowBelow, preferFullScreen });
-
-  const handleOpen = useCallback(() => {
+  const handleOpen = useCallback(async () => {
     console.log('[Combobox] handleOpen called', { disabled, optionsCount: options.length });
     if (disabled) return;
-    measureSelect();
-    setTimeout(() => {
-      console.log('[Combobox] Setting open to true');
-      setOpen(true);
-    }, 0);
+
     setSearch("");
-  }, [disabled, measureSelect, options]);
+
+    const layout = await measureSelect();
+
+    // Notify parent about the opening so it can scroll if needed
+    let didScroll = false;
+    if (effectiveOnOpen && layout.height > 0) {
+      const dropdownHeight = Math.min(LIST_MAX_HEIGHT, options.length * 48 + 56);
+      didScroll = effectiveOnOpen({
+        inputY: layout.y,
+        inputHeight: layout.height,
+        requiredHeight: dropdownHeight,
+      }) === true;
+    }
+
+    if (didScroll) {
+      // Wait for scroll animation to complete, then re-measure and open
+      // The parent's handleComboboxOpen waits 50ms before scrolling, then scroll takes ~300-400ms
+      // So we need to wait at least 50 + 400 = 450ms, adding buffer for safety
+      setTimeout(async () => {
+        // Re-measure after scroll completed - this updates inputLayoutRef
+        const finalLayout = await measureSelect();
+        console.log('[Combobox] Final measurement after scroll:', finalLayout);
+        // Open immediately after measurement - ref is already updated
+        setOpen(true);
+      }, 550); // 50ms (parent delay) + 400ms (scroll) + 100ms (buffer)
+    } else {
+      // No scroll needed, open immediately
+      console.log('[Combobox] Setting open to true immediately');
+      setOpen(true);
+    }
+  }, [disabled, measureSelect, options, effectiveOnOpen]);
 
   const handleClose = useCallback(() => {
     setOpen(false);
     setSearch("");
     Keyboard.dismiss();
-  }, []);
+    effectiveOnClose?.();
+  }, [effectiveOnClose]);
 
   const handleSelect = useCallback(
     (optionValue: string) => {
@@ -510,7 +555,9 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   }, [onValueChange]);
 
   const handleEndReached = useCallback(() => {
+    console.log('[Combobox] onEndReached triggered', { async, hasMore, isLoadingMore });
     if (async && hasMore && !isLoadingMore) {
+      console.log('[Combobox] Calling loadMore from onEndReached');
       loadMore();
     }
   }, [async, hasMore, isLoadingMore, loadMore]);
@@ -622,16 +669,30 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   );
 
   const renderFooter = useCallback(() => {
-    if (!isLoadingMore) return null;
-    return (
-      <View style={styles.loadingFooter}>
-        <ActivityIndicator size="small" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
-          Carregando mais...
-        </Text>
-      </View>
-    );
-  }, [isLoadingMore, colors]);
+    if (isLoadingMore) {
+      return (
+        <View style={styles.loadingFooter}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
+            Carregando mais...
+          </Text>
+        </View>
+      );
+    }
+
+    // Show indicator when there are more items to load
+    if (async && hasMore) {
+      return (
+        <View style={styles.loadingFooter}>
+          <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
+            Role para carregar mais
+          </Text>
+        </View>
+      );
+    }
+
+    return null;
+  }, [isLoadingMore, async, hasMore, colors]);
 
   return (
     <View style={styles.container}>
@@ -728,12 +789,12 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         animationType="fade"
         onRequestClose={handleClose}
         statusBarTranslucent
-        onShow={() => console.log('[Combobox] Modal shown', { filteredOptionsCount: filteredOptions.length, useFullScreenMode })}
+        onShow={() => console.log('[Combobox] Modal shown', { filteredOptionsCount: filteredOptions.length })}
       >
         <Pressable
           style={[
             styles.modalOverlay,
-            (inputLayout.width === 0 || useFullScreenMode) && {
+            inputLayout.width === 0 && {
               justifyContent: "flex-start",
               backgroundColor: "rgba(0, 0, 0, 0.5)",
             },
@@ -742,31 +803,32 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         >
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={(inputLayout.width === 0 || useFullScreenMode) ? styles.keyboardAvoidingView : undefined}
+            style={inputLayout.width === 0 ? styles.keyboardAvoidingView : undefined}
             keyboardVerticalOffset={0}
           >
             <Pressable
               style={[
-                inputLayout.width > 0 && !useFullScreenMode ? styles.dropdownContent : styles.modalContent,
+                inputLayout.width > 0 ? styles.dropdownContent : styles.modalContent,
                 {
                   backgroundColor: colors.card,
                   borderColor: colors.border,
-                  ...(inputLayout.width > 0 && !useFullScreenMode && {
+                  ...(inputLayout.width > 0 && {
                     position: "absolute",
                     width: inputLayout.width,
                     left: inputLayout.x,
-                    top: shouldShowBelow ? inputLayout.y + inputLayout.height + 4 : undefined,
-                    bottom: !shouldShowBelow ? SCREEN_HEIGHT - inputLayout.y + 4 : undefined,
-                    maxHeight: LIST_MAX_HEIGHT + 100,
+                    // Always show below the input - parent is responsible for scrolling to ensure visibility
+                    top: inputLayout.y + inputLayout.height + 4,
+                    // Limit height to available space on screen
+                    maxHeight: Math.min(LIST_MAX_HEIGHT + 100, SCREEN_HEIGHT - inputLayout.y - inputLayout.height - 20),
                   }),
-                  ...((inputLayout.width === 0 || useFullScreenMode) && {
+                  ...(inputLayout.width === 0 && {
                     maxHeight: MAX_MODAL_HEIGHT,
                   }),
                 },
               ]}
               onPress={() => {}}
             >
-            {(inputLayout.width === 0 || useFullScreenMode) && (
+            {inputLayout.width === 0 && (
               <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.modalTitle, { color: colors.foreground }]}>
                   {label || "Selecione uma opção"}
@@ -797,7 +859,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
                   placeholderTextColor={colors.mutedForeground}
                   value={search}
                   onChangeText={setSearch}
-                  autoFocus={inputLayout.width === 0 || useFullScreenMode}
+                  autoFocus={inputLayout.width === 0}
                   accessibilityLabel="Campo de pesquisa"
                 />
               </View>
@@ -831,7 +893,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
               keyboardShouldPersistTaps="always"
               keyboardDismissMode="none"
               onEndReached={handleEndReached}
-              onEndReachedThreshold={0.5}
+              onEndReachedThreshold={0.2}
               ListFooterComponent={renderFooter}
               ListHeaderComponent={
                 <>
@@ -888,7 +950,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
                 )
               }
               style={{
-                maxHeight: inputLayout.width > 0 && !useFullScreenMode ? LIST_MAX_HEIGHT : undefined,
+                maxHeight: inputLayout.width > 0 ? LIST_MAX_HEIGHT : undefined,
               }}
               contentContainerStyle={{
                 flexGrow: 1,
@@ -914,7 +976,7 @@ Combobox.displayName = "Combobox";
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.md,
+    // No marginBottom - let parent control spacing via gap
   },
   label: {
     fontSize: fontSize.sm,

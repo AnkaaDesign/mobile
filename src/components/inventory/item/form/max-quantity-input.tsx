@@ -25,21 +25,16 @@ export function MaxQuantityInput({ disabled }: MaxQuantityInputProps) {
           </Label>
           <Input
             id="maxQuantity"
-            value={value?.toString() || ""}
-            onChangeText={(text) => {
-              if (text === "") {
-                onChange(null);
-              } else {
-                const num = parseInt(text, 10);
-                onChange(isNaN(num) ? null : num);
-              }
-            }}
+            fieldKey="maxQuantity"
+            type="natural"
+            value={value}
+            onChangeText={onChange}
             onBlur={onBlur}
             placeholder="0"
-            editable={!disabled}
-            keyboardType="numeric"
+            disabled={disabled}
+            min={0}
           />
-          {error && <ThemedText style={{ fontSize: 14, color: "#ef4444", marginTop: 4 }}>{error.message}</ThemedText>}
+          {error && <ThemedText variant="destructive" style={{ fontSize: 14, marginTop: 4 }}>{error.message}</ThemedText>}
         </View>
       )}
     />

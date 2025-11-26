@@ -1,5 +1,5 @@
-import React, { memo, useState, useEffect, useCallback } from 'react'
-import { View, ScrollView, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Keyboard } from 'react-native'
+import React, { memo, useState, useEffect, useCallback, useRef } from 'react'
+import { View, ScrollView, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Keyboard, Dimensions, LayoutChangeEvent } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,8 @@ import { useTheme } from '@/lib/theme'
 import { IconFilter, IconX } from '@tabler/icons-react-native'
 import { SelectField, DateRangeField, NumberRangeField, ToggleField, TextField } from './Fields'
 import type { FiltersProps, FilterField, FilterValue } from '../types'
+
+const SCREEN_HEIGHT = Dimensions.get('window').height
 
 export const Filters = memo(function Filters({
   fields,
@@ -20,26 +22,57 @@ export const Filters = memo(function Filters({
 }: FiltersProps) {
   const { colors } = useTheme()
   const insets = useSafeAreaInsets()
-  const scrollViewRef = React.useRef<ScrollView>(null)
+  const scrollViewRef = useRef<ScrollView>(null)
+  const fieldLayoutsRef = useRef<Map<string, { y: number; height: number }>>(new Map())
+  const scrollViewYRef = useRef(0)
+  const currentScrollY = useRef(0)
 
   // Local state for uncommitted changes
   const [localValues, setLocalValues] = useState(values)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
+  const [focusedFieldKey, setFocusedFieldKey] = useState<string | null>(null)
+  const [comboboxExtraPadding, setComboboxExtraPadding] = useState(0)
 
-  // Track keyboard height and scroll moderately when keyboard shows
+  // Intelligent keyboard-aware scrolling when a field is focused
+  useEffect(() => {
+    if (!focusedFieldKey || keyboardHeight === 0) return
+
+    const fieldLayout = fieldLayoutsRef.current.get(focusedFieldKey)
+    if (!fieldLayout || !scrollViewRef.current) return
+
+    // Calculate where the field's bottom is on screen (accounting for current scroll)
+    const fieldBottomOnScreen = fieldLayout.y - currentScrollY.current + scrollViewYRef.current + fieldLayout.height
+
+    // Calculate the visible area bottom (above keyboard with small padding)
+    const visibleAreaBottom = SCREEN_HEIGHT - keyboardHeight - 16
+
+    // Only scroll if the field's bottom is hidden by keyboard
+    if (fieldBottomOnScreen > visibleAreaBottom) {
+      // Calculate exactly how much the field is hidden
+      const hiddenAmount = fieldBottomOnScreen - visibleAreaBottom
+
+      // Scroll just enough to show the field (minimal padding)
+      const targetScrollY = currentScrollY.current + hiddenAmount + 8
+
+      scrollViewRef.current.scrollTo({
+        y: targetScrollY,
+        animated: true,
+      })
+    }
+  }, [focusedFieldKey, keyboardHeight])
+
+  // Track keyboard visibility
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow'
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide'
 
     const showListener = Keyboard.addListener(showEvent, (e) => {
       setKeyboardHeight(e.endCoordinates.height)
-      // Scroll down to bring focused input into view
-      setTimeout(() => {
-        scrollViewRef.current?.scrollTo({ y: 300, animated: true })
-      }, 100)
     })
+
     const hideListener = Keyboard.addListener(hideEvent, () => {
       setKeyboardHeight(0)
+      setFocusedFieldKey(null)
     })
 
     return () => {
@@ -76,25 +109,93 @@ export const Filters = memo(function Filters({
     []
   )
 
+  // Handle field layout measurement
+  const handleFieldLayout = useCallback((fieldKey: string, event: LayoutChangeEvent) => {
+    const { y, height } = event.nativeEvent.layout
+    fieldLayoutsRef.current.set(fieldKey, { y, height })
+  }, [])
+
+  // Handle field focus
+  const handleFieldFocus = useCallback((fieldKey: string) => {
+    setFocusedFieldKey(fieldKey)
+  }, [])
+
+  // Handle combobox opening - scroll to position input at top of screen
+  // Returns true if scrolling was needed
+  const handleComboboxOpen = useCallback((measurements: { inputY: number; inputHeight: number; requiredHeight: number }): boolean => {
+    if (!scrollViewRef.current) return false
+
+    const { inputY, inputHeight } = measurements
+
+    // Target: position input near the top of the screen (with space for label)
+    // scrollViewYRef.current contains the Y position of the ScrollView on screen
+    const topPadding = 30 // Space for label above the input
+    const targetInputY = scrollViewYRef.current + topPadding
+
+    // Calculate scroll amount needed to move input to top
+    const scrollAmount = inputY - targetInputY
+
+    console.log('[Filters] Combobox scroll to top:', {
+      inputY,
+      targetInputY,
+      scrollAmount,
+      currentScrollY: currentScrollY.current,
+      scrollViewY: scrollViewYRef.current,
+      SCREEN_HEIGHT,
+    })
+
+    // Scroll if input is below target position
+    if (scrollAmount > 0) {
+      // Add extra padding to allow scroll room
+      setComboboxExtraPadding(scrollAmount + 300)
+
+      // Then scroll after a brief delay to let padding apply
+      setTimeout(() => {
+        const targetScrollY = currentScrollY.current + scrollAmount
+        console.log('[Filters] Executing scroll to:', targetScrollY)
+        scrollViewRef.current?.scrollTo({
+          y: Math.max(0, targetScrollY),
+          animated: true,
+        })
+      }, 50)
+      return true
+    }
+    return false
+  }, [])
+
+  // Function to reset padding when combobox closes
+  const handleComboboxClose = useCallback(() => {
+    setComboboxExtraPadding(0)
+  }, [])
+
   const renderField = useCallback(
-    (field: FilterField) => {
+    (field: FilterField, index: number) => {
       const fieldValue = localValues[field.key]
+
+      const wrapWithLayout = (component: React.ReactNode) => (
+        <View
+          key={field.key}
+          onLayout={(e) => handleFieldLayout(field.key, e)}
+        >
+          {component}
+        </View>
+      )
 
       switch (field.type) {
         case 'select':
-          return (
+          return wrapWithLayout(
             <SelectField
-              key={field.key}
               field={field}
               value={fieldValue}
               onChange={(value) => handleFieldChange(field.key, value)}
+              onOpen={handleComboboxOpen}
+              onClose={handleComboboxClose}
             />
           )
 
         case 'date-range':
-          return (
+          return wrapWithLayout(
             <DateRangeField
-              key={field.key}
               field={field}
               value={fieldValue}
               onChange={(value) => handleFieldChange(field.key, value)}
@@ -102,19 +203,18 @@ export const Filters = memo(function Filters({
           )
 
         case 'number-range':
-          return (
+          return wrapWithLayout(
             <NumberRangeField
-              key={field.key}
               field={field}
               value={fieldValue}
               onChange={(value) => handleFieldChange(field.key, value)}
+              onFocus={() => handleFieldFocus(field.key)}
             />
           )
 
         case 'toggle':
-          return (
+          return wrapWithLayout(
             <ToggleField
-              key={field.key}
               field={field}
               value={fieldValue}
               onChange={(value) => handleFieldChange(field.key, value)}
@@ -122,12 +222,12 @@ export const Filters = memo(function Filters({
           )
 
         case 'text':
-          return (
+          return wrapWithLayout(
             <TextField
-              key={field.key}
               field={field}
               value={fieldValue}
               onChange={(value) => handleFieldChange(field.key, value)}
+              onFocus={() => handleFieldFocus(field.key)}
             />
           )
 
@@ -135,7 +235,7 @@ export const Filters = memo(function Filters({
           return null
       }
     },
-    [localValues, handleFieldChange]
+    [localValues, handleFieldChange, handleFieldLayout, handleFieldFocus, handleComboboxOpen, handleComboboxClose]
   )
 
   return (
@@ -172,13 +272,24 @@ export const Filters = memo(function Filters({
           contentContainerStyle={[
             styles.scrollContent,
             {
+              // Dynamic padding: extra when combobox needs scroll room
               paddingBottom: keyboardHeight > 0
-                ? keyboardHeight + 80
-                : insets.bottom + 100
+                ? keyboardHeight + 120
+                : insets.bottom + 100 + comboboxExtraPadding
             }
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          onLayout={(e) => {
+            // Measure scroll view position relative to screen
+            e.target.measureInWindow?.((x, y) => {
+              scrollViewYRef.current = y
+            })
+          }}
+          onScroll={(e) => {
+            currentScrollY.current = e.nativeEvent.contentOffset.y
+          }}
+          scrollEventThrottle={16}
         >
           <View style={styles.fieldsContainer}>
             {fields.map(renderField)}

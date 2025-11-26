@@ -191,6 +191,31 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
         label: 'Tipos de Tinta',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['paint-types', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getPaintTypes } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getPaintTypes({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((type: any) => ({
+                label: type.name,
+                value: type.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Paint Type Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os tipos de tinta',
       },
       {
@@ -198,6 +223,31 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
         label: 'Marcas de Tinta',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['paint-brands', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getPaintBrands } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getPaintBrands({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((brand: any) => ({
+                label: brand.name,
+                value: brand.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Paint Brand Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione as marcas de tinta',
       },
       {

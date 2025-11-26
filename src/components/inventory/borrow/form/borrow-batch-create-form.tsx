@@ -1,439 +1,619 @@
-import { useState, useCallback } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
+import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, Keyboard, ActivityIndicator } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Icon } from "@/components/ui/icon";
+import { Button } from "@/components/ui/button";
+import { Text } from "@/components/ui/text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useItems, useUsers } from "@/hooks";
-import { IconLoader } from "@tabler/icons-react-native";
+import { formSpacing, formLayout } from "@/constants/form-styles";
+import { useUsers, useItems, useMultiStepForm, useKeyboardAwareScroll } from "@/hooks";
+import { ITEM_CATEGORY_TYPE } from "@/constants";
+import { FormSteps, FormStep } from "@/components/ui/form-steps";
+import { ItemSelectorTable } from "@/components/forms";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import {
+  IconPackage,
+  IconBox,
+  IconUser,
+  IconArrowLeft,
+  IconArrowRight,
+  IconCheck,
+  IconX,
+} from "@tabler/icons-react-native";
 
 // Form schema for batch borrow creation
 const borrowBatchFormSchema = z.object({
   userId: z.string().uuid("Usuário é obrigatório"),
-  reason: z.string().max(200, "Motivo deve ter no máximo 200 caracteres").optional(),
-  notes: z.string().max(500, "Notas devem ter no máximo 500 caracteres").optional(),
-  items: z.array(z.object({
-    itemId: z.string().uuid(),
-    quantity: z.number().positive("Quantidade deve ser positiva"),
-  })).min(1, "Selecione pelo menos um item").max(50, "Máximo de 50 itens por empréstimo"),
 });
 
 type BorrowBatchFormData = z.infer<typeof borrowBatchFormSchema>;
 
 interface BorrowBatchCreateFormProps {
-  onSubmit: (data: BorrowBatchFormData) => Promise<void>;
+  onSubmit: (data: {
+    userId: string;
+    items: Array<{ itemId: string; quantity: number }>;
+  }) => Promise<void>;
   onCancel: () => void;
   isSubmitting?: boolean;
 }
 
-export function BorrowBatchCreateForm({ onSubmit, onCancel, isSubmitting }: BorrowBatchCreateFormProps) {
+// 2 Steps: Select Items (with user) -> Review
+const STEPS: FormStep[] = [
+  { id: 1, name: "Selecionar", description: "Usuário e ferramentas" },
+  { id: 2, name: "Confirmar", description: "Revise e confirme" },
+];
+
+export function BorrowBatchCreateForm({
+  onSubmit,
+  onCancel,
+  isSubmitting = false,
+}: BorrowBatchCreateFormProps) {
   const { colors } = useTheme();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [userSearchQuery, setUserSearchQuery] = useState("");
-  const [selectedItems, setSelectedItems] = useState<Array<{ itemId: string; name: string; quantity: number; availableStock?: number }>>([]);
+  const insets = useSafeAreaInsets();
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  // Keyboard visibility tracking
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const keyboardShowListener = Keyboard.addListener(showEvent, () => {
+      setIsKeyboardVisible(true);
+    });
+    const keyboardHideListener = Keyboard.addListener(hideEvent, () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      keyboardShowListener.remove();
+      keyboardHideListener.remove();
+    };
+  }, []);
+
+  // Keyboard-aware scrolling
+  const { handlers, refs } = useKeyboardAwareScroll();
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
+
+  // Multi-step form state management
+  const multiStepForm = useMultiStepForm<BorrowBatchFormData>({
+    storageKey: "@borrow_batch_form",
+    totalSteps: 2,
+    defaultFormData: { userId: "" },
+    defaultQuantity: 1,
+    validateOnStepChange: true,
+    validateStep: (step, state) => {
+      if (step === 1) {
+        return !!state.formData.userId && state.selectedItems.length > 0;
+      }
+      return true;
+    },
+    getStepErrors: (step, state) => {
+      const errors: Record<string, string> = {};
+      if (step === 1) {
+        if (!state.formData.userId) errors.userId = "Selecione um usuário";
+        if (state.selectedItems.length === 0) errors.items = "Selecione pelo menos uma ferramenta";
+      }
+      return errors;
+    },
+  });
 
   const form = useForm<BorrowBatchFormData>({
     resolver: zodResolver(borrowBatchFormSchema),
-    defaultValues: {
-      userId: "",
-      reason: "",
-      notes: "",
-      items: [],
-    },
+    defaultValues: multiStepForm.formData,
+    mode: "onChange",
   });
 
-  // Fetch items for selection
-  const { data: items, isLoading: isLoadingItems } = useItems({
-    searchingFor: searchQuery,
-    orderBy: { name: "asc" },
-    include: {
-      brand: true,
-      category: true,
+  const handleFormChange = useCallback(
+    (field: keyof BorrowBatchFormData, value: string) => {
+      form.setValue(field, value);
+      multiStepForm.updateFormData({ [field]: value });
     },
-  });
+    [form, multiStepForm],
+  );
 
-  // Fetch users for selection
+  // Fetch users
   const { data: users, isLoading: isLoadingUsers } = useUsers({
-    searchingFor: userSearchQuery,
     orderBy: { name: "asc" },
   });
 
-  const itemOptions = items?.data?.map((item) => ({
-    value: item.id,
-    label: `${item.name}${item.brand ? ` - ${item.brand.name}` : ""}`,
-  })) || [];
+  const userOptions = useMemo(
+    () => users?.data?.map((user) => ({ value: user.id, label: user.name })) || [],
+    [users],
+  );
 
-  const userOptions = users?.data?.map((user) => ({
-    value: user.id,
-    label: user.name,
-  })) || [];
+  // Fetch selected items for review
+  const selectedItemIds = useMemo(() => Array.from(multiStepForm.selectedItems), [multiStepForm.selectedItems]);
 
-  // Handle adding an item to the batch
-  const handleAddItem = useCallback((itemId: string) => {
-    const item = items?.data?.find((i) => i.id === itemId);
-    if (!item) return;
+  const { data: selectedItemsData } = useItems(
+    { where: { id: { in: selectedItemIds } }, include: { brand: true, category: true } },
+    { enabled: multiStepForm.currentStep === 2 && selectedItemIds.length > 0 },
+  );
 
-    // Check if item already exists
-    if (selectedItems.some((i) => i.itemId === itemId)) {
-      Alert.alert("Atenção", "Este item já foi adicionado à lista");
-      return;
-    }
+  const selectedItemsWithNames = useMemo(() => {
+    const itemsMap = new Map(selectedItemsData?.data?.map((item) => [item.id, item]) || []);
+    return multiStepForm.getSelectedItemsWithData().map((item) => ({
+      ...item,
+      name: itemsMap.get(item.id)?.name || `Item ${item.id.slice(0, 8)}`,
+      brand: itemsMap.get(item.id)?.brand?.name,
+      uniCode: itemsMap.get(item.id)?.uniCode,
+    }));
+  }, [selectedItemsData, multiStepForm]);
 
-    // Check max items limit
-    if (selectedItems.length >= 50) {
-      Alert.alert("Limite Atingido", "Você pode adicionar no máximo 50 itens por empréstimo");
-      return;
-    }
+  const selectedUserName = useMemo(() => {
+    const user = users?.data?.find((u) => u.id === multiStepForm.formData.userId);
+    return user?.name || "Não selecionado";
+  }, [users, multiStepForm.formData.userId]);
 
-    // Check stock availability
-    if (item.quantity <= 0) {
-      Alert.alert("Estoque Insuficiente", `O item "${item.name}" não possui estoque disponível.`);
-      return;
-    }
+  const totalUnits = useMemo(
+    () => multiStepForm.getSelectedItemsWithData().reduce((sum, item) => sum + item.quantity, 0),
+    [multiStepForm],
+  );
 
-    setSelectedItems((prev) => [
-      ...prev,
-      {
-        itemId: item.id,
-        name: item.name,
-        quantity: 1,
-        availableStock: item.quantity,
-      },
-    ]);
-  }, [items?.data, selectedItems]);
-
-  // Handle removing an item from the batch
-  const handleRemoveItem = useCallback((itemId: string) => {
-    setSelectedItems((prev) => prev.filter((i) => i.itemId !== itemId));
-  }, []);
-
-  // Handle quantity change for an item
-  const handleQuantityChange = useCallback((itemId: string, quantity: string) => {
-    const numQuantity = parseInt(quantity, 10);
-    if (isNaN(numQuantity) || numQuantity <= 0) return;
-
-    setSelectedItems((prev) =>
-      prev.map((i) => {
-        if (i.itemId === itemId) {
-          // Validate against available stock
-          if (i.availableStock && numQuantity > i.availableStock) {
-            Alert.alert(
-              "Quantidade Inválida",
-              `Quantidade solicitada (${numQuantity}) excede o estoque disponível (${i.availableStock}).`
-            );
-            return i; // Don't update if exceeds stock
-          }
-          return { ...i, quantity: numQuantity };
-        }
-        return i;
-      })
-    );
-  }, []);
-
-  // Handle form submission
-  const handleFormSubmit = async (data: BorrowBatchFormData) => {
+  const handleFormSubmit = useCallback(async () => {
     try {
-      // Validate stock for all items
-      const invalidItems = selectedItems.filter(
-        (item) => item.availableStock !== undefined && item.quantity > item.availableStock
-      );
-
+      const items = multiStepForm.getSelectedItemsWithData();
+      const invalidItems = items.filter((item) => item.quantity <= 0);
       if (invalidItems.length > 0) {
-        Alert.alert(
-          "Estoque Insuficiente",
-          `Os seguintes itens excedem o estoque disponível:\n${invalidItems.map((i) => `- ${i.name}`).join("\n")}`
-        );
+        Alert.alert("Erro", "Todos os itens devem ter quantidade maior que zero");
         return;
       }
 
-      // Map selected items to form data
-      const formData = {
-        ...data,
-        items: selectedItems.map((item) => ({
-          itemId: item.itemId,
-          quantity: item.quantity,
-        })),
-      };
+      await onSubmit({
+        userId: multiStepForm.formData.userId,
+        items: items.map((item) => ({ itemId: item.id, quantity: item.quantity })),
+      });
+      await multiStepForm.resetForm();
+    } catch (error) {}
+  }, [multiStepForm, onSubmit]);
 
-      await onSubmit(formData);
-    } catch (error) {
-      // Error handled by parent component
+  const handleCancel = useCallback(() => {
+    if (multiStepForm.selectionCount > 0 || multiStepForm.formData.userId) {
+      Alert.alert("Descartar alterações?", "Você tem dados não salvos.", [
+        { text: "Continuar", style: "cancel" },
+        { text: "Descartar", style: "destructive", onPress: async () => { await multiStepForm.resetForm(); onCancel(); }},
+      ]);
+    } else {
+      onCancel();
     }
-  };
+  }, [multiStepForm, onCancel]);
+
+  const isFirstStep = multiStepForm.currentStep === 1;
+  const isLastStep = multiStepForm.currentStep === STEPS.length;
+
+  if (multiStepForm.isLoading) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ThemedText>Carregando...</ThemedText>
+      </View>
+    );
+  }
 
   return (
     <FormProvider {...form}>
-      <ThemedScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
-          {/* User Selection */}
-          <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Informações do Empréstimo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Controller
-                control={form.control}
-                name="userId"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View>
-                    <Label>Usuário *</Label>
-                    <Combobox
-                      value={value}
-                      onValueChange={onChange}
-                      options={userOptions}
-                      placeholder="Selecione o usuário"
-                      searchPlaceholder="Buscar usuário..."
-                      emptyText="Nenhum usuário encontrado"
-                      onSearchChange={setUserSearchQuery}
-                      disabled={isSubmitting || isLoadingUsers}
-                      loading={isLoadingUsers}
-                      clearable={false}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                    <ThemedText style={styles.helpText}>
-                      Selecione o colaborador que receberá os itens emprestados
-                    </ThemedText>
-                  </View>
-                )}
-              />
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardView}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+        >
+          {/* Progress Steps */}
+          <View style={styles.stepsContainer}>
+            <FormSteps steps={STEPS} currentStep={multiStepForm.currentStep} />
+          </View>
 
-              {/* Reason */}
-              <Controller
-                control={form.control}
-                name="reason"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View style={styles.fieldGroup}>
-                    <Label>Motivo do Empréstimo</Label>
-                    <Input
-                      value={value || ""}
-                      onChangeText={onChange}
-                      placeholder="Ex: Manutenção, Projeto X, etc."
-                      editable={!isSubmitting}
-                      maxLength={200}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                    <ThemedText style={styles.helpText}>
-                      Motivo ou justificativa do empréstimo (opcional)
-                    </ThemedText>
-                  </View>
-                )}
-              />
-
-              {/* Notes */}
-              <Controller
-                control={form.control}
-                name="notes"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View style={styles.fieldGroup}>
-                    <Label>Observações</Label>
-                    <Textarea
-                      value={value || ""}
-                      onChangeText={onChange}
-                      placeholder="Adicione observações adicionais..."
-                      editable={!isSubmitting}
-                      maxLength={500}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                    <ThemedText style={styles.helpText}>
-                      Informações adicionais sobre o empréstimo (opcional)
-                    </ThemedText>
-                  </View>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Item Selection */}
-          <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Selecionar Itens</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View style={styles.fieldGroup}>
-                <Label>Adicionar Item</Label>
-                <Combobox
-                  value=""
-                  onValueChange={(value: string | undefined) => {
-                    if (value) handleAddItem(value);
-                  }}
-                  options={itemOptions}
-                  placeholder="Buscar e adicionar item..."
-                  searchPlaceholder="Digite para buscar..."
-                  emptyText="Nenhum item encontrado"
-                  onSearchChange={setSearchQuery}
-                  disabled={isSubmitting || isLoadingItems || selectedItems.length >= 50}
-                  loading={isLoadingItems}
-                />
-                <ThemedText style={styles.helpText}>
-                  {selectedItems.length}/50 itens adicionados
-                </ThemedText>
-              </View>
-            </CardContent>
-          </Card>
-
-          {/* Selected Items */}
-          {selectedItems.length > 0 && (
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Itens Selecionados ({selectedItems.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.itemsList}>
-                  {selectedItems.map((item) => (
-                    <View key={item.itemId} style={[styles.itemRow, { borderBottomColor: colors.border }]}>
-                      <View style={styles.itemInfo}>
-                        <ThemedText style={styles.itemName} numberOfLines={1}>
-                          {item.name}
+          {/* Step 1: User + Item Selection */}
+          {multiStepForm.currentStep === 1 && (
+            <View style={styles.step1Container}>
+              {/* User Selection */}
+              <KeyboardAwareFormProvider value={keyboardContextValue}>
+                <Controller
+                  control={form.control}
+                  name="userId"
+                  render={({ field: { value }, fieldState: { error } }) => (
+                    <View style={styles.userSelector}>
+                      <Combobox
+                        value={value}
+                        onValueChange={(val) => handleFormChange("userId", typeof val === "string" ? val || "" : "")}
+                        options={userOptions}
+                        placeholder="Selecione o colaborador"
+                        searchPlaceholder="Buscar colaborador..."
+                        emptyText="Nenhum colaborador encontrado"
+                        disabled={isSubmitting || isLoadingUsers}
+                        loading={isLoadingUsers}
+                        clearable={false}
+                        searchable
+                      />
+                      {error && (
+                        <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
+                          {error.message}
                         </ThemedText>
-                        {item.availableStock !== undefined && (
-                          <ThemedText style={[styles.stockText, { color: item.availableStock > 10 ? colors.mutedForeground : colors.destructive }]}>
-                            Estoque disponível: {item.availableStock}
-                          </ThemedText>
-                        )}
-                        <View style={styles.quantityRow}>
-                          <Label style={styles.quantityLabel}>Qtd:</Label>
-                          <Input
-                            value={item.quantity.toString()}
-                            onChangeText={(value) => handleQuantityChange(item.itemId, value)}
-                            keyboardType="numeric"
-                            editable={!isSubmitting}
-                            containerStyle={styles.quantityInput}
-                          />
-                          {item.availableStock !== undefined && item.quantity > item.availableStock && (
-                            <ThemedText style={[styles.errorText, { marginLeft: spacing.sm }]}>
-                              Excede estoque!
-                            </ThemedText>
-                          )}
-                        </View>
-                      </View>
-                      <Button
-                        variant="ghost"
-                        onPress={() => handleRemoveItem(item.itemId)}
-                        disabled={isSubmitting}
-                        style={styles.removeButton}
-                      >
-                        <Icon name="trash" size={20} color={colors.destructive} />
-                      </Button>
+                      )}
                     </View>
+                  )}
+                />
+              </KeyboardAwareFormProvider>
+
+              {/* Item Selector - Filter only TOOL category */}
+              <ItemSelectorTable
+                style={styles.itemSelector}
+                selectedItems={multiStepForm.selectedItems}
+                quantities={multiStepForm.quantities}
+                onSelectItem={multiStepForm.toggleItemSelection}
+                onQuantityChange={multiStepForm.setItemQuantity}
+                showQuantityInput
+                minQuantity={1}
+                categoryType={ITEM_CATEGORY_TYPE.TOOL}
+                showSelectedOnly={multiStepForm.showSelectedOnly}
+                searchTerm={multiStepForm.searchTerm}
+                showInactive={multiStepForm.showInactive}
+                categoryIds={multiStepForm.categoryIds}
+                brandIds={multiStepForm.brandIds}
+                supplierIds={multiStepForm.supplierIds}
+                onShowSelectedOnlyChange={multiStepForm.setShowSelectedOnly}
+                onSearchTermChange={multiStepForm.setSearchTerm}
+                onShowInactiveChange={multiStepForm.setShowInactive}
+                onCategoryIdsChange={multiStepForm.setCategoryIds}
+                onBrandIdsChange={multiStepForm.setBrandIds}
+                onSupplierIdsChange={multiStepForm.setSupplierIds}
+                allowZeroStock={false}
+                emptyMessage="Nenhuma ferramenta encontrada"
+              />
+              {/* Validation Errors */}
+              {multiStepForm.formTouched && Object.keys(multiStepForm.validation.errors).length > 0 && (
+                <View style={styles.validationErrorContainer}>
+                  {Object.values(multiStepForm.validation.errors).map((error, index) => (
+                    <ThemedText key={index} style={[styles.validationErrorText, { color: colors.destructive }]}>
+                      {error}
+                    </ThemedText>
                   ))}
                 </View>
-              </CardContent>
-            </Card>
+              )}
+            </View>
           )}
 
-          {/* Actions */}
-          <View style={styles.actionsContainer}>
-            <View style={styles.actions}>
-              <Button variant="outline" onPress={onCancel} disabled={isSubmitting} style={styles.cancelButton}>
-                Cancelar
-              </Button>
-              <Button
-                onPress={form.handleSubmit(handleFormSubmit)}
-                disabled={isSubmitting || selectedItems.length === 0}
-                style={styles.submitButton}
-              >
-                {isSubmitting ? (
-                  <>
-                    <IconLoader size={20} color={colors.primaryForeground} />
-                    <ThemedText style={{ color: colors.primaryForeground }}>Salvando...</ThemedText>
-                  </>
+          {/* Step 2: Review */}
+          {multiStepForm.currentStep === 2 && (
+            <ScrollView
+              ref={refs.scrollViewRef}
+              style={styles.reviewScrollView}
+              contentContainerStyle={styles.reviewContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Summary Metrics */}
+              <Card style={styles.card}>
+                <CardContent style={styles.metricsContent}>
+                  {/* User */}
+                  <View style={styles.metricRow}>
+                    <View style={styles.metricHeader}>
+                      <IconUser size={16} color={colors.mutedForeground} />
+                      <ThemedText style={[styles.metricLabel, { color: colors.mutedForeground }]}>USUÁRIO</ThemedText>
+                    </View>
+                    <ThemedText style={[styles.metricValue, { color: colors.foreground }]} numberOfLines={1}>
+                      {selectedUserName}
+                    </ThemedText>
+                  </View>
+
+                  {/* Items */}
+                  <View style={styles.metricRow}>
+                    <View style={styles.metricHeader}>
+                      <IconPackage size={16} color={colors.mutedForeground} />
+                      <ThemedText style={[styles.metricLabel, { color: colors.mutedForeground }]}>ITENS</ThemedText>
+                    </View>
+                    <ThemedText style={[styles.metricValue, { color: colors.foreground }]}>
+                      {multiStepForm.selectionCount}
+                    </ThemedText>
+                  </View>
+
+                  {/* Units */}
+                  <View style={styles.metricRow}>
+                    <View style={styles.metricHeader}>
+                      <IconBox size={16} color={colors.mutedForeground} />
+                      <ThemedText style={[styles.metricLabel, { color: colors.mutedForeground }]}>UNIDADES</ThemedText>
+                    </View>
+                    <ThemedText style={[styles.metricValue, { color: colors.primary }]}>
+                      {totalUnits}
+                    </ThemedText>
+                  </View>
+                </CardContent>
+              </Card>
+
+              {/* Items Table - Matching item-table styling */}
+              <View style={[styles.tableContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {/* Table Header */}
+                <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
+                  <ThemedText style={[styles.tableHeaderText, styles.tableHeaderItemCol]}>ITEM</ThemedText>
+                  <ThemedText style={[styles.tableHeaderText, styles.tableHeaderQtyCol]}>QTD</ThemedText>
+                </View>
+
+                {/* Table Body */}
+                {selectedItemsWithNames.map((item, index) => (
+                  <View
+                    key={item.id}
+                    style={[
+                      styles.tableRow,
+                      {
+                        backgroundColor: index % 2 === 0 ? colors.background : colors.card,
+                        borderBottomColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <View style={styles.tableItemCol}>
+                      <ThemedText style={[styles.tableItemName, { color: colors.foreground }]} numberOfLines={1}>
+                        {item.uniCode ? `${item.name} - ${item.uniCode}` : item.name}
+                      </ThemedText>
+                      {item.brand && (
+                        <ThemedText style={[styles.tableItemBrand, { color: colors.mutedForeground }]}>
+                          {item.brand}
+                        </ThemedText>
+                      )}
+                    </View>
+                    <View style={styles.tableQtyCol}>
+                      <ThemedText style={[styles.tableQtyText, { color: colors.foreground }]}>
+                        {item.quantity}
+                      </ThemedText>
+                    </View>
+                  </View>
+                ))}
+
+                {/* Table Footer */}
+                <View style={[styles.tableFooter, { backgroundColor: colors.muted, borderTopColor: colors.border }]}>
+                  <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>Total</ThemedText>
+                  <ThemedText style={[styles.tableFooterValue, { color: colors.primary }]}>{totalUnits}</ThemedText>
+                </View>
+              </View>
+            </ScrollView>
+          )}
+
+          {/* Action Bar - Same pattern as SimpleFormActionBar */}
+          {!isKeyboardVisible && (
+            <View
+              style={[
+                styles.actionBar,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: colors.card,
+                  marginBottom: (insets.bottom || 0) + formSpacing.cardMarginBottom,
+                },
+              ]}
+            >
+              {/* Left button - Cancel or Previous */}
+              <View style={styles.buttonWrapper}>
+                {isFirstStep ? (
+                  <Button
+                    variant="outline"
+                    onPress={handleCancel}
+                    disabled={isSubmitting}
+                  >
+                    <IconX size={18} color={colors.mutedForeground} />
+                    <Text style={styles.buttonText}>Cancelar</Text>
+                  </Button>
                 ) : (
-                  <ThemedText style={{ color: colors.primaryForeground }}>Criar Empréstimos</ThemedText>
+                  <Button
+                    variant="outline"
+                    onPress={multiStepForm.goToPrevStep}
+                    disabled={isSubmitting}
+                  >
+                    <IconArrowLeft size={18} color={colors.foreground} />
+                    <Text style={styles.buttonText}>Anterior</Text>
+                  </Button>
                 )}
-              </Button>
+              </View>
+
+              {/* Right button - Next or Submit */}
+              <View style={styles.buttonWrapper}>
+                {isLastStep ? (
+                  <Button
+                    variant="default"
+                    onPress={handleFormSubmit}
+                    disabled={!multiStepForm.validation.canSubmit || isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator size="small" color={colors.primaryForeground} />
+                    ) : (
+                      <IconCheck size={18} color={colors.primaryForeground} />
+                    )}
+                    <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
+                      {isSubmitting ? "Cadastrando..." : "Cadastrar"}
+                    </Text>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="default"
+                    onPress={multiStepForm.goToNextStep}
+                    disabled={!multiStepForm.validation.canProceedToNext || isSubmitting}
+                  >
+                    <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>Próximo</Text>
+                    <IconArrowRight size={18} color={colors.primaryForeground} />
+                  </Button>
+                )}
+              </View>
             </View>
-          </View>
-        </View>
-      </ThemedScrollView>
+          )}
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </FormProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
+  safeArea: {
+    flex: 1,
   },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xl * 2,
+  keyboardView: {
+    flex: 1,
   },
-  card: {
-    marginBottom: spacing.lg,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  fieldGroup: {
-    gap: spacing.lg,
+  stepsContainer: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  step1Container: {
+    flex: 1,
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+  },
+  userSelector: {
+    marginBottom: spacing.sm,
   },
   errorText: {
     fontSize: fontSize.xs,
-    color: "#ef4444",
     marginTop: spacing.xs,
   },
-  helpText: {
-    fontSize: fontSize.xs,
-    color: "#6b7280",
-    marginTop: spacing.xs,
+  itemSelector: {
+    flex: 1,
   },
-  itemsList: {
-    gap: spacing.sm,
+  validationErrorContainer: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
-  itemRow: {
+  validationErrorText: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+  },
+  reviewScrollView: {
+    flex: 1,
+  },
+  reviewContainer: {
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: spacing.sm,
+    paddingBottom: 0,
+  },
+  card: {
+    marginBottom: spacing.md,
+  },
+  metricsContent: {
+    paddingVertical: spacing.xs,
+  },
+  metricRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
-  itemInfo: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  itemName: {
-    fontSize: fontSize.base,
-    fontWeight: "500",
-    marginBottom: spacing.xs,
-  },
-  stockText: {
-    fontSize: fontSize.xs,
-    marginBottom: spacing.xs,
-  },
-  quantityRow: {
+  metricHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 6,
   },
-  quantityLabel: {
-    fontSize: fontSize.sm,
-    minWidth: 35,
+  metricLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  quantityInput: {
-    width: 80,
-    height: 36,
+  metricValue: {
+    fontSize: fontSize.base,
+    fontWeight: "600",
   },
-  removeButton: {
-    padding: spacing.sm,
+  // Table - matching item-table styling
+  tableContainer: {
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: "hidden",
+    marginBottom: spacing.md,
   },
-  actionsContainer: {
-    marginTop: spacing.lg,
-  },
-  actions: {
+  tableHeader: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: spacing.md,
+    alignItems: "center",
+    minHeight: 40,
+    borderBottomWidth: 2,
+    paddingHorizontal: spacing.sm,
   },
-  cancelButton: {
-    minWidth: 100,
+  tableHeaderText: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  submitButton: {
-    minWidth: 120,
+  tableHeaderItemCol: {
+    flex: 1,
+  },
+  tableHeaderQtyCol: {
+    width: 50,
+    textAlign: "right",
+  },
+  tableRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 36,
+    borderBottomWidth: 1,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+  },
+  tableItemCol: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  tableItemName: {
+    fontSize: fontSize.xs,
+    fontWeight: "500",
+  },
+  tableItemBrand: {
+    fontSize: fontSize.xs,
+    marginTop: 1,
+  },
+  tableQtyCol: {
+    width: 50,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  tableQtyText: {
+    fontSize: fontSize.xs,
+    fontWeight: "600",
+  },
+  tableFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderTopWidth: 1,
+  },
+  tableFooterText: {
+    fontSize: fontSize.sm,
+    fontWeight: "600",
+  },
+  tableFooterValue: {
+    fontSize: fontSize.md,
+    fontWeight: "700",
+  },
+  // Action bar - matches SimpleFormActionBar exactly
+  actionBar: {
+    flexDirection: "row",
+    gap: formSpacing.rowGap,
+    padding: formSpacing.actionBarPadding,
+    borderRadius: formLayout.cardBorderRadius,
+    borderWidth: formLayout.borderWidth,
+    marginHorizontal: formSpacing.containerPaddingHorizontal,
+    marginTop: spacing.md,
+  },
+  buttonWrapper: {
+    flex: 1,
+  },
+  buttonText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
+
+export default BorrowBatchCreateForm;

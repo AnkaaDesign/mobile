@@ -21,16 +21,13 @@ import { useItems, useUsers, useItem } from "@/hooks";
 import { BORROW_STATUS } from "@/constants";
 import type { Borrow } from "@/types";
 
-// Borrow Edit Form Schema - matches backend API structure
+// Borrow Edit Form Schema - matches backend API structure (Prisma schema)
 const borrowEditSchema = z.object({
   userId: z.string().uuid("Colaborador é obrigatório").min(1, "Colaborador é obrigatório"),
   itemId: z.string().uuid("Item é obrigatório").min(1, "Item é obrigatório"),
   quantity: z.number().positive("Quantidade deve ser positiva").int("Quantidade deve ser um número inteiro"),
   returnedAt: z.date().nullable().optional(),
   status: z.enum([BORROW_STATUS.ACTIVE, BORROW_STATUS.RETURNED, BORROW_STATUS.LOST]).optional(),
-  reason: z.string().optional(),
-  notes: z.string().optional(),
-  conditionNotes: z.string().optional(),
 });
 
 type BorrowEditFormData = z.infer<typeof borrowEditSchema>;
@@ -74,9 +71,6 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
       quantity: borrow.quantity || 1,
       returnedAt: borrow.returnedAt ? new Date(borrow.returnedAt) : null,
       status: borrow.status,
-      reason: borrow.reason || "",
-      notes: borrow.notes || "",
-      conditionNotes: borrow.conditionNotes || "",
     },
     mode: "onChange",
   });
@@ -216,6 +210,7 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
           {/* Header */}
@@ -427,58 +422,6 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
                   </View>
                 </Card>
               )}
-
-              <SimpleFormField label="Motivo" error={form.formState.errors.reason}>
-                <Controller
-                  control={form.control}
-                  name="reason"
-                  render={({ field: { onChange, value } }) => (
-                    <Input
-                      value={value || ""}
-                      onChangeText={onChange}
-                      placeholder="Motivo do empréstimo (opcional)"
-                      editable={!isSubmitting}
-                      error={!!form.formState.errors.reason}
-                    />
-                  )}
-                />
-              </SimpleFormField>
-
-              <SimpleFormField label="Observações" error={form.formState.errors.notes}>
-                <Controller
-                  control={form.control}
-                  name="notes"
-                  render={({ field: { onChange, value } }) => (
-                    <Input
-                      value={value || ""}
-                      onChangeText={onChange}
-                      placeholder="Observações gerais (opcional)"
-                      multiline
-                      numberOfLines={3}
-                      editable={!isSubmitting}
-                      error={!!form.formState.errors.notes}
-                    />
-                  )}
-                />
-              </SimpleFormField>
-
-              <SimpleFormField label="Condição do Item" error={form.formState.errors.conditionNotes}>
-                <Controller
-                  control={form.control}
-                  name="conditionNotes"
-                  render={({ field: { onChange, value } }) => (
-                    <Input
-                      value={value || ""}
-                      onChangeText={onChange}
-                      placeholder="Estado do item (opcional)"
-                      multiline
-                      numberOfLines={2}
-                      editable={!isSubmitting}
-                      error={!!form.formState.errors.conditionNotes}
-                    />
-                  )}
-                />
-              </SimpleFormField>
             </View>
           </Card>
 
@@ -525,6 +468,7 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
 const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 0, // No spacing - action bar has its own margin
   },
   content: {
     padding: spacing.lg,

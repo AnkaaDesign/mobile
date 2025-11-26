@@ -10,7 +10,7 @@ import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { NumberInput } from "@/components/ui/number-input";
-import { CurrencyInput } from "@/components/ui/currency-input";
+import { Input } from "@/components/ui/input";
 
 interface ExternalWithdrawalItemCardProps {
   itemId: string;
@@ -137,9 +137,10 @@ export function ExternalWithdrawalItemCard({
         {type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && onPriceChange && (
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Preço unitário</Text>
-            <CurrencyInput
+            <Input
+              type="currency"
               value={displayPrice}
-              onChangeValue={onPriceChange}
+              onChangeText={(value) => onPriceChange(Number(value) || 0)}
               style={styles.input}
             />
           </View>

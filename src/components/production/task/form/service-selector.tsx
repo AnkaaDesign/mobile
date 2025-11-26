@@ -128,8 +128,6 @@ export function ServiceSelector({
 
   return (
     <View style={styles.container}>
-      <Label>Serviços *</Label>
-
       <View style={styles.servicesContainer}>
         {services.map((service, index) => (
           <View key={index} style={styles.serviceRow}>
@@ -161,7 +159,6 @@ export function ServiceSelector({
                 pageSize={50}
                 debounceMs={300}
                 hideDescription={true}
-                preferFullScreen={true}
               />
             </View>
 

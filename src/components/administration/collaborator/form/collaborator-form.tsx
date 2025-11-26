@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,8 @@ import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
+import { useKeyboardAwareScroll } from "@/hooks";
+import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 import { userCreateSchema, userUpdateSchema } from "@/schemas/user";
 import type { UserCreateFormData, UserUpdateFormData } from "@/schemas/user";
@@ -64,6 +66,7 @@ const BRAZIL_STATES: ComboboxOption[] = [
 export function CollaboratorForm({ mode, user, onSuccess, onCancel }: CollaboratorFormProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useUserMutations();
 
   const { data: sectors } = useSectors({ orderBy: { name: "asc" } });
@@ -174,15 +177,31 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
     })
   );
 
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView} keyboardVerticalOffset={0}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      >
         <ScrollView
+          ref={refs.scrollViewRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
         >
+          <KeyboardAwareFormProvider value={keyboardContextValue}>
         {/* Personal Information */}
         <FormCard
           title="Informações Pessoais"
@@ -640,7 +659,8 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             </FormFieldGroup>
           </FormRow>
         </FormCard>
-      </ScrollView>
+          </KeyboardAwareFormProvider>
+        </ScrollView>
 
         <SimpleFormActionBar
           onCancel={handleCancel}
@@ -667,7 +687,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: formSpacing.containerPaddingHorizontal,
     paddingTop: formSpacing.containerPaddingVertical,
-    paddingBottom: 100, // Extra padding so inputs can scroll above action bar when keyboard is open
+    paddingBottom: 0, // No spacing - action bar has its own margin
   },
   switchRow: {
     flexDirection: "row",

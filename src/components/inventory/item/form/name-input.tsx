@@ -24,7 +24,7 @@ export function NameInput({ disabled, required }: NameInputProps) {
           <Label nativeID="name" style={{ marginBottom: 4 }}>
             Nome do Item {required && <ThemedText variant="destructive">*</ThemedText>}
           </Label>
-          <Input id="name" value={value} onChangeText={onChange} onBlur={onBlur} placeholder="Digite o nome do item" editable={!disabled} maxLength={255} autoCapitalize="words" />
+          <Input id="name" fieldKey="name" value={value} onChangeText={onChange} onBlur={onBlur} placeholder="Digite o nome do item" editable={!disabled} maxLength={255} autoCapitalize="words" />
           {error && <ThemedText variant="destructive" style={{ fontSize: 14, marginTop: 4 }}>{error.message}</ThemedText>}
         </View>
       )}

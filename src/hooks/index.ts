@@ -173,6 +173,7 @@ export * from "./use-observations-infinite-mobile";
 export * from "./use-paint-brands-infinite-mobile";
 export * from "./use-deployments-infinite-mobile";
 export * from "./use-paint-productions-infinite-mobile";
+export * from "./use-paint-formula-components-infinite-mobile";
 
 // =====================================================
 // UI State Management Hooks
@@ -193,6 +194,11 @@ export * from "./use-multi-step-form";
 // =====================================================
 export * from "./use-cnpj-lookup";
 export * from "./use-cep-lookup";
+
+// =====================================================
+// Keyboard & Form Utilities
+// =====================================================
+export * from "./useKeyboardAwareScroll";
 
 // =====================================================
 // Monitoring & Utilities

@@ -13,7 +13,7 @@ import { useTheme } from "@/lib/theme";
 
 import { RoutePrivilegeGuard } from "@/components/navigation/route-privilege-guard";
 import { PageHeader } from "@/components/ui/page-header";
-import { BasicInfoCard, ContactDetailsCard, AddressInfoCard, RelatedItemsCard, RelatedOrdersCard, DocumentsCard } from "@/components/inventory/supplier/detail";
+import { BasicInfoCard, ContactDetailsCard, AddressInfoCard, ItemsTable, OrdersTable, DocumentsCard } from "@/components/inventory/supplier/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { FileViewerProvider } from "@/components/file";
 import { toast } from "@/lib/toast";
@@ -138,22 +138,20 @@ export default function SupplierDetailsScreen() {
                 <ContactDetailsCard supplier={supplier} />
               </View>
 
-              {/* Address and Changelog Grid */}
+              {/* Address and Documents Grid */}
               <View className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <AddressInfoCard supplier={supplier} />
-                <ChangelogTimeline entityType={CHANGE_LOG_ENTITY_TYPE.SUPPLIER} entityId={id} maxHeight={500} />
-              </View>
-
-              {/* Documents Grid */}
-              <View className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <DocumentsCard supplier={supplier} />
               </View>
 
-              {/* Related Orders */}
-              <RelatedOrdersCard supplier={supplier} />
+              {/* Related Items Table - Full Width */}
+              <ItemsTable supplier={supplier} maxHeight={500} />
 
-              {/* Related Items - Full Width, Last Section */}
-              <RelatedItemsCard items={supplier.items} supplierId={supplier.id} />
+              {/* Related Orders Table - Full Width */}
+              <OrdersTable supplier={supplier} maxHeight={500} />
+
+              {/* Changelog - Full Width, Last Section */}
+              <ChangelogTimeline entityType={CHANGE_LOG_ENTITY_TYPE.SUPPLIER} entityId={id} maxHeight={500} />
             </View>
           </ScrollView>
 

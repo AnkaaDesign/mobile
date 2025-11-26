@@ -23,7 +23,7 @@ import { hasPrivilege } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
 
 // Import modular components
-import { SpecificationsCard, SectorUsersCard, SectorTasksCard } from "@/components/administration/sector/detail";
+import { SpecificationsCard, UsersTable, TasksTable } from "@/components/administration/sector/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function SectorDetailScreen() {
@@ -193,31 +193,33 @@ export default function SectorDetailScreen() {
           </CardContent>
         </Card>
 
-        {/* Info Grid - Specifications and Changelog side by side on larger screens */}
+        {/* Info Grid - Specifications */}
         <View style={styles.infoGrid}>
           <SpecificationsCard sector={sector} />
-          <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconHistory size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
-            </View>
-            <View style={{ paddingHorizontal: spacing.md }}>
-              <ChangelogTimeline
-                entityType={CHANGE_LOG_ENTITY_TYPE.SECTOR}
-                entityId={sector.id}
-                entityName={sector.name}
-                entityCreatedAt={sector.createdAt}
-                maxHeight={400}
-              />
-            </View>
-          </Card>
         </View>
 
-        {/* Related Tasks */}
-        <SectorTasksCard sector={sector} />
+        {/* Related Users - Show table before tasks */}
+        <UsersTable sector={sector} maxHeight={500} />
 
-        {/* Related Users - Last Section */}
-        <SectorUsersCard sector={sector} />
+        {/* Related Tasks */}
+        <TasksTable sector={sector} maxHeight={500} />
+
+        {/* Changelog Timeline - After tables */}
+        <Card style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <IconHistory size={20} color={colors.primary} />
+            <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
+          </View>
+          <View style={{ paddingHorizontal: spacing.md }}>
+            <ChangelogTimeline
+              entityType={CHANGE_LOG_ENTITY_TYPE.SECTOR}
+              entityId={sector.id}
+              entityName={sector.name}
+              entityCreatedAt={sector.createdAt}
+              maxHeight={400}
+            />
+          </View>
+        </Card>
 
         {/* Bottom spacing for mobile navigation */}
         <View style={{ height: spacing.xxl * 2 }} />

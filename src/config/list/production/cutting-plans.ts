@@ -76,7 +76,7 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
         sortable: false,
         width: 2.0,
         align: 'left',
-        render: (cut) => cut.task?.customer?.name || '-',
+        render: (cut) => cut.task?.customer?.fantasyName || '-',
       },
       {
         key: 'file',
@@ -182,6 +182,36 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
         label: 'Tarefas',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['tasks', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getTasks } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getTasks({
+              where: searchTerm ? {
+                OR: [
+                  { customer: { fantasyName: { contains: searchTerm, mode: 'insensitive' } } },
+                  { plate: { contains: searchTerm, mode: 'insensitive' } },
+                ]
+              } : undefined,
+              orderBy: { createdAt: 'desc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((task: any) => ({
+                label: `${task.customer?.fantasyName || '-'} - ${task.plate || '-'}`,
+                value: task.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Task Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione as tarefas',
       },
       {

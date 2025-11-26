@@ -39,6 +39,10 @@ export interface SelectFilterProps<T = string> {
   queryKey?: unknown[];
   /** Query function for async mode */
   queryFn?: (searchTerm: string, page?: number) => Promise<{ data: SelectOption<T>[]; hasMore?: boolean }>;
+  /** Callback when combobox opens - for scroll handling */
+  onOpen?: (measurements: { inputY: number; inputHeight: number; requiredHeight: number }) => boolean | void;
+  /** Callback when combobox closes */
+  onClose?: () => void;
 }
 
 /**
@@ -77,6 +81,8 @@ export function SelectFilter<T extends string = string>({
   async = false,
   queryKey,
   queryFn,
+  onOpen,
+  onClose,
 }: SelectFilterProps<T>) {
   const { colors } = useTheme();
 
@@ -117,7 +123,8 @@ export function SelectFilter<T extends string = string>({
         getOptionDescription={(option: SelectOption<T>) => option.description}
         isOptionDisabled={(option: SelectOption<T>) => option.disabled || false}
         renderOption={renderOption}
-        preferFullScreen={false}
+        onOpen={onOpen}
+        onClose={onClose}
       />
     </View>
   );
@@ -156,6 +163,10 @@ export interface MultiSelectFilterProps<T = string> {
   showClearButton?: boolean;
   /** Disabled state */
   disabled?: boolean;
+  /** Callback when combobox opens - for scroll handling */
+  onOpen?: (measurements: { inputY: number; inputHeight: number; requiredHeight: number }) => boolean | void;
+  /** Callback when combobox closes */
+  onClose?: () => void;
 }
 
 /**
@@ -192,6 +203,8 @@ export function MultiSelectFilter<T extends string = string>({
   async = false,
   queryKey,
   queryFn,
+  onOpen,
+  onClose,
 }: MultiSelectFilterProps<T>) {
   const { colors } = useTheme();
 
@@ -234,7 +247,8 @@ export function MultiSelectFilter<T extends string = string>({
         getOptionDescription={(option: MultiSelectOption<T>) => option.description}
         isOptionDisabled={(option: MultiSelectOption<T>) => option.disabled || false}
         renderOption={renderOption}
-        preferFullScreen={false}
+        onOpen={onOpen}
+        onClose={onClose}
       />
     </View>
   );

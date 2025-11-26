@@ -276,6 +276,7 @@ const ALL_ROUTES = [
   { name: "minha-equipe/membros/detalhes/[id]", title: "Detalhes do Membro" },
 
   // Personal (User's own information only)
+  { name: "pessoal/index", title: "Pessoal" },
   { name: "pessoal/meus-feriados/index", title: "Feriados" },
   { name: "pessoal/meus-feriados/detalhes/[id]", title: "Detalhes do Feriado" },
   { name: "pessoal/minhas-ferias/index", title: "Férias" },
@@ -292,6 +293,11 @@ const ALL_ROUTES = [
   { name: "pessoal/meus-bonus/index", title: "Meus Bônus" },
   { name: "pessoal/meus-bonus/detalhes/[id]", title: "Detalhes do Bônus" },
   { name: "pessoal/simulacao-bonus", title: "Simulação de Bônus" },
+  { name: "pessoal/meu-bonus/index", title: "Meu Bônus" },
+  { name: "pessoal/meu-bonus/atual", title: "Meu Bônus" },
+  { name: "pessoal/meu-bonus/simulacao", title: "Simulação de Bônus" },
+  { name: "pessoal/meu-bonus/historico", title: "Histórico de Bônus" },
+  { name: "pessoal/meu-bonus/detalhes/[id]", title: "Detalhes do Bônus" },
   { name: "pessoal/meus-pontos/index", title: "Meus Pontos" },
   { name: "pessoal/minhas-notificacoes/index", title: "Notificações" },
   { name: "pessoal/minhas-notificacoes/configuracoes", title: "Configurações de Notificações" },
@@ -515,8 +521,14 @@ export function PrivilegeOptimizedFullLayout() {
       screenOptions={({ navigation, route }) => {
         // Find the route config to get the proper title from ALL_ROUTES
         // This works with file-based routing by mapping route names to titles
-        const routeConfig = ALL_ROUTES.find(r => r.name === route.name);
-        const title = routeConfig?.title || route.name;
+        // Handle both with and without (tabs) prefix
+        const normalizedRouteName = route.name.replace(/^\(tabs\)\//, '');
+        const routeConfig = ALL_ROUTES.find(r =>
+          r.name === route.name ||
+          r.name === normalizedRouteName ||
+          route.name.endsWith(r.name)
+        );
+        const title = routeConfig?.title || normalizedRouteName;
 
         // Header theme colors - matching your app's theme palette
         const headerBackground = isDark ? "#262626" : "#fafafa"; // card/surface colors

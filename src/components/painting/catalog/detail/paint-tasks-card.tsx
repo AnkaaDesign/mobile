@@ -1,315 +1,191 @@
 import { useState, useMemo, useCallback } from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
-import { useRouter } from "expo-router";
-import {
-  IconBrush,
-  IconSearch,
-  IconColumns3,
-  IconExternalLink,
-  IconAlertCircle,
-} from "@tabler/icons-react-native";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { TaskTable } from "@/components/production/task/list/task-table";
+import { SearchBar } from "@/components/ui/search-bar";
+import { ListActionButton } from "@/components/ui/list-action-button";
 import { useTheme } from "@/lib/theme";
-import { borderRadius, fontSize, fontWeight, spacing } from "@/lib/constants";
+import { spacing, fontSize } from "@/constants/design-system";
+import { IconClipboardList, IconAlertCircle, IconList } from "@tabler/icons-react-native";
+import type { Paint, Task } from "@/types";
+import { routes } from "@/constants";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { useDebounce } from "@/hooks/useDebouncedSearch";
-import { useTasks } from "@/hooks/useTask";
-import { Task } from "@/types/task";
-import { Paint } from "@/types/paint";
-import { ColumnVisibilityDrawerV2 } from "@/components/ui/table-column-visibility-drawer-v2";
-import { Button } from "@/components/ui/button";
+import { useTasksInfiniteMobile } from "@/hooks";
 
 interface PaintTasksCardProps {
   paint: Paint;
   maxHeight?: number;
 }
 
-const defaultVisibleColumns = [
-  "name",
-  "customer.fantasyName",
-  "status",
-  "finishedAt",
-  "createdBy.name",
-];
-
-const allColumns = [
-  { key: "name", header: "Tarefa" },
-  { key: "customer.fantasyName", header: "Cliente" },
-  { key: "sector.name", header: "Setor" },
-  { key: "status", header: "Status" },
-  { key: "priority", header: "Prioridade" },
-  { key: "entryDate", header: "Entrada" },
-  { key: "startedAt", header: "Início" },
-  { key: "finishedAt", header: "Conclusão" },
-  { key: "term", header: "Prazo" },
-  { key: "serialNumber", header: "Número Série" },
-  { key: "plate", header: "Placa" },
-  { key: "chassisNumber", header: "Chassi" },
-  { key: "price", header: "Preço" },
-  { key: "createdBy.name", header: "Criado por" },
-  { key: "observation", header: "Observação" },
-];
-
 export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) {
   const { colors } = useTheme();
-  const router = useRouter();
+
+  // Column panel state
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
+
+  // Default visible columns for paint detail view
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
+    return ["name", "serialNumber"];
+  });
+
+  // Search state
   const [searchQuery, setSearchQuery] = useState("");
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(defaultVisibleColumns);
-  const [showColumnManager, setShowColumnManager] = useState(false);
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Build query filters for tasks related to this paint
-  const queryParams = useMemo(() => {
-    return {
-      where: {
-        OR: [
-          { paintId: paint.id },
-          { logoPaints: { some: { id: paint.id } } },
-        ],
-      },
-      include: {
-        customer: true,
-        sector: true,
-        generalPainting: {
-          include: {
-            paintType: true,
-            paintBrand: true,
-          },
-        },
-        createdBy: true,
-        updatedBy: true,
-        services: {
-          include: {
-            service: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" as const },
-      search: debouncedSearch,
-      page: 1,
-      limit: 50,
-    };
-  }, [paint.id, debouncedSearch]);
+  // Fetch tasks for this specific paint with infinite scroll
+  const {
+    items: tasks,
+    isLoading,
+    error,
+    loadMore,
+    canLoadMore,
+    isFetchingNextPage,
+    totalCount,
+  } = useTasksInfiniteMobile({
+    where: {
+      OR: [
+        { generalPaintId: paint.id },
+        { logoPaintId: paint.id },
+      ],
+    },
+    include: {
+      customer: true,
+    },
+    orderBy: { createdAt: "desc" },
+    enabled: !!paint.id,
+  });
 
-  const { data: tasksResponse, isLoading, error, refetch } = useTasks(queryParams);
-  const tasks = tasksResponse?.data || [];
+  // Filter tasks based on search (client-side for already loaded items)
+  const filteredTasks = useMemo(() => {
+    if (!debouncedSearch) return tasks;
 
-  const handleTaskPress = useCallback((task: Task) => {
-    router.push(`/(tabs)/production/tasks/details/${task.id}` as any);
-  }, [router]);
+    const searchLower = debouncedSearch.toLowerCase();
+    return tasks.filter((task: Task) =>
+      task.name?.toLowerCase().includes(searchLower) ||
+      task.customer?.fantasyName?.toLowerCase().includes(searchLower) ||
+      task.serialNumber?.toLowerCase().includes(searchLower)
+    );
+  }, [tasks, debouncedSearch]);
 
-  const handleViewAll = useCallback(() => {
-    router.push({
-      pathname: "/(tabs)/producao/cronograma" as any,
-      params: { paintId: paint.id },
-    });
-  }, [router, paint.id]);
+  // Get all column definitions
+  const allColumns = useMemo(() => createColumnDefinitions(), []);
 
-  const handleColumnsChange = useCallback((columns: Set<string>) => {
-    setVisibleColumnKeys(Array.from(columns));
-    setShowColumnManager(false);
+  // Handle columns change
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
   }, []);
 
-  // Empty state (no tasks at all)
+  // Get default visible columns
+  const getDefaultVisibleColumns = useCallback(() => {
+    return ["name", "serialNumber"];
+  }, []);
+
+  // Handle opening column panel
+  const handleOpenColumns = useCallback(() => {
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
+
+  const handleTaskPress = (taskId: string) => {
+    router.push(routeToMobilePath(routes.production.schedule.details(taskId)) as any);
+  };
+
+  // Don't show if no tasks and not loading
   if (!isLoading && tasks.length === 0 && !searchQuery) {
-    return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconBrush size={20} color={colors.mutedForeground} />
-            <ThemedText style={[styles.title, { color: colors.foreground }]}>
-              Tarefas Relacionadas
-            </ThemedText>
-          </View>
-        </View>
-        <View style={styles.content}>
-          <View style={[styles.emptyState, { backgroundColor: colors.muted + "20" }]}>
-            <IconBrush size={48} color={colors.mutedForeground} />
-            <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Nenhuma tarefa utiliza esta tinta
-            </ThemedText>
-            <ThemedText style={[styles.emptyDescription, { color: colors.mutedForeground }]}>
-              As tarefas que utilizarem esta tinta aparecerão aqui
-            </ThemedText>
-          </View>
-        </View>
-      </Card>
-    );
+    return null;
   }
 
-  // Loading state
-  if (isLoading && !tasks.length) {
-    return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconBrush size={20} color={colors.mutedForeground} />
-            <ThemedText style={[styles.title, { color: colors.foreground }]}>
-              Tarefas Relacionadas
-            </ThemedText>
-          </View>
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={[styles.loadingText, { color: colors.mutedForeground }]}>
-            Carregando tarefas...
-          </ThemedText>
-        </View>
-      </Card>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconBrush size={20} color={colors.mutedForeground} />
-            <ThemedText style={[styles.title, { color: colors.foreground }]}>
-              Tarefas Relacionadas
-            </ThemedText>
-          </View>
-        </View>
-        <View style={styles.content}>
-          <View style={[styles.errorState, { backgroundColor: colors.destructive + "10" }]}>
-            <IconAlertCircle size={32} color={colors.destructive} />
-            <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
-              Erro ao carregar tarefas
-            </ThemedText>
-            <Button onPress={() => refetch()} variant="destructive">
-              <ThemedText style={{ color: colors.destructiveForeground }}>
-                Tentar Novamente
-              </ThemedText>
-            </Button>
-          </View>
-        </View>
-      </Card>
-    );
-  }
-
-  // No results with search
-  if (tasks.length === 0 && searchQuery) {
-    return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconBrush size={20} color={colors.mutedForeground} />
-            <ThemedText style={[styles.title, { color: colors.foreground }]}>
-              Tarefas Relacionadas
-            </ThemedText>
-          </View>
-        </View>
-        <View style={styles.content}>
-          <View style={styles.controlsContainer}>
-            <View style={[styles.searchContainer, { backgroundColor: colors.muted }]}>
-              <IconSearch size={18} color={colors.mutedForeground} />
-              <Input
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Buscar tarefas..."
-                inputStyle={StyleSheet.flatten([styles.searchInput, { color: colors.foreground }])}
-                placeholderTextColor={colors.mutedForeground}
-              />
-            </View>
-          </View>
-          <View style={[styles.emptyState, { backgroundColor: colors.muted + "20" }]}>
-            <IconSearch size={32} color={colors.mutedForeground} />
-            <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Nenhuma tarefa encontrada
-            </ThemedText>
-            <ThemedText style={[styles.emptyDescription, { color: colors.mutedForeground }]}>
-              Tente ajustar sua busca
-            </ThemedText>
-          </View>
-        </View>
-      </Card>
-    );
-  }
-
-  // Loaded state with data
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconBrush size={20} color={colors.primary} />
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>
-            Tarefas Relacionadas
-            {tasks.length > 0 && (
-              <ThemedText style={[styles.count, { color: colors.mutedForeground }]}>
-                {" "}({tasks.length})
-              </ThemedText>
-            )}
-          </ThemedText>
+    <>
+      <Card style={styles.card}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconClipboardList size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>
+              Tarefas Relacionadas {tasks.length > 0 && `(${tasks.length}${totalCount ? `/${totalCount}` : ""})`}
+            </ThemedText>
+          </View>
         </View>
-        <TouchableOpacity onPress={handleViewAll} style={styles.viewAllButton}>
-          <ThemedText style={[styles.viewAllText, { color: colors.primary }]}>
-            Ver Todas
-          </ThemedText>
-          <IconExternalLink size={16} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.content}>
-        {/* Search + Controls */}
-        <View style={styles.controlsContainer}>
-          <View style={[styles.searchContainer, { backgroundColor: colors.muted }]}>
-            <IconSearch size={18} color={colors.mutedForeground} />
-            <Input
+        <View style={styles.content}>
+          {/* Search and Column Visibility Controls */}
+          <View style={styles.controlsContainer}>
+            <SearchBar
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="Buscar tarefas..."
-              inputStyle={StyleSheet.flatten([styles.searchInput, { color: colors.foreground }])}
-              placeholderTextColor={colors.mutedForeground}
+              style={styles.searchBar}
+            />
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumnKeys.length}
+              badgeVariant="primary"
             />
           </View>
-          <TouchableOpacity
-            onPress={() => setShowColumnManager(true)}
-            style={[styles.columnButton, { backgroundColor: colors.muted }]}
-          >
-            <IconColumns3 size={18} color={colors.foreground} />
-            {visibleColumnKeys.length > 0 && (
-              <Badge variant="secondary" style={styles.badge}>
-                <ThemedText style={styles.badgeText}>
-                  {visibleColumnKeys.length}
-                </ThemedText>
-              </Badge>
-            )}
-          </TouchableOpacity>
-        </View>
 
-        {/* Table Container with Max Height */}
-        <View style={[styles.tableContainer, { maxHeight }]}>
-          <TaskTable
-            tasks={tasks}
-            onTaskPress={(taskId: string) => {
-              const task = tasks.find(t => t.id === taskId);
-              if (task) handleTaskPress(task);
-            }}
-            visibleColumnKeys={visibleColumnKeys}
-            loading={isLoading}
-          />
+          {/* Task Table */}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <ThemedText style={styles.loadingText}>Carregando tarefas...</ThemedText>
+            </View>
+          ) : error ? (
+            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+              <IconAlertCircle size={48} color={colors.mutedForeground} />
+              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+                Erro ao carregar tarefas.
+              </ThemedText>
+            </View>
+          ) : filteredTasks.length === 0 ? (
+            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+              <IconAlertCircle size={48} color={colors.mutedForeground} />
+              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+                {searchQuery
+                  ? `Nenhuma tarefa encontrada para "${searchQuery}".`
+                  : "Nenhuma tarefa utiliza esta tinta."}
+              </ThemedText>
+            </View>
+          ) : (
+            <View style={[styles.tableContainer, { maxHeight }]}>
+              <TaskTable
+                tasks={filteredTasks}
+                onTaskPress={handleTaskPress}
+                enableSwipeActions={false}
+                visibleColumnKeys={visibleColumnKeys}
+                onEndReached={() => canLoadMore && loadMore()}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={
+                  isFetchingNextPage ? (
+                    <View style={styles.footerLoader}>
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    </View>
+                  ) : null
+                }
+              />
+            </View>
+          )}
         </View>
-      </View>
+      </Card>
 
-      {/* Column Visibility Drawer */}
-      <ColumnVisibilityDrawerV2
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        open={showColumnManager}
-        onOpenChange={setShowColumnManager}
-        defaultColumns={new Set(defaultVisibleColumns)}
-      />
-    </Card>
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <ColumnVisibilitySlidePanel
+          columns={allColumns}
+          visibleColumns={new Set(visibleColumnKeys)}
+          onVisibilityChange={handleColumnsChange}
+          onClose={handleCloseColumns}
+          defaultColumns={new Set(getDefaultVisibleColumns())}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 
@@ -329,101 +205,50 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    flex: 1,
   },
   title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.medium as any,
-  },
-  count: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.normal as any,
-  },
-  viewAllButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  viewAllText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium as any,
+    fontWeight: "500",
   },
   content: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   controlsContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  searchContainer: {
+  searchBar: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-    gap: spacing.xs,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: fontSize.sm,
-    paddingVertical: spacing.xs,
-  },
-  columnButton: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  badge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 18,
-    height: 18,
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: fontWeight.semibold as any,
   },
   tableContainer: {
-    flex: 1,
+    minHeight: 200,
+    overflow: "hidden",
+    marginHorizontal: -8,
   },
   loadingContainer: {
-    padding: spacing.xxl,
+    paddingVertical: spacing.xxl,
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.md,
   },
   loadingText: {
     fontSize: fontSize.sm,
+    opacity: 0.7,
   },
   emptyState: {
-    padding: spacing.xl,
-    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.xl,
+    borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
     gap: spacing.md,
   },
   emptyText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium as any,
-  },
-  emptyDescription: {
     fontSize: fontSize.sm,
     textAlign: "center",
   },
-  errorState: {
-    padding: spacing.xl,
-    borderRadius: borderRadius.lg,
+  footerLoader: {
+    paddingVertical: spacing.md,
     alignItems: "center",
-    gap: spacing.md,
-  },
-  errorText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium as any,
   },
 });

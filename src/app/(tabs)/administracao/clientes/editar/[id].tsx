@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCustomer, useCustomerMutations } from "@/hooks";
+import { useCustomer, useCustomerMutations, useKeyboardAwareScroll } from "@/hooks";
 import { useCnpjLookup } from "@/hooks/use-cnpj-lookup";
 import { useCepLookup } from "@/hooks/use-cep-lookup";
 import { customerUpdateSchema} from "@/schemas";
@@ -14,6 +14,7 @@ import { showToast } from "@/components/ui/toast";
 import { Input, Combobox, Button, ErrorScreen, Skeleton } from "@/components/ui";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
@@ -34,6 +35,17 @@ export default function CustomerEditScreen() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [economicActivityInitialOptions, setEconomicActivityInitialOptions] = useState<Array<{ value: string; label: string }>>([]);
   const queryClient = useQueryClient();
+
+  // Keyboard-aware scrolling
+  const { handlers, refs } = useKeyboardAwareScroll();
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   const { data: customer, isLoading, error, refetch } = useCustomer(id!, {
     include: {
@@ -362,13 +374,22 @@ export default function CustomerEditScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView} keyboardVerticalOffset={0}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      >
         <ScrollView
+          ref={refs.scrollViewRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
         >
+        <KeyboardAwareFormProvider value={keyboardContextValue}>
         {/* Basic Information */}
         <FormCard title="Informações Básicas">
           <FormFieldGroup
@@ -811,6 +832,7 @@ export default function CustomerEditScreen() {
             />
           </FormFieldGroup>
         </FormCard>
+        </KeyboardAwareFormProvider>
         </ScrollView>
 
         <SimpleFormActionBar
@@ -838,7 +860,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: formSpacing.containerPaddingHorizontal,
     paddingTop: formSpacing.containerPaddingVertical,
-    paddingBottom: 100, // Extra padding so inputs can scroll above action bar when keyboard is open
+    paddingBottom: 0, // No spacing - action bar has its own margin
   },
   documentRow: {
     flexDirection: "row",

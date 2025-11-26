@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { TextInput } from '@/components/ui/text-input';
-import { CurrencyInput } from '@/components/ui/currency-input';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
@@ -42,6 +41,8 @@ export interface NumericRangeFilterProps {
   decimalPlaces?: number;
   /** Format type - 'currency' uses natural currency typing */
   format?: 'currency';
+  /** Callback when an input is focused */
+  onFocus?: () => void;
 }
 
 /**
@@ -87,6 +88,7 @@ export function NumericRangeFilter({
   disabled = false,
   decimalPlaces = 0,
   format,
+  onFocus,
 }: NumericRangeFilterProps) {
   const { colors } = useTheme();
 
@@ -203,10 +205,15 @@ export function NumericRangeFilter({
     inputContainer: {
       flex: 1,
     },
+    separatorContainer: {
+      height: 48,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 4,
+    },
     separator: {
       fontSize: 16,
       color: colors.mutedForeground,
-      alignSelf: 'center',
     },
     inputWithAffix: {
       flexDirection: 'row',
@@ -235,10 +242,14 @@ export function NumericRangeFilter({
     isMin: boolean,
     placeholder: string
   ) => {
-    // For currency format, use CurrencyInput
+    // For currency format, use Input type="currency"
     if (isCurrency) {
       const currencyValue = isMin ? value?.min : value?.max;
-      const handleCurrencyChange = (cents: number | undefined) => {
+      // Convert cents to reais for Input (which works with reais internally)
+      const reaisValue = currencyValue !== undefined ? currencyValue / 100 : undefined;
+      const handleCurrencyChange = (reais: number | string | null) => {
+        // Convert reais back to cents for storage
+        const cents = reais !== null && reais !== undefined ? Math.round(Number(reais) * 100) : undefined;
         const minValue = isMin ? cents : value?.min;
         const maxValue = isMin ? value?.max : cents;
 
@@ -250,11 +261,13 @@ export function NumericRangeFilter({
       };
 
       return (
-        <CurrencyInput
-          value={currencyValue}
-          onValueChange={handleCurrencyChange}
+        <Input
+          type="currency"
+          value={reaisValue}
+          onChangeText={handleCurrencyChange}
           placeholder={placeholder}
           disabled={disabled}
+          onFocus={onFocus}
         />
       );
     }
@@ -267,13 +280,14 @@ export function NumericRangeFilter({
       return (
         <View style={styles.inputWithAffix}>
           {prefix && <Text style={styles.affix}>{prefix}</Text>}
-          <TextInput
+          <Input
+            type={decimalPlaces > 0 ? 'decimal' : 'natural'}
             value={text}
-            onChangeText={onChangeText}
+            onChangeText={(val) => onChangeText(String(val ?? ''))}
             placeholder={placeholder}
-            keyboardType={decimalPlaces > 0 ? 'decimal-pad' : 'number-pad'}
-            editable={!disabled}
+            disabled={disabled}
             inputStyle={styles.input}
+            onFocus={onFocus}
           />
           {suffix && <Text style={styles.affix}>{suffix}</Text>}
         </View>
@@ -281,12 +295,13 @@ export function NumericRangeFilter({
     }
 
     return (
-      <TextInput
+      <Input
+        type={decimalPlaces > 0 ? 'decimal' : 'natural'}
         value={text}
-        onChangeText={onChangeText}
+        onChangeText={(val) => onChangeText(String(val ?? ''))}
         placeholder={placeholder}
-        keyboardType={decimalPlaces > 0 ? 'decimal-pad' : 'number-pad'}
-        editable={!disabled}
+        disabled={disabled}
+        onFocus={onFocus}
       />
     );
   };
@@ -320,7 +335,9 @@ export function NumericRangeFilter({
         <View style={styles.inputContainer}>
           {renderInput(true, minPlaceholder)}
         </View>
-        <Text style={styles.separator}>-</Text>
+        <View style={styles.separatorContainer}>
+          <Text style={styles.separator}>-</Text>
+        </View>
         <View style={styles.inputContainer}>
           {renderInput(false, maxPlaceholder)}
         </View>

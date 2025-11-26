@@ -37,7 +37,6 @@ export function LayoutSelector({
       searchable={true}
       clearable={!required}
       emptyText="Nenhum layout encontrado"
-      preferFullScreen={true}
     />
   );
 }

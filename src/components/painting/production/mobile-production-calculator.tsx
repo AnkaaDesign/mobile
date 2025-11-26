@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { View, ScrollView, TouchableOpacity } from "react-native";
+import { View, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,8 @@ import { Icon } from "@/components/ui/icon";
 import { measureUtils, formatCurrency } from "@/utils";
 import { MEASURE_UNIT } from "@/constants";
 import type { PaintFormula, PaintFormulaComponent } from '../../../types';
+import { useKeyboardAwareScroll } from "@/hooks";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 interface MobileProductionCalculatorProps {
   formula: PaintFormula;
@@ -46,6 +48,9 @@ interface ProductionCalculation {
 }
 
 export function MobileProductionCalculator({ formula, targetQuantity = 1, onCalculationComplete }: MobileProductionCalculatorProps) {
+  // Keyboard-aware scrolling
+  const { handlers, refs } = useKeyboardAwareScroll();
+
   const [targetWeight, setTargetWeight] = useState(1000); // Default 1kg
   const [targetWeightUnit, setTargetWeightUnit] = useState<MEASURE_UNIT>(MEASURE_UNIT.GRAM);
   const [productionMode, setProductionMode] = useState<"weight" | "volume">("weight");
@@ -54,6 +59,14 @@ export function MobileProductionCalculator({ formula, targetQuantity = 1, onCalc
 
   const components = formula.components || [];
   const formulaDensity = Number(formula.density) || 1.0;
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   // Calculate base formula metrics
   const baseFormulaMetrics = useMemo(() => {
@@ -164,18 +177,33 @@ export function MobileProductionCalculator({ formula, targetQuantity = 1, onCalc
       : 0;
 
   return (
-    <ScrollView className="flex-1">
-      <View className="p-4 space-y-4">
-        {/* Input Section */}
-        <Card className="p-4">
-          <View className="flex-row items-center gap-2 mb-3">
-            <Icon name="calculator" size={20} className="text-primary" />
-            <Text className="text-lg font-semibold text-foreground">Calculadora de Produção</Text>
-          </View>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1"
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
+      <ScrollView
+        ref={refs.scrollViewRef}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 0 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        onLayout={handlers.handleScrollViewLayout}
+        onScroll={handlers.handleScroll}
+        scrollEventThrottle={16}
+      >
+        <KeyboardAwareFormProvider value={keyboardContextValue}>
+          <View className="p-4 space-y-4">
+            {/* Input Section */}
+            <Card className="p-4">
+              <View className="flex-row items-center gap-2 mb-3">
+                <Icon name="calculator" size={20} className="text-primary" />
+                <Text className="text-lg font-semibold text-foreground">Calculadora de Produção</Text>
+              </View>
 
-          <View className="space-y-3">
-            {/* Mode Selection */}
-            <View className="flex-row gap-2">
+              <View className="space-y-3">
+                {/* Mode Selection */}
+                <View className="flex-row gap-2">
               <TouchableOpacity
                 onPress={() => setProductionMode("weight")}
                 className={`flex-1 px-4 py-2 rounded-lg border ${productionMode === "weight" ? "bg-primary border-primary" : "bg-transparent border-border"}`}
@@ -196,43 +224,49 @@ export function MobileProductionCalculator({ formula, targetQuantity = 1, onCalc
               </TouchableOpacity>
             </View>
 
-            {/* Target Input */}
-            {productionMode === "weight" ? (
-              <View>
-                <Label nativeID="targetWeight">Peso desejado</Label>
-                <View className="flex-row items-center gap-2 mt-1">
-                  <Input
-                    id="targetWeight"
-                    value={targetWeight.toString()}
-                    onChangeText={(text) => setTargetWeight(Number(text) || 0)}
-                    keyboardType="numeric"
-                    placeholder="1000"
-                    className="flex-1"
-                  />
+                {/* Target Input */}
+                {productionMode === "weight" ? (
+                  <View
+                    onLayout={(e) => handlers.handleFieldLayout('targetWeight', e)}
+                  >
+                    <Label nativeID="targetWeight">Peso desejado</Label>
+                    <View className="flex-row items-center gap-2 mt-1">
+                      <Input
+                        id="targetWeight"
+                        value={targetWeight.toString()}
+                        onChangeText={(text) => setTargetWeight(Number(text) || 0)}
+                        keyboardType="numeric"
+                        placeholder="1000"
+                        className="flex-1"
+                        onFocus={() => handlers.handleFieldFocus('targetWeight')}
+                      />
                   <TouchableOpacity
                     onPress={() => setTargetWeightUnit(targetWeightUnit === MEASURE_UNIT.GRAM ? MEASURE_UNIT.KILOGRAM : MEASURE_UNIT.GRAM)}
                     className="px-3 py-2 rounded-lg border border-border bg-background"
                   >
                     <Text className="text-sm">{targetWeightUnit === MEASURE_UNIT.GRAM ? "g" : "kg"}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <View>
-                <Label nativeID="targetVolume">Volume desejado (L)</Label>
-                <Input
-                  id="targetVolume"
-                  value={targetVolume.toString()}
-                  onChangeText={(text) => setTargetVolume(Number(text) || 0)}
-                  keyboardType="numeric"
-                  placeholder="1"
-                  className="mt-1"
-                />
-              </View>
-            )}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <View
+                    onLayout={(e) => handlers.handleFieldLayout('targetVolume', e)}
+                  >
+                    <Label nativeID="targetVolume">Volume desejado (L)</Label>
+                    <Input
+                      id="targetVolume"
+                      value={targetVolume.toString()}
+                      onChangeText={(text) => setTargetVolume(Number(text) || 0)}
+                      keyboardType="numeric"
+                      placeholder="1"
+                      className="mt-1"
+                      onFocus={() => handlers.handleFieldFocus('targetVolume')}
+                    />
+                  </View>
+                )}
 
-            {/* Production Summary */}
-            <View className="bg-muted/30 rounded-lg p-3">
+                {/* Production Summary */}
+                <View className="bg-muted/30 rounded-lg p-3">
               <Text className="text-xs text-muted-foreground mb-1">Produção Estimada</Text>
               <Text className="text-lg font-bold">
                 {measureUtils.formatMeasure({
@@ -240,14 +274,14 @@ export function MobileProductionCalculator({ formula, targetQuantity = 1, onCalc
                   unit: MEASURE_UNIT.GRAM,
                 })}
               </Text>
-              <Text className="text-xs text-muted-foreground">Volume: {(calculation.totalVolume / 1000).toFixed(2)} L</Text>
-              <Text className="text-xs text-muted-foreground">Densidade: {calculation.estimatedDensity.toFixed(3)} g/ml</Text>
-            </View>
-          </View>
-        </Card>
+                  <Text className="text-xs text-muted-foreground">Volume: {(calculation.totalVolume / 1000).toFixed(2)} L</Text>
+                  <Text className="text-xs text-muted-foreground">Densidade: {calculation.estimatedDensity.toFixed(3)} g/ml</Text>
+                </View>
+              </View>
+            </Card>
 
-        {/* Stock Status */}
-        <Card className="p-4">
+            {/* Stock Status */}
+            <Card className="p-4">
           <View className="flex-row items-center gap-2 mb-3">
             <Icon name="shopping-cart" size={16} className="text-primary" />
             <Text className="text-base font-medium text-foreground">Status de Estoque</Text>
@@ -278,148 +312,150 @@ export function MobileProductionCalculator({ formula, targetQuantity = 1, onCalc
                 </AlertDescription>
               </Alert>
             )}
-          </View>
-        </Card>
-
-        {/* Results Section */}
-        {calculation && (
-          <>
-            {/* Summary */}
-            <Card className="p-4">
-              <View className="flex-row items-center gap-2 mb-3">
-                <Icon name="clipboard-check" size={16} className="text-green-600" />
-                <Text className="text-base font-medium text-foreground">Resumo da Produção</Text>
-              </View>
-
-              <View className="grid grid-cols-2 gap-4">
-                <View className="bg-muted/30 rounded-lg p-3">
-                  <Text className="text-xs text-muted-foreground mb-1">Peso Total</Text>
-                  <Text className="text-sm font-medium">
-                    {measureUtils.formatMeasure({
-                      value: calculation.totalWeight,
-                      unit: MEASURE_UNIT.GRAM,
-                    })}
-                  </Text>
-                </View>
-
-                <View className="bg-muted/30 rounded-lg p-3">
-                  <Text className="text-xs text-muted-foreground mb-1">Volume Total</Text>
-                  <Text className="text-sm font-medium">
-                    {(calculation.totalVolume / 1000).toFixed(2)} L
-                  </Text>
-                </View>
-
-                <View className="bg-muted/30 rounded-lg p-3">
-                  <Text className="text-xs text-muted-foreground mb-1">Custo Total</Text>
-                  <Text className="text-sm font-medium text-primary">{formatCurrency(calculation.totalCost)}</Text>
-                </View>
-
-                <View className="bg-muted/30 rounded-lg p-3">
-                  <Text className="text-xs text-muted-foreground mb-1">Custo por Litro</Text>
-                  <Text className="text-sm font-medium">{formatCurrency(calculation.pricePerLiter)}</Text>
-                </View>
               </View>
             </Card>
 
-            {/* Production Status */}
-            <Alert variant={calculation.canProduce ? "default" : "destructive"}>
-              <Icon name={calculation.canProduce ? "check-circle" : "alert-circle"} size={16} />
-              <AlertDescription>
-                {calculation.canProduce
-                  ? `Produção possível! Todos os componentes estão disponíveis.`
-                  : `Não é possível produzir. Componentes em falta: ${calculation.missingComponents.join(", ")}`}
-              </AlertDescription>
-            </Alert>
+            {/* Results Section */}
+            {calculation && (
+              <>
+                {/* Summary */}
+                <Card className="p-4">
+                  <View className="flex-row items-center gap-2 mb-3">
+                    <Icon name="clipboard-check" size={16} className="text-green-600" />
+                    <Text className="text-base font-medium text-foreground">Resumo da Produção</Text>
+                  </View>
 
-            {/* Component Details */}
-            <Card className="p-4">
-              <View className="flex-row items-center gap-2 mb-3">
-                <Icon name="list" size={16} className="text-primary" />
-                <Text className="text-base font-medium text-foreground">Requisitos dos Componentes</Text>
-              </View>
-
-              <View className="space-y-3">
-                {calculation.components.map((calc, index) => (
-                  <View key={calc.component.id || index} className="border border-border rounded-lg p-3">
-                    <View className="flex-row items-center justify-between mb-2">
-                      <View className="flex-1">
-                        <View className="flex-row items-center gap-2">
-                          <Text className="text-sm font-medium text-foreground">{calc.component.item?.name || "Item não encontrado"}</Text>
-                          <Icon name={calc.hasEnoughStock ? "circle-check" : "alert-triangle"} size={16} className={calc.hasEnoughStock ? "text-green-500" : "text-red-500"} />
-                        </View>
-
-                        <View className="flex-row flex-wrap gap-2 mt-2">
-                          {/* Production Weight */}
-                          <View className="bg-muted/30 rounded px-2 py-1">
-                            <View className="flex-row items-center gap-1">
-                              <Icon name="scale" size={12} className="text-muted-foreground" />
-                              <Text className="text-xs text-muted-foreground">Produção:</Text>
-                            </View>
-                            <Badge variant="secondary" size="sm">
-                              {measureUtils.formatMeasure({
-                                value: calc.calculatedWeight,
-                                unit: MEASURE_UNIT.GRAM,
-                              })}
-                            </Badge>
-                          </View>
-
-                          {/* Volume */}
-                          <View className="bg-muted/30 rounded px-2 py-1">
-                            <View className="flex-row items-center gap-1">
-                              <Icon name="droplet" size={12} className="text-muted-foreground" />
-                              <Text className="text-xs text-muted-foreground">Volume:</Text>
-                            </View>
-                            <Badge variant="secondary" size="sm">
-                              {measureUtils.formatMeasure({
-                                value: calc.calculatedVolume,
-                                unit: MEASURE_UNIT.MILLILITER,
-                              })}
-                            </Badge>
-                          </View>
-
-                          {/* Inventory Units */}
-                          <View className="bg-muted/30 rounded px-2 py-1">
-                            <View className="flex-row items-center gap-1">
-                              <Icon name="shopping-cart" size={12} className="text-muted-foreground" />
-                              <Text className="text-xs text-muted-foreground">Estoque:</Text>
-                            </View>
-                            <Badge variant={calc.hasEnoughStock ? "default" : "destructive"} size="sm">
-                              {calc.requiredUnits.toFixed(2)} {calc.component.item?.measureUnit || "un"}
-                            </Badge>
-                          </View>
-
-                          {/* Cost */}
-                          <View className="bg-muted/30 rounded px-2 py-1">
-                            <View className="flex-row items-center gap-1">
-                              <Icon name="currency-dollar" size={12} className="text-muted-foreground" />
-                              <Text className="text-xs text-muted-foreground">Custo:</Text>
-                            </View>
-                            <Badge variant="outline" size="sm">
-                              {formatCurrency(calc.totalCost)}
-                            </Badge>
-                          </View>
-                        </View>
-
-                        <View className="mt-2">
-                          <Text className="text-xs text-muted-foreground">
-                            Disponível: {calc.availableStock.toFixed(2)} {calc.component.item?.measureUnit || "un"}
-                            {" • "}
-                            Densidade: {calc.density.toFixed(3)} g/ml
-                            {" • "}
-                            {calc.percentageOfFormula.toFixed(1)}% da fórmula
-                          </Text>
-                        </View>
-                      </View>
+                  <View className="grid grid-cols-2 gap-4">
+                    <View className="bg-muted/30 rounded-lg p-3">
+                      <Text className="text-xs text-muted-foreground mb-1">Peso Total</Text>
+                      <Text className="text-sm font-medium">
+                        {measureUtils.formatMeasure({
+                          value: calculation.totalWeight,
+                          unit: MEASURE_UNIT.GRAM,
+                        })}
+                      </Text>
                     </View>
 
-                    {index < calculation.components.length - 1 && <Separator className="mt-2" />}
+                    <View className="bg-muted/30 rounded-lg p-3">
+                      <Text className="text-xs text-muted-foreground mb-1">Volume Total</Text>
+                      <Text className="text-sm font-medium">
+                        {(calculation.totalVolume / 1000).toFixed(2)} L
+                      </Text>
+                    </View>
+
+                    <View className="bg-muted/30 rounded-lg p-3">
+                      <Text className="text-xs text-muted-foreground mb-1">Custo Total</Text>
+                      <Text className="text-sm font-medium text-primary">{formatCurrency(calculation.totalCost)}</Text>
+                    </View>
+
+                    <View className="bg-muted/30 rounded-lg p-3">
+                      <Text className="text-xs text-muted-foreground mb-1">Custo por Litro</Text>
+                      <Text className="text-sm font-medium">{formatCurrency(calculation.pricePerLiter)}</Text>
+                    </View>
                   </View>
-                ))}
-              </View>
-            </Card>
-          </>
-        )}
-      </View>
-    </ScrollView>
+                </Card>
+
+                {/* Production Status */}
+                <Alert variant={calculation.canProduce ? "default" : "destructive"}>
+                  <Icon name={calculation.canProduce ? "check-circle" : "alert-circle"} size={16} />
+                  <AlertDescription>
+                    {calculation.canProduce
+                      ? `Produção possível! Todos os componentes estão disponíveis.`
+                      : `Não é possível produzir. Componentes em falta: ${calculation.missingComponents.join(", ")}`}
+                  </AlertDescription>
+                </Alert>
+
+                {/* Component Details */}
+                <Card className="p-4">
+                  <View className="flex-row items-center gap-2 mb-3">
+                    <Icon name="list" size={16} className="text-primary" />
+                    <Text className="text-base font-medium text-foreground">Requisitos dos Componentes</Text>
+                  </View>
+
+                  <View className="space-y-3">
+                    {calculation.components.map((calc, index) => (
+                      <View key={calc.component.id || index} className="border border-border rounded-lg p-3">
+                        <View className="flex-row items-center justify-between mb-2">
+                          <View className="flex-1">
+                            <View className="flex-row items-center gap-2">
+                              <Text className="text-sm font-medium text-foreground">{calc.component.item?.name || "Item não encontrado"}</Text>
+                              <Icon name={calc.hasEnoughStock ? "circle-check" : "alert-triangle"} size={16} className={calc.hasEnoughStock ? "text-green-500" : "text-red-500"} />
+                            </View>
+
+                            <View className="flex-row flex-wrap gap-2 mt-2">
+                              {/* Production Weight */}
+                              <View className="bg-muted/30 rounded px-2 py-1">
+                                <View className="flex-row items-center gap-1">
+                                  <Icon name="scale" size={12} className="text-muted-foreground" />
+                                  <Text className="text-xs text-muted-foreground">Produção:</Text>
+                                </View>
+                                <Badge variant="secondary" size="sm">
+                                  {measureUtils.formatMeasure({
+                                    value: calc.calculatedWeight,
+                                    unit: MEASURE_UNIT.GRAM,
+                                  })}
+                                </Badge>
+                              </View>
+
+                              {/* Volume */}
+                              <View className="bg-muted/30 rounded px-2 py-1">
+                                <View className="flex-row items-center gap-1">
+                                  <Icon name="droplet" size={12} className="text-muted-foreground" />
+                                  <Text className="text-xs text-muted-foreground">Volume:</Text>
+                                </View>
+                                <Badge variant="secondary" size="sm">
+                                  {measureUtils.formatMeasure({
+                                    value: calc.calculatedVolume,
+                                    unit: MEASURE_UNIT.MILLILITER,
+                                  })}
+                                </Badge>
+                              </View>
+
+                              {/* Inventory Units */}
+                              <View className="bg-muted/30 rounded px-2 py-1">
+                                <View className="flex-row items-center gap-1">
+                                  <Icon name="shopping-cart" size={12} className="text-muted-foreground" />
+                                  <Text className="text-xs text-muted-foreground">Estoque:</Text>
+                                </View>
+                                <Badge variant={calc.hasEnoughStock ? "default" : "destructive"} size="sm">
+                                  {calc.requiredUnits.toFixed(2)} {calc.component.item?.measureUnit || "un"}
+                                </Badge>
+                              </View>
+
+                              {/* Cost */}
+                              <View className="bg-muted/30 rounded px-2 py-1">
+                                <View className="flex-row items-center gap-1">
+                                  <Icon name="currency-dollar" size={12} className="text-muted-foreground" />
+                                  <Text className="text-xs text-muted-foreground">Custo:</Text>
+                                </View>
+                                <Badge variant="outline" size="sm">
+                                  {formatCurrency(calc.totalCost)}
+                                </Badge>
+                              </View>
+                            </View>
+
+                            <View className="mt-2">
+                              <Text className="text-xs text-muted-foreground">
+                                Disponível: {calc.availableStock.toFixed(2)} {calc.component.item?.measureUnit || "un"}
+                                {" • "}
+                                Densidade: {calc.density.toFixed(3)} g/ml
+                                {" • "}
+                                {calc.percentageOfFormula.toFixed(1)}% da fórmula
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+
+                        {index < calculation.components.length - 1 && <Separator className="mt-2" />}
+                      </View>
+                    ))}
+                  </View>
+                </Card>
+              </>
+            )}
+          </View>
+        </KeyboardAwareFormProvider>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

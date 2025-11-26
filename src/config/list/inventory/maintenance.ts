@@ -153,6 +153,31 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
         label: 'Itens',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['items', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getItems } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getItems({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((item: any) => ({
+                label: item.name,
+                value: item.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Item Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os itens',
       },
       {

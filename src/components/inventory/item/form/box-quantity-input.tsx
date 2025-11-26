@@ -25,21 +25,16 @@ export function BoxQuantityInput({ disabled }: BoxQuantityInputProps) {
           </Label>
           <Input
             id="boxQuantity"
-            value={value?.toString() || ""}
-            onChangeText={(text) => {
-              if (text === "") {
-                onChange(null);
-              } else {
-                const num = parseInt(text, 10);
-                onChange(isNaN(num) ? null : num);
-              }
-            }}
+            fieldKey="boxQuantity"
+            type="natural"
+            value={value}
+            onChangeText={onChange}
             onBlur={onBlur}
             placeholder="1"
-            editable={!disabled}
-            keyboardType="numeric"
+            disabled={disabled}
+            min={1}
           />
-          {error && <ThemedText style={{ fontSize: 14, color: "#ef4444", marginTop: 4 }}>{error.message}</ThemedText>}
+          {error && <ThemedText variant="destructive" style={{ fontSize: 14, marginTop: 4 }}>{error.message}</ThemedText>}
         </View>
       )}
     />

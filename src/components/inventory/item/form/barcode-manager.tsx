@@ -46,6 +46,7 @@ export function BarcodeManager({ disabled }: BarcodeManagerProps) {
       <View style={styles.inputRow}>
         <View style={styles.inputWrapper}>
           <Input
+            fieldKey="barcode"
             value={newBarcode}
             onChangeText={setNewBarcode}
             placeholder="Digite o código de barras"

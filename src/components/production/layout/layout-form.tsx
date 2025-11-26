@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, TextInput } from "react-native";
+import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { Icon } from "@/components/ui/icon";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { useKeyboardAwareScroll } from "@/hooks";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import type { LayoutCreateFormData } from "@/schemas";
 import { showToast } from "@/components/ui/toast";
 import { getApiBaseUrl } from "@/utils/file";
@@ -149,6 +151,17 @@ const getPhotoUrl = (photoId: string | null): string | undefined => {
 
 export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }: LayoutFormProps) {
   const { colors } = useTheme();
+
+  // Keyboard-aware scrolling
+  const { handlers, refs } = useKeyboardAwareScroll();
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   // Track if we're currently saving to prevent state reset during save
   const isSavingRef = useRef(false);
@@ -741,7 +754,21 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
+      <ScrollView
+        ref={refs.scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        onLayout={handlers.handleScrollViewLayout}
+        onScroll={handlers.handleScroll}
+        scrollEventThrottle={16}
+      >
+        <KeyboardAwareFormProvider value={keyboardContextValue}>
       {/* Total Width Display */}
       <View style={[styles.totalWidthContainer, { backgroundColor: colors.primary + '20', borderRadius: borderRadius.md }]}>
         <ThemedText style={[styles.totalWidthLabel, { color: colors.mutedForeground }]}>
@@ -984,13 +1011,21 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
       )}
 
       <View style={{ height: spacing.xl }} />
-    </ScrollView>
+        </KeyboardAwareFormProvider>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 0,
   },
   totalWidthContainer: {
     flexDirection: 'row',

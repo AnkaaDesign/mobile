@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
@@ -8,6 +8,7 @@ import { z } from "zod";
 import * as DocumentPicker from "expo-document-picker";
 import { createFormDataWithContext } from "@/utils/form-data-context";
 import { Card } from "@/components/ui/card";
+import { FormCard } from "@/components/ui/form-section";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -24,7 +25,9 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius, fontWeight } from "@/constants/design-system";
-import { useSectors } from "@/hooks";
+import { formSpacing } from "@/constants/form-styles";
+import { useSectors, useKeyboardAwareScroll } from "@/hooks";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES } from "@/constants";
 import { IconX } from "@tabler/icons-react-native";
 import { CustomerSelector } from "./customer-selector";
@@ -191,6 +194,7 @@ const TASK_STATUS_OPTIONS = [
 export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, onSubmit, onCancel, isSubmitting: isSubmittingProp }: TaskFormProps) {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { handlers, refs } = useKeyboardAwareScroll();
   const [sectorSearch, setSectorSearch] = useState("");
   const [isSubmittingInternal, setIsSubmittingInternal] = useState(false);
 
@@ -303,6 +307,14 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
     value: sector.id,
     label: sector.name,
   })) || [];
+
+  // Memoized keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   // Handle artwork file selection from MediaPickerCard
   const handleArtworkSelect = (result: MediaPickerResult) => {
@@ -534,18 +546,19 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
         keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
         <ScrollView
+          ref={refs.scrollViewRef}
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
+          contentContainerStyle={styles.scrollContent}
         >
+          <KeyboardAwareFormProvider value={keyboardContextValue}>
           <View style={styles.container}>
             {/* Basic Information */}
-            <Card style={styles.card}>
-              <View style={styles.cardTitleRow}>
-                <Icon name="clipboard-list" size={20} color={colors.foreground} />
-                <ThemedText style={styles.cardTitleText}>Informações Básicas</ThemedText>
-              </View>
-              <View style={styles.cardContent}>
+            <FormCard title="Informações Básicas">
               {/* Name - Disabled for financial, warehouse, designer, logistic */}
               <SimpleFormField label="Nome da Tarefa" required error={errors.name}>
                 <Controller
@@ -655,7 +668,6 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                       loading={isLoadingSectors}
                       searchable={true}
                       clearable={true}
-                      preferFullScreen={true}
                     />
                   )}
                 />
@@ -676,7 +688,6 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                       }))}
                       placeholder="Selecione o status de comissão"
                       searchable={false}
-                      preferFullScreen={true}
                       disabled={isSubmitting || isFinancialSector}
                     />
                   )}
@@ -696,7 +707,6 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                         options={TASK_STATUS_OPTIONS}
                         placeholder="Selecione o status"
                         searchable={false}
-                        preferFullScreen={true}
                       />
                     )}
                   />
@@ -758,17 +768,11 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                   </View>
                 )}
               />
-              </View>
-            </Card>
+            </FormCard>
 
           {/* Additional Dates (edit mode only) */}
           {mode === "edit" && (
-          <Card style={styles.card}>
-            <View style={styles.cardTitleRow}>
-              <Icon name="calendar-event" size={20} color={colors.foreground} />
-              <ThemedText style={styles.cardTitleText}>Datas Adicionais</ThemedText>
-            </View>
-            <View style={styles.cardContent}>
+          <FormCard title="Datas Adicionais">
               {/* Started At */}
               <Controller
                 control={form.control}
@@ -806,14 +810,13 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                   </View>
                 )}
               />
-            </View>
-          </Card>
+          </FormCard>
           )}
 
           {/* Observation Section - Only in edit mode, hidden for warehouse, financial, designer, logistic users */}
           {mode === "edit" && !isWarehouseSector && !isFinancialSector && !isDesignerSector && !isLogisticSector && (
-            <Card style={styles.card}>
-              <View style={styles.collapsibleCardHeader}>
+            <Card>
+              <View style={[styles.collapsibleCardHeader, isObservationOpen && styles.collapsibleCardHeaderOpen, isObservationOpen && { borderBottomColor: colors.border }]}>
                 <View style={styles.collapsibleCardTitleRow}>
                   <Icon name="file-text" size={20} color={colors.foreground} />
                   <ThemedText style={styles.collapsibleCardTitle}>Observação</ThemedText>
@@ -846,7 +849,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
               </View>
 
               {isObservationOpen && (
-                <View style={styles.cardContent}>
+                <View style={styles.collapsibleCardContent}>
                   {/* Observation Description */}
                   <SimpleFormField label="Descrição" required error={errors.observation?.description}>
                     <Controller
@@ -883,12 +886,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           )}
 
           {/* Services */}
-          <Card style={styles.card}>
-            <View style={styles.cardTitleRow}>
-              <Icon name="clipboard-list" size={20} color={colors.foreground} />
-              <ThemedText style={styles.cardTitleText}>Serviços</ThemedText>
-            </View>
-            <View style={styles.cardContent}>
+          <FormCard title="Serviços">
               <FormFieldGroup label="Serviços" required error={errors.services?.message}>
                 <Controller
                   control={form.control}
@@ -903,16 +901,10 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                   )}
                 />
               </FormFieldGroup>
-            </View>
-          </Card>
+          </FormCard>
 
           {/* Paints */}
-          <Card style={styles.card}>
-            <View style={styles.cardTitleRow}>
-              <Icon name="palette" size={20} color={colors.foreground} />
-              <ThemedText style={styles.cardTitleText}>Tintas</ThemedText>
-            </View>
-            <View style={styles.cardContent}>
+          <FormCard title="Tintas">
               {/* General Painting */}
               <Controller
                 control={form.control}
@@ -940,13 +932,12 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                   />
                 )}
               />
-            </View>
-          </Card>
+          </FormCard>
 
           {/* Truck Layout Section - Hidden for financial and warehouse users */}
           {!isFinancialSector && !isWarehouseSector && (
-          <Card style={styles.card}>
-            <View style={styles.collapsibleCardHeader}>
+          <Card>
+            <View style={[styles.collapsibleCardHeader, isLayoutOpen && styles.collapsibleCardHeaderOpen, isLayoutOpen && { borderBottomColor: colors.border }]}>
               <View style={styles.collapsibleCardTitleRow}>
                 <Icon name="ruler" size={20} color={colors.foreground} />
                 <ThemedText style={styles.collapsibleCardTitle}>Layout do Caminhão</ThemedText>
@@ -983,7 +974,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
             </View>
 
             {isLayoutOpen && (
-              <View style={styles.cardContent}>
+              <View style={styles.collapsibleCardContent}>
                 {/* Side Selector */}
                 <View style={styles.layoutSideSelector}>
                   <Button
@@ -1054,12 +1045,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
 
           {/* Artworks - Last section, hidden for warehouse, financial, logistic users */}
           {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
-            <Card style={styles.card}>
-              <View style={styles.cardTitleRow}>
-                <Icon name="file" size={20} color={colors.foreground} />
-                <ThemedText style={styles.cardTitleText}>Artes (Opcional)</ThemedText>
-              </View>
-              <View style={styles.cardContent}>
+            <FormCard title="Artes (Opcional)">
                 <MediaPicker
                   onSelect={handleArtworkSelect}
                   disabled={isSubmitting || artworkFiles.length >= 5}
@@ -1105,13 +1091,10 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                     ))}
                   </ScrollView>
                 )}
-              </View>
-            </Card>
+            </FormCard>
           )}
-
-          {/* Bottom spacing */}
-          <View style={{ height: spacing.md }} />
         </View>
+        </KeyboardAwareFormProvider>
       </ScrollView>
       </KeyboardAvoidingView>
 
@@ -1211,6 +1194,9 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 0, // No spacing - action bar has its own margin
+  },
   headerCard: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -1236,17 +1222,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.sm,
     minHeight: 36,
-  },
-  card: {
-    padding: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.md,
-  },
-  cardContent: {
-    gap: spacing.md,
   },
   fieldGroup: {
     gap: spacing.sm,
@@ -1353,7 +1328,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  collapsibleCardHeaderOpen: {
+    borderBottomWidth: 1,
+    paddingBottom: spacing.md,
+  },
+  collapsibleCardContent: {
+    padding: spacing.md,
+    gap: spacing.md,
   },
   collapsibleCardTitleRow: {
     flexDirection: "row",
@@ -1361,16 +1345,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   collapsibleCardTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
-  cardTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  cardTitleText: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
   },

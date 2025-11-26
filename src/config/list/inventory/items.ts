@@ -313,20 +313,23 @@ export const itemsListConfig: ListConfig<Item> = {
         multiple: true,
         async: true,
         queryKey: ['item-categories', 'filter'],
-        queryFn: async (searchTerm: string) => {
+        queryFn: async (searchTerm: string, page: number = 1) => {
           try {
             const { getItemCategories } = await import('@/api-client')
+            const pageSize = 20
             const response = await getItemCategories({
               where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
               orderBy: { name: 'asc' },
-              take: 50,
+              limit: pageSize,
+              page: page,
             })
             return {
               data: (response.data || []).map((cat: any) => ({
                 label: cat.name,
                 value: cat.id,
               })),
-              hasMore: false,
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
             }
           } catch (error) {
             console.error('[Category Filter] Error:', error)
@@ -345,20 +348,23 @@ export const itemsListConfig: ListConfig<Item> = {
         multiple: true,
         async: true,
         queryKey: ['item-brands', 'filter'],
-        queryFn: async (searchTerm: string) => {
+        queryFn: async (searchTerm: string, page: number = 1) => {
           try {
             const { getItemBrands } = await import('@/api-client')
+            const pageSize = 20
             const response = await getItemBrands({
               where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
               orderBy: { name: 'asc' },
-              take: 50,
+              limit: pageSize,
+              page: page,
             })
             return {
               data: (response.data || []).map((brand: any) => ({
                 label: brand.name,
                 value: brand.id,
               })),
-              hasMore: false,
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
             }
           } catch (error) {
             console.error('[Brand Filter] Error:', error)
@@ -377,9 +383,10 @@ export const itemsListConfig: ListConfig<Item> = {
         multiple: true,
         async: true,
         queryKey: ['suppliers', 'filter'],
-        queryFn: async (searchTerm: string) => {
+        queryFn: async (searchTerm: string, page: number = 1) => {
           try {
             const { getSuppliers } = await import('@/api-client')
+            const pageSize = 20
             const response = await getSuppliers({
               where: searchTerm ? {
                 OR: [
@@ -388,15 +395,17 @@ export const itemsListConfig: ListConfig<Item> = {
                 ],
               } : undefined,
               orderBy: { fantasyName: 'asc' },
-              take: 50,
+              limit: pageSize,
+              page: page,
             })
-            console.log('[Supplier Filter] Response:', response)
+            console.log('[Supplier Filter] Response:', response, 'Page:', page, 'HasMore:', response.meta?.hasNextPage)
             return {
               data: (response.data || []).map((supplier: any) => ({
                 label: supplier.fantasyName || supplier.corporateName || 'Sem nome',
                 value: supplier.id,
               })),
-              hasMore: false,
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
             }
           } catch (error) {
             console.error('[Supplier Filter] Error:', error)

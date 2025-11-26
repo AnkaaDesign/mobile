@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { View, TouchableOpacity, ScrollView, StyleSheet, Modal } from "react-native";
+import { View, TouchableOpacity, ScrollView, StyleSheet, Modal, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { Text } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
@@ -11,16 +11,18 @@ import { formatCurrency, formatNumberWithDecimals } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import type { PaintFormula, Item } from "../../../types";
 import { IconAlertTriangle, IconCheck, IconX, IconAlertCircle, IconLoader2, IconCurrencyDollar, IconAdjustments } from "@tabler/icons-react-native";
-import { usePaintProductionMutations } from "@/hooks";
+import { usePaintProductionMutations, useKeyboardAwareScroll } from "@/hooks";
 import { useItems } from "../../../hooks";
 import { showToast } from "@/components/ui/toast";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { formSpacing } from "@/constants/form-styles";
 
 interface MobilePaintFormulaCalculatorProps {
   formula: PaintFormula;
 }
 
 // Quick volume buttons (mobile optimized)
-const QUICK_VOLUMES = [100, 2000, 3600];
+const QUICK_VOLUMES = [100, 1000, 2000, 3600];
 
 interface ComponentCalculation {
   id: string;
@@ -47,6 +49,9 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
   const router = useRouter();
   const { createAsync: createProduction } = usePaintProductionMutations();
 
+  // Keyboard-aware scrolling
+  const { handlers, refs } = useKeyboardAwareScroll();
+
   // Main state - VOLUME based like web
   const [desiredVolume, setDesiredVolume] = useState("2000");
   const [showPrices, setShowPrices] = useState(false);
@@ -59,6 +64,14 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
   const [actualAmount, setActualAmount] = useState("");
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [selectedComponentForError, setSelectedComponentForError] = useState<string | null>(null);
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   // Get item IDs from formula components
   const itemIds = useMemo(() => {
@@ -323,21 +336,41 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
   };
 
   return (
-    <View style={styles.container}>
-      {/* Controls Section */}
-      <View style={styles.controls}>
-        {/* Volume Input */}
-        <View style={styles.inputSection}>
-          <Text style={[styles.label, { color: colors.foreground }]}>
-            Volume Desejado (ml)
-          </Text>
-          <Input
-            value={desiredVolume}
-            onChangeText={setDesiredVolume}
-            keyboardType="numeric"
-            placeholder="Digite o volume desejado em ml"
-            style={styles.input}
-          />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.keyboardView}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
+      <ScrollView
+        ref={refs.scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        onLayout={handlers.handleScrollViewLayout}
+        onScroll={handlers.handleScroll}
+        scrollEventThrottle={16}
+      >
+        <KeyboardAwareFormProvider value={keyboardContextValue}>
+          <View style={styles.container}>
+            {/* Controls Section */}
+            <View style={styles.controls}>
+              {/* Volume Input */}
+              <View
+                style={styles.inputSection}
+                onLayout={(e) => handlers.handleFieldLayout('volumeInput', e)}
+              >
+                <Text style={[styles.label, { color: colors.foreground }]}>
+                  Volume Desejado (ml)
+                </Text>
+                <Input
+                  value={desiredVolume}
+                  onChangeText={setDesiredVolume}
+                  keyboardType="numeric"
+                  placeholder="Digite o volume desejado em ml"
+                  style={styles.input}
+                  onFocus={() => handlers.handleFieldFocus('volumeInput')}
+                />
           {/* Quick Buttons and Action Icons Row */}
           <View style={styles.quickButtonsRow}>
             <View style={styles.quickButtons}>
@@ -600,6 +633,10 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
         </View>
       </Card>
 
+          </View>
+        </KeyboardAwareFormProvider>
+      </ScrollView>
+
       {/* Error Dialog */}
       <Modal
         visible={showErrorDialog}
@@ -629,13 +666,17 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
                 })()}
             </Text>
 
-            <View style={styles.modalInput}>
+            <View
+              style={styles.modalInput}
+              onLayout={(e) => handlers.handleFieldLayout('actualAmount', e)}
+            >
               <Text style={[styles.inputLabel, { color: colors.foreground }]}>Quantidade Real (g)</Text>
               <Input
                 value={actualAmount}
                 onChangeText={setActualAmount}
                 keyboardType="numeric"
                 placeholder="Digite a quantidade real em gramas"
+                onFocus={() => handlers.handleFieldFocus('actualAmount')}
               />
               {selectedComponentForError &&
                 (() => {
@@ -686,11 +727,22 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
           </View>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: formSpacing.containerPaddingVertical,
+    paddingBottom: 0,
+  },
   container: {
     gap: 16,
   },

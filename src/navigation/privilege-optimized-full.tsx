@@ -271,6 +271,7 @@ const ALL_ROUTES = [
   { name: "meu-pessoal/ferias", title: "Férias" },
 
   // Personal
+  { name: "pessoal/index", title: "Pessoal" },
   { name: "pessoal/meus-emprestimos/detalhes/[id]", title: "Detalhes do Empréstimo" },
   { name: "pessoal/meus-epis/request", title: "Solicitar EPI" },
   { name: "pessoal/meus-feriados/detalhes/[id]", title: "Detalhes do Feriado" },

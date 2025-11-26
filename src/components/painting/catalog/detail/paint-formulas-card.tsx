@@ -152,16 +152,11 @@ Densidade: ${formula.density != null ? `${Number(formula.density).toFixed(3)} g/
           </View>
         </View>
       ) : (
-        <View className="items-center py-8 gap-4">
-          <Icon name="flask" size={48} className="text-muted-foreground/50" />
-          <View className="items-center gap-2">
-            <Text className="text-sm font-medium text-muted-foreground">
-              Nenhuma fórmula cadastrada
-            </Text>
-            <Text className="text-xs text-muted-foreground text-center">
-              Crie a primeira fórmula para esta tinta e comece a produzir
-            </Text>
-          </View>
+        <View className="items-center py-6 gap-3">
+          <Icon name="flask" size={40} className="text-muted-foreground/50" />
+          <Text className="text-sm text-muted-foreground">
+            Nenhuma fórmula cadastrada
+          </Text>
           <View className="flex-row gap-2">
             <Button variant="outline" size="sm" onPress={handleShowAll}>
               <View className="flex-row items-center gap-2">
@@ -172,7 +167,7 @@ Densidade: ${formula.density != null ? `${Number(formula.density).toFixed(3)} g/
             <Button variant="outline" size="sm" onPress={handleCreateFormula}>
               <View className="flex-row items-center gap-2">
                 <Icon name="plus" size={16} />
-                <Text className="text-sm">Criar Primeira Fórmula</Text>
+                <Text className="text-sm">Nova Fórmula</Text>
               </View>
             </Button>
           </View>

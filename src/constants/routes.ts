@@ -507,6 +507,14 @@ export const routes = {
       root: "/pessoal/minhas-atividades",
     },
     myBonuses: {
+      root: "/pessoal/meu-bonus",
+      current: "/pessoal/meu-bonus",
+      details: (id: string) => `/pessoal/meu-bonus/detalhes/${id}`,
+      history: "/pessoal/meu-bonus/historico",
+      simulation: "/pessoal/meu-bonus/simulacao",
+    },
+    // Legacy routes for backward compatibility
+    myBonusesLegacy: {
       details: (id: string) => `/pessoal/meus-bonus/detalhes/${id}`,
       root: "/pessoal/meus-bonus",
       simulation: "/pessoal/simulacao-bonus",

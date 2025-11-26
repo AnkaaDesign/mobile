@@ -22,6 +22,10 @@ import {
   LoginInfoCard,
   ProfessionalInfoCard,
   ActivitiesTimelineCard,
+  VacationsTable,
+  WarningsTable,
+  BorrowsTable,
+  PpeDeliveriesTable,
 } from "@/components/administration/employee/detail";
 import { EmployeeDetailSkeleton } from "@/components/administration/employee/skeleton";
 
@@ -135,6 +139,12 @@ export default function EmployeeDetailsScreen() {
           {employee.activities && employee.activities.length > 0 && (
             <ActivitiesTimelineCard employee={employee} maxHeight={500} />
           )}
+
+          {/* Relation Tables */}
+          <VacationsTable employee={employee} maxHeight={400} />
+          <WarningsTable employee={employee} maxHeight={400} />
+          <BorrowsTable employee={employee} maxHeight={400} />
+          <PpeDeliveriesTable employee={employee} maxHeight={400} />
 
           {/* Changelog Timeline */}
           <UICard>

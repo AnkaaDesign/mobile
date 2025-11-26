@@ -112,39 +112,6 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
         format: 'date',
       },
       {
-        key: 'quantityReturned',
-        label: 'QTD. DEVOLVIDA',
-        sortable: true,
-        width: 1.2,
-        align: 'center',
-        render: (borrow) => String(borrow.quantityReturned || 0),
-        format: 'number',
-      },
-      {
-        key: 'reason',
-        label: 'MOTIVO',
-        sortable: false,
-        width: 1.5,
-        align: 'left',
-        render: (borrow) => borrow.reason || '-',
-      },
-      {
-        key: 'notes',
-        label: 'OBSERVAÇÕES',
-        sortable: false,
-        width: 1.8,
-        align: 'left',
-        render: (borrow) => borrow.notes || '-',
-      },
-      {
-        key: 'conditionNotes',
-        label: 'CONDIÇÃO',
-        sortable: false,
-        width: 1.5,
-        align: 'left',
-        render: (borrow) => borrow.conditionNotes || '-',
-      },
-      {
         key: 'updatedAt',
         label: 'ATUALIZADO EM',
         sortable: true,
@@ -160,6 +127,9 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
   },
 
   filters: {
+    defaultValues: {
+      statuses: [BORROW_STATUS.ACTIVE],
+    },
     fields: [
       {
         key: 'statuses',
@@ -184,21 +154,35 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
         label: 'Itens',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['items', 'filter', 'tools'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getItems } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getItems({
+              where: {
+                ...(searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : {}),
+                category: { type: 'TOOL' },
+              },
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((item: any) => ({
+                label: `${item.name} (${item.uniCode || '-'})`,
+                value: item.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Item Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os itens',
-      },
-      {
-        key: 'categoryIds',
-        label: 'Categorias',
-        type: 'select',
-        multiple: true,
-        placeholder: 'Selecione as categorias',
-      },
-      {
-        key: 'brandIds',
-        label: 'Marcas',
-        type: 'select',
-        multiple: true,
-        placeholder: 'Selecione as marcas',
       },
       {
         key: 'borrowDate',
@@ -211,12 +195,6 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
         label: 'Data de Devolução',
         type: 'date-range',
         placeholder: 'Data de Devolução',
-      },
-      {
-        key: 'updatedAt',
-        label: 'Data de Atualização',
-        type: 'date-range',
-        placeholder: 'Data de Atualização',
       },
     ],
   },
@@ -237,13 +215,9 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
       { key: 'brand', label: 'Marca', path: 'item.brand.name' },
       { key: 'supplier', label: 'Fornecedor', path: 'item.supplier.name' },
       { key: 'quantity', label: 'Quantidade', path: 'quantity', format: 'number' },
-      { key: 'quantityReturned', label: 'Quantidade Devolvida', path: 'quantityReturned', format: 'number' },
       { key: 'status', label: 'Status', path: 'status', format: (value) => BORROW_STATUS_LABELS[value] || value },
       { key: 'createdAt', label: 'Data de Empréstimo', path: 'createdAt', format: 'date' },
       { key: 'returnedAt', label: 'Devolvido Em', path: 'returnedAt', format: 'date' },
-      { key: 'reason', label: 'Motivo', path: 'reason' },
-      { key: 'notes', label: 'Observações', path: 'notes' },
-      { key: 'conditionNotes', label: 'Condição', path: 'conditionNotes' },
       { key: 'updatedAt', label: 'Atualizado Em', path: 'updatedAt', format: 'date' },
     ],
   },

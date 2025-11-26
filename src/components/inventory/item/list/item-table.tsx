@@ -34,6 +34,7 @@ interface ItemTableProps {
   onItemDuplicate?: (itemId: string) => void;
   onRefresh?: () => Promise<void>;
   onEndReached?: () => void;
+  onEndReachedThreshold?: number;
   refreshing?: boolean;
   loading?: boolean;
   loadingMore?: boolean;
@@ -44,6 +45,9 @@ interface ItemTableProps {
   onSort?: (configs: SortConfig[]) => void;
   enableSwipeActions?: boolean;
   visibleColumnKeys?: string[];
+  ListFooterComponent?: React.ReactElement | null;
+  /** Disable aggressive virtualization for small lists in detail pages */
+  disableVirtualization?: boolean;
 }
 
 // Get screen width for responsive design
@@ -450,6 +454,7 @@ export const ItemTable = React.memo<ItemTableProps>(
     // onItemDuplicate removed
     onRefresh,
     onEndReached,
+    onEndReachedThreshold = 0.2,
     refreshing = false,
     loading = false,
     loadingMore = false,
@@ -460,6 +465,8 @@ export const ItemTable = React.memo<ItemTableProps>(
     onSort,
     enableSwipeActions = true,
     visibleColumnKeys,
+    ListFooterComponent,
+    disableVirtualization = false,
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
@@ -607,8 +614,8 @@ export const ItemTable = React.memo<ItemTableProps>(
             style={StyleSheet.flatten([
               styles.headerContainer,
               {
-                backgroundColor: isDark ? extendedColors.neutral[800] : extendedColors.neutral[100],
-                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                backgroundColor: colors.card,
+                borderBottomColor: colors.border,
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
@@ -683,8 +690,8 @@ export const ItemTable = React.memo<ItemTableProps>(
                   style={StyleSheet.flatten([
                     styles.row,
                     {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                      borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                      backgroundColor: isEven ? colors.background : colors.card,
+                      borderBottomColor: "rgba(0,0,0,0.05)",
                     },
                     isSelected && { backgroundColor: colors.primary + "20" },
                   ])}
@@ -725,8 +732,8 @@ export const ItemTable = React.memo<ItemTableProps>(
             style={StyleSheet.flatten([
               styles.row,
               {
-                backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                backgroundColor: isEven ? colors.background : colors.card,
+                borderBottomColor: "rgba(0,0,0,0.05)",
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
@@ -809,7 +816,7 @@ export const ItemTable = React.memo<ItemTableProps>(
 
     return (
       <View style={styles.wrapper}>
-        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])} onPress={handleContainerPress}>
+        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: "transparent", borderColor: colors.border }])} onPress={handleContainerPress}>
           {renderHeader()}
           <FlatList
             ref={flatListRef}
@@ -818,24 +825,27 @@ export const ItemTable = React.memo<ItemTableProps>(
             keyExtractor={(item) => item.id}
             refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} /> : undefined}
             onEndReached={onEndReached}
-            onEndReachedThreshold={0.2}
+            onEndReachedThreshold={onEndReachedThreshold}
             onScroll={handleScroll}
             scrollEventThrottle={16}
-            ListFooterComponent={renderFooter}
+            ListFooterComponent={ListFooterComponent !== undefined ? ListFooterComponent : renderFooter()}
             ListEmptyComponent={renderEmpty}
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={10}
-            windowSize={5}
-            initialNumToRender={15}
-            updateCellsBatchingPeriod={50}
+            // Virtualization settings - disable for small detail page lists to prevent row disappearing
+            removeClippedSubviews={!disableVirtualization}
+            maxToRenderPerBatch={disableVirtualization ? 50 : 10}
+            windowSize={disableVirtualization ? 21 : 5}
+            initialNumToRender={disableVirtualization ? 50 : 15}
+            updateCellsBatchingPeriod={disableVirtualization ? 100 : 50}
             getItemLayout={(_data, index) => ({
               length: 60, // Fixed row height
               offset: 60 * index,
               index,
             })}
             style={styles.flatList}
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={true}
             contentContainerStyle={{ flexGrow: 1 }}
+            // Enable nested scrolling for detail page tables inside ScrollView
+            nestedScrollEnabled={disableVirtualization}
           />
         </Pressable>
       </View>
@@ -846,14 +856,18 @@ export const ItemTable = React.memo<ItemTableProps>(
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
+    height: '100%',
+    minHeight: 100,
     paddingHorizontal: 8,
     paddingBottom: 16,
     backgroundColor: "transparent",
   },
   container: {
     flex: 1,
+    height: '100%',
     backgroundColor: "white",
     borderRadius: 8,
+    borderWidth: 1,
     overflow: "hidden",
     elevation: 2,
     shadowColor: "#000",

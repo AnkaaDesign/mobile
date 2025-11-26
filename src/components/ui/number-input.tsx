@@ -1,8 +1,9 @@
 import { useCallback, useRef, useState, useEffect } from "react";
-import { TextInput, TextInputProps, View, ViewStyle, TextStyle, Animated, StyleSheet } from "react-native";
+import { TextInput, TextInputProps, View, ViewStyle, TextStyle, Animated, StyleSheet, LayoutChangeEvent } from "react-native";
 import type { BlurEvent, FocusEvent } from "react-native/Libraries/Types/CoreEventTypes";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, fontSize, transitions } from "@/constants/design-system";
+import { useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
 
 interface NumberInputProps extends Omit<TextInputProps, "onChange" | "value" | "onChangeText" | "keyboardType" | "onBlur" | "onFocus"> {
   value?: number;
@@ -20,6 +21,9 @@ interface NumberInputProps extends Omit<TextInputProps, "onChange" | "value" | "
   allowNegative?: boolean;
   className?: string;
   placeholder?: string;
+  // Keyboard-aware form integration
+  // Unique identifier for this field to enable keyboard-aware scrolling
+  fieldKey?: string;
 }
 
 export function NumberInput({
@@ -38,9 +42,11 @@ export function NumberInput({
   allowNegative = true,
   editable = true,
   className,
+  fieldKey,
   ...props
 }: NumberInputProps) {
   const { colors } = useTheme();
+  const keyboardContext = useKeyboardAwareForm();
   const inputRef = useRef<TextInput>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [internalValue, setInternalValue] = useState("");
@@ -147,11 +153,15 @@ export function NumberInput({
     [onBlur, value, formatNumber]
   );
 
-  // Handle focus
+  // Handle focus with keyboard-aware integration
   const handleFocus = useCallback((e: FocusEvent) => {
     setIsFocused(true);
+    // Notify keyboard context about focus for auto-scrolling
+    if (fieldKey && keyboardContext?.onFieldFocus) {
+      keyboardContext.onFieldFocus(fieldKey);
+    }
     onFocus?.(e);
-  }, [onFocus]);
+  }, [onFocus, fieldKey, keyboardContext]);
 
   // Create regex pattern for input validation
   const getInputPattern = useCallback(() => {
@@ -258,8 +268,19 @@ export function NumberInput({
     }),
   };
 
+  // Handle layout for keyboard-aware scrolling
+  const handleLayout = useCallback((event: LayoutChangeEvent) => {
+    if (fieldKey && keyboardContext?.onFieldLayout) {
+      keyboardContext.onFieldLayout(fieldKey, event);
+    }
+  }, [fieldKey, keyboardContext]);
+
   return (
-    <View style={baseContainerStyles} className={className}>
+    <View
+      style={baseContainerStyles}
+      className={className}
+      onLayout={handleLayout}
+    >
       <Animated.View style={animatedShadowStyles}>
         <Animated.View style={StyleSheet.flatten([baseInputContainerStyles, animatedStyles])}>
           <TextInput

@@ -1,5 +1,5 @@
 import { View, StyleSheet } from 'react-native';
-import { TextInput } from '@/components/ui/text-input';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -157,11 +157,12 @@ export function StringFilter({
 
       <View style={styles.inputRow}>
         <View style={styles.inputContainer}>
-          <TextInput
+          <Input
+            type="text"
             value={currentValue}
-            onChangeText={handleTextChange}
+            onChangeText={(val) => handleTextChange(String(val ?? ''))}
             placeholder={placeholder}
-            editable={!disabled}
+            disabled={disabled}
             inputStyle={styles.input}
           />
           {showClearButton && hasValue && !disabled && (

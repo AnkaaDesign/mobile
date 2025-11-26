@@ -44,11 +44,6 @@ export default function CustomerDetailScreen() {
   } = useCustomer(id, {
     include: {
       logo: true,
-      _count: {
-        tasks: true,
-        serviceOrders: true,
-        services: true,
-      },
     },
     enabled: !!id && id !== "",
   });

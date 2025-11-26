@@ -1,7 +1,8 @@
 import { forwardRef, useCallback, useEffect, useState } from "react";
-import { TextInput as RNTextInput, View, Text, StyleSheet, TextInputProps as RNTextInputProps, ActivityIndicator } from "react-native";
+import { TextInput as RNTextInput, View, Text, StyleSheet, TextInputProps as RNTextInputProps, ActivityIndicator, LayoutChangeEvent } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, fontSize, spacing } from "@/constants/design-system";
+import { useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
 
 interface ZipCodeInputProps extends Omit<RNTextInputProps, 'value' | 'onChangeText' | 'style' | 'onChange'> {
   value?: string;
@@ -20,11 +21,14 @@ interface ZipCodeInputProps extends Omit<RNTextInputProps, 'value' | 'onChangeTe
   containerStyle?: any;
   inputStyle?: any;
   editable?: boolean;
+  // Keyboard-aware form integration
+  fieldKey?: string;
 }
 
 export const ZipCodeInput = forwardRef<RNTextInput, ZipCodeInputProps>(
-  ({ value, onChange, onBlur, onCepChange, label, error, helperText, containerStyle, inputStyle, placeholder = "00000-000", editable = true, ...props }, ref) => {
+  ({ value, onChange, onBlur, onCepChange, label, error, helperText, containerStyle, inputStyle, placeholder = "00000-000", editable = true, fieldKey, ...props }, ref) => {
     const { colors } = useTheme();
+    const keyboardContext = useKeyboardAwareForm();
     const [displayValue, setDisplayValue] = useState(() => formatZipCode(value || ""));
     const [isLoading, setIsLoading] = useState(false);
     const [previousValue, setPreviousValue] = useState<string>("");
@@ -114,8 +118,26 @@ export const ZipCodeInput = forwardRef<RNTextInput, ZipCodeInputProps>(
       backgroundColor: colors.background,
     };
 
+    // Handle layout for keyboard-aware scrolling
+    const handleLayout = useCallback((event: LayoutChangeEvent) => {
+      if (fieldKey && keyboardContext?.onFieldLayout) {
+        keyboardContext.onFieldLayout(fieldKey, event);
+      }
+    }, [fieldKey, keyboardContext]);
+
+    // Handle focus for keyboard-aware scrolling
+    const handleFocus = useCallback((e: any) => {
+      if (fieldKey && keyboardContext?.onFieldFocus) {
+        keyboardContext.onFieldFocus(fieldKey);
+      }
+      props.onFocus?.(e);
+    }, [fieldKey, keyboardContext, props.onFocus]);
+
     return (
-      <View style={StyleSheet.flatten([{ marginBottom: spacing.sm }, containerStyle])}>
+      <View
+        style={StyleSheet.flatten([{ marginBottom: spacing.sm }, containerStyle])}
+        onLayout={handleLayout}
+      >
         {label && (
           <View style={styles.labelContainer}>
             <Text style={StyleSheet.flatten([styles.label, { color: colors.foreground }])}>
@@ -129,6 +151,7 @@ export const ZipCodeInput = forwardRef<RNTextInput, ZipCodeInputProps>(
           value={displayValue}
           onChangeText={handleChangeText}
           onBlur={onBlur}
+          onFocus={handleFocus}
           placeholder={placeholder}
           keyboardType="numeric"
           style={StyleSheet.flatten([baseInputStyle, inputStyle])}

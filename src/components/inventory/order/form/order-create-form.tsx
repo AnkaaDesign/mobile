@@ -26,7 +26,7 @@ import { formatCurrency } from "@/utils";
 import type { FormStep } from "@/components/ui/form-steps";
 import {
   MultiStepFormContainer,
-  ItemSelectorTableV2,
+  ItemSelectorTable,
 } from "@/components/forms";
 import {
   IconPackage,
@@ -497,7 +497,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
         isSubmitting={isSubmitting}
         canProceed={multiStepForm.validation.canProceedToNext}
         canSubmit={multiStepForm.validation.canSubmit}
-        submitLabel={isUploadingFiles ? "Enviando arquivos..." : "Criar Pedido"}
+        submitLabel={isUploadingFiles ? "Enviando arquivos..." : "Cadastrar"}
         cancelLabel="Cancelar"
         scrollable={multiStepForm.currentStep !== 2 || !isInventoryMode}
       >
@@ -706,17 +706,13 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
         {multiStepForm.currentStep === 2 && (
           <View style={styles.itemSelectorContainer}>
             {isInventoryMode ? (
-              <ItemSelectorTableV2
+              <ItemSelectorTable
                 selectedItems={multiStepForm.selectedItems}
                 quantities={multiStepForm.quantities}
-                prices={multiStepForm.prices}
                 onSelectItem={multiStepForm.toggleItemSelection}
                 onQuantityChange={multiStepForm.setItemQuantity}
-                onPriceChange={multiStepForm.setItemPrice}
                 showQuantityInput
-                showPriceInput
                 minQuantity={1}
-                quantityDecimals={0}
                 showSelectedOnly={multiStepForm.showSelectedOnly}
                 searchTerm={multiStepForm.searchTerm}
                 showInactive={multiStepForm.showInactive}
@@ -962,11 +958,8 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                       ]}
                     >
                       <View style={styles.itemInfo}>
-                        <ThemedText style={[styles.itemCode, { color: colors.mutedForeground }]}>
-                          {item.uniCode || "-"}
-                        </ThemedText>
                         <ThemedText style={[styles.itemName, { color: colors.foreground }]} numberOfLines={1}>
-                          {item.name}
+                          {item.uniCode ? `${item.name} - ${item.uniCode}` : item.name}
                         </ThemedText>
                         {item.brand && (
                           <ThemedText style={[styles.itemBrand, { color: colors.mutedForeground }]}>

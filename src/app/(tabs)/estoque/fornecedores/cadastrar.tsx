@@ -1,20 +1,20 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateSupplier } from "@/hooks";
+import { useCreateSupplier, useKeyboardAwareScroll } from "@/hooks";
 import { supplierCreateSchema } from "@/schemas";
 import { Input, Combobox } from "@/components/ui";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatCNPJ, cleanCNPJ, formatZipCode, cleanZipCode } from "@/utils";
 import { PhoneManager, TagManager, FileUploadManager } from "@/components/inventory/supplier/form";
-import { spacing } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
 
 interface FileUpload {
@@ -30,6 +30,17 @@ export default function SupplierCreateScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoFiles, setLogoFiles] = useState<FileUpload[]>([]);
   const [documentFiles, setDocumentFiles] = useState<FileUpload[]>([]);
+
+  // Keyboard-aware scrolling
+  const { handlers, refs } = useKeyboardAwareScroll();
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   const form = useForm<SupplierCreateFormData>({
     resolver: zodResolver(supplierCreateSchema),
@@ -163,13 +174,22 @@ export default function SupplierCreateScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView} keyboardVerticalOffset={0}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      >
         <ScrollView
+          ref={refs.scrollViewRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
         >
+        <KeyboardAwareFormProvider value={keyboardContextValue}>
         {/* Basic Information */}
         <FormCard title="Informações Básicas">
           <FormFieldGroup
@@ -457,6 +477,7 @@ export default function SupplierCreateScreen() {
             />
           </FormFieldGroup>
         </FormCard>
+        </KeyboardAwareFormProvider>
         </ScrollView>
 
         <SimpleFormActionBar

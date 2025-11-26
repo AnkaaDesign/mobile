@@ -190,6 +190,36 @@ export const ordersListConfig: ListConfig<Order> = {
         label: 'Fornecedores',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['suppliers', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getSuppliers } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getSuppliers({
+              where: searchTerm ? {
+                OR: [
+                  { fantasyName: { contains: searchTerm, mode: 'insensitive' } },
+                  { corporateName: { contains: searchTerm, mode: 'insensitive' } },
+                ],
+              } : undefined,
+              orderBy: { fantasyName: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((supplier: any) => ({
+                label: supplier.fantasyName || supplier.corporateName || 'Sem nome',
+                value: supplier.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Supplier Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os fornecedores',
       },
       {

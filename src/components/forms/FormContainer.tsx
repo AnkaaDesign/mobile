@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -6,29 +6,32 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { FormHeader } from "@/components/ui/form-header";
 import { SimpleFormActionBar, SimpleFormActionBarProps } from "./SimpleFormActionBar";
+import { useKeyboardAwareScroll } from "@/hooks/useKeyboardAwareScroll";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 /**
- * StandardizedFormContainer
+ * FormContainer
  *
  * A consistent wrapper for all single-step forms in the mobile application.
  * Provides:
  * - Header with title/subtitle and optional cancel/save in header
- * - ScrollView with keyboard avoiding
+ * - ScrollView with intelligent keyboard avoiding
  * - Consistent padding and spacing
  * - Bottom action bar (Cancel/Submit buttons)
+ * - KeyboardAwareFormProvider context for automatic keyboard handling
  *
  * This component ensures all forms have the same layout structure and behavior.
  *
  * Usage:
  * ```tsx
- * <StandardizedFormContainer
+ * <FormContainer
  *   title="Criar Colaborador"
  *   subtitle="Preencha os dados do colaborador"
  *   onCancel={() => router.back()}
@@ -39,11 +42,11 @@ import { SimpleFormActionBar, SimpleFormActionBarProps } from "./SimpleFormActio
  *   <FormCard title="Informações Básicas">
  *     <FormField ... />
  *   </FormCard>
- * </StandardizedFormContainer>
+ * </FormContainer>
  * ```
  */
 
-export interface StandardizedFormContainerProps {
+export interface FormContainerProps {
   /** Form title shown in header */
   title: string;
   /** Optional subtitle shown in header */
@@ -72,7 +75,7 @@ export interface StandardizedFormContainerProps {
   testID?: string;
 }
 
-export function StandardizedFormContainer({
+export function FormContainer({
   title,
   subtitle,
   onCancel,
@@ -86,8 +89,18 @@ export function StandardizedFormContainer({
   showCancel = true,
   children,
   testID,
-}: StandardizedFormContainerProps) {
+}: FormContainerProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { state, handlers, refs, getContentPadding } = useKeyboardAwareScroll();
+
+  // Memoize context value to prevent unnecessary re-renders
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   return (
     <SafeAreaView
@@ -98,7 +111,7 @@ export function StandardizedFormContainer({
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        keyboardVerticalOffset={0}
       >
         {/* Header */}
         {actionsInHeader ? (
@@ -121,15 +134,26 @@ export function StandardizedFormContainer({
           />
         )}
 
-        {/* Scrollable Content */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {children}
-        </ScrollView>
+        {/* Scrollable Content with intelligent keyboard handling */}
+        <KeyboardAwareFormProvider value={keyboardContextValue}>
+          <ScrollView
+            ref={refs.scrollViewRef}
+            style={styles.scrollView}
+            contentContainerStyle={[
+              styles.scrollContent,
+              {
+                paddingBottom: getContentPadding(insets.bottom + spacing.xxl),
+              },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            onLayout={handlers.handleScrollViewLayout}
+            onScroll={handlers.handleScroll}
+            scrollEventThrottle={16}
+          >
+            {children}
+          </ScrollView>
+        </KeyboardAwareFormProvider>
 
         {/* Bottom Action Bar (if not in header) */}
         {!actionsInHeader && (
@@ -162,8 +186,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: formSpacing.containerPaddingHorizontal, // 16px
     paddingTop: formSpacing.containerPaddingVertical, // 16px
-    paddingBottom: spacing.xxl, // Extra padding for keyboard/bottom
+    // paddingBottom is now dynamic via getContentPadding for intelligent keyboard handling
   },
 });
 
-export default StandardizedFormContainer;
+export default FormContainer;

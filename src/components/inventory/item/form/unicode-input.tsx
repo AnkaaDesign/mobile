@@ -25,6 +25,7 @@ export function UnicodeInput({ disabled }: UnicodeInputProps) {
           </Label>
           <Input
             id="uniCode"
+            fieldKey="uniCode"
             value={value || ""}
             onChangeText={onChange}
             onBlur={onBlur}

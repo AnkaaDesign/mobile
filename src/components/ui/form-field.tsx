@@ -1,4 +1,3 @@
-
 import { View } from "react-native";
 import { Controller, Control, FieldPath, FieldValues, FieldError } from "react-hook-form";
 import { Text } from "./text";
@@ -9,10 +8,10 @@ import { Combobox } from "./combobox";
 import { Checkbox } from "./checkbox";
 import { RadioGroup, RadioGroupItem } from "./radio-group";
 import { DatePicker } from "./date-picker";
-import { CurrencyInput } from "./currency-input";
 import { NumberInput } from "./number-input";
 import { Switch } from "./switch";
 import { cn } from "@/lib/cn";
+import { useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
 
 // Base FormField props that all field types share
 export interface BaseFormFieldProps<TFormData extends FieldValues> {
@@ -95,6 +94,12 @@ export type FormFieldProps<TFormData extends FieldValues> =
 
 export function FormField<TFormData extends FieldValues>(props: FormFieldProps<TFormData>) {
   const { control, name, label, helperText, error, required, disabled, className } = props;
+  const keyboardContext = useKeyboardAwareForm();
+
+  // Handlers for keyboard-aware integration
+  const handleFocus = () => {
+    keyboardContext?.onFieldFocus(name);
+  };
 
   const renderField = (field: any) => {
     switch (props.type) {
@@ -110,6 +115,7 @@ export function FormField<TFormData extends FieldValues>(props: FormFieldProps<T
             keyboardType={props.keyboardType}
             editable={!disabled}
             error={!!error}
+            onFocus={handleFocus}
           />
         );
 
@@ -125,18 +131,21 @@ export function FormField<TFormData extends FieldValues>(props: FormFieldProps<T
             step={props.step}
             editable={!disabled}
             error={!!error}
+            onFocus={handleFocus}
           />
         );
 
       case "currency":
         return (
-          <CurrencyInput
+          <Input
+            type="currency"
             value={field.value}
-            onChange={field.onChange}
+            onChangeText={field.onChange}
             onBlur={field.onBlur}
             placeholder={props.placeholder}
-            editable={!disabled}
+            disabled={disabled}
             error={!!error}
+            onFocus={handleFocus}
           />
         );
 
@@ -148,6 +157,7 @@ export function FormField<TFormData extends FieldValues>(props: FormFieldProps<T
             numberOfLines={props.numberOfLines}
             editable={!disabled}
             error={!!error}
+            onFocus={handleFocus}
           />
         );
 
@@ -161,7 +171,8 @@ export function FormField<TFormData extends FieldValues>(props: FormFieldProps<T
             disabled={disabled}
             searchable={false}
             clearable={!!props.emptyOption}
-            preferFullScreen={true}
+            onOpen={keyboardContext?.onComboboxOpen}
+            onClose={keyboardContext?.onComboboxClose}
           />
         );
 
@@ -235,7 +246,10 @@ export function FormField<TFormData extends FieldValues>(props: FormFieldProps<T
   const showFieldWrapper = !["checkbox", "switch"].includes(props.type);
 
   return (
-    <View className={cn("mb-4", className)}>
+    <View
+      className={cn("mb-4", className)}
+      onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout(name, e) : undefined}
+    >
       {showLabel && (
         <Label className="mb-2">
           {label}

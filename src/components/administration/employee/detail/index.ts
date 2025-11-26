@@ -4,3 +4,7 @@ export { PpeSizesCard } from "./ppe-sizes-card";
 export { LoginInfoCard } from "./login-info-card";
 export { ProfessionalInfoCard } from "./professional-info-card";
 export { ActivitiesTimelineCard } from "./activities-timeline-card";
+export { VacationsTable } from "./vacations-table";
+export { WarningsTable } from "./warnings-table";
+export { BorrowsTable } from "./borrows-table";
+export { PpeDeliveriesTable } from "./ppe-deliveries-table";

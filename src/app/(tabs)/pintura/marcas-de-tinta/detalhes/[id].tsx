@@ -1,382 +1,463 @@
-
-import { View, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { useState } from "react";
+import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { LoadingScreen } from "@/components/ui/loading-screen";
+import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintBrand } from "@/hooks";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege } from "@/utils";
+import { usePaintBrand, usePaintBrandMutations } from "@/hooks";
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { SECTOR_PRIVILEGES, PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from "@/constants";
+import { hasPrivilege, formatDate } from "@/utils";
+import { showToast } from "@/components/ui/toast";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
-  IconTag,
-  IconPalette,
+  IconRefresh,
   IconEdit,
+  IconTrash,
+  IconPaint,
+  IconSettings,
+  IconInfoCircle,
+  IconBrush,
+  IconCalendar,
+  IconComponents,
 } from "@tabler/icons-react-native";
+import { ComponentsTable } from "@/components/painting/paint-type/detail";
 
 export default function PaintBrandDetailsScreen() {
+  const { id } = useLocalSearchParams();
   const { colors } = useTheme();
   const { data: user } = useAuth();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { delete: deleteAsync } = usePaintBrandMutations();
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Check user permissions
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.BASIC);
+  // Check permissions
+  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION);
+  const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
-  // Fetch paint brand data
-  // Fixed: PaintBrandGetUniqueResponse has a data property, need to extract it
-  const { data: paintBrandResponse, isLoading, error } = usePaintBrand(id || "", {
+  // Fetch paint brand details
+  const { data: response, isLoading, error, refetch } = usePaintBrand(id as string, {
     include: {
-      _count: {
-        select: {
-          paints: true,
+      componentItems: {
+        include: {
+          measures: true,
+          category: true,
+          brand: true,
         },
       },
       paints: {
+        orderBy: { name: "asc" },
         include: {
           paintType: true,
+          formulas: true,
         },
-        take: 5, // Limit to first 5 paints for preview
+      },
+      _count: {
+        select: {
+          paints: true,
+          componentItems: true,
+        },
       },
     },
+    enabled: !!id,
   });
 
-  const paintBrand = paintBrandResponse?.data;
+  const paintBrand = response?.data;
+
+  // Handle refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+    showToast({ message: "Detalhes atualizados", type: "success" });
+  };
 
   // Handle edit
   const handleEdit = () => {
-    if (!id) return;
-    router.push(`/painting/paint-brands/edit/${id}` as any);
+    if (!canEdit) {
+      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      return;
+    }
+    router.push(`/pintura/marcas-de-tinta/editar/${id}`);
+  };
+
+  // Handle delete
+  const handleDelete = () => {
+    if (!canDelete) {
+      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      return;
+    }
+
+    Alert.alert(
+      "Excluir Marca de Tinta",
+      "Tem certeza que deseja excluir esta marca de tinta? Esta ação não pode ser desfeita.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteAsync(id as string);
+              showToast({ message: "Marca de tinta excluída com sucesso", type: "success" });
+              router.back();
+            } catch (error) {
+              showToast({ message: "Erro ao excluir marca de tinta", type: "error" });
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (isLoading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <ThemedText style={styles.loadingText}>Carregando marca de tinta...</ThemedText>
-      </View>
-    );
+    return <LoadingScreen message="Carregando detalhes da marca de tinta..." />;
   }
 
   if (error || !paintBrand) {
     return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={styles.errorText}>
-          Erro ao carregar marca de tinta
-        </ThemedText>
-        <Button variant="outline" onPress={() => router.back()} style={styles.backButton}>
-          Voltar
-        </Button>
-      </View>
+      <ErrorScreen
+        message="Erro ao carregar detalhes da marca de tinta"
+        onRetry={refetch}
+      />
     );
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: paintBrand.name,
-          headerBackTitle: "Voltar",
-          headerRight: () =>
-            canEdit ? (
-              <Button size="sm" onPress={handleEdit}>
-                <IconEdit size={16} color="#fff" />
-              </Button>
-            ) : null,
-        }}
-      />
-      <ScrollView
-        style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Header Card */}
-        <Card style={styles.headerCard}>
-          <View style={styles.headerContent}>
-            <IconTag size={32} color={colors.primary} />
-            <View style={styles.headerText}>
-              <ThemedText style={styles.brandName}>{paintBrand.name}</ThemedText>
-              {paintBrand._count?.paints !== undefined && (
-                <ThemedText style={styles.paintCount}>
-                  {paintBrand._count.paints} {paintBrand._count.paints === 1 ? "tinta cadastrada" : "tintas cadastradas"}
-                </ThemedText>
+    <ScrollView
+      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor={colors.primary}
+        />
+      }
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.content}>
+        {/* Header Card with Title and Actions */}
+        <Card>
+          <CardContent style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <ThemedText style={StyleSheet.flatten([styles.paintBrandTitle, { color: colors.foreground }])} numberOfLines={2}>
+                {paintBrand.name}
+              </ThemedText>
+            </View>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={handleRefresh}
+                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
+                activeOpacity={0.7}
+                disabled={refreshing}
+              >
+                <IconRefresh size={18} color={colors.foreground} />
+              </TouchableOpacity>
+              {canEdit && (
+                <TouchableOpacity
+                  onPress={handleEdit}
+                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
+                  activeOpacity={0.7}
+                >
+                  <IconEdit size={18} color={colors.primaryForeground} />
+                </TouchableOpacity>
               )}
+              {canDelete && (
+                <TouchableOpacity
+                  onPress={handleDelete}
+                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.destructive }])}
+                  activeOpacity={0.7}
+                >
+                  <IconTrash size={18} color={colors.destructiveForeground} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </CardContent>
+        </Card>
+
+        {/* Basic Information Card */}
+        <Card style={styles.card}>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <IconInfoCircle size={20} color={colors.primary} />
+            <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
+          </View>
+          <View style={styles.itemDetails}>
+            <View style={styles.detailRow}>
+              <ThemedText style={styles.detailLabel}>Nome</ThemedText>
+              <ThemedText style={styles.detailValue}>{paintBrand.name}</ThemedText>
             </View>
           </View>
         </Card>
 
-        {/* Paints List */}
-        {paintBrand.paints && paintBrand.paints.length > 0 && (
-          <Card style={styles.paintsCard}>
-            <View style={styles.sectionHeader}>
-              <IconPalette size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Tintas Associadas</ThemedText>
+        {/* Statistics Card */}
+        <Card style={styles.card}>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <IconSettings size={20} color={colors.primary} />
+            <ThemedText style={styles.sectionTitle}>Estatísticas</ThemedText>
+          </View>
+          <View style={styles.statisticsGrid}>
+            <View style={StyleSheet.flatten([styles.statItem, { backgroundColor: colors.muted }])}>
+              <IconPaint size={24} color={colors.primary} />
+              <ThemedText style={styles.statValue}>{paintBrand._count?.paints || 0}</ThemedText>
+              <ThemedText style={styles.statLabel}>Tintas</ThemedText>
             </View>
-
-            <View style={styles.paintsList}>
-              {paintBrand.paints.map((paint: any /* TODO: Add proper type */, index: any /* TODO: Add proper type */) => (
-                <View
-                  key={paint.id}
-                  style={[
-                    styles.paintItem,
-                    index < paintBrand.paints!.length - 1 && {
-                      borderBottomWidth: StyleSheet.hairlineWidth,
-                      borderBottomColor: colors.border,
-                    },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.colorIndicator,
-                      { backgroundColor: paint.hex || colors.muted },
-                    ]}
-                  />
-                  <View style={styles.paintInfo}>
-                    <ThemedText style={styles.paintName} numberOfLines={1}>
-                      {paint.name}
-                    </ThemedText>
-                    {paint.code && (
-                      <ThemedText style={styles.paintCode}>{paint.code}</ThemedText>
-                    )}
-                    {paint.paintType && (
-                      <Badge variant="outline" style={styles.typeBadge}>
-                        {paint.paintType.name}
-                      </Badge>
-                    )}
-                  </View>
-                </View>
-              ))}
+            <View style={StyleSheet.flatten([styles.statItem, { backgroundColor: colors.muted }])}>
+              <IconComponents size={24} color={colors.primary} />
+              <ThemedText style={styles.statValue}>{paintBrand._count?.componentItems || 0}</ThemedText>
+              <ThemedText style={styles.statLabel}>Componentes</ThemedText>
             </View>
+          </View>
+        </Card>
 
-            {paintBrand._count?.paints !== undefined && paintBrand._count.paints > 5 && (
-              <View style={styles.moreInfo}>
-                <ThemedText style={styles.moreInfoText}>
-                  E mais {paintBrand._count.paints - 5} {paintBrand._count.paints - 5 === 1 ? "tinta" : "tintas"}
+        {/* Related Paints Section */}
+        {paintBrand.paints && paintBrand.paints.length > 0 ? (
+          <Card style={styles.card}>
+            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+              <IconBrush size={20} color={colors.primary} />
+              <ThemedText style={styles.sectionTitle}>Tintas Relacionadas</ThemedText>
+            </View>
+            <ScrollView
+              style={{ maxHeight: 400 }}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={true}
+            >
+              <View style={styles.paintsList}>
+                {paintBrand.paints.map((paint: any) => (
+                  <TouchableOpacity
+                    key={paint.id}
+                    style={StyleSheet.flatten([
+                      styles.paintItem,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                      }
+                    ])}
+                    onPress={() => router.push(`/pintura/catalogo/detalhes/${paint.id}`)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.paintItemLeft}>
+                      <View
+                        style={StyleSheet.flatten([
+                          styles.colorPreview,
+                          {
+                            backgroundColor: paint.hex || colors.muted,
+                            borderColor: colors.border,
+                          }
+                        ])}
+                      />
+                      <View style={styles.paintInfo}>
+                        <ThemedText style={styles.paintName} numberOfLines={1}>
+                          {paint.name}
+                        </ThemedText>
+                        <View style={styles.paintBadges}>
+                          {paint.paintType?.name && (
+                            <Badge variant="outline" size="sm">
+                              {paint.paintType.name}
+                            </Badge>
+                          )}
+                          {paint.finish && (
+                            <Badge variant="secondary" size="sm">
+                              {PAINT_FINISH_LABELS[paint.finish] || paint.finish}
+                            </Badge>
+                          )}
+                          {paint.manufacturer && (
+                            <Badge variant="outline" size="sm">
+                              {TRUCK_MANUFACTURER_LABELS[paint.manufacturer] || paint.manufacturer}
+                            </Badge>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </Card>
+        ) : (
+          <Card style={styles.card}>
+            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+              <IconBrush size={20} color={colors.primary} />
+              <ThemedText style={styles.sectionTitle}>Tintas Relacionadas</ThemedText>
+            </View>
+            <View style={styles.emptyState}>
+              <IconPaint size={48} color={colors.mutedForeground} style={{ opacity: 0.5 }} />
+              <ThemedText style={styles.emptyStateText}>
+                Nenhuma tinta cadastrada para esta marca
+              </ThemedText>
+            </View>
+          </Card>
+        )}
+
+        {/* Components Table */}
+        <ComponentsTable paintType={paintBrand as any} maxHeight={400} />
+
+        {/* Metadata Card */}
+        <Card style={styles.card}>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <IconCalendar size={20} color={colors.primary} />
+            <ThemedText style={styles.sectionTitle}>Metadados</ThemedText>
+          </View>
+          <View style={styles.itemDetails}>
+            <View style={styles.detailRow}>
+              <ThemedText style={styles.detailLabel}>Data de Criação</ThemedText>
+              <ThemedText style={styles.detailValue}>
+                {formatDate(paintBrand.createdAt)}
+              </ThemedText>
+            </View>
+            {paintBrand.updatedAt && (
+              <View style={styles.detailRow}>
+                <ThemedText style={styles.detailLabel}>Última Atualização</ThemedText>
+                <ThemedText style={styles.detailValue}>
+                  {formatDate(paintBrand.updatedAt)}
                 </ThemedText>
               </View>
             )}
-          </Card>
-        )}
-
-        {/* Empty State */}
-        {(!paintBrand.paints || paintBrand.paints.length === 0) && (
-          <Card style={styles.emptyCard}>
-            <View style={styles.emptyContent}>
-              <IconPalette size={48} color={colors.muted} />
-              <ThemedText style={styles.emptyText}>
-                Nenhuma tinta associada
-              </ThemedText>
-              <ThemedText style={styles.emptySubtext}>
-                Esta marca ainda não possui tintas cadastradas
-              </ThemedText>
-            </View>
-          </Card>
-        )}
-
-        {/* Metadata */}
-        <Card style={styles.metadataCard}>
-          <ThemedText style={styles.metadataTitle}>Informações do Sistema</ThemedText>
-          <View style={styles.metadataRow}>
-            <ThemedText style={styles.metadataLabel}>ID:</ThemedText>
-            <ThemedText style={styles.metadataValue} numberOfLines={1}>
-              {paintBrand.id}
-            </ThemedText>
           </View>
-          {paintBrand.createdAt && (
-            <View style={styles.metadataRow}>
-              <ThemedText style={styles.metadataLabel}>Criado em:</ThemedText>
-              <ThemedText style={styles.metadataValue}>
-                {new Date(paintBrand.createdAt).toLocaleDateString("pt-BR")}
-              </ThemedText>
-            </View>
-          )}
-          {paintBrand.updatedAt && (
-            <View style={styles.metadataRow}>
-              <ThemedText style={styles.metadataLabel}>Atualizado em:</ThemedText>
-              <ThemedText style={styles.metadataValue}>
-                {new Date(paintBrand.updatedAt).toLocaleDateString("pt-BR")}
-              </ThemedText>
-            </View>
-          )}
         </Card>
 
-        {/* Actions */}
-        {canEdit && (
-          <View style={styles.actions}>
-            <Button onPress={handleEdit} style={styles.editButton}>
-              <IconEdit size={16} color="#fff" />
-              <ThemedText style={styles.editButtonText}>Editar Marca</ThemedText>
-            </Button>
-          </View>
-        )}
-      </ScrollView>
-    </>
+        {/* Bottom spacing for mobile navigation */}
+        <View style={{ height: spacing.xxl * 2 }} />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
   },
-  scrollContent: {
-    padding: spacing.md,
-    paddingBottom: spacing.xl,
-  },
-  centerContainer: {
+  content: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.xl,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-  },
-  errorText: {
-    textAlign: "center",
-    marginBottom: spacing.md,
-  },
-  backButton: {
-    marginTop: spacing.sm,
-  },
-  headerCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    gap: spacing.lg,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.md,
   },
-  headerText: {
+  headerLeft: {
     flex: 1,
-    marginLeft: spacing.md,
+    marginRight: spacing.sm,
   },
-  brandName: {
+  paintBrandTitle: {
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
-    marginBottom: 4,
   },
-  paintCount: {
-    fontSize: fontSize.sm,
-    opacity: 0.6,
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
   },
-  paintsCard: {
-    marginBottom: spacing.md,
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  card: {
     padding: spacing.md,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
   sectionTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
+    fontSize: fontSize.lg,
+    fontWeight: "600",
     marginLeft: spacing.sm,
+    flex: 1,
+  },
+  itemDetails: {
+    gap: spacing.sm,
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.xs,
+  },
+  detailLabel: {
+    fontSize: fontSize.sm,
+    opacity: 0.7,
+    fontWeight: "500",
+  },
+  detailValue: {
+    fontSize: fontSize.sm,
+    fontWeight: "400",
+  },
+  statisticsGrid: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  statItem: {
+    flex: 1,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+  },
+  statValue: {
+    fontSize: fontSize["2xl"],
+    fontWeight: fontWeight.bold,
+  },
+  statLabel: {
+    fontSize: fontSize.sm,
+    opacity: 0.7,
   },
   paintsList: {
-    gap: 0,
+    gap: spacing.sm,
   },
   paintItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.sm,
+    justifyContent: "space-between",
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
   },
-  colorIndicator: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    marginRight: spacing.sm,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+  paintItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    gap: spacing.sm,
+  },
+  colorPreview: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
   },
   paintInfo: {
     flex: 1,
   },
   paintName: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    marginBottom: 2,
-  },
-  paintCode: {
-    fontSize: fontSize.xs,
-    opacity: 0.6,
-    marginBottom: 4,
-  },
-  typeBadge: {
-    alignSelf: "flex-start",
-  },
-  moreInfo: {
-    paddingTop: spacing.sm,
-    marginTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
-    alignItems: "center",
-  },
-  moreInfoText: {
-    fontSize: fontSize.sm,
-    opacity: 0.6,
-  },
-  emptyCard: {
-    marginBottom: spacing.md,
-    padding: spacing.xl,
-  },
-  emptyContent: {
-    alignItems: "center",
-  },
-  emptyText: {
     fontSize: fontSize.md,
-    fontWeight: fontWeight.medium,
-    marginTop: spacing.md,
-    textAlign: "center",
+    fontWeight: "500",
   },
-  emptySubtext: {
-    fontSize: fontSize.sm,
-    opacity: 0.6,
-    marginTop: spacing.sm,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  metadataCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  metadataTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.sm,
-    opacity: 0.7,
-  },
-  metadataRow: {
+  paintBadges: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: spacing.xs,
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
-  metadataLabel: {
-    fontSize: fontSize.sm,
-    opacity: 0.6,
-  },
-  metadataValue: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    flex: 1,
-    textAlign: "right",
-    marginLeft: spacing.sm,
-  },
-  actions: {
-    gap: spacing.sm,
-  },
-  editButton: {
-    flexDirection: "row",
+  emptyState: {
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.xs,
+    paddingVertical: spacing.xl,
+    gap: spacing.sm,
   },
-  editButtonText: {
-    color: "#fff",
-    fontWeight: fontWeight.semibold,
+  emptyStateText: {
+    fontSize: fontSize.sm,
+    opacity: 0.7,
+    textAlign: "center",
   },
 });

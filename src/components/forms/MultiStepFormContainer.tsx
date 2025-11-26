@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -7,12 +7,14 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { FormSteps, FormStep } from "@/components/ui/form-steps";
 import { FormActionBar, FormActionBarProps } from "./FormActionBar";
+import { useKeyboardAwareScroll } from "@/hooks/useKeyboardAwareScroll";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 /**
  * MultiStepFormContainer
@@ -118,10 +120,22 @@ export function MultiStepFormContainer({
 }: MultiStepFormContainerProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const isTablet = width >= TABLET_BREAKPOINT;
 
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === steps.length;
+
+  // Intelligent keyboard handling
+  const { state, handlers, refs, getContentPadding } = useKeyboardAwareScroll();
+
+  // Memoize context value to prevent unnecessary re-renders
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   // Handle next step with async support
   const handleNext = useCallback(async () => {
@@ -132,28 +146,43 @@ export function MultiStepFormContainer({
     }
   }, [onNextStep]);
 
-  // Render content
-  const ContentWrapper = scrollable ? ScrollView : View;
-  const contentWrapperProps = scrollable
-    ? {
-        contentContainerStyle: [
-          styles.scrollContent,
-          isTablet && styles.scrollContentTablet,
-          contentStyle,
-        ],
-        showsVerticalScrollIndicator: false,
-        keyboardShouldPersistTaps: "handled" as const,
-      }
-    : {
-        style: [styles.content, isTablet && styles.contentTablet, contentStyle],
-      };
+  // Content rendering with keyboard-aware handling
+  const renderContent = () => {
+    if (scrollable) {
+      return (
+        <ScrollView
+          ref={refs.scrollViewRef}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isTablet && styles.scrollContentTablet,
+            contentStyle,
+            {
+              paddingBottom: getContentPadding(insets.bottom + spacing.lg),
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
+        >
+          {children}
+        </ScrollView>
+      );
+    }
+    return (
+      <View style={[styles.content, isTablet && styles.contentTablet, contentStyle]}>
+        {children}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoiding}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        keyboardVerticalOffset={0}
       >
         {/* Header */}
         {header}
@@ -170,8 +199,10 @@ export function MultiStepFormContainer({
           </View>
         )}
 
-        {/* Content */}
-        <ContentWrapper {...contentWrapperProps}>{children}</ContentWrapper>
+        {/* Content with intelligent keyboard handling */}
+        <KeyboardAwareFormProvider value={keyboardContextValue}>
+          {renderContent()}
+        </KeyboardAwareFormProvider>
 
         {/* Footer */}
         {footer}

@@ -1,5 +1,5 @@
-import React from "react";
-import { View, ScrollView, StyleSheet, Alert } from "react-native";
+import React, { useMemo } from "react";
+import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -12,6 +12,8 @@ import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
+import { useKeyboardAwareScroll } from "@/hooks";
+import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 import { positionCreateSchema, positionUpdateSchema } from "@/schemas/position";
 import type { PositionCreateFormData, PositionUpdateFormData } from "@/schemas/position";
@@ -28,6 +30,7 @@ interface PositionFormProps {
 export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFormProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = usePositionMutations();
 
   const form = useForm<PositionCreateFormData | PositionUpdateFormData>({
@@ -75,15 +78,32 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
     }
   };
 
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
-        <FormCard title="Informações do Cargo">
+        <ScrollView
+          ref={refs.scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
+        >
+          <KeyboardAwareFormProvider value={keyboardContextValue}>
+          <FormCard title="Informações do Cargo">
           {/* Name */}
           <FormFieldGroup
             label="Nome"
@@ -172,22 +192,27 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
               />
             </View>
           </FormFieldGroup>
-        </FormCard>
-      </ScrollView>
+          </FormCard>
+          </KeyboardAwareFormProvider>
+        </ScrollView>
 
-      <SimpleFormActionBar
-        onCancel={handleCancel}
-        onSubmit={form.handleSubmit(handleSubmit)}
-        isSubmitting={isLoading}
-        canSubmit={form.formState.isValid}
-        submitLabel={mode === "create" ? "Criar" : "Salvar"}
-      />
+        <SimpleFormActionBar
+          onCancel={handleCancel}
+          onSubmit={form.handleSubmit(handleSubmit)}
+          isSubmitting={isLoading}
+          canSubmit={form.formState.isValid}
+          submitLabel={mode === "create" ? "Criar" : "Salvar"}
+        />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
     flex: 1,
   },
   scrollView: {
@@ -197,6 +222,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: formSpacing.containerPaddingHorizontal,
     paddingTop: formSpacing.containerPaddingVertical,
     paddingBottom: 0, // No spacing - action bar has its own margin
+  },
+  fieldGroup: {
+    gap: spacing.lg,
   },
   switchRow: {
     flexDirection: "row",

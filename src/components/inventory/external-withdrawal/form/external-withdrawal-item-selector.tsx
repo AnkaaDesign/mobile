@@ -16,7 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { Switch } from "@/components/ui/switch";
-import { CurrencyInput } from "@/components/ui/currency-input";
 import { NumberInput } from "@/components/ui/number-input";
 import { Pagination } from "@/components/ui/pagination";
 
@@ -257,9 +256,10 @@ export function ExternalWithdrawalItemSelector({
             {type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && onPriceChange && (
               <View style={styles.inputWrapper}>
                 <Text style={styles.inputLabel}>Preço Unit.</Text>
-                <CurrencyInput
+                <Input
+                  type="currency"
                   value={price}
-                  onChangeValue={(value) => onPriceChange(item.id, value)}
+                  onChangeText={(value) => onPriceChange(item.id, Number(value) || 0)}
                   style={styles.input}
                 />
               </View>

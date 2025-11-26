@@ -13,6 +13,8 @@ interface SelectFieldProps {
   value: any
   onChange: (value: any) => void
   options?: Array<{ label: string; value: any }>
+  onOpen?: (measurements: { inputY: number; inputHeight: number; requiredHeight: number }) => boolean | void
+  onClose?: () => void
 }
 
 const SelectFieldComponent = function SelectField({
@@ -20,6 +22,8 @@ const SelectFieldComponent = function SelectField({
   value,
   onChange,
   options: providedOptions,
+  onOpen,
+  onClose,
 }: SelectFieldProps) {
   // Prepare options
   const options = useMemo(() => {
@@ -91,6 +95,8 @@ const SelectFieldComponent = function SelectField({
         async={field.async}
         queryKey={field.queryKey}
         queryFn={field.queryFn}
+        onOpen={onOpen}
+        onClose={onClose}
       />
     )
   }
@@ -107,6 +113,8 @@ const SelectFieldComponent = function SelectField({
       async={field.async}
       queryKey={field.queryKey}
       queryFn={field.queryFn}
+      onOpen={onOpen}
+      onClose={onClose}
     />
   )
 }

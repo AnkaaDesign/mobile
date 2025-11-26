@@ -274,8 +274,8 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     gap: 8,
     alignItems: 'center',
   },

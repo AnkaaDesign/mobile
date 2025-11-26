@@ -7,12 +7,14 @@ interface TextFieldProps {
   field: FilterField
   value: string | undefined
   onChange: (value: string | undefined) => void
+  onFocus?: () => void
 }
 
 export const TextField = memo(function TextField({
   field,
   value,
   onChange,
+  onFocus,
 }: TextFieldProps) {
   const handleChange = (text: string) => {
     onChange(text || undefined)
@@ -29,6 +31,7 @@ export const TextField = memo(function TextField({
         value={value || ''}
         onChangeText={handleChange}
         placeholder={placeholder}
+        onFocus={onFocus}
       />
     </View>
   )

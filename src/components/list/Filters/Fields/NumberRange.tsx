@@ -7,12 +7,14 @@ interface NumberRangeFieldProps {
   field: FilterField
   value: { min?: number; max?: number } | undefined
   onChange: (value: { min?: number; max?: number } | undefined) => void
+  onFocus?: () => void
 }
 
 export const NumberRangeField = memo(function NumberRangeField({
   field,
   value,
   onChange,
+  onFocus,
 }: NumberRangeFieldProps) {
   // Get placeholder labels - use field.placeholder if object, otherwise defaults
   const placeholders = typeof field.placeholder === 'object' && field.placeholder
@@ -37,6 +39,7 @@ export const NumberRangeField = memo(function NumberRangeField({
       minPlaceholder={placeholders.min}
       maxPlaceholder={placeholders.max}
       format={isCurrency ? 'currency' : undefined}
+      onFocus={onFocus}
     />
   )
 })

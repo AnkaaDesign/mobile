@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
-import { View, ScrollView, Alert, StyleSheet, Keyboard, Platform } from "react-native";
+import { useState, useEffect, useMemo } from "react";
+import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCustomerMutations } from "@/hooks";
+import { useCustomerMutations, useKeyboardAwareScroll } from "@/hooks";
 import { useCnpjLookup } from "@/hooks/use-cnpj-lookup";
 import { useCepLookup } from "@/hooks/use-cep-lookup";
 import { customerCreateSchema, type CustomerCreateFormData } from "@/schemas";
@@ -14,6 +14,7 @@ import { showToast } from "@/components/ui/toast";
 import { Input, Combobox, Button } from "@/components/ui";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
@@ -31,6 +32,17 @@ export default function FinancialCustomerCreateScreen() {
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cnpj");
   const [economicActivityInitialOptions, setEconomicActivityInitialOptions] = useState<Array<{ value: string; label: string }>>([]);
   const queryClient = useQueryClient();
+
+  // Keyboard-aware scrolling
+  const { handlers, refs } = useKeyboardAwareScroll();
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   const {
     control,
@@ -226,34 +238,24 @@ export default function FinancialCustomerCreateScreen() {
     value: state,
   }));
 
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showListener = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
-    const hideListener = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
-
-    return () => {
-      showListener.remove();
-      hideListener.remove();
-    };
-  }, []);
-
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <View style={styles.keyboardView}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      >
         <ScrollView
+          ref={refs.scrollViewRef}
           style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            isKeyboardVisible && styles.scrollContentKeyboardOpen,
-          ]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          automaticallyAdjustKeyboardInsets
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
         >
+        <KeyboardAwareFormProvider value={keyboardContextValue}>
         {/* Basic Information */}
         <FormCard title="Informações Básicas">
           <FormFieldGroup
@@ -689,7 +691,7 @@ export default function FinancialCustomerCreateScreen() {
             />
           </FormFieldGroup>
         </FormCard>
-        <View style={styles.lastCardSpacer} />
+        </KeyboardAwareFormProvider>
         </ScrollView>
 
         <SimpleFormActionBar
@@ -699,7 +701,7 @@ export default function FinancialCustomerCreateScreen() {
           canSubmit={isValid}
           submitLabel="Criar"
         />
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -717,12 +719,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: formSpacing.containerPaddingHorizontal,
     paddingTop: formSpacing.containerPaddingVertical,
-  },
-  scrollContentKeyboardOpen: {
-    paddingBottom: 150,
-  },
-  lastCardSpacer: {
-    marginTop: -spacing.md, // -16px to offset last FormCard's marginBottom
+    paddingBottom: 0, // No spacing - action bar has its own margin
   },
   documentRow: {
     flexDirection: "row",

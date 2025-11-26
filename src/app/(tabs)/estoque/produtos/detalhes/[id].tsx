@@ -20,7 +20,7 @@ import { TouchableOpacity } from "react-native";
 import { showToast } from "@/components/ui/toast";
 
 // Import modular components
-import { MetricsCard, ActivityHistoryCard, RelatedItemsCard, SpecificationsCard, PpeInfoCard } from "@/components/inventory/item/detail";
+import { MetricsCard, RelatedItemsCard, SpecificationsCard, PpeInfoCard, ActivitiesTable, BorrowsTable, OrdersTable } from "@/components/inventory/item/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function ItemDetailScreen() {
@@ -335,7 +335,12 @@ export default function ItemDetailScreen() {
           <MetricsCard item={item} />
           {item.ppeType && <PpeInfoCard item={item} />}
           <RelatedItemsCard item={item} />
-          <ActivityHistoryCard item={item} maxHeight={400} />
+
+          {/* Related Data Tables */}
+          <ActivitiesTable item={item} maxHeight={400} />
+          <BorrowsTable item={item} maxHeight={400} />
+          <OrdersTable item={item} maxHeight={400} />
+
           {/* Changelog Timeline */}
           <Card>
             <CardHeader>

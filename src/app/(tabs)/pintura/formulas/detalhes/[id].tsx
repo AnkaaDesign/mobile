@@ -14,6 +14,8 @@ import { showToast } from "@/components/ui/toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MobilePaintFormulaCalculator } from "@/components/painting/formula/mobile-paint-formula-calculator";
+import { FormulaComponentsTable } from "@/components/painting/formula/detail/components-table";
+import { FormulaProductionsTable } from "@/components/painting/formula/detail/productions-table";
 import {
   IconFlask,
   IconRefresh,
@@ -58,10 +60,15 @@ export default function FormulaDetailsScreen() {
           ratio: "desc",
         },
       },
+      paintProduction: {
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
       _count: {
         select: {
           components: true,
-          productions: true,
+          paintProduction: true,
         },
       },
     },
@@ -158,24 +165,11 @@ export default function FormulaDetailsScreen() {
           <MobilePaintFormulaCalculator formula={formula} />
         )}
 
-        {/* Productions Summary Card */}
-        {/* Fixed: Changed productions to paintProduction to match API type */}
-        {formula._count?.paintProduction !== undefined && formula._count.paintProduction > 0 && (
-          <Card style={styles.card}>
-            <View style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}>
-              <IconClipboardList size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Produções</ThemedText>
-              <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                {formula._count.paintProduction}
-              </Badge>
-            </View>
-            <View style={styles.itemDetails}>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.mutedForeground }])}>
-                Esta fórmula foi utilizada em {formula._count.paintProduction} {formula._count.paintProduction === 1 ? "produção" : "produções"}.
-              </ThemedText>
-            </View>
-          </Card>
-        )}
+        {/* Components Table */}
+        <FormulaComponentsTable formula={formula} maxHeight={400} />
+
+        {/* Productions Table */}
+        <FormulaProductionsTable formula={formula} maxHeight={400} />
 
         {/* Bottom spacing for mobile navigation */}
         <View style={{ height: spacing.xxl * 2 }} />

@@ -1,133 +1,487 @@
-import { View, ScrollView, StyleSheet } from 'react-native'
-import { Card } from '@/components/ui/card'
-import { Text } from '@/components/ui/text'
-import { Badge } from '@/components/ui/badge'
-import { Icon } from '@/components/ui/icon'
-import { useTheme } from '@/lib/theme'
-import { spacing, fontSize } from '@/constants/design-system'
-import type { Paint } from '@/types'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { useState, useMemo, useCallback } from "react";
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Pressable,
+  ScrollView,
+  Dimensions,
+  ActivityIndicator,
+} from "react-native";
+import { router } from "expo-router";
+import { Card } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
+import { SearchBar } from "@/components/ui/search-bar";
+import { ListActionButton } from "@/components/ui/list-action-button";
+import { Badge } from "@/components/ui/badge";
+import { useTheme } from "@/lib/theme";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { IconBuildingFactory, IconAlertCircle, IconList, IconSelector } from "@tabler/icons-react-native";
+import type { Paint, PaintProduction } from "@/types";
+import { SlideInPanel } from "@/components/ui/slide-in-panel";
+import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
+import { useDebounce } from "@/hooks/useDebouncedSearch";
+import { usePaintProductionsInfiniteMobile } from "@/hooks";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface PaintProductionHistoryCardProps {
-  paint: Paint
-  maxHeight?: number
+  paint: Paint;
+  maxHeight?: number;
 }
+
+// Get screen width for responsive design
+const { width: screenWidth } = Dimensions.get("window");
+const availableWidth = screenWidth - 32;
+
+// Column definitions for production table
+interface ProductionColumn {
+  key: string;
+  header: string;
+  accessor: (production: PaintProduction) => React.ReactNode;
+  width: number;
+  align?: "left" | "center" | "right";
+}
+
+const createProductionColumnDefinitions = (): ProductionColumn[] => [
+  {
+    key: "volumeLiters",
+    header: "VOLUME",
+    align: "left",
+    width: 0,
+    accessor: (production: PaintProduction) => (
+      <Badge variant="secondary">
+        <ThemedText style={styles.badgeText}>
+          {(production.volumeLiters || 0).toFixed(2)} L
+        </ThemedText>
+      </Badge>
+    ),
+  },
+  {
+    key: "createdAt",
+    header: "PRODUZIDO EM",
+    align: "left",
+    width: 0,
+    accessor: (production: PaintProduction) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {format(new Date(production.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "formula.description",
+    header: "FÓRMULA",
+    align: "left",
+    width: 0,
+    accessor: (production: PaintProduction) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {(production as any).formula?.description || "-"}
+      </ThemedText>
+    ),
+  },
+  {
+    key: "notes",
+    header: "OBSERVAÇÕES",
+    align: "left",
+    width: 0,
+    accessor: (production: PaintProduction) => (
+      <ThemedText style={styles.cellText} numberOfLines={1}>
+        {production.notes || "-"}
+      </ThemedText>
+    ),
+  },
+];
 
 export function PaintProductionHistoryCard({
   paint,
   maxHeight = 400,
 }: PaintProductionHistoryCardProps) {
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme();
 
-  // Get all productions from formulas
-  const productions = paint.formulas
-    ?.flatMap((formula) => formula.paintProduction || [])
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || []
+  // Column panel state
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
-  if (productions.length === 0) {
-    return (
-      <Card className="p-4">
-        <View className="flex-row items-center gap-2 mb-4">
-          <View className="p-2 rounded-lg bg-primary/10">
-            <Icon name="factory" size={20} className="text-primary" />
-          </View>
-          <Text className="text-lg font-semibold text-foreground">Histórico de Produção</Text>
-        </View>
+  // Default visible columns
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
+    return ["volumeLiters", "createdAt"];
+  });
 
-        <View className="items-center justify-center py-8">
-          <Icon name="inbox" size={48} className="text-muted-foreground mb-2" />
-          <Text className="text-sm text-muted-foreground text-center">
-            Nenhuma produção registrada
-          </Text>
-        </View>
-      </Card>
-    )
-  }
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Calculate statistics
-  const totalProductions = productions.length
-  const totalQuantity = productions.reduce((sum, prod) => sum + (prod.quantity || 0), 0)
-  const avgQuantity = totalQuantity / totalProductions
+  // Fetch productions for this specific paint with infinite scroll
+  const {
+    items: productions,
+    isLoading,
+    error,
+    loadMore,
+    canLoadMore,
+    isFetchingNextPage,
+    totalCount,
+  } = usePaintProductionsInfiniteMobile({
+    where: {
+      formula: {
+        paintId: paint.id,
+      },
+    },
+    include: {
+      formula: true,
+    },
+    orderBy: { createdAt: "desc" },
+    enabled: !!paint.id,
+  });
 
-  return (
-    <Card className="p-4">
-      {/* Header */}
-      <View className="flex-row items-center gap-2 mb-4">
-        <View className="p-2 rounded-lg bg-primary/10">
-          <Icon name="factory" size={20} className="text-primary" />
-        </View>
-        <View className="flex-1">
-          <Text className="text-lg font-semibold text-foreground">Histórico de Produção</Text>
-          <Text className="text-xs text-muted-foreground">
-            {totalProductions} {totalProductions === 1 ? 'produção' : 'produções'}
-          </Text>
-        </View>
-      </View>
+  // Filter productions based on search (client-side for already loaded items)
+  const filteredProductions = useMemo(() => {
+    if (!debouncedSearch) return productions;
 
-      {/* Statistics */}
-      <View className="flex-row gap-2 mb-4">
-        <View className="flex-1 bg-muted/30 rounded-lg p-3">
-          <Text className="text-xs text-muted-foreground mb-1">Total Produzido</Text>
-          <Text className="text-lg font-semibold">{totalQuantity.toFixed(2)} L</Text>
-        </View>
-        <View className="flex-1 bg-muted/30 rounded-lg p-3">
-          <Text className="text-xs text-muted-foreground mb-1">Média por Produção</Text>
-          <Text className="text-lg font-semibold">{avgQuantity.toFixed(2)} L</Text>
-        </View>
-      </View>
+    const searchLower = debouncedSearch.toLowerCase();
+    return productions.filter((production: any) =>
+      production.formula?.description?.toLowerCase().includes(searchLower) ||
+      production.notes?.toLowerCase().includes(searchLower)
+    );
+  }, [productions, debouncedSearch]);
 
-      {/* Production List */}
-      <ScrollView style={{ maxHeight }} showsVerticalScrollIndicator={false}>
-        <View className="gap-2">
-          {productions.map((production, index) => (
+  // Get all column definitions
+  const allColumns = useMemo(() => createProductionColumnDefinitions(), []);
+
+  // Build visible columns with dynamic widths
+  const displayColumns = useMemo(() => {
+    const columnWidthRatios: Record<string, number> = {
+      volumeLiters: 1.2,
+      createdAt: 1.8,
+      "formula.description": 2.0,
+      notes: 2.0,
+    };
+
+    const visible = allColumns.filter((col) => visibleColumnKeys.includes(col.key));
+    const totalRatio = visible.reduce((sum, col) => sum + (columnWidthRatios[col.key] || 1.0), 0);
+
+    return visible.map((col) => {
+      const ratio = columnWidthRatios[col.key] || 1.0;
+      const width = Math.floor((availableWidth * ratio) / totalRatio);
+      return { ...col, width };
+    });
+  }, [allColumns, visibleColumnKeys]);
+
+  // Calculate total table width
+  const tableWidth = useMemo(() => {
+    return displayColumns.reduce((sum, col) => sum + col.width, 0);
+  }, [displayColumns]);
+
+  // Handle columns change
+  const handleColumnsChange = useCallback((newColumns: Set<string>) => {
+    setVisibleColumnKeys(Array.from(newColumns));
+  }, []);
+
+  // Get default visible columns
+  const getDefaultVisibleColumns = useCallback(() => {
+    return ["volumeLiters", "createdAt"];
+  }, []);
+
+  // Handle opening column panel
+  const handleOpenColumns = useCallback(() => {
+    setIsColumnPanelOpen(true);
+  }, []);
+
+  const handleCloseColumns = useCallback(() => {
+    setIsColumnPanelOpen(false);
+  }, []);
+
+  const handleProductionPress = (productionId: string) => {
+    router.push(`/(tabs)/pintura/producoes/detalhes/${productionId}` as any);
+  };
+
+  // Render table header
+  const renderHeader = useCallback(() => (
+    <View style={styles.headerWrapper}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        scrollEnabled={tableWidth > availableWidth}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+      >
+        <View style={StyleSheet.flatten([styles.tableHeaderRow, { width: tableWidth }])}>
+          {displayColumns.map((column) => (
             <View
-              key={production.id}
-              className="bg-muted/30 rounded-lg p-3"
-              style={[
-                styles.productionItem,
-                { borderLeftColor: colors.primary, borderLeftWidth: 3 },
-              ]}
+              key={column.key}
+              style={StyleSheet.flatten([
+                styles.tableHeaderCell,
+                { width: column.width },
+                column.align === "center" && styles.centerAlign,
+                column.align === "right" && styles.rightAlign,
+              ])}
             >
-              <View className="flex-row items-start justify-between mb-2">
-                <View className="flex-1">
-                  <Text className="text-sm font-semibold text-foreground mb-1">
-                    Produção #{totalProductions - index}
-                  </Text>
-                  <Text className="text-xs text-muted-foreground">
-                    {format(new Date(production.createdAt), "dd 'de' MMM 'de' yyyy 'às' HH:mm", {
-                      locale: ptBR,
-                    })}
-                  </Text>
-                </View>
-                <Badge variant="secondary">
-                  <Text className="text-xs font-medium">{production.quantity?.toFixed(2)} L</Text>
-                </Badge>
-              </View>
-
-              {production.notes && (
-                <View className="mt-2 pt-2 border-t border-border">
-                  <Text className="text-xs text-muted-foreground">{production.notes}</Text>
-                </View>
-              )}
-
-              {production.formula && (
-                <View className="mt-2">
-                  <Text className="text-xs text-muted-foreground">
-                    Fórmula: {production.formula.description || 'Sem descrição'}
-                  </Text>
-                </View>
-              )}
+              <ThemedText
+                style={StyleSheet.flatten([
+                  styles.tableHeaderText,
+                  { color: colors.foreground }
+                ])}
+                numberOfLines={1}
+              >
+                {column.header}
+              </ThemedText>
             </View>
           ))}
         </View>
       </ScrollView>
-    </Card>
-  )
+    </View>
+  ), [displayColumns, tableWidth, colors]);
+
+  // Render table row
+  const renderRow = useCallback(({ item: production, index }: { item: PaintProduction; index: number }) => {
+    const isEven = index % 2 === 0;
+    const rowBgColor = isEven ? colors.background : colors.card;
+
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        scrollEnabled={tableWidth > availableWidth}
+        style={StyleSheet.flatten([
+          styles.tableRow,
+          {
+            backgroundColor: rowBgColor,
+          },
+        ])}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+      >
+        <Pressable
+          style={StyleSheet.flatten([styles.tableRowContent, { width: tableWidth }])}
+          onPress={() => handleProductionPress(production.id)}
+          android_ripple={{ color: colors.primary + "20" }}
+        >
+          {displayColumns.map((column) => (
+            <View
+              key={column.key}
+              style={StyleSheet.flatten([
+                styles.tableCell,
+                { width: column.width },
+                column.align === "center" && styles.centerAlign,
+                column.align === "right" && styles.rightAlign,
+              ])}
+            >
+              {column.accessor(production)}
+            </View>
+          ))}
+        </Pressable>
+      </ScrollView>
+    );
+  }, [displayColumns, tableWidth, colors, isDark]);
+
+  // Prepare columns for slide panel (convert to expected format)
+  const columnDefinitionsForPanel = useMemo(() =>
+    allColumns.map(col => ({
+      key: col.key,
+      header: col.header,
+      accessor: () => null, // Not used by panel
+      width: 0,
+    })),
+  [allColumns]);
+
+  // Don't show if no productions and not loading
+  if (!isLoading && productions.length === 0 && !searchQuery) {
+    return null;
+  }
+
+  return (
+    <>
+      <Card style={styles.card}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconBuildingFactory size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>
+              Histórico de Produção {productions.length > 0 && `(${productions.length}${totalCount ? `/${totalCount}` : ""})`}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.content}>
+          {/* Search and Column Visibility Controls */}
+          <View style={styles.controlsContainer}>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Buscar produções..."
+              style={styles.searchBar}
+            />
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumnKeys.length}
+              badgeVariant="primary"
+            />
+          </View>
+
+          {/* Production Table */}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <ThemedText style={styles.loadingText}>Carregando produções...</ThemedText>
+            </View>
+          ) : error ? (
+            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+              <IconAlertCircle size={48} color={colors.mutedForeground} />
+              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+                Erro ao carregar produções.
+              </ThemedText>
+            </View>
+          ) : filteredProductions.length === 0 ? (
+            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+              <IconAlertCircle size={48} color={colors.mutedForeground} />
+              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+                {searchQuery
+                  ? `Nenhuma produção encontrada para "${searchQuery}".`
+                  : "Nenhuma produção registrada."}
+              </ThemedText>
+            </View>
+          ) : (
+            <View style={[styles.tableContainer, { maxHeight }]}>
+              {renderHeader()}
+              <FlatList
+                data={filteredProductions}
+                renderItem={renderRow}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ flexGrow: 1 }}
+                onEndReached={() => canLoadMore && loadMore()}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={
+                  isFetchingNextPage ? (
+                    <View style={styles.footerLoader}>
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    </View>
+                  ) : null
+                }
+              />
+            </View>
+          )}
+        </View>
+      </Card>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <ColumnVisibilitySlidePanel
+          columns={columnDefinitionsForPanel}
+          visibleColumns={new Set(visibleColumnKeys)}
+          onVisibilityChange={handleColumnsChange}
+          onClose={handleCloseColumns}
+          defaultColumns={new Set(getDefaultVisibleColumns())}
+        />
+      </SlideInPanel>
+    </>
+  );
 }
 
 const styles = StyleSheet.create({
-  productionItem: {
-    borderLeftWidth: 3,
+  card: {
+    padding: spacing.md,
   },
-})
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+  controlsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  searchBar: {
+    flex: 1,
+  },
+  tableContainer: {
+    minHeight: 200,
+    overflow: "hidden",
+    marginHorizontal: -8,
+  },
+  headerWrapper: {
+    // Border is handled by parent container
+  },
+  tableHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 40,
+  },
+  tableHeaderCell: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+    minHeight: 40,
+    justifyContent: "center",
+  },
+  tableHeaderText: {
+    fontSize: 10,
+    fontWeight: fontWeight.bold as any,
+    textTransform: "uppercase",
+    lineHeight: 12,
+  },
+  tableRow: {
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
+  },
+  tableRowContent: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    minHeight: 48,
+  },
+  tableCell: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+    justifyContent: "center",
+    minHeight: 48,
+  },
+  centerAlign: {
+    alignItems: "center",
+  },
+  rightAlign: {
+    alignItems: "flex-end",
+  },
+  cellText: {
+    fontSize: fontSize.xs,
+  },
+  badgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium as any,
+  },
+  emptyState: {
+    paddingVertical: spacing.xl,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.md,
+  },
+  emptyText: {
+    fontSize: fontSize.sm,
+    textAlign: "center",
+  },
+  loadingContainer: {
+    paddingVertical: spacing.xxl,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.md,
+  },
+  loadingText: {
+    fontSize: fontSize.sm,
+    opacity: 0.7,
+  },
+  footerLoader: {
+    paddingVertical: spacing.md,
+    alignItems: "center",
+  },
+});

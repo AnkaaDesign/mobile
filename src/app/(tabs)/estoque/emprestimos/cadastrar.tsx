@@ -12,8 +12,6 @@ export default function EstoqueEmprestimosCadastrarScreen() {
 
   const handleSubmit = async (data: {
     userId: string;
-    reason?: string;
-    notes?: string;
     items: Array<{ itemId: string; quantity: number }>;
   }) => {
     try {
@@ -22,8 +20,6 @@ export default function EstoqueEmprestimosCadastrarScreen() {
         userId: data.userId,
         itemId: item.itemId,
         quantity: item.quantity,
-        reason: data.reason,
-        notes: data.notes,
       }));
 
       const result = await batchCreateAsync({ borrows });

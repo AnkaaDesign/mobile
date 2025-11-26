@@ -193,6 +193,9 @@ export default function PositionDetailScreen() {
         <SpecificationsCard position={position} />
         <RemunerationHistoryCard position={position} />
 
+        {/* Related Users - Full width, before changelog */}
+        <RelatedUsersCard position={position} />
+
         {/* Changelog - Single column */}
         <ChangelogTimeline
           entityType={CHANGE_LOG_ENTITY_TYPE.POSITION}
@@ -201,9 +204,6 @@ export default function PositionDetailScreen() {
           entityCreatedAt={position.createdAt}
           maxHeight={500}
         />
-
-        {/* Related Users - Full width, last section */}
-        <RelatedUsersCard position={position} />
 
         {/* Bottom spacing for mobile navigation */}
         <View style={{ height: spacing.xxl * 2 }} />

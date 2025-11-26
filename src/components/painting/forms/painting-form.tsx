@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,10 +14,11 @@ import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 
 import { paintCreateSchema, paintUpdateSchema, type PaintCreateFormData, type PaintUpdateFormData } from '../../../schemas';
-import { usePaintTypes, usePaintBrands, usePaints, usePaintType, useAvailableComponents } from "@/hooks";
+import { usePaintTypes, usePaintBrands, usePaints, usePaintType, useAvailableComponents, useKeyboardAwareScroll } from "@/hooks";
 import { PAINT_FINISH, COLOR_PALETTE, TRUCK_MANUFACTURER } from "@/constants";
 import type { PaintFormula, Paint } from "../../../types";
 import { FormulaManager } from "../formula/formula-manager";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 interface BaseFormProps {
   onCancel: () => void;
@@ -92,6 +93,9 @@ export function PaintForm(props: PaintFormProps) {
   const { defaultValues, mode, onStepChange, onPaintTypeChange, isSubmitting, onCancel } = props;
   const { colors } = useTheme();
 
+  // Keyboard-aware scrolling
+  const { handlers, refs } = useKeyboardAwareScroll();
+
   // Step management
   const [currentStep, setCurrentStep] = useState(props.currentStep || 1);
   const [formulas, setFormulas] = useState<PaintFormula[]>([]);
@@ -100,6 +104,14 @@ export function PaintForm(props: PaintFormProps) {
   const [paintTypeSearch, setPaintTypeSearch] = useState("");
   const [paintBrandSearch, setPaintBrandSearch] = useState("");
   const [groundPaintSearch, setGroundPaintSearch] = useState("");
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   // Sync currentStep from props
   useEffect(() => {
@@ -287,14 +299,24 @@ export function PaintForm(props: PaintFormProps) {
   return (
     <FormProvider {...form}>
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardView}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
         >
-          {/* Step Indicator */}
-          <FormSteps steps={availableSteps} currentStep={currentStep} />
+          <ScrollView
+            ref={refs.scrollViewRef}
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            onLayout={handlers.handleScrollViewLayout}
+            onScroll={handlers.handleScroll}
+            scrollEventThrottle={16}
+          >
+            <KeyboardAwareFormProvider value={keyboardContextValue}>
+              {/* Step Indicator */}
+              <FormSteps steps={availableSteps} currentStep={currentStep} />
 
           {/* Step 1: Basic Information */}
           {currentStep === 1 && (
@@ -611,18 +633,20 @@ export function PaintForm(props: PaintFormProps) {
               </FormFieldGroup>
             </FormCard>
           )}
-        </ScrollView>
+            </KeyboardAwareFormProvider>
+          </ScrollView>
 
-        {/* Action Bar */}
-        <SimpleFormActionBar
-          onCancel={isFirstStep ? onCancel : prevStep}
-          onSubmit={isLastStep ? form.handleSubmit(handleSubmit) : nextStep}
-          isSubmitting={isSubmitting}
-          canSubmit={form.formState.isValid}
-          cancelLabel={isFirstStep ? "Cancelar" : "Voltar"}
-          submitLabel={isLastStep ? (mode === "create" ? "Criar Tinta" : "Salvar Alterações") : "Próximo"}
-          showCancel={true}
-        />
+          {/* Action Bar */}
+          <SimpleFormActionBar
+            onCancel={isFirstStep ? onCancel : prevStep}
+            onSubmit={isLastStep ? form.handleSubmit(handleSubmit) : nextStep}
+            isSubmitting={isSubmitting}
+            canSubmit={form.formState.isValid}
+            cancelLabel={isFirstStep ? "Cancelar" : "Voltar"}
+            submitLabel={isLastStep ? (mode === "create" ? "Criar Tinta" : "Salvar Alterações") : "Próximo"}
+            showCancel={true}
+          />
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </FormProvider>
   );
@@ -632,13 +656,16 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  keyboardView: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: formSpacing.containerPaddingHorizontal,
     paddingTop: formSpacing.containerPaddingVertical,
-    paddingBottom: spacing.xxl,
+    paddingBottom: 0,
   },
   hexRow: {
     flexDirection: "row",

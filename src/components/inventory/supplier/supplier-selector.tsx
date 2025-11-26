@@ -129,7 +129,6 @@ export function SupplierSelector({
         minSearchLength={0}
         pageSize={50}
         debounceMs={300}
-        preferFullScreen={true}
       />
     </View>
   );

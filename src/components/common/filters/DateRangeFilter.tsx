@@ -58,8 +58,8 @@ export function DateRangeFilter({
   onChange,
   label,
   icon: Icon,
-  fromPlaceholder = 'Data inicial',
-  toPlaceholder = 'Data final',
+  fromPlaceholder = 'Início',
+  toPlaceholder = 'Final',
   showClearButton = true,
   showPresets = false,
   disabled = false,
@@ -165,11 +165,15 @@ export function DateRangeFilter({
       alignItems: 'center',
       gap: spacing.sm,
     },
+    separatorContainer: {
+      height: 48,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 4,
+    },
     separator: {
       fontSize: 14,
       color: colors.mutedForeground,
-      textAlign: 'center',
-      marginVertical: spacing.xs,
     },
     presetsContainer: {
       marginTop: spacing.xs,
@@ -225,7 +229,9 @@ export function DateRangeFilter({
           style={{ flex: 1 }}
         />
 
-        <Text style={styles.separator}>até</Text>
+        <View style={styles.separatorContainer}>
+          <Text style={styles.separator}>até</Text>
+        </View>
 
         <DatePicker
           value={value?.to}

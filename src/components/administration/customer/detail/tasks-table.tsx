@@ -16,7 +16,7 @@ import { TaskTable, createColumnDefinitions } from "@/components/production/task
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { useDebounce } from "@/hooks/useDebouncedSearch";
-import { useTasks } from "@/hooks";
+import { useTasksInfiniteMobile } from "@/hooks";
 
 interface TasksTableProps {
   customer: Customer;
@@ -38,42 +38,45 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Fetch tasks for this specific customer
-  const queryParams = {
+  // Fetch tasks for this specific customer with infinite scroll
+  const {
+    items: tasks,
+    isLoading,
+    error,
+    loadMore,
+    canLoadMore,
+    isFetchingNextPage,
+    totalCount,
+  } = useTasksInfiniteMobile({
     where: {
       customerId: customer.id,
     },
     include: {
-      customer: true,
       sector: true,
-      generalPainting: true,
       services: {
         select: {
           id: true,
           name: true,
         },
       },
-      createdBy: {
-        select: {
-          name: true,
-          id: true,
-        },
-      },
     },
     orderBy: { createdAt: "desc" },
-    searchingFor: debouncedSearch || undefined,
-    page: 1,
-    limit: 50, // Get up to 50 tasks for this customer
-    enabled: true,
-  };
+    enabled: !!customer.id,
+  });
 
-  const {
-    data: tasksResponse,
-    isLoading,
-    error,
-  } = useTasks(queryParams);
+  // Filter tasks based on search (client-side for already loaded items)
+  const filteredTasks = useMemo(() => {
+    if (!debouncedSearch) return tasks;
 
-  const tasks = tasksResponse?.data || [];
+    const lowerSearch = debouncedSearch.toLowerCase();
+    return tasks.filter((task: any) => {
+      return (
+        task.name?.toLowerCase().includes(lowerSearch) ||
+        task.serialNumber?.toLowerCase().includes(lowerSearch) ||
+        task.sector?.name?.toLowerCase().includes(lowerSearch)
+      );
+    });
+  }, [tasks, debouncedSearch]);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -82,7 +85,6 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {
     const newColumnsArray = Array.from(newColumns);
     setVisibleColumnKeys(newColumnsArray);
-    // Note: In React Native, we would use AsyncStorage to persist preferences
   }, []);
 
   // Get default visible columns (for the customer detail view)
@@ -103,115 +105,95 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
     router.push(routeToMobilePath(routes.production.schedule.details(taskId)) as any);
   };
 
-  // Don't rely on totalTasks from _count since it might not be accurate
-  // Instead, check if we're still loading or have actual data
-  if (!isLoading && tasks.length === 0 && !searchQuery) {
-    return (
-      <>
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconClipboardList size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Tarefas Relacionadas</ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
-              <IconAlertCircle size={48} color={colors.mutedForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-                Nenhuma tarefa associada a este cliente.
-              </ThemedText>
-            </View>
-          </View>
-        </Card>
-
-        <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
-          <ColumnVisibilitySlidePanel
-            columns={allColumns}
-            visibleColumns={new Set(visibleColumnKeys)}
-            onVisibilityChange={handleColumnsChange}
-            onClose={handleCloseColumns}
-            defaultColumns={new Set(getDefaultVisibleColumns())}
-          />
-        </SlideInPanel>
-      </>
-    );
+  // Don't show if no tasks and not loading
+  if (!isLoading && tasks.length === 0 && !totalCount && !searchQuery) {
+    return null;
   }
 
   return (
     <>
       <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconClipboardList size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>
-            Tarefas Relacionadas {tasks.length > 0 && `(${tasks.length})`}
-          </ThemedText>
-        </View>
-      </View>
-
-      <View style={styles.content}>
-        {/* Search and Column Visibility Controls */}
-        <View style={styles.controlsContainer}>
-          <SearchBar
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Buscar tarefas..."
-            style={styles.searchBar}
-          />
-          <ListActionButton
-            icon={<IconList size={20} color={colors.foreground} />}
-            onPress={handleOpenColumns}
-            badgeCount={visibleColumnKeys.length}
-            badgeVariant="primary"
-          />
-        </View>
-
-        {/* Task Table */}
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <ThemedText style={styles.loadingText}>Carregando tarefas...</ThemedText>
-          </View>
-        ) : error ? (
-          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
-            <IconAlertCircle size={48} color={colors.mutedForeground} />
-            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-              Erro ao carregar tarefas.
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconClipboardList size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>
+              Tarefas Relacionadas {tasks.length > 0 && `(${tasks.length}${totalCount ? `/${totalCount}` : ""})`}
             </ThemedText>
           </View>
-        ) : tasks.length === 0 ? (
-          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
-            <IconAlertCircle size={48} color={colors.mutedForeground} />
-            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-              {searchQuery
-                ? `Nenhuma tarefa encontrada para "${searchQuery}".`
-                : "Nenhuma tarefa associada a este cliente."}
-            </ThemedText>
-          </View>
-        ) : (
-          <View style={[styles.tableContainer, { height: maxHeight || 400 }]}>
-            <TaskTable
-              tasks={tasks}
-              onTaskPress={handleTaskPress}
-              enableSwipeActions={false}
-              visibleColumnKeys={visibleColumnKeys}
+        </View>
+
+        <View style={styles.content}>
+          {/* Search and Column Visibility Controls */}
+          <View style={styles.controlsContainer}>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Buscar tarefas..."
+              style={styles.searchBar}
+            />
+            <ListActionButton
+              icon={<IconList size={20} color={colors.foreground} />}
+              onPress={handleOpenColumns}
+              badgeCount={visibleColumnKeys.length}
+              badgeVariant="primary"
             />
           </View>
-        )}
-      </View>
-    </Card>
 
-    <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
-      <ColumnVisibilitySlidePanel
-        columns={allColumns}
-        visibleColumns={new Set(visibleColumnKeys)}
-        onVisibilityChange={handleColumnsChange}
-        onClose={handleCloseColumns}
-        defaultColumns={new Set(getDefaultVisibleColumns())}
-      />
-    </SlideInPanel>
-  </>
+          {/* Task Table */}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <ThemedText style={styles.loadingText}>Carregando tarefas...</ThemedText>
+            </View>
+          ) : error ? (
+            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+              <IconAlertCircle size={48} color={colors.mutedForeground} />
+              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+                Erro ao carregar tarefas.
+              </ThemedText>
+            </View>
+          ) : filteredTasks.length === 0 ? (
+            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+              <IconAlertCircle size={48} color={colors.mutedForeground} />
+              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+                {searchQuery
+                  ? `Nenhuma tarefa encontrada para "${searchQuery}".`
+                  : "Nenhuma tarefa associada a este cliente."}
+              </ThemedText>
+            </View>
+          ) : (
+            <View style={[styles.tableContainer, { height: maxHeight, maxHeight: maxHeight }]}>
+              <TaskTable
+                tasks={filteredTasks}
+                onTaskPress={handleTaskPress}
+                enableSwipeActions={false}
+                visibleColumnKeys={visibleColumnKeys}
+                onEndReached={() => canLoadMore && loadMore()}
+                onEndReachedThreshold={0.5}
+                disableVirtualization={true}
+                ListFooterComponent={
+                  isFetchingNextPage ? (
+                    <View style={styles.footerLoader}>
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    </View>
+                  ) : null
+                }
+              />
+            </View>
+          )}
+        </View>
+      </Card>
+
+      <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
+        <ColumnVisibilitySlidePanel
+          columns={allColumns}
+          visibleColumns={new Set(visibleColumnKeys)}
+          onVisibilityChange={handleColumnsChange}
+          onClose={handleCloseColumns}
+          defaultColumns={new Set(getDefaultVisibleColumns())}
+        />
+      </SlideInPanel>
+    </>
   );
 }
 
@@ -248,9 +230,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tableContainer: {
-    flex: 1,
     overflow: 'hidden',
     marginHorizontal: -8,
+    minHeight: 200,
   },
   loadingContainer: {
     paddingVertical: spacing.xxl,
@@ -272,5 +254,9 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: fontSize.sm,
     textAlign: "center",
+  },
+  footerLoader: {
+    paddingVertical: spacing.md,
+    alignItems: "center",
   },
 });

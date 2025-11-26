@@ -325,7 +325,8 @@ export const AirbrushingTable = React.memo<AirbrushingTableProps>(
             style={StyleSheet.flatten([
               styles.headerContainer,
               {
-                backgroundColor: isDark ? extendedColors.neutral[800] : extendedColors.neutral[100],
+                backgroundColor: colors.card,
+                borderBottomColor: colors.border,
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
@@ -400,7 +401,8 @@ export const AirbrushingTable = React.memo<AirbrushingTableProps>(
                   style={StyleSheet.flatten([
                     styles.row,
                     {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                      backgroundColor: isEven ? colors.background : colors.card,
+                      borderBottomColor: "rgba(0,0,0,0.05)",
                     },
                     isSelected && { backgroundColor: colors.primary + "20" },
                   ])}
@@ -532,7 +534,7 @@ export const AirbrushingTable = React.memo<AirbrushingTableProps>(
 
     return (
       <View style={styles.wrapper}>
-        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background, borderColor: colors.border }])} onPress={handleContainerPress}>
+        <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: "transparent", borderColor: colors.border }])} onPress={handleContainerPress}>
           {renderHeader()}
           <FlatList
             data={airbrushings}
@@ -571,7 +573,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "transparent",
     borderRadius: 8,
     borderWidth: 1,
     overflow: "hidden",

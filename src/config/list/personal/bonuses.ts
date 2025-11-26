@@ -131,7 +131,7 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
       },
       {
         key: 'averageTasksPerUser',
-        label: 'MÉDIA',
+        label: 'MÉDIA/COLAB.',
         sortable: true,
         width: 1.0,
         align: 'center',
@@ -198,11 +198,11 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
         onPress: (bonus, router) => {
           // @ts-ignore - isLive is dynamically added
           if (bonus.isLive) {
-            // Navigate to simulation for live bonus
-            router.push(routeToMobilePath(routes.personal.myBonuses.simulation) as any)
+            // Navigate to current bonus page for live bonus
+            router.push('/(tabs)/pessoal/meu-bonus' as any)
           } else {
             // Navigate to details for saved bonus
-            router.push(routeToMobilePath(routes.personal.myBonuses.details(bonus.id)) as any)
+            router.push(`/(tabs)/pessoal/meu-bonus/detalhes/${bonus.id}` as any)
           }
         },
       },
@@ -210,9 +210,11 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
     onRowPress: (bonus, router) => {
       // @ts-ignore - isLive is dynamically added
       if (bonus.isLive) {
-        router.push(routeToMobilePath(routes.personal.myBonuses.simulation) as any)
+        // Navigate to current bonus page for live bonus
+        router.push('/(tabs)/pessoal/meu-bonus' as any)
       } else {
-        router.push(routeToMobilePath(routes.personal.myBonuses.details(bonus.id)) as any)
+        // Navigate to details for saved bonus
+        router.push(`/(tabs)/pessoal/meu-bonus/detalhes/${bonus.id}` as any)
       }
     },
   },
@@ -292,7 +294,7 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
       },
       {
         key: 'averageTasksPerUser',
-        label: 'Média por Usuário',
+        label: 'Média por Colaborador',
         path: 'averageTasksPerUser',
         format: (value) => formatDecimal(value)
       },
@@ -311,19 +313,6 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
   },
 
   // No create/edit/delete for personal bonuses - read-only view
-  // But add simulation button in toolbar
-  actions: {
-    toolbar: [
-      {
-        key: 'simulation',
-        icon: 'calculator',
-        variant: 'primary',
-        onPress: (router) => {
-          router.push('/(tabs)/pessoal/simulacao-bonus' as any)
-        },
-      },
-    ],
-  },
 
   emptyState: {
     icon: 'currency-dollar',

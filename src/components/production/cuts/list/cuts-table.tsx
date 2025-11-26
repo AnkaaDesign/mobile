@@ -329,7 +329,8 @@ export const CutsTable = React.memo<CutsTableProps>(
             style={StyleSheet.flatten([
               styles.headerContainer,
               {
-                backgroundColor: isDark ? extendedColors.neutral[800] : extendedColors.neutral[100],
+                backgroundColor: colors.card,
+                borderBottomColor: colors.border,
               },
             ])}
             contentContainerStyle={{ paddingHorizontal: 16 }}
@@ -405,7 +406,8 @@ export const CutsTable = React.memo<CutsTableProps>(
                   style={StyleSheet.flatten([
                     styles.row,
                     {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                      backgroundColor: isEven ? colors.background : colors.card,
+                      borderBottomColor: "rgba(0,0,0,0.05)",
                     },
                     isSelected && { backgroundColor: colors.primary + "20" },
                   ])}

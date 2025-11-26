@@ -13,14 +13,9 @@ export interface Borrow extends BaseEntity {
   itemId: string;
   userId: string;
   quantity: number;
-  quantityReturned: number;
   status: BORROW_STATUS;
   statusOrder: number;
-  expectedReturnDate: Date | null;
   returnedAt: Date | null;
-  notes: string | null;
-  reason: string | null;
-  conditionNotes: string | null;
 
   // Relations (optional, populated based on query)
   item?: Item;
@@ -51,10 +46,8 @@ export interface BorrowIncludes {
 export interface BorrowOrderBy {
   id?: ORDER_BY_DIRECTION;
   quantity?: ORDER_BY_DIRECTION;
-  quantityReturned?: ORDER_BY_DIRECTION;
   status?: ORDER_BY_DIRECTION;
   statusOrder?: ORDER_BY_DIRECTION;
-  expectedReturnDate?: ORDER_BY_DIRECTION;
   returnedAt?: ORDER_BY_DIRECTION;
   createdAt?: ORDER_BY_DIRECTION;
   updatedAt?: ORDER_BY_DIRECTION;

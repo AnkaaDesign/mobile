@@ -121,39 +121,6 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         format: 'date',
       },
       {
-        key: 'quantityReturned',
-        label: 'QTD. DEVOLVIDA',
-        sortable: true,
-        width: 1.2,
-        align: 'center',
-        render: (borrow) => String(borrow.quantityReturned || 0),
-        format: 'number',
-      },
-      {
-        key: 'reason',
-        label: 'MOTIVO',
-        sortable: false,
-        width: 1.5,
-        align: 'left',
-        render: (borrow) => borrow.reason || '-',
-      },
-      {
-        key: 'notes',
-        label: 'OBSERVAÇÕES',
-        sortable: false,
-        width: 1.8,
-        align: 'left',
-        render: (borrow) => borrow.notes || '-',
-      },
-      {
-        key: 'conditionNotes',
-        label: 'CONDIÇÃO',
-        sortable: false,
-        width: 1.5,
-        align: 'left',
-        render: (borrow) => borrow.conditionNotes || '-',
-      },
-      {
         key: 'updatedAt',
         label: 'ATUALIZADO EM',
         sortable: true,
@@ -200,7 +167,6 @@ export const borrowsListConfig: ListConfig<Borrow> = {
             data: {
               status: BORROW_STATUS.RETURNED,
               returnedAt: new Date(),
-              quantityReturned: borrow.quantity,
             },
           })
         },
@@ -242,12 +208,54 @@ export const borrowsListConfig: ListConfig<Borrow> = {
   },
 
   filters: {
+    defaultValues: {
+      statusIds: [BORROW_STATUS.ACTIVE],
+    },
     fields: [
+      {
+        key: 'statusIds',
+        label: 'Status',
+        type: 'select',
+        multiple: true,
+        options: Object.values(BORROW_STATUS).map((status) => ({
+          label: BORROW_STATUS_LABELS[status],
+          value: status,
+        })),
+        placeholder: 'Selecione os status',
+      },
       {
         key: 'itemIds',
         label: 'Itens',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['items', 'filter', 'tools'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getItems } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getItems({
+              where: {
+                ...(searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : {}),
+                category: { type: 'TOOL' },
+              },
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((item: any) => ({
+                label: `${item.name} (${item.uniCode || '-'})`,
+                value: item.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Item Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione itens...',
       },
       {
@@ -255,35 +263,32 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         label: 'Usuários',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['users', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getUsers } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getUsers({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((user: any) => ({
+                label: user.name,
+                value: user.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[User Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione usuários...',
-      },
-      {
-        key: 'categoryIds',
-        label: 'Categorias',
-        type: 'select',
-        multiple: true,
-        placeholder: 'Selecione categorias...',
-      },
-      {
-        key: 'brandIds',
-        label: 'Marcas',
-        type: 'select',
-        multiple: true,
-        placeholder: 'Selecione marcas...',
-      },
-      {
-        key: 'status',
-        label: 'Status',
-        type: 'select',
-        multiple: false,
-        options: [
-          { label: 'Todos os status', value: 'all' },
-          ...Object.values(BORROW_STATUS).map((status) => ({
-            label: BORROW_STATUS_LABELS[status],
-            value: status,
-          })),
-        ],
-        placeholder: 'Todos os status',
       },
       {
         key: 'createdAt',
@@ -316,13 +321,9 @@ export const borrowsListConfig: ListConfig<Borrow> = {
       { key: 'brand', label: 'Marca', path: 'item.brand.name' },
       { key: 'userName', label: 'Usuário', path: 'user.name' },
       { key: 'quantity', label: 'Quantidade', path: 'quantity', format: 'number' },
-      { key: 'quantityReturned', label: 'Quantidade Devolvida', path: 'quantityReturned', format: 'number' },
       { key: 'status', label: 'Status', path: 'status', format: 'enum', enumLabels: BORROW_STATUS_LABELS },
       { key: 'createdAt', label: 'Emprestado Em', path: 'createdAt', format: 'date' },
       { key: 'returnedAt', label: 'Devolvido Em', path: 'returnedAt', format: 'date' },
-      { key: 'reason', label: 'Motivo', path: 'reason' },
-      { key: 'notes', label: 'Observações', path: 'notes' },
-      { key: 'conditionNotes', label: 'Condição', path: 'conditionNotes' },
       { key: 'updatedAt', label: 'Atualizado Em', path: 'updatedAt', format: 'date' },
     ],
   },

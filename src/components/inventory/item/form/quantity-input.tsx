@@ -26,15 +26,14 @@ export function QuantityInput({ disabled, required }: QuantityInputProps) {
           </Label>
           <Input
             id="quantity"
-            value={value?.toString() || "0"}
-            onChangeText={(text) => {
-              const num = parseInt(text, 10);
-              onChange(isNaN(num) ? 0 : num);
-            }}
+            fieldKey="quantity"
+            type="natural"
+            value={value}
+            onChangeText={onChange}
             onBlur={onBlur}
             placeholder="0"
-            editable={!disabled}
-            keyboardType="numeric"
+            disabled={disabled}
+            min={0}
           />
           {error && <ThemedText variant="destructive" style={{ fontSize: 14, marginTop: 4 }}>{error.message}</ThemedText>}
         </View>

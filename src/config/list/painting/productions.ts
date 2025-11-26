@@ -133,6 +133,31 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
         label: 'Tipos de Tinta',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['paintTypes', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getPaintTypes } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getPaintTypes({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((type: any) => ({
+                label: type.name,
+                value: type.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[PaintType Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os tipos de tinta',
       },
       {
@@ -166,6 +191,31 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
         label: 'Marcas de Tinta',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['paintBrands', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getPaintBrands } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getPaintBrands({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((brand: any) => ({
+                label: brand.name,
+                value: brand.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[PaintBrand Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione as marcas de tinta',
       },
       {
@@ -173,6 +223,31 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
         label: 'Fórmulas',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['formulas', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getFormulas } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getFormulas({
+              where: searchTerm ? { code: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { code: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((formula: any) => ({
+                label: formula.code,
+                value: formula.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Formula Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione as fórmulas',
       },
       {

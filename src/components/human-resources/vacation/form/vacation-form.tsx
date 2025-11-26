@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,8 +12,10 @@ import { Switch } from "@/components/ui/switch";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
-import { formSpacing, formTypography } from "@/constants/form-styles";
+import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
+import { useKeyboardAwareScroll } from "@/hooks";
+import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 import { vacationCreateSchema, vacationUpdateSchema } from "@/schemas/vacation";
 import type { VacationCreateFormData, VacationUpdateFormData } from "@/schemas/vacation";
@@ -47,6 +49,7 @@ const VACATION_STATUS_LABELS = {
 export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFormProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useVacationMutations();
 
   const { data: users } = useUsers({
@@ -120,20 +123,33 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
     label,
   }));
 
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView} keyboardVerticalOffset={0}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      >
         <ScrollView
+          ref={refs.scrollViewRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
         >
-        {/* Main Form Card */}
-        <FormCard
-          title="Informações das Férias"
-          subtitle="Preencha as informações do período de férias"
-        >
+          <KeyboardAwareFormProvider value={keyboardContextValue}>
+          {/* Main Form Card */}
+          <FormCard title="Informações das Férias">
           {/* Collective Toggle */}
           <FormFieldGroup label="Férias Coletivas" helper="Férias aplicadas a todos os colaboradores">
             <View style={styles.switchRow}>
@@ -268,9 +284,9 @@ export function VacationForm({ mode, vacation, onSuccess, onCancel }: VacationFo
             </FormFieldGroup>
           </FormRow>
         </FormCard>
+          </KeyboardAwareFormProvider>
         </ScrollView>
 
-        {/* Standardized Action Bar */}
         <SimpleFormActionBar
           onCancel={handleCancel}
           onSubmit={form.handleSubmit(handleSubmit)}
@@ -294,9 +310,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: formSpacing.containerPaddingHorizontal, // 16px
-    paddingTop: formSpacing.containerPaddingVertical, // 16px
+    paddingHorizontal: formSpacing.containerPaddingHorizontal,
+    paddingTop: formSpacing.containerPaddingVertical,
     paddingBottom: 0, // No spacing - action bar has its own margin
+  },
+  fieldGroup: {
+    gap: spacing.lg,
   },
   switchRow: {
     flexDirection: "row",

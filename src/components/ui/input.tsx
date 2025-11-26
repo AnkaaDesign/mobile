@@ -1,7 +1,8 @@
 import * as React from "react";
-import { TextInput, View, ViewStyle, TextStyle, TextInputProps, Animated, StyleSheet, ActivityIndicator} from "react-native";
+import { TextInput, View, ViewStyle, TextStyle, TextInputProps, Animated, StyleSheet, ActivityIndicator, LayoutChangeEvent } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, fontSize, transitions } from "@/constants/design-system";
+import { useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
 import {
   formatCPF,
   formatCNPJ,
@@ -78,6 +79,9 @@ export interface InputProps extends Omit<TextInputProps, "value" | "onChangeText
   // Accessibility props
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  // Keyboard-aware form integration
+  // Unique identifier for this field to enable keyboard-aware scrolling
+  fieldKey?: string;
 }
 
 const Input = React.forwardRef<TextInput, InputProps>(
@@ -105,6 +109,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
       max,
       step,
       loading = false,
+      fieldKey,
       ...props
     },
     ref,
@@ -115,6 +120,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
     // Handle disabled prop
     const isEditable = disabled !== undefined ? !disabled : editable;
     const { colors } = useTheme();
+    const keyboardContext = useKeyboardAwareForm();
     const [isFocused, setIsFocused] = React.useState(false);
     const [internalValue, setInternalValue] = React.useState("");
     const [isCepLoading, setIsCepLoading] = React.useState(false);
@@ -791,8 +797,29 @@ const Input = React.forwardRef<TextInput, InputProps>(
 
     const isLoading = loading || (type === "cep" && showCepLoading && isCepLoading);
 
+    // Handle layout for keyboard-aware scrolling
+    const handleLayout = React.useCallback((event: LayoutChangeEvent) => {
+      if (fieldKey && keyboardContext?.onFieldLayout) {
+        keyboardContext.onFieldLayout(fieldKey, event);
+      }
+    }, [fieldKey, keyboardContext]);
+
+    // Handle focus for keyboard-aware scrolling
+    const handleInputFocus = React.useCallback((e: any) => {
+      setIsFocused(true);
+      // Notify keyboard context about focus for auto-scrolling
+      if (fieldKey && keyboardContext?.onFieldFocus) {
+        keyboardContext.onFieldFocus(fieldKey);
+      }
+      props.onFocus?.(e);
+    }, [fieldKey, keyboardContext, props.onFocus]);
+
     return (
-      <View style={baseContainerStyles} className={className}>
+      <View
+        style={baseContainerStyles}
+        className={className}
+        onLayout={handleLayout}
+      >
         <Animated.View style={animatedShadowStyles}>
           <Animated.View style={[baseContainerViewStyles, animatedStyles]}>
             <TextInput
@@ -807,10 +834,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
               placeholder={getPlaceholder()}
               maxLength={getMaxLength()}
               secureTextEntry={getSecureTextEntry()}
-              onFocus={(e) => {
-                setIsFocused(true);
-                props.onFocus?.(e);
-              }}
+              onFocus={handleInputFocus}
               onBlur={handleBlur}
               accessible={true}
               accessibilityLabel={props.accessibilityLabel || getPlaceholder()}

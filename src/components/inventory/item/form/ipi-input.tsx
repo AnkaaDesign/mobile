@@ -44,20 +44,19 @@ export function IpiInput({ disabled, required, priceFieldName }: IpiInputProps) 
             <View style={{ flex: 1 }}>
               <Input
                 id="ipi"
-                value={value?.toString() || "0"}
-                onChangeText={(text) => {
-                  const num = parseFloat(text);
-                  onChange(isNaN(num) ? 0 : num);
-                }}
+                fieldKey="ipi"
+                type="percentage"
+                value={value}
+                onChangeText={onChange}
                 onBlur={onBlur}
                 placeholder="0"
-                editable={!disabled}
-                keyboardType="decimal-pad"
-                maxLength={6}
-                style={{ backgroundColor: 'transparent' }}
+                disabled={disabled}
+                min={0}
+                max={100}
+                decimals={2}
+                transparent
               />
             </View>
-            <ThemedText style={{ fontSize: 14, color: "#6b7280" }}>%</ThemedText>
           </View>
           {priceFieldName && (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 }}>

@@ -172,8 +172,9 @@ export const Tags = memo(function Tags({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    paddingVertical: 0,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
   },
   scrollContent: {
     gap: 8,

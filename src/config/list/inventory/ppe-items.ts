@@ -18,15 +18,6 @@ export const ppeItemsListConfig: ListConfig<Item> = {
       category: true,
       supplier: true,
       measures: true,
-      prices: {
-        where: {
-          isActive: true,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        take: 1,
-      },
     },
     where: {
       category: {
@@ -166,6 +157,34 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         label: 'Categorias',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['categories', 'filter', 'ppe'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getCategories } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getCategories({
+              where: {
+                type: 'PPE',
+                ...(searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : {}),
+              },
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((category: any) => ({
+                label: category.name,
+                value: category.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Category Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione as categorias',
       },
       {
@@ -173,6 +192,31 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         label: 'Marcas',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['brands', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getBrands } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getBrands({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((brand: any) => ({
+                label: brand.name,
+                value: brand.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Brand Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione as marcas',
       },
       {
@@ -180,6 +224,36 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         label: 'Fornecedores',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['suppliers', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getSuppliers } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getSuppliers({
+              where: searchTerm ? {
+                OR: [
+                  { fantasyName: { contains: searchTerm, mode: 'insensitive' } },
+                  { corporateName: { contains: searchTerm, mode: 'insensitive' } },
+                ],
+              } : undefined,
+              orderBy: { fantasyName: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((supplier: any) => ({
+                label: supplier.fantasyName || supplier.corporateName || 'Sem nome',
+                value: supplier.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Supplier Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os fornecedores',
       },
       {

@@ -54,72 +54,7 @@ export function BorrowCard({ borrow }: BorrowCardProps) {
               {borrow.quantity}
             </ThemedText>
           </View>
-
-          <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-            <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
-              Quantidade Devolvida
-            </ThemedText>
-            <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-              {borrow.quantityReturned}
-            </ThemedText>
-          </View>
-
-          <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-            <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
-              Quantidade Pendente
-            </ThemedText>
-            <ThemedText
-              style={[
-                styles.fieldValue,
-                { color: borrow.quantity - borrow.quantityReturned > 0 ? "#ea580c" : colors.foreground },
-              ]}
-            >
-              {borrow.quantity - borrow.quantityReturned}
-            </ThemedText>
-          </View>
         </View>
-
-        {/* Notes Section */}
-        {(borrow.notes || borrow.reason || borrow.conditionNotes) && (
-          <View style={[styles.section, styles.notesSection, { borderTopColor: colors.border + "50" }]}>
-            <ThemedText style={[styles.subsectionHeader, { color: colors.foreground }]}>
-              Observações
-            </ThemedText>
-
-            {borrow.reason && (
-              <View style={styles.noteItem}>
-                <ThemedText style={[styles.noteLabel, { color: colors.mutedForeground }]}>
-                  Motivo
-                </ThemedText>
-                <ThemedText style={[styles.noteValue, { color: colors.foreground }]}>
-                  {borrow.reason}
-                </ThemedText>
-              </View>
-            )}
-
-            {borrow.notes && (
-              <View style={styles.noteItem}>
-                <ThemedText style={[styles.noteLabel, { color: colors.mutedForeground }]}>
-                  Notas
-                </ThemedText>
-                <ThemedText style={[styles.noteValue, { color: colors.foreground }]}>
-                  {borrow.notes}
-                </ThemedText>
-              </View>
-            )}
-
-            {borrow.conditionNotes && (
-              <View style={styles.noteItem}>
-                <ThemedText style={[styles.noteLabel, { color: colors.mutedForeground }]}>
-                  Condição
-                </ThemedText>
-                <ThemedText style={[styles.noteValue, { color: colors.foreground }]}>
-                  {borrow.conditionNotes}
-                </ThemedText>
-              </View>
-            )}
-          </View>
-        )}
       </View>
     </Card>
   );

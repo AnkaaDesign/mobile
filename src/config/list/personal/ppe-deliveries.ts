@@ -143,6 +143,34 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         label: 'Tipos de EPI',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['categories', 'filter', 'ppe'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getCategories } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getCategories({
+              where: {
+                ...(searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : {}),
+                type: 'PPE',
+              },
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((category: any) => ({
+                label: category.name,
+                value: category.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Category Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os tipos',
       },
       {

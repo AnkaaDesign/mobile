@@ -27,24 +27,19 @@ export function LeadTimeInput({ disabled }: LeadTimeInputProps) {
             <View style={{ flex: 1 }}>
               <Input
                 id="estimatedLeadTime"
-                value={value?.toString() || ""}
-                onChangeText={(text) => {
-                  if (text === "") {
-                    onChange(null);
-                  } else {
-                    const num = parseInt(text, 10);
-                    onChange(isNaN(num) ? null : num);
-                  }
-                }}
+                fieldKey="estimatedLeadTime"
+                type="natural"
+                value={value}
+                onChangeText={onChange}
                 onBlur={onBlur}
                 placeholder="30"
-                editable={!disabled}
-                keyboardType="numeric"
+                disabled={disabled}
+                min={1}
               />
             </View>
             <ThemedText style={{ fontSize: 14, color: "#6b7280" }}>dias</ThemedText>
           </View>
-          {error && <ThemedText style={{ fontSize: 14, color: "#ef4444", marginTop: 4 }}>{error.message}</ThemedText>}
+          {error && <ThemedText variant="destructive" style={{ fontSize: 14, marginTop: 4 }}>{error.message}</ThemedText>}
         </View>
       )}
     />

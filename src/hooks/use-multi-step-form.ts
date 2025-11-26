@@ -192,6 +192,16 @@ export function useMultiStepForm<TFormData = Record<string, unknown>>(
     return new Set<string>(state.selectedItems);
   }, [state.selectedItems]);
 
+  // Invalidate validation cache when form data or selections change
+  // This allows the "Next" button to be re-enabled after user makes changes
+  useEffect(() => {
+    setStepValidationCache((prev) => {
+      // Only clear the current step's cache, not all steps
+      const { [state.currentStep]: _, ...rest } = prev;
+      return rest;
+    });
+  }, [state.formData, state.selectedItems, state.currentStep]);
+
   // Validate current step
   const validateCurrentStep = useCallback(async (): Promise<boolean> => {
     if (!validateStep) return true;

@@ -19,6 +19,7 @@ export interface Bonus extends BaseEntity {
   baseBonus: number | { toNumber: () => number }; // Decimal from Prisma
   ponderedTaskCount: number | { toNumber: () => number }; // Decimal from Prisma
   averageTasksPerUser: number | { toNumber: () => number }; // Decimal from Prisma
+  eligibleUsersCount?: number; // Number of eligible users at the time of calculation
   calculationPeriodStart: Date;
   calculationPeriodEnd: Date;
 

@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import { View, TouchableOpacity , StyleSheet} from "react-native";
 import { Controller, useFieldArray, useFormContext } from "react-hook-form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { FormCard } from "@/components/ui/form-section";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Combobox } from "@/components/ui/combobox";
-
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
@@ -120,32 +118,23 @@ export function MeasuresManager({ disabled }: MeasuresManagerProps) {
 
   if (!fields.length && disabled) {
     return (
-      <Card style={styles.card}>
-        <CardContent style={styles.emptyContent}>
+      <FormCard title="Medidas do Produto">
+        <View style={styles.emptyContent}>
           <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted }])}>
             <IconRuler size={24} color={colors.mutedForeground} />
           </View>
           <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>Nenhuma medida cadastrada</ThemedText>
-        </CardContent>
-      </Card>
+        </View>
+      </FormCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      <CardHeader>
-        <View style={styles.headerRow}>
-          <CardTitle style={styles.title}>Medidas do Produto</CardTitle>
-          {!disabled && (
-            <Button variant="outline" size="sm" onPress={addNewMeasure} style={styles.addButton}>
-              <IconPlus size={16} color={colors.primary} />
-              <ThemedText style={StyleSheet.flatten([styles.addButtonText, { color: colors.primary }])}>Adicionar</ThemedText>
-            </Button>
-          )}
-        </View>
-      </CardHeader>
-      <CardContent>
-        <View style={styles.measuresContainer}>
+    <FormCard
+      title="Medidas do Produto"
+      action={!disabled ? { label: "+ Adicionar", onPress: addNewMeasure } : undefined}
+    >
+      <View style={styles.measuresContainer}>
           {fields.map((field, index) => (
             <Controller
               key={field.id}
@@ -268,35 +257,12 @@ export function MeasuresManager({ disabled }: MeasuresManagerProps) {
               <ThemedText style={StyleSheet.flatten([styles.addPromptText, { color: colors.mutedForeground }])}>Adicionar primeira medida</ThemedText>
             </TouchableOpacity>
           )}
-        </View>
-      </CardContent>
-    </Card>
+      </View>
+    </FormCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    marginBottom: spacing.lg,
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: {
-    flex: 1,
-  },
-  addButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    minWidth: "auto",
-  },
-  addButtonText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
   measuresContainer: {
     gap: spacing.md,
   },

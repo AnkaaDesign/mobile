@@ -1,6 +1,6 @@
 // Main Forms
 export { BorrowEditForm } from "./borrow-edit-form";
-export { BorrowBatchCreateForm } from "./borrow-batch-create-form-v2";
+export { BorrowBatchCreateForm } from "./borrow-batch-create-form";
 export { BorrowReturnForm } from "./borrow-return-form";
 
 // Form Components

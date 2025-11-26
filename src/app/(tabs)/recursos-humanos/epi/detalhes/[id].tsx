@@ -17,6 +17,9 @@ import { Button } from "@/components/ui/button";
 // Import item detail components (matching web pattern)
 import { SpecificationsCard, MetricsCard, PpeInfoCard, ActivityHistoryCard, RelatedItemsCard } from "@/components/inventory/item/detail";
 
+// Import PPE-specific detail components
+import { DeliveriesTable, SchedulesTable } from "@/components/human-resources/ppe/detail";
+
 // Import skeleton
 import { PpeDetailSkeleton } from "@/components/human-resources/ppe/skeleton";
 
@@ -79,6 +82,22 @@ export default function PPEDetailsScreen() {
         },
         orderBy: { createdAt: "desc" },
         take: 50,
+      },
+      ppeDeliveries: {
+        include: {
+          user: {
+            include: {
+              position: true,
+            },
+          },
+          item: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      },
+      ppeSchedules: {
+        orderBy: { nextRun: "asc" },
+        take: 20,
       },
       changeLogs: {
         include: {
@@ -213,6 +232,12 @@ export default function PPEDetailsScreen() {
 
           {/* Activity History */}
           <ActivityHistoryCard item={item} />
+
+          {/* PPE Deliveries Table */}
+          <DeliveriesTable item={item} maxHeight={500} />
+
+          {/* PPE Schedules Table */}
+          <SchedulesTable item={item} maxHeight={400} />
 
           {/* Changelog Timeline */}
           <Card>

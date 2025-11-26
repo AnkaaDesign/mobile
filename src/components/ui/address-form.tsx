@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { fontSize, spacing } from "@/constants/design-system";
+import { useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
 import { ZipCodeInput } from "./zipcode-input";
-import { TextInput } from "./text-input";
+import { Input } from "./input";
+import { Label } from "./label";
 
 export interface AddressFormData {
   zipCode?: string;
@@ -34,6 +36,7 @@ export function AddressForm({
   containerStyle,
 }: AddressFormProps) {
   const { colors } = useTheme();
+  const keyboardContext = useKeyboardAwareForm();
   const [addressData, setAddressData] = useState<AddressFormData>(value);
 
   const handleFieldChange = (field: keyof AddressFormData, fieldValue: string | undefined) => {
@@ -77,6 +80,7 @@ export function AddressForm({
       {/* CEP - ZIP Code */}
       <ZipCodeInput
         label="CEP"
+        fieldKey="address-zipcode"
         value={addressData.zipCode}
         onChange={(val) => handleFieldChange("zipCode", val)}
         onCepChange={handleCepChange}
@@ -86,93 +90,120 @@ export function AddressForm({
       />
 
       {/* Street - Logradouro */}
-      <TextInput
-        label="Rua/Logradouro"
-        value={addressData.street || ""}
-        onChangeText={(val) => handleFieldChange("street", val)}
-        error={!!errors.street}
-        helperText={errors.street}
-        placeholder="Rua das Flores"
-        editable={!disabled}
-      />
+      <View style={styles.fieldContainer}>
+        <Label style={styles.label}>Rua/Logradouro</Label>
+        <Input
+          type="text"
+          fieldKey="address-street"
+          value={addressData.street || ""}
+          onChangeText={(val) => handleFieldChange("street", String(val ?? ""))}
+          error={!!errors.street}
+          errorMessage={errors.street}
+          placeholder="Rua das Flores"
+          disabled={disabled}
+        />
+      </View>
 
       {/* Number and Complement Row */}
       <View style={styles.row}>
         <View style={styles.numberField}>
-          <TextInput
-            label="Número"
-            value={addressData.number || ""}
-            onChangeText={(val) => handleFieldChange("number", val)}
-            error={!!errors.number}
-            helperText={errors.number}
-            placeholder="123"
-            keyboardType="numeric"
-            editable={!disabled}
-          />
+          <View style={styles.fieldContainer}>
+            <Label style={styles.label}>Número</Label>
+            <Input
+              type="natural"
+              fieldKey="address-number"
+              value={addressData.number || ""}
+              onChangeText={(val) => handleFieldChange("number", String(val ?? ""))}
+              error={!!errors.number}
+              errorMessage={errors.number}
+              placeholder="123"
+              disabled={disabled}
+            />
+          </View>
         </View>
         <View style={styles.complementField}>
-          <TextInput
-            label="Complemento"
-            value={addressData.complement || ""}
-            onChangeText={(val) => handleFieldChange("complement", val)}
-            error={!!errors.complement}
-            helperText={errors.complement}
-            placeholder="Apto 45"
-            editable={!disabled}
-          />
+          <View style={styles.fieldContainer}>
+            <Label style={styles.label}>Complemento</Label>
+            <Input
+              type="text"
+              fieldKey="address-complement"
+              value={addressData.complement || ""}
+              onChangeText={(val) => handleFieldChange("complement", String(val ?? ""))}
+              error={!!errors.complement}
+              errorMessage={errors.complement}
+              placeholder="Apto 45"
+              disabled={disabled}
+            />
+          </View>
         </View>
       </View>
 
       {/* Neighborhood */}
-      <TextInput
-        label="Bairro"
-        value={addressData.neighborhood || ""}
-        onChangeText={(val) => handleFieldChange("neighborhood", val)}
-        error={!!errors.neighborhood}
-        helperText={errors.neighborhood}
-        placeholder="Centro"
-        editable={!disabled}
-      />
+      <View style={styles.fieldContainer}>
+        <Label style={styles.label}>Bairro</Label>
+        <Input
+          type="text"
+          fieldKey="address-neighborhood"
+          value={addressData.neighborhood || ""}
+          onChangeText={(val) => handleFieldChange("neighborhood", String(val ?? ""))}
+          error={!!errors.neighborhood}
+          errorMessage={errors.neighborhood}
+          placeholder="Centro"
+          disabled={disabled}
+        />
+      </View>
 
       {/* City and State Row */}
       <View style={styles.row}>
         <View style={styles.cityField}>
-          <TextInput
-            label="Cidade"
-            value={addressData.city || ""}
-            onChangeText={(val) => handleFieldChange("city", val)}
-            error={!!errors.city}
-            helperText={errors.city}
-            placeholder="São Paulo"
-            editable={!disabled}
-          />
+          <View style={styles.fieldContainer}>
+            <Label style={styles.label}>Cidade</Label>
+            <Input
+              type="text"
+              fieldKey="address-city"
+              value={addressData.city || ""}
+              onChangeText={(val) => handleFieldChange("city", String(val ?? ""))}
+              error={!!errors.city}
+              errorMessage={errors.city}
+              placeholder="São Paulo"
+              disabled={disabled}
+            />
+          </View>
         </View>
         <View style={styles.stateField}>
-          <TextInput
-            label="Estado"
-            value={addressData.state || ""}
-            onChangeText={(val) => handleFieldChange("state", val)}
-            error={!!errors.state}
-            helperText={errors.state}
-            placeholder="SP"
-            maxLength={2}
-            autoCapitalize="characters"
-            editable={!disabled}
-          />
+          <View style={styles.fieldContainer}>
+            <Label style={styles.label}>Estado</Label>
+            <Input
+              type="text"
+              fieldKey="address-state"
+              value={addressData.state || ""}
+              onChangeText={(val) => handleFieldChange("state", String(val ?? ""))}
+              error={!!errors.state}
+              errorMessage={errors.state}
+              placeholder="SP"
+              maxLength={2}
+              autoCapitalize="characters"
+              disabled={disabled}
+            />
+          </View>
         </View>
       </View>
 
       {/* Country (optional) */}
       {showCountry && (
-        <TextInput
-          label="País"
-          value={addressData.country || "Brasil"}
-          onChangeText={(val) => handleFieldChange("country", val)}
-          error={!!errors.country}
-          helperText={errors.country}
-          placeholder="Brasil"
-          editable={!disabled}
-        />
+        <View style={styles.fieldContainer}>
+          <Label style={styles.label}>País</Label>
+          <Input
+            type="text"
+            fieldKey="address-country"
+            value={addressData.country || "Brasil"}
+            onChangeText={(val) => handleFieldChange("country", String(val ?? ""))}
+            error={!!errors.country}
+            errorMessage={errors.country}
+            placeholder="Brasil"
+            disabled={disabled}
+          />
+        </View>
       )}
     </View>
   );
@@ -186,6 +217,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: '600',
     marginBottom: spacing.md,
+  },
+  fieldContainer: {
+    marginBottom: spacing.sm,
+  },
+  label: {
+    marginBottom: spacing.xs,
   },
   row: {
     flexDirection: 'row',

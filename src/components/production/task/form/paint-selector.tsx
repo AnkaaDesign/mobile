@@ -247,7 +247,6 @@ export function GeneralPaintingSelector({
       minSearchLength={0}
       pageSize={50}
       debounceMs={300}
-      preferFullScreen={true}
     />
   );
 }
@@ -329,7 +328,6 @@ export function LogoPaintsSelector({
       pageSize={50}
       debounceMs={300}
       showCount={true}
-      preferFullScreen={true}
     />
   );
 }

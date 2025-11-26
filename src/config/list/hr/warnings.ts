@@ -151,6 +151,31 @@ export const warningsListConfig: ListConfig<Warning> = {
         label: 'Colaboradores',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['users', 'filter', 'collaborators'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getUsers } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getUsers({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((user: any) => ({
+                label: user.name,
+                value: user.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Collaborator Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os colaboradores',
       },
       {
@@ -158,6 +183,31 @@ export const warningsListConfig: ListConfig<Warning> = {
         label: 'Supervisores',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['users', 'filter', 'supervisors'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getUsers } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getUsers({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((user: any) => ({
+                label: user.name,
+                value: user.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Supervisor Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione os supervisores',
       },
       {
@@ -165,6 +215,31 @@ export const warningsListConfig: ListConfig<Warning> = {
         label: 'Testemunhas',
         type: 'select',
         multiple: true,
+        async: true,
+        queryKey: ['users', 'filter', 'witnesses'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getUsers } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getUsers({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((user: any) => ({
+                label: user.name,
+                value: user.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Witness Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
         placeholder: 'Selecione as testemunhas',
       },
       {

@@ -126,7 +126,6 @@ export function FrequencySelector({
         renderOption={renderOption}
         getOptionValue={(option) => option.value}
         getOptionLabel={(option) => option.label}
-        preferFullScreen={true}
       />
     </View>
   );

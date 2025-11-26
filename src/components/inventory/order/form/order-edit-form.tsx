@@ -3,6 +3,7 @@ import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert } f
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 import { orderUpdateSchema } from '@/schemas';
 import type { OrderUpdateFormData } from '@/schemas';
@@ -20,6 +21,7 @@ import { useTheme } from '@/lib/theme';
 import { showToast } from '@/lib/toast';
 import { getSuppliers } from '@/api-client';
 import type { Supplier } from '@/types';
+import { spacing } from '@/constants/design-system';
 
 interface OrderEditFormProps {
   orderId: string;
@@ -29,6 +31,7 @@ interface OrderEditFormProps {
 export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess }) => {
   const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const { data: order, isLoading: isLoadingOrder } = useOrder(orderId, {
     include: {
@@ -381,6 +384,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
     },
     content: {
       padding: theme.spacing.md,
+      paddingBottom: 0, // No spacing - action bar has its own margin
     },
     section: {
       marginBottom: theme.spacing.lg,
@@ -436,8 +440,13 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Card style={styles.section}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+          <Card style={styles.section}>
           <View style={styles.field}>
             <ThemedText style={styles.label}>
               Descrição <ThemedText style={styles.required}>*</ThemedText>
