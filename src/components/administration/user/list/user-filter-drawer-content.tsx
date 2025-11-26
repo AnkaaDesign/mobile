@@ -1,12 +1,20 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
-import { IconFilter, IconX, IconUserCheck, IconBriefcase, IconBuildingStore, IconShieldCheck } from '@tabler/icons-react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { IconFilter, IconX, IconCheck } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
-import { ThemedText } from '@/components/ui/themed-text';
-import { Combobox } from '@/components/ui/combobox';
+import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { getFilterIcon } from '@/lib/filter-icon-mapping';
+import {
+  BooleanFilter,
+  MultiSelectFilter,
+} from '@/components/common/filters';
 import { usePositions, useSectors } from "@/hooks";
 import { USER_STATUS, USER_STATUS_LABELS } from "@/constants";
+import { spacing } from '@/constants/design-system';
 import type { UserGetManyFormData } from '../../../../schemas';
 
 interface UserFilterDrawerContentProps {
@@ -135,13 +143,13 @@ export function UserFilterDrawerContent({
       }]}>
         <View style={styles.headerContent}>
           <IconFilter size={24} color={colors.foreground} />
-          <ThemedText style={styles.title}>Filtros de Usuários</ThemedText>
+          <Text style={styles.title}>Filtros de Usuários</Text>
           {activeFiltersCount > 0 && (
-            <View style={[styles.countBadge, { backgroundColor: colors.destructive }]}>
-              <ThemedText style={[styles.countText, { color: colors.destructiveForeground }]}>
+            <Badge variant="secondary">
+              <Text style={{ fontSize: 12, fontWeight: '600' }}>
                 {activeFiltersCount}
-              </ThemedText>
-            </View>
+              </Text>
+            </Badge>
           )}
         </View>
         <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -149,150 +157,81 @@ export function UserFilterDrawerContent({
         </TouchableOpacity>
       </View>
 
-      {/* Scrollable Content */}
+      {/* Filter List - Flat structure with icons */}
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 90 }]}
+        contentContainerStyle={[styles.scrollContent, {
+          paddingBottom: Math.max(insets.bottom, 16) + 90,
+          gap: spacing.lg
+        }]}
         showsVerticalScrollIndicator={true}
       >
-        {/* Status */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconUserCheck size={18} color={colors.mutedForeground} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Status
-            </ThemedText>
-          </View>
+        {/* Multi-Select: Status */}
+        <MultiSelectFilter
+          label="Status do Usuário"
+          icon={getFilterIcon('status')}
+          value={localFilters.statuses || []}
+          onChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: values.length > 0 ? values : undefined }))}
+          options={statusOptions}
+          placeholder="Todos os status"
+        />
 
-          <View style={styles.inputGroup}>
-            <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
-              Status do Usuário
-            </ThemedText>
-            <Combobox
-              options={statusOptions}
-              selectedValues={localFilters.statuses || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: values }))}
-              placeholder="Todos os status"
-              searchPlaceholder="Buscar status..."
-              emptyText="Nenhum status encontrado"
-            />
-          </View>
-        </View>
+        <Separator />
 
-        {/* Positions */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconBriefcase size={18} color={colors.mutedForeground} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Cargos
-            </ThemedText>
-          </View>
+        {/* Multi-Select: Positions */}
+        <MultiSelectFilter
+          label="Cargos"
+          icon={getFilterIcon('positionIds')}
+          value={localFilters.positionIds || []}
+          onChange={(values) => setLocalFilters((prev) => ({ ...prev, positionIds: values.length > 0 ? values : undefined }))}
+          options={positionOptions}
+          placeholder={positions.length === 0 ? 'Carregando cargos...' : 'Todos os cargos'}
+        />
 
-          <View style={styles.inputGroup}>
-            <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
-              Selecionar Cargos
-            </ThemedText>
-            <Combobox
-              options={positionOptions}
-              selectedValues={localFilters.positionIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, positionIds: values }))}
-              placeholder="Todos os cargos"
-              searchPlaceholder="Buscar cargos..."
-              emptyText="Nenhum cargo encontrado"
-            />
-          </View>
-        </View>
+        <Separator />
 
-        {/* Sectors */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconBuildingStore size={18} color={colors.mutedForeground} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Setores
-            </ThemedText>
-          </View>
+        {/* Multi-Select: Sectors */}
+        <MultiSelectFilter
+          label="Setores"
+          icon={getFilterIcon('sectorIds')}
+          value={localFilters.sectorIds || []}
+          onChange={(values) => setLocalFilters((prev) => ({ ...prev, sectorIds: values.length > 0 ? values : undefined }))}
+          options={sectorOptions}
+          placeholder={sectors.length === 0 ? 'Carregando setores...' : 'Todos os setores'}
+        />
 
-          <View style={styles.inputGroup}>
-            <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
-              Selecionar Setores
-            </ThemedText>
-            <Combobox
-              options={sectorOptions}
-              selectedValues={localFilters.sectorIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sectorIds: values }))}
-              placeholder="Todos os setores"
-              searchPlaceholder="Buscar setores..."
-              emptyText="Nenhum setor encontrado"
-            />
-          </View>
+        <Separator />
 
-          <View style={styles.inputGroup}>
-            <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>
-              Setores Gerenciados
-            </ThemedText>
-            <Combobox
-              options={sectorOptions}
-              selectedValues={localFilters.managedSectorIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, managedSectorIds: values }))}
-              placeholder="Todos os setores gerenciados"
-              searchPlaceholder="Buscar setores..."
-              emptyText="Nenhum setor encontrado"
-            />
-          </View>
-        </View>
+        {/* Multi-Select: Managed Sectors */}
+        <MultiSelectFilter
+          label="Setores Gerenciados"
+          icon={getFilterIcon('managedSectorIds')}
+          value={localFilters.managedSectorIds || []}
+          onChange={(values) => setLocalFilters((prev) => ({ ...prev, managedSectorIds: values.length > 0 ? values : undefined }))}
+          options={sectorOptions}
+          placeholder={sectors.length === 0 ? 'Carregando setores...' : 'Todos os setores gerenciados'}
+        />
 
-        {/* Verification */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconShieldCheck size={18} color={colors.mutedForeground} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Verificação e Permissões
-            </ThemedText>
-          </View>
+        <Separator />
 
-          <View style={[styles.filterItem, { borderBottomColor: colors.border }]}>
-            <TouchableOpacity
-              style={styles.filterTouchable}
-              onPress={() => setLocalFilters((prev) => ({ ...prev, verified: prev.verified === true ? undefined : true }))}
-              activeOpacity={0.7}
-            >
-              <View>
-                <ThemedText style={styles.filterLabel}>Usuário Verificado</ThemedText>
-                <ThemedText style={[styles.filterDescription, { color: colors.mutedForeground }]}>
-                  Filtrar por usuários com email verificado
-                </ThemedText>
-              </View>
-            </TouchableOpacity>
-            <RNSwitch
-              value={localFilters.verified === true}
-              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, verified: value ? true : undefined }))}
-              trackColor={{ false: colors.muted, true: colors.primary }}
-              thumbColor={localFilters.verified === true ? colors.primaryForeground : "#f4f3f4"}
-              ios_backgroundColor={colors.muted}
-            />
-          </View>
+        {/* Boolean: Verified */}
+        <BooleanFilter
+          label="Usuário Verificado"
+          icon={getFilterIcon('verified')}
+          description="Filtrar por usuários com email verificado"
+          value={localFilters.verified === true}
+          onChange={(value) => setLocalFilters((prev) => ({ ...prev, verified: value ? true : undefined }))}
+        />
 
-          <View style={[styles.filterItem, { borderBottomWidth: 0 }]}>
-            <TouchableOpacity
-              style={styles.filterTouchable}
-              onPress={() => setLocalFilters((prev) => ({ ...prev, hasManagedSector: prev.hasManagedSector === true ? undefined : true }))}
-              activeOpacity={0.7}
-            >
-              <View>
-                <ThemedText style={styles.filterLabel}>Gerencia Setor</ThemedText>
-                <ThemedText style={[styles.filterDescription, { color: colors.mutedForeground }]}>
-                  Filtrar por usuários que gerenciam setores
-                </ThemedText>
-              </View>
-            </TouchableOpacity>
-            <RNSwitch
-              value={localFilters.hasManagedSector === true}
-              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, hasManagedSector: value ? true : undefined }))}
-              trackColor={{ false: colors.muted, true: colors.primary }}
-              thumbColor={localFilters.hasManagedSector === true ? colors.primaryForeground : "#f4f3f4"}
-              ios_backgroundColor={colors.muted}
-            />
-          </View>
-        </View>
+        <Separator />
+
+        {/* Boolean: Has Managed Sector */}
+        <BooleanFilter
+          label="Gerencia Setor"
+          icon={getFilterIcon('hasManagedSector')}
+          description="Filtrar por usuários que gerenciam setores"
+          value={localFilters.hasManagedSector === true}
+          onChange={(value) => setLocalFilters((prev) => ({ ...prev, hasManagedSector: value ? true : undefined }))}
+        />
       </ScrollView>
 
       {/* Footer */}
@@ -301,20 +240,24 @@ export function UserFilterDrawerContent({
         borderTopColor: colors.border,
         paddingBottom: Math.max(insets.bottom, 16)
       }]}>
-        <TouchableOpacity
-          style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+        <Button
+          variant="outline"
           onPress={handleClear}
-          activeOpacity={0.7}
+          style={styles.footerButton}
         >
-          <ThemedText style={styles.footerBtnText}>Limpar</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.footerBtn, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+          <IconX size={18} color={colors.foreground} />
+          <Text style={{ marginLeft: spacing.xs }}>Limpar</Text>
+        </Button>
+        <Button
+          variant="default"
           onPress={handleApply}
-          activeOpacity={0.7}
+          style={styles.footerButton}
         >
-          <ThemedText style={[styles.footerBtnText, { color: colors.primaryForeground }]}>Aplicar</ThemedText>
-        </TouchableOpacity>
+          <IconCheck size={18} color={colors.background} />
+          <Text style={{ marginLeft: spacing.xs, color: colors.background }}>
+            Aplicar
+          </Text>
+        </Button>
       </View>
     </View>
   );
@@ -328,72 +271,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
     paddingBottom: 12,
     borderBottomWidth: 1,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
+    flex: 1,
   },
   title: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  countBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginLeft: 8,
-  },
-  countText: {
-    fontSize: 12,
+    fontSize: 18,
     fontWeight: "600",
   },
   scrollContent: {
-    paddingTop: 16,
-    paddingHorizontal: 16,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  filterItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  filterTouchable: {
-    flex: 1,
-    paddingRight: 16,
-  },
-  filterLabel: {
-    fontSize: 15,
-    fontWeight: "500",
-    marginBottom: 2,
-  },
-  filterDescription: {
-    fontSize: 13,
-  },
-  inputGroup: {
-    marginBottom: 10,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 4,
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.md,
   },
   footer: {
     position: "absolute",
@@ -401,21 +295,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 16,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingTop: 12,
     borderTopWidth: 1,
   },
-  footerBtn: {
+  footerButton: {
     flex: 1,
-    height: 48,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  footerBtnText: {
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

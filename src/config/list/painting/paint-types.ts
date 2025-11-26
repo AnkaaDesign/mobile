@@ -109,18 +109,21 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
     fields: [
       {
         key: 'needGround',
+        label: 'Necessita Primer',
         type: 'toggle',
         placeholder: 'Necessita Primer',
         description: 'Apenas tipos que necessitam primer',
       },
       {
         key: 'hasPaints',
+        label: 'Com Tintas',
         type: 'toggle',
         placeholder: 'Com Tintas',
         description: 'Apenas tipos com tintas cadastradas',
       },
       {
         key: 'createdAt',
+        label: 'Data de Cadastro',
         type: 'date-range',
         placeholder: 'Data de Cadastro',
       },

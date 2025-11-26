@@ -141,12 +141,26 @@ export const CalculationsTable = React.memo<CalculationsTableProps>(({
     );
   }
 
-  // Empty state
+  // Empty state with pull-to-refresh
   if (data.length === 0) {
     return (
       <View style={styles.wrapper}>
         <View style={[styles.container, { backgroundColor: colors.background, borderColor: colors.border }]}>
-          {renderEmpty()}
+          <ScrollView
+            contentContainerStyle={styles.emptyScrollContent}
+            refreshControl={
+              onRefresh ? (
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[colors.primary]}
+                  tintColor={colors.primary}
+                />
+              ) : undefined
+            }
+          >
+            {renderEmpty()}
+          </ScrollView>
         </View>
       </View>
     );
@@ -338,6 +352,10 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: fontSize.sm,
     opacity: 0.7,
+  },
+  emptyScrollContent: {
+    flex: 1,
+    minHeight: 400, // Ensure enough height for pull-to-refresh
   },
   emptyContainer: {
     flex: 1,

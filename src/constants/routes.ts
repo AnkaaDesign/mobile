@@ -132,7 +132,7 @@ export const routes = {
   humanResources: {
     bonusSimulation: "/recursos-humanos/simulacao-bonus",
     calculations: {
-      root: "/recursos-humanos/calculos-ponto",
+      root: "/recursos-humanos/calculos",
     },
     employees: {
       create: "/recursos-humanos/colaboradores/cadastrar",
@@ -193,7 +193,7 @@ export const routes = {
     },
     root: "/recursos-humanos",
     timeClock: {
-      root: "/recursos-humanos/registros-ponto",
+      root: "/recursos-humanos/controle-ponto",
     },
     vacations: {
       batchEdit: "/recursos-humanos/ferias/editar-em-lote",
@@ -232,13 +232,13 @@ export const routes = {
       },
     },
     timeEntries: {
-      root: "/recursos-humanos/registros-ponto",
-      details: (id: string) => `/recursos-humanos/registros-ponto/detalhes/${id}`,
-      list: "/recursos-humanos/registros-ponto/listar",
+      root: "/recursos-humanos/controle-ponto",
+      details: (id: string) => `/recursos-humanos/controle-ponto/detalhes/${id}`,
+      list: "/recursos-humanos/controle-ponto",
     },
     timeCalculations: {
-      root: "/recursos-humanos/calculos-ponto",
-      list: "/recursos-humanos/calculos-ponto/listar",
+      root: "/recursos-humanos/calculos",
+      list: "/recursos-humanos/calculos",
     },
     timeRequests: {
       root: "/recursos-humanos/requisicoes-ponto",
@@ -458,7 +458,7 @@ export const routes = {
 
   // Server - Servidor - Server Management
   server: {
-    backup: "/servidor/backup",
+    backup: "/servidor/backups/listar",
     changeLogs: {
       details: (id: string) => `/servidor/registros-de-alteracoes/detalhes/${id}`,
       root: "/servidor/registros-de-alteracoes",

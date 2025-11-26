@@ -1,5 +1,5 @@
-import { memo, useState, useEffect, useCallback } from 'react'
-import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
+import React, { memo, useState, useEffect, useCallback } from 'react'
+import { View, ScrollView, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Keyboard } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Button } from '@/components/ui/button'
@@ -20,9 +20,33 @@ export const Filters = memo(function Filters({
 }: FiltersProps) {
   const { colors } = useTheme()
   const insets = useSafeAreaInsets()
+  const scrollViewRef = React.useRef<ScrollView>(null)
 
   // Local state for uncommitted changes
   const [localValues, setLocalValues] = useState(values)
+  const [keyboardHeight, setKeyboardHeight] = useState(0)
+
+  // Track keyboard height and scroll moderately when keyboard shows
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow'
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide'
+
+    const showListener = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height)
+      // Scroll down to bring focused input into view
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ y: 300, animated: true })
+      }, 100)
+    })
+    const hideListener = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0)
+    })
+
+    return () => {
+      showListener.remove()
+      hideListener.remove()
+    }
+  }, [])
 
   // Sync local values when panel opens
   useEffect(() => {
@@ -116,7 +140,11 @@ export const Filters = memo(function Filters({
 
   return (
     <SlideInPanel isOpen={isOpen} onClose={onClose}>
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={[styles.container, { backgroundColor: colors.background }]}
+        keyboardVerticalOffset={0}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
@@ -139,8 +167,18 @@ export const Filters = memo(function Filters({
 
         {/* Fields */}
         <ScrollView
+          ref={scrollViewRef}
           style={styles.content}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingBottom: keyboardHeight > 0
+                ? keyboardHeight + 80
+                : insets.bottom + 100
+            }
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <View style={styles.fieldsContainer}>
             {fields.map(renderField)}
@@ -164,7 +202,7 @@ export const Filters = memo(function Filters({
             Aplicar
           </Button>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SlideInPanel>
   )
 })
@@ -214,7 +252,7 @@ const styles = StyleSheet.create({
   },
   fieldsContainer: {
     paddingHorizontal: 16,
-    gap: 8,
+    gap: 16,
   },
   footer: {
     flexDirection: 'row',

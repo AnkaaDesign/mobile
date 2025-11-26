@@ -1,8 +1,6 @@
 import { memo } from 'react'
-import { View, StyleSheet } from 'react-native'
-import { ThemedText } from '@/components/ui/themed-text'
-import { DatePicker } from '@/components/ui/date-picker'
-import { useTheme } from '@/lib/theme'
+import { DateRangeFilter } from '@/components/common/filters'
+import { getFilterIcon } from '@/lib/filter-icon-mapping'
 import type { FilterField } from '../../types'
 
 interface DateRangeFieldProps {
@@ -16,73 +14,33 @@ export const DateRangeField = memo(function DateRangeField({
   value,
   onChange,
 }: DateRangeFieldProps) {
-  const { colors } = useTheme()
-
-  const handleFromChange = (date: Date | null) => {
+  // Convert gte/lte to from/to for the DateRangeFilter component
+  const handleChange = (range: { from?: Date; to?: Date } | undefined) => {
+    if (!range) {
+      onChange(undefined)
+      return
+    }
     onChange({
-      ...value,
-      gte: date || undefined,
+      gte: range.from,
+      lte: range.to,
     })
   }
 
-  const handleToChange = (date: Date | null) => {
-    onChange({
-      ...value,
-      lte: date || undefined,
-    })
-  }
+  // Use field label or placeholder string as label
+  const label = field.label || (typeof field.placeholder === 'string' ? field.placeholder : field.key)
 
-  // Get placeholder labels - use field.placeholder if object, otherwise defaults
-  const placeholders = typeof field.placeholder === 'object' && field.placeholder
-    ? {
-        from: field.placeholder.from || field.placeholder.min || 'Data inicial',
-        to: field.placeholder.to || field.placeholder.max || 'Data final'
-      }
-    : { from: 'Data inicial', to: 'Data final' }
+  // Get icon for this filter
+  const icon = getFilterIcon(field.key)
 
   return (
-    <View style={styles.container}>
-      <View style={styles.row}>
-        <View style={styles.dateField}>
-          <ThemedText style={[styles.subLabel, { color: colors.mutedForeground }]}>
-            {placeholders.from}
-          </ThemedText>
-          <DatePicker
-            value={value?.gte || null}
-            onChange={handleFromChange}
-            placeholder="Selecionar..."
-          />
-        </View>
-
-        <View style={styles.dateField}>
-          <ThemedText style={[styles.subLabel, { color: colors.mutedForeground }]}>
-            {placeholders.to}
-          </ThemedText>
-          <DatePicker
-            value={value?.lte || null}
-            onChange={handleToChange}
-            placeholder="Selecionar..."
-          />
-        </View>
-      </View>
-    </View>
+    <DateRangeFilter
+      label={label}
+      icon={icon}
+      value={{
+        from: value?.gte,
+        to: value?.lte,
+      }}
+      onChange={handleChange}
+    />
   )
-})
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 12,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  dateField: {
-    flex: 1,
-  },
-  subLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
 })

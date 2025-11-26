@@ -100,6 +100,7 @@ export const personalNotificationsListConfig: ListConfig<Notification> = {
     fields: [
       {
         key: 'types',
+        label: 'Tipos',
         type: 'select',
         multiple: true,
         options: Object.values(NOTIFICATION_TYPE).map((type) => ({
@@ -110,6 +111,7 @@ export const personalNotificationsListConfig: ListConfig<Notification> = {
       },
       {
         key: 'importance',
+        label: 'Importância',
         type: 'select',
         multiple: true,
         options: Object.values(NOTIFICATION_IMPORTANCE).map((importance) => ({
@@ -120,12 +122,14 @@ export const personalNotificationsListConfig: ListConfig<Notification> = {
       },
       {
         key: 'unreadOnly',
+        label: 'Apenas Não Lidas',
         type: 'toggle',
         placeholder: 'Apenas Não Lidas',
         description: 'Mostrar apenas notificações não lidas',
       },
       {
         key: 'dateRange',
+        label: 'Período',
         type: 'date-range',
         placeholder: 'Período',
       },

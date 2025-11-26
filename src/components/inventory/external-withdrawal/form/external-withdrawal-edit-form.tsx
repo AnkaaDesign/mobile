@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, ArrowRight, Check, User, Package, FileText, Receipt, FileInvoice } from "lucide-react-native";
+import { IconArrowLeft, IconArrowRight, IconCheck, IconUser, IconPackage, IconFileText, IconReceipt } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
@@ -16,9 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
-import { FormLabel } from "@/components/ui/form-label";
+import { FormLabel } from "@/components/ui/form";
 import { Alert } from "@/components/ui/alert";
-import { ProgressBar } from "@/components/ui/progress-bar";
+import { Progress as ProgressBar } from "@/components/ui/progress";
 import { FileUpload, type FileItem } from "@/components/ui/file-upload";
 
 import { ExternalWithdrawalItemSelector } from "./external-withdrawal-item-selector";
@@ -29,19 +29,19 @@ const STAGES = [
     id: 1,
     name: "Informações Básicas",
     description: "Responsável e detalhes da retirada",
-    icon: User,
+    icon: IconUser,
   },
   {
     id: 2,
     name: "Seleção de Itens",
     description: "Escolha os itens e quantidades",
-    icon: Package,
+    icon: IconPackage,
   },
   {
     id: 3,
     name: "Revisão",
     description: "Confirme os dados da retirada",
-    icon: Check,
+    icon: IconCheck,
   },
 ] as const;
 
@@ -318,7 +318,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
       <Card style={styles.card}>
         <CardHeader>
           <View style={styles.cardHeaderContent}>
-            <User size={20} color={colors.primary} />
+            <IconUser size={20} color={colors.primary} />
             <Text style={styles.cardTitle}>Informações da Retirada</Text>
           </View>
         </CardHeader>
@@ -393,7 +393,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
             {/* Receipt */}
             <View style={styles.fileUploadContainer}>
               <View style={styles.fileUploadHeader}>
-                <Receipt size={16} color={colors.mutedForeground} />
+                <IconReceipt size={16} color={colors.mutedForeground} />
                 <Text style={styles.fileUploadLabel}>Recibo</Text>
               </View>
               <FileUpload
@@ -407,7 +407,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
             {/* NFE */}
             <View style={styles.fileUploadContainer}>
               <View style={styles.fileUploadHeader}>
-                <FileInvoice size={16} color={colors.mutedForeground} />
+                <IconFileText size={16} color={colors.mutedForeground} />
                 <Text style={styles.fileUploadLabel}>Nota Fiscal</Text>
               </View>
               <FileUpload
@@ -547,7 +547,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
               variant="outline"
               onPress={handlePrev}
               disabled={isSubmitting}
-              icon={<ArrowLeft size={16} />}
+              icon={<IconArrowLeft size={16} />}
               style={styles.footerButton}
             >
               Anterior
@@ -559,7 +559,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
               variant="default"
               onPress={handleNext}
               disabled={isSubmitting}
-              icon={<ArrowRight size={16} />}
+              icon={<IconArrowRight size={16} />}
               style={styles.footerButton}
             >
               Próximo
@@ -570,7 +570,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
               onPress={handleSubmit}
               disabled={isSubmitting || !validation.canSubmit || !hasFormChanges || selectedItems.size === 0}
               loading={isSubmitting}
-              icon={<Check size={16} />}
+              icon={<IconCheck size={16} />}
               style={styles.footerButton}
             >
               Salvar Alterações

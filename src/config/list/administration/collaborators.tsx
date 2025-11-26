@@ -316,38 +316,44 @@ export const collaboratorsListConfig: ListConfig<User> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(USER_STATUS).map((status) => ({
           label: STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'positionIds',
+        label: 'Cargos',
         type: 'select',
         multiple: true,
-        placeholder: 'Cargos',
+        placeholder: 'Selecione os cargos',
       },
       {
         key: 'sectorIds',
+        label: 'Setores',
         type: 'select',
         multiple: true,
-        placeholder: 'Setores',
+        placeholder: 'Selecione os setores',
       },
       {
         key: 'birth',
+        label: 'Data de Nascimento',
         type: 'date-range',
         placeholder: 'Data de Nascimento',
       },
       {
         key: 'dismissedAt',
+        label: 'Data de Demissão',
         type: 'date-range',
         placeholder: 'Data de Demissão',
       },
       {
         key: 'exp1EndAt',
+        label: 'Data de Contratação',
         type: 'date-range',
         placeholder: 'Data de Contratação',
       },

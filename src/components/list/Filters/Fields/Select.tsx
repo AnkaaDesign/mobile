@@ -1,6 +1,11 @@
 import { memo, useMemo } from 'react'
-import { View, StyleSheet } from 'react-native'
-import { Combobox } from '@/components/ui/combobox'
+import { View } from 'react-native'
+import { MultiSelectFilter, SelectFilter } from '@/components/common/filters'
+import { getFilterIcon } from '@/lib/filter-icon-mapping'
+import { Icon } from '@/components/ui/icon'
+import { ThemedText } from '@/components/ui/themed-text'
+import { useTheme } from '@/lib/theme'
+import { getStockLevelTextColor } from '@/utils/stock-level'
 import type { FilterField } from '../../types'
 
 interface SelectFieldProps {
@@ -10,7 +15,7 @@ interface SelectFieldProps {
   options?: Array<{ label: string; value: any }>
 }
 
-export const SelectField = memo(function SelectField({
+const SelectFieldComponent = function SelectField({
   field,
   value,
   onChange,
@@ -25,42 +30,86 @@ export const SelectField = memo(function SelectField({
   }, [providedOptions, field.options])
 
   const handleChange = (newValue: any) => {
-    if (field.multiple) {
-      onChange(newValue)
-    } else {
-      onChange(newValue?.[0] || null)
-    }
+    onChange(newValue)
   }
 
   const currentValue = useMemo(() => {
     if (field.multiple) {
       return Array.isArray(value) ? value : []
     }
-    return value ? [value] : []
+    return value || null
   }, [value, field.multiple])
 
-  // Use placeholder as the main identifier (clean approach)
-  const placeholder = typeof field.placeholder === 'string'
-    ? field.placeholder
-    : field.label || 'Selecione...'
+  // Use placeholder as the label
+  const label = field.label || (typeof field.placeholder === 'string' ? field.placeholder : 'Selecione...')
+  const placeholder = typeof field.placeholder === 'string' ? field.placeholder : 'Selecione...'
+
+  // Get icon for this filter
+  const icon = getFilterIcon(field.key)
+  const { colors } = useTheme()
+
+  // Stock level custom renderer with icons and colors
+  const renderStockLevelOption = useMemo(() => {
+    if (field.key !== 'stockLevels') return undefined
+
+    return (option: any) => {
+      const stockLevel = option.stockLevel || option.value
+      const colorClass = getStockLevelTextColor(stockLevel)
+      const colorMap: Record<string, string> = {
+        'text-neutral-500': '#6b7280',
+        'text-red-600': '#dc2626',
+        'text-orange-500': '#f97316',
+        'text-yellow-500': '#eab308',
+        'text-green-600': '#16a34a',
+        'text-purple-600': '#9333ea',
+      }
+      const iconColor = colorMap[colorClass] || colors.foreground
+
+      return (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Icon
+            name="alert-triangle"
+            size={18}
+            color={iconColor}
+          />
+          <ThemedText style={{ color: iconColor }}>{option.label}</ThemedText>
+        </View>
+      )
+    }
+  }, [field.key, colors])
+
+  if (field.multiple) {
+    return (
+      <MultiSelectFilter
+        label={label}
+        icon={icon}
+        value={currentValue}
+        onChange={handleChange}
+        options={field.async ? undefined : options}
+        placeholder={placeholder}
+        renderOption={renderStockLevelOption}
+        async={field.async}
+        queryKey={field.queryKey}
+        queryFn={field.queryFn}
+      />
+    )
+  }
 
   return (
-    <View style={styles.container}>
-      <Combobox
-        options={options}
-        selectedValues={currentValue}
-        onValueChange={handleChange}
-        placeholder={placeholder}
-        searchPlaceholder={`Buscar ${field.label?.toLowerCase() || ''}...`.trim()}
-        emptyText="Nenhuma opção encontrada"
-        mode={field.multiple ? 'multiple' : 'single'}
-      />
-    </View>
+    <SelectFilter
+      label={label}
+      icon={icon}
+      value={currentValue}
+      onChange={handleChange}
+      options={field.async ? undefined : options}
+      placeholder={placeholder}
+      renderOption={renderStockLevelOption}
+      async={field.async}
+      queryKey={field.queryKey}
+      queryFn={field.queryFn}
+    />
   )
-})
+}
 
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 12,
-  },
-})
+SelectFieldComponent.displayName = 'SelectField'
+export const SelectField = memo(SelectFieldComponent)

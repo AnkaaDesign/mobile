@@ -115,8 +115,10 @@ export interface FilterField {
   placeholder?: string | { min?: string; max?: string; from?: string; to?: string } // For range/date inputs
   multiple?: boolean
   defaultValue?: any
-  options?: Array<{ label: string; value: any }> // Static options
+  options?: Array<{ label: string; value: any; [key: string]: any }> // Static options
   async?: boolean // Load options asynchronously
+  queryKey?: unknown[] // Query key for async mode
+  queryFn?: (searchTerm: string, page?: number) => Promise<{ data: Array<{ label: string; value: any }>; hasMore?: boolean }> // Query function for async
   loadOptions?: () => Promise<Array<{ label: string; value: any }>>
   min?: number
   max?: number

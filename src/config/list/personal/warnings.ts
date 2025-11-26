@@ -119,6 +119,7 @@ export const personalWarningsListConfig: ListConfig<Warning> = {
     fields: [
       {
         key: 'severity',
+        label: 'Severidade',
         type: 'select',
         multiple: true,
         options: Object.values(WARNING_SEVERITY).map((severity) => ({
@@ -129,6 +130,7 @@ export const personalWarningsListConfig: ListConfig<Warning> = {
       },
       {
         key: 'category',
+        label: 'Categoria',
         type: 'select',
         multiple: true,
         options: Object.values(WARNING_CATEGORY).map((category) => ({
@@ -139,17 +141,20 @@ export const personalWarningsListConfig: ListConfig<Warning> = {
       },
       {
         key: 'isActive',
+        label: 'Apenas Ativas',
         type: 'toggle',
         placeholder: 'Apenas Ativas',
         description: 'Mostrar apenas advertências ativas',
       },
       {
         key: 'createdAt',
+        label: 'Data da Advertência',
         type: 'date-range',
         placeholder: 'Data da Advertência',
       },
       {
         key: 'followUpDate',
+        label: 'Data de Acompanhamento',
         type: 'date-range',
         placeholder: 'Data de Acompanhamento',
       },

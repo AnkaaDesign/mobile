@@ -165,9 +165,10 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
     fields: [
       {
         key: 'sortBy',
+        label: 'Ordenar por',
         type: 'select',
         multiple: false,
-        placeholder: 'Ordenar por',
+        placeholder: 'Selecione a ordenação',
         options: [
           { label: 'Data de Criação', value: 'createdAt' },
           { label: 'Preço por Litro', value: 'pricePerLiter' },
@@ -176,9 +177,10 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
       },
       {
         key: 'sortOrder',
+        label: 'Ordem',
         type: 'select',
         multiple: false,
-        placeholder: 'Ordem',
+        placeholder: 'Selecione a ordem',
         options: [
           { label: 'Crescente', value: 'asc' },
           { label: 'Decrescente', value: 'desc' },
@@ -186,28 +188,33 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
       },
       {
         key: 'paintTypeIds',
+        label: 'Tipos de Tinta',
         type: 'select',
         multiple: true,
-        placeholder: 'Tipos de Tinta',
+        placeholder: 'Selecione os tipos de tinta',
       },
       {
         key: 'paintBrandIds',
+        label: 'Marcas de Tinta',
         type: 'select',
         multiple: true,
-        placeholder: 'Marcas de Tinta',
+        placeholder: 'Selecione as marcas de tinta',
       },
       {
         key: 'pricePerLiter',
+        label: 'Preço por Litro',
         type: 'number-range',
         placeholder: { min: 'Preço Mín (R$)', max: 'Preço Máx (R$)' },
       },
       {
         key: 'density',
+        label: 'Densidade',
         type: 'number-range',
         placeholder: { min: 'Densidade Mín (g/ml)', max: 'Densidade Máx (g/ml)' },
       },
       {
         key: 'createdAt',
+        label: 'Data de Cadastro',
         type: 'date-range',
         placeholder: 'Data de Cadastro',
       },

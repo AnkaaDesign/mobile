@@ -1,238 +1,83 @@
-import { useCallback, useRef, useState, useEffect } from "react";
-import { TextInput, TextInputProps, View, ViewStyle, TextStyle, Animated, StyleSheet } from "react-native";
-import type { BlurEvent, FocusEvent } from "react-native/Libraries/Types/CoreEventTypes";
-import { useTheme } from "@/lib/theme";
-import { borderRadius, shadow, fontSize, transitions } from "@/constants/design-system";
+import React, { useState, useEffect } from 'react'
+import { TextInput } from './text-input'
 
-interface CurrencyInputProps extends Omit<TextInputProps, "onChange" | "value" | "onChangeText" | "keyboardType" | "onBlur" | "onFocus"> {
-  value?: number;
-  onChange?: (value: number | undefined) => void;
-  onBlur?: (e: BlurEvent) => void;
-  onFocus?: (e: FocusEvent) => void;
-  error?: boolean;
-  containerStyle?: ViewStyle;
-  inputStyle?: TextStyle;
+interface CurrencyInputProps {
+  value?: number // Value in cents
+  onValueChange?: (value: number | undefined) => void
+  placeholder?: string
+  disabled?: boolean
+  error?: boolean
 }
 
-export function CurrencyInput({ value, onChange, onBlur, onFocus, placeholder = "R$ 0,00", error, containerStyle, inputStyle, editable = true, ...props }: CurrencyInputProps) {
-  const { colors } = useTheme();
-  const inputRef = useRef<TextInput>(null);
-  const [isFocused, setIsFocused] = useState(false);
-  const borderColorAnim = useRef(new Animated.Value(0)).current;
-  const shadowAnim = useRef(new Animated.Value(0)).current;
-  const [cents, setCents] = useState(() => {
-    if (value === undefined || value === null) return 0;
-    return Math.round(value * 100);
-  });
-  const previousCents = useRef(cents);
+/**
+ * Currency Input with natural typing
+ *
+ * As you type numbers, it formats as BRL currency:
+ * - Type "4" → "R$ 0,04"
+ * - Type "2" → "R$ 0,42"
+ * - Type "0" → "R$ 4,20"
+ * - Type "0" → "R$ 42,00"
+ *
+ * Stores value internally as cents (integer)
+ */
+export function CurrencyInput({
+  value,
+  onValueChange,
+  placeholder = 'R$ 0,00',
+  disabled = false,
+  error = false,
+}: CurrencyInputProps) {
+  const [displayValue, setDisplayValue] = useState('')
 
-  // Animate border and shadow on focus
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(borderColorAnim, {
-        toValue: isFocused ? 1 : 0,
-        duration: transitions.fast,
-        useNativeDriver: false,
-      }),
-      Animated.timing(shadowAnim, {
-        toValue: isFocused ? 1 : 0,
-        duration: transitions.fast,
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, [isFocused, borderColorAnim, shadowAnim]);
-
-  // Format cents to display string
-  function formatCentsToDisplay(totalCents: number): string {
-    // If zero, return empty string (show placeholder)
-    if (totalCents === 0) {
-      return "";
-    }
-
-    const whole = Math.floor(totalCents / 100);
-    const decimal = totalCents % 100;
-
-    // Format whole part with thousand separators
-    const wholeStr = whole.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-
-    // Always show 2 decimal places
-    const decimalStr = decimal.toString().padStart(2, "0");
-
-    return `R$ ${wholeStr},${decimalStr}`;
+  // Format cents to BRL currency string
+  const formatCurrency = (cents: number): string => {
+    const reais = cents / 100
+    return reais.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
   }
 
-  // Extract only numbers from input
-  function extractNumbers(str: string): string {
-    return str.replace(/\D/g, "");
-  }
-
-  // Handle input change
-  const handleChangeText = useCallback(
-    (text: string) => {
-      // If text is empty (user cleared the field), reset to 0
-      if (!text) {
-        setCents(0);
-        previousCents.current = 0;
-        onChange?.(undefined);
-        return;
-      }
-
-      const currentNumbers = extractNumbers(formatCentsToDisplay(previousCents.current));
-      const newNumbers = extractNumbers(text);
-
-      // Detect if user is trying to delete
-      const isDeleting = newNumbers.length < currentNumbers.length;
-
-      if (isDeleting) {
-        // Handle backspace - remove last digit from cents
-        const newCents = Math.floor(previousCents.current / 10);
-        setCents(newCents);
-        previousCents.current = newCents;
-        onChange?.(newCents > 0 ? newCents / 100 : undefined);
-      } else {
-        // Extract the new digit(s) added
-        const addedDigits = newNumbers.slice(currentNumbers.length);
-
-        if (addedDigits) {
-          // Add new digits to the right
-          let newCents = previousCents.current;
-
-          for (const digit of addedDigits) {
-            newCents = newCents * 10 + parseInt(digit, 10);
-
-            // Limit to max safe value (999.999.999,99)
-            const maxCents = 99999999999;
-            if (newCents > maxCents) {
-              newCents = maxCents;
-              break;
-            }
-          }
-
-          setCents(newCents);
-          previousCents.current = newCents;
-          onChange?.(newCents > 0 ? newCents / 100 : undefined);
-        }
-      }
-    },
-    [onChange],
-  );
-
-  // Handle blur
-  const handleBlur = useCallback(
-    (e: BlurEvent) => {
-      setIsFocused(false);
-      onBlur?.(e);
-    },
-    [onBlur],
-  );
-
-  // Handle focus
-  const handleFocus = useCallback((e: FocusEvent) => {
-    setIsFocused(true);
-    onFocus?.(e);
-  }, [onFocus]);
-
-  // Update cents when value prop changes
+  // Update display when value prop changes
   useEffect(() => {
-    if (!inputRef.current?.isFocused()) {
-      const newCents = value !== undefined ? Math.round(value * 100) : 0;
-      setCents(newCents);
-      previousCents.current = newCents;
+    if (value !== undefined && value !== null) {
+      setDisplayValue(formatCurrency(value))
+    } else {
+      setDisplayValue('')
     }
-  }, [value]);
+  }, [value])
 
-  const displayValue = formatCentsToDisplay(cents);
+  const handleChangeText = (text: string) => {
+    // Remove all non-numeric characters
+    const numericOnly = text.replace(/\D/g, '')
 
-  // Animated styles
-  const animatedBorderColor = borderColorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [colors.border, colors.ring],
-  });
+    if (numericOnly === '') {
+      setDisplayValue('')
+      onValueChange?.(undefined)
+      return
+    }
 
-  const baseContainerStyles: ViewStyle = {
-    width: "100%",
-  };
+    // Parse as integer (cents)
+    const cents = parseInt(numericOnly, 10)
 
-  const baseInputContainerStyles: ViewStyle = {
-    // Size
-    height: 40,
-    paddingHorizontal: 12,
+    // Format and display
+    const formatted = formatCurrency(cents)
+    setDisplayValue(formatted)
 
-    // Border
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-
-    // Background
-    backgroundColor: colors.input,
-
-    // Base shadow
-    ...shadow.sm,
-
-    // Error state
-    ...(error && {
-      borderColor: colors.destructive,
-    }),
-
-    // Disabled state
-    ...(editable === false && {
-      opacity: 0.5,
-      backgroundColor: colors.input,
-    }),
-
-    // Custom styles - only spread ViewStyle compatible properties from containerStyle
-    ...(containerStyle || {}),
-  };
-
-  const baseInputTextStyles: TextStyle = {
-    flex: 1,
-    fontSize: fontSize.base,
-    color: colors.foreground,
-    height: "100%",
-    textAlignVertical: "center",
-    includeFontPadding: false,
-    padding: 0,
-    // Merge text-specific styles from inputStyle prop if provided
-    ...(inputStyle || {}),
-  };
-
-  const animatedStyles = {
-    borderColor: error ? colors.destructive : animatedBorderColor,
-  };
-
-  const animatedShadowStyles = {
-    shadowOpacity: shadowAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [shadow.sm.shadowOpacity, 0.15],
-    }),
-    shadowRadius: shadowAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [shadow.sm.shadowRadius, 4],
-    }),
-    elevation: shadowAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [shadow.sm.elevation, 3],
-    }),
-  };
+    // Notify parent with cents value
+    onValueChange?.(cents)
+  }
 
   return (
-    <View style={baseContainerStyles}>
-      <Animated.View style={StyleSheet.flatten([animatedShadowStyles])}>
-        <Animated.View style={StyleSheet.flatten([baseInputContainerStyles, animatedStyles])}>
-          <TextInput
-            {...props}
-            ref={inputRef}
-            style={baseInputTextStyles}
-            value={displayValue}
-            onChangeText={handleChangeText}
-            onBlur={handleBlur}
-            onFocus={handleFocus}
-            placeholder={placeholder}
-            placeholderTextColor={colors.mutedForeground}
-            keyboardType="number-pad"
-            editable={editable}
-          />
-        </Animated.View>
-      </Animated.View>
-    </View>
-  );
+    <TextInput
+      value={displayValue}
+      onChangeText={handleChangeText}
+      placeholder={placeholder}
+      keyboardType="numeric"
+      disabled={disabled}
+      error={error}
+    />
+  )
 }

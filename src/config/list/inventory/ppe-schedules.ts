@@ -170,28 +170,32 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
     fields: [
       {
         key: 'isActive',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: [
           { label: 'Ativo', value: 'true' },
           { label: 'Inativo', value: 'false' },
         ],
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'itemIds',
+        label: 'Itens EPI',
         type: 'select',
         multiple: true,
-        placeholder: 'Itens EPI',
+        placeholder: 'Selecione os itens EPI',
       },
       {
         key: 'userIds',
+        label: 'Usuários',
         type: 'select',
         multiple: true,
-        placeholder: 'Usuários',
+        placeholder: 'Selecione os usuários',
       },
       {
         key: 'frequency',
+        label: 'Frequência',
         type: 'select',
         multiple: true,
         options: [
@@ -205,10 +209,11 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
           { label: FREQUENCY_LABELS.SEMI_ANNUAL, value: SCHEDULE_FREQUENCY.SEMI_ANNUAL },
           { label: FREQUENCY_LABELS.ANNUAL, value: SCHEDULE_FREQUENCY.ANNUAL },
         ],
-        placeholder: 'Frequência',
+        placeholder: 'Selecione as frequências',
       },
       {
         key: 'assignmentType',
+        label: 'Tipo de Atribuição',
         type: 'select',
         multiple: true,
         options: [
@@ -216,15 +221,17 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
           { label: ASSIGNMENT_TYPE_LABELS.ALL_EXCEPT, value: ASSIGNMENT_TYPE.ALL_EXCEPT },
           { label: ASSIGNMENT_TYPE_LABELS.SPECIFIC, value: ASSIGNMENT_TYPE.SPECIFIC },
         ],
-        placeholder: 'Tipo de Atribuição',
+        placeholder: 'Selecione os tipos de atribuição',
       },
       {
         key: 'nextRunRange',
+        label: 'Próxima Execução',
         type: 'date-range',
         placeholder: 'Próxima Execução',
       },
       {
         key: 'lastRunRange',
+        label: 'Última Execução',
         type: 'date-range',
         placeholder: 'Última Execução',
       },

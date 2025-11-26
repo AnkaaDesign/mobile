@@ -16,7 +16,7 @@ export default function FuncionariosIndexScreen() {
   const menuItems = [
     {
       id: "list",
-      title: "Listar Funcionários",
+      title: "Funcionários",
       description: "Visualize todos os funcionários da empresa",
       icon: <IconList size={24} color={colors.primary} />,
       route: "/(tabs)/pessoal/funcionarios/listar",

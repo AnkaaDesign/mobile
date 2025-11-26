@@ -106,12 +106,14 @@ export const observationsListConfig: ListConfig<Observation> = {
     fields: [
       {
         key: 'taskIds',
+        label: 'Tarefas',
         type: 'select',
         multiple: true,
-        placeholder: 'Tarefas',
+        placeholder: 'Selecione as tarefas',
       },
       {
         key: 'createdAt',
+        label: 'Data de Criação',
         type: 'date-range',
         placeholder: 'Data de Criação',
       },

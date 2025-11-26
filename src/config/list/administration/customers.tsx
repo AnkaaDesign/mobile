@@ -329,16 +329,18 @@ export const customersListConfig: ListConfig<Customer> = {
     fields: [
       {
         key: 'states',
+        label: 'Estados',
         type: 'select',
         multiple: true,
         options: BRAZILIAN_STATES.map((state) => ({
           label: BRAZILIAN_STATE_NAMES[state],
           value: state,
         })),
-        placeholder: 'Estados',
+        placeholder: 'Selecione os estados',
       },
       {
         key: 'taskCount',
+        label: 'Quantidade de Tarefas',
         type: 'number-range',
         placeholder: {
           min: 'Mínimo',
@@ -347,6 +349,7 @@ export const customersListConfig: ListConfig<Customer> = {
       },
       {
         key: 'createdAt',
+        label: 'Data de Cadastro',
         type: 'date-range',
         placeholder: 'Data de Cadastro',
       },

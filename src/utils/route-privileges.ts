@@ -314,9 +314,13 @@ export const ROUTE_PRIVILEGES: Record<
   // =====================
   // SERVIDOR (SERVER)
   // =====================
-  
+
   '/(tabs)/servidor': 'ADMIN',
   '/(tabs)/servidor/backups': 'ADMIN',
+  '/(tabs)/servidor/backups/listar': 'ADMIN',
+  '/(tabs)/servidor/backups/cadastrar': 'ADMIN',
+  '/(tabs)/servidor/backups/detalhes': 'ADMIN',
+  '/servidor/backups/listar': 'ADMIN',
   '/(tabs)/servidor/registros-de-alteracoes': 'ADMIN',
   '/(tabs)/servidor/implantacoes': 'ADMIN',
   '/(tabs)/servidor/logs': 'ADMIN',

@@ -98,42 +98,48 @@ export const myTeamWarningsListConfig: ListConfig<Warning> = {
     fields: [
       {
         key: 'severities',
+        label: 'Severidade',
         type: 'select',
         multiple: true,
         options: Object.values(WARNING_SEVERITY).map((severity) => ({
           label: WARNING_SEVERITY_LABELS[severity],
           value: severity,
         })),
-        placeholder: 'Severidade',
+        placeholder: 'Selecione as severidades',
       },
       {
         key: 'categories',
+        label: 'Categoria',
         type: 'select',
         multiple: true,
         options: Object.values(WARNING_CATEGORY).map((category) => ({
           label: WARNING_CATEGORY_LABELS[category],
           value: category,
         })),
-        placeholder: 'Categoria',
+        placeholder: 'Selecione as categorias',
       },
       {
         key: 'userIds',
+        label: 'Colaboradores',
         type: 'select',
         multiple: true,
-        placeholder: 'Colaboradores',
+        placeholder: 'Selecione os colaboradores',
       },
       {
         key: 'isActive',
+        label: 'Mostrar apenas ativas',
         type: 'toggle',
         placeholder: 'Mostrar apenas ativas',
       },
       {
         key: 'createdAt',
+        label: 'Data da Advertência',
         type: 'date-range',
         placeholder: 'Data da Advertência',
       },
       {
         key: 'followUpDate',
+        label: 'Data de Acompanhamento',
         type: 'date-range',
         placeholder: 'Data de Acompanhamento',
       },

@@ -155,16 +155,18 @@ export const sectorsListConfig: ListConfig<Sector> = {
     fields: [
       {
         key: 'privileges',
+        label: 'Privilégios',
         type: 'select',
         multiple: false,
         options: Object.values(SECTOR_PRIVILEGES).map((privilege) => ({
           label: SECTOR_PRIVILEGES_LABELS[privilege],
           value: privilege,
         })),
-        placeholder: 'Privilégios',
+        placeholder: 'Selecione o privilégio',
       },
       {
         key: 'hasUsers',
+        label: 'Com Colaboradores',
         type: 'toggle',
         placeholder: 'Com Colaboradores',
         description: 'Apenas setores com colaboradores',

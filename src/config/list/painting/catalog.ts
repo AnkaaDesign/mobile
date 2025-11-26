@@ -176,18 +176,21 @@ export const catalogListConfig: ListConfig<Paint> = {
     fields: [
       {
         key: 'paintTypeIds',
+        label: 'Tipos de Tinta',
         type: 'select',
         multiple: true,
-        placeholder: 'Tipos de Tinta',
+        placeholder: 'Selecione os tipos de tinta',
       },
       {
         key: 'paintBrandIds',
+        label: 'Marcas de Tinta',
         type: 'select',
         multiple: true,
-        placeholder: 'Marcas de Tinta',
+        placeholder: 'Selecione as marcas de tinta',
       },
       {
         key: 'finishes',
+        label: 'Acabamento',
         type: 'select',
         multiple: true,
         options: [
@@ -197,16 +200,18 @@ export const catalogListConfig: ListConfig<Paint> = {
           { label: 'Fosco', value: 'MATTE' },
           { label: 'Semi Brilho', value: 'SATIN' },
         ],
-        placeholder: 'Acabamento',
+        placeholder: 'Selecione os acabamentos',
       },
       {
         key: 'hasFormulas',
+        label: 'Apenas com fórmulas',
         type: 'boolean',
         placeholder: 'Apenas com fórmulas',
         description: 'Mostrar apenas tintas que possuem fórmulas cadastradas',
       },
       {
         key: 'manufacturers',
+        label: 'Montadora',
         type: 'select',
         multiple: true,
         options: [
@@ -221,10 +226,11 @@ export const catalogListConfig: ListConfig<Paint> = {
           { label: 'Agrale', value: 'AGRALE' },
           { label: 'Outro', value: 'OTHER' },
         ],
-        placeholder: 'Montadora',
+        placeholder: 'Selecione as montadoras',
       },
       {
         key: 'palettes',
+        label: 'Paleta de Cores',
         type: 'select',
         multiple: true,
         options: [
@@ -243,10 +249,11 @@ export const catalogListConfig: ListConfig<Paint> = {
           { label: 'Rosa', value: 'PINK' },
           { label: 'Roxo', value: 'PURPLE' },
         ],
-        placeholder: 'Paleta de Cores',
+        placeholder: 'Selecione as paletas de cores',
       },
       {
         key: 'createdAt',
+        label: 'Data de Cadastro',
         type: 'date-range',
         placeholder: 'Data de Cadastro',
       },

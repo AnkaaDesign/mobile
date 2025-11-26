@@ -430,6 +430,8 @@ export const TABLER_ICONS = {
   components: "IconPuzzle",
   entity: "IconDatabase",
   spotCheck: "IconEye",
+  hardDrive: "IconDeviceHardDrive",
+  cpu: "IconCpu",
 } as const;
 
 // Type for accessing Tabler icon names

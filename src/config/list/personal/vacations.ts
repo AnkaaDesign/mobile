@@ -112,6 +112,7 @@ export const personalVacationsListConfig: ListConfig<Vacation> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: false,
         options: Object.values(VACATION_STATUS).map((status) => ({
@@ -122,6 +123,7 @@ export const personalVacationsListConfig: ListConfig<Vacation> = {
       },
       {
         key: 'type',
+        label: 'Tipo',
         type: 'select',
         multiple: true,
         options: Object.values(VACATION_TYPE).map((type) => ({
@@ -132,12 +134,14 @@ export const personalVacationsListConfig: ListConfig<Vacation> = {
       },
       {
         key: 'isCollective',
+        label: 'Apenas Férias Coletivas',
         type: 'toggle',
         placeholder: 'Apenas Férias Coletivas',
         description: 'Mostrar apenas férias coletivas',
       },
       {
         key: 'year',
+        label: 'Ano',
         type: 'select',
         multiple: false,
         options: Array.from({ length: 5 }, (_, i) => {

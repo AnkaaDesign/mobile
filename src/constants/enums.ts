@@ -1834,7 +1834,7 @@ export enum FAVORITE_PAGES {
   RECURSOS_HUMANOS_FERIAS_LISTAR = "/recursos-humanos/ferias",
   RECURSOS_HUMANOS_FERIADOS_LISTAR = "/recursos-humanos/feriados",
   RECURSOS_HUMANOS_AVISOS_LISTAR = "/recursos-humanos/advertencias",
-  RECURSOS_HUMANOS_CALCULOS = "/recursos-humanos/calculos-ponto",
+  RECURSOS_HUMANOS_CALCULOS = "/recursos-humanos/calculos",
   RECURSOS_HUMANOS_EPI_LISTAR = "/recursos-humanos/epi",
   RECURSOS_HUMANOS_EPI_ENTREGAS_LISTAR = "/recursos-humanos/epi/entregas",
   RECURSOS_HUMANOS_EPI_AGENDAMENTOS_LISTAR = "/recursos-humanos/epi/agendamentos",

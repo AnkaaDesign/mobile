@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
-import { View, StyleSheet, Pressable } from "react";
-import { X, AlertTriangle } from "lucide-react-native";
+import { View, StyleSheet, Pressable } from "react-native";
+import { IconX, IconAlertTriangle } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
@@ -115,7 +115,7 @@ export function ExternalWithdrawalItemCard({
           onPress={onRemove}
           style={styles.removeButton}
         >
-          <X size={18} color={colors.destructive} />
+          <IconX size={18} color={colors.destructive} />
         </Button>
       </View>
 
@@ -149,7 +149,7 @@ export function ExternalWithdrawalItemCard({
       {/* Stock Warning */}
       {isNegativeStock && (
         <View style={[styles.warning, { backgroundColor: `${colors.destructive}10` }]}>
-          <AlertTriangle size={16} color={colors.destructive} />
+          <IconAlertTriangle size={16} color={colors.destructive} />
           <Text style={[styles.warningText, { color: colors.destructive }]}>
             Quantidade excede o estoque disponível
           </Text>

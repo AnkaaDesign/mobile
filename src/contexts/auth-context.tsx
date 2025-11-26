@@ -67,15 +67,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Set up the token provider for the API client to use cached token
   useEffect(() => {
-    console.log("[AUTH DEBUG] Setting up token provider");
+    console.log("\n🔑 [AUTH CONTEXT] ========== SETTING UP TOKEN PROVIDER ==========");
+    console.log(`🔑 [AUTH CONTEXT] Cached token: ${cachedToken ? `EXISTS (length: ${cachedToken.length}, preview: ${cachedToken.substring(0, 20)}...)` : "❌ NULL"}`);
+
     // Create a synchronous token provider that returns cached token
     const tokenProvider = () => {
-      console.log("[AUTH DEBUG] Token provider called - returning cached token:", cachedToken ? `Token exists (length: ${cachedToken.length})` : "No token");
+      console.log("\n🔑 [TOKEN PROVIDER CALLED] ========== GETTING TOKEN ==========");
+      console.log(`🔑 [TOKEN PROVIDER] Returning: ${cachedToken ? `TOKEN (length: ${cachedToken.length}, preview: ${cachedToken.substring(0, 20)}...)` : "❌ NULL - NO TOKEN!"}`);
+      console.log(`🔑 [TOKEN PROVIDER] ========== END ==========\n`);
       return cachedToken;
     };
 
     setTokenProvider(tokenProvider);
-    console.log("[AUTH DEBUG] Token provider setup complete");
+    console.log("🔑 [AUTH CONTEXT] Token provider setup complete");
+    console.log("🔑 [AUTH CONTEXT] ========== TOKEN PROVIDER READY ==========\n");
   }, [cachedToken]);
 
   // Sync cached token with AsyncStorage whenever user changes

@@ -112,26 +112,29 @@ export const vacationsListConfig: ListConfig<Vacation> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: false,
         options: Object.entries(VACATION_STATUS_LABELS).map(([key, label]) => ({
           label,
           value: key,
         })),
-        placeholder: 'Status',
+        placeholder: 'Selecione o status',
       },
       {
         key: 'type',
+        label: 'Tipo de Férias',
         type: 'select',
         multiple: false,
         options: Object.entries(VACATION_TYPE_LABELS).map(([key, label]) => ({
           label,
           value: key,
         })),
-        placeholder: 'Tipo de férias',
+        placeholder: 'Selecione o tipo',
       },
       {
         key: 'year',
+        label: 'Ano',
         type: 'select',
         multiple: false,
         options: (() => {
@@ -141,10 +144,11 @@ export const vacationsListConfig: ListConfig<Vacation> = {
             return { label: String(year), value: year }
           })
         })(),
-        placeholder: 'Ano',
+        placeholder: 'Selecione o ano',
       },
       {
         key: 'isCollective',
+        label: 'Apenas Férias Coletivas',
         type: 'toggle',
         placeholder: 'Apenas férias coletivas',
       },

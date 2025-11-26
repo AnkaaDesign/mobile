@@ -1,49 +1,7 @@
-
-import { View, StyleSheet } from "react-native";
-import { ThemedView } from "@/components/ui/themed-view";
-import { ThemedText } from "@/components/ui/themed-text";
-import { IconTools } from "@tabler/icons-react-native";
+// This route has been moved to /servidor/system-users.tsx
+// Redirect to the correct route
+import { Redirect } from "expo-router";
 
 export default function UsuariosScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <View style={styles.content}>
-        <IconTools size={64} color="#9ca3af" style={styles.icon} />
-        <ThemedText style={styles.title}>Em Construção</ThemedText>
-        <ThemedText style={styles.subtitle}>
-          Esta página está em desenvolvimento.
-        </ThemedText>
-        <ThemedText style={styles.subtitle}>
-          Use o menu lateral para acessar as funcionalidades disponíveis.
-        </ThemedText>
-      </View>
-    </ThemedView>
-  );
+  return <Redirect href="/servidor/system-users" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  content: {
-    alignItems: "center",
-    gap: 16,
-  },
-  icon: {
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: "center",
-    opacity: 0.7,
-    maxWidth: 400,
-  },
-});

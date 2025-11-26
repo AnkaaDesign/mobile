@@ -1,6 +1,7 @@
 import * as React from "react";
 import { StyleSheet, View, ViewStyle } from "react-native";
 import Animated, {  Extrapolation, interpolate, useAnimatedStyle, useDerivedValue, withSpring  } from "react-native-reanimated";
+import { useTheme } from "@/lib/theme";
 
 export interface ProgressProps {
   value?: number;
@@ -10,6 +11,7 @@ export interface ProgressProps {
 }
 
 const Progress = React.forwardRef<View, ProgressProps>(({ value = 0, max = 100, style, indicatorStyle, ...props }, ref) => {
+  const { colors } = useTheme();
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
 
   const containerStyles: ViewStyle = {
@@ -18,20 +20,20 @@ const Progress = React.forwardRef<View, ProgressProps>(({ value = 0, max = 100, 
     width: "100%",
     overflow: "hidden",
     borderRadius: 9999,
-    backgroundColor: "#e5e5e5",
+    backgroundColor: colors.muted,
     ...style,
   };
 
   return (
     <View ref={ref} style={containerStyles} {...props}>
-      <Indicator value={percentage} style={indicatorStyle} />
+      <Indicator value={percentage} style={indicatorStyle} colors={colors} />
     </View>
   );
 });
 
 Progress.displayName = "Progress";
 
-function Indicator({ value, style }: { value: number; style?: ViewStyle }) {
+function Indicator({ value, style, colors }: { value: number; style?: ViewStyle; colors: any }) {
   const progress = useDerivedValue(() => value ?? 0);
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -42,7 +44,7 @@ function Indicator({ value, style }: { value: number; style?: ViewStyle }) {
 
   const indicatorStyles: ViewStyle = {
     height: "100%",
-    backgroundColor: "#16a34a",
+    backgroundColor: colors.success,
     borderRadius: 9999,
     ...style,
   };

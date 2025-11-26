@@ -138,39 +138,48 @@ export const changeLogsListConfig: ListConfig<ChangeLog> = {
     ],
     defaultVisible: ['action', 'user', 'createdAt'],
     rowHeight: 72,
+    // No row actions - change logs are audit records meant to be viewed in list form only
+    // The full information is already visible in the expandable row details
     actions: [],
+    onRowPress: (log, router) => {
+      router.push(`/(tabs)/servidor/registros-de-alteracoes/detalhes/${log.id}` as any)
+    },
   },
 
   filters: {
     fields: [
       {
         key: 'actions',
+        label: 'Ações',
         type: 'select',
         multiple: true,
         options: Object.values(CHANGE_LOG_ACTION).map((action) => ({
           label: ACTION_LABELS[action],
           value: action,
         })),
-        placeholder: 'Ações',
+        placeholder: 'Selecione as ações',
       },
       {
         key: 'entityTypes',
+        label: 'Entidades',
         type: 'select',
         multiple: true,
         options: Object.values(CHANGE_LOG_ENTITY_TYPE).map((type) => ({
           label: ENTITY_TYPE_LABELS[type] || type,
           value: type,
         })),
-        placeholder: 'Entidades',
+        placeholder: 'Selecione as entidades',
       },
       {
         key: 'userIds',
+        label: 'Usuários',
         type: 'select',
         multiple: true,
-        placeholder: 'Usuários',
+        placeholder: 'Selecione os usuários',
       },
       {
         key: 'createdAt',
+        label: 'Data da Alteração',
         type: 'date-range',
         placeholder: 'Data da Alteração',
       },

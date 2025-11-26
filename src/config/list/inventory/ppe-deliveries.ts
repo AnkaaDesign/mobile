@@ -155,6 +155,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: [
@@ -164,27 +165,31 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
           { label: STATUS_LABELS.REPROVED, value: PPE_DELIVERY_STATUS.REPROVED },
           { label: STATUS_LABELS.CANCELLED, value: PPE_DELIVERY_STATUS.CANCELLED },
         ],
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'userIds',
+        label: 'Funcionários',
         type: 'select',
         multiple: true,
-        placeholder: 'Funcionários',
+        placeholder: 'Selecione os funcionários',
       },
       {
         key: 'itemIds',
+        label: 'Itens EPI',
         type: 'select',
         multiple: true,
-        placeholder: 'Itens EPI',
+        placeholder: 'Selecione os itens EPI',
       },
       {
         key: 'scheduledDateRange',
+        label: 'Data Agendada',
         type: 'date-range',
         placeholder: 'Data Agendada',
       },
       {
         key: 'actualDeliveryDateRange',
+        label: 'Data de Entrega',
         type: 'date-range',
         placeholder: 'Data de Entrega',
       },

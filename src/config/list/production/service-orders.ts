@@ -138,32 +138,37 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(SERVICE_ORDER_STATUS).map((status) => ({
           label: SERVICE_ORDER_STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'taskIds',
+        label: 'Tarefas',
         type: 'select',
         multiple: true,
-        placeholder: 'Tarefas',
+        placeholder: 'Selecione as tarefas',
       },
       {
         key: 'startedAt',
+        label: 'Data de Início',
         type: 'date-range',
         placeholder: 'Data de Início',
       },
       {
         key: 'finishedAt',
+        label: 'Data de Conclusão',
         type: 'date-range',
         placeholder: 'Data de Conclusão',
       },
       {
         key: 'createdAt',
+        label: 'Data de Criação',
         type: 'date-range',
         placeholder: 'Data de Criação',
       },

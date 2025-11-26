@@ -136,16 +136,18 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(EXTERNAL_WITHDRAWAL_STATUS).map((status) => ({
           label: STATUS_LABELS[status] || status,
           value: status,
         })),
-        placeholder: 'Status da Retirada',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'type',
+        label: 'Tipo',
         type: 'select',
         multiple: true,
         options: [
@@ -153,22 +155,25 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
           { label: 'Cobrável', value: 'CHARGEABLE' },
           { label: 'Cortesia', value: 'COMPLIMENTARY' },
         ],
-        placeholder: 'Tipo de Retirada',
+        placeholder: 'Selecione os tipos',
       },
       {
         key: 'hasNfe',
+        label: 'Com NFe',
         description: 'Apenas retiradas com nota fiscal',
         type: 'toggle',
         placeholder: 'Com NFe',
       },
       {
         key: 'hasReceipt',
+        label: 'Com Recibo',
         description: 'Apenas retiradas com recibo',
         type: 'toggle',
         placeholder: 'Com Recibo',
       },
       {
         key: 'createdAt',
+        label: 'Data de Retirada',
         type: 'date-range',
         placeholder: 'Data de Retirada',
       },
@@ -201,6 +206,16 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
       canCreate: canEditExternalWithdrawals,
     },
     bulk: [
+      {
+        key: 'edit',
+        label: 'Editar em Lote',
+        icon: 'pencil',
+        variant: 'default',
+        onPress: async (ids, _, router) => {
+          const idsArray = Array.from(ids)
+          router.push(`/estoque/retiradas-externas/editar-em-lote?ids=${idsArray.join(',')}`)
+        },
+      },
       {
         key: 'delete',
         label: 'Excluir',

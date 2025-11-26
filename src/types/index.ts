@@ -2,6 +2,7 @@
 
 // Export common types
 export * from "./common";
+export * from "./contexts";
 
 // Export entity interfaces
 export * from "./activity";

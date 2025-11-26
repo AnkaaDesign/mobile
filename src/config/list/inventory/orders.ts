@@ -176,51 +176,39 @@ export const ordersListConfig: ListConfig<Order> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(ORDER_STATUS).map((status) => ({
           label: ORDER_STATUS_LABELS[status as keyof typeof ORDER_STATUS_LABELS] || status,
           value: status,
         })),
-        placeholder: 'Status do Pedido',
-      },
-      {
-        key: 'hasItems',
-        description: 'Apenas pedidos que possuem itens',
-        type: 'toggle',
-        placeholder: 'Com Itens',
-      },
-      {
-        key: 'isFromSchedule',
-        description: 'Apenas pedidos criados a partir de agendamentos',
-        type: 'toggle',
-        placeholder: 'De Agendamento',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'supplierIds',
+        label: 'Fornecedores',
         type: 'select',
         multiple: true,
-        placeholder: 'Fornecedores',
+        placeholder: 'Selecione os fornecedores',
       },
       {
         key: 'createdAt',
+        label: 'Período de criação',
         type: 'date-range',
         placeholder: 'Data de Criação',
       },
       {
         key: 'forecastRange',
+        label: 'Previsão de entrega',
         type: 'date-range',
         placeholder: 'Previsão de Entrega',
       },
       {
         key: 'updatedAt',
+        label: 'Data de conclusão',
         type: 'date-range',
         placeholder: 'Data de Atualização',
-      },
-      {
-        key: 'totalPriceRange',
-        type: 'number-range',
-        placeholder: { min: 'Mín', max: 'Máx' },
       },
     ],
   },

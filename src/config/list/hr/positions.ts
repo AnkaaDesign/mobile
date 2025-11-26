@@ -135,28 +135,33 @@ export const positionsListConfig: ListConfig<Position> = {
     fields: [
       {
         key: 'bonifiable',
+        label: 'Apenas Bonificáveis',
         type: 'toggle',
         placeholder: 'Apenas bonificáveis',
       },
       {
         key: 'hasUsers',
+        label: 'Com Colaboradores',
         type: 'toggle',
         placeholder: 'Com colaboradores',
       },
       {
         key: 'hierarchyRange',
+        label: 'Hierarquia',
         type: 'number-range',
         placeholder: { min: 'Hierarquia mínima', max: 'Hierarquia máxima' },
       },
       {
         key: 'remunerationRange',
+        label: 'Remuneração',
         type: 'number-range',
         placeholder: { min: 'Remuneração mínima', max: 'Remuneração máxima' },
       },
       {
         key: 'createdAt',
+        label: 'Data de Cadastro',
         type: 'date-range',
-        placeholder: { from: 'Cadastro de', to: 'Cadastro até' },
+        placeholder: 'Data de Cadastro',
       },
     ],
   },

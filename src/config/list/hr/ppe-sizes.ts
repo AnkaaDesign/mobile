@@ -144,29 +144,34 @@ export const ppeSizesListConfig: ListConfig<PpeSize> = {
     fields: [
       {
         key: 'hasAllSizes',
+        label: 'Completo',
         type: 'toggle',
         placeholder: 'Completo (todos os tamanhos)',
       },
       {
         key: 'missingShirts',
+        label: 'Sem Tamanho de Camisa',
         type: 'toggle',
         placeholder: 'Sem tamanho de camisa',
       },
       {
         key: 'missingPants',
+        label: 'Sem Tamanho de Calça',
         type: 'toggle',
         placeholder: 'Sem tamanho de calça',
       },
       {
         key: 'missingBoots',
+        label: 'Sem Tamanho de Bota',
         type: 'toggle',
         placeholder: 'Sem tamanho de bota',
       },
       {
         key: 'userIds',
+        label: 'Funcionários',
         type: 'select',
         multiple: true,
-        placeholder: 'Funcionários',
+        placeholder: 'Selecione os funcionários',
       },
     ],
   },

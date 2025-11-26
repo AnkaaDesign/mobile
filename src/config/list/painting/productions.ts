@@ -130,12 +130,14 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
     fields: [
       {
         key: 'paintTypeIds',
+        label: 'Tipos de Tinta',
         type: 'select',
         multiple: true,
-        placeholder: 'Tipos de Tinta',
+        placeholder: 'Selecione os tipos de tinta',
       },
       {
         key: 'paintFinishes',
+        label: 'Acabamentos',
         type: 'select',
         multiple: true,
         options: [
@@ -145,10 +147,11 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
           { value: 'MATTE', label: 'Fosco' },
           { value: 'SATIN', label: 'Semi Brilho' },
         ],
-        placeholder: 'Acabamentos',
+        placeholder: 'Selecione os acabamentos',
       },
       {
         key: 'paintBrands',
+        label: 'Marcas de Tinta (Legacy)',
         type: 'select',
         multiple: true,
         options: [
@@ -156,22 +159,25 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
           { value: 'FARBEN', label: 'Farben' },
           { value: 'LAZZURIL', label: 'Lazzuril' },
         ],
-        placeholder: 'Marcas de Tinta (Legacy)',
+        placeholder: 'Selecione as marcas (legacy)',
       },
       {
         key: 'paintBrandIds',
+        label: 'Marcas de Tinta',
         type: 'select',
         multiple: true,
-        placeholder: 'Marcas de Tinta',
+        placeholder: 'Selecione as marcas de tinta',
       },
       {
         key: 'formulaIds',
+        label: 'Fórmulas',
         type: 'select',
         multiple: true,
-        placeholder: 'Fórmulas',
+        placeholder: 'Selecione as fórmulas',
       },
       {
         key: 'volumeRange',
+        label: 'Volume',
         type: 'number-range',
         placeholder: {
           min: 'Volume Mín (L)',
@@ -180,6 +186,7 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
       },
       {
         key: 'createdAt',
+        label: 'Data de Produção',
         type: 'date-range',
         placeholder: 'Data de Produção',
       },

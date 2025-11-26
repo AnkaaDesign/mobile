@@ -12,7 +12,7 @@ import { useList } from '@/hooks/list/useList'
 import { useAuth } from '@/contexts/auth-context'
 import { Table } from '../Table'
 import { Search } from '../Search'
-import { Filters } from '../Filters'
+import { Filters, Tags } from '../Filters'
 import { BulkActions } from '../BulkActions'
 import { ColumnVisibilityButton, ColumnVisibilityPanel } from '../ColumnVisibility'
 import type { ListConfig } from '../types'
@@ -192,7 +192,7 @@ export const Layout = memo(function Layout({
 
       {/* Filter Tags */}
       {config.filters && list.filters.activeCount > 0 && (
-        <Filters.Tags {...list.filters.tags} />
+        <Tags {...list.filters.tags} />
       )}
 
       {/* Bulk Actions Bar */}

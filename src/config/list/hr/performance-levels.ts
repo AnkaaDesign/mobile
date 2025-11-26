@@ -132,6 +132,7 @@ export const performanceLevelsListConfig: ListConfig<User> = {
     fields: [
       {
         key: 'performanceLevel',
+        label: 'Nível de Performance',
         type: 'number-range',
         placeholder: { min: 'Nível mínimo', max: 'Nível máximo' },
         min: 0,
@@ -139,30 +140,34 @@ export const performanceLevelsListConfig: ListConfig<User> = {
       },
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(USER_STATUS).map((status) => ({
           label: USER_STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Status do funcionário',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'isActive',
+        label: 'Apenas Ativos',
         type: 'toggle',
         placeholder: 'Apenas ativos',
       },
       {
         key: 'positionIds',
+        label: 'Cargos',
         type: 'select',
         multiple: true,
-        placeholder: 'Cargos',
+        placeholder: 'Selecione os cargos',
       },
       {
         key: 'sectorIds',
+        label: 'Setores',
         type: 'select',
         multiple: true,
-        placeholder: 'Setores',
+        placeholder: 'Selecione os setores',
       },
     ],
   },

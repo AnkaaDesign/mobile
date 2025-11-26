@@ -157,37 +157,42 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(CUT_STATUS).map((status) => ({
           label: STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'type',
+        label: 'Tipo de Corte',
         type: 'select',
         multiple: true,
         options: Object.values(CUT_TYPE).map((type) => ({
           label: TYPE_LABELS[type],
           value: type,
         })),
-        placeholder: 'Tipo de Corte',
+        placeholder: 'Selecione os tipos de corte',
       },
       {
         key: 'taskIds',
+        label: 'Tarefas',
         type: 'select',
         multiple: true,
-        placeholder: 'Tarefas',
+        placeholder: 'Selecione as tarefas',
       },
       {
         key: 'createdAt',
+        label: 'Data de Criação',
         type: 'date-range',
         placeholder: 'Data de Criação',
       },
       {
         key: 'updatedAt',
+        label: 'Data de Atualização',
         type: 'date-range',
         placeholder: 'Data de Atualização',
       },

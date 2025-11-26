@@ -163,6 +163,7 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
     fields: [
       {
         key: 'statuses',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(BORROW_STATUS).map((status) => ({
@@ -173,40 +174,47 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
       },
       {
         key: 'isOverdue',
+        label: 'Apenas Atrasados',
         type: 'toggle',
         placeholder: 'Apenas Atrasados',
         description: 'Mostrar apenas empréstimos atrasados',
       },
       {
         key: 'itemIds',
+        label: 'Itens',
         type: 'select',
         multiple: true,
         placeholder: 'Selecione os itens',
       },
       {
         key: 'categoryIds',
+        label: 'Categorias',
         type: 'select',
         multiple: true,
         placeholder: 'Selecione as categorias',
       },
       {
         key: 'brandIds',
+        label: 'Marcas',
         type: 'select',
         multiple: true,
         placeholder: 'Selecione as marcas',
       },
       {
         key: 'borrowDate',
+        label: 'Data de Empréstimo',
         type: 'date-range',
         placeholder: 'Data de Empréstimo',
       },
       {
         key: 'returnDate',
+        label: 'Data de Devolução',
         type: 'date-range',
         placeholder: 'Data de Devolução',
       },
       {
         key: 'updatedAt',
+        label: 'Data de Atualização',
         type: 'date-range',
         placeholder: 'Data de Atualização',
       },

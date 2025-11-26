@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TextInput } from '@/components/ui/text-input';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { IconX } from '@tabler/icons-react-native';
 import { useTheme } from '@/lib/theme';
 import { spacing } from '@/constants/design-system';
+import type { FilterIconComponent } from '@/lib/filter-icon-mapping';
 
 export interface NumericRange {
   min?: number;
@@ -20,6 +22,8 @@ export interface NumericRangeFilterProps {
   onChange: (range: NumericRange | undefined) => void;
   /** Label for the filter */
   label?: string;
+  /** Icon component to display next to label */
+  icon?: FilterIconComponent;
   /** Placeholder for min input */
   minPlaceholder?: string;
   /** Placeholder for max input */
@@ -36,6 +40,8 @@ export interface NumericRangeFilterProps {
   disabled?: boolean;
   /** Number of decimal places */
   decimalPlaces?: number;
+  /** Format type - 'currency' uses natural currency typing */
+  format?: 'currency';
 }
 
 /**
@@ -71,6 +77,7 @@ export function NumericRangeFilter({
   value,
   onChange,
   label,
+  icon: Icon,
   minPlaceholder = 'Mínimo',
   maxPlaceholder = 'Máximo',
   step: _step = 1,
@@ -79,8 +86,12 @@ export function NumericRangeFilter({
   showClearButton = true,
   disabled = false,
   decimalPlaces = 0,
+  format,
 }: NumericRangeFilterProps) {
   const { colors } = useTheme();
+
+  // For currency format, values are stored as cents
+  const isCurrency = format === 'currency';
 
   const [minText, setMinText] = React.useState(value?.min?.toString() || '');
   const [maxText, setMaxText] = React.useState(value?.max?.toString() || '');
@@ -133,6 +144,17 @@ export function NumericRangeFilter({
     if (!hasValue) return '';
 
     const formatValue = (num: number): string => {
+      if (isCurrency) {
+        // For currency, convert cents to reais
+        const reais = num / 100;
+        return reais.toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+      }
+
       const formatted = decimalPlaces > 0
         ? num.toFixed(decimalPlaces)
         : num.toString();
@@ -160,6 +182,11 @@ export function NumericRangeFilter({
       justifyContent: 'space-between',
       alignItems: 'center',
     },
+    labelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
     displayText: {
       fontSize: 13,
       color: colors.mutedForeground,
@@ -179,7 +206,7 @@ export function NumericRangeFilter({
     separator: {
       fontSize: 16,
       color: colors.mutedForeground,
-      paddingTop: 20,
+      alignSelf: 'center',
     },
     inputWithAffix: {
       flexDirection: 'row',
@@ -205,10 +232,37 @@ export function NumericRangeFilter({
   });
 
   const renderInput = (
-    text: string,
-    onChangeText: (text: string) => void,
+    isMin: boolean,
     placeholder: string
   ) => {
+    // For currency format, use CurrencyInput
+    if (isCurrency) {
+      const currencyValue = isMin ? value?.min : value?.max;
+      const handleCurrencyChange = (cents: number | undefined) => {
+        const minValue = isMin ? cents : value?.min;
+        const maxValue = isMin ? value?.max : cents;
+
+        if (minValue === undefined && maxValue === undefined) {
+          onChange(undefined);
+        } else {
+          onChange({ min: minValue, max: maxValue });
+        }
+      };
+
+      return (
+        <CurrencyInput
+          value={currencyValue}
+          onValueChange={handleCurrencyChange}
+          placeholder={placeholder}
+          disabled={disabled}
+        />
+      );
+    }
+
+    // For regular numeric inputs
+    const text = isMin ? minText : maxText;
+    const onChangeText = isMin ? handleMinChange : handleMaxChange;
+
     if (prefix || suffix) {
       return (
         <View style={styles.inputWithAffix}>
@@ -240,7 +294,12 @@ export function NumericRangeFilter({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {label && <Label>{label}</Label>}
+        {label && (
+          <View style={styles.labelRow}>
+            {Icon && <Icon size={18} color={colors.foreground} />}
+            <Label>{label}</Label>
+          </View>
+        )}
         {showClearButton && hasValue && !disabled && (
           <Button
             variant="ghost"
@@ -259,11 +318,11 @@ export function NumericRangeFilter({
 
       <View style={styles.inputsRow}>
         <View style={styles.inputContainer}>
-          {renderInput(minText, handleMinChange, minPlaceholder)}
+          {renderInput(true, minPlaceholder)}
         </View>
         <Text style={styles.separator}>-</Text>
         <View style={styles.inputContainer}>
-          {renderInput(maxText, handleMaxChange, maxPlaceholder)}
+          {renderInput(false, maxPlaceholder)}
         </View>
       </View>
     </View>

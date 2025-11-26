@@ -1,13 +1,5 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Holiday } from '@/types'
-import { HOLIDAY_TYPE } from '@/constants/enums'
-
-const TYPE_LABELS: Record<string, string> = {
-  NATIONAL: 'Nacional',
-  STATE: 'Estadual',
-  MUNICIPAL: 'Municipal',
-  OPTIONAL: 'Facultativo',
-}
 
 export const holidaysListConfig: ListConfig<Holiday> = {
   key: 'hr-holidays',
@@ -25,31 +17,34 @@ export const holidaysListConfig: ListConfig<Holiday> = {
         key: 'name',
         label: 'NOME',
         sortable: true,
-        width: 2.5,
+        width: 2.0,
         align: 'left',
-        render: (holiday) => holiday.name,
+        render: (holiday) => holiday.name || '-',
         style: { fontWeight: '500' },
       },
       {
         key: 'date',
         label: 'DATA',
         sortable: true,
-        width: 1.2,
+        width: 1.3,
         align: 'left',
         render: (holiday) => holiday.date,
         format: 'date',
       },
       {
-        key: 'type',
-        label: 'TIPO',
-        sortable: true,
-        width: 1.2,
-        align: 'center',
-        render: (holiday) => holiday.type,
-        format: 'badge',
+        key: 'dayOfWeek',
+        label: 'DIA DA SEMANA',
+        sortable: false,
+        width: 1.5,
+        align: 'left',
+        render: (holiday) => {
+          if (!holiday.date) return '-'
+          const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+          return days[new Date(holiday.date).getDay()]
+        },
       },
     ],
-    defaultVisible: ['name', 'date', 'type'],
+    defaultVisible: ['name', 'date', 'dayOfWeek'],
     rowHeight: 72,
     actions: [
       {
@@ -90,19 +85,21 @@ export const holidaysListConfig: ListConfig<Holiday> = {
     fields: [
       {
         key: 'year',
+        label: 'Ano',
         type: 'select',
         multiple: false,
         options: (() => {
           const currentYear = new Date().getFullYear()
           return Array.from({ length: 5 }, (_, i) => {
-            const year = currentYear - 2 + i
+            const year = currentYear - 1 + i
             return { label: String(year), value: year }
           })
         })(),
-        placeholder: 'Ano',
+        placeholder: 'Selecione o ano',
       },
       {
         key: 'month',
+        label: 'Mês',
         type: 'select',
         multiple: false,
         options: [
@@ -119,17 +116,7 @@ export const holidaysListConfig: ListConfig<Holiday> = {
           { label: 'Novembro', value: 11 },
           { label: 'Dezembro', value: 12 },
         ],
-        placeholder: 'Mês',
-      },
-      {
-        key: 'type',
-        type: 'select',
-        multiple: true,
-        options: Object.values(HOLIDAY_TYPE).map((type) => ({
-          label: TYPE_LABELS[type],
-          value: type,
-        })),
-        placeholder: 'Tipo de feriado',
+        placeholder: 'Selecione o mês',
       },
     ],
   },
@@ -146,7 +133,6 @@ export const holidaysListConfig: ListConfig<Holiday> = {
     columns: [
       { key: 'name', label: 'Nome', path: 'name' },
       { key: 'date', label: 'Data', path: 'date', format: 'date' },
-      { key: 'type', label: 'Tipo', path: 'type', format: (value) => TYPE_LABELS[value] || value },
     ],
   },
 

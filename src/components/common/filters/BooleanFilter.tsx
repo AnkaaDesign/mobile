@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '@/lib/theme';
 import { spacing } from '@/constants/design-system';
+import type { FilterIconComponent } from '@/lib/filter-icon-mapping';
 
 export interface BooleanFilterProps {
   /** Current boolean value */
@@ -13,6 +14,8 @@ export interface BooleanFilterProps {
   onChange: (value: boolean) => void;
   /** Label for the switch */
   label?: string;
+  /** Icon component to display next to label */
+  icon?: FilterIconComponent;
   /** Description text shown below label */
   description?: string;
   /** Disabled state */
@@ -39,6 +42,7 @@ export function BooleanFilter({
   value,
   onChange,
   label,
+  icon: Icon,
   description,
   disabled = false,
 }: BooleanFilterProps) {
@@ -56,6 +60,11 @@ export function BooleanFilter({
       flex: 1,
       gap: spacing.xs,
     },
+    labelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
     description: {
       fontSize: 13,
       color: colors.mutedForeground,
@@ -66,7 +75,12 @@ export function BooleanFilter({
   return (
     <View style={styles.container}>
       <View style={styles.labelContainer}>
-        {label && <Label>{label}</Label>}
+        {label && (
+          <View style={styles.labelRow}>
+            {Icon && <Icon size={18} color={colors.foreground} />}
+            <Label>{label}</Label>
+          </View>
+        )}
         {description && <Text style={styles.description}>{description}</Text>}
       </View>
       <Switch

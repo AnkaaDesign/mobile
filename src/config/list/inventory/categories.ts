@@ -99,12 +99,14 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
     fields: [
       {
         key: 'hasItems',
+        label: 'Com Produtos',
         description: 'Apenas categorias que possuem produtos',
         type: 'toggle',
         placeholder: 'Com Produtos',
       },
       {
         key: 'createdAt',
+        label: 'Data de Cadastro',
         type: 'date-range',
         placeholder: 'Data de Cadastro',
       },

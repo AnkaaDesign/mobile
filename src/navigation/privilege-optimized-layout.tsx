@@ -72,7 +72,7 @@ const PRIVILEGED_ROUTES: Record<string, RouteConfig[]> = {
   // HUMAN_RESOURCES routes
   [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: [
     { name: "recursos-humanos/index", title: "Recursos Humanos", module: "hr" },
-    { name: "recursos-humanos/funcionarios/listar", title: "Funcionários", module: "hr" },
+    { name: "recursos-humanos/colaboradores/listar", title: "Colaboradores", module: "hr" },
     { name: "recursos-humanos/ferias/index", title: "Férias", module: "hr" },
     { name: "recursos-humanos/feriados/index", title: "Feriados", module: "hr" },
     { name: "recursos-humanos/cargos/index", title: "Cargos", module: "hr" },

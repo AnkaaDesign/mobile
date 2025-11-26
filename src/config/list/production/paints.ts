@@ -131,29 +131,34 @@ export const paintsListConfig: ListConfig<Paint> = {
     fields: [
       {
         key: 'taskId',
+        label: 'Tarefa',
         type: 'select',
         multiple: false,
-        placeholder: 'Tarefa',
+        placeholder: 'Selecione a tarefa',
       },
       {
         key: 'customerId',
+        label: 'Cliente',
         type: 'select',
         multiple: false,
-        placeholder: 'Cliente',
+        placeholder: 'Selecione o cliente',
       },
       {
         key: 'catalogPaintId',
+        label: 'Tinta do Catálogo',
         type: 'select',
         multiple: false,
-        placeholder: 'Tinta do Catálogo',
+        placeholder: 'Selecione a tinta',
       },
       {
         key: 'quantityRange',
+        label: 'Quantidade',
         type: 'number-range',
         placeholder: { min: 'Mínimo', max: 'Máximo' },
       },
       {
         key: 'createdAt',
+        label: 'Data de Cadastro',
         type: 'date-range',
         placeholder: 'Data de Cadastro',
       },

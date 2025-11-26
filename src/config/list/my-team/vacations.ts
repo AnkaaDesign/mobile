@@ -115,36 +115,41 @@ export const teamVacationsListConfig: ListConfig<Vacation> = {
     fields: [
       {
         key: 'statuses',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(VACATION_STATUS).map((status) => ({
           label: STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'types',
+        label: 'Tipo de Férias',
         type: 'select',
         multiple: true,
         options: Object.values(VACATION_TYPE).map((type) => ({
           label: TYPE_LABELS[type],
           value: type,
         })),
-        placeholder: 'Tipo de Férias',
+        placeholder: 'Selecione os tipos',
       },
       {
         key: 'startAt',
+        label: 'Data de Início',
         type: 'date-range',
         placeholder: 'Data de Início',
       },
       {
         key: 'endAt',
+        label: 'Data de Fim',
         type: 'date-range',
         placeholder: 'Data de Fim',
       },
       {
         key: 'showCurrentOnly',
+        label: 'Mostrar apenas férias ativas',
         type: 'toggle',
         placeholder: 'Mostrar apenas férias ativas',
       },

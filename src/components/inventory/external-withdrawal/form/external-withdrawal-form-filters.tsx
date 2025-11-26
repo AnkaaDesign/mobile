@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
-import { Filter, X, RefreshCw, Tag, Search } from "lucide-react-native";
+import { IconFilter, IconX, IconRefresh, IconTag, IconSearch } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
@@ -10,7 +10,7 @@ import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/ui/combobox";
-import { FormLabel } from "@/components/ui/form-label";
+import { FormLabel } from "@/components/ui/form";
 import { Modal } from "@/components/ui/modal";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -131,7 +131,7 @@ export function ExternalWithdrawalFormFilters({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTitle}>
-            <Filter size={20} color={colors.mutedForeground} />
+            <IconFilter size={20} color={colors.mutedForeground} />
             <Text style={styles.title}>Filtros de Seleção de Itens</Text>
             {activeFilterCount() > 0 && (
               <Badge variant="secondary">{activeFilterCount()}</Badge>
@@ -145,10 +145,10 @@ export function ExternalWithdrawalFormFilters({
         {/* Tabs */}
         <Tabs defaultValue="basic" style={styles.tabs}>
           <TabsList>
-            <TabsTrigger value="basic" icon={<Search size={16} />}>
+            <TabsTrigger value="basic" icon={<IconSearch size={16} />}>
               Básico
             </TabsTrigger>
-            <TabsTrigger value="entities" icon={<Tag size={16} />}>
+            <TabsTrigger value="entities" icon={<IconTag size={16} />}>
               Categorias e Marcas
             </TabsTrigger>
           </TabsList>
@@ -253,7 +253,7 @@ export function ExternalWithdrawalFormFilters({
           <Button
             variant="outline"
             onPress={handleReset}
-            icon={<RefreshCw size={16} />}
+            icon={<IconRefresh size={16} />}
             style={styles.footerButton}
           >
             Limpar todos

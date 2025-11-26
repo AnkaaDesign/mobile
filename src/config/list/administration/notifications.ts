@@ -146,43 +146,49 @@ export const notificationsListConfig: ListConfig<Notification> = {
     fields: [
       {
         key: 'importance',
+        label: 'Importância',
         type: 'select',
         multiple: true,
         options: Object.values(NOTIFICATION_IMPORTANCE).map((importance) => ({
           label: IMPORTANCE_LABELS[importance],
           value: importance,
         })),
-        placeholder: 'Importância',
+        placeholder: 'Selecione as importâncias',
       },
       {
         key: 'type',
+        label: 'Tipo',
         type: 'select',
         multiple: true,
         options: Object.values(NOTIFICATION_TYPE).map((type) => ({
           label: TYPE_LABELS[type],
           value: type,
         })),
-        placeholder: 'Tipo',
+        placeholder: 'Selecione os tipos',
       },
       {
         key: 'sent',
+        label: 'Enviadas',
         type: 'toggle',
         placeholder: 'Enviadas',
         description: 'Apenas notificações enviadas',
       },
       {
         key: 'hasSeen',
+        label: 'Visualizadas',
         type: 'toggle',
         placeholder: 'Visualizadas',
         description: 'Apenas notificações visualizadas',
       },
       {
         key: 'sentAt',
+        label: 'Data de Envio',
         type: 'date-range',
         placeholder: 'Data de Envio',
       },
       {
         key: 'createdAt',
+        label: 'Data de Cadastro',
         type: 'date-range',
         placeholder: 'Data de Cadastro',
       },

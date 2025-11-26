@@ -204,43 +204,48 @@ export const cutsListConfig: ListConfig<Cut> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(CUT_STATUS).map((status) => ({
           label: STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'type',
+        label: 'Tipo de Corte',
         type: 'select',
         multiple: true,
         options: Object.values(CUT_TYPE).map((type) => ({
           label: TYPE_LABELS[type],
           value: type,
         })),
-        placeholder: 'Tipo de Corte',
+        placeholder: 'Selecione os tipos de corte',
       },
       {
         key: 'origin',
+        label: 'Origem',
         type: 'select',
         multiple: true,
         options: Object.values(CUT_ORIGIN).map((origin) => ({
           label: ORIGIN_LABELS[origin],
           value: origin,
         })),
-        placeholder: 'Origem',
+        placeholder: 'Selecione as origens',
       },
       {
         key: 'sectorIds',
+        label: 'Setores',
         type: 'select',
         multiple: true,
         async: true,
-        placeholder: 'Setores',
+        placeholder: 'Selecione os setores',
       },
       {
         key: 'createdAt',
+        label: 'Data de Criação',
         type: 'date-range',
         placeholder: 'Data de Criação',
       },

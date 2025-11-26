@@ -141,18 +141,21 @@ export function createFormulaComponentsListConfig(
       fields: [
         {
           key: 'brandIds',
+          label: 'Marcas',
           type: 'select',
           multiple: true,
-          placeholder: 'Marcas',
+          placeholder: 'Selecione as marcas',
         },
         {
           key: 'categoryIds',
+          label: 'Categorias',
           type: 'select',
           multiple: true,
-          placeholder: 'Categorias',
+          placeholder: 'Selecione as categorias',
         },
         {
           key: 'ratio',
+          label: 'Proporção',
           type: 'number-range',
           placeholder: { min: 'Proporção Mín (%)', max: 'Proporção Máx (%)' },
           min: 0,
@@ -161,6 +164,7 @@ export function createFormulaComponentsListConfig(
         },
         {
           key: 'weight',
+          label: 'Peso',
           type: 'number-range',
           placeholder: { min: 'Peso Mín (g)', max: 'Peso Máx (g)' },
           min: 0,
@@ -168,6 +172,7 @@ export function createFormulaComponentsListConfig(
         },
         {
           key: 'createdAt',
+          label: 'Data de Adição',
           type: 'date-range',
           placeholder: 'Data de Adição',
         },

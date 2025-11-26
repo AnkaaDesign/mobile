@@ -9,6 +9,7 @@ import { useTheme } from '@/lib/theme';
 import { spacing } from '@/constants/design-system';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import type { FilterIconComponent } from '@/lib/filter-icon-mapping';
 
 export interface DateRange {
   from?: Date;
@@ -22,6 +23,8 @@ export interface DateRangeFilterProps {
   onChange: (range: DateRange | undefined) => void;
   /** Label for the filter */
   label?: string;
+  /** Icon component to display next to label */
+  icon?: FilterIconComponent;
   /** Placeholder for from date */
   fromPlaceholder?: string;
   /** Placeholder for to date */
@@ -54,10 +57,11 @@ export function DateRangeFilter({
   value,
   onChange,
   label,
+  icon: Icon,
   fromPlaceholder = 'Data inicial',
   toPlaceholder = 'Data final',
   showClearButton = true,
-  showPresets = true,
+  showPresets = false,
   disabled = false,
 }: DateRangeFilterProps) {
   const { colors } = useTheme();
@@ -143,6 +147,11 @@ export function DateRangeFilter({
       justifyContent: 'space-between',
       alignItems: 'center',
     },
+    labelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
     displayText: {
       fontSize: 13,
       color: colors.mutedForeground,
@@ -152,6 +161,8 @@ export function DateRangeFilter({
       padding: 4,
     },
     datePickersRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: spacing.sm,
     },
     separator: {
@@ -182,7 +193,12 @@ export function DateRangeFilter({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {label && <Label>{label}</Label>}
+        {label && (
+          <View style={styles.labelRow}>
+            {Icon && <Icon size={18} color={colors.foreground} />}
+            <Label>{label}</Label>
+          </View>
+        )}
         {showClearButton && hasValue && !disabled && (
           <Button
             variant="ghost"
@@ -201,23 +217,23 @@ export function DateRangeFilter({
 
       <View style={styles.datePickersRow}>
         <DatePicker
-          label="De"
           value={value?.from}
           onChange={handleFromChange}
           placeholder={fromPlaceholder}
           disabled={disabled}
           type="date"
+          style={{ flex: 1 }}
         />
 
         <Text style={styles.separator}>até</Text>
 
         <DatePicker
-          label="Até"
           value={value?.to}
           onChange={handleToChange}
           placeholder={toPlaceholder}
           disabled={disabled}
           type="date"
+          style={{ flex: 1 }}
         />
       </View>
 

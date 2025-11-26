@@ -90,12 +90,14 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
     fields: [
       {
         key: 'hasPaints',
+        label: 'Com Tintas',
         type: 'toggle',
         placeholder: 'Com Tintas',
         description: 'Apenas marcas com tintas cadastradas',
       },
       {
         key: 'createdAt',
+        label: 'Data de Cadastro',
         type: 'date-range',
         placeholder: 'Data de Cadastro',
       },

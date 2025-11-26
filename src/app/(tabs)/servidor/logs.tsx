@@ -191,7 +191,7 @@ export default function ServerLogsScreen() {
 
         {/* Action Buttons */}
         <ThemedView className="flex-row justify-between items-center">
-          <ThemedView className="flex-row gap-2">
+          <ThemedView className="flex-row gap-2 items-center">
             <Combobox
               value={lineLimit.toString()}
               onValueChange={(value) => setLineLimit(parseInt(value))}
@@ -201,20 +201,21 @@ export default function ServerLogsScreen() {
               }))}
               placeholder="Selecionar"
               searchable={false}
-              style={{ width: 128 }}
+              style={{ minWidth: 140 }}
             />
 
             <Button
               variant="outline"
-              size="sm"
+              size="default"
               onPress={() => setAutoRefresh(!autoRefresh)}
+              className="flex-row items-center gap-1"
             >
               <Icon
                 name={autoRefresh ? 'pause' : 'play'}
-                size={14}
+                size={16}
                 className={autoRefresh ? 'text-warning' : 'text-success'}
               />
-              <ThemedText className="ml-1 text-xs">
+              <ThemedText className="text-sm font-medium">
                 {autoRefresh ? 'Pausar' : 'Auto'}
               </ThemedText>
             </Button>
@@ -308,32 +309,32 @@ export default function ServerLogsScreen() {
         )}
 
         {filteredLogs.length > 0 && (
-          <ThemedView className="p-2">
+          <ThemedView className="p-3">
             {filteredLogs.map((log, index) => {
               const logConfig = LOG_LEVELS[log.level as keyof typeof LOG_LEVELS] || LOG_LEVELS.INFO;
 
               return (
-                <Card key={index} className="mb-1 p-0">
-                  <ThemedView className="p-3">
-                    <ThemedView className="flex-row items-start gap-2 mb-1">
-                      <Badge variant={logConfig.color as BadgeProps['variant']} style={{ marginTop: 2 }}>
+                <Card key={index} className="mb-2 p-0">
+                  <ThemedView className="p-4">
+                    <ThemedView className="flex-row items-start gap-2 mb-2">
+                      <Badge variant={logConfig.color as BadgeProps['variant']} size="default" style={{ marginTop: 2 }}>
                         <ThemedView className="flex-row items-center">
-                          <Icon name={logConfig.icon} size={10} className="mr-1" />
-                          <ThemedText className="text-xs">{log.level}</ThemedText>
+                          <Icon name={logConfig.icon} size={12} className="mr-1" />
+                          <ThemedText className="text-xs font-semibold">{log.level}</ThemedText>
                         </ThemedView>
                       </Badge>
 
-                      <ThemedText className="text-xs text-muted-foreground flex-1">
-                        {new Date(log.timestamp).toLocaleString('pt-BR')}
+                      <ThemedText className="text-sm text-muted-foreground flex-1">
+                        {new Date(log.timestamp).toLocaleString('pt-BR', {
+                          dateStyle: 'short',
+                          timeStyle: 'medium'
+                        })}
                       </ThemedText>
                     </ThemedView>
 
                     <ThemedText
-                      className="text-sm font-mono leading-5"
-                      style={{
-                        fontFamily: 'monospace',
-                        color: log.level === 'ERROR' ? '#ef4444' : undefined
-                      }}
+                      className={`text-base font-mono leading-6 ${log.level === 'ERROR' ? 'text-destructive' : ''}`}
+                      style={{ fontFamily: 'monospace' }}
                     >
                       {log.message}
                     </ThemedText>

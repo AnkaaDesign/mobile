@@ -1,8 +1,6 @@
 import { memo } from 'react'
-import { View, StyleSheet } from 'react-native'
-import { ThemedText } from '@/components/ui/themed-text'
-import { Input } from '@/components/ui/input'
-import { useTheme } from '@/lib/theme'
+import { NumericRangeFilter } from '@/components/common/filters'
+import { getFilterIcon } from '@/lib/filter-icon-mapping'
 import type { FilterField } from '../../types'
 
 interface NumberRangeFieldProps {
@@ -16,74 +14,29 @@ export const NumberRangeField = memo(function NumberRangeField({
   value,
   onChange,
 }: NumberRangeFieldProps) {
-  const { colors } = useTheme()
-
-  const handleMinChange = (text: string) => {
-    const num = text ? parseFloat(text) : undefined
-    onChange({
-      ...value,
-      min: num,
-    })
-  }
-
-  const handleMaxChange = (text: string) => {
-    const num = text ? parseFloat(text) : undefined
-    onChange({
-      ...value,
-      max: num,
-    })
-  }
-
   // Get placeholder labels - use field.placeholder if object, otherwise defaults
   const placeholders = typeof field.placeholder === 'object' && field.placeholder
     ? { min: field.placeholder.min || 'Mínimo', max: field.placeholder.max || 'Máximo' }
     : { min: 'Mínimo', max: 'Máximo' }
 
+  // Use field label or placeholder string as label
+  const label = field.label || (typeof field.placeholder === 'string' ? field.placeholder : field.key)
+
+  // Get icon for this filter
+  const icon = getFilterIcon(field.key)
+
+  // Detect if this is a currency field based on key name
+  const isCurrency = field.key.toLowerCase().includes('price') || field.key.toLowerCase().includes('preço')
+
   return (
-    <View style={styles.container}>
-      <View style={styles.row}>
-        <View style={styles.inputField}>
-          <ThemedText style={[styles.subLabel, { color: colors.mutedForeground }]}>
-            {placeholders.min}
-          </ThemedText>
-          <Input
-            value={value?.min?.toString() || ''}
-            onChangeText={handleMinChange}
-            placeholder="0"
-            keyboardType="numeric"
-          />
-        </View>
-
-        <View style={styles.inputField}>
-          <ThemedText style={[styles.subLabel, { color: colors.mutedForeground }]}>
-            {placeholders.max}
-          </ThemedText>
-          <Input
-            value={value?.max?.toString() || ''}
-            onChangeText={handleMaxChange}
-            placeholder="∞"
-            keyboardType="numeric"
-          />
-        </View>
-      </View>
-    </View>
+    <NumericRangeFilter
+      label={label}
+      icon={icon}
+      value={value}
+      onChange={onChange}
+      minPlaceholder={placeholders.min}
+      maxPlaceholder={placeholders.max}
+      format={isCurrency ? 'currency' : undefined}
+    />
   )
-})
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 12,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  inputField: {
-    flex: 1,
-  },
-  subLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
 })

@@ -39,21 +39,25 @@ export interface BadgeProps {
 }
 
 const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeProps["size"] = "default", colors: any, isDark: boolean): ViewStyle => {
-  // Size-based padding matching web (increased vertical padding for better height)
-  const sizePadding: Record<string, { paddingHorizontal: number; paddingVertical: number }> = {
-    sm: { paddingHorizontal: 8, paddingVertical: 5 },
-    default: { paddingHorizontal: 10, paddingVertical: 7 },
-    md: { paddingHorizontal: 10, paddingVertical: 5 },
-    lg: { paddingHorizontal: 12, paddingVertical: 8 },
+  // Size-based padding with MORE vertical padding to fix Android text cutoff
+  const sizePadding: Record<string, { paddingHorizontal: number; paddingVertical: number; minHeight: number }> = {
+    sm: { paddingHorizontal: 8, paddingVertical: 6, minHeight: 24 },
+    default: { paddingHorizontal: 10, paddingVertical: 8, minHeight: 28 },
+    md: { paddingHorizontal: 10, paddingVertical: 8, minHeight: 28 },
+    lg: { paddingHorizontal: 12, paddingVertical: 10, minHeight: 32 },
   };
+
+  const padding = sizePadding[size || "default"] || sizePadding.default;
 
   const baseStyles: ViewStyle = {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start", // Changed from center to flex-start for left alignment
+    justifyContent: "center",
     borderRadius: borderRadius.DEFAULT,
     borderWidth: 1,
-    ...(sizePadding[size || "default"] || sizePadding.default),
+    paddingHorizontal: padding.paddingHorizontal,
+    paddingVertical: padding.paddingVertical,
+    minHeight: padding.minHeight, // Ensure minimum height for text
   };
 
   // Safe border color with fallback
@@ -181,17 +185,19 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
 };
 
 const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: BadgeProps["size"] = "default", colors: any, _isDark: boolean): TextStyle => {
-  // Size-based font sizes matching web
-  const sizeFont: Record<string, { fontSize: number }> = {
-    sm: { fontSize: 10 },
-    default: { fontSize: fontSize.xs },
-    md: { fontSize: fontSize.xs },
-    lg: { fontSize: fontSize.sm },
+  // Size-based font sizes with MUCH taller line heights to prevent cutoff
+  const sizeFont: Record<string, { fontSize: number; lineHeight: number }> = {
+    sm: { fontSize: 10, lineHeight: 14 },
+    default: { fontSize: fontSize.xs, lineHeight: 16 },
+    md: { fontSize: fontSize.xs, lineHeight: 16 },
+    lg: { fontSize: fontSize.sm, lineHeight: 18 },
   };
 
   const baseStyles: TextStyle = {
     fontWeight: fontWeight.semibold,
-    textAlign: "left", // Changed from center to left
+    textAlign: "center",
+    includeFontPadding: false, // Critical for Android - removes extra padding
+    textAlignVertical: "center",
     ...(sizeFont[size || "default"] || sizeFont.default),
   };
 
@@ -342,17 +348,27 @@ function Badge(props: BadgeProps) {
 
   const renderChildren = () => {
     if (typeof children === "string" || typeof children === "number") {
-      return <Text style={StyleSheet.flatten([badgeTextStyles, textStyle].filter(Boolean))} numberOfLines={1} ellipsizeMode="tail">{children}</Text>;
+      return (
+        <Text
+          style={StyleSheet.flatten([badgeTextStyles, textStyle].filter(Boolean))}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          allowFontScaling={false}
+        >
+          {children}
+        </Text>
+      );
     }
 
     // For non-text children, wrap Text components with styles
     return React.Children.map(children, (child) => {
       if (React.isValidElement(child) && child.type === Text) {
-        const element = child as React.ReactElement<{ style?: TextStyle; numberOfLines?: number; ellipsizeMode?: "head" | "middle" | "tail" | "clip" }>;
+        const element = child as React.ReactElement<{ style?: TextStyle; numberOfLines?: number; ellipsizeMode?: "head" | "middle" | "tail" | "clip"; allowFontScaling?: boolean }>;
         return React.cloneElement(element, {
           style: StyleSheet.flatten([badgeTextStyles, element.props?.style, textStyle].filter(Boolean)),
           numberOfLines: 1,
           ellipsizeMode: "tail" as const,
+          allowFontScaling: false,
         });
       }
       return child;
@@ -363,7 +379,21 @@ function Badge(props: BadgeProps) {
   const safeProps = restProps && typeof restProps === 'object' ? restProps : {};
 
   return (
-    <View style={StyleSheet.flatten([badgeStyles, style].filter(Boolean))} {...safeProps}>
+    <View
+      style={StyleSheet.flatten([
+        badgeStyles,
+        style,
+        // CRITICAL: Force override any conflicting NativeWind styles that cause text cutoff
+        {
+          minHeight: badgeStyles.minHeight,
+          paddingVertical: badgeStyles.paddingVertical,
+          paddingHorizontal: badgeStyles.paddingHorizontal,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }
+      ].filter(Boolean))}
+      {...safeProps}
+    >
       {renderChildren()}
     </View>
   );

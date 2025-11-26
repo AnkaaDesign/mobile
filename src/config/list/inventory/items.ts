@@ -11,6 +11,7 @@ import {
   ITEM_CATEGORY_TYPE_LABELS,
 } from '@/constants'
 import { canEditItems } from '@/utils/permissions/entity-permissions'
+import { getStockLevelIcon } from '@/utils/stock-level'
 
 export const itemsListConfig: ListConfig<Item> = {
   key: 'inventory-items',
@@ -270,116 +271,154 @@ export const itemsListConfig: ListConfig<Item> = {
     fields: [
       {
         key: 'isActive',
-        description: 'Incluir apenas produtos ativos',
-        type: 'toggle',
-        defaultValue: true,
-        placeholder: 'Produtos Ativos',
+        label: 'Status',
+        type: 'select',
+        multiple: false,
+        options: [
+          { label: 'Ambos', value: 'ambos' },
+          { label: 'Ativo', value: 'ativo' },
+          { label: 'Inativo', value: 'inativo' },
+        ],
+        placeholder: 'Selecione...',
       },
       {
         key: 'shouldAssignToUser',
-        description: 'Atribuir produtos ao usuário',
-        type: 'toggle',
-        placeholder: 'Atribuir ao Usuário',
+        label: 'Atribuir ao usuário',
+        type: 'select',
+        multiple: false,
+        options: [
+          { label: 'Ambos', value: 'ambos' },
+          { label: 'Sim', value: 'sim' },
+          { label: 'Não', value: 'nao' },
+        ],
+        placeholder: 'Selecione...',
       },
       {
         key: 'stockLevels',
+        label: 'Status de Estoque',
         type: 'select',
         multiple: true,
         options: Object.values(STOCK_LEVEL).map((level) => ({
           label: STOCK_LEVEL_LABELS[level as keyof typeof STOCK_LEVEL_LABELS] || level,
           value: level,
+          icon: 'alert-triangle', // Same icon for all, different colors
+          stockLevel: level, // Pass the level for color mapping
         })),
-        placeholder: 'Nível de Estoque',
-      },
-      {
-        key: 'nearReorderPoint',
-        description: 'Itens próximos ao ponto de reposição',
-        type: 'toggle',
-        placeholder: 'Próximo ao Ponto de Reposição',
-      },
-      {
-        key: 'noReorderPoint',
-        description: 'Itens sem ponto de reposição definido',
-        type: 'toggle',
-        placeholder: 'Sem Ponto de Reposição',
-      },
-      {
-        key: 'brandIds',
-        type: 'select',
-        multiple: true,
-        placeholder: 'Marcas',
+        placeholder: 'Selecione status de estoque...',
       },
       {
         key: 'categoryIds',
+        label: 'Categoria',
         type: 'select',
         multiple: true,
-        placeholder: 'Categorias',
+        async: true,
+        queryKey: ['item-categories', 'filter'],
+        queryFn: async (searchTerm: string) => {
+          try {
+            const { getItemCategories } = await import('@/api-client')
+            const response = await getItemCategories({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              take: 50,
+            })
+            return {
+              data: (response.data || []).map((cat: any) => ({
+                label: cat.name,
+                value: cat.id,
+              })),
+              hasMore: false,
+            }
+          } catch (error) {
+            console.error('[Category Filter] Error:', error)
+            return {
+              data: [],
+              hasMore: false,
+            }
+          }
+        },
+        placeholder: 'Selecione categorias...',
+      },
+      {
+        key: 'brandIds',
+        label: 'Marca',
+        type: 'select',
+        multiple: true,
+        async: true,
+        queryKey: ['item-brands', 'filter'],
+        queryFn: async (searchTerm: string) => {
+          try {
+            const { getItemBrands } = await import('@/api-client')
+            const response = await getItemBrands({
+              where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { name: 'asc' },
+              take: 50,
+            })
+            return {
+              data: (response.data || []).map((brand: any) => ({
+                label: brand.name,
+                value: brand.id,
+              })),
+              hasMore: false,
+            }
+          } catch (error) {
+            console.error('[Brand Filter] Error:', error)
+            return {
+              data: [],
+              hasMore: false,
+            }
+          }
+        },
+        placeholder: 'Selecione marcas...',
       },
       {
         key: 'supplierIds',
+        label: 'Fornecedor',
         type: 'select',
         multiple: true,
-        placeholder: 'Fornecedores',
-      },
-      {
-        key: 'measureUnits',
-        type: 'select',
-        multiple: true,
-        options: Object.values(MEASURE_UNIT).map((unit) => ({
-          label: MEASURE_UNIT_LABELS[unit] || unit,
-          value: unit,
-        })),
-        placeholder: 'Unidades de Medida',
-      },
-      {
-        key: 'measureTypes',
-        type: 'select',
-        multiple: true,
-        options: Object.values(MEASURE_TYPE).map((type) => ({
-          label: MEASURE_TYPE_LABELS[type] || type,
-          value: type,
-        })),
-        placeholder: 'Tipos de Medida',
+        async: true,
+        queryKey: ['suppliers', 'filter'],
+        queryFn: async (searchTerm: string) => {
+          try {
+            const { getSuppliers } = await import('@/api-client')
+            const response = await getSuppliers({
+              where: searchTerm ? {
+                OR: [
+                  { fantasyName: { contains: searchTerm, mode: 'insensitive' } },
+                  { corporateName: { contains: searchTerm, mode: 'insensitive' } },
+                ],
+              } : undefined,
+              orderBy: { fantasyName: 'asc' },
+              take: 50,
+            })
+            console.log('[Supplier Filter] Response:', response)
+            return {
+              data: (response.data || []).map((supplier: any) => ({
+                label: supplier.fantasyName || supplier.corporateName || 'Sem nome',
+                value: supplier.id,
+              })),
+              hasMore: false,
+            }
+          } catch (error) {
+            console.error('[Supplier Filter] Error:', error)
+            return {
+              data: [],
+              hasMore: false,
+            }
+          }
+        },
+        placeholder: 'Selecione fornecedores...',
       },
       {
         key: 'quantityRange',
+        label: 'Faixa de Quantidade',
         type: 'number-range',
-        placeholder: { min: 'Mín', max: 'Máx' },
+        placeholder: { min: 'Mínimo', max: 'Máximo' },
       },
       {
         key: 'totalPriceRange',
+        label: 'Faixa de Preço',
         type: 'number-range',
-        placeholder: { min: 'Mín', max: 'Máx' },
-      },
-      {
-        key: 'icmsRange',
-        type: 'number-range',
-        placeholder: { min: 'Mín', max: 'Máx' },
-      },
-      {
-        key: 'ipiRange',
-        type: 'number-range',
-        placeholder: { min: 'Mín', max: 'Máx' },
-      },
-      {
-        key: 'monthlyConsumptionRange',
-        type: 'number-range',
-        placeholder: { min: 'Mín', max: 'Máx' },
-      },
-      {
-        key: 'measureValueRange',
-        type: 'number-range',
-        placeholder: { min: 'Mín', max: 'Máx' },
-      },
-      {
-        key: 'createdAt',
-        type: 'date-range',
-        placeholder: 'Data de Criação',
-      },
-      {
-        key: 'updatedAt',
-        type: 'date-range',
-        placeholder: 'Data de Atualização',
+        placeholder: { min: 'Mínimo', max: 'Máximo' },
       },
     ],
   },
@@ -414,6 +453,16 @@ export const itemsListConfig: ListConfig<Item> = {
       canCreate: canEditItems,
     },
     bulk: [
+      {
+        key: 'batch-edit',
+        label: 'Editar em Lote',
+        icon: 'pencil',
+        variant: 'default',
+        onPress: (ids, _, router) => {
+          const idsArray = Array.from(ids)
+          router.push(`/estoque/produtos/editar-em-lote?ids=${idsArray.join(',')}`)
+        },
+      },
       {
         key: 'delete',
         label: 'Excluir',

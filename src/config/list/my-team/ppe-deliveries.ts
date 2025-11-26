@@ -102,33 +102,38 @@ export const myTeamPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(PPE_DELIVERY_STATUS).map((status) => ({
           label: PPE_DELIVERY_STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'userIds',
+        label: 'Funcionários',
         type: 'select',
         multiple: true,
-        placeholder: 'Funcionários',
+        placeholder: 'Selecione os funcionários',
       },
       {
         key: 'itemIds',
+        label: 'Itens EPI',
         type: 'select',
         multiple: true,
-        placeholder: 'Itens EPI',
+        placeholder: 'Selecione os itens EPI',
       },
       {
         key: 'scheduledDate',
+        label: 'Data Agendada',
         type: 'date-range',
         placeholder: 'Data Agendada',
       },
       {
         key: 'actualDeliveryDate',
+        label: 'Data de Entrega',
         type: 'date-range',
         placeholder: 'Data de Entrega',
       },

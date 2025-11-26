@@ -241,6 +241,7 @@ export const historyListConfig: ListConfig<Task> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: [
@@ -261,44 +262,51 @@ export const historyListConfig: ListConfig<Task> = {
             value: TASK_STATUS.SETTLED,
           },
         ],
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
         defaultValue: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED],
       },
       {
         key: 'customerIds',
+        label: 'Clientes',
         type: 'select',
         multiple: true,
-        placeholder: 'Clientes',
+        placeholder: 'Selecione os clientes',
       },
       {
         key: 'sectorIds',
+        label: 'Setores',
         type: 'select',
         multiple: true,
-        placeholder: 'Setores',
+        placeholder: 'Selecione os setores',
       },
       {
         key: 'assigneeIds',
+        label: 'Finalizado por',
         type: 'select',
         multiple: true,
-        placeholder: 'Finalizado por',
+        placeholder: 'Selecione quem finalizou',
       },
       {
         key: 'finishedDateRange',
+        label: 'Data de Finalização',
         type: 'date-range',
         placeholder: 'Data de Finalização',
       },
       {
         key: 'entryDateRange',
+        label: 'Data de Entrada',
         type: 'date-range',
         placeholder: 'Data de Entrada',
       },
       {
         key: 'startedDateRange',
+        label: 'Data de Início',
         type: 'date-range',
         placeholder: 'Data de Início',
       },
       {
         key: 'priceRange',
+        label: 'Preço',
         type: 'number-range',
         placeholder: { min: 'Mín', max: 'Máx' },
       },

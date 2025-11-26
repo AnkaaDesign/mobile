@@ -167,27 +167,31 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(AIRBRUSHING_STATUS).map((status) => ({
           label: STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'taskIds',
+        label: 'Tarefas',
         type: 'select',
         multiple: true,
-        placeholder: 'Tarefas',
+        placeholder: 'Selecione as tarefas',
       },
       {
         key: 'priceRange',
+        label: 'Preço',
         type: 'number-range',
         placeholder: { min: 'Mínimo', max: 'Máximo' },
       },
       {
         key: 'createdAt',
+        label: 'Data de Criação',
         type: 'date-range',
         placeholder: 'Data de Criação',
       },

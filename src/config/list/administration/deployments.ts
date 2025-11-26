@@ -115,31 +115,35 @@ export const deploymentsListConfig: ListConfig<Deployment> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(DEPLOYMENT_STATUS).map((status) => ({
           label: STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'environment',
+        label: 'Ambiente',
         type: 'select',
         multiple: true,
         options: Object.values(DEPLOYMENT_ENVIRONMENT).map((env) => ({
           label: ENVIRONMENT_LABELS[env],
           value: env,
         })),
-        placeholder: 'Ambiente',
+        placeholder: 'Selecione os ambientes',
       },
       {
         key: 'startedAt',
+        label: 'Data de Início',
         type: 'date-range',
         placeholder: 'Data de Início',
       },
       {
         key: 'completedAt',
+        label: 'Data de Conclusão',
         type: 'date-range',
         placeholder: 'Data de Conclusão',
       },

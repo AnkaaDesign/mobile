@@ -427,11 +427,11 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
 
   client.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
-      if (finalConfig.enableLogging) {
-        console.log(`[AXIOS INTERCEPTOR] Request starting for: ${config.method?.toUpperCase()} ${config.url}`);
-        console.log(`[AXIOS INTERCEPTOR] Instance ID: ${(client as any).__instanceId || "unknown"}`);
-        console.log(`[AXIOS INTERCEPTOR] Has token provider: ${!!((client as any).__tokenProvider || globalTokenProvider)}`);
-      }
+      console.log(`\n🔍 [AXIOS INTERCEPTOR] ========== REQUEST STARTING ==========`);
+      console.log(`🔍 [AXIOS INTERCEPTOR] Method: ${config.method?.toUpperCase()}`);
+      console.log(`🔍 [AXIOS INTERCEPTOR] URL: ${config.url}`);
+      console.log(`🔍 [AXIOS INTERCEPTOR] Full URL: ${config.baseURL}${config.url}`);
+      console.log(`🔍 [AXIOS INTERCEPTOR] Instance ID: ${(client as any).__instanceId || "unknown"}`);
 
       const requestId = generateRequestId();
       const startTime = Date.now();
@@ -452,12 +452,11 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       // Check for updated token provider first (set via setTokenProvider)
       const tokenProvider = (client as any).__tokenProvider || globalTokenProvider || finalConfig.tokenProvider;
 
-      if (finalConfig.enableLogging) {
-        console.log(`[API CLIENT DEBUG] Request interceptor - URL: ${config.url}, Has tokenProvider: ${!!tokenProvider}`);
-        console.log(
-          `[API CLIENT DEBUG] Token provider sources - __tokenProvider: ${!!(client as any).__tokenProvider}, globalTokenProvider: ${!!globalTokenProvider}, finalConfig.tokenProvider: ${!!finalConfig.tokenProvider}`,
-        );
-      }
+      console.log(`🔍 [AXIOS INTERCEPTOR] Has token provider: ${!!tokenProvider}`);
+      console.log(`🔍 [AXIOS INTERCEPTOR] Token provider sources:`);
+      console.log(`   - __tokenProvider: ${!!(client as any).__tokenProvider}`);
+      console.log(`   - globalTokenProvider: ${!!globalTokenProvider}`);
+      console.log(`   - finalConfig.tokenProvider: ${!!finalConfig.tokenProvider}`);
 
       // Always check for fresh token, even if Authorization header exists
       // But skip public auth endpoints to avoid sending corrupted tokens
@@ -468,41 +467,45 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
                                     config.url?.includes("/auth/send-verification") ||
                                     config.url?.includes("/auth/resend-verification");
 
+      console.log(`🔍 [AXIOS INTERCEPTOR] Is public auth endpoint: ${isPublicAuthEndpoint}`);
+
       if (tokenProvider && !isPublicAuthEndpoint) {
         try {
-          console.log(`[API CLIENT DEBUG] Calling tokenProvider to get token for ${config.url}`);
+          console.log(`🔍 [AXIOS INTERCEPTOR] Calling tokenProvider to get token...`);
           const token = await tokenProvider();
-          console.log(`[API CLIENT DEBUG] Token provider result: ${token ? `exists (length: ${token.length})` : "null"}`);
+          console.log(`🔍 [AXIOS INTERCEPTOR] Token provider returned: ${token ? `TOKEN EXISTS (length: ${token.length}, preview: ${token.substring(0, 20)}...)` : "❌ NULL - NO TOKEN!"}`);
 
           // If we have a token, use it
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-            console.log(`[API CLIENT DEBUG] Authorization header set for ${config.url}`);
+            console.log(`✅ [AXIOS INTERCEPTOR] Authorization header SET for ${config.url}`);
           } else if (!config.url?.includes("/auth/")) {
+            console.log(`❌ [AXIOS INTERCEPTOR] NO TOKEN for non-auth endpoint: ${config.url}`);
             // If no token and not an auth endpoint, check if we just logged in
             if ((client as any).__justLoggedIn) {
-              if (finalConfig.enableLogging) {
-                console.log("[API CLIENT DEBUG] No token found after login, waiting and retrying...");
-              }
+              console.log("[AXIOS INTERCEPTOR] No token found after login, waiting 300ms and retrying...");
               await delay(300);
               const retryToken = await tokenProvider();
               if (retryToken) {
                 config.headers.Authorization = `Bearer ${retryToken}`;
+                console.log(`✅ [AXIOS INTERCEPTOR] Authorization header SET on retry`);
               } else {
+                console.log(`❌ [AXIOS INTERCEPTOR] Still NO TOKEN after retry!`);
               }
             } else {
-              if (finalConfig.enableLogging) {
-                console.log(`[API CLIENT DEBUG] No token available for ${config.url}`);
-              }
+              console.log(`⚠️  [AXIOS INTERCEPTOR] No token and not just logged in - request will be sent WITHOUT auth!`);
             }
           }
         } catch (error) {
           // Silently fail if token retrieval fails
-          if (finalConfig.enableLogging) {
-            console.error("[API CLIENT DEBUG] Failed to retrieve auth token:", error);
-          }
+          console.error("❌ [AXIOS INTERCEPTOR] Failed to retrieve auth token:", error);
         }
+      } else if (!tokenProvider) {
+        console.log(`❌ [AXIOS INTERCEPTOR] NO TOKEN PROVIDER CONFIGURED!`);
       }
+
+      console.log(`🔍 [AXIOS INTERCEPTOR] Final Authorization header: ${config.headers.Authorization ? "SET ✅" : "NOT SET ❌"}`);
+      console.log(`🔍 [AXIOS INTERCEPTOR] ========== REQUEST PREPARED ==========\n`);
 
       // Add request ID header if enabled
       if (finalConfig.enableRequestId) {
@@ -699,6 +702,13 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       return response;
     },
     async (error: AxiosError<ApiErrorResponse>) => {
+      console.log(`\n❌ [AXIOS RESPONSE ERROR] ========== ERROR OCCURRED ==========`);
+      console.log(`❌ [AXIOS RESPONSE ERROR] Status Code: ${error.response?.status || "NO RESPONSE"}`);
+      console.log(`❌ [AXIOS RESPONSE ERROR] Status Text: ${error.response?.statusText || "N/A"}`);
+      console.log(`❌ [AXIOS RESPONSE ERROR] URL: ${error.config?.url}`);
+      console.log(`❌ [AXIOS RESPONSE ERROR] Method: ${error.config?.method?.toUpperCase()}`);
+      console.log(`❌ [AXIOS RESPONSE ERROR] Response Data:`, JSON.stringify(error.response?.data, null, 2));
+
       const config = error.config as InternalAxiosRequestConfig;
       const metadata = config?.metadata as RequestMetadata;
       const requestId = metadata?.requestId;
@@ -735,7 +745,15 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       }
 
       // Process and handle the error
+      console.log(`🔍 [AXIOS RESPONSE ERROR] Processing error with handleApiError()...`);
       const errorInfo = handleApiError(error);
+      console.log(`🔍 [AXIOS RESPONSE ERROR] Error Info:`, {
+        title: errorInfo.title,
+        message: errorInfo.message,
+        _statusCode: errorInfo._statusCode,
+        category: errorInfo.category,
+        isRetryable: errorInfo.isRetryable,
+      });
 
       // NOTE: This API uses JWT access tokens without separate refresh tokens.
       // The /auth/refresh endpoint requires a valid access token to extract userId,

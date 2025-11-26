@@ -14,462 +14,6 @@ interface MenuItem {
   isContextual?: boolean; // Indicates if this is a contextual menu item
 }
 
-// Comprehensive Tabler icon mapping for Brazilian manufacturing system
-// Updated with verified @tabler/icons-react and @tabler/icons-react-native icon names
-export const TABLER_ICONS = {
-  // ==================== MAIN NAVIGATION ====================
-  dashboard: "IconDashboard",
-  menu: "IconMenu2",
-  home: "IconHome",
-
-  // ==================== DOMAIN MODULE ICONS ====================
-  // Production
-  factory: "IconBuilding",
-  production: "IconTool", // More manufacturing-appropriate
-  manufacturing: "IconTool",
-
-  // Inventory/Stock
-  package: "IconPackage",
-  inventory: "IconBox", // Better represents inventory data/statistics
-  warehouse: "IconBuildingWarehouse",
-
-  // Paint/Painting
-  paintBrush: "IconBrush", // More appropriate for paint brush functionality
-  paint: "IconPaint",
-
-  // Human Resources
-  users: "IconUsers",
-  hr: "IconBriefcase", // More appropriate for HR department management
-
-  // Administration
-  cog: "IconSettings",
-  admin: "IconShield", // More universal administrative icon
-
-  // Personal
-  userCircle: "IconUserCircle",
-  personal: "IconUser",
-
-  // Analytics/Statistics
-  barChart: "IconChartBar",
-  chartBar: "IconChartBar",
-  analytics: "IconChartLine",
-
-  // ==================== PRODUCTION MANAGEMENT ====================
-  // Task Status
-  play: "IconPlayerPlay",
-  pause: "IconPlayerPause",
-  stop: "IconPlayerStop",
-  clock: "IconClock",
-  pending: "IconClock",
-  inProgress: "IconPlayerPlay",
-  onHold: "IconPlayerPause",
-  completed: "IconCircleCheck",
-  cancelled: "IconX",
-
-  // Production Tools
-  scissors: "IconScissors",
-  cutting: "IconScissors",
-  garage: "IconBuildingWarehouse",
-  truck: "IconTruck",
-  tool: "IconTool",
-  serviceWrench: "IconTool",
-  tools: "IconTools",
-  maintenance: "IconTools",
-
-  // Documentation
-  clipboard: "IconClipboard",
-  clipboardList: "IconClipboardList", // More consistent with clipboard concept
-  note: "IconNote",
-  history: "IconHistory", // Better represents historical data
-  hourglass: "IconHourglass",
-  file: "IconFile",
-
-  // ==================== INVENTORY MANAGEMENT ====================
-  // Products and Items
-  box: "IconBox",
-  item: "IconPackage",
-  products: "IconPackages",
-
-  // Categories and Organization
-  tags: "IconTags",
-  tag: "IconTag",
-  category: "IconFolder",
-  brand: "IconBadge", // More appropriate for brand representation
-  packages: "IconPackages",
-
-  // Suppliers and Orders
-  suppliers: "IconUsers", // Better represents supplier relationships
-  supplier: "IconTruck",
-  orders: "IconClipboardList", // Better represents order management
-  order: "IconFileText",
-  shoppingCart: "IconShoppingCart",
-
-  // Scheduling and Automation
-  calendar: "IconCalendar",
-  calendarTime: "IconCalendarTime",
-  calendarStats: "IconCalendarStats",
-  calendarWeek: "IconCalendarWeek",
-  calendarDollar: "IconCalendarDollar",
-  schedule: "IconCalendarPlus",
-  automation: "IconBolt",
-
-  // Movement and Activities
-  packageSearch: "IconSearch", // Better for inventory search
-  activity: "IconActivity",
-  movement: "IconArrowsUpDown",
-
-  // External Operations
-  external: "IconSend", // More appropriate for external operations
-  withdrawal: "IconArrowUp", // Better represents withdrawal/outgoing items
-
-  // Safety Equipment (PPE)
-  shield: "IconShield", // Better represents safety verification
-  hardHat: "IconHelmet",
-  safety: "IconShieldCheck",
-  helmet: "IconHelmet",
-
-  // Borrowing/Lending
-  borrowing: "IconArrowsExchange", // Better represents borrowing cycle
-  loan: "IconArrowsExchange", // Consistent with borrowing concept
-  return: "IconArrowLeft", // For returning borrowed items
-
-  // Sizing
-  sizes: "IconRuler",
-  measurements: "IconRuler2",
-
-  // ==================== PAINT MANAGEMENT ====================
-  // Paint Types and Colors
-  palette: "IconPalette",
-  droplet: "IconDroplet",
-  color: "IconColorSwatch",
-  brush: "IconBrush",
-  flask: "IconFlask",
-
-  // Production and Formulas
-  beaker: "IconFlask",
-  formula: "IconCalculator",
-  mixing: "IconFlask",
-
-  // Catalog
-  catalog: "IconBook",
-  swatch: "IconColorPicker",
-  colorPicker: "IconColorPicker",
-
-  // ==================== HUMAN RESOURCES ====================
-  // People Management
-  user: "IconUser",
-  employee: "IconUser",
-  userCheck: "IconUserCheck",
-  team: "IconUsers",
-
-  // Organization Structure
-  building: "IconBuilding",
-  buildingSkyscraper: "IconBuildingSkyscraper",
-  sector: "IconBuildingBank",
-  position: "IconBadge",
-  briefcaseUser: "IconBriefcase",
-  briefcase: "IconBriefcase",
-
-  // Time Management
-  vacation: "IconBeach", // More appropriate for time off
-  beach: "IconBeach",
-  holiday: "IconCalendarEvent", // Standard calendar for holidays
-  calendarEvent: "IconCalendarEvent",
-  timeOff: "IconCalendarMinus",
-
-  // Communication
-  warning: "IconAlertTriangle",
-  announcement: "IconSpeakerphone",
-  notice: "IconBell",
-
-  // Payments
-  dollarSign: "IconCurrencyDollar",
-  salary: "IconCurrencyDollar",
-  payroll: "IconCalendarDollar",
-  deviceIpadDollar: "IconDeviceIpadDollar",
-
-  // Job Openings
-  jobOpening: "IconBriefcase",
-  vacancy: "IconUserPlus",
-
-  // ==================== ADMINISTRATION ====================
-  // Customer Management
-  customers: "IconUsers",
-  customer: "IconUserCircle",
-  client: "IconUser",
-
-  // Document Management
-  files: "IconFolders",
-  folders: "IconFolders",
-  document: "IconFileText",
-  fileInvoice: "IconFileInvoice",
-  archive: "IconArchive",
-  databaseImport: "IconDatabaseImport",
-
-  // System Management
-  auditLog: "IconList", // Better represents audit verification
-  log: "IconListDetails", // Better for system logs/statistics
-  system: "IconDeviceDesktop",
-
-  // Integrations
-  api: "IconApi",
-  database: "IconDatabase",
-  sync: "IconRefresh",
-  refresh: "IconRefresh",
-  repeat: "IconRepeat",
-  calculator: "IconCalculator",
-
-  // Notifications
-  bell: "IconBell",
-  notification: "IconBellRinging",
-  alert: "IconAlertCircle",
-
-  // ==================== PERSONAL/USER INTERFACE ====================
-  // Profile Management
-  profile: "IconUserCircle",
-  account: "IconUserCircle",
-
-  // Personal Tasks and Items
-  myTasks: "IconList",
-  myVacations: "IconCalendarEvent",
-  myBorrows: "IconPackage",
-  myPpes: "IconShieldCheck",
-  myNotifications: "IconBellRinging",
-
-  // Preferences and Settings
-  preferences: "IconSettings",
-  theme: "IconPalette",
-  privacy: "IconLock",
-  configuration: "IconSettings",
-
-  // ==================== STATISTICS AND ANALYTICS ====================
-  // Chart Types
-  pieChart: "IconChartPie", // Better chart representation
-  lineChart: "IconChartLine",
-  areaChart: "IconChartArea",
-
-  // Trends and Performance
-  trendingUp: "IconTrendingUp",
-  trendingDown: "IconTrendingDown",
-  performance: "IconBolt",
-  efficiency: "IconChartBar",
-
-  // Financial Metrics
-  revenue: "IconCurrencyDollar",
-  profit: "IconTrendingUp",
-  cost: "IconCalculator",
-  financial: "IconCurrencyDollar",
-  coins: "IconCoins",
-  receipt: "IconReceipt",
-
-  // ==================== COMMON ACTIONS ====================
-  // CRUD Operations
-  plus: "IconPlus",
-  add: "IconPlus",
-  create: "IconPlus",
-  edit: "IconEdit",
-  update: "IconRefresh",
-  trash: "IconTrash",
-  delete: "IconTrash",
-  details: "IconEye",
-  view: "IconEye",
-  list: "IconList",
-
-  // Favorites
-  star: "IconStar",
-  starFilled: "IconStarFilled",
-  favorites: "IconStar",
-
-  // Data Operations
-  search: "IconSearch",
-  filter: "IconFilter",
-  sort: "IconArrowsSort",
-
-  // File Operations
-  download: "IconDownload",
-  upload: "IconUpload",
-  import: "IconFileImport",
-  export: "IconFileExport",
-
-  // ==================== STATUS INDICATORS ====================
-  // Success/Failure
-  check: "IconCheck",
-  checkCircle: "IconCircleCheck",
-  x: "IconX",
-  xCircle: "IconCircleX",
-
-  // Information
-  info: "IconInfoCircle",
-  help: "IconHelp",
-  question: "IconQuestionMark",
-
-  // Warnings and Errors
-  warningTriangle: "IconAlertTriangle",
-  alertTriangle: "IconAlertTriangle",
-  error: "IconAlertCircle",
-
-  // ==================== FORM AND INPUT ====================
-  // Visibility
-  eye: "IconEye",
-  eyeOff: "IconEyeOff",
-
-  // Selection
-  radio: "IconCircle",
-  checkbox: "IconCheck",
-
-  // ==================== NAVIGATION CONTROLS ====================
-  // Directional
-  chevronRight: "IconChevronRight",
-  chevronLeft: "IconChevronLeft",
-  chevronDown: "IconChevronDown",
-  chevronUp: "IconChevronUp",
-
-  // Actions
-  back: "IconArrowLeft",
-  forward: "IconArrowRight",
-
-  // ==================== LOADING AND STATES ====================
-  loader: "IconLoader",
-  loading: "IconLoader",
-
-  // Biometrics
-  fingerprint: "IconFingerprint",
-
-  // ==================== AUTENTICAÇÃO ====================
-  login: "IconLogin",
-  logOut: "IconLogout",
-  register: "IconUserPlus",
-  forgotPassword: "IconKey",
-  resetPassword: "IconRefresh",
-  verify: "IconShieldCheck",
-
-  // ==================== BRAZILIAN BUSINESS CONTEXT ====================
-  // Documents
-  cpf: "IconId",
-  cnpj: "IconBuildingBank",
-
-  // Geographic
-  location: "IconMapPin",
-  address: "IconHome",
-
-  // Communication
-  phone: "IconPhone",
-  email: "IconMail",
-
-  // ==================== SERVER MANAGEMENT ====================
-  server: "IconServer",
-  services: "IconSettings",
-  systemUsers: "IconUserCog",
-  sharedFolders: "IconFolderShare",
-  systemMetrics: "IconChartLine",
-  systemLogs: "IconFileText",
-  rocket: "IconRocket",
-  deployment: "IconRocket",
-
-  // ==================== SPECIALIZED TOOLS ====================
-  // Configuration Tools
-  userCog: "IconUserCog",
-  systemCog: "IconSettings",
-
-  // Quality Control
-  quality: "IconShieldCheck",
-  inspection: "IconSearch",
-
-  // Reporting
-  report: "IconFileReport",
-  print: "IconPrinter",
-
-  // ==================== UTILITIES ====================
-  // Common UI Elements
-  more: "IconDots",
-  options: "IconMenu2",
-  fullscreen: "IconMaximize",
-
-  // File Types
-  fileText: "IconFileText",
-  fileSpreadsheet: "IconFileSpreadsheet",
-  image: "IconPhoto",
-  video: "IconVideo",
-
-  // Time and Date
-  time: "IconClock",
-  date: "IconCalendar",
-  timer: "IconClock",
-  timeTracking: "IconClockHour4",
-  clockIn: "IconPlayerPlay",
-  clockOut: "IconPlayerPause",
-
-  // ==================== MOBILE SPECIFIC ====================
-  // Mobile Navigation
-  hamburger: "IconMenu2",
-  bottomTab: "IconDots",
-
-  // Mobile Actions
-  share: "IconShare",
-
-  // ==================== STATUS SPECIFIC ====================
-  // Task Statuses
-  statusPending: "IconClock",
-  statusInProgress: "IconPlayerPlay",
-  statusCompleted: "IconCircleCheck",
-  statusCancelled: "IconX",
-  statusOnHold: "IconPlayerPause",
-
-  // Order Statuses
-  statusCreated: "IconCirclePlus",
-  statusReceived: "IconCircleCheck",
-  statusFulfilled: "IconTruck",
-
-  // User Statuses
-  statusActive: "IconUser",
-  statusInactive: "IconUserX",
-  statusActivate: "IconCircleCheck",
-  statusDeactivate: "IconCircleX",
-
-  // General Statuses
-  statusEnabled: "IconCheck",
-  statusDisabled: "IconX",
-
-  // Awards and Achievements
-  award: "IconAward",
-  medal: "IconMedal",
-  trophy: "IconTrophy",
-
-  // Priority Levels
-  priorityLow: "IconArrowDown",
-  priorityMedium: "IconMinus",
-  priorityHigh: "IconArrowUp",
-  priorityCritical: "IconAlertTriangle",
-
-  // ==================== ENTITY SPECIFIC ====================
-
-  // PPE Related
-  ppeDelivered: "IconCircleCheck",
-  ppePending: "IconClock",
-  ppeExpired: "IconAlertTriangle",
-
-  // Paint Related
-  paintMixed: "IconCircleCheck",
-  paintPending: "IconClock",
-
-  // ==================== SETTINGS CATEGORIES ====================
-  settingsGeneral: "IconSettings",
-  settingsAccount: "IconUserCog",
-  settingsNotifications: "IconBellRinging",
-  settingsPrivacy: "IconLock",
-  settingsTheme: "IconPalette",
-  settingsSecurity: "IconShield",
-
-  // ==================== ADDITIONAL ICONS ====================
-  approve: "IconCircleCheck",
-  reject: "IconCircleX",
-  send: "IconSend",
-  orphan: "IconFolderX",
-  components: "IconPuzzle",
-  entity: "IconDatabase",
-  spotCheck: "IconEye",
-} as const;
-
 export const NAVIGATION_MENU: MenuItem[] = [
   // HOME - Pagina Inicial (Excecao - sempre primeiro)
   {
@@ -946,14 +490,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
         id: "warnings",
         title: "Advertencias",
         icon: "alertTriangle",
-        path: "/recursos-humanos/avisos",
+        path: "/recursos-humanos/advertencias",
         children: [
-          { id: "warnings-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/avisos/cadastrar" },
-          { id: "warnings-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/avisos/detalhes/:id", isDynamic: true },
-          { id: "warnings-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/avisos/editar/:id", isDynamic: true },
+          { id: "warnings-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/advertencias/cadastrar" },
+          { id: "warnings-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/advertencias/detalhes/:id", isDynamic: true },
+          { id: "warnings-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/advertencias/editar/:id", isDynamic: true },
         ],
       },
-      { id: "calculos", title: "Calculos", icon: "deviceIpadDollar", path: "/recursos-humanos/calculos" },
+      { id: "calculos", title: "Cálculos de Ponto", icon: "deviceIpadDollar", path: "/recursos-humanos/calculos" },
       {
         id: "cargos",
         title: "Cargos",
@@ -1020,7 +564,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         ],
       },
       { id: "folha-de-pagamento", title: "Folha de Pagamento", icon: "payroll", path: "/recursos-humanos/folha-de-pagamento" },
-      { id: "niveis-desempenho", title: "Niveis de Desempenho", icon: "trendingUp", path: "/recursos-humanos/niveis-desempenho" },
+      { id: "niveis-desempenho", title: "Niveis de Desempenho", icon: "trendingUp", path: "/recursos-humanos/niveis-de-desempenho" },
       { id: "requisicoes", title: "Requisicoes", icon: "clipboardList", path: "/recursos-humanos/requisicoes" },
       { id: "simulacao-bonus", title: "Simulacao de Bonus", icon: "calculator", path: "/recursos-humanos/simulacao-bonus" },
     ],
@@ -1034,7 +578,17 @@ export const NAVIGATION_MENU: MenuItem[] = [
     path: "/servidor",
     requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
     children: [
-      { id: "servidor-backup", title: "Backup do Sistema", icon: "databaseImport", path: "/servidor/backup" },
+      {
+        id: "servidor-backups",
+        title: "Backups",
+        icon: "databaseImport",
+        path: "/servidor/backups",
+        children: [
+          { id: "servidor-backups-listar", title: "Listar", icon: "list", path: "/servidor/backups/listar" },
+          { id: "servidor-backups-cadastrar", title: "Criar Backup", icon: "plus", path: "/servidor/backups/cadastrar" },
+          { id: "servidor-backups-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/backups/detalhes/:id", isDynamic: true },
+        ],
+      },
       {
         id: "servidor-implantacoes",
         title: "Implantacoes",
@@ -1055,6 +609,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         icon: "auditLog",
         path: "/servidor/registros-de-alteracoes",
         children: [
+          { id: "registros-listar", title: "Listar", icon: "list", path: "/servidor/registros-de-alteracoes/listar" },
           { id: "registros-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/registros-de-alteracoes/detalhes/:id", isDynamic: true },
         ],
       },

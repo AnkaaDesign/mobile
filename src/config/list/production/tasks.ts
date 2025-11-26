@@ -327,17 +327,20 @@ export const tasksListConfig: ListConfig<Task> = {
     fields: [
       {
         key: 'sectorIds',
+        label: 'Setores',
         type: 'select',
         multiple: true,
-        placeholder: 'Setores',
+        placeholder: 'Selecione os setores',
       },
       {
         key: 'termRange',
+        label: 'Prazo',
         type: 'date-range',
         placeholder: 'Prazo',
       },
       {
         key: 'isOverdue',
+        label: 'Mostrar apenas tarefas atrasadas',
         type: 'switch',
         placeholder: 'Mostrar apenas tarefas atrasadas',
       },

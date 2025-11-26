@@ -113,6 +113,7 @@ export const personalActivitiesListConfig: ListConfig<Activity> = {
     fields: [
       {
         key: 'operations',
+        label: 'Operações',
         type: 'select',
         multiple: true,
         options: Object.values(ACTIVITY_OPERATION).map((operation) => ({
@@ -123,6 +124,7 @@ export const personalActivitiesListConfig: ListConfig<Activity> = {
       },
       {
         key: 'reasons',
+        label: 'Motivos',
         type: 'select',
         multiple: true,
         options: Object.values(ACTIVITY_REASON).map((reason) => ({
@@ -133,6 +135,7 @@ export const personalActivitiesListConfig: ListConfig<Activity> = {
       },
       {
         key: 'createdAt',
+        label: 'Período de Atividade',
         type: 'date-range',
         placeholder: 'Período de Atividade',
       },

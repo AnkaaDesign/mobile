@@ -95,43 +95,49 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
     fields: [
       {
         key: 'operations',
+        label: 'Tipo de Operação',
         type: 'select',
         multiple: true,
         options: Object.values(ACTIVITY_OPERATION).map((operation) => ({
           label: ACTIVITY_OPERATION_LABELS[operation],
           value: operation,
         })),
-        placeholder: 'Tipo de Operação',
+        placeholder: 'Selecione os tipos de operação',
       },
       {
         key: 'reasons',
+        label: 'Motivo da Movimentação',
         type: 'select',
         multiple: true,
         options: Object.values(ACTIVITY_REASON).map((reason) => ({
           label: ACTIVITY_REASON_LABELS[reason],
           value: reason,
         })),
-        placeholder: 'Motivo da Movimentação',
+        placeholder: 'Selecione os motivos',
       },
       {
         key: 'itemIds',
+        label: 'Produtos',
         type: 'select',
         multiple: true,
-        placeholder: 'Produtos',
+        placeholder: 'Selecione os produtos',
       },
       {
         key: 'userIds',
+        label: 'Usuários',
         type: 'select',
         multiple: true,
-        placeholder: 'Usuários',
+        placeholder: 'Selecione os usuários',
       },
       {
         key: 'quantityRange',
+        label: 'Quantidade',
         type: 'number-range',
         placeholder: { min: 'Mínimo', max: 'Máximo' },
       },
       {
         key: 'createdAt',
+        label: 'Data de Criação',
         type: 'date-range',
         placeholder: 'Data de Criação',
       },

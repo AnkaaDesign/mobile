@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
-import { View, ScrollView, StyleSheet } from "react";
-import { User, Package, DollarSign, FileText, Hash, Boxes } from "lucide-react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
+import { IconUser, IconPackage, IconCurrencyDollar, IconFileText, IconHash, IconBoxMultiple } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
@@ -60,7 +60,7 @@ export function ExternalWithdrawalSummaryCards({
         <CardHeader>
           <View style={styles.cardHeader}>
             <View style={[styles.iconBadge, { backgroundColor: `${colors.primary}20` }]}>
-              <User size={20} color={colors.primary} />
+              <IconUser size={20} color={colors.primary} />
             </View>
             <Text style={styles.cardTitle}>Informações da Retirada</Text>
           </View>
@@ -69,7 +69,7 @@ export function ExternalWithdrawalSummaryCards({
           {/* Withdrawer */}
           <View style={[styles.infoRow, { backgroundColor: colors.muted }]}>
             <View style={styles.infoRowIcon}>
-              <User size={16} color={colors.mutedForeground} />
+              <IconUser size={16} color={colors.mutedForeground} />
             </View>
             <Text style={styles.infoLabel}>Nome do Retirador</Text>
             <Text style={styles.infoValue}>{withdrawerName}</Text>
@@ -78,7 +78,7 @@ export function ExternalWithdrawalSummaryCards({
           {/* Type */}
           <View style={[styles.infoRow, { backgroundColor: colors.muted }]}>
             <View style={styles.infoRowIcon}>
-              <Package size={16} color={colors.mutedForeground} />
+              <IconPackage size={16} color={colors.mutedForeground} />
             </View>
             <Text style={styles.infoLabel}>Tipo de Retirada</Text>
             <Badge
@@ -98,7 +98,7 @@ export function ExternalWithdrawalSummaryCards({
           {notes && (
             <View style={[styles.notesRow, { backgroundColor: colors.muted }]}>
               <View style={styles.infoRowIcon}>
-                <FileText size={16} color={colors.mutedForeground} />
+                <IconFileText size={16} color={colors.mutedForeground} />
               </View>
               <View style={styles.notesContent}>
                 <Text style={styles.infoLabel}>Observações</Text>
@@ -114,7 +114,7 @@ export function ExternalWithdrawalSummaryCards({
         <CardHeader>
           <View style={styles.cardHeader}>
             <View style={[styles.iconBadge, { backgroundColor: `${colors.primary}20` }]}>
-              <Package size={20} color={colors.primary} />
+              <IconPackage size={20} color={colors.primary} />
             </View>
             <Text style={styles.cardTitle}>Itens da Retirada</Text>
             <Badge variant="secondary">
@@ -127,7 +127,7 @@ export function ExternalWithdrawalSummaryCards({
           <View style={styles.statsGrid}>
             <View style={[styles.statCard, { backgroundColor: colors.muted }]}>
               <View style={styles.statIcon}>
-                <Hash size={16} color={colors.mutedForeground} />
+                <IconHash size={16} color={colors.mutedForeground} />
               </View>
               <Text style={styles.statLabel}>Total de Itens</Text>
               <Text style={styles.statValue}>{totalItems}</Text>
@@ -135,7 +135,7 @@ export function ExternalWithdrawalSummaryCards({
 
             <View style={[styles.statCard, { backgroundColor: colors.muted }]}>
               <View style={styles.statIcon}>
-                <Boxes size={16} color={colors.mutedForeground} />
+                <IconBoxMultiple size={16} color={colors.mutedForeground} />
               </View>
               <Text style={styles.statLabel}>Quantidade Total</Text>
               <Text style={styles.statValue}>
@@ -151,7 +151,7 @@ export function ExternalWithdrawalSummaryCards({
 
           {selectedItems.size === 0 && (
             <View style={styles.emptyState}>
-              <Package size={24} color={colors.mutedForeground} />
+              <IconPackage size={24} color={colors.mutedForeground} />
               <Text style={styles.emptyText}>Nenhum item selecionado</Text>
             </View>
           )}
@@ -164,7 +164,7 @@ export function ExternalWithdrawalSummaryCards({
           <CardHeader>
             <View style={styles.cardHeader}>
               <View style={[styles.iconBadge, { backgroundColor: `${colors.primary}20` }]}>
-                <DollarSign size={20} color={colors.primary} />
+                <IconCurrencyDollar size={20} color={colors.primary} />
               </View>
               <Text style={styles.cardTitle}>Cálculo do Total</Text>
             </View>

@@ -181,7 +181,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   }, [value]);
 
   // Async query for first page
-  const { data: asyncResponse, isLoading: isLoadingOptions } = useQuery({
+  const { data: asyncResponse, isLoading: isLoadingOptions, refetch } = useQuery({
     queryKey: queryKey ? [...queryKey, debouncedSearch, 1] : ["combobox", debouncedSearch, 1],
     queryFn: async () => {
       if (!queryFn) {
@@ -208,12 +208,20 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
       }
       return result;
     },
-    enabled: async && !!queryKey && !!queryFn && open,
+    enabled: async && !!queryKey && !!queryFn,
     staleTime: 0,
-    gcTime: 0,
+    gcTime: 5 * 60 * 1000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
+
+  // Refetch when dropdown opens for async mode (only if no data)
+  useEffect(() => {
+    if (open && async && queryKey && queryFn && allAsyncOptions.length === 0 && !isLoadingOptions) {
+      console.log('[Combobox] Refetching data on open (no existing data)');
+      refetch();
+    }
+  }, [open, async, queryKey, queryFn, refetch, allAsyncOptions.length, isLoadingOptions]);
 
   // Initialize with initialOptions on mount
   useEffect(() => {
@@ -233,8 +241,19 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
 
   // Update all options when first page loads or search changes
   useEffect(() => {
+    console.log('[Combobox] asyncResponse effect triggered', {
+      hasResponse: !!asyncResponse,
+      responseDataLength: asyncResponse?.data?.length,
+      debouncedSearch,
+      queryKey: JSON.stringify(queryKey)
+    });
+
     if (asyncResponse) {
       let newOptions = asyncResponse.data || [];
+      console.log('[Combobox] Processing asyncResponse', {
+        newOptionsLength: newOptions.length,
+        queryKey: JSON.stringify(queryKey)
+      });
 
       // Add all fetched items to the cache
       newOptions.forEach(item => {
@@ -275,9 +294,15 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         }
       );
 
+      console.log('[Combobox] Setting allAsyncOptions', {
+        count: deduplicatedData.length,
+        queryKey: JSON.stringify(queryKey),
+        sampleItem: deduplicatedData[0]
+      });
       setAllAsyncOptions(deduplicatedData);
       setHasMore(asyncResponse.hasMore || false);
     } else if (asyncResponse === null) {
+      console.log('[Combobox] Clearing allAsyncOptions (asyncResponse is null)');
       setAllAsyncOptions([]);
       setHasMore(false);
     }
@@ -635,9 +660,12 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
           style={[
             styles.selectorText,
             {
-              color: selectedOptions.length > 0 ? colors.foreground : colors.mutedForeground,
+              color: disabled
+                ? colors.mutedForeground
+                : selectedOptions.length > 0
+                  ? colors.cardForeground || colors.foreground
+                  : colors.mutedForeground,
             },
-            disabled && { color: colors.mutedForeground },
           ]}
           numberOfLines={1}
         >
@@ -684,9 +712,9 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
                 onPress={() => handleSelect(optionValue)}
                 activeOpacity={0.7}
               >
-                <Badge variant="secondary" size="sm" style={styles.badge}>
-                  <Text style={styles.badgeText}>{formatOptionLabel(option)}</Text>
-                  <Icon name="x" size={12} color={colors.secondaryForeground} style={styles.badgeIcon} />
+                <Badge variant="outline" size="sm" style={styles.badge}>
+                  <Text style={[styles.badgeText, { color: colors.foreground }]}>{formatOptionLabel(option)}</Text>
+                  <Icon name="x" size={12} color={colors.foreground} style={styles.badgeIcon} />
                 </Badge>
               </TouchableOpacity>
             );
@@ -863,7 +891,8 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
                 maxHeight: inputLayout.width > 0 && !useFullScreenMode ? LIST_MAX_HEIGHT : undefined,
               }}
               contentContainerStyle={{
-                flexGrow: inputLayout.width > 0 && !useFullScreenMode ? 0 : 1,
+                flexGrow: 1,
+                paddingBottom: 8,
               }}
               initialNumToRender={15}
               maxToRenderPerBatch={15}

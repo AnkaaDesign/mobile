@@ -749,6 +749,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
       flex: 1,
       paddingHorizontal: 12,
       paddingRight: withIcon || loading || (type === "cep" && showCepLoading && isCepLoading) ? 40 : 12,
+      paddingVertical: 0,
       fontSize: fontSize.base,
       color: colors.foreground,
       height: "100%",

@@ -171,6 +171,8 @@ import {
   IconBuildingSkyscraper,
   IconTag,
   IconShoppingCart,
+  IconDeviceHardDrive,
+  IconCpu,
 } from "@tabler/icons-react-native";
 
 // Apply cssInterop to all Tabler icons to support className prop
@@ -196,7 +198,7 @@ const tablerIcons = [
   IconCalendarTime, IconHelmet, IconBuildingBank, IconFileReport, IconListSearch, IconDroplet, IconQuestionMark,
   IconCircle, IconPhotoPlus, IconTrash2, IconFlipHorizontal, IconCalendarStats, IconCalendarWeek, IconCalendarDollar,
   IconDeviceIpadDollar, IconFingerprint, IconColorPicker, IconPaint, IconCoins, IconRepeat, IconHourglass,
-  IconFileInvoice, IconBuildingSkyscraper, IconTag, IconShoppingCart
+  IconFileInvoice, IconBuildingSkyscraper, IconTag, IconShoppingCart, IconDeviceHardDrive, IconCpu
 ];
 
 // Log any undefined icons for debugging
@@ -353,6 +355,11 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   server: IconServer,
   cloud: IconCloud,
   wifi: IconWifi,
+  "hard-drive": IconDeviceHardDrive,
+  "device-hard-drive": IconDeviceHardDrive,
+  hardDrive: IconDeviceHardDrive, // camelCase version
+  cpu: IconCpu,
+  processor: IconCpu, // Alias
 
   // Notifications
   bell: IconBell,

@@ -122,43 +122,49 @@ export const teamCommissionsListConfig: ListConfig<Task> = {
     fields: [
       {
         key: 'commission',
+        label: 'Status da Comissão',
         type: 'select',
         multiple: true,
         options: Object.values(COMMISSION_STATUS).map((status) => ({
           label: COMMISSION_STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Status da Comissão',
+        placeholder: 'Selecione os status da comissão',
       },
       {
         key: 'status',
+        label: 'Status da Tarefa',
         type: 'select',
         multiple: true,
         options: Object.values(TASK_STATUS).map((status) => ({
           label: TASK_STATUS_LABELS[status as keyof typeof TASK_STATUS_LABELS] || status,
           value: status,
         })),
-        placeholder: 'Status da Tarefa',
+        placeholder: 'Selecione os status da tarefa',
       },
       {
         key: 'createdByIds',
+        label: 'Colaboradores',
         type: 'select',
         multiple: true,
-        placeholder: 'Colaboradores',
+        placeholder: 'Selecione os colaboradores',
       },
       {
         key: 'customerIds',
+        label: 'Clientes',
         type: 'select',
         multiple: true,
-        placeholder: 'Clientes',
+        placeholder: 'Selecione os clientes',
       },
       {
         key: 'createdAtRange',
+        label: 'Data de Criação',
         type: 'date-range',
         placeholder: 'Data de Criação',
       },
       {
         key: 'priceRange',
+        label: 'Preço',
         type: 'number-range',
         placeholder: { min: 'Mín', max: 'Máx' },
       },

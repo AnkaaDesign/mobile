@@ -91,12 +91,14 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
     fields: [
       {
         key: 'hasItems',
+        label: 'Com Produtos',
         description: 'Apenas marcas que possuem produtos',
         type: 'toggle',
         placeholder: 'Com Produtos',
       },
       {
         key: 'createdAt',
+        label: 'Data de Cadastro',
         type: 'date-range',
         placeholder: 'Data de Cadastro',
       },
@@ -126,6 +128,16 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
       canCreate: canEditItems,
     },
     bulk: [
+      {
+        key: 'edit',
+        label: 'Editar em Lote',
+        icon: 'pencil',
+        variant: 'default',
+        onPress: (ids, _, router) => {
+          const idsArray = Array.from(ids)
+          router.push(`/estoque/produtos/marcas/editar-em-lote?ids=${idsArray.join(',')}`)
+        },
+      },
       {
         key: 'delete',
         label: 'Excluir',

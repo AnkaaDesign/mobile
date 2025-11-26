@@ -221,6 +221,7 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
     fields: [
       {
         key: 'year',
+        label: 'Ano',
         type: 'select',
         multiple: false,
         options: Array.from({ length: 5 }, (_, i) => {
@@ -231,6 +232,7 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
       },
       {
         key: 'month',
+        label: 'Mês',
         type: 'select',
         multiple: false,
         options: Array.from({ length: 12 }, (_, i) => ({
@@ -241,6 +243,7 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
       },
       {
         key: 'performanceLevel',
+        label: 'Nível de Performance',
         type: 'select',
         multiple: true,
         options: [1, 2, 3, 4, 5].map(level => ({

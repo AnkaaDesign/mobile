@@ -1,17 +1,21 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, TextInput, Text } from 'react-native';
-import { IconFilter, IconX, IconChecklist, IconCalendar, IconBuildingFactory2, IconUser, IconUsers, IconCurrencyDollar } from '@tabler/icons-react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { IconFilter, IconX, IconCheck } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
-import { ThemedText } from '@/components/ui/themed-text';
-import { Combobox } from '@/components/ui/combobox';
-import { CustomerLogoDisplay } from '@/components/ui/customer-logo-display';
+import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { getFilterIcon } from '@/lib/filter-icon-mapping';
+import {
+  MultiSelectFilter,
+  DateRangeFilter,
+  NumericRangeFilter,
+} from '@/components/common/filters';
 import { TASK_STATUS, TASK_STATUS_LABELS } from '@/constants';
 import { useSectors, useCustomers, useUsers } from '@/hooks';
-import { DatePicker } from '@/components/ui/date-picker';
-import { formatCurrency } from '@/utils';
-import { spacing, fontSize, fontWeight } from '@/constants/design-system';
-import type { Customer } from '@/types';
+import { spacing } from '@/constants/design-system';
 
 interface HistoryFilterSlidePanelProps {
   filters: any;
@@ -58,94 +62,30 @@ export function HistoryFilterSlidePanel({
     status: filters?.status || DEFAULT_STATUS_VALUES,
   }));
 
-  // Price range state
-  const [priceMin, setPriceMin] = useState(filters.priceRange?.from?.toString() || "");
-  const [priceMax, setPriceMax] = useState(filters.priceRange?.to?.toString() || "");
-
   // Reset local state when filters change
   useEffect(() => {
     setLocalFilters({
       ...filters,
       status: filters?.status || DEFAULT_STATUS_VALUES,
     });
-    setPriceMin(filters.priceRange?.from?.toString() || "");
-    setPriceMax(filters.priceRange?.to?.toString() || "");
   }, [filters]);
 
-  const handleStatusChange = useCallback((value: string | string[] | null | undefined) => {
-    const statusValues = Array.isArray(value) ? value : [];
+  const updateFilter = useCallback((key: string, value: any) => {
     setLocalFilters((prev: any) => ({
       ...prev,
-      status: statusValues.length > 0 ? statusValues : undefined,
-    }));
-  }, []);
-
-  const handleDateRangeChange = useCallback((field: 'from' | 'to', date: Date | null) => {
-    setLocalFilters((prev: any) => {
-      const finishedDateRange = prev.finishedDateRange || {};
-
-      if (!date && !finishedDateRange[field === 'from' ? 'to' : 'from']) {
-        const { finishedDateRange, ...rest } = prev;
-        return rest;
-      }
-
-      return {
-        ...prev,
-        finishedDateRange: {
-          ...finishedDateRange,
-          ...(date && { [field]: date }),
-        },
-      };
-    });
-  }, []);
-
-  const handleSectorChange = useCallback((value: string | string[] | null | undefined) => {
-    const sectorIds = Array.isArray(value) ? value : [];
-    setLocalFilters((prev: any) => ({
-      ...prev,
-      sectorIds: sectorIds.length > 0 ? sectorIds : undefined,
-    }));
-  }, []);
-
-  const handleCustomerChange = useCallback((value: string | string[] | null | undefined) => {
-    const customerIds = Array.isArray(value) ? value : [];
-    setLocalFilters((prev: any) => ({
-      ...prev,
-      customerIds: customerIds.length > 0 ? customerIds : undefined,
-    }));
-  }, []);
-
-  const handleUserChange = useCallback((value: string | string[] | null | undefined) => {
-    const assigneeIds = Array.isArray(value) ? value : [];
-    setLocalFilters((prev: any) => ({
-      ...prev,
-      assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
+      [key]: value,
     }));
   }, []);
 
   const handleApply = useCallback(() => {
-    const updatedFilters = { ...localFilters };
-
-    // Handle price range
-    if (priceMin || priceMax) {
-      updatedFilters.priceRange = {
-        ...(priceMin && { from: parseFloat(priceMin) }),
-        ...(priceMax && { to: parseFloat(priceMax) }),
-      };
-    } else {
-      delete updatedFilters.priceRange;
-    }
-
-    onFiltersChange(updatedFilters);
+    onFiltersChange(localFilters);
     onClose();
-  }, [localFilters, priceMin, priceMax, onFiltersChange, onClose]);
+  }, [localFilters, onFiltersChange, onClose]);
 
   const handleClear = useCallback(() => {
     setLocalFilters({
       status: DEFAULT_STATUS_VALUES,
     });
-    setPriceMin("");
-    setPriceMax("");
     onClear();
   }, [onClear]);
 
@@ -181,38 +121,6 @@ export function HistoryFilterSlidePanel({
     })) || [],
   [usersData]);
 
-  // Render customer option with logo
-  const renderCustomerOption = useCallback(
-    (option: any, isSelected: boolean) => {
-      const customer = customersData?.data?.find((c) => c.id === option.value);
-      if (!customer) return null;
-
-      return (
-        <View style={styles.customerOptionContainer}>
-          <CustomerLogoDisplay
-            logo={customer.logo || null}
-            customerName={customer.fantasyName}
-            size="sm"
-            shape="rounded"
-          />
-          <View style={styles.customerInfo}>
-            <Text
-              style={[
-                styles.customerName,
-                { color: colors.foreground },
-                isSelected && styles.selectedText,
-              ]}
-              numberOfLines={1}
-            >
-              {customer.fantasyName}
-            </Text>
-          </View>
-        </View>
-      );
-    },
-    [customersData, colors]
-  );
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
@@ -223,13 +131,13 @@ export function HistoryFilterSlidePanel({
       }]}>
         <View style={styles.headerContent}>
           <IconFilter size={24} color={colors.foreground} />
-          <ThemedText style={styles.title}>Filtros de Histórico</ThemedText>
+          <Text style={styles.title}>Filtros de Histórico</Text>
           {activeFiltersCount > 0 && (
-            <View style={[styles.countBadge, { backgroundColor: colors.destructive }]}>
-              <ThemedText style={[styles.countText, { color: colors.destructiveForeground }]}>
+            <Badge variant="secondary">
+              <Text style={{ fontSize: 12, fontWeight: '600' }}>
                 {activeFiltersCount}
-              </ThemedText>
-            </View>
+              </Text>
+            </Badge>
           )}
         </View>
         <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -237,176 +145,92 @@ export function HistoryFilterSlidePanel({
         </TouchableOpacity>
       </View>
 
-      {/* Scrollable Content */}
+      {/* Filter List - Flat structure with icons */}
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 90 }]}
+        contentContainerStyle={[styles.scrollContent, {
+          paddingBottom: Math.max(insets.bottom, 16) + 90,
+          gap: spacing.lg
+        }]}
         showsVerticalScrollIndicator={true}
       >
-        {/* Status Filters - Only for Admin and Financial */}
+        {/* Multi-Select: Status - Only for Admin and Financial */}
         {canViewStatusFilter && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <IconChecklist size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Status das Tarefas
-              </ThemedText>
-            </View>
-            <Combobox
-              mode="multiple"
-              options={statusOptions}
+          <>
+            <MultiSelectFilter
+              label="Status das Tarefas"
+              icon={getFilterIcon('status')}
               value={localFilters.status || []}
-              onValueChange={handleStatusChange}
+              onChange={(values) => updateFilter('status', values.length > 0 ? values : undefined)}
+              options={statusOptions}
               placeholder="Selecione os status"
-              emptyText="Nenhum status encontrado"
-              searchable
             />
-          </View>
+            <Separator />
+          </>
         )}
 
-        {/* Finished Date Range Filter */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconCalendar size={18} color={colors.mutedForeground} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Data de Finalização
-            </ThemedText>
-          </View>
+        {/* Date Range: Finished Date */}
+        <DateRangeFilter
+          label="Data de Finalização"
+          icon={getFilterIcon('finishedDateRange')}
+          value={{
+            from: localFilters.finishedDateRange?.from,
+            to: localFilters.finishedDateRange?.to,
+          }}
+          onChange={(range) => updateFilter('finishedDateRange', range)}
+          showPresets={true}
+        />
 
-          <View style={styles.dateRangeContainer}>
-            <View style={styles.dateInput}>
-              <ThemedText style={[styles.dateLabel, { color: colors.mutedForeground }]}>De</ThemedText>
-              <DatePicker
-                value={localFilters.finishedDateRange?.from}
-                onChange={(date) => handleDateRangeChange('from', date)}
-                placeholder="Selecionar"
-              />
-            </View>
-            <View style={styles.dateInput}>
-              <ThemedText style={[styles.dateLabel, { color: colors.mutedForeground }]}>Até</ThemedText>
-              <DatePicker
-                value={localFilters.finishedDateRange?.to}
-                onChange={(date) => handleDateRangeChange('to', date)}
-                placeholder="Selecionar"
-              />
-            </View>
-          </View>
-        </View>
+        <Separator />
 
-        {/* Sector Filter */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconBuildingFactory2 size={18} color={colors.mutedForeground} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Setores
-            </ThemedText>
-          </View>
-          <Combobox
-            mode="multiple"
-            options={sectorOptions}
-            value={localFilters.sectorIds || []}
-            onValueChange={handleSectorChange}
-            placeholder="Selecione os setores"
-            emptyText="Nenhum setor encontrado"
-            searchable
-          />
-        </View>
+        {/* Multi-Select: Sectors */}
+        <MultiSelectFilter
+          label="Setores"
+          icon={getFilterIcon('sectorIds')}
+          value={localFilters.sectorIds || []}
+          onChange={(values) => updateFilter('sectorIds', values.length > 0 ? values : undefined)}
+          options={sectorOptions}
+          placeholder={sectorsData?.data ? 'Selecione os setores' : 'Carregando setores...'}
+        />
 
-        {/* Customer Filter */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconUser size={18} color={colors.mutedForeground} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Clientes
-            </ThemedText>
-          </View>
-          <Combobox
-            mode="multiple"
-            options={customerOptions}
-            value={localFilters.customerIds || []}
-            onValueChange={handleCustomerChange}
-            placeholder="Selecione os clientes"
-            emptyText="Nenhum cliente encontrado"
-            searchable
-            renderOption={renderCustomerOption}
-          />
-        </View>
+        <Separator />
 
-        {/* User Filter - Who completed the task */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconUsers size={18} color={colors.mutedForeground} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Finalizado por
-            </ThemedText>
-          </View>
-          <Combobox
-            mode="multiple"
-            options={userOptions}
-            value={localFilters.assigneeIds || []}
-            onValueChange={handleUserChange}
-            placeholder="Selecione os usuários"
-            emptyText="Nenhum usuário encontrado"
-            searchable
-          />
-        </View>
+        {/* Multi-Select: Customers */}
+        <MultiSelectFilter
+          label="Clientes"
+          icon={getFilterIcon('customerIds')}
+          value={localFilters.customerIds || []}
+          onChange={(values) => updateFilter('customerIds', values.length > 0 ? values : undefined)}
+          options={customerOptions}
+          placeholder={customersData?.data ? 'Selecione os clientes' : 'Carregando clientes...'}
+        />
+
+        <Separator />
+
+        {/* Multi-Select: Users/Assignees */}
+        <MultiSelectFilter
+          label="Finalizado por"
+          icon={getFilterIcon('assigneeIds')}
+          value={localFilters.assigneeIds || []}
+          onChange={(values) => updateFilter('assigneeIds', values.length > 0 ? values : undefined)}
+          options={userOptions}
+          placeholder={usersData?.data ? 'Selecione os usuários' : 'Carregando usuários...'}
+        />
 
         {/* Price Range - Only for Admin and Leader */}
         {canViewPrice && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <IconCurrencyDollar size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Faixa de Valor
-              </ThemedText>
-            </View>
-
-            <View style={styles.priceRangeContainer}>
-              <View style={styles.priceInput}>
-                <ThemedText style={[styles.priceLabel, { color: colors.mutedForeground }]}>
-                  Mínimo
-                </ThemedText>
-                <TextInput
-                  style={[styles.input, {
-                    color: colors.foreground,
-                    backgroundColor: colors.card,
-                    borderColor: colors.border
-                  }]}
-                  placeholder="0,00"
-                  placeholderTextColor={colors.mutedForeground}
-                  keyboardType="numeric"
-                  value={priceMin}
-                  onChangeText={setPriceMin}
-                />
-              </View>
-              <View style={styles.priceInput}>
-                <ThemedText style={[styles.priceLabel, { color: colors.mutedForeground }]}>
-                  Máximo
-                </ThemedText>
-                <TextInput
-                  style={[styles.input, {
-                    color: colors.foreground,
-                    backgroundColor: colors.card,
-                    borderColor: colors.border
-                  }]}
-                  placeholder="0,00"
-                  placeholderTextColor={colors.mutedForeground}
-                  keyboardType="numeric"
-                  value={priceMax}
-                  onChangeText={setPriceMax}
-                />
-              </View>
-            </View>
-
-            {(priceMin || priceMax) && (
-              <ThemedText style={[styles.priceInfo, { color: colors.mutedForeground }]}>
-                {priceMin && priceMax
-                  ? `Entre ${formatCurrency(Number(priceMin))} e ${formatCurrency(Number(priceMax))}`
-                  : priceMin
-                    ? `Acima de ${formatCurrency(Number(priceMin))}`
-                    : `Até ${formatCurrency(Number(priceMax))}`}
-              </ThemedText>
-            )}
-          </View>
+          <>
+            <Separator />
+            <NumericRangeFilter
+              label="Faixa de Valor"
+              icon={getFilterIcon('priceRange')}
+              value={localFilters.priceRange}
+              onChange={(v) => updateFilter('priceRange', v)}
+              prefix="R$ "
+              minPlaceholder="Mínimo"
+              maxPlaceholder="Máximo"
+              decimalPlaces={2}
+            />
+          </>
         )}
       </ScrollView>
 
@@ -416,21 +240,24 @@ export function HistoryFilterSlidePanel({
         borderTopColor: colors.border,
         paddingBottom: Math.max(insets.bottom, 16)
       }]}>
-        <TouchableOpacity
-          style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+        <Button
+          variant="outline"
           onPress={handleClear}
-          activeOpacity={0.7}
+          style={styles.footerButton}
         >
           <IconX size={18} color={colors.foreground} />
-          <ThemedText style={[styles.footerBtnText, { marginLeft: 8 }]}>Limpar Filtros</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.footerBtn, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+          <Text style={{ marginLeft: spacing.xs }}>Limpar</Text>
+        </Button>
+        <Button
+          variant="default"
           onPress={handleApply}
-          activeOpacity={0.7}
+          style={styles.footerButton}
         >
-          <ThemedText style={[styles.footerBtnText, { color: colors.primaryForeground }]}>Aplicar Filtros</ThemedText>
-        </TouchableOpacity>
+          <IconCheck size={18} color={colors.background} />
+          <Text style={{ marginLeft: spacing.xs, color: colors.background }}>
+            Aplicar
+          </Text>
+        </Button>
       </View>
     </View>
   );
@@ -444,78 +271,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
     paddingBottom: 12,
     borderBottomWidth: 1,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
+    flex: 1,
   },
   title: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  countBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginLeft: 8,
-  },
-  countText: {
-    fontSize: 12,
+    fontSize: 18,
     fontWeight: "600",
   },
   scrollContent: {
-    paddingTop: 16,
-    paddingHorizontal: 16,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  dateRangeContainer: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  dateInput: {
-    flex: 1,
-  },
-  dateLabel: {
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  priceRangeContainer: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  priceInput: {
-    flex: 1,
-  },
-  priceLabel: {
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  input: {
-    height: 44,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 14,
-  },
-  priceInfo: {
-    fontSize: 13,
-    marginTop: 8,
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.md,
   },
   footer: {
     position: "absolute",
@@ -523,39 +295,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 16,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingTop: 12,
     borderTopWidth: 1,
   },
-  footerBtn: {
+  footerButton: {
     flex: 1,
-    height: 48,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-  },
-  footerBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  customerOptionContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    flex: 1,
-  },
-  customerInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  customerName: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium as any,
-  },
-  selectedText: {
-    fontWeight: fontWeight.semibold as any,
   },
 });

@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { View, FlatList, StyleSheet, RefreshControl } from "react-native";
-import { Search, Filter, X } from "lucide-react-native";
+import { IconSearch, IconFilter, IconX } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
@@ -288,7 +288,7 @@ export function ExternalWithdrawalItemSelector({
       {/* Search and Filters */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
-          <Search size={18} color={colors.mutedForeground} style={styles.searchIcon} />
+          <IconSearch size={18} color={colors.mutedForeground} style={styles.searchIcon} />
           <Input
             value={localSearchTerm}
             onChangeText={handleSearch}
@@ -302,7 +302,7 @@ export function ExternalWithdrawalItemSelector({
           size="icon"
           onPress={() => setIsFilterModalOpen(true)}
         >
-          <Filter size={18} />
+          <IconFilter size={18} />
           {activeFilterCount > 0 && (
             <Badge
               variant="destructive"

@@ -139,32 +139,37 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(MAINTENANCE_STATUS).map((status) => ({
           label: STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'itemIds',
+        label: 'Itens',
         type: 'select',
         multiple: true,
-        placeholder: 'Itens',
+        placeholder: 'Selecione os itens',
       },
       {
         key: 'scheduledFor',
+        label: 'Agendado Para',
         type: 'date-range',
         placeholder: 'Agendado Para',
       },
       {
         key: 'startedAt',
+        label: 'Data de Início',
         type: 'date-range',
         placeholder: 'Data de Início',
       },
       {
         key: 'finishedAt',
+        label: 'Data de Conclusão',
         type: 'date-range',
         placeholder: 'Data de Conclusão',
       },

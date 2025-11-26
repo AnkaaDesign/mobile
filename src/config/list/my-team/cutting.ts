@@ -99,47 +99,53 @@ export const teamCuttingListConfig: ListConfig<Cut> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(CUT_STATUS).map((status) => ({
           label: CUT_STATUS_LABELS[status],
           value: status,
         })),
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'type',
+        label: 'Tipo de Corte',
         type: 'select',
         multiple: true,
         options: Object.values(CUT_TYPE).map((type) => ({
           label: CUT_TYPE_LABELS[type],
           value: type,
         })),
-        placeholder: 'Tipo de Corte',
+        placeholder: 'Selecione os tipos de corte',
       },
       {
         key: 'origin',
+        label: 'Origem do Corte',
         type: 'select',
         multiple: true,
         options: Object.values(CUT_ORIGIN).map((origin) => ({
           label: CUT_ORIGIN_LABELS[origin],
           value: origin,
         })),
-        placeholder: 'Origem do Corte',
+        placeholder: 'Selecione as origens',
       },
       {
         key: 'taskIds',
+        label: 'Tarefas',
         type: 'select',
         multiple: true,
-        placeholder: 'Tarefas',
+        placeholder: 'Selecione as tarefas',
       },
       {
         key: 'startedAt',
+        label: 'Data de Início',
         type: 'date-range',
         placeholder: 'Data de Início',
       },
       {
         key: 'completedAt',
+        label: 'Data de Conclusão',
         type: 'date-range',
         placeholder: 'Data de Conclusão',
       },

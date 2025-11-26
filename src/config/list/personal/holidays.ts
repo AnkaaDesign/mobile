@@ -92,6 +92,7 @@ export const personalHolidaysListConfig: ListConfig<Holiday> = {
     fields: [
       {
         key: 'year',
+        label: 'Ano',
         type: 'select',
         multiple: false,
         options: Array.from({ length: 5 }, (_, i) => {
@@ -102,6 +103,7 @@ export const personalHolidaysListConfig: ListConfig<Holiday> = {
       },
       {
         key: 'month',
+        label: 'Mês',
         type: 'select',
         multiple: false,
         options: [

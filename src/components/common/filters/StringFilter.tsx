@@ -6,6 +6,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { IconX } from '@tabler/icons-react-native';
 import { useTheme } from '@/lib/theme';
 import { spacing } from '@/constants/design-system';
+import type { FilterIconComponent } from '@/lib/filter-icon-mapping';
 
 export type StringFilterMode = 'contains' | 'equals' | 'startsWith' | 'endsWith' | 'notContains' | 'notEquals';
 
@@ -21,6 +22,8 @@ export interface StringFilterProps {
   onChange: (value: string | StringFilterValue | undefined) => void;
   /** Label for the input */
   label?: string;
+  /** Icon component to display next to label */
+  icon?: FilterIconComponent;
   /** Placeholder text */
   placeholder?: string;
   /** Whether to show mode selector (contains, equals, etc.) */
@@ -72,6 +75,7 @@ export function StringFilter({
   value,
   onChange,
   label,
+  icon: Icon,
   placeholder = 'Digite...',
   showModeSelector = false,
   defaultMode = 'contains',
@@ -113,6 +117,11 @@ export function StringFilter({
     container: {
       gap: spacing.sm,
     },
+    labelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
     inputRow: {
       flexDirection: 'row',
       gap: spacing.sm,
@@ -139,7 +148,12 @@ export function StringFilter({
 
   return (
     <View style={styles.container}>
-      {label && <Label>{label}</Label>}
+      {label && (
+        <View style={styles.labelRow}>
+          {Icon && <Icon size={18} color={colors.foreground} />}
+          <Label>{label}</Label>
+        </View>
+      )}
 
       <View style={styles.inputRow}>
         <View style={styles.inputContainer}>

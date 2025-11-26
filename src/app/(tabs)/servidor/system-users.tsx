@@ -11,8 +11,10 @@ import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { useSystemUsers, useDeleteSystemUser } from "@/hooks/useServer";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
+import { useTheme } from "@/lib/theme";
 
 export default function SystemUsersScreen() {
+  const { colors } = useTheme();
   const { data, isLoading, refetch, isFetching } = useSystemUsers();
   const { mutateAsync: deleteUser } = useDeleteSystemUser();
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
@@ -117,13 +119,14 @@ export default function SystemUsersScreen() {
                     <View className="flex-row items-center gap-3 flex-1">
                       <Icon
                         name={getStatusIcon(item.status)}
-                        className={`w-5 h-5 ${
-                          item.status === "active"
-                            ? "text-green-500"
+                        className="w-5 h-5"
+                        style={{
+                          color: item.status === "active"
+                            ? colors.success
                             : item.status === "locked"
-                            ? "text-red-500"
-                            : "text-muted-foreground"
-                        }`}
+                            ? colors.destructive
+                            : colors.mutedForeground
+                        }}
                       />
                       <View className="flex-1">
                         <CardTitle className="text-lg">{item.username}</CardTitle>

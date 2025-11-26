@@ -21,9 +21,11 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
       borderColor: error ? colors.destructive : colors.border,
       borderRadius: borderRadius.md,
       paddingHorizontal: spacing.sm,
+      paddingVertical: 0,
       fontSize: fontSize.base,
       color: colors.foreground,
-      backgroundColor: colors.background,
+      backgroundColor: colors.input,
+      textAlignVertical: 'center' as const,
     };
 
     return (

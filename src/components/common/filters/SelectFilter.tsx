@@ -1,10 +1,9 @@
 import { View, StyleSheet } from 'react-native';
 import { Combobox } from '@/components/ui/combobox';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { IconX } from '@tabler/icons-react-native';
 import { useTheme } from '@/lib/theme';
 import { spacing } from '@/constants/design-system';
+import type { FilterIconComponent } from '@/lib/filter-icon-mapping';
 
 export interface SelectOption<T = string> {
   value: T;
@@ -19,9 +18,11 @@ export interface SelectFilterProps<T = string> {
   /** Callback when value changes */
   onChange: (value: T | undefined) => void;
   /** Available options */
-  options: SelectOption<T>[];
+  options?: SelectOption<T>[];
   /** Label for the select */
   label?: string;
+  /** Icon component to display next to label */
+  icon?: FilterIconComponent;
   /** Placeholder text */
   placeholder?: string;
   /** Whether to allow clearing selection */
@@ -30,6 +31,14 @@ export interface SelectFilterProps<T = string> {
   showClearButton?: boolean;
   /** Disabled state */
   disabled?: boolean;
+  /** Custom render function for options */
+  renderOption?: (option: SelectOption<T>, isSelected: boolean) => React.ReactNode;
+  /** Async mode */
+  async?: boolean;
+  /** Query key for async mode */
+  queryKey?: unknown[];
+  /** Query function for async mode */
+  queryFn?: (searchTerm: string, page?: number) => Promise<{ data: SelectOption<T>[]; hasMore?: boolean }>;
 }
 
 /**
@@ -57,50 +66,39 @@ export interface SelectFilterProps<T = string> {
 export function SelectFilter<T extends string = string>({
   value,
   onChange,
-  options,
+  options = [],
   label,
+  icon: Icon,
   placeholder = 'Selecione...',
   allowClear = true,
   showClearButton = true,
   disabled = false,
+  renderOption,
+  async = false,
+  queryKey,
+  queryFn,
 }: SelectFilterProps<T>) {
   const { colors } = useTheme();
-
-  const handleClear = () => {
-    onChange(undefined);
-  };
-
-  const hasValue = value !== undefined;
 
   const styles = StyleSheet.create({
     container: {
       gap: spacing.sm,
     },
-    header: {
+    labelRow: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'center',
-    },
-    clearButton: {
-      padding: 4,
+      gap: spacing.xs,
     },
   });
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        {label && <Label>{label}</Label>}
-        {showClearButton && hasValue && !disabled && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={handleClear}
-            style={styles.clearButton}
-          >
-            <IconX size={16} color={colors.mutedForeground} />
-          </Button>
-        )}
-      </View>
+      {label && (
+        <View style={styles.labelRow}>
+          {Icon && <Icon size={18} color={colors.foreground} />}
+          <Label>{label}</Label>
+        </View>
+      )}
 
       <Combobox
         value={value as string || ""}
@@ -108,13 +106,18 @@ export function SelectFilter<T extends string = string>({
         options={options as any[]}
         placeholder={placeholder}
         disabled={disabled}
-        searchable={false}
+        searchable={true}
         clearable={allowClear}
+        async={async}
+        queryKey={queryKey}
+        queryFn={queryFn as any}
+        minSearchLength={async ? 0 : 1}
         getOptionValue={(option: SelectOption<T>) => String(option.value)}
         getOptionLabel={(option: SelectOption<T>) => option.label}
         getOptionDescription={(option: SelectOption<T>) => option.description}
         isOptionDisabled={(option: SelectOption<T>) => option.disabled || false}
-        preferFullScreen={true}
+        renderOption={renderOption}
+        preferFullScreen={false}
       />
     </View>
   );
@@ -133,9 +136,20 @@ export interface MultiSelectFilterProps<T = string> {
   /** Callback when value changes */
   onChange: (values: T[]) => void;
   /** Available options */
-  options: MultiSelectOption<T>[];
+  options?: MultiSelectOption<T>[];
+  /** Custom render function for options */
+  renderOption?: (option: MultiSelectOption<T>, isSelected: boolean) => React.ReactNode;
+  /** Async mode */
+  async?: boolean;
+  /** Query key for async mode */
+  queryKey?: unknown[];
+  /** Query function for async mode */
+  queryFn?: (searchTerm: string, page?: number) => Promise<{ data: MultiSelectOption<T>[]; hasMore?: boolean }>;
+
   /** Label for the select */
   label?: string;
+  /** Icon component to display next to label */
+  icon?: FilterIconComponent;
   /** Placeholder text */
   placeholder?: string;
   /** Whether to show clear button */
@@ -168,49 +182,38 @@ export interface MultiSelectFilterProps<T = string> {
 export function MultiSelectFilter<T extends string = string>({
   value,
   onChange,
-  options,
+  options = [],
   label,
+  icon: Icon,
   placeholder = 'Selecione...',
   showClearButton = true,
   disabled = false,
+  renderOption,
+  async = false,
+  queryKey,
+  queryFn,
 }: MultiSelectFilterProps<T>) {
   const { colors } = useTheme();
-
-  const handleClear = () => {
-    onChange([]);
-  };
-
-  const hasValue = value.length > 0;
 
   const styles = StyleSheet.create({
     container: {
       gap: spacing.sm,
     },
-    header: {
+    labelRow: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'center',
-    },
-    clearButton: {
-      padding: 4,
+      gap: spacing.xs,
     },
   });
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        {label && <Label>{label}</Label>}
-        {showClearButton && hasValue && !disabled && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={handleClear}
-            style={styles.clearButton}
-          >
-            <IconX size={16} color={colors.mutedForeground} />
-          </Button>
-        )}
-      </View>
+      {label && (
+        <View style={styles.labelRow}>
+          {Icon && <Icon size={18} color={colors.foreground} />}
+          <Label>{label}</Label>
+        </View>
+      )}
 
       <Combobox
         mode="multiple"
@@ -219,14 +222,19 @@ export function MultiSelectFilter<T extends string = string>({
         options={options as any[]}
         placeholder={placeholder}
         disabled={disabled}
-        searchable={false}
+        searchable={true}
         clearable={true}
         showCount={true}
+        async={async}
+        queryKey={queryKey}
+        queryFn={queryFn as any}
+        minSearchLength={async ? 0 : 1}
         getOptionValue={(option: MultiSelectOption<T>) => String(option.value)}
         getOptionLabel={(option: MultiSelectOption<T>) => option.label}
         getOptionDescription={(option: MultiSelectOption<T>) => option.description}
         isOptionDisabled={(option: MultiSelectOption<T>) => option.disabled || false}
-        preferFullScreen={true}
+        renderOption={renderOption}
+        preferFullScreen={false}
       />
     </View>
   );

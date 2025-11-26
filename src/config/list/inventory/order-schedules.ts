@@ -137,32 +137,37 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
     fields: [
       {
         key: 'isActive',
+        label: 'Ativo',
         type: 'toggle',
         placeholder: 'Ativo',
       },
       {
         key: 'frequency',
+        label: 'Frequência',
         type: 'select',
         multiple: true,
         options: Object.values(SCHEDULE_FREQUENCY).map((frequency) => ({
           label: FREQUENCY_LABELS[frequency],
           value: frequency,
         })),
-        placeholder: 'Frequência',
+        placeholder: 'Selecione as frequências',
       },
       {
         key: 'supplierIds',
+        label: 'Fornecedores',
         type: 'select',
         multiple: true,
-        placeholder: 'Fornecedores',
+        placeholder: 'Selecione os fornecedores',
       },
       {
         key: 'nextRun',
+        label: 'Próxima Execução',
         type: 'date-range',
         placeholder: 'Próxima Execução',
       },
       {
         key: 'lastRun',
+        label: 'Última Execução',
         type: 'date-range',
         placeholder: 'Última Execução',
       },

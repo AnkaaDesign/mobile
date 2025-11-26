@@ -10,6 +10,7 @@ import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { apiClient } from "@/api-client";
+import { useTheme } from "@/lib/theme";
 
 interface ThrottlerStats {
   totalKeys: number;
@@ -36,6 +37,7 @@ interface BlockedKey {
 }
 
 export default function RateLimitingScreen() {
+  const { colors } = useTheme();
   const [stats, setStats] = useState<ThrottlerStats | null>(null);
   const [blockedKeys, setBlockedKeys] = useState<BlockedKey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,17 +53,25 @@ export default function RateLimitingScreen() {
         apiClient.get("/system/throttler/blocked-keys"),
       ]);
 
-      if (statsResponse.data.success) {
+      console.log("Rate limiting data fetched:", { stats: statsResponse.data, blocked: blockedResponse.data });
+
+      if (statsResponse.data?.success) {
         setStats(statsResponse.data.data);
+      } else {
+        setStats(null);
       }
 
-      if (blockedResponse.data.success) {
+      if (blockedResponse.data?.success) {
         setBlockedKeys(blockedResponse.data.data || []);
+      } else {
+        setBlockedKeys([]);
       }
     } catch (error) {
       console.error("Failed to fetch throttler data:", error);
+      setStats(null);
+      setBlockedKeys([]);
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
       setIsRefreshing(false);
     }
   };
@@ -185,11 +195,11 @@ export default function RateLimitingScreen() {
                     <Text className="text-sm text-muted-foreground mb-1">
                       Chaves Ativas
                     </Text>
-                    <Text className="text-3xl font-bold text-green-500">
+                    <Text className="text-3xl font-bold" style={{ color: colors.success }}>
                       {stats?.activeKeys ?? 0}
                     </Text>
                   </View>
-                  <Icon name="check-circle" className="w-8 h-8 text-green-500" />
+                  <Icon name="check-circle" className="w-8 h-8" style={{ color: colors.success }} />
                 </View>
               </CardContent>
             </Card>
@@ -201,11 +211,11 @@ export default function RateLimitingScreen() {
                     <Text className="text-sm text-muted-foreground mb-1">
                       Chaves Bloqueadas
                     </Text>
-                    <Text className="text-3xl font-bold text-red-500">
+                    <Text className="text-3xl font-bold" style={{ color: colors.destructive }}>
                       {stats?.blockedKeys ?? 0}
                     </Text>
                   </View>
-                  <Icon name="alert-triangle" className="w-8 h-8 text-red-500" />
+                  <Icon name="alert-triangle" className="w-8 h-8" style={{ color: colors.destructive }} />
                 </View>
               </CardContent>
             </Card>
@@ -216,7 +226,7 @@ export default function RateLimitingScreen() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex-row items-center gap-2">
-                  <Icon name="alert-triangle" className="w-5 h-5 text-red-500" />
+                  <Icon name="alert-triangle" className="w-5 h-5" style={{ color: colors.destructive }} />
                   Chaves Bloqueadas ({blockedKeys.length})
                 </CardTitle>
               </CardHeader>

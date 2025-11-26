@@ -209,6 +209,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
     fields: [
       {
         key: 'receivedStatus',
+        label: 'Status de Recebimento',
         type: 'select',
         multiple: true,
         options: [
@@ -216,25 +217,29 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
           { label: 'Parcial', value: 'partial' },
           { label: 'Recebido', value: 'received' },
         ],
-        placeholder: 'Status de Recebimento',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'receivedAt',
+        label: 'Data de Recebimento',
         type: 'date-range',
         placeholder: 'Data de Recebimento',
       },
       {
         key: 'fulfilledAt',
+        label: 'Data de Atendimento',
         type: 'date-range',
         placeholder: 'Data de Atendimento',
       },
       {
         key: 'priceRange',
+        label: 'Preço',
         type: 'number-range',
         placeholder: { min: 'Mín', max: 'Máx' },
       },
       {
         key: 'quantityRange',
+        label: 'Quantidade',
         type: 'number-range',
         placeholder: { min: 'Mín', max: 'Máx' },
       },

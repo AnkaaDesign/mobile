@@ -42,6 +42,8 @@ export function ThemedText({ style, variant = "default", size = "base", weight =
           color: textColors[variant],
           fontSize: textSizes[size],
           fontWeight: fontWeights[weight],
+          includeFontPadding: false, // Prevent text cutoff on Android
+          textAlignVertical: 'center', // Ensure vertical centering
         },
         style,
       ])}

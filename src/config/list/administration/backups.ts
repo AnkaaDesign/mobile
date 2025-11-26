@@ -144,6 +144,7 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: [
@@ -152,10 +153,11 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
           { label: 'Concluído', value: 'completed' },
           { label: 'Falhou', value: 'failed' },
         ],
-        placeholder: 'Status',
+        placeholder: 'Selecione os status',
       },
       {
         key: 'type',
+        label: 'Tipo',
         type: 'select',
         multiple: true,
         options: [
@@ -163,10 +165,11 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
           { label: 'Arquivos', value: 'files' },
           { label: 'Completo', value: 'full' },
         ],
-        placeholder: 'Tipo',
+        placeholder: 'Selecione os tipos',
       },
       {
         key: 'priority',
+        label: 'Prioridade',
         type: 'select',
         multiple: true,
         options: [
@@ -175,17 +178,18 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
           { label: 'Alta', value: 'high' },
           { label: 'Crítica', value: 'critical' },
         ],
-        placeholder: 'Prioridade',
+        placeholder: 'Selecione as prioridades',
       },
       {
         key: 'encrypted',
+        label: 'Criptografado',
         type: 'select',
         multiple: false,
         options: [
           { label: 'Sim', value: 'true' },
           { label: 'Não', value: 'false' },
         ],
-        placeholder: 'Criptografado',
+        placeholder: 'Selecione',
       },
     ],
   },

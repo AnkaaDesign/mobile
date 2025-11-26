@@ -208,27 +208,31 @@ export const ppeItemsListConfig: ListConfig<Item> = {
     fields: [
       {
         key: 'brandIds',
+        label: 'Marcas',
         type: 'select',
         multiple: true,
-        placeholder: 'Marcas',
+        placeholder: 'Selecione as marcas',
       },
       {
         key: 'ppeType',
+        label: 'Tipo de EPI',
         type: 'select',
         multiple: true,
         options: Object.values(PPE_TYPE).map((type) => ({
           label: PPE_TYPE_LABELS[type],
           value: type,
         })),
-        placeholder: 'Tipo de EPI',
+        placeholder: 'Selecione os tipos',
       },
       {
         key: 'createdAtRange',
+        label: 'Data de Criação',
         type: 'date-range',
-        placeholder: { from: 'Criação de', to: 'Criação até' },
+        placeholder: 'Data de Criação',
       },
       {
         key: 'showInactive',
+        label: 'Mostrar Inativos',
         type: 'toggle',
         placeholder: 'Mostrar inativos',
       },

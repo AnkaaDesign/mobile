@@ -129,6 +129,7 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
     fields: [
       {
         key: 'status',
+        label: 'Status',
         type: 'select',
         multiple: true,
         options: Object.values(PPE_DELIVERY_STATUS).map((status) => ({
@@ -139,12 +140,14 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
       },
       {
         key: 'ppeTypes',
+        label: 'Tipos de EPI',
         type: 'select',
         multiple: true,
         placeholder: 'Selecione os tipos',
       },
       {
         key: 'deliveryDateRange',
+        label: 'Período de Entrega',
         type: 'date-range',
         placeholder: 'Período de Entrega',
       },

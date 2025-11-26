@@ -101,22 +101,26 @@ export const servicesListConfig: ListConfig<Service> = {
     fields: [
       {
         key: 'isActive',
+        label: 'Serviços Ativos',
         type: 'toggle',
         placeholder: 'Serviços Ativos',
         defaultValue: true,
       },
       {
         key: 'priceRange',
+        label: 'Preço',
         type: 'number-range',
         placeholder: { min: 'Mínimo', max: 'Máximo' },
       },
       {
         key: 'durationRange',
+        label: 'Duração',
         type: 'number-range',
         placeholder: { min: 'Mínimo', max: 'Máximo' },
       },
       {
         key: 'createdAt',
+        label: 'Data de Cadastro',
         type: 'date-range',
         placeholder: 'Data de Cadastro',
       },
