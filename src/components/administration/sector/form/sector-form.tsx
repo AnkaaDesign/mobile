@@ -19,7 +19,7 @@ import { sectorCreateSchema, sectorUpdateSchema } from "@/schemas/sector";
 import type { SectorCreateFormData, SectorUpdateFormData } from "@/schemas/sector";
 import type { Sector } from "@/types";
 import { useSectorMutations } from "@/hooks/useSector";
-import { SECTOR_PRIVILEGES } from "@/constants";
+import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from "@/constants";
 
 interface SectorFormProps {
   mode: "create" | "update";
@@ -27,12 +27,6 @@ interface SectorFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
 }
-
-const PRIVILEGE_LABELS: Record<string, string> = {
-  [SECTOR_PRIVILEGES.BASIC]: "Básico",
-  [SECTOR_PRIVILEGES.ADVANCED]: "Avançado",
-  [SECTOR_PRIVILEGES.FULL]: "Completo",
-};
 
 export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProps) {
   const router = useRouter();
@@ -88,12 +82,30 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
     }
   };
 
-  const privilegeOptions: ComboboxOption[] = Object.entries(PRIVILEGE_LABELS).map(
-    ([value, label]) => ({
-      value,
-      label,
-    })
+  // Define privilege descriptions and order (matching web version)
+  const privilegeInfo = {
+    [SECTOR_PRIVILEGES.BASIC]: { order: 1, description: "Acesso básico aos recursos do sistema" },
+    [SECTOR_PRIVILEGES.EXTERNAL]: { order: 2, description: "Acesso para colaboradores externos" },
+    [SECTOR_PRIVILEGES.WAREHOUSE]: { order: 3, description: "Controle de estoque e almoxarifado" },
+    [SECTOR_PRIVILEGES.DESIGNER]: { order: 4, description: "Design e criação de artes" },
+    [SECTOR_PRIVILEGES.PRODUCTION]: { order: 5, description: "Gestão de produção e tarefas" },
+    [SECTOR_PRIVILEGES.MAINTENANCE]: { order: 6, description: "Manutenção e equipamentos" },
+    [SECTOR_PRIVILEGES.LOGISTIC]: { order: 7, description: "Logística e transporte" },
+    [SECTOR_PRIVILEGES.LEADER]: { order: 8, description: "Liderança de equipe e supervisão" },
+    [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: { order: 9, description: "Recursos humanos e pessoal" },
+    [SECTOR_PRIVILEGES.FINANCIAL]: { order: 10, description: "Controle financeiro e orçamentário" },
+    [SECTOR_PRIVILEGES.ADMIN]: { order: 11, description: "Administração completa do sistema" },
+  };
+
+  // Sort privileges by order (matching web version)
+  const sortedPrivileges = Object.entries(SECTOR_PRIVILEGES_LABELS).sort(
+    ([a], [b]) => privilegeInfo[a as keyof typeof privilegeInfo].order - privilegeInfo[b as keyof typeof privilegeInfo].order,
   );
+
+  const privilegeOptions: ComboboxOption[] = sortedPrivileges.map(([value, label]) => ({
+    value,
+    label,
+  }));
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
@@ -115,12 +127,16 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
           <KeyboardAwareFormProvider value={keyboardContextValue}>
             <FormCard
               title="Informações do Setor"
-              subtitle="Preencha os dados do setor"
+              subtitle="Preencha as informações básicas do setor"
             >
               {/* Name */}
               <FormFieldGroup
-                label="Nome"
+                label="Nome do Setor"
                 required
+                helper={(() => {
+                  const characterCount = (form.watch("name") || "").length;
+                  return `Nome único para identificar o setor · ${characterCount}/100`;
+                })()}
                 error={form.formState.errors.name?.message}
               >
                 <Controller
@@ -131,9 +147,10 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
                       value={value || ""}
                       onChangeText={onChange}
                       onBlur={onBlur}
-                      placeholder="Digite o nome do setor"
+                      placeholder="Ex: Recursos Humanos, Produção, Financeiro"
                       editable={!isLoading}
                       error={!!form.formState.errors.name}
+                      maxLength={100}
                     />
                   )}
                 />
@@ -143,7 +160,13 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
               <FormFieldGroup
                 label="Privilégios"
                 required
-                helper="Define o nível de acesso do setor no sistema"
+                helper={(() => {
+                  const currentValue = form.watch("privileges");
+                  if (currentValue && privilegeInfo[currentValue as keyof typeof privilegeInfo]) {
+                    return privilegeInfo[currentValue as keyof typeof privilegeInfo].description;
+                  }
+                  return undefined;
+                })()}
                 error={form.formState.errors.privileges?.message}
               >
                 <Controller
@@ -154,7 +177,7 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
                       options={privilegeOptions}
                       value={value}
                       onValueChange={onChange}
-                      placeholder="Selecione o nível de privilégio"
+                      placeholder="Selecione os privilégios do setor"
                       disabled={isLoading}
                       searchable={false}
                       clearable={false}
@@ -172,7 +195,7 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
           onSubmit={form.handleSubmit(handleSubmit)}
           isSubmitting={isLoading}
           canSubmit={form.formState.isValid}
-          submitLabel={mode === "create" ? "Criar" : "Salvar"}
+          submitLabel={mode === "create" ? "Cadastrar" : "Atualizar"}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

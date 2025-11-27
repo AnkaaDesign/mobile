@@ -58,6 +58,7 @@ export function OrderBatchCreateForm({
   isSubmitting = false,
 }: OrderBatchCreateFormProps) {
   const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   // Local state for date (since it's a Date object)
   const [forecastDate, setForecastDate] = useState<Date | undefined>(undefined);
@@ -456,7 +457,7 @@ export function OrderBatchCreateForm({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -470,12 +471,12 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: fontSize.xs,
-    color: "#ef4444",
+    color: colors.destructive,
     marginTop: spacing.xs,
   },
   helpText: {
     fontSize: fontSize.xs,
-    color: "#6b7280",
+    color: colors.mutedForeground,
     marginTop: spacing.xs,
   },
   itemSelectorContainer: {
@@ -498,7 +499,7 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: fontSize.xs,
-    color: "#6b7280",
+    color: colors.mutedForeground,
     marginBottom: spacing.xs,
     textTransform: "uppercase",
     fontWeight: "600",
@@ -510,19 +511,19 @@ const styles = StyleSheet.create({
   totalSection: {
     paddingTop: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: colors.border,
     marginTop: spacing.md,
   },
   totalValue: {
     fontSize: fontSize.xl,
     fontWeight: "700",
-    color: "#10b981",
+    color: colors.success,
   },
   summarySection: {
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: colors.border,
   },
   itemsList: {
     gap: spacing.sm,

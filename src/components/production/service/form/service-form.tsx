@@ -103,7 +103,7 @@ export function ServiceForm({ service, onSubmit, onCancel, isSubmitting }: Servi
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           canSubmit={form.formState.isValid}
-          submitLabel={isEditing ? "Salvar" : "Criar"}
+          submitLabel={isEditing ? "Atualizar" : "Cadastrar"}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -23,6 +23,7 @@ import { useSuppliers, useItems, useOrderMutations, useFileUploadManager } from 
 import { useMultiStepForm } from "@/hooks";
 import { ORDER_STATUS } from "@/constants";
 import { formatCurrency } from "@/utils";
+import { createOrderFormData } from "@/utils/order-form-utils";
 import type { FormStep } from "@/components/ui/form-steps";
 import {
   MultiStepFormContainer,
@@ -347,49 +348,56 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
         }));
       }
 
-      // Upload files
-      setIsUploadingFiles(true);
+      // Prepare order data
+      const orderData = {
+        description: multiStepForm.formData.description,
+        status: ORDER_STATUS.CREATED,
+        supplierId: multiStepForm.formData.supplierId || undefined,
+        forecast: forecastDate || undefined,
+        notes: multiStepForm.formData.notes || undefined,
+        items: itemsData,
+      };
+
+      // Check if there are files to upload
+      const hasFiles =
+        budgetFiles.length > 0 ||
+        invoiceFiles.length > 0 ||
+        receiptFiles.length > 0 ||
+        reimbursementFiles.length > 0 ||
+        reimbursementInvoiceFiles.length > 0;
+
+      let result;
+      setIsUploadingFiles(hasFiles);
 
       try {
-        // Upload all file types
-        for (const file of budgetFiles) {
-          await budgetUpload.addFile({ uri: file.uri, name: file.name, type: file.type, size: file.size || 0 });
-        }
-        for (const file of invoiceFiles) {
-          await invoiceUpload.addFile({ uri: file.uri, name: file.name, type: file.type, size: file.size || 0 });
-        }
-        for (const file of receiptFiles) {
-          await receiptUpload.addFile({ uri: file.uri, name: file.name, type: file.type, size: file.size || 0 });
-        }
-        for (const file of reimbursementFiles) {
-          await reimbursementUpload.addFile({ uri: file.uri, name: file.name, type: file.type, size: file.size || 0 });
-        }
-        for (const file of reimbursementInvoiceFiles) {
-          await reimbursementInvoiceUpload.addFile({ uri: file.uri, name: file.name, type: file.type, size: file.size || 0 });
-        }
+        if (hasFiles) {
+          // ATOMIC SUBMISSION: Use FormData when there are files
+          // This prevents race conditions by submitting files + data in single request
+          const supplier = multiStepForm.formData.supplierId
+            ? suppliers?.data?.find((s) => s.id === multiStepForm.formData.supplierId)
+            : undefined;
 
-        // Collect uploaded file IDs
-        const budgetIds = budgetUpload.getUploadedIds();
-        const invoiceIds = invoiceUpload.getUploadedIds();
-        const receiptIds = receiptUpload.getUploadedIds();
-        const reimbursementIds = reimbursementUpload.getUploadedIds();
-        const reimbursementInvoiceIds = reimbursementInvoiceUpload.getUploadedIds();
+          const formDataWithFiles = createOrderFormData(
+            orderData,
+            {
+              budgets: budgetFiles.length > 0 ? budgetFiles : undefined,
+              receipts: receiptFiles.length > 0 ? receiptFiles : undefined,
+              invoices: invoiceFiles.length > 0 ? invoiceFiles : undefined,
+            },
+            supplier
+              ? {
+                  id: supplier.id,
+                  name: supplier.name,
+                  fantasyName: supplier.fantasyName,
+                }
+              : undefined
+          );
 
-        const orderData = {
-          description: multiStepForm.formData.description,
-          status: ORDER_STATUS.CREATED,
-          supplierId: multiStepForm.formData.supplierId || undefined,
-          forecast: forecastDate || undefined,
-          notes: multiStepForm.formData.notes || undefined,
-          items: itemsData,
-          budgetIds: budgetIds.length > 0 ? budgetIds : undefined,
-          invoiceIds: invoiceIds.length > 0 ? invoiceIds : undefined,
-          receiptIds: receiptIds.length > 0 ? receiptIds : undefined,
-          reimbursementIds: reimbursementIds.length > 0 ? reimbursementIds : undefined,
-          reimbursementInvoiceIds: reimbursementInvoiceIds.length > 0 ? reimbursementInvoiceIds : undefined,
-        };
-
-        const result = await createAsync(orderData);
+          result = await createAsync(formDataWithFiles as any);
+        } else {
+          // Use regular JSON payload when no files
+          result = await createAsync(orderData);
+        }
 
         if (result.success && result.data) {
           showToast({ type: "success", message: "Pedido criado com sucesso!" });

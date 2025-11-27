@@ -5,3 +5,4 @@ export { TasksCard } from "./tasks-card";
 export { TasksTable } from "./tasks-table";
 export { CustomerDocumentsCard } from "./customer-documents-card";
 export { CustomerInvoicesCard } from "./customer-invoices-card";
+export { ServiceOrdersTable } from "./service-orders-table";

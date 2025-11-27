@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
@@ -26,12 +27,14 @@ import {
   NOTIFICATION_TYPE,
   NOTIFICATION_CHANNEL,
   NOTIFICATION_IMPORTANCE,
+  NOTIFICATION_ACTION_TYPE,
   USER_STATUS,
 } from "@/constants";
 import {
   NOTIFICATION_TYPE_LABELS,
   NOTIFICATION_IMPORTANCE_LABELS,
   NOTIFICATION_CHANNEL_LABELS,
+  NOTIFICATION_ACTION_TYPE_LABELS,
 } from "@/constants/enum-labels";
 
 interface NotificationFormProps {
@@ -137,6 +140,14 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
       label,
     })
   );
+
+  const actionTypeOptions: ComboboxOption[] = [
+    { value: "", label: "Nenhuma ação" },
+    ...Object.entries(NOTIFICATION_ACTION_TYPE_LABELS).map(([value, label]) => ({
+      value,
+      label,
+    })),
+  ];
 
   const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
     onFieldLayout: handlers.handleFieldLayout,
@@ -284,6 +295,43 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
                   )}
                 />
               </FormFieldGroup>
+
+              {/* Channel Selection - Multiple Checkboxes */}
+              <FormFieldGroup
+                label="Canais de Notificação"
+                required
+                error={form.formState.errors.channel?.message}
+                helper="Selecione pelo menos um canal para enviar a notificação"
+              >
+                <Controller
+                  control={form.control}
+                  name="channel"
+                  render={({ field: { onChange, value } }) => (
+                    <View style={styles.checkboxContainer}>
+                      {Object.entries(NOTIFICATION_CHANNEL_LABELS).map(([channelValue, channelLabel]) => {
+                        const isSelected = value?.includes(channelValue);
+                        return (
+                          <View key={channelValue} style={styles.checkboxRow}>
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={(checked) => {
+                                const updatedValue = checked
+                                  ? [...(value || []), channelValue]
+                                  : value?.filter((v) => v !== channelValue) || [];
+                                onChange(updatedValue);
+                              }}
+                              disabled={isLoading}
+                            />
+                            <Text style={[styles.checkboxLabel, { color: colors.foreground }]}>
+                              {channelLabel}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+                />
+              </FormFieldGroup>
             </FormCard>
 
             {/* Scheduling Card */}
@@ -314,52 +362,58 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
 
             {/* Action Card (optional) */}
             <FormCard
-              title="Ação"
+              title="Configuração de Ação"
               subtitle="Configure uma ação ao clicar na notificação (opcional)"
             >
-              <FormRow>
-                <FormFieldGroup
-                  label="Tipo de Ação"
-                  error={form.formState.errors.actionType?.message}
-                >
-                  <Controller
-                    control={form.control}
-                    name="actionType"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <Input
-                        value={value || ""}
-                        onChangeText={(val) => onChange(val || null)}
-                        onBlur={onBlur}
-                        placeholder="Ex: VIEW_DETAILS"
-                        editable={!isLoading}
-                        error={!!form.formState.errors.actionType}
-                      />
-                    )}
-                  />
-                </FormFieldGroup>
+              <FormFieldGroup
+                label="Tipo de Ação"
+                error={form.formState.errors.actionType?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name="actionType"
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
+                    <Combobox
+                      options={actionTypeOptions}
+                      value={value || ""}
+                      onValueChange={(val) => onChange(val === "" ? null : val)}
+                      placeholder="Selecione o tipo de ação"
+                      disabled={isLoading}
+                      searchable={false}
+                      clearable={false}
+                      error={error?.message}
+                    />
+                  )}
+                />
+              </FormFieldGroup>
 
-                <FormFieldGroup
-                  label="URL da Ação"
-                  error={form.formState.errors.actionUrl?.message}
-                >
-                  <Controller
-                    control={form.control}
-                    name="actionUrl"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <Input
-                        value={value || ""}
-                        onChangeText={(val) => onChange(val || null)}
-                        onBlur={onBlur}
-                        placeholder="https://..."
-                        keyboardType="url"
-                        autoCapitalize="none"
-                        editable={!isLoading}
-                        error={!!form.formState.errors.actionUrl}
-                      />
-                    )}
-                  />
-                </FormFieldGroup>
-              </FormRow>
+              <FormFieldGroup
+                label="URL da Ação"
+                required={form.watch("actionType") !== null && form.watch("actionType") !== ""}
+                error={form.formState.errors.actionUrl?.message}
+                helper={
+                  form.watch("actionType") && !form.watch("actionUrl")
+                    ? "URL é obrigatória quando um tipo de ação é selecionado"
+                    : undefined
+                }
+              >
+                <Controller
+                  control={form.control}
+                  name="actionUrl"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      value={value || ""}
+                      onChangeText={(val) => onChange(val || null)}
+                      onBlur={onBlur}
+                      placeholder="https://exemplo.com/acao"
+                      keyboardType="url"
+                      autoCapitalize="none"
+                      editable={!isLoading && (form.watch("actionType") !== null && form.watch("actionType") !== "")}
+                      error={!!form.formState.errors.actionUrl}
+                    />
+                  )}
+                />
+              </FormFieldGroup>
             </FormCard>
           </KeyboardAwareFormProvider>
         </ScrollView>
@@ -369,7 +423,7 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
           onSubmit={form.handleSubmit(handleSubmit)}
           isSubmitting={isLoading}
           canSubmit={form.formState.isValid}
-          submitLabel={mode === "create" ? "Criar" : "Salvar"}
+          submitLabel={mode === "create" ? "Cadastrar" : "Atualizar"}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -390,5 +444,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: formSpacing.containerPaddingHorizontal,
     paddingTop: formSpacing.containerPaddingVertical,
     paddingBottom: 0, // No spacing - action bar has its own margin
+  },
+  checkboxContainer: {
+    gap: spacing.md,
+  },
+  checkboxRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    flex: 1,
   },
 });

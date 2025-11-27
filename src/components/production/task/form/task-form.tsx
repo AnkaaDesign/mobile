@@ -26,7 +26,7 @@ import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius, fontWeight } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
-import { useSectors, useKeyboardAwareScroll } from "@/hooks";
+import { useSectors, useKeyboardAwareScroll, useLayoutMutations } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES } from "@/constants";
 import { IconX } from "@tabler/icons-react-native";
@@ -53,13 +53,15 @@ const taskFormSchema = z.object({
     plate: z.string()
       .nullable()
       .optional()
-      .refine((val) => !val || /^[A-Z0-9-]+$/.test(val), {
-        message: "Placa deve conter apenas letras maiúsculas, números e hífens",
+      .transform((val) => (val === "" ? null : val?.toUpperCase()))
+      .refine((val) => !val || /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$|^[A-Z]{3}-?[0-9]{4}$/i.test(val), {
+        message: "Formato de placa inválido (ex: ABC1234 ou ABC-1234)",
       }),
     // Use 'chassisNumber' to match Prisma schema (source of truth)
     chassisNumber: z.string()
       .nullable()
       .optional()
+      .transform((val) => (val === "" ? null : val?.toUpperCase()))
       .refine((val) => {
         if (!val) return true;
         const cleaned = val.replace(/\s/g, "").toUpperCase();
@@ -67,6 +69,9 @@ const taskFormSchema = z.object({
       }, {
         message: "Número do chassi deve ter exatamente 17 caracteres alfanuméricos",
       }),
+    xPosition: z.number().nullable().optional(),
+    yPosition: z.number().nullable().optional(),
+    garageId: z.string().uuid("Garagem inválida").nullable().optional(),
   }).nullable().optional(),
   details: z.string().max(1000, "Detalhes muito longos (máx. 1000 caracteres)").nullable().optional(),
   entryDate: z.date().nullable().optional(),
@@ -178,7 +183,7 @@ interface TaskFormProps {
     right?: LayoutCreateFormData;
     back?: LayoutCreateFormData;
   };
-  onSubmit: (data: TaskFormData) => Promise<void>;
+  onSubmit: (data: TaskFormData) => Promise<any>; // Returns task data with truck ID for layout creation
   onCancel: () => void;
   isSubmitting?: boolean;
 }
@@ -195,6 +200,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
   const { colors } = useTheme();
   const { user } = useAuth();
   const { handlers, refs } = useKeyboardAwareScroll();
+  const { createOrUpdateTruckLayout } = useLayoutMutations();
   const [sectorSearch, setSectorSearch] = useState("");
   const [isSubmittingInternal, setIsSubmittingInternal] = useState(false);
 
@@ -258,9 +264,15 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
     truck: initialData?.truck ? {
       plate: initialData.truck.plate || null,
       chassisNumber: initialData.truck.chassisNumber || null,
+      xPosition: initialData.truck.xPosition || null,
+      yPosition: initialData.truck.yPosition || null,
+      garageId: initialData.truck.garageId || null,
     } : {
       plate: null,
       chassisNumber: null,
+      xPosition: null,
+      yPosition: null,
+      garageId: null,
     },
     details: initialData?.details || null,
     entryDate: initialData?.entryDate || null,
@@ -410,7 +422,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
       if (data.sectorId) formDataFields.sectorId = data.sectorId;
       if (data.serialNumber) formDataFields.serialNumber = data.serialNumber.toUpperCase();
 
-      // Handle truck object structure
+      // Handle truck object structure (match web implementation)
       if (data.truck) {
         const truckData: any = {};
         if (data.truck.plate) {
@@ -419,6 +431,15 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
         if (data.truck.chassisNumber) {
           // Clean and uppercase chassis number
           truckData.chassisNumber = data.truck.chassisNumber.replace(/\s/g, "").toUpperCase();
+        }
+        if (data.truck.xPosition !== null && data.truck.xPosition !== undefined) {
+          truckData.xPosition = data.truck.xPosition;
+        }
+        if (data.truck.yPosition !== null && data.truck.yPosition !== undefined) {
+          truckData.yPosition = data.truck.yPosition;
+        }
+        if (data.truck.garageId) {
+          truckData.garageId = data.truck.garageId;
         }
         if (Object.keys(truckData).length > 0) {
           formDataFields.truck = truckData;
@@ -442,29 +463,6 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
         };
       }
 
-      // Add layouts if present - only modified sides (following web implementation)
-      if (isLayoutOpen && modifiedLayoutSides.size > 0) {
-        const truckLayoutData: any = {};
-
-        for (const side of modifiedLayoutSides) {
-          const sideData = layouts[side];
-          if (sideData && sideData.sections && sideData.sections.length > 0) {
-            const sideName = side === 'left' ? 'leftSide' : side === 'right' ? 'rightSide' : 'backSide';
-            truckLayoutData[sideName] = {
-              height: sideData.height,
-              sections: sideData.sections,
-              photoId: sideData.photoId || null,
-            };
-            console.log(`[TaskForm] Added modified ${sideName} to payload`);
-          }
-        }
-
-        if (Object.keys(truckLayoutData).length > 0) {
-          formDataFields.truckLayoutData = truckLayoutData;
-          console.log('[TaskForm] truckLayoutData:', truckLayoutData);
-        }
-      }
-
       // Create FormData with context for proper backend file organization
       const formData = createFormDataWithContext(
         formDataFields,
@@ -475,8 +473,51 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
         }
       );
 
-      await onSubmit(formData as any);
+      const result = await onSubmit(formData as any);
       console.log('[TaskForm] FormData submission completed');
+
+      // Create layouts AFTER task creation (matching web implementation)
+      if (isLayoutOpen && modifiedLayoutSides.size > 0 && result?.data?.truck?.id) {
+        const truckId = result.data.truck.id;
+        console.log(`[TaskForm] Creating layouts for truck ${truckId}`);
+
+        const layoutPromises = [];
+        for (const side of modifiedLayoutSides) {
+          const sideData = layouts[side];
+          if (sideData && sideData.sections && sideData.sections.length > 0) {
+            console.log(`[TaskForm] Creating ${side} layout`);
+            layoutPromises.push(
+              createOrUpdateTruckLayout({
+                truckId,
+                side,
+                data: {
+                  height: sideData.height,
+                  sections: sideData.sections.map((section: any) => ({
+                    width: section.width,
+                    isDoor: section.isDoor || false,
+                    doorOffset: section.isDoor ? section.doorOffset : null,
+                    position: section.position,
+                  })),
+                  photoId: sideData.photoId || null,
+                },
+              })
+            );
+          }
+        }
+
+        if (layoutPromises.length > 0) {
+          try {
+            await Promise.all(layoutPromises);
+            console.log(`[TaskForm] Successfully created ${layoutPromises.length} layout(s)`);
+          } catch (layoutError) {
+            console.error('[TaskForm] Error creating layouts:', layoutError);
+            Alert.alert(
+              "Aviso",
+              "Tarefa criada, mas houve um erro ao criar os layouts do caminhão."
+            );
+          }
+        }
+      }
     } else {
       // No files - submit as regular JSON with proper formatting
       const cleanedData: any = {
@@ -484,11 +525,14 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
         serialNumber: data.serialNumber?.toUpperCase() || null,
       };
 
-      // Handle truck object structure
+      // Handle truck object structure (match web implementation)
       if (data.truck) {
         cleanedData.truck = {
           plate: data.truck.plate?.toUpperCase() || null,
           chassisNumber: data.truck.chassisNumber?.replace(/\s/g, "").toUpperCase() || null,
+          xPosition: data.truck.xPosition || null,
+          yPosition: data.truck.yPosition || null,
+          garageId: data.truck.garageId || null,
         };
       }
 
@@ -501,31 +545,51 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
         delete cleanedData.observation;
       }
 
-      // Add layouts if present - only modified sides (following web implementation)
-      if (isLayoutOpen && modifiedLayoutSides.size > 0) {
-        const truckLayoutData: any = {};
+      const result = await onSubmit(cleanedData);
+      console.log('[TaskForm] JSON submission completed');
 
+      // Create layouts AFTER task creation (matching web implementation)
+      if (isLayoutOpen && modifiedLayoutSides.size > 0 && result?.data?.truck?.id) {
+        const truckId = result.data.truck.id;
+        console.log(`[TaskForm] Creating layouts for truck ${truckId}`);
+
+        const layoutPromises = [];
         for (const side of modifiedLayoutSides) {
           const sideData = layouts[side];
           if (sideData && sideData.sections && sideData.sections.length > 0) {
-            const sideName = side === 'left' ? 'leftSide' : side === 'right' ? 'rightSide' : 'backSide';
-            truckLayoutData[sideName] = {
-              height: sideData.height,
-              sections: sideData.sections,
-              photoId: sideData.photoId || null,
-            };
-            console.log(`[TaskForm] Added modified ${sideName} to payload (JSON)`);
+            console.log(`[TaskForm] Creating ${side} layout`);
+            layoutPromises.push(
+              createOrUpdateTruckLayout({
+                truckId,
+                side,
+                data: {
+                  height: sideData.height,
+                  sections: sideData.sections.map((section: any) => ({
+                    width: section.width,
+                    isDoor: section.isDoor || false,
+                    doorOffset: section.isDoor ? section.doorOffset : null,
+                    position: section.position,
+                  })),
+                  photoId: sideData.photoId || null,
+                },
+              })
+            );
           }
         }
 
-        if (Object.keys(truckLayoutData).length > 0) {
-          cleanedData.truckLayoutData = truckLayoutData;
-          console.log('[TaskForm] truckLayoutData (JSON):', truckLayoutData);
+        if (layoutPromises.length > 0) {
+          try {
+            await Promise.all(layoutPromises);
+            console.log(`[TaskForm] Successfully created ${layoutPromises.length} layout(s)`);
+          } catch (layoutError) {
+            console.error('[TaskForm] Error creating layouts:', layoutError);
+            Alert.alert(
+              "Aviso",
+              "Tarefa criada, mas houve um erro ao criar os layouts do caminhão."
+            );
+          }
         }
       }
-
-      await onSubmit(cleanedData);
-      console.log('[TaskForm] JSON submission completed');
     }
     } catch (error) {
       console.error('[TaskForm] Submission error:', error);
@@ -1175,7 +1239,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           )();
         }}
         isSubmitting={isSubmitting}
-        submitLabel={mode === "create" ? "Salvar Tarefa" : "Salvar Alterações"}
+        submitLabel={mode === "create" ? "Cadastrar" : "Atualizar"}
       />
     </ThemedView>
   );

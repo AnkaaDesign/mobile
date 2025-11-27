@@ -468,12 +468,14 @@ export function ActivityBatchCreateForm({
                     name="userId"
                     render={({ field: { value }, fieldState: { error } }) => (
                       <View style={styles.fieldGroup}>
-                        <Label style={styles.fieldLabel}>Usuário</Label>
+                        <Label style={styles.fieldLabel}>
+                          Usuário Responsável <ThemedText style={[styles.optionalLabel, { color: colors.mutedForeground }]}>(opcional)</ThemedText>
+                        </Label>
                         <Combobox
                           value={value || ""}
                           onValueChange={(val) => handleFormChange("userId", val || null)}
                           options={userOptions}
-                          placeholder="Selecione um usuário"
+                          placeholder="Selecione um usuário (opcional)"
                           searchPlaceholder="Buscar usuário..."
                           emptyText="Nenhum usuário encontrado"
                           disabled={isSubmitting || isLoadingUsers}
@@ -493,7 +495,9 @@ export function ActivityBatchCreateForm({
                     name="reason"
                     render={({ field: { value }, fieldState: { error } }) => (
                       <View style={styles.fieldGroup}>
-                        <Label style={styles.fieldLabel}>Motivo</Label>
+                        <Label style={styles.fieldLabel}>
+                          Motivo <ThemedText style={[styles.optionalLabel, { color: colors.mutedForeground }]}>(opcional)</ThemedText>
+                        </Label>
                         <Combobox
                           value={value || ""}
                           onValueChange={(val) => handleFormChange("reason", val || null)}
@@ -738,6 +742,10 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     marginBottom: 4,
+  },
+  optionalLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: "400",
   },
   errorText: {
     fontSize: 14,

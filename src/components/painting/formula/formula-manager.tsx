@@ -100,7 +100,7 @@ export function FormulaManager({ formulas, onFormulasChange, paintId, availableI
             placeholder="Ex: Fórmula Principal, Variação Clara, etc."
             value={form.watch("description")}
             onChangeText={(value) => form.setValue("description", value)}
-            style={form.formState.errors.description ? styles.inputError : undefined}
+            style={form.formState.errors.description ? { borderColor: colors.destructive } : undefined}
             onFocus={() => keyboardContext?.onFieldFocus('formulaDescription')}
           />
           {form.formState.errors.description && (
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   inputError: {
-    borderColor: '#ef4444',
+    // borderColor should be set dynamically via inline style using colors.destructive
   },
   errorText: {
     fontSize: 12,

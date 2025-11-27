@@ -571,7 +571,7 @@ export function PaintForm(props: PaintFormProps) {
                         />
                       </View>
                       {value && (
-                        <View style={[styles.colorPreview, { backgroundColor: value }]} />
+                        <View style={[styles.colorPreview, { backgroundColor: value, borderColor: colors.border }]} />
                       )}
                     </View>
                   )}
@@ -627,6 +627,7 @@ export function PaintForm(props: PaintFormProps) {
                       searchPlaceholder="Buscar tintas..."
                       disabled={isSubmitting || isLoadingPaints}
                       error={error?.message}
+                      initialOptions={mode === "update" ? (props.initialGrounds?.map(p => ({ value: p.id, label: p.name })) || []) : undefined}
                     />
                   )}
                 />
@@ -643,7 +644,7 @@ export function PaintForm(props: PaintFormProps) {
             isSubmitting={isSubmitting}
             canSubmit={form.formState.isValid}
             cancelLabel={isFirstStep ? "Cancelar" : "Voltar"}
-            submitLabel={isLastStep ? (mode === "create" ? "Criar Tinta" : "Salvar Alterações") : "Próximo"}
+            submitLabel={isLastStep ? (mode === "create" ? "Cadastrar" : "Atualizar") : "Próximo"}
             showCancel={true}
           />
         </KeyboardAvoidingView>
@@ -680,7 +681,6 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#d1d5db",
   },
   previewContainer: {
     alignItems: "center",

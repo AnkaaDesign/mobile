@@ -325,7 +325,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
         <CardContent style={styles.cardContent}>
           {/* Withdrawer Name */}
           <View style={styles.formField}>
-            <FormLabel required>Nome do Retirador</FormLabel>
+            <FormLabel required asteriskColor="red">Nome do Retirador</FormLabel>
             <Input
               value={withdrawerName}
               onChangeText={updateWithdrawerName}
@@ -340,7 +340,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
 
           {/* Withdrawal Type */}
           <View style={styles.formField}>
-            <FormLabel required>Tipo de Retirada</FormLabel>
+            <FormLabel required asteriskColor="red">Tipo de Retirada</FormLabel>
             <Combobox
               value={type}
               onValueChange={(value) => updateType(value as EXTERNAL_WITHDRAWAL_TYPE)}
@@ -573,7 +573,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
               icon={<IconCheck size={16} />}
               style={styles.footerButton}
             >
-              Salvar Alterações
+              Atualizar
             </Button>
           )}
         </View>

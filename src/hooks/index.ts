@@ -188,6 +188,7 @@ export * from "./useDebouncedSearch";
 // =====================================================
 export * from "./use-external-withdrawal-form-state";
 export * from "./use-multi-step-form";
+export * from "./use-persisted-state";
 
 // =====================================================
 // Lookup & Validation Hooks

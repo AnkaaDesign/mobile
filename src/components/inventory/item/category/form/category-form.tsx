@@ -1,5 +1,5 @@
-
-import { ScrollView, StyleSheet } from "react-native";
+import { useMemo } from "react";
+import { ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,11 +9,12 @@ import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
-import { useItems } from "@/hooks";
+import { useItems, useKeyboardAwareScroll } from "@/hooks";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
+import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 interface ItemCategoryFormProps<TMode extends "create" | "update"> {
   onSubmit: (data: TMode extends "create" ? ItemCategoryCreateFormData : ItemCategoryUpdateFormData) => Promise<any>;
@@ -25,6 +26,7 @@ interface ItemCategoryFormProps<TMode extends "create" | "update"> {
 
 export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, onCancel, isSubmitting, defaultValues, mode }: ItemCategoryFormProps<TMode>) {
   const { colors } = useTheme();
+  const { handlers, refs } = useKeyboardAwareScroll();
 
   type FormData = TMode extends "create" ? ItemCategoryCreateFormData : ItemCategoryUpdateFormData;
 
@@ -69,15 +71,32 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
 
   const watchedType = form.watch("type");
 
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
-        <FormCard title="Informações da Categoria">
+        <ScrollView
+          ref={refs.scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
+        >
+          <KeyboardAwareFormProvider value={keyboardContextValue}>
+            <FormCard title="Informações da Categoria">
           <FormFieldGroup
             label="Nome da Categoria"
             required={isRequired}
@@ -150,22 +169,27 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
               )}
             />
           </FormFieldGroup>
-        </FormCard>
-      </ScrollView>
+            </FormCard>
+          </KeyboardAwareFormProvider>
+        </ScrollView>
 
-      <SimpleFormActionBar
+        <SimpleFormActionBar
         onCancel={onCancel}
         onSubmit={form.handleSubmit(handleSubmit as any)}
         isSubmitting={isSubmitting}
         canSubmit={form.formState.isValid}
-        submitLabel={mode === "create" ? "Criar" : "Salvar"}
-      />
+        submitLabel={mode === "create" ? "Cadastrar" : "Atualizar"}
+        />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
     flex: 1,
   },
   scrollView: {

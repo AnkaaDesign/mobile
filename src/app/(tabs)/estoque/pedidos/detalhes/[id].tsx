@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { OrderInfoCard } from "@/components/inventory/order/detail/order-info-card";
-import { OrderItemsCard } from "@/components/inventory/order/detail/order-items-card";
+import { OrderItemsCardEnhanced } from "@/components/inventory/order/detail/order-items-card-enhanced";
 import { OrderSupplierCard } from "@/components/inventory/order/detail/order-supplier-card";
 import { OrderTimelineCard } from "@/components/inventory/order/detail/order-timeline-card";
 import { OrderSummaryCard } from "@/components/inventory/order/detail/order-summary-card";
@@ -264,7 +264,13 @@ export default function OrderDetailScreen() {
           <OrderSummaryCard order={order} />
 
           {/* Order Items */}
-          <OrderItemsCard items={order?.items || []} />
+          <OrderItemsCardEnhanced
+            items={order?.items || []}
+            orderStatus={order?.status || ""}
+            orderDescription={order?.description}
+            orderCreatedAt={order?.createdAt}
+            onOrderUpdate={handleRefresh}
+          />
 
           {/* Documents */}
           <OrderDocumentsCard order={order} />

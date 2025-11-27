@@ -1,5 +1,5 @@
-import React from "react";
-import { View, ScrollView, StyleSheet, Alert } from "react-native";
+import React, { useMemo } from "react";
+import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -17,11 +17,12 @@ import { spacing } from "@/constants/design-system";
 import { itemCreateSchema, itemUpdateSchema } from "@/schemas/item";
 import type { ItemCreateFormData, ItemUpdateFormData } from "@/schemas/item";
 import type { Item } from "@/types";
-import { useItemMutations } from "@/hooks/useItem";
+import { useItemMutations, useKeyboardAwareScroll } from "@/hooks/useItem";
 import { useItemBrands } from "@/hooks/useItemBrand";
 import { useItemCategories } from "@/hooks/useItemCategory";
 import { PPE_TYPE, PPE_DELIVERY_MODE, ITEM_CATEGORY_TYPE } from "@/constants";
 import { PPE_TYPE_LABELS, PPE_DELIVERY_MODE_LABELS } from "@/constants/enum-labels";
+import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 interface PPEFormProps {
   mode: "create" | "update";
@@ -33,6 +34,7 @@ interface PPEFormProps {
 export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useItemMutations();
 
   const { data: brands } = useItemBrands({ orderBy: { name: "asc" } });
@@ -130,19 +132,36 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
     })
   );
 
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
-        {/* Basic Information */}
-        <FormCard
-          title="Informações Básicas"
-          subtitle="Dados do equipamento de proteção individual"
+        <ScrollView
+          ref={refs.scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
         >
+          <KeyboardAwareFormProvider value={keyboardContextValue}>
+            {/* Basic Information */}
+            <FormCard
+              title="Informações Básicas"
+              subtitle="Dados do equipamento de proteção individual"
+            >
           {/* Name */}
           <FormFieldGroup
             label="Nome"
@@ -438,22 +457,27 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
               </View>
             </FormFieldGroup>
           </FormRow>
-        </FormCard>
-      </ScrollView>
+            </FormCard>
+          </KeyboardAwareFormProvider>
+        </ScrollView>
 
-      <SimpleFormActionBar
-        onCancel={handleCancel}
-        onSubmit={form.handleSubmit(handleSubmit)}
-        isSubmitting={isLoading}
-        canSubmit={form.formState.isValid}
-        submitLabel={mode === "create" ? "Criar" : "Salvar"}
-      />
+        <SimpleFormActionBar
+          onCancel={handleCancel}
+          onSubmit={form.handleSubmit(handleSubmit)}
+          isSubmitting={isLoading}
+          canSubmit={form.formState.isValid}
+          submitLabel={mode === "create" ? "Cadastrar" : "Atualizar"}
+        />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
     flex: 1,
   },
   scrollView: {

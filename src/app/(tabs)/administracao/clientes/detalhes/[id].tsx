@@ -25,6 +25,7 @@ import {
   ContactInfoCard,
   AddressCard,
   TasksTable,
+  ServiceOrdersTable,
 } from "@/components/administration/customer/detail";
 import { CustomerDetailSkeleton } from "@/components/administration/customer/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
@@ -44,6 +45,15 @@ export default function CustomerDetailScreen() {
   } = useCustomer(id, {
     include: {
       logo: true,
+      tasks: {
+        include: {
+          services: {
+            include: {
+              task: true,
+            },
+          },
+        },
+      },
     },
     enabled: !!id && id !== "",
   });
@@ -141,6 +151,9 @@ export default function CustomerDetailScreen() {
 
           {/* Tasks Table */}
           <TasksTable customer={customer} maxHeight={400} />
+
+          {/* Service Orders Table */}
+          <ServiceOrdersTable customer={customer} maxHeight={400} />
 
           {/* Changelog Timeline */}
           <Card style={styles.card}>

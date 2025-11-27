@@ -201,7 +201,7 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
           onSubmit={form.handleSubmit(handleSubmit)}
           isSubmitting={isLoading}
           canSubmit={form.formState.isValid}
-          submitLabel={mode === "create" ? "Criar" : "Salvar"}
+          submitLabel={mode === "create" ? "Cadastrar" : "Atualizar"}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -286,7 +286,7 @@ export function ItemForm(props: ItemFormProps) {
             onSubmit={form.handleSubmit(handleSubmit)}
             isSubmitting={isSubmitting}
             canSubmit={isValid}
-            submitLabel={mode === "create" ? "Criar" : "Salvar"}
+            submitLabel={mode === "create" ? "Cadastrar" : "Atualizar"}
           />
         </KeyboardAvoidingView>
       </SafeAreaView>

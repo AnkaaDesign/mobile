@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
-import { formatCurrency, formatNumberWithDecimals } from "@/utils";
+import { formatCurrency, formatNumberWithDecimals, formatDensity } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import type { PaintFormula, Item } from "../../../types";
 import { IconAlertTriangle, IconCheck, IconX, IconAlertCircle, IconLoader2, IconCurrencyDollar, IconAdjustments } from "@tabler/icons-react-native";
@@ -621,7 +621,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
           <View style={styles.specItem}>
             <Text style={[styles.specLabel, { color: colors.mutedForeground }]}>Densidade</Text>
             <Text style={[styles.specValue, { color: colors.foreground }]}>
-              {formatNumberWithDecimals(Number(formula.density), 3)} g/ml
+              {formatDensity(Number(formula.density))} g/ml
             </Text>
           </View>
           <View style={styles.specItem}>

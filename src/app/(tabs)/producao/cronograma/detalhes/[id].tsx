@@ -21,6 +21,7 @@ import { TaskGroundPaintsCard } from "@/components/production/task/detail/task-g
 import { ObservationsTable } from "@/components/production/task/detail/observations-table";
 import { CutsTable } from "@/components/production/task/detail/cuts-table";
 import { ServicesTable } from "@/components/production/task/detail/services-table";
+import { ServicesTableEnhanced } from "@/components/production/task/detail/services-table-enhanced";
 import { AirbrushingsTable } from "@/components/production/task/detail/airbrushings-table";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -288,8 +289,13 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Services Table */}
-          <ServicesTable taskId={id as string} maxHeight={400} />
+          {/* Services Table Enhanced - with inline editing */}
+          {(task as any)?.services && (task as any).services.length > 0 && (
+            <ServicesTableEnhanced
+              services={(task as any).services}
+              onServicesUpdate={refetch}
+            />
+          )}
 
           {/* Paints - Tintas */}
           {((task as any)?.generalPainting || ((task as any)?.logoPaints && (task as any).logoPaints.length > 0)) && (

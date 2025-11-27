@@ -8,14 +8,15 @@ import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { usePaintFormula, usePaintFormulaMutations } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege, formatCurrency, formatDateTime } from "@/utils";
+import { SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { hasPrivilege, formatCurrency, formatDateTime, formatDensity } from "@/utils";
 import { showToast } from "@/components/ui/toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MobilePaintFormulaCalculator } from "@/components/painting/formula/mobile-paint-formula-calculator";
 import { FormulaComponentsTable } from "@/components/painting/formula/detail/components-table";
 import { FormulaProductionsTable } from "@/components/painting/formula/detail/productions-table";
+import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import {
   IconFlask,
   IconRefresh,
@@ -23,6 +24,7 @@ import {
   IconTrash,
   IconDroplet,
   IconClipboardList,
+  IconHistory,
 } from "@tabler/icons-react-native";
 
 export default function FormulaDetailsScreen() {
@@ -160,16 +162,91 @@ export default function FormulaDetailsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.content}>
+        {/* Header with Edit Button */}
+        <View style={styles.headerSection}>
+          <View style={styles.headerLeft}>
+            <ThemedText style={styles.formulaTitle}>
+              {formula.description || (formula.paint?.name ? `Fórmula de ${formula.paint.name}` : "Fórmula de Tinta")}
+            </ThemedText>
+          </View>
+          <View style={styles.headerActions}>
+            {canEdit && (
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                onPress={handleEdit}
+                activeOpacity={0.7}
+              >
+                <IconEdit size={20} color={colors.primaryForeground} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
         {/* Production Calculator - Main Focus */}
         {formula.components && formula.components.length > 0 && (
           <MobilePaintFormulaCalculator formula={formula} />
         )}
+
+        {/* Specifications Card */}
+        <Card style={[styles.card, { backgroundColor: colors.muted + "30" }]}>
+          <View style={styles.sectionHeader}>
+            <IconDroplet size={20} color={colors.primary} />
+            <ThemedText style={styles.sectionTitle}>Especificações</ThemedText>
+          </View>
+          <View style={styles.specsGrid}>
+            <View style={styles.specItem}>
+              <ThemedText style={[styles.specLabel, { color: colors.mutedForeground }]}>
+                Densidade
+              </ThemedText>
+              <ThemedText style={[styles.specValue, { color: colors.foreground }]}>
+                {formatDensity(Number(formula.density))} g/ml
+              </ThemedText>
+            </View>
+            <View style={styles.specItem}>
+              <ThemedText style={[styles.specLabel, { color: colors.mutedForeground }]}>
+                Preço por Litro
+              </ThemedText>
+              <ThemedText style={[styles.specValue, { color: colors.foreground }]}>
+                {formatCurrency(formula.pricePerLiter)}
+              </ThemedText>
+            </View>
+          </View>
+          {formula.description && (
+            <View style={styles.descriptionSection}>
+              <ThemedText style={[styles.specLabel, { color: colors.mutedForeground }]}>
+                Descrição
+              </ThemedText>
+              <ThemedText style={[styles.descriptionText, { color: colors.foreground }]}>
+                {formula.description}
+              </ThemedText>
+            </View>
+          )}
+        </Card>
 
         {/* Components Table */}
         <FormulaComponentsTable formula={formula} maxHeight={400} />
 
         {/* Productions Table */}
         <FormulaProductionsTable formula={formula} maxHeight={400} />
+
+        {/* Changelog History */}
+        <Card style={[styles.card, { backgroundColor: colors.card }]}>
+          <View style={styles.sectionHeader}>
+            <IconHistory size={20} color={colors.primary} />
+            <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
+          </View>
+          <ThemedText style={[styles.sectionDescription, { color: colors.mutedForeground }]}>
+            Acompanhe todas as modificações realizadas nesta fórmula
+          </ThemedText>
+          <ChangelogTimeline
+            entityType={CHANGE_LOG_ENTITY_TYPE.PAINT_FORMULA}
+            entityId={formula.id}
+            entityName={formula.paint?.name || "Fórmula"}
+            entityCreatedAt={formula.createdAt}
+            maxHeight={400}
+            limit={50}
+          />
+        </Card>
 
         {/* Bottom spacing for mobile navigation */}
         <View style={{ height: spacing.xxl * 2 }} />
@@ -187,6 +264,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     gap: spacing.lg,
+  },
+  headerSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.sm,
   },
   headerContent: {
     flexDirection: "row",
@@ -207,8 +290,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   actionButton: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
@@ -228,6 +311,38 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: spacing.sm,
     flex: 1,
+  },
+  sectionDescription: {
+    fontSize: fontSize.sm,
+    marginBottom: spacing.md,
+  },
+  specsGrid: {
+    flexDirection: "row",
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  specItem: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  specLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: "500",
+    textTransform: "uppercase",
+  },
+  specValue: {
+    fontSize: fontSize.lg,
+    fontWeight: "600",
+  },
+  descriptionSection: {
+    gap: spacing.xs,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(0,0,0,0.1)",
+  },
+  descriptionText: {
+    fontSize: fontSize.sm,
+    lineHeight: 20,
   },
   detailRow: {
     flexDirection: "row",

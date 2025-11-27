@@ -1,6 +1,6 @@
-import React from "react";
-import { View, ScrollView, StyleSheet, Alert } from "react-native";
-import { useForm, Controller } from "react-hook-form";
+import React, { useMemo } from "react";
+import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,6 +11,8 @@ import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
+import { Button } from "@/components/ui/button";
+import { Text } from "@/components/ui/text";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
@@ -19,9 +21,10 @@ import { maintenanceCreateSchema, maintenanceUpdateSchema } from "@/schemas/main
 import type { MaintenanceCreateFormData, MaintenanceUpdateFormData } from "@/schemas/maintenance";
 import type { Maintenance } from "@/types";
 import { useMaintenanceMutations } from "@/hooks/useMaintenance";
-import { useItems } from "@/hooks/useItem";
+import { useItems, useKeyboardAwareScroll } from "@/hooks/useItem";
 import { MAINTENANCE_STATUS } from "@/constants";
 import { MAINTENANCE_STATUS_LABELS } from "@/constants/enum-labels";
+import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 interface MaintenanceFormProps {
   mode: "create" | "update";
@@ -33,6 +36,7 @@ interface MaintenanceFormProps {
 export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: MaintenanceFormProps) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useMaintenanceMutations();
 
   const { data: items } = useItems({
@@ -50,6 +54,7 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
             status: MAINTENANCE_STATUS.PENDING,
             itemId: "",
             scheduledFor: new Date(),
+            itemsNeeded: [],
           }
         : {
             name: maintenance?.name || "",
@@ -62,6 +67,12 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
             finishedAt: maintenance?.finishedAt ? new Date(maintenance.finishedAt) : undefined,
             timeTaken: maintenance?.timeTaken || undefined,
           },
+  });
+
+  // useFieldArray for maintenance items (only in create mode)
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "itemsNeeded" as any,
   });
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
@@ -105,19 +116,36 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
     })
   );
 
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
-        {/* Basic Information */}
-        <FormCard
-          title="Informações da Manutenção"
-          subtitle="Dados básicos da manutenção"
+        <ScrollView
+          ref={refs.scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
         >
+          <KeyboardAwareFormProvider value={keyboardContextValue}>
+            {/* Basic Information */}
+            <FormCard
+              title="Informações da Manutenção"
+              subtitle="Dados básicos da manutenção"
+            >
           {/* Name */}
           <FormFieldGroup
             label="Nome"
@@ -306,21 +334,109 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
             </FormFieldGroup>
           )}
         </FormCard>
-      </ScrollView>
 
-      <SimpleFormActionBar
-        onCancel={handleCancel}
-        onSubmit={form.handleSubmit(handleSubmit)}
-        isSubmitting={isLoading}
-        canSubmit={form.formState.isValid}
-        submitLabel={mode === "create" ? "Criar" : "Salvar"}
-      />
+        {/* Items Needed (Only in create mode) */}
+        {mode === "create" && (
+          <FormCard
+            title="Itens Necessários (Opcional)"
+            subtitle="Itens utilizados na manutenção"
+          >
+            {fields.map((field, index) => (
+              <View key={field.id} style={styles.itemRow}>
+                <View style={styles.itemFieldContainer}>
+                  <FormFieldGroup
+                    label={index === 0 ? "Item" : undefined}
+                    error={form.formState.errors.itemsNeeded?.[index]?.itemId?.message}
+                  >
+                    <Controller
+                      control={form.control}
+                      name={`itemsNeeded.${index}.itemId` as any}
+                      render={({ field: { onChange, value }, fieldState: { error } }) => (
+                        <Combobox
+                          options={itemOptions}
+                          value={value}
+                          onValueChange={onChange}
+                          placeholder="Selecione o item"
+                          disabled={isLoading}
+                          searchable
+                          clearable={false}
+                          error={error?.message}
+                        />
+                      )}
+                    />
+                  </FormFieldGroup>
+                </View>
+
+                <View style={styles.quantityContainer}>
+                  <FormFieldGroup
+                    label={index === 0 ? "Quantidade" : undefined}
+                    error={form.formState.errors.itemsNeeded?.[index]?.quantity?.message}
+                  >
+                    <Controller
+                      control={form.control}
+                      name={`itemsNeeded.${index}.quantity` as any}
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <Input
+                          value={value?.toString() || "1"}
+                          onChangeText={(val) => {
+                            const numValue = parseInt(val);
+                            onChange(isNaN(numValue) || numValue < 1 ? 1 : numValue);
+                          }}
+                          onBlur={onBlur}
+                          placeholder="Qtd"
+                          keyboardType="numeric"
+                          editable={!isLoading}
+                        />
+                      )}
+                    />
+                  </FormFieldGroup>
+                </View>
+
+                <View style={styles.removeButtonContainer}>
+                  {index === 0 && <Text style={styles.removeButtonSpacer}>&nbsp;</Text>}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => remove(index)}
+                    disabled={isLoading}
+                  >
+                    <Text>Remover</Text>
+                  </Button>
+                </View>
+              </View>
+            ))}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onPress={() => append({ itemId: "", quantity: 1 })}
+              disabled={isLoading}
+              style={styles.addButton}
+            >
+              <Text>Adicionar Item</Text>
+            </Button>
+          </FormCard>
+            )}
+          </KeyboardAwareFormProvider>
+        </ScrollView>
+
+        <SimpleFormActionBar
+          onCancel={handleCancel}
+          onSubmit={form.handleSubmit(handleSubmit)}
+          isSubmitting={isLoading}
+          canSubmit={form.formState.isValid}
+          submitLabel={mode === "create" ? "Cadastrar" : "Atualizar"}
+        />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
     flex: 1,
   },
   scrollView: {
@@ -330,5 +446,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: formSpacing.containerPaddingHorizontal,
     paddingTop: formSpacing.containerPaddingVertical,
     paddingBottom: 0, // No spacing - action bar has its own margin
+  },
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  itemFieldContainer: {
+    flex: 2,
+  },
+  quantityContainer: {
+    flex: 1,
+  },
+  removeButtonContainer: {
+    justifyContent: "flex-end",
+  },
+  removeButtonSpacer: {
+    height: 20,
+  },
+  addButton: {
+    marginTop: spacing.sm,
   },
 });

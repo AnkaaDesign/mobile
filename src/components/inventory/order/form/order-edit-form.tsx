@@ -22,6 +22,7 @@ import { showToast } from '@/lib/toast';
 import { getSuppliers } from '@/api-client';
 import type { Supplier } from '@/types';
 import { spacing } from '@/constants/design-system';
+import { createOrderFormData } from '@/utils/order-form-utils';
 
 interface OrderEditFormProps {
   orderId: string;
@@ -221,7 +222,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
           changedData.notes = data.notes;
         }
 
-        // Upload new files and merge with existing IDs
+        // Check if there are new files to upload
         const hasNewFiles =
           budgetFiles.length > 0 ||
           invoiceFiles.length > 0 ||
@@ -229,114 +230,63 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
           reimbursementFiles.length > 0 ||
           reimbursementInvoiceFiles.length > 0;
 
-        if (hasNewFiles) {
-          setIsUploadingFiles(true);
+        setIsUploadingFiles(hasNewFiles);
 
-          try {
-            // Upload new budget files
-            for (const filePreview of budgetFiles) {
-              await budgetUpload.addFile({
-                uri: filePreview.uri,
-                name: filePreview.name,
-                type: filePreview.type,
-                size: filePreview.size || 0,
-              });
-            }
-
-            // Upload new invoice files
-            for (const filePreview of invoiceFiles) {
-              await invoiceUpload.addFile({
-                uri: filePreview.uri,
-                name: filePreview.name,
-                type: filePreview.type,
-                size: filePreview.size || 0,
-              });
-            }
-
-            // Upload new receipt files
-            for (const filePreview of receiptFiles) {
-              await receiptUpload.addFile({
-                uri: filePreview.uri,
-                name: filePreview.name,
-                type: filePreview.type,
-                size: filePreview.size || 0,
-              });
-            }
-
-            // Upload new reimbursement files
-            for (const filePreview of reimbursementFiles) {
-              await reimbursementUpload.addFile({
-                uri: filePreview.uri,
-                name: filePreview.name,
-                type: filePreview.type,
-                size: filePreview.size || 0,
-              });
-            }
-
-            // Upload new reimbursement invoice files
-            for (const filePreview of reimbursementInvoiceFiles) {
-              await reimbursementInvoiceUpload.addFile({
-                uri: filePreview.uri,
-                name: filePreview.name,
-                type: filePreview.type,
-                size: filePreview.size || 0,
-              });
-            }
-
-            // Collect uploaded file IDs and merge with existing
-            const newBudgetIds = budgetUpload.uploadedFiles
-              .filter((f) => f.status === 'completed' && f.id)
-              .map((f) => f.id!);
-            if (newBudgetIds.length > 0) {
-              changedData.budgetIds = [...existingBudgetIds, ...newBudgetIds];
-            }
-
-            const newInvoiceIds = invoiceUpload.uploadedFiles
-              .filter((f) => f.status === 'completed' && f.id)
-              .map((f) => f.id!);
-            if (newInvoiceIds.length > 0) {
-              changedData.invoiceIds = [...existingInvoiceIds, ...newInvoiceIds];
-            }
-
-            const newReceiptIds = receiptUpload.uploadedFiles
-              .filter((f) => f.status === 'completed' && f.id)
-              .map((f) => f.id!);
-            if (newReceiptIds.length > 0) {
-              changedData.receiptIds = [...existingReceiptIds, ...newReceiptIds];
-            }
-
-            const newReimbursementIds = reimbursementUpload.uploadedFiles
-              .filter((f) => f.status === 'completed' && f.id)
-              .map((f) => f.id!);
-            if (newReimbursementIds.length > 0) {
-              changedData.reimbursementIds = [...existingReimbursementIds, ...newReimbursementIds];
-            }
-
-            const newReimbursementInvoiceIds = reimbursementInvoiceUpload.uploadedFiles
-              .filter((f) => f.status === 'completed' && f.id)
-              .map((f) => f.id!);
-            if (newReimbursementInvoiceIds.length > 0) {
-              changedData.reimbursementInvoiceIds = [
-                ...existingReimbursementInvoiceIds,
-                ...newReimbursementInvoiceIds,
-              ];
-            }
-          } catch (error) {
-            console.error('Error uploading files:', error);
-            Alert.alert('Erro', 'Falha ao fazer upload dos arquivos');
-            setIsUploadingFiles(false);
-            return;
-          } finally {
-            setIsUploadingFiles(false);
-          }
+        // Include existing file IDs in changedData (will be preserved on backend)
+        if (existingBudgetIds.length > 0) {
+          changedData.budgetIds = existingBudgetIds;
+        }
+        if (existingInvoiceIds.length > 0) {
+          changedData.invoiceIds = existingInvoiceIds;
+        }
+        if (existingReceiptIds.length > 0) {
+          changedData.receiptIds = existingReceiptIds;
+        }
+        if (existingReimbursementIds.length > 0) {
+          changedData.reimbursementIds = existingReimbursementIds;
+        }
+        if (existingReimbursementInvoiceIds.length > 0) {
+          changedData.reimbursementInvoiceIds = existingReimbursementInvoiceIds;
         }
 
-        if (Object.keys(changedData).length === 0) {
+        if (Object.keys(changedData).length === 0 && !hasNewFiles) {
           Alert.alert('Aviso', 'Nenhuma alteração foi feita');
           return;
         }
 
-        const result = await updateAsync({ id: orderId, data: changedData });
+        let result;
+        try {
+          if (hasNewFiles) {
+            // ATOMIC SUBMISSION: Use FormData when there are new files
+            // This prevents race conditions by submitting files + data in single request
+            const supplier = data.supplierId
+              ? await getSuppliers({ where: { id: data.supplierId } }).then((res) => res.data?.[0])
+              : order?.supplier;
+
+            const formDataWithFiles = createOrderFormData(
+              { ...changedData, id: orderId },
+              {
+                budgets: budgetFiles.length > 0 ? budgetFiles : undefined,
+                receipts: receiptFiles.length > 0 ? receiptFiles : undefined,
+                invoices: invoiceFiles.length > 0 ? invoiceFiles : undefined,
+              },
+              supplier
+                ? {
+                    id: supplier.id,
+                    name: supplier.name,
+                    fantasyName: supplier.fantasyName,
+                  }
+                : undefined
+            );
+
+            result = await updateAsync({ id: orderId, data: formDataWithFiles as any });
+          } else {
+            // Use regular JSON payload when no new files
+            result = await updateAsync({ id: orderId, data: changedData });
+          }
+        } finally {
+          setIsUploadingFiles(false);
+        }
 
         if (result.success) {
           showToast({

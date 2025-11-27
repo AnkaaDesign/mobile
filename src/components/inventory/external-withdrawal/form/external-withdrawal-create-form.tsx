@@ -206,7 +206,7 @@ export function ExternalWithdrawalCreateForm() {
         <CardContent style={styles.cardContent}>
           {/* Withdrawer Name */}
           <View style={styles.formField}>
-            <FormLabel required>Nome do Retirador</FormLabel>
+            <FormLabel required asteriskColor="red">Nome do Retirador</FormLabel>
             <Input
               value={withdrawerName}
               onChangeText={updateWithdrawerName}
@@ -221,7 +221,7 @@ export function ExternalWithdrawalCreateForm() {
 
           {/* Withdrawal Type */}
           <View style={styles.formField}>
-            <FormLabel required>Tipo de Retirada</FormLabel>
+            <FormLabel required asteriskColor="red">Tipo de Retirada</FormLabel>
             <Combobox
               value={type}
               onValueChange={(value) => updateType(value as EXTERNAL_WITHDRAWAL_TYPE)}
