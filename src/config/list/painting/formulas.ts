@@ -82,7 +82,7 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
         width: 1.0,
         align: 'center',
         render: (formula) => String((formula as any)._count?.components || 0),
-        format: 'badge',
+        format: 'count-badge',
       },
       {
         key: 'density',

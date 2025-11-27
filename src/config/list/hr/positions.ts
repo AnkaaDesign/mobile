@@ -74,7 +74,7 @@ export const positionsListConfig: ListConfig<Position> = {
         width: 1.0,
         align: 'center',
         render: (position) => String((position as any)._count?.users || 0),
-        format: 'badge',
+        format: 'count-badge',
       },
       {
         key: 'description',

@@ -88,7 +88,7 @@ export default function EmployeeDetailScreen() {
       position: true,
       sector: true,
       ppeConfig: true,
-      tasks: {
+      createdTasks: {
         include: {
           customer: {
             select: {
@@ -101,10 +101,10 @@ export default function EmployeeDetailScreen() {
         take: 10,
       },
       vacations: {
-        orderBy: { startDate: "desc" },
+        orderBy: { startAt: "desc" },
         take: 5,
       },
-      warnings: {
+      warningsCollaborator: {
         orderBy: { createdAt: "desc" },
         take: 5,
       },
@@ -122,17 +122,19 @@ export default function EmployeeDetailScreen() {
         },
         take: 5,
       },
-      ppeRequests: {
+      ppeDeliveries: {
         orderBy: { createdAt: "desc" },
         take: 5,
       },
       _count: {
-        tasks: true,
-        vacations: true,
-        warnings: true,
-        borrows: true,
-        ppeRequests: true,
-        commissions: true,
+        select: {
+          createdTasks: true,
+          vacations: true,
+          warningsCollaborator: true,
+          borrows: true,
+          ppeDeliveries: true,
+          bonuses: true,
+        },
       },
     },
     enabled: !!id && id !== "",

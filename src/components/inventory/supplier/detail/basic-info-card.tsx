@@ -1,69 +1,199 @@
-import { View } from "react-native";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Icon } from "@/components/ui/icon";
-import { Text } from "@/components/ui/text";
+import { View, StyleSheet, Image } from "react-native";
+import { Card } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
+
+import { useTheme } from "@/lib/theme";
+import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { IconBuilding, IconCertificate } from "@tabler/icons-react-native";
 import type { Supplier } from "@/types";
-import { cn } from "@/lib/utils";
-import { maskCNPJ } from "@/utils";
-import { CustomerLogoDisplay } from "@/components/ui/customer-logo-display";
+import { formatCNPJ } from "@/utils";
+import { getFileUrl } from "@/utils/file";
 
 interface BasicInfoCardProps {
   supplier: Supplier;
-  className?: string;
 }
 
-export function BasicInfoCard({ supplier, className }: BasicInfoCardProps) {
+export function BasicInfoCard({ supplier }: BasicInfoCardProps) {
+  const { colors } = useTheme();
+
+  // Get initials for fallback display
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
-    <Card className={cn("shadow-sm border border-border flex flex-col", className)} level={1}>
-      <CardHeader className="pb-6">
-        <CardTitle className="flex items-center gap-3 text-xl">
-          <View className="p-2 rounded-lg bg-primary/10">
-            <Icon name="building" size={20} className="text-primary" />
-          </View>
-          <Text className="text-xl font-semibold">Informações Básicas</Text>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0 flex-1">
-        <View className="space-y-6">
-          {/* Logo Section */}
-          <View className="flex justify-center mb-6">
-            <CustomerLogoDisplay
-              logo={supplier.logo}
-              customerName={supplier.fantasyName}
-              size="2xl"
-              shape="rounded"
-            />
+    <Card style={styles.card}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconBuilding size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Informações Básicas</ThemedText>
+        </View>
+      </View>
+      <View style={styles.content}>
+        <View style={styles.infoContainer}>
+          {/* Logo Section - Always show with fallback */}
+          <View style={styles.logoSection}>
+            <View style={StyleSheet.flatten([styles.logoContainer, { borderColor: colors.muted, backgroundColor: colors.muted + "30" }])}>
+              {supplier.logo && supplier.logo.id ? (
+                <Image
+                  source={{ uri: getFileUrl(supplier.logo) }}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={StyleSheet.flatten([styles.logoFallback, { backgroundColor: colors.primary + "20" }])}>
+                  <ThemedText style={StyleSheet.flatten([styles.logoInitials, { color: colors.primary }])}>
+                    {getInitials(supplier.fantasyName)}
+                  </ThemedText>
+                </View>
+              )}
+            </View>
           </View>
 
-          {/* Basic Information Section */}
-          <View>
-            <Text className="text-base font-semibold mb-4 text-foreground">Identificação</Text>
-            <View className="space-y-4">
-              <View className="flex flex-row justify-between items-center bg-muted/50 rounded-lg px-4 py-3">
-                <Text className="text-sm font-medium text-muted-foreground">Nome Fantasia</Text>
-                <Text className="text-sm font-semibold text-foreground">{supplier.fantasyName}</Text>
+          {/* Identification Section */}
+          <View style={styles.section}>
+            <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
+              Identificação
+            </ThemedText>
+            <View style={styles.fieldsContainer}>
+              {/* Fantasy Name */}
+              <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                  Nome Fantasia
+                </ThemedText>
+                <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                  {supplier.fantasyName}
+                </ThemedText>
               </View>
 
+              {/* Corporate Name */}
               {supplier.corporateName && (
-                <View className="flex flex-row justify-between items-center bg-muted/50 rounded-lg px-4 py-3">
-                  <Text className="text-sm font-medium text-muted-foreground">Razão Social</Text>
-                  <Text className="text-sm font-semibold text-foreground">{supplier.corporateName}</Text>
+                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                    Razão Social
+                  </ThemedText>
+                  <ThemedText
+                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {supplier.corporateName}
+                  </ThemedText>
                 </View>
               )}
 
+              {/* CNPJ */}
               {supplier.cnpj && (
-                <View className="flex flex-row justify-between items-center bg-muted/50 rounded-lg px-4 py-3">
-                  <View className="flex flex-row items-center gap-2">
-                    <Icon name="certificate" size={16} />
-                    <Text className="text-sm font-medium text-muted-foreground">CNPJ</Text>
+                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                  <View style={styles.fieldLabelWithIcon}>
+                    <IconCertificate size={16} color={colors.mutedForeground} />
+                    <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                      CNPJ
+                    </ThemedText>
                   </View>
-                  <Text className="text-sm font-semibold text-foreground">{maskCNPJ(supplier.cnpj)}</Text>
+                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                    {formatCNPJ(supplier.cnpj)}
+                  </ThemedText>
                 </View>
               )}
             </View>
           </View>
         </View>
-      </CardContent>
+      </View>
     </Card>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+  infoContainer: {
+    gap: spacing.xl,
+  },
+  logoSection: {
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  logoContainer: {
+    width: 128,
+    height: 128,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoImage: {
+    width: "100%",
+    height: "100%",
+  },
+  logoFallback: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoInitials: {
+    fontSize: fontSize["2xl"],
+    fontWeight: fontWeight.bold,
+  },
+  section: {
+    gap: spacing.lg,
+  },
+  subsectionHeader: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+  },
+  fieldsContainer: {
+    gap: spacing.md,
+  },
+  fieldRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+  },
+  fieldLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  fieldLabelWithIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  fieldValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    flex: 1,
+    textAlign: "right",
+  },
+});

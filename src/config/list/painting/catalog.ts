@@ -103,7 +103,7 @@ export const catalogListConfig: ListConfig<Paint> = {
         width: 0.8,
         align: 'center',
         render: (paint) => String((paint as any)._count?.formulas || 0),
-        format: 'badge',
+        format: 'count-badge',
       },
       {
         key: 'usageCount',

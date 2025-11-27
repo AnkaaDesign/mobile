@@ -1,16 +1,14 @@
-
-import { View, ScrollView, Pressable, StyleSheet} from "react-native";
+import { View, ScrollView, Pressable, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconExternalLink, IconPackage, IconChevronRight } from "@tabler/icons-react-native";
-import type { Item } from '../../../../types';
+import type { Item } from "../../../../types";
 import { router } from "expo-router";
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { routeToMobilePath } from "@/utils/route-mapper";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { extendedColors } from "@/lib/theme/extended-colors";
 import { itemUtils } from "@/utils";
 
 interface RelatedItemsCardProps {
@@ -33,15 +31,13 @@ export function RelatedItemsCard({ item }: RelatedItemsCardProps) {
 
   return (
     <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-            <IconExternalLink size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Produtos Relacionados</ThemedText>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconExternalLink size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Produtos Relacionados</ThemedText>
         </View>
-        <Badge variant="secondary" style={{ backgroundColor: colors.muted }}>
-          <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.mutedForeground }])}>{allRelated.length}</ThemedText>
+        <Badge variant="muted">
+          {allRelated.length}
         </Badge>
       </View>
       <View style={styles.content}>
@@ -60,8 +56,8 @@ export function RelatedItemsCard({ item }: RelatedItemsCardProps) {
               ]}
             >
               {/* Item Icon */}
-              <View style={StyleSheet.flatten([styles.itemIcon, { backgroundColor: colors.primary + "10" }])}>
-                <IconPackage size={24} color={colors.primary} />
+              <View style={StyleSheet.flatten([styles.itemIcon, { backgroundColor: colors.muted + "30" }])}>
+                <IconPackage size={24} color={colors.mutedForeground} />
               </View>
 
               {/* Item Info */}
@@ -71,24 +67,8 @@ export function RelatedItemsCard({ item }: RelatedItemsCardProps) {
                   <ThemedText style={StyleSheet.flatten([styles.itemName, { color: colors.foreground }])} numberOfLines={2}>
                     {relatedItem.name}
                   </ThemedText>
-                  <Badge
-                    variant={relatedItem.isActive ? "default" : "secondary"}
-                    style={{
-                      backgroundColor: relatedItem.isActive ? extendedColors.green[100] : colors.muted,
-                      borderColor: relatedItem.isActive ? extendedColors.green[300] : colors.border,
-                      borderWidth: 1,
-                    }}
-                  >
-                    <ThemedText
-                      style={StyleSheet.flatten([
-                        styles.statusText,
-                        {
-                          color: relatedItem.isActive ? extendedColors.green[700] : colors.mutedForeground,
-                        },
-                      ])}
-                    >
-                      {relatedItem.isActive ? "Ativo" : "Inativo"}
-                    </ThemedText>
+                  <Badge variant={relatedItem.isActive ? "success" : "muted"}>
+                    {relatedItem.isActive ? "Ativo" : "Inativo"}
                   </Badge>
                 </View>
 
@@ -137,7 +117,7 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
-  sectionHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -145,24 +125,17 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  content: {
-    gap: spacing.md,
-  },
-  titleRow: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.md,
   },
   badgeText: {
     fontSize: fontSize.sm,

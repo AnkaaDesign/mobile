@@ -143,9 +143,26 @@ export const useMySecullumCalculations = (params?: {
 }) => {
   return useQuery({
     queryKey: [...secullumKeys.all, "my-calculations", params],
-    queryFn: () => secullumService.getMyCalculations(params),
+    queryFn: async () => {
+      try {
+        return await secullumService.getMyCalculations(params);
+      } catch (error: any) {
+        // Check if user is not registered in Secullum - return special response instead of throwing
+        const errorMessage = error?.response?.data?.message || error?.message || '';
+        const isNotRegistered = errorMessage.toLowerCase().includes('secullum employee id')
+          || errorMessage.toLowerCase().includes('secullum account')
+          || errorMessage.toLowerCase().includes('não possui cadastro');
+
+        if (isNotRegistered) {
+          // Return a special response that indicates user is not registered
+          return { data: { success: false, notRegistered: true, message: errorMessage } };
+        }
+        throw error;
+      }
+    },
     staleTime: 5 * 60 * 1000,
     enabled: !!params?.startDate && !!params?.endDate,
+    retry: false, // Don't retry for this endpoint
   });
 };
 

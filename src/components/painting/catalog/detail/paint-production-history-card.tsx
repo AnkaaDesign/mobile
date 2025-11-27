@@ -196,39 +196,38 @@ export function PaintProductionHistoryCard({
 
   // Render table header
   const renderHeader = useCallback(() => (
-    <View style={styles.headerWrapper}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        scrollEnabled={tableWidth > availableWidth}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-      >
-        <View style={StyleSheet.flatten([styles.tableHeaderRow, { width: tableWidth }])}>
-          {displayColumns.map((column) => (
-            <View
-              key={column.key}
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      scrollEnabled={tableWidth > availableWidth}
+      style={[styles.headerWrapper, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
+      contentContainerStyle={{ paddingHorizontal: 16 }}
+    >
+      <View style={StyleSheet.flatten([styles.tableHeaderRow, { width: tableWidth }])}>
+        {displayColumns.map((column) => (
+          <View
+            key={column.key}
+            style={StyleSheet.flatten([
+              styles.tableHeaderCell,
+              { width: column.width },
+              column.align === "center" && styles.centerAlign,
+              column.align === "right" && styles.rightAlign,
+            ])}
+          >
+            <ThemedText
               style={StyleSheet.flatten([
-                styles.tableHeaderCell,
-                { width: column.width },
-                column.align === "center" && styles.centerAlign,
-                column.align === "right" && styles.rightAlign,
+                styles.tableHeaderText,
+                { color: isDark ? "#e5e5e5" : "#000000" }
               ])}
+              numberOfLines={1}
             >
-              <ThemedText
-                style={StyleSheet.flatten([
-                  styles.tableHeaderText,
-                  { color: colors.foreground }
-                ])}
-                numberOfLines={1}
-              >
-                {column.header}
-              </ThemedText>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-    </View>
-  ), [displayColumns, tableWidth, colors]);
+              {column.header}
+            </ThemedText>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  ), [displayColumns, tableWidth, colors, isDark]);
 
   // Render table row
   const renderRow = useCallback(({ item: production, index }: { item: PaintProduction; index: number }) => {
@@ -338,7 +337,7 @@ export function PaintProductionHistoryCard({
               </ThemedText>
             </View>
           ) : (
-            <View style={[styles.tableContainer, { maxHeight }]}>
+            <View style={[styles.tableContainer, { maxHeight, borderColor: colors.border }]}>
               {renderHeader()}
               <FlatList
                 data={filteredProductions}
@@ -409,20 +408,26 @@ const styles = StyleSheet.create({
   tableContainer: {
     minHeight: 200,
     overflow: "hidden",
-    marginHorizontal: -8,
+    borderRadius: 8,
+    borderWidth: 1,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   headerWrapper: {
-    // Border is handled by parent container
+    borderBottomWidth: 1,
   },
   tableHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 40,
+    minHeight: 32,
   },
   tableHeaderCell: {
     paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
-    minHeight: 40,
+    paddingVertical: spacing.xs,
+    minHeight: 32,
     justifyContent: "center",
   },
   tableHeaderText: {
@@ -438,13 +443,13 @@ const styles = StyleSheet.create({
   tableRowContent: {
     flexDirection: "row",
     alignItems: "stretch",
-    minHeight: 48,
+    minHeight: 36,
   },
   tableCell: {
     paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.sm,
+    paddingVertical: 6,
     justifyContent: "center",
-    minHeight: 48,
+    minHeight: 36,
   },
   centerAlign: {
     alignItems: "center",

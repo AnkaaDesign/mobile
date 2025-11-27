@@ -1,6 +1,6 @@
 // packages/hooks/src/useVacation.ts
 
-import { getVacations, getMyVacations, getVacationById, createVacation, updateVacation, deleteVacation, batchCreateVacations, batchUpdateVacations, batchDeleteVacations } from '@/api-client';
+import { getVacations, getMyVacations, getTeamVacations, getVacationById, createVacation, updateVacation, deleteVacation, batchCreateVacations, batchUpdateVacations, batchDeleteVacations } from '@/api-client';
 import type {
   VacationGetManyFormData,
   VacationCreateFormData,
@@ -108,6 +108,51 @@ export function useMyVacationsInfinite(
   const refresh = () => {
     queryClient.invalidateQueries({
       queryKey: [...vacationKeys.all, 'my-vacations'],
+    });
+  };
+
+  return {
+    ...query,
+    refresh,
+  };
+}
+
+// =====================================================
+// Team Vacations Hook (for team leaders)
+// =====================================================
+
+export function useTeamVacationsInfinite(
+  params?: Partial<VacationGetManyFormData>,
+  options?: { enabled?: boolean },
+) {
+  const queryClient = useQueryClient();
+  const { enabled = true } = options || {};
+
+  const query = useInfiniteQuery({
+    queryKey: [...vacationKeys.all, 'team-vacations', params],
+    queryFn: async ({ pageParam = 1 }) => {
+      const queryParams = {
+        ...params,
+        page: pageParam,
+        limit: params?.limit || 40,
+      } as VacationGetManyFormData;
+      return getTeamVacations(queryParams);
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.meta) return undefined;
+      return lastPage.meta.hasNextPage ? lastPage.meta.page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 1000 * 60 * 5,
+    placeholderData: (previousData) => previousData,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    enabled,
+  });
+
+  const refresh = () => {
+    queryClient.invalidateQueries({
+      queryKey: [...vacationKeys.all, 'team-vacations'],
     });
   };
 

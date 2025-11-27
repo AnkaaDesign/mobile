@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Text, View, ViewStyle, TextStyle, StyleProp } from "react-native";
+import { Text, View, ViewStyle, TextStyle, StyleProp, ViewProps, TextProps } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, spacing, fontSize, fontWeight, lineHeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
@@ -58,17 +58,15 @@ interface CardHeaderProps extends ViewProps {
 }
 
 function CardHeader({ style, children, ...props }: CardHeaderProps) {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
 
   const headerStyles: StyleProp<ViewStyle> = [
     {
       flexDirection: "column",
       gap: spacing.xs,
-      paddingHorizontal: spacing.md,
+      marginHorizontal: spacing.md,
       paddingTop: spacing.md,
       paddingBottom: spacing.sm,
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? extendedColors.neutral[800] : extendedColors.neutral[100],
     },
     style,
   ];
@@ -162,9 +160,6 @@ function CardFooter({ style, flexDirection = "column", children, ...props }: Car
       gap: spacing.sm,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.md,
-      borderTopWidth: 1,
-      borderTopColor: isDark ? extendedColors.neutral[800] : extendedColors.neutral[100],
-      // Removed backgroundColor to maintain consistent card background
     },
     style,
   ];

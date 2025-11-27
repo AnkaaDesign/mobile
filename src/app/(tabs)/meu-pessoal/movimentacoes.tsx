@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { useMyActivitiesInfiniteMobile } from "@/hooks";
+import { useAuth } from "@/contexts/auth-context";
+import { useActivitiesInfiniteMobile } from "@/hooks";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
@@ -11,20 +12,21 @@ import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { ListActionButton } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { IconFilter, IconList } from "@tabler/icons-react-native";
+import { IconFilter, IconList, IconClock } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PersonalActivityTable, createColumnDefinitions } from "@/components/personal/activity/list/personal-activity-table";
-import { PersonalActivityFilterTags } from "@/components/personal/activity/list/personal-activity-filter-tags";
+import { TeamActivityTable, createColumnDefinitions } from "@/components/my-team/activity/list/team-activity-table";
+import { TeamActivityFilterTags } from "@/components/my-team/activity/list/team-activity-filter-tags";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
-import { PersonalActivityFilterDrawerContent } from "@/components/personal/activity/list/personal-activity-filter-drawer-content";
-import { PersonalActivityColumnDrawerContent } from "@/components/personal/activity/list/personal-activity-column-drawer-content";
+import { TeamActivityFilterDrawerContent } from "@/components/my-team/activity/list/team-activity-filter-drawer-content";
+import { TeamActivityColumnDrawerContent } from "@/components/my-team/activity/list/team-activity-column-drawer-content";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { useTableSort } from "@/hooks/useTableSort";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
 
-export default function MyActivitiesScreen() {
+export default function TeamActivitiesScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { user: currentUser } = useAuth();
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -39,10 +41,14 @@ export default function MyActivitiesScreen() {
   const [filters, setFilters] = useState<{
     operations?: string[];
     reasons?: string[];
+    userIds?: string[];
     itemIds?: string[];
     quantityRange?: { min?: number; max?: number };
     createdAt?: { gte?: Date; lte?: Date };
   }>({});
+
+  // Check if user is a team leader
+  const isTeamLeader = currentUser?.managedSectorId || false;
 
   const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
     [{ columnKey: "createdAt", direction: "desc", order: 0 }],
@@ -54,14 +60,20 @@ export default function MyActivitiesScreen() {
     visibleColumns,
     setVisibleColumns,
   } = useColumnVisibility(
-    "personal-activities",
-    ["itemName", "quantity", "createdAt"], // Default: item, quantity, date
-    ["itemName", "operation", "quantity", "reason", "createdAt"]
+    "team-movements",
+    ["itemName", "quantity", "userName", "createdAt"],
+    ["itemCode", "itemName", "quantity", "userName", "reason", "createdAt"]
   );
 
   // Build API query
   const buildWhereClause = useCallback(() => {
-    const where: any = {};
+    if (!isTeamLeader || !currentUser?.managedSectorId) return undefined;
+
+    const where: any = {
+      user: {
+        sectorId: currentUser.managedSectorId,
+      },
+    };
 
     if (filters.operations?.length) {
       where.operation = { in: filters.operations };
@@ -69,6 +81,10 @@ export default function MyActivitiesScreen() {
 
     if (filters.reasons?.length) {
       where.reason = { in: filters.reasons };
+    }
+
+    if (filters.userIds?.length) {
+      where.userId = { in: filters.userIds };
     }
 
     if (filters.itemIds?.length) {
@@ -95,16 +111,20 @@ export default function MyActivitiesScreen() {
       }
     }
 
-    return Object.keys(where).length > 0 ? where : undefined;
-  }, [filters]);
+    return where;
+  }, [isTeamLeader, currentUser?.managedSectorId, filters]);
 
   const queryParams = useMemo(() => {
+    if (!isTeamLeader || !currentUser?.managedSectorId) return null;
+
     return {
       orderBy: buildOrderBy(
         {
+          itemCode: "item.uniCode",
           itemName: "item.name",
           operation: "operation",
           quantity: "quantity",
+          userName: "user.name",
           reason: "reason",
           createdAt: "createdAt",
         },
@@ -113,10 +133,15 @@ export default function MyActivitiesScreen() {
       ...(searchText ? { searchingFor: searchText } : {}),
       where: buildWhereClause(),
       include: {
+        user: {
+          include: {
+            position: true,
+          },
+        },
         item: true,
       },
     };
-  }, [searchText, buildWhereClause, buildOrderBy]);
+  }, [isTeamLeader, currentUser?.managedSectorId, searchText, buildWhereClause, buildOrderBy]);
 
   const {
     items,
@@ -131,7 +156,7 @@ export default function MyActivitiesScreen() {
     refresh,
     prefetchNext,
     shouldPrefetch,
-  } = useMyActivitiesInfiniteMobile(queryParams);
+  } = useActivitiesInfiniteMobile(queryParams || {});
 
   // Type alias for activities
   const activities = items;
@@ -189,6 +214,7 @@ export default function MyActivitiesScreen() {
     let count = 0;
     if (filters.operations?.length) count++;
     if (filters.reasons?.length) count++;
+    if (filters.userIds?.length) count++;
     if (filters.itemIds?.length) count++;
     if (filters.quantityRange?.min !== undefined || filters.quantityRange?.max !== undefined) count++;
     if (filters.createdAt?.gte || filters.createdAt?.lte) count++;
@@ -198,13 +224,32 @@ export default function MyActivitiesScreen() {
   // Only show skeleton on initial load
   const isInitialLoad = isLoading && activities.length === 0;
 
+  // Show access denied if not a team leader
+  if (!isTeamLeader) {
+    return (
+      <ThemedView style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <Card style={styles.loadingCard}>
+            <IconClock size={48} color={colors.mutedForeground} />
+            <ThemedText style={[styles.title, { color: colors.foreground, textAlign: "center", marginTop: spacing.md }]}>
+              Acesso Restrito
+            </ThemedText>
+            <ThemedText style={[styles.subtitle, { color: colors.mutedForeground, textAlign: "center" }]}>
+              Esta área é exclusiva para líderes de equipe.
+            </ThemedText>
+          </Card>
+        </View>
+      </ThemedView>
+    );
+  }
+
   if (isInitialLoad) {
     return (
       <ThemedView style={styles.container}>
         <View style={styles.loadingContainer}>
           <Card style={styles.loadingCard}>
             <ThemedText style={{ color: colors.mutedForeground }}>
-              Carregando suas atividades...
+              Carregando movimentações da equipe...
             </ThemedText>
           </Card>
         </View>
@@ -216,7 +261,7 @@ export default function MyActivitiesScreen() {
     return (
       <ThemedView style={styles.container}>
         <ErrorScreen
-          message="Erro ao carregar atividades"
+          message="Erro ao carregar movimentações"
           detail={error.message}
           onRetry={handleRefresh}
         />
@@ -236,7 +281,7 @@ export default function MyActivitiesScreen() {
             value={displaySearchText}
             onChangeText={handleDisplaySearchChange}
             onSearch={handleSearch}
-            placeholder="Buscar atividades..."
+            placeholder="Buscar movimentações..."
             style={styles.searchBar}
             debounceMs={300}
             loading={isRefetching && !isFetchingNextPage}
@@ -259,7 +304,7 @@ export default function MyActivitiesScreen() {
         </View>
 
         {/* Individual filter tags */}
-        <PersonalActivityFilterTags
+        <TeamActivityFilterTags
           filters={filters}
           searchText={searchText}
           onFilterChange={setFilters}
@@ -272,7 +317,7 @@ export default function MyActivitiesScreen() {
 
         {hasActivities ? (
           <TableErrorBoundary onRetry={handleRefresh}>
-            <PersonalActivityTable
+            <TeamActivityTable
               activities={activities}
               onRefresh={handleRefresh}
               onEndReached={canLoadMore ? loadMore : undefined}
@@ -290,17 +335,18 @@ export default function MyActivitiesScreen() {
                 }
               }}
               visibleColumnKeys={Array.from(visibleColumns) as string[]}
+              enableSwipeActions={false}
             />
           </TableErrorBoundary>
         ) : (
           <View style={styles.emptyContainer}>
             <EmptyState
               icon={searchText ? "search" : "clock"}
-              title={searchText ? "Nenhuma atividade encontrada" : "Sem atividades"}
+              title={searchText ? "Nenhuma movimentação encontrada" : "Sem movimentações"}
               description={
                 searchText
                   ? `Nenhum resultado para "${searchText}"`
-                  : "Você não possui atividades registradas"
+                  : "Não há movimentações registradas para a equipe"
               }
             />
           </View>
@@ -312,7 +358,7 @@ export default function MyActivitiesScreen() {
 
       {/* Slide-in panels */}
       <SlideInPanel isOpen={isFilterPanelOpen} onClose={handleCloseFilters}>
-        <PersonalActivityFilterDrawerContent
+        <TeamActivityFilterDrawerContent
           filters={filters}
           onFiltersChange={setFilters}
           onClear={handleClearFilters}
@@ -321,7 +367,7 @@ export default function MyActivitiesScreen() {
       </SlideInPanel>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
-        <PersonalActivityColumnDrawerContent
+        <TeamActivityColumnDrawerContent
           columns={allColumns}
           visibleColumns={visibleColumns}
           onVisibilityChange={handleColumnsChange}
@@ -348,6 +394,14 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     gap: 8,
+  },
+  title: {
+    fontSize: fontSize.xl,
+    fontWeight: "700",
+    marginBottom: spacing.xs,
+  },
+  subtitle: {
+    fontSize: fontSize.sm,
   },
   loadingContainer: {
     flex: 1,

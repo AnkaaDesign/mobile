@@ -31,8 +31,15 @@ export function useList<T extends { id: string }>(
     mapping: buildSortMapping(config.table.columns),
   })
 
+  // Filter fields based on user permissions (canView check)
+  const accessibleFilterFields = useMemo(() => {
+    const fields = config.filters?.fields || []
+    return fields.filter((field) => !field.canView || field.canView(user))
+  }, [config.filters?.fields, user])
+
   const filters = useFilters({
-    fields: config.filters?.fields || [],
+    fields: accessibleFilterFields,
+    defaultValues: config.filters?.defaultValues,
   })
 
   const selection = useSelection()
@@ -43,11 +50,12 @@ export function useList<T extends { id: string }>(
       orderBy: sort.orderBy,
       ...(search.text ? { searchingFor: search.text } : {}),
       ...filters.apiParams,
+      ...(config.query.forcedParams || {}), // Forced params (e.g., sectorIds for team filtering)
       include: config.query.include,
       where: config.query.where, // Base where clause
       limit: config.query.pageSize || 25,
     }),
-    [sort.orderBy, search.text, filters.apiParams, config.query.include, config.query.where, config.query.pageSize]
+    [sort.orderBy, search.text, filters.apiParams, config.query.forcedParams, config.query.include, config.query.where, config.query.pageSize]
   )
 
   // Data fetching

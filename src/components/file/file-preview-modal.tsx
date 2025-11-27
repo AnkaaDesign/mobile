@@ -29,10 +29,10 @@ import Animated, {
 import * as Haptics from "expo-haptics";
 import {
   IconX,
-  IconDownload,
   IconExternalLink,
   IconVectorBezier,
 } from "@tabler/icons-react-native";
+import { SvgUri } from "react-native-svg";
 import { useTheme } from "@/lib/theme";
 
 import { Badge } from "@/components/ui/badge";
@@ -51,8 +51,20 @@ const isEpsFile = (file: AnkaaFile): boolean => {
   return epsMimeTypes.includes(file.mimetype.toLowerCase());
 };
 
+// SVG file detection
+const isSvgFile = (file: AnkaaFile): boolean => {
+  const svgMimeTypes = ["image/svg+xml", "image/svg"];
+  if (svgMimeTypes.includes(file.mimetype?.toLowerCase())) return true;
+  const ext = getFileExtension(file.filename).toLowerCase();
+  return ext === "svg";
+};
+
 // Check if file can be previewed
 const isPreviewableFile = (file: AnkaaFile): boolean => {
+  // SVG files can always be previewed with SvgUri
+  if (isSvgFile(file)) {
+    return true;
+  }
   return isImageFile(file) || (isEpsFile(file) && !!file.thumbnailUrl);
 };
 
@@ -81,7 +93,7 @@ export function FilePreviewModal({
   showThumbnailStrip = true,
   showImageCounter = true,
 }: FilePreviewModalProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
   // State management
@@ -159,6 +171,23 @@ export function FilePreviewModal({
   const showControls = useCallback(() => {
     resetControlsTimeout();
   }, [resetControlsTimeout]);
+
+  // Toggle controls visibility (for single tap)
+  const toggleControls = useCallback(() => {
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+
+    setIsControlsVisible(prev => {
+      if (!prev) {
+        // If showing controls, start the auto-hide timer
+        controlsTimeoutRef.current = setTimeout(() => {
+          setIsControlsVisible(false);
+        }, 3000);
+      }
+      return !prev;
+    });
+  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -241,28 +270,7 @@ export function FilePreviewModal({
     showControls();
   }, [showControls]);
 
-  // Download/Share/Open functions
-  const handleDownload = useCallback(async () => {
-    if (!currentFile) return;
-
-    try {
-      showControls();
-
-      Alert.alert("Baixando arquivo...", "Aguarde enquanto o arquivo é baixado.");
-
-      // Download file
-      // TODO: Implement actual download functionality using:
-      // const fileUrl = getFileUrl(currentFile);
-      // const fileUri = FileSystem.documentDirectory + currentFile.filename;
-
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      Alert.alert("Sucesso", "Arquivo salvo com sucesso!");
-    } catch (error) {
-      console.error("Error downloading file:", error);
-      Alert.alert("Erro", "Não foi possível baixar o arquivo.");
-    }
-  }, [currentFile, baseUrl, showControls]);
-
+  // Share/Open function - opens native share sheet for download, save, share, etc.
   const handleShare = useCallback(async () => {
     if (!currentFile) return;
 
@@ -360,6 +368,9 @@ export function FilePreviewModal({
   const panGesture = Gesture.Pan()
     .onStart(() => {
       'worklet';
+      // Save current position at start of gesture to prevent teleporting
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
       runOnJS(showControls)();
     })
     .onUpdate((event) => {
@@ -386,21 +397,27 @@ export function FilePreviewModal({
         const maxTranslateX = ((SCREEN_WIDTH * scale.value) - SCREEN_WIDTH) / 2;
         const maxTranslateY = ((SCREEN_HEIGHT * scale.value) - SCREEN_HEIGHT) / 2;
 
+        // Calculate final position after this pan
+        const finalX = clamp(translateX.value, -maxTranslateX, maxTranslateX);
+        const finalY = clamp(translateY.value, -maxTranslateY, maxTranslateY);
+
         // Apply decay with boundaries
         translateX.value = withDecay({
           velocity: event.velocityX,
           clamp: [-maxTranslateX, maxTranslateX],
-          deceleration: 0.998,
+          deceleration: 0.997,
+        }, () => {
+          // Update saved value when animation completes
+          savedTranslateX.value = translateX.value;
         });
         translateY.value = withDecay({
           velocity: event.velocityY,
           clamp: [-maxTranslateY, maxTranslateY],
-          deceleration: 0.998,
+          deceleration: 0.997,
+        }, () => {
+          // Update saved value when animation completes
+          savedTranslateY.value = translateY.value;
         });
-
-        // Update saved values after animation
-        savedTranslateX.value = translateX.value;
-        savedTranslateY.value = translateY.value;
       } else if (enableSwipeNavigation) {
         // Handle swipe navigation
         const shouldNavigate = Math.abs(event.translationX) > SWIPE_THRESHOLD;
@@ -417,6 +434,14 @@ export function FilePreviewModal({
         swipeTranslateX.value = withSpring(0, { damping: 20, stiffness: 150 });
         opacity.value = withSpring(1, { damping: 20, stiffness: 150 });
       }
+    });
+
+  // Single tap to toggle controls
+  const singleTapGesture = Gesture.Tap()
+    .numberOfTaps(1)
+    .onEnd(() => {
+      'worklet';
+      runOnJS(toggleControls)();
     });
 
   // Double tap to zoom
@@ -451,10 +476,13 @@ export function FilePreviewModal({
       }
     });
 
+  // Tap gestures: double-tap has priority, then single-tap
+  const tapGestures = Gesture.Exclusive(doubleTapGesture, singleTapGesture);
+
   // Compose all gestures
   const composedGesture = Gesture.Simultaneous(
     pinchGesture,
-    Gesture.Race(doubleTapGesture, panGesture)
+    Gesture.Race(tapGestures, panGesture)
   );
 
   // Animated styles (pinch/pan zoom only, no rotation)
@@ -490,6 +518,11 @@ export function FilePreviewModal({
 
   const isPDF = getFileExtension(currentFile.filename).toLowerCase() === "pdf";
   const isEPS = isEpsFile(currentFile);
+  const isSVG = isSvgFile(currentFile);
+
+  // For EPS files, we need to use thumbnails (server renders them as PNG)
+  // SVG files will be rendered directly with SvgUri
+  const needsThumbnail = isEPS;
 
   // Helper function to get proper file URL
   const getFileUrl = (file: AnkaaFile): string => {
@@ -566,8 +599,8 @@ export function FilePreviewModal({
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       <View style={styles.container}>
-        {/* Background */}
-        <View style={StyleSheet.flatten([StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.95)' }])} />
+        {/* Background - always light for image visibility, matches thumbnail in table */}
+        <View style={StyleSheet.flatten([StyleSheet.absoluteFillObject, { backgroundColor: '#e5e5e5' }])} />
 
         {/* Main Content */}
         <View style={styles.content}>
@@ -593,7 +626,7 @@ export function FilePreviewModal({
 
             <View style={styles.headerRight}>
               <TouchableOpacity style={styles.headerButton} onPress={onClose} activeOpacity={0.7}>
-                <IconX size={24} color={colors.foreground} />
+                <IconX size={24} color="#ffffff" />
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -605,48 +638,76 @@ export function FilePreviewModal({
                 <GestureDetector gesture={composedGesture}>
                   <Animated.View style={styles.imageWrapper}>
                     <Animated.View style={animatedImageStyle}>
-                      <Image
-                        key={`main-image-${currentFile.id}-${currentIndex}`}
-                        source={{
-                          uri: (() => {
-                            const url = isEPS && currentFile.thumbnailUrl
-                              ? getFileThumbnailUrl(currentFile, "large")
-                              : getFileUrl(currentFile);
-                            console.log('🖼️ [MainImage] About to load:', {
+                      {isSVG ? (
+                        // Render SVG files with SvgUri for crisp vector rendering
+                        <View style={styles.svgContainer}>
+                          <SvgUri
+                            key={`svg-image-${currentFile.id}-${currentIndex}`}
+                            uri={getFileUrl(currentFile)}
+                            width={SCREEN_WIDTH}
+                            height={SCREEN_HEIGHT - 200}
+                            onLoad={() => {
+                              console.log('✅ [SvgUri] Loaded successfully:', currentFile.filename);
+                              handleImageLoad();
+                            }}
+                            onError={(error: Error) => {
+                              console.error('❌ [SvgUri] Failed to load:', {
+                                filename: currentFile.filename,
+                                url: getFileUrl(currentFile),
+                                error: error.message
+                              });
+                              handleImageError();
+                            }}
+                          />
+                        </View>
+                      ) : (
+                        // Render regular images (and EPS with thumbnail)
+                        <Image
+                          key={`main-image-${currentFile.id}-${currentIndex}`}
+                          source={{
+                            uri: (() => {
+                              // For EPS files, use thumbnail (server renders them as PNG)
+                              const url = needsThumbnail && currentFile.thumbnailUrl
+                                ? getFileThumbnailUrl(currentFile, "large")
+                                : getFileUrl(currentFile);
+                              console.log('🖼️ [MainImage] About to load:', {
+                                filename: currentFile.filename,
+                                isEPS,
+                                isSVG,
+                                needsThumbnail,
+                                hasThumbnailUrl: !!currentFile.thumbnailUrl,
+                                finalUrl: url,
+                                imageLoading,
+                                imageError
+                              });
+                              return url;
+                            })(),
+                            cache: 'reload'
+                          }}
+                          style={styles.image}
+                          resizeMode="contain"
+                          onLoadStart={() => {
+                            console.log('⏳ [MainImage] Load started:', currentFile.filename);
+                          }}
+                          onLoad={() => {
+                            console.log('✅ [MainImage] Loaded successfully:', currentFile.filename);
+                            handleImageLoad();
+                          }}
+                          onError={(error) => {
+                            console.error('❌ [MainImage] Failed to load:', {
                               filename: currentFile.filename,
-                              isEPS,
-                              hasThumbnailUrl: !!currentFile.thumbnailUrl,
-                              finalUrl: url,
-                              imageLoading,
-                              imageError
+                              url: needsThumbnail && currentFile.thumbnailUrl
+                                ? getFileThumbnailUrl(currentFile, "large")
+                                : getFileUrl(currentFile),
+                              error: error.nativeEvent
                             });
-                            return url;
-                          })(),
-                          cache: 'reload'
-                        }}
-                        style={styles.image}
-                        resizeMode="contain"
-                        onLoadStart={() => {
-                          console.log('⏳ [MainImage] Load started:', currentFile.filename);
-                        }}
-                        onLoad={() => {
-                          console.log('✅ [MainImage] Loaded successfully:', currentFile.filename);
-                          handleImageLoad();
-                        }}
-                        onError={(error) => {
-                          console.error('❌ [MainImage] Failed to load:', {
-                            filename: currentFile.filename,
-                            url: isEPS && currentFile.thumbnailUrl
-                              ? getFileThumbnailUrl(currentFile, "large")
-                              : getFileUrl(currentFile),
-                            error: error.nativeEvent
-                          });
-                          handleImageError();
-                        }}
-                        onLoadEnd={() => {
-                          console.log('🏁 [MainImage] Load ended (success or error):', currentFile.filename);
-                        }}
-                      />
+                            handleImageError();
+                          }}
+                          onLoadEnd={() => {
+                            console.log('🏁 [MainImage] Load ended (success or error):', currentFile.filename);
+                          }}
+                        />
+                      )}
                     </Animated.View>
 
                     {/* Loading Overlay */}
@@ -663,16 +724,10 @@ export function FilePreviewModal({
                         <Text style={styles.errorIcon}>⚠️</Text>
                         <Text style={styles.errorTitle}>Erro ao carregar</Text>
                         <Text style={styles.errorText}>Não foi possível carregar a imagem</Text>
-                        <View style={styles.errorButtonRow}>
-                          <TouchableOpacity style={styles.errorButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                            <IconExternalLink size={16} color={colors.background} />
-                            <Text style={styles.errorButtonText}>Abrir</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity style={styles.errorButton} onPress={handleDownload} activeOpacity={0.7}>
-                            <IconDownload size={16} color={colors.background} />
-                            <Text style={styles.errorButtonText}>Salvar</Text>
-                          </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity style={styles.errorButton} onPress={handleOpenFile} activeOpacity={0.7}>
+                          <IconExternalLink size={16} color="#ffffff" />
+                          <Text style={styles.errorButtonText}>Abrir</Text>
+                        </TouchableOpacity>
                       </View>
                     )}
                   </Animated.View>
@@ -687,49 +742,33 @@ export function FilePreviewModal({
                       <Text style={styles.filePreviewIcon}>📄</Text>
                       <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
                       <Text style={styles.filePreviewSubtitle}>Documento PDF • {formatFileSize(currentFile.size)}</Text>
-                      <View style={styles.filePreviewActions}>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                          <IconExternalLink size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Abrir</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
-                          <IconDownload size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Salvar</Text>
-                        </TouchableOpacity>
-                      </View>
+                      <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
+                        <IconExternalLink size={18} color="#ffffff" />
+                        <Text style={styles.fileActionButtonText}>Abrir</Text>
+                      </TouchableOpacity>
                     </>
-                  ) : isEPS && !currentFile.thumbnailUrl ? (
+                  ) : (isEPS || isSVG) && !currentFile.thumbnailUrl ? (
                     <>
                       <IconVectorBezier size={64} color={colors.primary} />
                       <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
-                      <Text style={styles.filePreviewSubtitle}>Arquivo EPS • {formatFileSize(currentFile.size)}</Text>
+                      <Text style={styles.filePreviewSubtitle}>
+                        Arquivo {isSVG ? 'SVG' : 'EPS'} • {formatFileSize(currentFile.size)}
+                      </Text>
                       <Text style={styles.filePreviewNote}>Visualização não disponível</Text>
-                      <View style={styles.filePreviewActions}>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                          <IconExternalLink size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Abrir</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
-                          <IconDownload size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Salvar</Text>
-                        </TouchableOpacity>
-                      </View>
+                      <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
+                        <IconExternalLink size={18} color="#ffffff" />
+                        <Text style={styles.fileActionButtonText}>Abrir</Text>
+                      </TouchableOpacity>
                     </>
                   ) : (
                     <>
                       <Text style={styles.filePreviewIcon}>📎</Text>
                       <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
                       <Text style={styles.filePreviewSubtitle}>{formatFileSize(currentFile.size)}</Text>
-                      <View style={styles.filePreviewActions}>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                          <IconExternalLink size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Abrir</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.fileActionButton} onPress={handleDownload} activeOpacity={0.7}>
-                          <IconDownload size={18} color={colors.background} />
-                          <Text style={styles.fileActionButtonText}>Salvar</Text>
-                        </TouchableOpacity>
-                      </View>
+                      <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
+                        <IconExternalLink size={18} color="#ffffff" />
+                        <Text style={styles.fileActionButtonText}>Abrir</Text>
+                      </TouchableOpacity>
                     </>
                   )}
                 </TouchableOpacity>
@@ -747,12 +786,9 @@ export function FilePreviewModal({
               <View style={styles.controlsRow}>
                 {/* Action Controls */}
                 <View style={styles.actionControls}>
-                  <TouchableOpacity style={styles.controlButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                    <IconExternalLink size={20} color={colors.foreground} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.controlButton} onPress={handleDownload} activeOpacity={0.7}>
-                    <IconDownload size={20} color={colors.foreground} />
+                  <TouchableOpacity style={[styles.controlButton, styles.controlButtonPrimary]} onPress={handleOpenFile} activeOpacity={0.7}>
+                    <IconExternalLink size={20} color="#ffffff" />
+                    <Text style={styles.controlButtonTextPrimary}>Abrir</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -826,7 +862,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    backgroundColor: "#262626", // neutral-825
+    borderBottomWidth: 1,
+    borderBottomColor: "#404040", // neutral-700
+    zIndex: 10,
   },
   headerLeft: {
     flex: 1,
@@ -842,33 +881,40 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   fileName: {
-    color: "white",
+    color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
     flex: 1,
   },
   fileSize: {
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "#9ca3af",
     fontSize: 12,
   },
   imageCounter: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "#404040", // neutral-700
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   imageCounterText: {
-    color: "white",
+    color: "#d4d4d4", // neutral-250
     fontSize: 10,
     fontWeight: "600",
   },
   headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#404040", // neutral-700
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#525252", // neutral-600
   },
   imageContainer: {
     flex: 1,
@@ -881,11 +927,18 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT - 200, // Account for header and controls
   },
+  svgContainer: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT - 200,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#e5e5e5", // neutral-200 - matches thumbnail and modal background
+  },
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     gap: 16,
   },
   loadingContainer: {
@@ -895,7 +948,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   loadingText: {
-    color: "white",
+    color: "#374151",
     fontSize: 16,
   },
   errorContainer: {
@@ -909,13 +962,13 @@ const styles = StyleSheet.create({
     fontSize: 64,
   },
   errorTitle: {
-    color: "white",
+    color: "#1f2937",
     fontSize: 20,
     fontWeight: "600",
     textAlign: "center",
   },
   errorText: {
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "#6b7280",
     fontSize: 14,
     textAlign: "center",
     marginBottom: 8,
@@ -924,15 +977,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    paddingHorizontal: 16,
+    backgroundColor: "#15803d", // green-700 (primary)
+    paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   errorButtonText: {
-    color: "white",
+    color: "#ffffff",
     fontSize: 14,
     fontWeight: "500",
   },
@@ -953,14 +1004,19 @@ const styles = StyleSheet.create({
     pointerEvents: "box-none",
   },
   navButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderColor: "#e5e7eb",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   navButtonLeft: {
     // Position specific styles if needed
@@ -977,65 +1033,71 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 16,
     paddingHorizontal: 32,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: "#f9fafb",
     borderRadius: 16,
     padding: 32,
     maxWidth: SCREEN_WIDTH - 64,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
   },
   filePreviewIcon: {
     fontSize: 72,
   },
   filePreviewTitle: {
-    color: "white",
+    color: "#1f2937",
     fontSize: 18,
     fontWeight: "600",
     textAlign: "center",
   },
   filePreviewSubtitle: {
-    color: "rgba(255, 255, 255, 0.7)",
+    color: "#6b7280",
     fontSize: 14,
     textAlign: "center",
   },
   filePreviewNote: {
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "#9ca3af",
     fontSize: 12,
     textAlign: "center",
-  },
-  filePreviewActions: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 8,
   },
   fileActionButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    paddingHorizontal: 16,
+    backgroundColor: "#15803d", // green-700 (primary)
+    paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
+    marginTop: 8,
   },
   fileActionButtonText: {
-    color: "white",
+    color: "#ffffff",
     fontSize: 14,
     fontWeight: "500",
   },
   bottomControls: {
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    backgroundColor: "#262626", // neutral-825
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#404040", // neutral-700
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 10,
   },
   controlsRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    gap: 12,
   },
   zoomControls: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "#f3f4f6",
     borderRadius: 24,
     padding: 4,
   },
@@ -1047,18 +1109,37 @@ const styles = StyleSheet.create({
   actionControls: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
   },
   controlButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
+    height: 48,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: "#404040", // neutral-700
+    borderWidth: 1,
+    borderColor: "#525252", // neutral-600
+  },
+  controlButtonPrimary: {
+    backgroundColor: "#15803d", // green-700 (primary)
+    borderColor: "#15803d",
+  },
+  controlButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#d4d4d4", // neutral-250
+  },
+  controlButtonTextPrimary: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#ffffff",
   },
   controlButtonDisabled: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: "#f9fafb",
+    opacity: 0.5,
   },
   resetButton: {
     paddingHorizontal: 16,
@@ -1066,15 +1147,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   zoomText: {
-    color: "white",
+    color: "#374151",
     fontSize: 14,
     fontWeight: "600",
     minWidth: 40,
     textAlign: "center",
   },
   thumbnailStrip: {
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    backgroundColor: "#262626", // neutral-825 (same as other bars)
     paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#404040", // neutral-700
   },
   thumbnailScrollContent: {
     paddingHorizontal: 16,
@@ -1088,10 +1171,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
     borderWidth: 2,
-    borderColor: "transparent",
+    borderColor: "#525252", // neutral-600
+    backgroundColor: "#fafafa", // neutral-50 - same as light mode for consistent thumbnail bg
   },
   thumbnailButtonActive: {
-    borderColor: "white",
+    borderColor: "#15803d", // green-700 (primary)
   },
   thumbnailImage: {
     width: "100%",
@@ -1103,6 +1187,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(21, 128, 61, 0.1)", // green-700 with opacity
   },
 });

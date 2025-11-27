@@ -37,7 +37,7 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
         width: 0.8,
         align: 'center',
         render: (brand) => String((brand as any)._count?.paints || 0),
-        format: 'badge',
+        format: 'count-badge',
       },
       {
         key: 'createdAt',

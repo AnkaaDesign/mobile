@@ -21,10 +21,8 @@ import {
   PpeSizesCard,
   LoginInfoCard,
   ProfessionalInfoCard,
-  ActivitiesTimelineCard,
   VacationsTable,
   WarningsTable,
-  BorrowsTable,
   PpeDeliveriesTable,
 } from "@/components/administration/employee/detail";
 import { EmployeeDetailSkeleton } from "@/components/administration/employee/skeleton";
@@ -57,11 +55,6 @@ export default function EmployeeDetailsScreen() {
       sector: true,
       managedSector: true,
       ppeSize: true,
-      activities: {
-        include: {
-          item: true,
-        },
-      },
       changeLogs: true,
       vacations: true,
     },
@@ -135,15 +128,9 @@ export default function EmployeeDetailsScreen() {
           {/* PPE Sizes */}
           <PpeSizesCard employee={employee} />
 
-          {/* Activities Timeline */}
-          {employee.activities && employee.activities.length > 0 && (
-            <ActivitiesTimelineCard employee={employee} maxHeight={500} />
-          )}
-
           {/* Relation Tables */}
           <VacationsTable employee={employee} maxHeight={400} />
           <WarningsTable employee={employee} maxHeight={400} />
-          <BorrowsTable employee={employee} maxHeight={400} />
           <PpeDeliveriesTable employee={employee} maxHeight={400} />
 
           {/* Changelog Timeline */}
@@ -151,9 +138,7 @@ export default function EmployeeDetailsScreen() {
             <CardHeader>
               <CardTitle style={styles.sectionTitle}>
                 <View style={styles.titleRow}>
-                  <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-                    <IconHistory size={18} color={colors.primary} />
-                  </View>
+                  <IconHistory size={18} color="#16a34a" />
                   <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
                     Histórico de Alterações
                   </ThemedText>
@@ -220,14 +205,7 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
+    gap: spacing.sm,
   },
   titleText: {
     fontSize: fontSize.lg,

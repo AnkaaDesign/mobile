@@ -78,14 +78,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // CATALOGO
+  // CATALOGO - View-only for Leaders and Designers (separate from Pintura module)
   {
     id: "catalogo",
     title: "Catalogo",
     icon: "palette",
-    path: "/pintura/catalogo-basico",
-    requiredPrivilege: [SECTOR_PRIVILEGES.LEADER],
-    children: [{ id: "catalogo-detalhes", title: "Detalhes", icon: "eye", path: "/pintura/catalogo-basico/detalhes/:id", isDynamic: true }],
+    path: "/catalogo",
+    requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.DESIGNER],
+    children: [{ id: "catalogo-detalhes", title: "Detalhes", icon: "eye", path: "/catalogo/detalhes/:id", isDynamic: true }],
   },
 
   // ESTOQUE
@@ -289,11 +289,12 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
     children: [
       { id: "advertencias-equipe", title: "Advertencias", icon: "alertTriangle", path: "/meu-pessoal/advertencias", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
-      { id: "atividades-equipe", title: "Atividades", icon: "activity", path: "/meu-pessoal/atividades", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
+      { id: "movimentacoes-equipe", title: "Movimentações", icon: "activity", path: "/meu-pessoal/movimentacoes", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
       { id: "usuarios-equipe", title: "Colaboradores", icon: "users", path: "/meu-pessoal/usuarios", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
       { id: "emprestimos-equipe", title: "Emprestimos", icon: "loan", path: "/meu-pessoal/emprestimos", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
       { id: "epis-equipe", title: "EPIs", icon: "helmet", path: "/meu-pessoal/epis", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
       { id: "ferias-equipe", title: "Ferias", icon: "calendarWeek", path: "/meu-pessoal/ferias", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
+      { id: "calculos-equipe", title: "Controle de Ponto", icon: "fingerprint", path: "/meu-pessoal/calculos", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
     ],
   },
 
@@ -358,13 +359,13 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // PINTURA
+  // PINTURA - Not available to LEADER or DESIGNER (they use the separate Catalogo menu)
   {
     id: "pintura",
     title: "Pintura",
     icon: "paint",
     path: "/pintura",
-    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
+    requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
     children: [
       { id: "catalogo", title: "Catalogo", icon: "palette", path: "/pintura/catalogo" },
       {
@@ -413,7 +414,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Aerografia",
         icon: "paintBrush",
         path: "/producao/aerografia",
-        requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN],
+        requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN],
         children: [
           { id: "aerografia-cadastrar", title: "Cadastrar", icon: "plus", path: "/producao/aerografia/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
           { id: "aerografia-detalhes", title: "Detalhes", icon: "eye", path: "/producao/aerografia/detalhes/:id", isDynamic: true },
@@ -431,7 +432,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "cronograma-cadastrar", title: "Nova Tarefa", icon: "plus", path: "/producao/cronograma/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
         ],
       },
-      { id: "cronograma-em-espera", title: "Em Espera", icon: "pause", path: "/producao/cronograma/em-espera", requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] },
+      { id: "cronograma-em-espera", title: "Em Espera", icon: "pause", path: "/producao/cronograma/em-espera", requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] },
       { id: "historico", title: "Historico", icon: "history", path: "/producao/historico" },
       {
         id: "observacoes",

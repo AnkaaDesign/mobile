@@ -66,11 +66,11 @@ export default function PessoalScreen() {
       available: true,
     },
     {
-      id: "activities",
-      title: "Minhas Atividades",
+      id: "movements",
+      title: "Minhas Movimentações",
       description: "Histórico de movimentações",
       icon: <IconActivity size={28} color={colors.primary} />,
-      route: "/(tabs)/pessoal/minhas-atividades/listar",
+      route: "/(tabs)/pessoal/minhas-movimentacoes/listar",
       available: true,
     },
     {

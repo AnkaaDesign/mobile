@@ -9,7 +9,7 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TeamWarningTableRowSwipe } from "./team-warning-table-row-swipe";
 import { formatDate } from "@/utils";
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { extendedColors } from "@/lib/theme/extended-colors";
 import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS, WARNING_SEVERITY } from "@/constants";
 
 export interface TableColumn {
@@ -44,19 +44,19 @@ interface TeamWarningTableProps {
 const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
-// Helper function to get severity colors
-const getSeverityColor = (severity: string) => {
+// Helper function to get severity variant
+const getSeverityVariant = (severity: string): string => {
   switch (severity) {
     case WARNING_SEVERITY.VERBAL:
-      return { background: badgeColors.info.background, text: badgeColors.info.text };
+      return "info";
     case WARNING_SEVERITY.WRITTEN:
-      return { background: badgeColors.warning.background, text: badgeColors.warning.text };
+      return "warning";
     case WARNING_SEVERITY.SUSPENSION:
-      return { background: "rgba(255, 152, 0, 0.15)", text: "#ff9800" };
+      return "orange";
     case WARNING_SEVERITY.FINAL_WARNING:
-      return { background: badgeColors.error.background, text: badgeColors.error.text };
+      return "error";
     default:
-      return { background: badgeColors.muted.background, text: badgeColors.muted.text };
+      return "muted";
   }
 };
 
@@ -90,10 +90,8 @@ export const createWarningColumnDefinitions = (): TableColumn[] => [
     accessor: (warning: Warning) => {
       const categoryLabel = WARNING_CATEGORY_LABELS[warning.category as keyof typeof WARNING_CATEGORY_LABELS] || warning.category;
       return (
-        <Badge variant="default" size="sm" style={{ backgroundColor: badgeColors.info.background, borderWidth: 0 }}>
-          <ThemedText style={{ color: badgeColors.info.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
-            {categoryLabel}
-          </ThemedText>
+        <Badge variant="info" size="sm">
+          {categoryLabel}
         </Badge>
       );
     },
@@ -106,12 +104,10 @@ export const createWarningColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (warning: Warning) => {
       const severityLabel = WARNING_SEVERITY_LABELS[warning.severity as keyof typeof WARNING_SEVERITY_LABELS] || warning.severity;
-      const severityColor = getSeverityColor(warning.severity);
+      const severityVariant = getSeverityVariant(warning.severity);
       return (
-        <Badge variant="secondary" size="sm" style={{ backgroundColor: severityColor.background, borderWidth: 0 }}>
-          <ThemedText style={{ color: severityColor.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
-            {severityLabel}
-          </ThemedText>
+        <Badge variant={severityVariant} size="sm">
+          {severityLabel}
         </Badge>
       );
     },
@@ -148,23 +144,8 @@ export const createWarningColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (warning: Warning) => (
       <View style={styles.centerAlign}>
-        <Badge
-          variant={warning.isActive ? "default" : "secondary"}
-          size="sm"
-          style={{
-            backgroundColor: warning.isActive ? badgeColors.success.background : badgeColors.muted.background,
-            borderWidth: 0,
-          }}
-        >
-          <ThemedText
-            style={{
-              color: warning.isActive ? badgeColors.success.text : badgeColors.muted.text,
-              fontSize: fontSize.xs,
-              fontWeight: fontWeight.medium,
-            }}
-          >
-            {warning.isActive ? "Ativa" : "Resolvida"}
-          </ThemedText>
+        <Badge variant={warning.isActive ? "success" : "muted"} size="sm">
+          {warning.isActive ? "Ativa" : "Resolvida"}
         </Badge>
       </View>
     ),

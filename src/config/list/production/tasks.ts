@@ -3,13 +3,26 @@ import { View } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig } from '@/components/list/types'
 import type { Task } from '@/types'
-import { canCreateTasks, canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
+import { canCreateTasks, canEditTasks, canDeleteTasks, canEditLayoutsOnly, canEditLayoutForTask, canLeaderManageTask, isLeader, canBatchOperateTasks } from '@/utils/permissions/entity-permissions'
 import { useAuth } from '@/hooks/useAuth'
 import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
   COMMISSION_STATUS,
+  SERVICE_ORDER_STATUS,
 } from '@/constants'
+import { showToast } from '@/components/ui/toast'
+import { updateTask } from '@/api-client'
+import { queryClient } from '@/lib/query-client'
+import { taskKeys } from '@/hooks/queryKeys'
+
+// Helper to check if task has pending service orders
+const hasPendingServiceOrders = (task: Task): boolean => {
+  if (!task.services || task.services.length === 0) return false
+  return task.services.some(
+    (service) => service.status === SERVICE_ORDER_STATUS.PENDING || service.status === SERVICE_ORDER_STATUS.IN_PROGRESS
+  )
+}
 import { DeadlineCountdown } from '@/components/production/DeadlineCountdown'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
 import { PAINT_FINISH } from '@/constants/enums'
@@ -284,6 +297,7 @@ export const tasksListConfig: ListConfig<Task> = {
       backgroundColor: getRowBackgroundColor(task, isDark),
     }),
     actions: [
+      // View action (handled by row click, not shown in swipe)
       {
         key: 'view',
         label: 'Visualizar',
@@ -293,9 +307,123 @@ export const tasksListConfig: ListConfig<Task> = {
           router.push(`/producao/cronograma/detalhes/${task.id}`)
         },
       },
+      // Leader actions (start/finish) - only shown for leaders managing tasks
+      {
+        key: 'start',
+        label: 'Iniciar Tarefa',
+        icon: 'player-play',
+        variant: 'default',
+        canPerform: isLeader,
+        visible: (task: Task, user: any) => {
+          if (task.status !== TASK_STATUS.PENDING) return false
+          return canLeaderManageTask(user, task.sectorId)
+        },
+        onPress: async (task: Task, router: any, context?: { user?: any }) => {
+          try {
+            const user = context?.user
+            const updateData: any = {
+              status: TASK_STATUS.IN_PRODUCTION,
+              startedAt: new Date().toISOString(),
+            }
+
+            if (!task.sectorId && user?.managedSectorId) {
+              updateData.sectorId = user.managedSectorId
+            }
+
+            await updateTask(task.id, updateData)
+            queryClient.invalidateQueries({ queryKey: taskKeys.all })
+
+            showToast({
+              message: `Tarefa "${task.name}" iniciada com sucesso!`,
+              type: 'success',
+            })
+          } catch (error: any) {
+            showToast({
+              title: 'Erro ao iniciar tarefa',
+              message: error?.message || 'Ocorreu um erro ao iniciar a tarefa',
+              type: 'error',
+            })
+          }
+        },
+      },
+      {
+        key: 'finish',
+        label: 'Finalizar Tarefa',
+        icon: 'circle-check',
+        variant: 'default',
+        canPerform: isLeader,
+        visible: (task: Task, user: any) => {
+          if (task.status !== TASK_STATUS.IN_PRODUCTION) return false
+          if (!task.sectorId) return false
+          return canLeaderManageTask(user, task.sectorId)
+        },
+        onPress: async (task: Task, router: any) => {
+          try {
+            if (hasPendingServiceOrders(task)) {
+              showToast({
+                title: 'Nao e possivel finalizar',
+                message: 'Existem ordens de servico pendentes. Finalize todas as ordens de servico antes de finalizar a tarefa.',
+                type: 'warning',
+              })
+              return
+            }
+
+            await updateTask(task.id, {
+              status: TASK_STATUS.COMPLETED,
+              finishedAt: new Date().toISOString(),
+            })
+
+            queryClient.invalidateQueries({ queryKey: taskKeys.all })
+
+            showToast({
+              message: `Tarefa "${task.name}" finalizada com sucesso!`,
+              type: 'success',
+            })
+          } catch (error: any) {
+            showToast({
+              title: 'Erro ao finalizar tarefa',
+              message: error?.message || 'Ocorreu um erro ao finalizar a tarefa',
+              type: 'error',
+            })
+          }
+        },
+      },
+      // Order from left to right: Layout, Definir Setor, Duplicar, Editar, Deletar
+      {
+        key: 'layout',
+        label: (task: Task) => {
+          const hasLayout = task.truck?.leftSideLayoutId ||
+                           task.truck?.rightSideLayoutId ||
+                           task.truck?.backSideLayoutId
+          return hasLayout ? 'Atualizar Layout' : 'Cadastrar Layout'
+        },
+        icon: 'truck',
+        variant: 'default',
+        canPerform: canEditLayoutsOnly,
+        visible: (task: Task, user: any) => canEditLayoutForTask(user, task.sectorId),
+        onPress: (task, router) => {
+          router.push(`/producao/cronograma/layout/${task.id}`)
+        },
+      },
+      {
+        key: 'change-sector',
+        label: 'Definir Setor',
+        icon: 'users',
+        variant: 'default',
+        canPerform: canBatchOperateTasks,
+        // Action is handled by TaskScheduleLayout - opens modal
+      },
+      {
+        key: 'duplicate',
+        label: 'Duplicar Tarefa',
+        icon: 'copy',
+        variant: 'default',
+        canPerform: canBatchOperateTasks,
+        // Action is handled by TaskScheduleLayout - opens modal
+      },
       {
         key: 'edit',
-        label: 'Editar',
+        label: 'Editar Tarefa',
         icon: 'pencil',
         variant: 'default',
         canPerform: canEditTasks,
@@ -305,12 +433,12 @@ export const tasksListConfig: ListConfig<Task> = {
       },
       {
         key: 'delete',
-        label: 'Excluir',
+        label: 'Deletar Tarefa',
         icon: 'trash',
         variant: 'destructive',
         canPerform: canDeleteTasks,
         confirm: {
-          title: 'Confirmar Exclusão',
+          title: 'Confirmar Exclusao',
           message: (task) => `Deseja excluir a tarefa "${task.name}"?`,
         },
         onPress: async (task, _, { delete: deleteTask }) => {

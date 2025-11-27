@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { IconUser, IconMail, IconPhone, IconBrandWhatsapp, IconId, IconShieldCheck } from "@tabler/icons-react-native";
 import { USER_STATUS } from "@/constants";
 
@@ -56,9 +56,7 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
     <Card style={styles.card}>
       <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
         <View style={styles.titleRow}>
-          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-            <IconUser size={18} color={colors.primary} />
-          </View>
+          <IconUser size={18} color="#16a34a" />
           <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
             Informações Básicas
           </ThemedText>
@@ -153,14 +151,7 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
+    gap: spacing.sm,
   },
   titleText: {
     fontSize: fontSize.lg,

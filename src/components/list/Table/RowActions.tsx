@@ -4,8 +4,9 @@ import { Swipeable } from 'react-native-gesture-handler'
 import { ThemedText } from '@/components/ui/themed-text'
 import { useTheme } from '@/lib/theme'
 import { useSwipeRow } from '@/contexts/swipe-row-context'
+import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'expo-router'
-import { IconEye, IconEdit, IconTrash } from '@tabler/icons-react-native'
+import { IconEye, IconEdit, IconTrash, IconTruck, IconPlayerPlay, IconCircleCheck, IconCut, IconUsers, IconCopy } from '@tabler/icons-react-native'
 import type { TableAction } from '../types'
 
 interface RowActionsProps<T extends { id: string }> {
@@ -21,13 +22,15 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
 }: RowActionsProps<T>) {
   const { colors } = useTheme()
   const router = useRouter()
+  const { user } = useAuth()
   const swipeableRef = useRef<Swipeable>(null)
   const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow()
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Filter visible actions, excluding 'view' since it's handled by row click
+  // Pass user to visible function for permission checks
   const visibleActions = actions.filter(
-    (action) => action.key !== 'view' && (!action.visible || action.visible(item))
+    (action) => action.key !== 'view' && (!action.visible || action.visible(item, user))
   )
 
   const handleOpen = useCallback(() => {
@@ -89,7 +92,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
               style: action.variant === 'destructive' ? 'destructive' : 'default',
               onPress: async () => {
                 if (action.onPress) {
-                  await action.onPress(item, router)
+                  await action.onPress(item, router, { user })
                 } else if (action.route) {
                   const route = typeof action.route === 'function' ? action.route(item) : action.route
                   router.push(route as any)
@@ -100,7 +103,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
         )
       } else {
         if (action.onPress) {
-          await action.onPress(item, router)
+          await action.onPress(item, router, { user })
         } else if (action.route) {
           const route = typeof action.route === 'function' ? action.route(item) : action.route
           router.push(route as any)
@@ -128,7 +131,28 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
             } else if (action.key === 'view' || action.icon === 'eye') {
               backgroundColor = '#10b981'
               Icon = IconEye
+            } else if (action.key === 'layout' || action.icon === 'truck') {
+              backgroundColor = '#7c3aed' // violet-600
+              Icon = IconTruck
+            } else if (action.key === 'start' || action.icon === 'player-play') {
+              backgroundColor = '#059669' // emerald-600
+              Icon = IconPlayerPlay
+            } else if (action.key === 'finish' || action.icon === 'circle-check') {
+              backgroundColor = '#16a34a' // green-600
+              Icon = IconCircleCheck
+            } else if (action.key === 'request' || action.icon === 'cut') {
+              backgroundColor = '#3b82f6' // blue-500
+              Icon = IconCut
+            } else if (action.key === 'change-sector' || action.icon === 'users') {
+              backgroundColor = '#ea580c' // orange-600
+              Icon = IconUsers
+            } else if (action.key === 'duplicate' || action.icon === 'copy') {
+              backgroundColor = '#0891b2' // cyan-600
+              Icon = IconCopy
             }
+
+            // Resolve dynamic label if it's a function
+            const label = typeof action.label === 'function' ? action.label(item) : action.label
 
             return (
               <TouchableOpacity
@@ -138,8 +162,8 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
                 activeOpacity={0.7}
               >
                 <Icon size={20} color="#fff" />
-                {action.label && (
-                  <ThemedText style={styles.actionText}>{action.label}</ThemedText>
+                {label && (
+                  <ThemedText style={styles.actionText}>{label}</ThemedText>
                 )}
               </TouchableOpacity>
             )
@@ -174,16 +198,19 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   actionButton: {
-    width: 50,
+    width: 54,
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 1,
-    paddingHorizontal: 2,
+    gap: 2,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
   actionText: {
     color: '#fff',
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 10,
   },
 })

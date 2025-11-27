@@ -1,120 +1,289 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatCurrency } from "@/utils";
-import type { OrderItem } from '../../../../types';
-import { IconCheck, IconX, IconClock } from "@tabler/icons-react-native";
+import type { Order, OrderItem } from "../../../../types";
+import {
+  IconShoppingCart,
+  IconCheck,
+  IconClock,
+  IconAlertTriangle,
+  IconBoxMultiple,
+} from "@tabler/icons-react-native";
 
 interface OrderItemsCardProps {
-  items: OrderItem[];
+  order: Order;
+  onOrderUpdate?: () => void;
 }
 
-export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ items }) => {
-  const { colors } = useTheme();
+// Item status types
+interface ItemStatusInfo {
+  label: string;
+  color: string;
+  icon: typeof IconCheck;
+}
 
-  const getItemStatus = (item: OrderItem) => {
-    if (item.receivedQuantity && item.receivedQuantity >= item.orderedQuantity) {
-      return { icon: IconCheck, color: colors.primary, label: "Recebido" };
+export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
+  const { colors } = useTheme();
+  const items = order?.items || [];
+
+  // Calculate summary statistics
+  const summary = useMemo(() => {
+    if (!items.length) return { totalOrdered: 0, totalReceived: 0, totalValue: 0, percentComplete: 0 };
+
+    let totalOrdered = 0;
+    let totalReceived = 0;
+    let totalValue = 0;
+
+    items.forEach((item) => {
+      totalOrdered += item.orderedQuantity;
+      totalReceived += item.receivedQuantity || 0;
+
+      const subtotal = item.orderedQuantity * item.price;
+      const icmsAmount = subtotal * ((item.icms || 0) / 100);
+      const ipiAmount = subtotal * ((item.ipi || 0) / 100);
+      totalValue += subtotal + icmsAmount + ipiAmount;
+    });
+
+    const percentComplete = totalOrdered > 0 ? Math.round((totalReceived / totalOrdered) * 100) : 0;
+
+    return { totalOrdered, totalReceived, totalValue, percentComplete };
+  }, [items]);
+
+  // Get item status info
+  const getItemStatus = (item: OrderItem): ItemStatusInfo => {
+    const ordered = item.orderedQuantity || 0;
+    const received = item.receivedQuantity || 0;
+    const fulfilled = item.fulfilledAt !== null;
+
+    if (received >= ordered && ordered > 0) {
+      if (received > ordered) {
+        return { label: "Excesso", color: "#3b82f6", icon: IconAlertTriangle }; // blue
+      }
+      return { label: "Recebido", color: colors.primary, icon: IconCheck }; // green
     }
-    if (item.receivedQuantity && item.receivedQuantity >= item.orderedQuantity) {
-      return { icon: IconClock, color: colors.warning, label: "Pedido" };
+    if (received > 0 && received < ordered) {
+      return { label: "Parcial", color: "#f97316", icon: IconClock }; // orange
     }
-    return { icon: IconX, color: colors.destructive, label: "Pendente" };
+    if (fulfilled) {
+      return { label: "Feito", color: "#8b5cf6", icon: IconCheck }; // purple
+    }
+    return { label: "Pendente", color: colors.mutedForeground, icon: IconClock }; // gray
+  };
+
+  // Calculate item total with taxes
+  const getItemTotal = (item: OrderItem): number => {
+    const subtotal = item.orderedQuantity * item.price;
+    const icmsAmount = subtotal * ((item.icms || 0) / 100);
+    const ipiAmount = subtotal * ((item.ipi || 0) / 100);
+    return subtotal + icmsAmount + ipiAmount;
   };
 
   if (items.length === 0) {
     return (
       <Card style={styles.card}>
-        <ThemedText style={styles.title}>Itens do Pedido</ThemedText>
-        <ThemedText style={styles.emptyText}>Nenhum item no pedido</ThemedText>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <View style={[styles.iconContainer, { backgroundColor: colors.primary + "20" }]}>
+              <IconShoppingCart size={20} color={colors.primary} />
+            </View>
+            <ThemedText style={styles.title}>Itens do Pedido</ThemedText>
+          </View>
+        </View>
+        <View style={styles.emptyContainer}>
+          <View style={[styles.emptyIconContainer, { backgroundColor: colors.muted + "30" }]}>
+            <IconBoxMultiple size={32} color={colors.mutedForeground} />
+          </View>
+          <ThemedText style={[styles.emptyTitle, { color: colors.foreground }]}>
+            Nenhum item no pedido
+          </ThemedText>
+          <ThemedText style={[styles.emptyDescription, { color: colors.mutedForeground }]}>
+            Este pedido não possui itens cadastrados.
+          </ThemedText>
+        </View>
       </Card>
     );
   }
 
   return (
     <Card style={styles.card}>
+      {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <ThemedText style={styles.title}>Itens do Pedido</ThemedText>
-        <Badge size="sm">
+        <View style={styles.headerLeft}>
+          <View style={[styles.iconContainer, { backgroundColor: colors.primary + "20" }]}>
+            <IconShoppingCart size={20} color={colors.primary} />
+          </View>
+          <ThemedText style={styles.title}>Itens do Pedido</ThemedText>
+        </View>
+        <Badge variant="secondary" size="sm">
           <ThemedText style={styles.countText}>{items.length} itens</ThemedText>
         </Badge>
       </View>
 
+      {/* Summary Statistics */}
+      <View style={[styles.summaryContainer, { backgroundColor: colors.muted + "30" }]}>
+        <View style={styles.summaryRow}>
+          {/* Total Ordered */}
+          <View style={styles.summaryItem}>
+            <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
+              Qtd. Pedida
+            </ThemedText>
+            <ThemedText style={[styles.summaryValue, { color: colors.foreground }]}>
+              {summary.totalOrdered}
+            </ThemedText>
+          </View>
+
+          {/* Total Received */}
+          <View style={styles.summaryItem}>
+            <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
+              Qtd. Recebida
+            </ThemedText>
+            <ThemedText style={[styles.summaryValue, { color: colors.primary }]}>
+              {summary.totalReceived}
+            </ThemedText>
+          </View>
+
+          {/* Total Value */}
+          <View style={styles.summaryItem}>
+            <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
+              Valor Total
+            </ThemedText>
+            <ThemedText style={[styles.summaryValue, { color: colors.foreground }]}>
+              {formatCurrency(summary.totalValue)}
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* Progress Bar */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressHeader}>
+            <ThemedText style={[styles.progressLabel, { color: colors.mutedForeground }]}>
+              Progresso
+            </ThemedText>
+            <ThemedText style={[styles.progressValue, { color: colors.foreground }]}>
+              {summary.percentComplete}%
+            </ThemedText>
+          </View>
+          <View style={[styles.progressBar, { backgroundColor: colors.muted }]}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  backgroundColor: summary.percentComplete >= 100 ? colors.primary : "#3b82f6",
+                  width: `${Math.min(summary.percentComplete, 100)}%`,
+                },
+              ]}
+            />
+          </View>
+        </View>
+      </View>
+
+      {/* Items List */}
       <View style={styles.itemsList}>
         {items.map((orderItem, index) => {
           const status = getItemStatus(orderItem);
           const StatusIcon = status.icon;
           const item = orderItem.item;
+          const itemTotal = getItemTotal(orderItem);
 
           return (
             <View
               key={orderItem.id}
-              style={StyleSheet.flatten([
+              style={[
                 styles.item,
+                { borderBottomColor: colors.border },
                 index < items.length - 1 && styles.itemBorder,
-              ])}
+              ]}
             >
+              {/* Item Header */}
               <View style={styles.itemHeader}>
                 <View style={styles.itemInfo}>
-                  <ThemedText style={styles.itemName} numberOfLines={2}>
-                    {item?.name || "Item desconhecido"}
+                  <ThemedText style={[styles.itemName, { color: colors.foreground }]} numberOfLines={2}>
+                    {orderItem.temporaryItemDescription || item?.name || "Item desconhecido"}
                   </ThemedText>
                   {item?.uniCode && (
-                    <ThemedText style={styles.itemCode}>
+                    <ThemedText style={[styles.itemCode, { color: colors.mutedForeground }]}>
                       Código: {item.uniCode}
                     </ThemedText>
                   )}
+                  {item?.brand && (
+                    <ThemedText style={[styles.itemBrand, { color: colors.mutedForeground }]}>
+                      {item.brand.name}
+                    </ThemedText>
+                  )}
                 </View>
-                <View style={StyleSheet.flatten([styles.statusBadge, { backgroundColor: status.color + "20" }])}>
-                  <StatusIcon size={16} color={status.color} />
-                  <ThemedText style={StyleSheet.flatten([styles.statusText, { color: status.color }])}>
+                <View style={[styles.statusBadge, { backgroundColor: status.color + "20" }]}>
+                  <StatusIcon size={14} color={status.color} />
+                  <ThemedText style={[styles.statusText, { color: status.color }]}>
                     {status.label}
                   </ThemedText>
                 </View>
               </View>
 
+              {/* Item Details Grid */}
               <View style={styles.itemDetails}>
-                <View style={styles.quantityInfo}>
-                  <View style={styles.quantityRow}>
-                    <ThemedText style={styles.quantityLabel}>Pedido:</ThemedText>
-                    <ThemedText style={styles.quantityValue}>
+                {/* Left Column - Quantities */}
+                <View style={styles.detailColumn}>
+                  <View style={styles.detailRow}>
+                    <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                      Pedido:
+                    </ThemedText>
+                    <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
                       {orderItem.orderedQuantity}
                     </ThemedText>
                   </View>
-                  {orderItem.receivedQuantity !== null && (
-                    <View style={styles.quantityRow}>
-                      <ThemedText style={styles.quantityLabel}>Atendido:</ThemedText>
-                      <ThemedText style={styles.quantityValue}>
-                        {orderItem.receivedQuantity}
-                      </ThemedText>
-                    </View>
-                  )}
-                  {orderItem.receivedQuantity !== null && (
-                    <View style={styles.quantityRow}>
-                      <ThemedText style={styles.quantityLabel}>Recebido:</ThemedText>
-                      <ThemedText style={StyleSheet.flatten([styles.quantityValue, { color: colors.primary }])}>
-                        {orderItem.receivedQuantity}
-                      </ThemedText>
-                    </View>
-                  )}
+                  <View style={styles.detailRow}>
+                    <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                      Recebido:
+                    </ThemedText>
+                    <ThemedText style={[styles.detailValue, { color: colors.primary }]}>
+                      {orderItem.receivedQuantity || 0}
+                    </ThemedText>
+                  </View>
                 </View>
 
-                <View style={styles.priceInfo}>
-                  <ThemedText style={styles.priceLabel}>Preço Unit:</ThemedText>
-                  <ThemedText style={styles.priceValue}>
-                    {formatCurrency(orderItem.unitPrice || 0)}
-                  </ThemedText>
-                  <ThemedText style={styles.priceLabel}>Total:</ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.priceValue, styles.totalPrice])}>
-                    {formatCurrency((orderItem.unitPrice || 0) * orderItem.orderedQuantity)}
-                  </ThemedText>
+                {/* Right Column - Prices */}
+                <View style={styles.detailColumn}>
+                  <View style={styles.detailRow}>
+                    <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                      Preço:
+                    </ThemedText>
+                    <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+                      {formatCurrency(orderItem.price)}
+                    </ThemedText>
+                  </View>
+                  {(orderItem.icms > 0 || orderItem.ipi > 0) && (
+                    <View style={styles.taxRow}>
+                      {orderItem.icms > 0 && (
+                        <View style={[styles.taxBadge, { backgroundColor: colors.muted }]}>
+                          <ThemedText style={[styles.taxText, { color: colors.mutedForeground }]}>
+                            ICMS: {orderItem.icms}%
+                          </ThemedText>
+                        </View>
+                      )}
+                      {orderItem.ipi > 0 && (
+                        <View style={[styles.taxBadge, { backgroundColor: colors.muted }]}>
+                          <ThemedText style={[styles.taxText, { color: colors.mutedForeground }]}>
+                            IPI: {orderItem.ipi}%
+                          </ThemedText>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                  <View style={styles.detailRow}>
+                    <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                      Total:
+                    </ThemedText>
+                    <ThemedText style={[styles.totalValue, { color: colors.primary }]}>
+                      {formatCurrency(itemTotal)}
+                    </ThemedText>
+                  </View>
                 </View>
               </View>
-
             </View>
           );
         })}
@@ -125,35 +294,111 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ items }) => {
 
 const styles = StyleSheet.create({
   card: {
-    padding: spacing.md,
+    padding: 0,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
   },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   title: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.semibold,
   },
   countText: {
     fontSize: fontSize.xs,
-    color: "#fff",
+    fontWeight: fontWeight.medium,
   },
-  emptyText: {
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.md,
+  },
+  emptyIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.md,
+  },
+  emptyTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    marginBottom: spacing.xs,
+  },
+  emptyDescription: {
     fontSize: fontSize.sm,
-    opacity: 0.6,
     textAlign: "center",
-    paddingVertical: spacing.lg,
   },
-  itemsList: {
+  summaryContainer: {
+    margin: spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
     gap: spacing.md,
   },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  summaryItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+  summaryLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+    marginBottom: spacing.xs,
+  },
+  summaryValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+  },
+  progressContainer: {
+    gap: spacing.xs,
+  },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  progressLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  progressValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  itemsList: {
+    paddingHorizontal: spacing.md,
+  },
   item: {
-    paddingBottom: spacing.md,
+    paddingVertical: spacing.md,
   },
   itemBorder: {
     borderBottomWidth: 1,
@@ -169,13 +414,17 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   itemName: {
-    fontSize: fontSize.md,
-    fontWeight: "600",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
     marginBottom: 2,
   },
   itemCode: {
     fontSize: fontSize.xs,
-    opacity: 0.6,
+    marginBottom: 2,
+  },
+  itemBrand: {
+    fontSize: fontSize.xs,
+    fontStyle: "italic",
   },
   statusBadge: {
     flexDirection: "row",
@@ -183,57 +432,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: 12,
-    gap: spacing.xs,
+    gap: 4,
   },
   statusText: {
     fontSize: fontSize.xs,
-    fontWeight: "600",
+    fontWeight: fontWeight.semibold,
   },
   itemDetails: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: spacing.md,
   },
-  quantityInfo: {
+  detailColumn: {
     flex: 1,
     gap: spacing.xs,
   },
-  quantityRow: {
+  detailRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
-  quantityLabel: {
+  detailLabel: {
     fontSize: fontSize.sm,
-    opacity: 0.7,
-    width: 70,
   },
-  quantityValue: {
+  detailValue: {
     fontSize: fontSize.sm,
-    fontWeight: "600",
+    fontWeight: fontWeight.medium,
   },
-  priceInfo: {
-    alignItems: "flex-end",
+  totalValue: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+  },
+  taxRow: {
+    flexDirection: "row",
     gap: spacing.xs,
+    justifyContent: "flex-end",
   },
-  priceLabel: {
-    fontSize: fontSize.xs,
-    opacity: 0.6,
+  taxBadge: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  priceValue: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-  },
-  totalPrice: {
-    fontSize: fontSize.md,
-    fontWeight: "600",
-  },
-  notesContainer: {
-    marginTop: spacing.xs,
-    paddingTop: spacing.xs,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  notes: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
-    fontStyle: "italic",
+  taxText: {
+    fontSize: 10,
+    fontWeight: fontWeight.medium,
   },
 });

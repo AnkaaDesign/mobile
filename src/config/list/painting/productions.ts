@@ -1,6 +1,5 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PaintProduction } from '@/types'
-import { canEditPaintProductions } from '@/utils/permissions/entity-permissions'
 
 export const productionsListConfig: ListConfig<PaintProduction> = {
   key: 'painting-productions',
@@ -289,11 +288,7 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
   },
 
   actions: {
-    create: {
-      label: 'Cadastrar Produção',
-      route: '/pintura/producoes/cadastrar',
-      canCreate: canEditPaintProductions,
-    },
+    // Note: Productions are created from the formula detail page, not from this list
     bulk: [
       {
         key: 'delete',

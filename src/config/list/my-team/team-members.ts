@@ -4,8 +4,8 @@ import { USER_STATUS } from '@/constants/enums'
 
 
 const STATUS_LABELS: Record<string, string> = {
-  EXPERIENCE_PERIOD_1: 'Experiência 1/2 (45 dias)',
-  EXPERIENCE_PERIOD_2: 'Experiência 2/2 (45 dias)',
+  EXPERIENCE_PERIOD_1: 'Experiência 1',
+  EXPERIENCE_PERIOD_2: 'Experiência 2',
   EFFECTED: 'Efetivado',
   DISMISSED: 'Desligado',
 }
@@ -67,6 +67,7 @@ export const teamMembersListConfig: ListConfig<User> = {
         align: 'center',
         render: (user) => STATUS_LABELS[user.status] || user.status,
         format: 'badge',
+        badgeEntity: 'USER',
       },
       {
         key: 'phone',
@@ -80,12 +81,18 @@ export const teamMembersListConfig: ListConfig<User> = {
     defaultVisible: ['name', 'position', 'status'],
     rowHeight: 72,
     actions: [],
+    onRowPress: (user: User, router: any) => {
+      router.push(`/(tabs)/minha-equipe/membros/detalhes/${user.id}`)
+    },
   },
 
   filters: {
+    defaultValues: {
+      statuses: [USER_STATUS.EFFECTED, USER_STATUS.EXPERIENCE_PERIOD_1, USER_STATUS.EXPERIENCE_PERIOD_2],
+    },
     fields: [
       {
-        key: 'status',
+        key: 'statuses',
         label: 'Status',
         type: 'select',
         multiple: true,

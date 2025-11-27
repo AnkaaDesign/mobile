@@ -49,8 +49,8 @@ export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) 
   } = useTasksInfiniteMobile({
     where: {
       OR: [
-        { generalPaintId: paint.id },
-        { logoPaintId: paint.id },
+        { paintId: paint.id },
+        { logoPaints: { some: { id: paint.id } } },
       ],
     },
     include: {

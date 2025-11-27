@@ -51,9 +51,7 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
-          <View style={[styles.iconWrapper, { backgroundColor: colors.primary + "10" }]}>
-            <IconClipboardList size={18} color={colors.primary} />
-          </View>
+          <IconClipboardList size={20} color={colors.primary} />
           <ThemedText style={styles.title}>Informações Gerais</ThemedText>
         </View>
         <TaskStatusBadge status={task.status} size="md" />
@@ -160,24 +158,17 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
+  content: {
+    gap: spacing.md,
+  },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
   },
-  iconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   title: {
     fontSize: fontSize.lg,
     fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
   },
   infoItem: {
     flexDirection: "row",

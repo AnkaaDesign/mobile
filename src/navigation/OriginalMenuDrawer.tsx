@@ -26,6 +26,7 @@ import {
   IconStarFilled,
   IconRefresh,
 } from "@tabler/icons-react-native";
+import { selectionHaptic, impactHaptic, lightImpactHaptic } from "@/utils/haptics";
 import { useRouter, usePathname } from "expo-router";
 import { MENU_ITEMS, routes, MenuItem} from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
@@ -73,6 +74,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const [showFavorites, setShowFavorites] = useState(true);
   const [navigatingItemId, setNavigatingItemId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isTogglingTheme, setIsTogglingTheme] = useState(false);
 
   // Animation refs
   const chevronAnimations = useRef(new Map<string, Animated.Value>());
@@ -197,6 +199,9 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
         event.stopPropagation();
       }
 
+      // INSTANT haptic feedback for submenu toggle
+      selectionHaptic();
+
       setExpandedMenus((prev) => {
         const isCurrentlyExpanded = prev[itemId];
         const newExpanded = { ...prev };
@@ -260,6 +265,8 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
 
   // Toggle favorites section
   const toggleShowFavorites = useCallback(() => {
+    // INSTANT haptic feedback
+    selectionHaptic();
     setShowFavorites((prev) => !prev);
   }, []);
 
@@ -371,6 +378,10 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   // Handle main item click
   const handleMainItemClick = useCallback(
     (item: MenuItem) => {
+      // INSTANT haptic feedback - fires immediately on touch
+      impactHaptic();
+
+      // INSTANT visual feedback
       setNavigatingItemId(item.id);
 
       requestAnimationFrame(() => {
@@ -379,7 +390,8 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
           navigateToPath(targetPath);
         }
 
-        setTimeout(() => setNavigatingItemId(null), 800);
+        // Keep loading state until navigation completes
+        setTimeout(() => setNavigatingItemId(null), 1500);
       });
     },
     [navigateToPath],
@@ -464,11 +476,16 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
               delayLongPress={500}
               style={({ pressed }) => ({
                 flex: 1,
-                transform: pressed || isNavigating ? [{ scale: 0.98 }] : [{ scale: 1 }],
-                opacity: isNavigating ? 0.7 : 1,
-                backgroundColor: (pressed || isNavigating) && !isActive
-                  ? (isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)")
-                  : "transparent",
+                // More pronounced scale feedback
+                transform: pressed ? [{ scale: 0.96 }] : isNavigating ? [{ scale: 0.98 }] : [{ scale: 1 }],
+                opacity: pressed ? 0.7 : isNavigating ? 0.85 : 1,
+                // Green-tinted background for better visual feedback
+                backgroundColor: pressed
+                  ? (isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.15)")
+                  : isNavigating && !isActive
+                    ? (isDarkMode ? "rgba(21, 128, 61, 0.1)" : "rgba(21, 128, 61, 0.08)")
+                    : "transparent",
+                borderRadius: 8,
               })}
               accessibilityRole="button"
               accessibilityLabel={item.title}
@@ -477,7 +494,16 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
               <View style={styles.menuItemInner}>
                 <View style={[styles.menuItemContent, { paddingLeft }]}>
                   <View style={styles.menuItemIcon}>
-                    {getIconComponentLocal(item.icon, isActive ? "onPrimary" : isInPath ? "primary" : "navigation")}
+                    {/* Show loading indicator when navigating */}
+                    {isNavigating ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={isActive ? "#fafafa" : "#15803d"}
+                        style={{ width: 20, height: 20 }}
+                      />
+                    ) : (
+                      getIconComponentLocal(item.icon, isActive ? "onPrimary" : isInPath ? "primary" : "navigation")
+                    )}
                   </View>
                   <Text
                     style={[
@@ -492,10 +518,10 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                     numberOfLines={1}
                     ellipsizeMode="tail"
                   >
-                    {item.title || item.id || 'Untitled'}
+                    {isNavigating ? "Carregando..." : (item.title || item.id || 'Untitled')}
                   </Text>
 
-                  {item.isContextual && (
+                  {item.isContextual && !isNavigating && (
                     <View style={styles.contextualBadge}>
                       <Text style={styles.contextualBadgeText}>ATUAL</Text>
                     </View>
@@ -503,10 +529,12 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                 </View>
 
                 {/* Favorite toggle button - only for items with paths */}
-                {item.path && !item.isContextual && (
+                {item.path && !item.isContextual && !isNavigating && (
                   <Pressable
                     onPress={async (e) => {
                       e.stopPropagation();
+                      // Instant haptic feedback for favorite toggle
+                      lightImpactHaptic();
                       await toggleFavorite({
                         path: item.path,
                         title: item.title,
@@ -575,6 +603,8 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
             <View style={{ width: "100%" }}>
               <Pressable
                 onPress={() => {
+                  // INSTANT haptic feedback
+                  selectionHaptic();
                   const newValue = !showUserMenu;
                   setShowUserMenu(newValue);
                   Animated.timing(dropdownAnimation, {
@@ -589,7 +619,8 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                     paddingHorizontal: 8,
                     paddingVertical: 4,
                     width: "100%",
-                    backgroundColor: pressed ? (isDarkMode ? "rgba(46, 46, 46, 0.5)" : "rgba(245, 245, 245, 0.5)") : "transparent",
+                    backgroundColor: pressed ? (isDarkMode ? "rgba(21, 128, 61, 0.15)" : "rgba(21, 128, 61, 0.1)") : "transparent",
+                    transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
                   }
                 ]}
                 accessibilityRole="button"
@@ -675,14 +706,17 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
             ]}>
               <Pressable
                 onPress={() => {
+                  // INSTANT haptic feedback
+                  impactHaptic();
                   closeUserMenu();
                   navigateToPath(routes.personal.myProfile.root);
                 }}
                 style={({ pressed }) => [
                   {
                     backgroundColor: pressed
-                      ? (isDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)")
-                      : "transparent"
+                      ? (isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.15)")
+                      : "transparent",
+                    transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
                   }
                 ]}
               >
@@ -696,14 +730,17 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
 
               <Pressable
                 onPress={() => {
+                  // INSTANT haptic feedback
+                  impactHaptic();
                   closeUserMenu();
                   navigateToPath(routes.personal.preferences.root);
                 }}
                 style={({ pressed }) => [
                   {
                     backgroundColor: pressed
-                      ? (isDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)")
-                      : "transparent"
+                      ? (isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.15)")
+                      : "transparent",
+                    transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
                   }
                 ]}
               >
@@ -717,20 +754,41 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
 
               <Pressable
                 onPress={() => {
-                  setTheme(isDarkMode ? 'light' : 'dark');
+                  if (isTogglingTheme) return;
+
+                  // INSTANT haptic feedback for theme toggle
+                  impactHaptic();
+
+                  // INSTANT visual feedback - show loading BEFORE async operation
+                  setIsTogglingTheme(true);
+
+                  // Use requestAnimationFrame to ensure UI updates first
+                  requestAnimationFrame(() => {
+                    // Fire and forget - don't await
+                    setTheme(isDarkMode ? 'light' : 'dark');
+                    // Reset after theme completes
+                    setTimeout(() => setIsTogglingTheme(false), 500);
+                  });
                 }}
+                disabled={isTogglingTheme}
                 style={({ pressed }) => [
                   {
-                    backgroundColor: pressed
-                      ? (isDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)")
-                      : "transparent"
+                    backgroundColor: pressed || isTogglingTheme
+                      ? (isDarkMode ? "rgba(21, 128, 61, 0.25)" : "rgba(21, 128, 61, 0.2)")
+                      : "transparent",
+                    transform: pressed ? [{ scale: 0.95 }] : isTogglingTheme ? [{ scale: 0.97 }] : [{ scale: 1 }],
+                    opacity: pressed ? 0.8 : isTogglingTheme ? 0.85 : 1,
                   }
                 ]}
               >
                 <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, minHeight: 44 }}>
-                  <Icon name={isDarkMode ? "moon" : "sun"} size={22} variant={isDarkMode ? "muted" : "default"} />
-                  <Text style={{ fontSize: 15, fontWeight: "500", marginLeft: 12, color: isDarkMode ? "#d4d4d4" : "#404040" }}>
-                    {isDarkMode ? "Tema Escuro" : "Tema Claro"}
+                  {isTogglingTheme ? (
+                    <ActivityIndicator size="small" color="#15803d" style={{ width: 22, height: 22 }} />
+                  ) : (
+                    <Icon name={isDarkMode ? "moon" : "sun"} size={22} variant={isDarkMode ? "muted" : "default"} />
+                  )}
+                  <Text style={{ fontSize: 15, fontWeight: "500", marginLeft: 12, color: isTogglingTheme ? "#15803d" : (isDarkMode ? "#d4d4d4" : "#404040") }}>
+                    {isTogglingTheme ? "Alterando..." : (isDarkMode ? "Tema Escuro" : "Tema Claro")}
                   </Text>
                 </View>
               </Pressable>
@@ -866,13 +924,19 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                           ]}
                         >
                           <Pressable
-                            onPress={() => navigateToPath(favorite.path)}
+                            onPress={() => {
+                              // INSTANT haptic feedback
+                              impactHaptic();
+                              navigateToPath(favorite.path);
+                            }}
                             style={({ pressed }) => ({
                               flex: 1,
                               opacity: pressed ? 0.7 : 1,
+                              transform: pressed ? [{ scale: 0.96 }] : [{ scale: 1 }],
                               backgroundColor: pressed && !isFavoriteActive
-                                ? (isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)")
+                                ? (isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.15)")
                                 : "transparent",
+                              borderRadius: 8,
                             })}
                           >
                             <View style={styles.menuItemInner}>

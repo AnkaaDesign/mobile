@@ -5,10 +5,10 @@ import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
-import { IconFilter, IconLayoutGrid, IconList, IconUsers } from "@tabler/icons-react-native";
+import { IconFilter, IconLayoutGrid, IconList } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
-import { useVacationsInfiniteMobile, useCurrentUser, useUsers } from "@/hooks";
+import { useTeamVacationsInfiniteMobile, useCurrentUser } from "@/hooks";
 import { TeamVacationTable } from "@/components/my-team/vacation/team-vacation-table";
 import { TeamVacationCalendar } from "@/components/my-team/vacation/team-vacation-calendar";
 import { TeamVacationFilterDrawerContent } from "@/components/my-team/vacation/team-vacation-filter-drawer-content";
@@ -50,22 +50,7 @@ export default function MyTeamVacationsScreen() {
 
   // Get current user to determine their sector
   const { data: currentUser } = useCurrentUser();
-
-  // Get team members (users in the same sector)
-  const { data: teamData } = useUsers({
-    where: {
-      sectorId: currentUser?.sectorId,
-    },
-    include: {
-      position: true,
-      sector: true,
-    },
-  });
-
-  // Extract team member IDs
-  const teamMemberIds = useMemo(() => {
-    return teamData?.data?.map((user) => user.id) || [];
-  }, [teamData]);
+  const isTeamLeader = !!currentUser?.managedSectorId;
 
   // Sorting
   const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
@@ -86,9 +71,7 @@ export default function MyTeamVacationsScreen() {
 
   // Build API query
   const buildWhereClause = useCallback(() => {
-    const where: any = {
-      userId: { in: teamMemberIds },
-    };
+    const where: any = {};
 
     if (filters.statuses?.length) {
       where.status = { in: filters.statuses };
@@ -113,7 +96,7 @@ export default function MyTeamVacationsScreen() {
     }
 
     return where;
-  }, [filters, teamMemberIds]);
+  }, [filters]);
 
   const queryParams = useMemo(() => ({
     orderBy: buildOrderBy(
@@ -151,35 +134,13 @@ export default function MyTeamVacationsScreen() {
     refresh,
     prefetchNext,
     shouldPrefetch,
-  } = useVacationsInfiniteMobile({
+  } = useTeamVacationsInfiniteMobile({
     ...queryParams,
-    enabled: teamMemberIds.length > 0,
+    enabled: isTeamLeader,
   });
 
   // Type alias for vacations
   const vacations = items;
-
-  // Calculate team coverage metrics
-  const coverageMetrics = useMemo(() => {
-    const now = new Date();
-    const currentlyOnVacation = vacations.filter((v: any) => {
-      const start = new Date(v.startAt);
-      const end = new Date(v.endAt);
-      return now >= start && now <= end;
-    });
-
-    const totalTeam = teamMemberIds.length;
-    const onVacationCount = currentlyOnVacation.length;
-    const availableCount = totalTeam - onVacationCount;
-    const coveragePercentage = totalTeam > 0 ? (availableCount / totalTeam) * 100 : 100;
-
-    return {
-      totalTeam,
-      onVacationCount,
-      availableCount,
-      coveragePercentage,
-    };
-  }, [vacations, teamMemberIds]);
 
   const handleVacationPress = useCallback(
     (vacationId: string) => {
@@ -327,51 +288,6 @@ export default function MyTeamVacationsScreen() {
             onClearAll={handleClearFilters}
           />
 
-          {/* Team Coverage Metrics */}
-          <View style={[styles.metricsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.metricRow}>
-              <View style={styles.metricItem}>
-                <IconUsers size={20} color={colors.foreground} />
-                <ThemedText style={styles.metricLabel}>Total da equipe</ThemedText>
-                <ThemedText style={styles.metricValue}>{coverageMetrics.totalTeam}</ThemedText>
-              </View>
-
-              <View style={[styles.metricDivider, { backgroundColor: colors.border }]} />
-
-              <View style={styles.metricItem}>
-                <ThemedText style={styles.metricLabel}>De férias agora</ThemedText>
-                <ThemedText style={[styles.metricValue, { color: colors.primary }]}>
-                  {coverageMetrics.onVacationCount}
-                </ThemedText>
-              </View>
-
-              <View style={[styles.metricDivider, { backgroundColor: colors.border }]} />
-
-              <View style={styles.metricItem}>
-                <ThemedText style={styles.metricLabel}>Disponíveis</ThemedText>
-                <ThemedText style={[styles.metricValue, { color: colors.success }]}>
-                  {coverageMetrics.availableCount}
-                </ThemedText>
-              </View>
-            </View>
-
-            {/* Coverage bar */}
-            <View style={styles.coverageBarContainer}>
-              <View style={[styles.coverageBarBg, { backgroundColor: colors.muted }]}>
-                <View
-                  style={[
-                    styles.coverageBar,
-                    {
-                      width: `${coverageMetrics.coveragePercentage}%`,
-                      backgroundColor: coverageMetrics.coveragePercentage >= 60 ? colors.success : coverageMetrics.coveragePercentage >= 40 ? "#f59e0b" : colors.destructive,
-                    },
-                  ]}
-                />
-              </View>
-              <ThemedText style={styles.coverageText}>{Math.round(coverageMetrics.coveragePercentage)}% de cobertura</ThemedText>
-            </View>
-          </View>
-
           {/* Content */}
           {viewMode === "list" ? (
             hasVacations ? (
@@ -421,7 +337,6 @@ export default function MyTeamVacationsScreen() {
             onFiltersChange={setFilters}
             onClear={handleClearFilters}
             activeFiltersCount={activeFiltersCount}
-            teamMemberIds={teamMemberIds}
           />
         </SlideInPanel>
 
@@ -461,54 +376,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  metricsCard: {
-    marginHorizontal: 8,
-    marginBottom: 8,
-    padding: spacing.md,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  metricRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    marginBottom: spacing.md,
-  },
-  metricItem: {
-    alignItems: "center",
-    gap: spacing.xs,
-    flex: 1,
-  },
-  metricDivider: {
-    width: 1,
-    height: 40,
-  },
-  metricLabel: {
-    fontSize: 12,
-    opacity: 0.7,
-    textAlign: "center",
-  },
-  metricValue: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  coverageBarContainer: {
-    gap: spacing.xs,
-  },
-  coverageBarBg: {
-    height: 8,
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  coverageBar: {
-    height: "100%",
-    borderRadius: 4,
-  },
-  coverageText: {
-    fontSize: 12,
-    fontWeight: "600",
-    textAlign: "center",
   },
   emptyContainer: {
     flex: 1,

@@ -12,7 +12,6 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { BorrowTableRowSwipe } from "./borrow-table-row-swipe";
 import { getDefaultVisibleColumns } from "./borrow-column-visibility-manager";
 import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
-import { formatDate, formatRelativeTime } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 
@@ -51,22 +50,21 @@ interface BorrowTableProps {
 const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
-// Helper function to format date with relative time
-const formatDateWithRelative = (date: Date | string) => {
-  const dateObj = typeof date === "string" ? new Date(date) : date;
+// Format date as dd/mm/yy and time as hh:mm (two separate values)
+function formatBorrowDate(date: Date | string | null | undefined): { date: string; time: string } {
+  if (!date) return { date: "-", time: "" };
 
-  // If less than 24 hours ago, show relative time
-  const now = new Date();
-  const diffMs = now.getTime() - dateObj.getTime();
-  const diffHours = diffMs / (1000 * 60 * 60);
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (!d || !(d instanceof Date) || isNaN(d.getTime())) return { date: "-", time: "" };
 
-  if (diffHours < 24 && diffHours >= 0) {
-    return formatRelativeTime(dateObj);
-  }
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = String(d.getFullYear()).slice(-2);
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
 
-  // Otherwise show date
-  return formatDate(dateObj);
-};
+  return { date: `${day}/${month}/${year}`, time: `${hours}:${minutes}` };
+}
 
 // Get status color (matches web version)
 const getStatusColor = (status: string) => {
@@ -159,7 +157,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
   },
   {
     key: "quantity",
-    header: "QUANTIDADE",
+    header: "QNT",
     align: "center",
     sortable: true,
     width: 0,
@@ -172,30 +170,28 @@ export const createColumnDefinitions = (): TableColumn[] => [
   {
     key: "status",
     header: "STATUS",
-    align: "center",
+    align: "left",
     sortable: true,
     width: 0,
     accessor: (borrow: Borrow) => (
-      <View style={styles.centerAlign}>
-        <Badge
-          variant="secondary"
-          size="sm"
+      <Badge
+        variant="secondary"
+        size="sm"
+        style={{
+          backgroundColor: getStatusColor(borrow.status),
+          borderWidth: 0,
+        }}
+      >
+        <ThemedText
           style={{
-            backgroundColor: getStatusColor(borrow.status),
-            borderWidth: 0,
+            color: getStatusTextColor(borrow.status),
+            fontSize: fontSize.xs,
+            fontWeight: fontWeight.medium,
           }}
         >
-          <ThemedText
-            style={{
-              color: getStatusTextColor(borrow.status),
-              fontSize: fontSize.xs,
-              fontWeight: fontWeight.medium,
-            }}
-          >
-            {BORROW_STATUS_LABELS[borrow.status]}
-          </ThemedText>
-        </Badge>
-      </View>
+          {BORROW_STATUS_LABELS[borrow.status]}
+        </ThemedText>
+      </Badge>
     ),
   },
   {
@@ -204,11 +200,21 @@ export const createColumnDefinitions = (): TableColumn[] => [
     align: "left",
     sortable: true,
     width: 0,
-    accessor: (borrow: Borrow) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
-        {formatDateWithRelative(borrow.createdAt)}
-      </ThemedText>
-    ),
+    accessor: (borrow: Borrow) => {
+      const { date, time } = formatBorrowDate(borrow.createdAt);
+      return (
+        <View style={styles.dateCell}>
+          <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText])} numberOfLines={1}>
+            {date}
+          </ThemedText>
+          {time && (
+            <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText, styles.timeText])} numberOfLines={1}>
+              {time}
+            </ThemedText>
+          )}
+        </View>
+      );
+    },
   },
   {
     key: "returnedAt",
@@ -216,11 +222,24 @@ export const createColumnDefinitions = (): TableColumn[] => [
     align: "left",
     sortable: true,
     width: 0,
-    accessor: (borrow: Borrow) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
-        {borrow.returnedAt ? formatDateWithRelative(borrow.returnedAt) : "-"}
-      </ThemedText>
-    ),
+    accessor: (borrow: Borrow) => {
+      if (!borrow.returnedAt) {
+        return <ThemedText style={styles.cellText}>-</ThemedText>;
+      }
+      const { date, time } = formatBorrowDate(borrow.returnedAt);
+      return (
+        <View style={styles.dateCell}>
+          <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText])} numberOfLines={1}>
+            {date}
+          </ThemedText>
+          {time && (
+            <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText, styles.timeText])} numberOfLines={1}>
+              {time}
+            </ThemedText>
+          )}
+        </View>
+      );
+    },
   },
   {
     key: "updatedAt",
@@ -228,11 +247,21 @@ export const createColumnDefinitions = (): TableColumn[] => [
     align: "left",
     sortable: true,
     width: 0,
-    accessor: (borrow: Borrow) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
-        {formatDateWithRelative(borrow.updatedAt)}
-      </ThemedText>
-    ),
+    accessor: (borrow: Borrow) => {
+      const { date, time } = formatBorrowDate(borrow.updatedAt);
+      return (
+        <View style={styles.dateCell}>
+          <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText])} numberOfLines={1}>
+            {date}
+          </ThemedText>
+          {time && (
+            <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText, styles.timeText])} numberOfLines={1}>
+              {time}
+            </ThemedText>
+          )}
+        </View>
+      );
+    },
   },
 ];
 
@@ -283,7 +312,7 @@ export const BorrowTable = React.memo<BorrowTableProps>(
         "item.brand.name": 1.2,
         "user.name": 1.5,
         quantity: 1.0,
-        status: 1.0,
+        status: 0.8,
         createdAt: 1.3,
         returnedAt: 1.3,
         updatedAt: 1.3,
@@ -625,8 +654,8 @@ export const BorrowTable = React.memo<BorrowTableProps>(
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
             getItemLayout={(_data, index) => ({
-              length: 60, // Fixed row height
-              offset: 60 * index,
+              length: 48, // Fixed row height (2 rows format)
+              offset: 48 * index,
               index,
             })}
             style={styles.flatList}
@@ -735,13 +764,13 @@ const styles = StyleSheet.create({
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch", // Changed from 'center' to 'stretch' to ensure all cells have same height
-    minHeight: 36,
+    minHeight: 48,
   },
   cell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: 6,
     justifyContent: "center",
-    minHeight: 36,
+    minHeight: 48,
   },
   centerAlign: {
     alignItems: "center",
@@ -759,6 +788,19 @@ const styles = StyleSheet.create({
   numberText: {
     fontWeight: fontWeight.normal,
     fontSize: fontSize.xs,
+  },
+  monoText: {
+    fontFamily: "monospace",
+    fontSize: fontSize.xs,
+  },
+  dateCell: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 2,
+  },
+  timeText: {
+    opacity: 0.7,
+    fontSize: fontSize.xs - 1,
   },
   loadingContainer: {
     flex: 1,

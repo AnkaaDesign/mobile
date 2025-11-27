@@ -1,16 +1,27 @@
 import { View, Text, ScrollView, Pressable, RefreshControl } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
-import { useRouter } from "expo-router";
-import { routes, DASHBOARD_TIME_PERIOD } from "@/constants";
+import { useRouter, Redirect } from "expo-router";
+import { routes, DASHBOARD_TIME_PERIOD, SECTOR_PRIVILEGES } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { useProductionDashboard } from "@/hooks/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback } from "react";
 import { formatCurrency } from "@/utils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function ProducaoScreen() {
+  const { user } = useAuth();
+
+  // Check if user is FINANCIAL or ADMIN - only they see the dashboard
+  const privilege = user?.sector?.privileges;
+  const isFinancialOrAdmin = privilege === SECTOR_PRIVILEGES.FINANCIAL || privilege === SECTOR_PRIVILEGES.ADMIN;
+
+  // Non-admin/financial users go directly to cronograma
+  if (!isFinancialOrAdmin) {
+    return <Redirect href="/producao/cronograma" />;
+  }
   const { colors } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();

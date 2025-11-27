@@ -80,18 +80,14 @@ export const createColumnDefinitions = (): TableColumn[] => [
   },
   {
     key: "usersCount",
-    header: "FUNCIONÁRIOS",
+    header: "COLAB.",
     align: "center",
     sortable: false,
     width: 0,
     accessor: (sector: Sector) => (
-      <View style={styles.centerAlign}>
-        <Badge variant="outline" size="sm">
-          <ThemedText style={{ fontSize: fontSize.xs, fontFamily: 'monospace' }}>
-            {(sector as any)._count?.users || 0}
-          </ThemedText>
-        </Badge>
-      </View>
+      <Badge variant="default" size="sm">
+        {(sector as any)._count?.users || 0}
+      </Badge>
     ),
   },
   {
@@ -101,13 +97,9 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: false,
     width: 0,
     accessor: (sector: Sector) => (
-      <View style={styles.centerAlign}>
-        <Badge variant="outline" size="sm">
-          <ThemedText style={{ fontSize: fontSize.xs, fontFamily: 'monospace' }}>
-            {(sector as any)._count?.tasks || 0}
-          </ThemedText>
-        </Badge>
-      </View>
+      <Badge variant="default" size="sm">
+        {(sector as any)._count?.tasks || 0}
+      </Badge>
     ),
   },
   {
@@ -624,13 +616,14 @@ const styles = StyleSheet.create({
   },
   rowContent: {
     flexDirection: "row",
-    alignItems: "stretch", // Changed from 'center' to 'stretch' to ensure all cells have same height
+    alignItems: "center", // Center items vertically - badges won't stretch
     minHeight: 36,
   },
   cell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: 6,
     justifyContent: "center",
+    alignItems: "flex-start", // Prevent children from stretching horizontally
     minHeight: 36,
   },
   centerAlign: {

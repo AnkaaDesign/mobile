@@ -25,9 +25,9 @@ export function ActivitiesTable({ item, maxHeight = 500 }: ActivitiesTableProps)
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
-  // Use minimal columns for item detail view: operation and quantity
+  // Use columns for item detail view: quantity, user and date
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
-    return ["operation", "quantity", "createdAt"];
+    return ["quantity", "user.name", "createdAt"];
   });
 
   // Search state
@@ -78,7 +78,7 @@ export function ActivitiesTable({ item, maxHeight = 500 }: ActivitiesTableProps)
 
   // Get default visible columns
   const getDefaultVisibleColumns = useCallback(() => {
-    return ["operation", "quantity", "createdAt"];
+    return ["quantity", "user.name", "createdAt"];
   }, []);
 
   // Handle opening column panel

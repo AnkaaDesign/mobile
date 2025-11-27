@@ -28,9 +28,9 @@ export function OrdersTable({ item, maxHeight = 500 }: OrdersTableProps) {
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
-  // Use minimal columns for item detail view: description and status
+  // Use columns for item detail view: description and status
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
-    return ["description", "status", "forecast"];
+    return ["description", "status"];
   });
 
   // Search state
@@ -86,7 +86,7 @@ export function OrdersTable({ item, maxHeight = 500 }: OrdersTableProps) {
 
   // Get default visible columns
   const getDefaultVisibleColumns = useCallback(() => {
-    return ["description", "status", "forecast"];
+    return ["description", "status"];
   }, []);
 
   // Handle opening column panel

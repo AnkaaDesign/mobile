@@ -75,28 +75,30 @@ export const activitiesListConfig: ListConfig<Activity> = {
       },
       {
         key: 'quantity',
-        label: 'QUANTIDADE',
+        label: 'QNT',
         sortable: true,
-        width: 1.2,
+        width: 0.8,
         align: 'center',
         render: (activity) => {
           const quantity = activity.quantity || 0
           const formattedQuantity = quantity.toLocaleString('pt-BR')
           const isInbound = activity.operation === ACTIVITY_OPERATION.INBOUND
 
-          const IconComponent = isInbound ? IconArrowDown : IconArrowUp
+          const IconComponent = isInbound ? IconArrowUp : IconArrowDown
 
           return (
-            <Badge
-              variant={isInbound ? 'success' : 'destructive'}
-              size="sm"
-              style={{ alignSelf: 'center' }}
-            >
-              <View style={styles.quantityContent}>
-                <IconComponent size={12} color="#ffffff" />
-                <ThemedText style={styles.badgeText}>{formattedQuantity}</ThemedText>
-              </View>
-            </Badge>
+            <View style={{ width: '100%' }}>
+              <Badge
+                variant={isInbound ? 'success' : 'destructive'}
+                size="sm"
+                style={{ alignSelf: 'stretch', justifyContent: 'center' }}
+              >
+                <View style={styles.quantityContent}>
+                  <IconComponent size={12} color="#ffffff" />
+                  <ThemedText style={styles.badgeText}>{formattedQuantity}</ThemedText>
+                </View>
+              </Badge>
+            </View>
           )
         },
       },

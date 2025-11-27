@@ -47,7 +47,7 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
         width: 0.8,
         align: 'center',
         render: (paintType) => String((paintType as any)._count?.paints || 0),
-        format: 'badge',
+        format: 'count-badge',
       },
       {
         key: 'componentItemsCount',
@@ -56,7 +56,7 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
         width: 1.0,
         align: 'center',
         render: (paintType) => String((paintType as any)._count?.componentItems || 0),
-        format: 'badge',
+        format: 'count-badge',
       },
       {
         key: 'createdAt',

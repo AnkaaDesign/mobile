@@ -24,7 +24,8 @@ import { Filters } from '@/components/list/Filters'
 import { BulkActions } from '@/components/list/BulkActions'
 import { ColumnVisibilityButton, ColumnVisibilityPanel } from '@/components/list/ColumnVisibility'
 import { Header as TableHeader, Row as TableRow, Empty, Loading } from '@/components/list/Table'
-import type { ListConfig, TableColumn, SortConfig, FilterValue } from '@/components/list/types'
+import { SectorSelectModal, TaskDuplicateModal } from '@/components/production/task/modals'
+import type { ListConfig, TableColumn, SortConfig, FilterValue, TableAction } from '@/components/list/types'
 import type { Task, Sector } from '@/types'
 
 interface TaskScheduleLayoutProps {
@@ -81,10 +82,17 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   // Other sectors visibility state (for LEADER and PRODUCTION users)
   const [showOtherSectors, setShowOtherSectors] = useState(false)
 
+  // Modal state for admin actions
+  const [sectorModalTask, setSectorModalTask] = useState<Task | null>(null)
+  const [duplicateModalTask, setDuplicateModalTask] = useState<Task | null>(null)
+
   // Check if user is LEADER or PRODUCTION (should see filtered view by default)
-  const isLeaderOrProduction = user?.sector?.privileges === SECTOR_PRIVILEGES.LEADER ||
-    user?.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION
-  const userSectorId = user?.sector?.id
+  const isLeader = user?.sector?.privileges === SECTOR_PRIVILEGES.LEADER
+  const isProduction = user?.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION
+  const isLeaderOrProduction = isLeader || isProduction
+  // For LEADER: show tasks from the sector they manage (managedSectorId)
+  // For PRODUCTION: show tasks from their own sector (sector.id)
+  const userSectorId = isLeader ? user?.managedSectorId : user?.sector?.id
 
   // ============================================================================
   // Data Fetching
@@ -377,11 +385,32 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     ? config.actions.create.canCreate(user)
     : true
 
-  // Filter table actions based on user permissions (canPerform check)
+  // Filter table actions based on user permissions and add modal handlers
   const filteredTableActions = useMemo(() => {
-    return (config.table.actions || []).filter(
+    const actions = (config.table.actions || []).filter(
       (action) => !action.canPerform || action.canPerform(user)
     )
+
+    // Wrap modal actions with custom handlers
+    return actions.map((action): TableAction<Task> => {
+      if (action.key === 'change-sector') {
+        return {
+          ...action,
+          onPress: (task: Task) => {
+            setSectorModalTask(task)
+          },
+        }
+      }
+      if (action.key === 'duplicate') {
+        return {
+          ...action,
+          onPress: (task: Task) => {
+            setDuplicateModalTask(task)
+          },
+        }
+      }
+      return action
+    })
   }, [config.table.actions, user])
 
   // ============================================================================
@@ -612,6 +641,28 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
           onClose={() => setFiltersOpen(false)}
         />
       )}
+
+      {/* Sector Select Modal */}
+      <SectorSelectModal
+        visible={!!sectorModalTask}
+        onClose={() => setSectorModalTask(null)}
+        task={sectorModalTask}
+        onSuccess={() => {
+          setSectorModalTask(null)
+          handleRefresh()
+        }}
+      />
+
+      {/* Task Duplicate Modal */}
+      <TaskDuplicateModal
+        visible={!!duplicateModalTask}
+        onClose={() => setDuplicateModalTask(null)}
+        task={duplicateModalTask}
+        onSuccess={() => {
+          setDuplicateModalTask(null)
+          handleRefresh()
+        }}
+      />
     </ThemedView>
   )
 })

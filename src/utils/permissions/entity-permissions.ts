@@ -76,9 +76,9 @@ export function canBatchOperateTasks(user: User | null): boolean {
 }
 
 /**
- * Check if LEADER can manage a specific task (sector-based validation)
- * LEADER can manage tasks in their own sector OR tasks without a sector
- * When starting a task without sector, it will be assigned to leader's sector
+ * Check if LEADER can manage a specific task (start/finish) (sector-based validation)
+ * LEADER can manage tasks in their MANAGED sector OR tasks without a sector
+ * When starting a task without sector, it will be assigned to leader's managed sector
  * ADMIN can manage any task
  */
 export function canLeaderManageTask(user: User | null, taskSectorId: string | null | undefined): boolean {
@@ -87,15 +87,112 @@ export function canLeaderManageTask(user: User | null, taskSectorId: string | nu
   // ADMIN can manage any task
   if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
 
-  // LEADER can manage tasks in their sector OR tasks without a sector
+  // LEADER can manage tasks in their MANAGED sector OR tasks without a sector
   if (user.sector?.privileges === SECTOR_PRIVILEGES.LEADER) {
-    // Task has no sector - leader can manage it (will assign to their sector on start)
+    // Task has no sector - leader can manage it (will assign to their managed sector on start)
     if (!taskSectorId) return true;
-    // Task sector matches leader's sector
-    return user.sector?.id === taskSectorId;
+    // Task sector matches leader's MANAGED sector (not their own sector)
+    return user.managedSectorId === taskSectorId;
   }
 
   return false;
+}
+
+/**
+ * Check if LEADER can update service orders for a specific task
+ * LEADER can ONLY update service orders for tasks in their MANAGED sector
+ * Tasks with null sector are NOT allowed (unlike task start/finish)
+ * ADMIN can update any service order
+ */
+export function canLeaderUpdateServiceOrder(user: User | null, taskSectorId: string | null | undefined): boolean {
+  if (!user) return false;
+
+  // ADMIN can update any service order
+  if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
+
+  // LEADER can ONLY update service orders for tasks in their MANAGED sector
+  // NOT for tasks with null sector
+  if (user.sector?.privileges === SECTOR_PRIVILEGES.LEADER) {
+    if (!taskSectorId) return false; // Cannot update service orders for tasks without sector
+    return user.managedSectorId === taskSectorId;
+  }
+
+  return false;
+}
+
+/**
+ * Check if user is a LEADER
+ */
+export function isLeader(user: User | null): boolean {
+  if (!user) return false;
+  return user.sector?.privileges === SECTOR_PRIVILEGES.LEADER;
+}
+
+// =====================
+// LAYOUT PERMISSIONS
+// =====================
+
+/**
+ * Can user edit truck layouts?
+ * LEADER and LOGISTIC can edit truck layouts only (not other task fields)
+ * ADMIN can edit everything including layouts
+ */
+export function canEditLayouts(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.LEADER,
+    SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
+}
+
+/**
+ * Can user view truck layouts?
+ * LEADER, LOGISTIC and ADMIN can view truck layouts
+ */
+export function canViewLayouts(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.LEADER,
+    SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
+}
+
+/**
+ * Can user edit ONLY layouts (not other task fields)?
+ * This is for LEADER and LOGISTIC who can only edit layouts
+ * ADMIN has full edit access, so they should use the regular edit page
+ */
+export function canEditLayoutsOnly(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.LEADER,
+    SECTOR_PRIVILEGES.LOGISTIC,
+  ]);
+}
+
+/**
+ * Can user edit layout for a specific task?
+ * LEADER/LOGISTIC can only edit layouts for tasks in their MANAGED sector or tasks with null sector
+ * Uses managedSectorId (the sector they manage), NOT their own sectorId
+ * ADMIN can edit layouts for any task
+ */
+export function canEditLayoutForTask(user: User | null, taskSectorId: string | null | undefined): boolean {
+  if (!user) return false;
+
+  // ADMIN can edit any task's layout
+  if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
+
+  // Check if user has layout editing privilege (LEADER or LOGISTIC)
+  if (!canEditLayoutsOnly(user)) return false;
+
+  // Task has no sector - anyone with layout privilege can edit
+  if (!taskSectorId) return true;
+
+  // Check if task is in user's MANAGED sector (not their own sector)
+  // managedSectorId is the sector they supervise/manage
+  return user.managedSectorId === taskSectorId;
 }
 
 // =====================
@@ -159,6 +256,28 @@ export function canRequestCut(user: User | null): boolean {
     SECTOR_PRIVILEGES.LEADER,
     SECTOR_PRIVILEGES.ADMIN,
   ]);
+}
+
+/**
+ * Can user request a cut for a specific task?
+ * LEADER can only request cuts for tasks in their MANAGED sector
+ * Tasks with null sector are NOT allowed for cut requests
+ * ADMIN can request cuts for any task
+ */
+export function canRequestCutForTask(user: User | null, taskSectorId: string | null | undefined): boolean {
+  if (!user) return false;
+
+  // ADMIN can request cuts for any task
+  if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
+
+  // LEADER can only request cuts for tasks in their MANAGED sector
+  // NOT for tasks with null sector
+  if (user.sector?.privileges === SECTOR_PRIVILEGES.LEADER) {
+    if (!taskSectorId) return false; // Cannot request cuts for tasks without sector
+    return user.managedSectorId === taskSectorId;
+  }
+
+  return false;
 }
 
 // =====================

@@ -1,16 +1,16 @@
-import { View } from "react-native";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Icon } from "@/components/ui/icon";
-import { Text } from "@/components/ui/text";
+import { View, StyleSheet } from "react-native";
+import { Card } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
+import { useTheme } from "@/lib/theme";
+import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { IconFileText, IconCertificate } from "@tabler/icons-react-native";
 import type { Supplier } from "@/types";
 import type { File as AnkaaFile } from "@/types";
-import { cn } from "@/lib/utils";
-import { maskCNPJ } from "@/utils";
+import { formatCNPJ } from "@/utils";
 import { FileItem } from "@/components/file";
 
 interface DocumentsCardProps {
   supplier: Supplier;
-  className?: string;
   // Extended supplier type that includes document fields (for future use)
   contracts?: AnkaaFile[];
   certificates?: AnkaaFile[];
@@ -19,112 +19,222 @@ interface DocumentsCardProps {
 
 export function DocumentsCard({
   supplier,
-  className,
   contracts = [],
   certificates = [],
-  otherDocuments = []
+  otherDocuments = [],
 }: DocumentsCardProps) {
+  const { colors } = useTheme();
+
   const allDocuments = [...contracts, ...certificates, ...otherDocuments];
   const hasDocuments = supplier.cnpj || allDocuments.length > 0;
 
   return (
-    <Card className={cn("shadow-sm border border-border flex flex-col", className)} level={1}>
-      <CardHeader className="pb-6">
-        <CardTitle className="flex items-center gap-3 text-xl">
-          <View className="p-2 rounded-lg bg-primary/10">
-            <Icon name="file-text" size={20} className="text-primary" />
-          </View>
-          <Text className="text-xl font-semibold">Documentos</Text>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0 flex-1">
-        <View className="space-y-6">
-          {hasDocuments ? (
-            <>
-              {/* CNPJ Information */}
-              {supplier.cnpj && (
-                <View>
-                  <Text className="text-base font-semibold mb-4 text-foreground">Documentação Legal</Text>
-                  <View className="space-y-4">
-                    <View className="flex flex-row justify-between items-center bg-muted/50 rounded-lg px-4 py-3">
-                      <View className="flex flex-row items-center gap-2">
-                        <Icon name="building" size={16} />
-                        <Text className="text-sm font-medium text-muted-foreground">CNPJ</Text>
-                      </View>
-                      <Text className="text-sm font-semibold text-foreground">{maskCNPJ(supplier.cnpj)}</Text>
-                    </View>
-                  </View>
-                </View>
-              )}
-
-              {/* Contracts Section */}
-              {contracts.length > 0 && (
-                <View>
-                  <View className="flex flex-row items-center gap-2 mb-4">
-                    <Icon name="file-type-pdf" size={20} className="text-red-500" />
-                    <Text className="text-base font-semibold text-foreground">Contratos</Text>
-                  </View>
-                  <View className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {contracts.map((file) => (
-                      <FileItem
-                        key={file.id}
-                        file={file}
-                        viewMode="list"
-                      />
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Certificates Section */}
-              {certificates.length > 0 && (
-                <View>
-                  <View className="flex flex-row items-center gap-2 mb-4">
-                    <Icon name="certificate" size={20} className="text-blue-500" />
-                    <Text className="text-base font-semibold text-foreground">Certificados</Text>
-                  </View>
-                  <View className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {certificates.map((file) => (
-                      <FileItem
-                        key={file.id}
-                        file={file}
-                        viewMode="list"
-                      />
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Other Documents Section */}
-              {otherDocuments.length > 0 && (
-                <View>
-                  <View className="flex flex-row items-center gap-2 mb-4">
-                    <Icon name="file-text" size={20} className="text-muted-foreground" />
-                    <Text className="text-base font-semibold text-foreground">Outros Documentos</Text>
-                  </View>
-                  <View className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {otherDocuments.map((file) => (
-                      <FileItem
-                        key={file.id}
-                        file={file}
-                        viewMode="list"
-                      />
-                    ))}
-                  </View>
-                </View>
-              )}
-            </>
-          ) : (
-            <View className="text-center py-8">
-              <View className="p-4 bg-muted/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Icon name="file-text" size={32} className="text-muted-foreground" />
-              </View>
-              <Text className="text-lg font-semibold mb-2 text-foreground">Nenhum documento cadastrado</Text>
-              <Text className="text-sm text-muted-foreground">Este fornecedor não possui documentos cadastrados.</Text>
-            </View>
-          )}
+    <Card style={styles.card}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconFileText size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Documentos</ThemedText>
         </View>
-      </CardContent>
+      </View>
+      <View style={styles.content}>
+        {hasDocuments ? (
+          <View style={styles.documentsContainer}>
+            {/* CNPJ Information */}
+            {supplier.cnpj && (
+              <View style={styles.section}>
+                <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
+                  Documentação Legal
+                </ThemedText>
+                <View style={styles.fieldsContainer}>
+                  <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                    <View style={styles.fieldLabelWithIcon}>
+                      <IconCertificate size={16} color={colors.mutedForeground} />
+                      <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                        CNPJ
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                      {formatCNPJ(supplier.cnpj)}
+                    </ThemedText>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Contracts Section */}
+            {contracts.length > 0 && (
+              <View style={[styles.section, supplier.cnpj ? styles.sectionWithBorder : null, supplier.cnpj ? { borderTopColor: colors.border + "50" } : null]}>
+                <View style={styles.sectionHeaderRow}>
+                  <IconFileText size={20} color="#ef4444" />
+                  <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
+                    Contratos
+                  </ThemedText>
+                </View>
+                <View style={styles.filesContainer}>
+                  {contracts.map((file) => (
+                    <FileItem
+                      key={file.id}
+                      file={file}
+                      viewMode="list"
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Certificates Section */}
+            {certificates.length > 0 && (
+              <View style={[styles.section, (supplier.cnpj || contracts.length > 0) ? styles.sectionWithBorder : null, (supplier.cnpj || contracts.length > 0) ? { borderTopColor: colors.border + "50" } : null]}>
+                <View style={styles.sectionHeaderRow}>
+                  <IconCertificate size={20} color="#3b82f6" />
+                  <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
+                    Certificados
+                  </ThemedText>
+                </View>
+                <View style={styles.filesContainer}>
+                  {certificates.map((file) => (
+                    <FileItem
+                      key={file.id}
+                      file={file}
+                      viewMode="list"
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Other Documents Section */}
+            {otherDocuments.length > 0 && (
+              <View style={[styles.section, (supplier.cnpj || contracts.length > 0 || certificates.length > 0) ? styles.sectionWithBorder : null, (supplier.cnpj || contracts.length > 0 || certificates.length > 0) ? { borderTopColor: colors.border + "50" } : null]}>
+                <View style={styles.sectionHeaderRow}>
+                  <IconFileText size={20} color={colors.mutedForeground} />
+                  <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
+                    Outros Documentos
+                  </ThemedText>
+                </View>
+                <View style={styles.filesContainer}>
+                  {otherDocuments.map((file) => (
+                    <FileItem
+                      key={file.id}
+                      file={file}
+                      viewMode="list"
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
+          </View>
+        ) : (
+          /* Empty State */
+          <View style={styles.emptyState}>
+            <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted + "30" }])}>
+              <IconFileText size={32} color={colors.mutedForeground} />
+            </View>
+            <ThemedText style={StyleSheet.flatten([styles.emptyTitle, { color: colors.foreground }])}>
+              Nenhum documento cadastrado
+            </ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.emptyDescription, { color: colors.mutedForeground }])}>
+              Este fornecedor não possui documentos cadastrados.
+            </ThemedText>
+          </View>
+        )}
+      </View>
     </Card>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+  documentsContainer: {
+    gap: spacing.xl,
+  },
+  section: {
+    gap: spacing.lg,
+  },
+  sectionWithBorder: {
+    paddingTop: spacing.xl,
+    borderTopWidth: 1,
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  subsectionHeader: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+  },
+  fieldsContainer: {
+    gap: spacing.md,
+  },
+  fieldRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+  },
+  fieldLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  fieldLabelWithIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  fieldValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    flex: 1,
+    textAlign: "right",
+  },
+  filesContainer: {
+    gap: spacing.sm,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: spacing.xxl,
+    gap: spacing.md,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  emptyTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+  },
+  emptyDescription: {
+    fontSize: fontSize.sm,
+    textAlign: "center",
+    paddingHorizontal: spacing.xl,
+  },
+});

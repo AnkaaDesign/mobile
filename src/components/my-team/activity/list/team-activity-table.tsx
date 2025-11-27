@@ -8,9 +8,9 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TeamActivityTableRowSwipe } from "./team-activity-table-row-swipe";
-import { formatDateTime } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from "@/constants";
+import { ACTIVITY_OPERATION, ACTIVITY_REASON_LABELS } from "@/constants";
+import { IconArrowUp, IconArrowDown } from "@tabler/icons-react-native";
 
 export interface TableColumn {
   key: string;
@@ -56,6 +56,17 @@ const formatQuantity = (quantity: number, operation: string) => {
   return `${sign}${absValue.toFixed(2)}`;
 };
 
+// Format date as DD/MM/YY and time as HH:MM
+const formatDateTwoLines = (date: Date) => {
+  const d = new Date(date);
+  const day = d.getDate().toString().padStart(2, '0');
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const year = d.getFullYear().toString().slice(-2);
+  const hours = d.getHours().toString().padStart(2, '0');
+  const minutes = d.getMinutes().toString().padStart(2, '0');
+  return { date: `${day}/${month}/${year}`, time: `${hours}:${minutes}` };
+};
+
 // Define all available columns with their renderers
 export const createColumnDefinitions = (): TableColumn[] => [
   {
@@ -77,15 +88,17 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (activity: Activity) => (
-      <ThemedText style={[styles.cellText, styles.boldText]} numberOfLines={2}>
-        {activity.item?.name || "-"}
-      </ThemedText>
+      <View style={styles.itemNameContainer}>
+        <ThemedText style={[styles.cellText, styles.boldText]} numberOfLines={2}>
+          {activity.item?.name || "-"}
+        </ThemedText>
+      </View>
     ),
   },
   {
-    key: "operation",
-    header: "Operação",
-    align: "left",
+    key: "quantity",
+    header: "Qtd",
+    align: "center",
     sortable: true,
     width: 0,
     accessor: (activity: Activity) => {
@@ -97,43 +110,26 @@ export const createColumnDefinitions = (): TableColumn[] => [
           style={{
             backgroundColor: isInbound ? badgeColors.success.background : badgeColors.destructive.background,
             borderWidth: 0,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 2,
           }}
         >
+          {isInbound ? (
+            <IconArrowUp size={12} color={badgeColors.success.text} />
+          ) : (
+            <IconArrowDown size={12} color={badgeColors.destructive.text} />
+          )}
           <ThemedText
             style={{
               color: isInbound ? badgeColors.success.text : badgeColors.destructive.text,
               fontSize: fontSize.xs,
-              fontWeight: fontWeight.medium,
+              fontWeight: fontWeight.bold,
             }}
           >
-            {isInbound ? "↑ " : "↓ "}
-            {ACTIVITY_OPERATION_LABELS[activity.operation] || "-"}
+            {formatQuantity(activity.quantity, activity.operation)}
           </ThemedText>
         </Badge>
-      );
-    },
-  },
-  {
-    key: "quantity",
-    header: "Quantidade",
-    align: "left",
-    sortable: true,
-    width: 0,
-    accessor: (activity: Activity) => {
-      const isInbound = activity.operation === ACTIVITY_OPERATION.INBOUND;
-      return (
-        <ThemedText
-          style={[
-            styles.cellText,
-            styles.boldText,
-            {
-              color: isInbound ? "#15803d" : "#b91c1c", // green-700 / red-700
-            },
-          ]}
-          numberOfLines={1}
-        >
-          {formatQuantity(activity.quantity, activity.operation)}
-        </ThemedText>
       );
     },
   },
@@ -144,9 +140,11 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (activity: Activity) => (
-      <ThemedText style={styles.cellText} numberOfLines={1}>
-        {activity.user?.name || "Sistema"}
-      </ThemedText>
+      <View style={styles.userNameContainer}>
+        <ThemedText style={[styles.cellText, styles.boldText]} numberOfLines={2}>
+          {activity.user?.name || "Sistema"}
+        </ThemedText>
+      </View>
     ),
   },
   {
@@ -169,11 +167,18 @@ export const createColumnDefinitions = (): TableColumn[] => [
     align: "left",
     sortable: true,
     width: 0,
-    accessor: (activity: Activity) => (
-      <ThemedText style={styles.cellText} numberOfLines={1}>
-        {activity.createdAt ? formatDateTime(new Date(activity.createdAt)) : "-"}
-      </ThemedText>
-    ),
+    accessor: (activity: Activity) => {
+      if (!activity.createdAt) {
+        return <ThemedText style={styles.cellText}>-</ThemedText>;
+      }
+      const { date, time } = formatDateTwoLines(new Date(activity.createdAt));
+      return (
+        <View style={styles.dateContainer}>
+          <ThemedText style={[styles.cellText, styles.boldText]}>{date}</ThemedText>
+          <ThemedText style={[styles.cellText, styles.timeText]}>{time}</ThemedText>
+        </View>
+      );
+    },
   },
 ];
 
@@ -203,15 +208,14 @@ export const TeamActivityTable = React.memo<TeamActivityTableProps>(
 
     // Build visible columns with dynamic widths
     const displayColumns = useMemo(() => {
-      // Define width ratios for each column type
+      // Define width ratios for each column type - updated for new design
       const columnWidthRatios: Record<string, number> = {
-        itemCode: 1.2,
+        itemCode: 1.0,
         itemName: 2.5,
-        operation: 1.5,
-        quantity: 1.2,
-        userName: 1.8,
-        reason: 2.0,
-        createdAt: 1.8,
+        quantity: 1.3,
+        userName: 2.0,
+        reason: 1.8,
+        createdAt: 1.2,
       };
 
       // Filter to visible columns
@@ -609,6 +613,22 @@ const styles = StyleSheet.create({
   },
   boldText: {
     fontWeight: fontWeight.medium,
+  },
+  itemNameContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  userNameContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  dateContainer: {
+    flexDirection: 'column',
+    gap: 2,
+  },
+  timeText: {
+    opacity: 0.7,
+    fontSize: fontSize.xs - 1,
   },
   loadingContainer: {
     flex: 1,

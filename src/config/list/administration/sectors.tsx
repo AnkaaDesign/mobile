@@ -41,7 +41,7 @@ export const sectorsListConfig: ListConfig<Sector> = {
         label: 'PRIVILÉGIOS',
         sortable: true,
         width: 2.0,
-        align: 'center',
+        align: 'left',
         render: (sector) => {
           if (!sector.privileges) return '-'
           const variant = getBadgeVariant(sector.privileges, 'SECTOR_PRIVILEGES')
@@ -50,7 +50,6 @@ export const sectorsListConfig: ListConfig<Sector> = {
             <Badge
               variant={variant}
               size="sm"
-              style={{ flex: 1, justifyContent: 'center' }}
             >
               {label}
             </Badge>
@@ -63,18 +62,8 @@ export const sectorsListConfig: ListConfig<Sector> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (sector) => {
-          const count = (sector as any)._count?.users || 0
-          return (
-            <Badge
-              variant="muted"
-              size="sm"
-              style={{ alignSelf: 'center', minWidth: 40, justifyContent: 'center' }}
-            >
-              {String(count)}
-            </Badge>
-          )
-        },
+        render: (sector) => String((sector as any)._count?.users || 0),
+        format: 'count-badge',
       },
       {
         key: 'tasksCount',
@@ -82,18 +71,8 @@ export const sectorsListConfig: ListConfig<Sector> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (sector) => {
-          const count = (sector as any)._count?.tasks || 0
-          return (
-            <Badge
-              variant="muted"
-              size="sm"
-              style={{ alignSelf: 'center', minWidth: 40, justifyContent: 'center' }}
-            >
-              {String(count)}
-            </Badge>
-          )
-        },
+        render: (sector) => String((sector as any)._count?.tasks || 0),
+        format: 'count-badge',
       },
       {
         key: 'createdAt',

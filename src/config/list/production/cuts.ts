@@ -76,12 +76,22 @@ export const cutsListConfig: ListConfig<Cut> = {
   table: {
     columns: [
       {
+        key: 'filePreview',
+        label: 'ARQUIVO',
+        sortable: false,
+        width: 1.0,
+        align: 'center',
+        render: (cut) => cut.file, // Return the file object for file-thumbnail component
+        component: 'file-thumbnail',
+        // onCellPress will be set dynamically in the listar page
+      },
+      {
         key: 'fileName',
-        label: 'NOME DO ARQUIVO',
+        label: 'NOME',
         sortable: false,
         width: 2.0,
         align: 'left',
-        render: (cut) => cut.file?.filename || cut.file?.fileName || cut.file?.key || '-',
+        render: (cut) => cut.file?.filename || '-',
       },
       {
         key: 'task',
@@ -161,7 +171,7 @@ export const cutsListConfig: ListConfig<Cut> = {
         render: (cut) => cut.task?.sector?.name || 'Indefinido',
       },
     ],
-    defaultVisible: ['fileName', 'status'],
+    defaultVisible: ['filePreview', 'fileName', 'status'],
     rowHeight: 72,
     actions: [
       {

@@ -38,7 +38,7 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
         width: 0.8,
         align: 'center',
         render: (brand) => String((brand as any)._count?.items || 0),
-        format: 'badge',
+        format: 'count-badge',
       },
       {
         key: 'createdAt',

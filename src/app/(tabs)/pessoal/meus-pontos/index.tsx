@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { IconChevronLeft, IconChevronRight, IconList } from "@tabler/icons-react-native";
+import { IconChevronLeft, IconChevronRight, IconList, IconFingerprint } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
@@ -204,11 +204,41 @@ export default function MeusPontosScreen() {
     setVisibleColumns(newColumns);
   }, []);
 
+  // Check if user is not registered in Secullum (from hook response)
+  const apiResponse = calculationsData?.data || calculationsData;
+  const isNotRegisteredFromResponse = apiResponse?.notRegistered === true;
+
   // Handle API errors
-  if (error) {
-    const errorMessage = (error as any)?.response?.data?.message
-      || (error as any)?.message
-      || 'Erro ao carregar seus pontos';
+  if (error || isNotRegisteredFromResponse) {
+    const errorMessage = isNotRegisteredFromResponse
+      ? (apiResponse?.message || '')
+      : ((error as any)?.response?.data?.message || (error as any)?.message || 'Erro ao carregar seus pontos');
+
+    // Check if user is not registered in Secullum
+    const isNotRegistered = isNotRegisteredFromResponse
+      || errorMessage.toLowerCase().includes('secullum employee id')
+      || errorMessage.toLowerCase().includes('secullum account')
+      || errorMessage.toLowerCase().includes('não possui cadastro');
+
+    if (isNotRegistered) {
+      return (
+        <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: "flex-start", alignItems: "center", paddingHorizontal: 8, paddingTop: "30%" }}>
+          <View style={{ width: "100%", backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 12, paddingVertical: 32, paddingHorizontal: 24, alignItems: "center" }}>
+            <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: colors.muted, alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+              <IconFingerprint size={48} color={colors.mutedForeground} />
+            </View>
+            <ThemedText style={styles.notRegisteredTitle}>
+              Ponto Eletrônico não disponível
+            </ThemedText>
+            <ThemedText style={[styles.notRegisteredDescription, { color: colors.mutedForeground }]}>
+              Você ainda não está cadastrado no sistema de Ponto Eletrônico (Secullum).
+              {"\n\n"}
+              Entre em contato com o RH para vincular seu cadastro.
+            </ThemedText>
+          </View>
+        </View>
+      );
+    }
 
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -292,6 +322,40 @@ export default function MeusPontosScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  notRegisteredWrapper: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 8,
+  },
+  notRegisteredCard: {
+    width: "100%",
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notRegisteredIconContainer: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  notRegisteredTitle: {
+    fontSize: 17,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  notRegisteredDescription: {
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 22,
   },
   headerContainer: {
     flexDirection: "row",

@@ -28,7 +28,7 @@ export const teamVacationsListConfig: ListConfig<Vacation> = {
   title: 'Férias da Equipe',
 
   query: {
-    hook: 'useVacationsInfiniteMobile',
+    hook: 'useTeamVacationsInfiniteMobile',
     defaultSort: { field: 'startAt', direction: 'desc' },
     pageSize: 25,
     include: {

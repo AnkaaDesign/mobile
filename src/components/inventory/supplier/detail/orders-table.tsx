@@ -162,6 +162,7 @@ export function OrdersTable({ supplier, maxHeight = 500 }: OrdersTableProps) {
                 visibleColumnKeys={visibleColumnKeys}
                 onEndReached={() => canLoadMore && loadMore()}
                 onEndReachedThreshold={0.5}
+                disableVirtualization={true}
                 ListFooterComponent={
                   isFetchingNextPage ? (
                     <View style={styles.footerLoader}>

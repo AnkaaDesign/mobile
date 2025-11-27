@@ -130,7 +130,7 @@ export function FormulaComponentsTable({
     totalCount,
   } = usePaintFormulaComponentsInfiniteMobile({
     where: {
-      paintFormulaId: formula.id,
+      formulaPaintId: formula.id,
     },
     include: {
       item: {

@@ -12,7 +12,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { OrderTableRowSwipe } from "./order-table-row-swipe";
 import { OrderStatusBadge } from "./order-status-badge";
 import { formatCurrency, formatDate } from "@/utils";
-import { extendedColors } from "@/lib/theme/extended-colors";
+import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
 // Import default visible columns function
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
@@ -52,6 +52,22 @@ interface OrderTableProps {
 const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
+// Format date as dd/mm/yy and time as hh:mm (two separate values)
+function formatOrderDate(date: Date | string | null | undefined): { date: string; time: string } {
+  if (!date) return { date: "-", time: "" };
+
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (!d || !(d instanceof Date) || isNaN(d.getTime())) return { date: "-", time: "" };
+
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = String(d.getFullYear()).slice(-2);
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+
+  return { date: `${day}/${month}/${year}`, time: `${hours}:${minutes}` };
+}
+
 // Define all available columns with their renderers
 export const createColumnDefinitions = (): TableColumn[] => [
   {
@@ -61,7 +77,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (order: Order) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={1} ellipsizeMode="tail">
+      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={2} ellipsizeMode="tail">
         {order.description || "Sem descrição"}
       </ThemedText>
     ),
@@ -81,13 +97,11 @@ export const createColumnDefinitions = (): TableColumn[] => [
   {
     key: "status",
     header: "STATUS",
-    align: "center",
+    align: "left",
     sortable: true,
     width: 0,
     accessor: (order: Order) => (
-      <View style={styles.centerAlign}>
-        <OrderStatusBadge status={order.status} size="sm" />
-      </View>
+      <OrderStatusBadge status={order.status} size="sm" />
     ),
   },
   {
@@ -96,15 +110,31 @@ export const createColumnDefinitions = (): TableColumn[] => [
     align: "center",
     sortable: true,
     width: 0,
-    accessor: (order: Order) => (
-      <View style={styles.centerAlign}>
-        <Badge variant="outline" size="sm">
-          <ThemedText style={{ fontSize: fontSize.xs, fontFamily: 'monospace' }}>
-            {order._count?.items ?? order.items?.length ?? 0}
-          </ThemedText>
-        </Badge>
-      </View>
-    ),
+    accessor: (order: Order) => {
+      const count = order._count?.items ?? order.items?.length ?? 0;
+      return (
+        <View style={styles.centerAlign}>
+          <Badge
+            variant="secondary"
+            size="sm"
+            style={{
+              backgroundColor: badgeColors.muted.background,
+              borderWidth: 0,
+            }}
+          >
+            <ThemedText
+              style={{
+                color: badgeColors.muted.text,
+                fontSize: fontSize.xs,
+                fontWeight: fontWeight.medium,
+              }}
+            >
+              {count}
+            </ThemedText>
+          </Badge>
+        </View>
+      );
+    },
   },
   {
     key: "totalPrice",
@@ -147,11 +177,21 @@ export const createColumnDefinitions = (): TableColumn[] => [
     align: "left",
     sortable: true,
     width: 0,
-    accessor: (order: Order) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
-        {formatDate(order.createdAt)}
-      </ThemedText>
-    ),
+    accessor: (order: Order) => {
+      const { date, time } = formatOrderDate(order.createdAt);
+      return (
+        <View style={styles.dateCell}>
+          <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText])} numberOfLines={1}>
+            {date}
+          </ThemedText>
+          {time && (
+            <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText, styles.timeText])} numberOfLines={1}>
+              {time}
+            </ThemedText>
+          )}
+        </View>
+      );
+    },
   },
   {
     key: "updatedAt",
@@ -159,11 +199,21 @@ export const createColumnDefinitions = (): TableColumn[] => [
     align: "left",
     sortable: true,
     width: 0,
-    accessor: (order: Order) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, { fontSize: fontSize.sm }])} numberOfLines={1}>
-        {formatDate(order.updatedAt)}
-      </ThemedText>
-    ),
+    accessor: (order: Order) => {
+      const { date, time } = formatOrderDate(order.updatedAt);
+      return (
+        <View style={styles.dateCell}>
+          <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText])} numberOfLines={1}>
+            {date}
+          </ThemedText>
+          {time && (
+            <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText, styles.timeText])} numberOfLines={1}>
+              {time}
+            </ThemedText>
+          )}
+        </View>
+      );
+    },
   },
 ];
 
@@ -207,7 +257,7 @@ export const OrderTable = React.memo<OrderTableProps>(
     const displayColumns = useMemo(() => {
       // Define width ratios for each column type
       const columnWidthRatios: Record<string, number> = {
-        description: 2.5,
+        description: 1.5,
         "supplier.fantasyName": 2.0,
         status: 1.0,
         itemsCount: 0.8,
@@ -337,13 +387,26 @@ export const OrderTable = React.memo<OrderTableProps>(
                 return (
                   <TouchableOpacity
                     key={column.key}
-                    style={StyleSheet.flatten([styles.headerCell, { width: column.width }])}
+                    style={StyleSheet.flatten([
+                      styles.headerCell,
+                      { width: column.width },
+                      column.align === "center" && styles.centerAlign,
+                      column.align === "right" && styles.rightAlign,
+                    ])}
                     onPress={() => column.sortable && handleSort(column.key)}
                     disabled={!column.sortable}
                     activeOpacity={column.sortable ? 0.7 : 1}
                   >
-                    <View style={styles.headerCellContent}>
-                      <View style={styles.headerTextContainer}>
+                    <View style={[
+                      styles.headerCellContent,
+                      column.align === "center" && { justifyContent: "center" },
+                      column.align === "right" && { justifyContent: "flex-end" },
+                    ]}>
+                      <View style={[
+                        styles.headerTextContainer,
+                        column.align === "center" && { flex: 0 },
+                        column.align === "right" && { flex: 0 },
+                      ]}>
                         <ThemedText
                           style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])}
                           numberOfLines={1}
@@ -542,8 +605,8 @@ export const OrderTable = React.memo<OrderTableProps>(
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
             getItemLayout={(_data, index) => ({
-              length: 60, // Fixed row height
-              offset: 60 * index,
+              length: 48, // Fixed row height (2 rows format)
+              offset: 48 * index,
               index,
             })}
             style={styles.flatList}
@@ -652,13 +715,13 @@ const styles = StyleSheet.create({
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch", // Changed from 'center' to 'stretch' to ensure all cells have same height
-    minHeight: 36,
+    minHeight: 48,
   },
   cell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: 6,
     justifyContent: "center",
-    minHeight: 36,
+    minHeight: 48,
   },
   centerAlign: {
     alignItems: "center",
@@ -676,6 +739,19 @@ const styles = StyleSheet.create({
   numberText: {
     fontWeight: fontWeight.normal,
     fontSize: fontSize.xs,
+  },
+  monoText: {
+    fontFamily: "monospace",
+    fontSize: fontSize.xs,
+  },
+  dateCell: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 2,
+  },
+  timeText: {
+    opacity: 0.7,
+    fontSize: fontSize.xs - 1,
   },
   loadingContainer: {
     flex: 1,

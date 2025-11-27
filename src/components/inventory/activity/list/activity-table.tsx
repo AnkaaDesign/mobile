@@ -48,20 +48,20 @@ interface ActivityTableProps {
 const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
-// Format date as hh:mm - dd/mm/yy (matching web version)
-function formatActivityDate(date: Date | string | null | undefined): string {
-  if (!date) return "-";
+// Format date as dd/mm/yy and time as hh:mm (two separate values)
+function formatActivityDate(date: Date | string | null | undefined): { date: string; time: string } {
+  if (!date) return { date: "-", time: "" };
 
   const d = typeof date === "string" ? new Date(date) : date;
-  if (!d || !(d instanceof Date) || isNaN(d.getTime())) return "-";
+  if (!d || !(d instanceof Date) || isNaN(d.getTime())) return { date: "-", time: "" };
 
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const year = String(d.getFullYear()).slice(-2);
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
 
-  return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  return { date: `${day}/${month}/${year}`, time: `${hours}:${minutes}` };
 }
 
 // Format quantity with 2 decimals only if needed
@@ -140,27 +140,43 @@ export const createColumnDefinitions = (): TableColumn[] => [
   },
   {
     key: "quantity",
-    header: "QUANTIDADE",
-    align: "right",
+    header: "QNT",
+    align: "left",
     sortable: true,
     width: 0,
     accessor: (activity: Activity) => (
-      <ThemedText
-        style={StyleSheet.flatten([
-          styles.cellText,
-          styles.quantityText,
-          {
-            color:
-              activity.operation === ACTIVITY_OPERATION.INBOUND
-                ? badgeColors.success.text
-                : badgeColors.error.text,
-          },
-        ])}
-        numberOfLines={1}
-      >
-        {activity.operation === ACTIVITY_OPERATION.INBOUND ? "+" : "-"}
-        {formatQuantity(Math.abs(activity.quantity))}
-      </ThemedText>
+      <View style={styles.quantityBadge}>
+        <View
+          style={[
+            styles.quantityBadgeInner,
+            {
+              backgroundColor:
+                activity.operation === ACTIVITY_OPERATION.INBOUND
+                  ? badgeColors.success.background
+                  : badgeColors.error.background,
+            },
+          ]}
+        >
+          {activity.operation === ACTIVITY_OPERATION.INBOUND ? (
+            <IconArrowUp size={14} color={badgeColors.success.text} />
+          ) : (
+            <IconArrowDown size={14} color={badgeColors.error.text} />
+          )}
+          <ThemedText
+            style={{
+              color:
+                activity.operation === ACTIVITY_OPERATION.INBOUND
+                  ? badgeColors.success.text
+                  : badgeColors.error.text,
+              fontSize: fontSize.xs,
+              fontWeight: fontWeight.bold,
+            }}
+            numberOfLines={1}
+          >
+            {formatQuantity(Math.abs(activity.quantity))}
+          </ThemedText>
+        </View>
+      </View>
     ),
   },
   {
@@ -187,12 +203,12 @@ export const createColumnDefinitions = (): TableColumn[] => [
   },
   {
     key: "user.name",
-    header: "USUÁRIO",
+    header: "COLABORADOR",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (activity: Activity) => (
-      <ThemedText style={styles.cellText} numberOfLines={1} ellipsizeMode="tail">
+      <ThemedText style={styles.cellText} numberOfLines={2} ellipsizeMode="tail">
         {activity.user?.name || "-"}
       </ThemedText>
     ),
@@ -211,15 +227,25 @@ export const createColumnDefinitions = (): TableColumn[] => [
   },
   {
     key: "createdAt",
-    header: "DATA/HORA",
+    header: "DATA",
     align: "left",
     sortable: true,
     width: 0,
-    accessor: (activity: Activity) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText])} numberOfLines={1}>
-        {formatActivityDate(activity.createdAt)}
-      </ThemedText>
-    ),
+    accessor: (activity: Activity) => {
+      const { date, time } = formatActivityDate(activity.createdAt);
+      return (
+        <View style={styles.dateCell}>
+          <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText])} numberOfLines={1}>
+            {date}
+          </ThemedText>
+          {time && (
+            <ThemedText style={StyleSheet.flatten([styles.cellText, styles.monoText, styles.timeText])} numberOfLines={1}>
+              {time}
+            </ThemedText>
+          )}
+        </View>
+      );
+    },
   },
 ];
 
@@ -263,9 +289,9 @@ export const ActivityTable = React.memo<ActivityTableProps>(
         operation: 1.2,
         "item.uniCode": 1.0,
         "item.name": 1.8,
-        quantity: 1.0,
+        quantity: 0.7,
         reason: 1.5,
-        "user.name": 1.1,
+        "user.name": 1.4,
         "order.id": 1.0,
         createdAt: 1.5,
       };
@@ -599,8 +625,8 @@ export const ActivityTable = React.memo<ActivityTableProps>(
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
             getItemLayout={(_data, index) => ({
-              length: 60, // Fixed row height
-              offset: 60 * index,
+              length: 48, // Fixed row height (2 rows format)
+              offset: 48 * index,
               index,
             })}
             style={styles.flatList}
@@ -709,13 +735,13 @@ const styles = StyleSheet.create({
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch",
-    minHeight: 36,
+    minHeight: 48,
   },
   cell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: 6,
     justifyContent: "center",
-    minHeight: 36,
+    minHeight: 48,
   },
   centerAlign: {
     alignItems: "center",
@@ -737,6 +763,26 @@ const styles = StyleSheet.create({
   quantityText: {
     fontWeight: fontWeight.bold,
     fontSize: fontSize.xs,
+  },
+  quantityBadge: {
+    alignItems: "flex-start",
+  },
+  quantityBadgeInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  dateCell: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 2,
+  },
+  timeText: {
+    opacity: 0.7,
+    fontSize: fontSize.xs - 1,
   },
   loadingContainer: {
     flex: 1,

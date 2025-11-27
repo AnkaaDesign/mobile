@@ -13,25 +13,25 @@ import type { Borrow } from '@/types'
 
 /**
  * My Team Borrows List Page
- * Shows all borrows for users in the current user's sector
+ * Shows all borrows for users in the team leader's managed sector
  */
 export default function MyTeamBorrowsScreen() {
   const { colors } = useTheme()
   const { data: currentUser, isLoading: isLoadingUser } = useCurrentUser()
 
-  // Build where clause to filter by team members (same sector)
+  // Build where clause to filter by team members in the managed sector
   const buildWhereClause = useCallback(
     (baseWhere: any) => {
-      if (!currentUser?.sectorId) return baseWhere
+      if (!currentUser?.managedSectorId) return baseWhere
 
       return {
         ...baseWhere,
         user: {
-          sectorId: currentUser.sectorId,
+          sectorId: currentUser.managedSectorId,
         },
       }
     },
-    [currentUser?.sectorId]
+    [currentUser?.managedSectorId]
   )
 
   // Customize config with dynamic where clause
@@ -40,7 +40,6 @@ export default function MyTeamBorrowsScreen() {
       ...myTeamBorrowsListConfig,
       query: {
         ...myTeamBorrowsListConfig.query,
-        // Add team member filter to all queries
         whereTransform: buildWhereClause,
       },
     }
@@ -59,14 +58,14 @@ export default function MyTeamBorrowsScreen() {
     )
   }
 
-  // Show error if user has no sector
-  if (!currentUser?.sectorId) {
+  // Show error if user doesn't manage a sector
+  if (!currentUser?.managedSectorId) {
     return (
       <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
         <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
           <View style={styles.errorContainer}>
             <ThemedText style={[styles.errorText, { color: colors.mutedForeground }]}>
-              Você precisa estar associado a um setor para visualizar os empréstimos da equipe.
+              Você precisa gerenciar um setor para visualizar os empréstimos da equipe.
             </ThemedText>
           </View>
         </ThemedView>

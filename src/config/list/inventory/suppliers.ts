@@ -1,9 +1,7 @@
-import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { Supplier } from '@/types'
 import { canEditSuppliers } from '@/utils/permissions/entity-permissions'
 import { formatBrazilianPhone, formatCNPJ } from '@/utils'
-import { Badge } from '@/components/ui/badge'
 
 export const suppliersListConfig: ListConfig<Supplier> = {
   key: 'inventory-suppliers',
@@ -121,18 +119,8 @@ export const suppliersListConfig: ListConfig<Supplier> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (supplier) => {
-          const count = (supplier as any)._count?.items || 0
-          return (
-            <Badge
-              variant="muted"
-              size="sm"
-              style={{ alignSelf: 'center', minWidth: 40, justifyContent: 'center' }}
-            >
-              {String(count)}
-            </Badge>
-          )
-        },
+        render: (supplier) => String((supplier as any)._count?.items || 0),
+        format: 'count-badge',
       },
       {
         key: 'createdAt',

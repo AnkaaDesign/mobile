@@ -81,6 +81,8 @@ export type BadgeVariant =
   | "orange"
   | "green"
   | "teal"
+  | "yellow"
+  | "amber"
   | "indigo"
   | "pink";
 
@@ -106,7 +108,7 @@ export const BADGE_COLORS: Record<
     text: "#171717", // neutral-900
   },
   muted: {
-    bg: "#6b7280", // gray-500
+    bg: "#a3a3a3", // neutral-400 (matches web)
     text: "#ffffff",
   },
   outline: {
@@ -195,7 +197,15 @@ export const BADGE_COLORS: Record<
     text: "#ffffff",
   },
   teal: {
-    bg: "#0d9488", // teal-600
+    bg: "#14b8a6", // teal-500 (matches web)
+    text: "#ffffff",
+  },
+  yellow: {
+    bg: "#eab308", // yellow-500 (matches web)
+    text: "#ffffff",
+  },
+  amber: {
+    bg: "#f59e0b", // amber-500 (matches web)
     text: "#ffffff",
   },
   indigo: {
@@ -216,10 +226,10 @@ export const ENTITY_BADGE_CONFIG = {
   // Order Status
   ORDER: {
     [ORDER_STATUS.CREATED]: "primary" as BadgeVariant,
-    [ORDER_STATUS.PARTIALLY_FULFILLED]: "warning" as BadgeVariant,
-    [ORDER_STATUS.FULFILLED]: "pending" as BadgeVariant, // Yellow - Feito (matches web)
-    [ORDER_STATUS.OVERDUE]: "warning" as BadgeVariant,
-    [ORDER_STATUS.PARTIALLY_RECEIVED]: "warning" as BadgeVariant,
+    [ORDER_STATUS.PARTIALLY_FULFILLED]: "yellow" as BadgeVariant, // Yellow-500 for partially fulfilled
+    [ORDER_STATUS.FULFILLED]: "amber" as BadgeVariant, // Amber-500 for fulfilled orders
+    [ORDER_STATUS.OVERDUE]: "purple" as BadgeVariant, // Purple-600 for overdue orders
+    [ORDER_STATUS.PARTIALLY_RECEIVED]: "teal" as BadgeVariant, // Teal-500 for partial receipt
     [ORDER_STATUS.RECEIVED]: "success" as BadgeVariant,
     [ORDER_STATUS.CANCELLED]: "cancelled" as BadgeVariant,
   },
@@ -509,19 +519,19 @@ export const ENTITY_BADGE_CONFIG = {
     [VERIFICATION_ERROR_SEVERITY.CRITICAL]: "destructive" as BadgeVariant,
   },
 
-  // Sector Privileges - Each privilege has a unique color
+  // Sector Privileges - matches web sector-table.tsx getPrivilegeColor
   SECTOR_PRIVILEGES: {
-    [SECTOR_PRIVILEGES.ADMIN]: "destructive" as BadgeVariant, // Red - highest privilege
-    [SECTOR_PRIVILEGES.LEADER]: "warning" as BadgeVariant, // Orange/Yellow - leadership role
+    [SECTOR_PRIVILEGES.ADMIN]: "destructive" as BadgeVariant,      // Red - highest privilege
+    [SECTOR_PRIVILEGES.LEADER]: "warning" as BadgeVariant,         // Orange/Yellow - leadership role
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "purple" as BadgeVariant, // Purple - HR specific
-    [SECTOR_PRIVILEGES.PRODUCTION]: "blue" as BadgeVariant, // Blue - production role
-    [SECTOR_PRIVILEGES.MAINTENANCE]: "orange" as BadgeVariant, // Dark Orange - maintenance role
-    [SECTOR_PRIVILEGES.WAREHOUSE]: "green" as BadgeVariant, // Green - warehouse role
-    [SECTOR_PRIVILEGES.FINANCIAL]: "teal" as BadgeVariant, // Teal - financial role
-    [SECTOR_PRIVILEGES.LOGISTIC]: "indigo" as BadgeVariant, // Indigo - logistics role
-    [SECTOR_PRIVILEGES.DESIGNER]: "pink" as BadgeVariant, // Pink - designer role
-    [SECTOR_PRIVILEGES.EXTERNAL]: "secondary" as BadgeVariant, // Light Gray - external access
-    [SECTOR_PRIVILEGES.BASIC]: "default" as BadgeVariant, // Gray - basic access
+    [SECTOR_PRIVILEGES.PRODUCTION]: "blue" as BadgeVariant,        // Blue - production role
+    [SECTOR_PRIVILEGES.MAINTENANCE]: "orange" as BadgeVariant,     // Dark Orange - maintenance role
+    [SECTOR_PRIVILEGES.WAREHOUSE]: "green" as BadgeVariant,        // Green - warehouse role
+    [SECTOR_PRIVILEGES.FINANCIAL]: "teal" as BadgeVariant,         // Teal - financial role
+    [SECTOR_PRIVILEGES.LOGISTIC]: "indigo" as BadgeVariant,        // Indigo - logistics role
+    [SECTOR_PRIVILEGES.DESIGNER]: "pink" as BadgeVariant,          // Pink - designer role
+    [SECTOR_PRIVILEGES.EXTERNAL]: "secondary" as BadgeVariant,     // Light Gray - external access
+    [SECTOR_PRIVILEGES.BASIC]: "default" as BadgeVariant,          // Gray - basic access
   },
 
   // Commission Status
@@ -554,11 +564,10 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   VERIFIED: "success",
   RETURNED: "completed",
   LOST: "destructive",
-  OVERDUE: "warning",
+  OVERDUE: "purple", // Purple-600 for overdue
   CREATED: "primary",
-  FULFILLED: "pending", // Yellow - Feito (matches web)
+  FULFILLED: "amber", // Amber-500 for fulfilled orders
   RECEIVED: "success",
-  MAINTENANCE: "warning",
   SENT: "info",
   ON_HOLD: "onHold",
   SUSPENDED: "warning",
@@ -618,8 +627,8 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   FINAL_WARNING: "destructive",
   PENDING_JUSTIFICATION: "pending",
   JUSTIFICATION_SUBMITTED: "info",
-  PARTIALLY_FULFILLED: "warning",
-  PARTIALLY_RECEIVED: "warning",
+  PARTIALLY_FULFILLED: "yellow", // Yellow-500 for partially fulfilled orders
+  PARTIALLY_RECEIVED: "teal", // Teal-500 for partially received orders
   PARTIALLY_RETURNED: "warning",
   FULLY_RETURNED: "success",
 
@@ -688,20 +697,15 @@ export const XYZ_BADGE_COLORS: Record<
  * For fields like type, isActive, etc.
  */
 export const BOOLEAN_BADGE_CONFIG = {
-  type: {
-    RETURNABLE: "success" as BadgeVariant, // Green - will return items
-    CHARGEABLE: "destructive" as BadgeVariant, // Red - chargeable items
-    COMPLIMENTARY: "secondary" as BadgeVariant, // Gray - complimentary items
+  willReturn: {
+    true: "success" as BadgeVariant, // Green - will return items (positive)
+    false: "destructive" as BadgeVariant, // Red - won't return items (negative)
   },
   isActive: {
     true: "active" as BadgeVariant,
     false: "inactive" as BadgeVariant,
   },
   isUrgent: {
-    true: "destructive" as BadgeVariant,
-    false: "default" as BadgeVariant,
-  },
-  isCritical: {
     true: "destructive" as BadgeVariant,
     false: "default" as BadgeVariant,
   },
@@ -722,7 +726,7 @@ export const BOOLEAN_BADGE_CONFIG = {
     false: "pending" as BadgeVariant,
   },
   isOverdue: {
-    true: "warning" as BadgeVariant,
+    true: "purple" as BadgeVariant, // Purple-600 for overdue
     false: "default" as BadgeVariant,
   },
 };

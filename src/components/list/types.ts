@@ -35,6 +35,7 @@ export type CellFormat =
   | 'boolean'
   | 'status'
   | 'badge'
+  | 'count-badge'
 
 export interface TableColumn<T = any> {
   key: string
@@ -44,13 +45,17 @@ export interface TableColumn<T = any> {
   align?: 'left' | 'center' | 'right'
   render: (item: T) => any // Can return primitive or ReactNode
   format?: CellFormat // Auto-format the rendered value
-  component?: string // Special component to use (e.g., 'quantity-with-status')
+  component?: string // Special component to use (e.g., 'file-thumbnail')
   style?: TextStyle // Additional text styles
+  badgeEntity?: string // Entity type for badge color resolution (e.g., 'ORDER', 'TASK', 'USER')
+  /** Custom press handler for cell - when provided, prevents default row press */
+  onCellPress?: (item: T) => void
 }
 
 export interface TableAction<T = any> {
   key: string
-  label: string
+  /** Label can be a string or a function that receives the item and returns a string */
+  label: string | ((item: T) => string)
   icon?: string
   variant?: 'default' | 'destructive' | 'secondary'
   route?: string | ((item: T) => string)
@@ -58,8 +63,9 @@ export interface TableAction<T = any> {
     title: string
     message: string | ((item: T) => string)
   }
-  onPress?: (item: T, router?: any, mutations?: any) => void | Promise<void>
-  visible?: (item: T) => boolean
+  onPress?: (item: T, router?: any, context?: { mutations?: any; user?: any }) => void | Promise<void>
+  /** Item-level visibility check - receives item and optionally user */
+  visible?: (item: T, user?: any) => boolean
   /** Permission check - if provided, action will only be shown if this returns true */
   canPerform?: (user: any) => boolean
 }
@@ -123,6 +129,8 @@ export interface FilterField {
   min?: number
   max?: number
   step?: number
+  /** Permission check - if provided, filter will only be shown if this returns true */
+  canView?: (user: any) => boolean
 }
 
 export interface FiltersProps {
@@ -252,6 +260,8 @@ export interface ListConfig<T extends { id: string }> {
     sortOptions?: Array<{ field: string; label: string }> // Available sort options
     include?: any // Prisma include object
     where?: any // Base Prisma where clause (will be merged with filters)
+    /** Forced API params that will be merged with user filters (e.g., sectorIds, statuses) */
+    forcedParams?: Record<string, any>
   }
 
   // Table
@@ -267,6 +277,8 @@ export interface ListConfig<T extends { id: string }> {
   // Filters
   filters?: {
     fields: FilterField[]
+    /** Default filter values that will be applied on initial load */
+    defaultValues?: FilterValue
   }
 
   // Search

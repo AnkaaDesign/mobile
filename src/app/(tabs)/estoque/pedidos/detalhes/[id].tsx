@@ -1,103 +1,109 @@
-import { useState } from "react";
-import { View, ScrollView, Alert, RefreshControl , StyleSheet} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { IconArrowLeft, IconEdit, IconTrash, IconRefresh, IconCheck, IconX } from "@tabler/icons-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useState, useCallback, useMemo } from "react";
+import { View, ScrollView, Alert, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
+import {
+  IconEdit,
+  IconTrash,
+  IconHistory,
+  IconPackage,
+} from "@tabler/icons-react-native";
 import { useOrder, useOrderMutations } from "@/hooks";
-import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
-import { ErrorScreen } from "@/components/ui/error-screen";
+import { Card } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { OrderInfoCard } from "@/components/inventory/order/detail/order-info-card";
-import { OrderItemsCard } from "@/components/inventory/order/detail/order-items-card";
-import { OrderSupplierCard } from "@/components/inventory/order/detail/order-supplier-card";
-import { OrderTimelineCard } from "@/components/inventory/order/detail/order-timeline-card";
-import { OrderSummaryCard } from "@/components/inventory/order/detail/order-summary-card";
+import { OrderItemsTable } from "@/components/inventory/order/detail/order-items-table";
 import { OrderDocumentsCard } from "@/components/inventory/order/detail/order-documents-card";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { routes, ORDER_STATUS, SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { routeToMobilePath } from "@/utils/route-mapper";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from "@/utils";
-import { spacing } from "@/constants/design-system";
+import { hasPrivilege, formatCurrency } from "@/utils";
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { showToast } from "@/components/ui/toast";
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   // Check permissions
-  const canEdit = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
+  const canManageWarehouse = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
   const canDelete = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.ADMIN);
-  const canMarkAsReceived = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
-  const canCancel = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
 
-  // Fetch order data with all necessary includes
+  // Fetch order data with all necessary includes (matching web version)
   const { data: response, isLoading, error, refetch } = useOrder(id!, {
     include: {
-      supplier: true,
       items: {
         include: {
           item: {
             include: {
               brand: true,
-              category: true,
+              measures: true,
             },
           },
         },
-        orderBy: { createdAt: "asc" },
       },
-      orderSchedule: true,
-      createdBy: { select: { id: true, name: true, email: true } },
-      activities: {
+      supplier: {
         include: {
-          user: { select: { name: true } },
+          logo: true,
         },
-        orderBy: { createdAt: "desc" },
-        take: 10,
       },
-      // File relations for documents
       budgets: true,
       invoices: true,
       receipts: true,
       reimbursements: true,
       invoiceReimbursements: true,
-      _count: { select: { items: true } },
     },
+    enabled: !!id && id !== "",
   });
 
-  const { update: updateOrder, delete: deleteOrder } = useOrderMutations();
+  const { delete: deleteOrder } = useOrderMutations();
 
   const order = response?.data;
 
-  const handleRefresh = async () => {
+  // Calculate order total with taxes
+  const orderTotal = useMemo(() => {
+    if (!order?.items) return 0;
+    return order.items.reduce((total, item) => {
+      const subtotal = item.orderedQuantity * item.price;
+      const icmsAmount = subtotal * (item.icms / 100);
+      const ipiAmount = subtotal * (item.ipi / 100);
+      return total + subtotal + icmsAmount + ipiAmount;
+    }, 0);
+  }, [order?.items]);
+
+  // Check if order can be edited
+  const canEdit = useMemo(() => {
+    return (
+      canManageWarehouse &&
+      order &&
+      ![ORDER_STATUS.RECEIVED, ORDER_STATUS.CANCELLED].includes(order.status)
+    );
+  }, [canManageWarehouse, order]);
+
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await refetch();
+      showToast({ message: "Pedido atualizado", type: "success" });
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [refetch]);
 
-  const handleGoBack = () => {
-    router.back();
-  };
-
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     if (!canEdit) {
       Alert.alert("Sem permissão", "Você não tem permissão para editar pedidos");
       return;
     }
     router.push(routeToMobilePath(routes.inventory.orders.edit(id!)) as any);
-  };
+  }, [canEdit, id]);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (!canDelete) {
       Alert.alert("Sem permissão", "Você não tem permissão para excluir pedidos");
       return;
@@ -105,7 +111,7 @@ export default function OrderDetailScreen() {
 
     Alert.alert(
       "Confirmar Exclusão",
-      "Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.",
+      `Tem certeza que deseja excluir este pedido?\n\nFornecedor: ${order?.supplier?.fantasyName || "Não especificado"}\nValor Total: ${formatCurrency(orderTotal)}`,
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -115,254 +121,223 @@ export default function OrderDetailScreen() {
             try {
               await deleteOrder(id!);
               router.replace(routeToMobilePath(routes.inventory.orders.list) as any);
+              showToast({ message: "Pedido excluído com sucesso", type: "success" });
             } catch (error) {
               Alert.alert("Erro", "Não foi possível excluir o pedido");
             }
           },
         },
-      ],
+      ]
     );
-  };
-
-  const handleMarkAsReceived = async () => {
-    if (!canMarkAsReceived) {
-      Alert.alert("Sem permissão", "Você não tem permissão para marcar pedidos como recebidos");
-      return;
-    }
-
-    Alert.alert(
-      "Confirmar Recebimento",
-      "Confirma que todos os itens do pedido foram recebidos?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Confirmar",
-          onPress: async () => {
-            try {
-              await updateOrder({
-                id: id!,
-                data: { status: ORDER_STATUS.RECEIVED },
-              });
-              await refetch();
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível atualizar o status do pedido");
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  const handleCancel = async () => {
-    if (!canCancel) {
-      Alert.alert("Sem permissão", "Você não tem permissão para cancelar pedidos");
-      return;
-    }
-
-    Alert.alert(
-      "Confirmar Cancelamento",
-      "Tem certeza que deseja cancelar este pedido?",
-      [
-        { text: "Não", style: "cancel" },
-        {
-          text: "Sim, Cancelar",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await updateOrder({
-                id: id!,
-                data: { status: ORDER_STATUS.CANCELLED },
-              });
-              await refetch();
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível cancelar o pedido");
-            }
-          },
-        },
-      ],
-    );
-  };
+  }, [canDelete, order, orderTotal, deleteOrder, id]);
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return <LoadingScreen message="Carregando pedido..." />;
   }
 
-  if (error || !order) {
+  if (error || !order || !id || id === "") {
     return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen
-          message="Erro ao carregar pedido"
-          detail={error?.message || "Pedido não encontrado"}
-          onRetry={handleRefresh}
-        />
-      </ThemedView>
+      <View style={[styles.scrollView, { backgroundColor: colors.background }]}>
+        <View style={styles.container}>
+          <Card style={styles.card}>
+            <View style={styles.errorContent}>
+              <View style={[styles.errorIcon, { backgroundColor: colors.muted }]}>
+                <IconPackage size={32} color={colors.mutedForeground} />
+              </View>
+              <ThemedText style={[styles.errorTitle, { color: colors.foreground }]}>
+                Pedido não encontrado
+              </ThemedText>
+              <ThemedText style={[styles.errorDescription, { color: colors.mutedForeground }]}>
+                O pedido solicitado não foi encontrado ou pode ter sido removido.
+              </ThemedText>
+              <Button onPress={() => router.back()}>
+                <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
+              </Button>
+            </View>
+          </Card>
+        </View>
+      </View>
     );
   }
 
-  // Determine available actions based on status
-  const showMarkAsReceived =
-    order?.status === ORDER_STATUS.FULFILLED && canMarkAsReceived;
-  const showCancel =
-    order?.status !== ORDER_STATUS.RECEIVED &&
-    order?.status !== ORDER_STATUS.CANCELLED &&
-    canCancel;
-
   return (
-    <ThemedView style={StyleSheet.flatten([styles.container, { paddingTop: insets.top }])}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <Button
-            variant="default"
-            size="icon"
-            onPress={handleGoBack}
-          >
-            <IconArrowLeft size={24} color={colors.foreground} />
-          </Button>
-          <ThemedText style={styles.headerTitle}>Pedido #{order?.id?.slice(-8).toUpperCase()}</ThemedText>
-        </View>
-        <View style={styles.headerRight}>
-          <Button
-            variant="default"
-            size="icon"
-            onPress={handleRefresh}><IconRefresh size={24} color={colors.foreground} /></Button>
-          {canEdit && (
-            <Button
-              variant="default"
-              size="icon"
-              onPress={handleEdit}><IconEdit size={24} color={colors.foreground} /></Button>
-          )}
-          {canDelete && (
-            <Button
-              variant="default"
-              size="icon"
-              onPress={handleDelete}><IconTrash size={24} color={colors.destructive} /></Button>
-          )}
-        </View>
-      </View>
-
-      {/* Content */}
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-          />
-        }
-      >
-        <View style={styles.cardsContainer}>
-          {/* Order Info */}
-          <OrderInfoCard order={order} />
-
-          {/* Supplier Info */}
-          {order?.supplier && <OrderSupplierCard supplier={order.supplier} />}
-
-          {/* Financial Summary */}
-          <OrderSummaryCard order={order} />
-
-          {/* Order Items */}
-          <OrderItemsCard items={order?.items || []} />
-
-          {/* Documents */}
-          <OrderDocumentsCard order={order} />
-
-          {/* Timeline */}
-          <OrderTimelineCard order={order} activities={order?.activities || []} />
-
-          {/* Changelog */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Alterações</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChangelogTimeline
-                entityType={CHANGE_LOG_ENTITY_TYPE.ORDER}
-                entityId={order.id}
-                entityName={order.description}
-                entityCreatedAt={order.createdAt}
-                maxHeight={400}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Action Buttons */}
-          {(showMarkAsReceived || showCancel) && (
-            <View style={styles.actionsCard}>
-              {showMarkAsReceived && (
-                <Button
-                  variant="default"
-                  onPress={handleMarkAsReceived}
-                  style={styles.actionButton}
+    <ScrollView
+      style={[styles.scrollView, { backgroundColor: colors.background }]}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.container}>
+        {/* Header Card with Order Title and Actions */}
+        <Card style={styles.headerCard}>
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <IconPackage size={24} color={colors.primary} />
+              <View style={styles.headerTitleContainer}>
+                <ThemedText style={[styles.orderTitle, { color: colors.foreground }]} numberOfLines={1}>
+                  {order.description || `Pedido #${order.id.slice(-8).toUpperCase()}`}
+                </ThemedText>
+                {order.supplier && (
+                  <ThemedText style={[styles.supplierName, { color: colors.mutedForeground }]}>
+                    {order.supplier.fantasyName}
+                  </ThemedText>
+                )}
+              </View>
+            </View>
+            <View style={styles.headerActions}>
+              {canEdit && (
+                <TouchableOpacity
+                  onPress={handleEdit}
+                  style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                  activeOpacity={0.7}
                 >
-                  <IconCheck size={20} color="#fff" />
-                  <ThemedText style={{ color: "#fff" }}>Marcar como Recebido</ThemedText>
-                </Button>
+                  <IconEdit size={18} color={colors.primaryForeground} />
+                </TouchableOpacity>
               )}
-              {showCancel && (
-                <Button
-                  variant="destructive"
-                  onPress={handleCancel}
-                  style={styles.actionButton}
+              {canDelete && (
+                <TouchableOpacity
+                  onPress={handleDelete}
+                  style={[styles.actionButton, { backgroundColor: colors.destructive }]}
+                  activeOpacity={0.7}
                 >
-                  <IconX size={20} color="#fff" />
-                  <ThemedText style={{ color: "#fff" }}>Cancelar Pedido</ThemedText>
-                </Button>
+                  <IconTrash size={18} color="#fff" />
+                </TouchableOpacity>
               )}
             </View>
-          )}
-        </View>
-      </ScrollView>
-    </ThemedView>
+          </View>
+        </Card>
+
+        {/* Order Info Card */}
+        <OrderInfoCard order={order} />
+
+        {/* Order Items Table */}
+        <OrderItemsTable order={order} />
+
+        {/* Documents */}
+        <OrderDocumentsCard order={order} />
+
+        {/* Changelog Timeline */}
+        <Card style={styles.card}>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <View style={styles.sectionHeaderLeft}>
+              <IconHistory size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
+            </View>
+          </View>
+          <View style={styles.changelogContent}>
+            <ChangelogTimeline
+              entityType={CHANGE_LOG_ENTITY_TYPE.ORDER}
+              entityId={order.id}
+              entityName={order.description}
+              entityCreatedAt={order.createdAt}
+              maxHeight={400}
+            />
+          </View>
+        </Card>
+
+        {/* Bottom spacing */}
+        <View style={{ height: spacing.xl }} />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
   },
-  header: {
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
+  card: {
+    padding: spacing.md,
+  },
+  headerCard: {
+    padding: spacing.md,
+  },
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    flex: 1,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+  headerTitleContainer: {
+    flex: 1,
   },
-  headerRight: {
+  orderTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+  },
+  supplierName: {
+    fontSize: fontSize.sm,
+    marginTop: 2,
+  },
+  headerActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
   },
-  content: {
-    flex: 1,
-  },
-  cardsContainer: {
-    padding: spacing.md,
-    gap: spacing.md,
-    paddingBottom: spacing.xl * 2,
-  },
-  actionsCard: {
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
   actionButton: {
-    width: "100%",
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  sectionHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.medium,
+  },
+  changelogContent: {
+    marginTop: spacing.sm,
+  },
+  errorContent: {
+    alignItems: "center",
+    paddingVertical: spacing.xl,
+    gap: spacing.md,
+  },
+  errorIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  errorTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    textAlign: "center",
+  },
+  errorDescription: {
+    fontSize: fontSize.sm,
+    textAlign: "center",
+    paddingHorizontal: spacing.lg,
   },
 });

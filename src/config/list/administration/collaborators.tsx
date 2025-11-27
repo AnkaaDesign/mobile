@@ -66,7 +66,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         label: 'STATUS',
         sortable: true,
         width: 1.8,
-        align: 'center',
+        align: 'left',
         render: (user) => {
           const variant = getBadgeVariant(user.status, 'USER')
           const label = STATUS_LABELS[user.status] || user.status || '-'
@@ -74,7 +74,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
             <Badge
               variant={variant}
               size="sm"
-              style={{ alignSelf: 'center' }}
+              style={{ alignSelf: 'flex-start' }}
             >
               {label}
             </Badge>
@@ -153,7 +153,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         label: 'NÍVEL DE PERFORMANCE',
         sortable: true,
         width: 1.5,
-        align: 'center',
+        align: 'left',
         render: (user) => String(user.performanceLevel || 0),
         format: 'number',
       },
@@ -162,7 +162,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         label: 'VERIFICADO',
         sortable: true,
         width: 1.1,
-        align: 'center',
+        align: 'left',
         render: (user) => user.verified ? 'Sim' : 'Não',
         format: 'badge',
       },
@@ -234,7 +234,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         label: 'REQUER ALTERAÇÃO DE SENHA',
         sortable: true,
         width: 2.0,
-        align: 'center',
+        align: 'left',
         render: (user) => user.requirePasswordChange ? 'Sim' : 'Não',
         format: 'badge',
       },
@@ -243,7 +243,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         label: 'TAREFAS',
         sortable: false,
         width: 1.0,
-        align: 'center',
+        align: 'left',
         render: (user) => String(user._count?.createdTasks || 0),
         format: 'number',
       },
@@ -252,7 +252,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
         label: 'FÉRIAS',
         sortable: false,
         width: 1.0,
-        align: 'center',
+        align: 'left',
         render: (user) => String(user._count?.vacations || 0),
         format: 'number',
       },

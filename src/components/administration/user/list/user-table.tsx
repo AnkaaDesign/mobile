@@ -11,7 +11,7 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { UserTableRowSwipe } from "./user-table-row-swipe";
 import { formatBrazilianPhone, formatDateTime } from "@/utils";
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { extendedColors } from "@/lib/theme/extended-colors";
 
 import { getUserStatusBadgeText } from "@/utils/user";
 import { getBadgeVariant } from "@/constants/badge-colors";
@@ -49,26 +49,6 @@ interface UserTableProps {
 // Get screen width for responsive design
 const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
-
-// Badge variant color mapping helper for mobile
-const getBadgeStyleFromVariant = (variant: string) => {
-  switch (variant) {
-    case "success":
-      return { background: badgeColors.success.background, text: badgeColors.success.text };
-    case "pending":
-      return { background: badgeColors.pending.background, text: badgeColors.pending.text }; // amber-600
-    case "warning":
-      return { background: badgeColors.warning.background, text: badgeColors.warning.text };
-    case "destructive":
-      return { background: badgeColors.destructive.background, text: badgeColors.destructive.text }; // red-700
-    case "error":
-      return { background: badgeColors.error.background, text: badgeColors.error.text }; // red-700
-    case "muted":
-      return { background: badgeColors.muted.background, text: badgeColors.muted.text };
-    default:
-      return { background: badgeColors.info.background, text: badgeColors.info.text };
-  }
-};
 
 // Define all available columns with their renderers
 const createColumnDefinitions = (): TableColumn[] => [
@@ -129,8 +109,8 @@ const createColumnDefinitions = (): TableColumn[] => [
     accessor: (user: User) => (
       <View style={styles.badgeContainer}>
         {user.position ? (
-          <Badge variant="secondary" size="sm" style={StyleSheet.flatten([styles.positionBadge, { backgroundColor: badgeColors.info.background }])}>
-            <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: badgeColors.info.text }])}>{user.position.name}</ThemedText>
+          <Badge variant="info" size="sm">
+            {user.position.name}
           </Badge>
         ) : (
           <ThemedText style={styles.cellText}>-</ThemedText>
@@ -170,12 +150,9 @@ const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (user: User) => {
       const variant = getBadgeVariant(user.status, "USER");
-      const statusColors = getBadgeStyleFromVariant(variant);
       return (
-        <Badge variant="secondary" size="sm" style={{ backgroundColor: statusColors.background, borderWidth: 0 }}>
-          <ThemedText style={{ color: statusColors.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
-            {getUserStatusBadgeText(user)}
-          </ThemedText>
+        <Badge variant={variant} size="sm">
+          {getUserStatusBadgeText(user)}
         </Badge>
       );
     },
@@ -189,13 +166,9 @@ const createColumnDefinitions = (): TableColumn[] => [
     accessor: (user: User) => (
       <View style={styles.centerAlign}>
         {user.verified ? (
-          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.success.background, borderWidth: 0 }}>
-            <ThemedText style={{ color: badgeColors.success.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>Sim</ThemedText>
-          </Badge>
+          <Badge variant="success" size="sm">Sim</Badge>
         ) : (
-          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.muted.background, borderWidth: 0 }}>
-            <ThemedText style={{ color: badgeColors.muted.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>Não</ThemedText>
-          </Badge>
+          <Badge variant="muted" size="sm">Não</Badge>
         )}
       </View>
     ),

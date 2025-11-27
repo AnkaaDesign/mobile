@@ -12,7 +12,7 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { EmployeeTableRowSwipe } from "./employee-table-row-swipe";
 import { formatCPF, formatBrazilianPhone, formatDate, formatDateTime } from "@/utils";
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { extendedColors } from "@/lib/theme/extended-colors";
 
 import { USER_STATUS } from "@/constants";
 import { getUserStatusBadgeText } from "@/utils/user";
@@ -51,19 +51,19 @@ interface EmployeeTableProps {
 const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
-// Status badge color helper
-const getStatusBadgeColors = (status: USER_STATUS) => {
+// Status badge variant helper - returns proper variant string
+const getStatusBadgeVariant = (status: USER_STATUS): string => {
   switch (status) {
     case USER_STATUS.EFFECTED:
-      return { background: badgeColors.success.background, text: badgeColors.success.text }; // green-700
+      return "success";
     case USER_STATUS.EXPERIENCE_PERIOD_1:
-      return { background: badgeColors.pending.background, text: badgeColors.pending.text }; // amber-600
+      return "pending";
     case USER_STATUS.EXPERIENCE_PERIOD_2:
-      return { background: badgeColors.warning.background, text: badgeColors.warning.text }; // orange-600
+      return "warning";
     case USER_STATUS.DISMISSED:
-      return { background: badgeColors.error.background, text: badgeColors.error.text }; // red-700 NOT gray
+      return "error";
     default:
-      return { background: badgeColors.info.background, text: badgeColors.info.text };
+      return "info";
   }
 };
 
@@ -166,8 +166,8 @@ export const createColumnDefinitions = (): TableColumn[] => [
     accessor: (employee: User) => (
       <View style={styles.badgeContainer}>
         {employee.position ? (
-          <Badge variant="secondary" size="sm" style={StyleSheet.flatten([styles.positionBadge, { backgroundColor: badgeColors.info.background }])}>
-            <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: badgeColors.info.text }])}>{employee.position.name}</ThemedText>
+          <Badge variant="info" size="sm">
+            {employee.position.name}
           </Badge>
         ) : (
           <ThemedText style={styles.cellText}>-</ThemedText>
@@ -195,10 +195,8 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (employee: User) => (
       <View style={styles.centerAlign}>
-        <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.info.background, borderWidth: 0 }}>
-          <ThemedText style={{ color: badgeColors.info.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
-            {employee._count?.createdTasks || 0}
-          </ThemedText>
+        <Badge variant="info" size="sm">
+          {employee._count?.createdTasks || 0}
         </Badge>
       </View>
     ),
@@ -211,10 +209,8 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (employee: User) => (
       <View style={styles.centerAlign}>
-        <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.success.background, borderWidth: 0 }}>
-          <ThemedText style={{ color: badgeColors.success.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
-            {employee._count?.vacations || 0}
-          </ThemedText>
+        <Badge variant="success" size="sm">
+          {employee._count?.vacations || 0}
         </Badge>
       </View>
     ),
@@ -250,12 +246,10 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (employee: User) => {
-      const statusColors = getStatusBadgeColors(employee.status);
+      const variant = getStatusBadgeVariant(employee.status);
       return (
-        <Badge variant="secondary" size="sm" style={{ backgroundColor: statusColors.background, borderWidth: 0 }}>
-          <ThemedText style={{ color: statusColors.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
-            {getUserStatusBadgeText(employee)}
-          </ThemedText>
+        <Badge variant={variant} size="sm">
+          {getUserStatusBadgeText(employee)}
         </Badge>
       );
     },
@@ -268,10 +262,8 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (employee: User) => (
       <View style={styles.centerAlign}>
-        <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.warning.background, borderWidth: 0 }}>
-          <ThemedText style={{ color: badgeColors.warning.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
-            {employee.performanceLevel || 0}
-          </ThemedText>
+        <Badge variant="warning" size="sm">
+          {employee.performanceLevel || 0}
         </Badge>
       </View>
     ),
@@ -285,13 +277,9 @@ export const createColumnDefinitions = (): TableColumn[] => [
     accessor: (employee: User) => (
       <View style={styles.centerAlign}>
         {employee.verified ? (
-          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.success.background, borderWidth: 0 }}>
-            <ThemedText style={{ color: badgeColors.success.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>Sim</ThemedText>
-          </Badge>
+          <Badge variant="success" size="sm">Sim</Badge>
         ) : (
-          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.muted.background, borderWidth: 0 }}>
-            <ThemedText style={{ color: badgeColors.muted.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>Não</ThemedText>
-          </Badge>
+          <Badge variant="muted" size="sm">Não</Badge>
         )}
       </View>
     ),
@@ -391,13 +379,9 @@ export const createColumnDefinitions = (): TableColumn[] => [
     accessor: (employee: User) => (
       <View style={styles.centerAlign}>
         {employee.requirePasswordChange ? (
-          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.error.background, borderWidth: 0 }}>
-            <ThemedText style={{ color: badgeColors.error.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>Sim</ThemedText>
-          </Badge>
+          <Badge variant="error" size="sm">Sim</Badge>
         ) : (
-          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.muted.background, borderWidth: 0 }}>
-            <ThemedText style={{ color: badgeColors.muted.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>Não</ThemedText>
-          </Badge>
+          <Badge variant="muted" size="sm">Não</Badge>
         )}
       </View>
     ),

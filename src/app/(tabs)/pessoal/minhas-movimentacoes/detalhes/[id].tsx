@@ -19,7 +19,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { Badge } from "@/components/ui/badge";
 import { TASK_STATUS_LABELS } from "@/constants";
 
-export default function ActivityDetailScreen() {
+export default function MovementDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
@@ -51,7 +51,7 @@ export default function ActivityDetailScreen() {
   }, [refetch]);
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando detalhes da atividade..." />;
+    return <LoadingScreen message="Carregando detalhes da movimentação..." />;
   }
 
   if (error || !task || !id || id === "") {
@@ -64,10 +64,10 @@ export default function ActivityDetailScreen() {
                 <IconActivity size={32} color={colors.mutedForeground} />
               </View>
               <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
-                Atividade não encontrada
+                Movimentação não encontrada
               </ThemedText>
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
-                A atividade solicitada não foi encontrada ou pode ter sido removida.
+                A movimentação solicitada não foi encontrada ou pode ter sido removida.
               </ThemedText>
               <Button onPress={() => router.back()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
@@ -93,7 +93,7 @@ export default function ActivityDetailScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.container}>
-        {/* Activity Header Card */}
+        {/* Movement Header Card */}
         <Card style={styles.headerCard}>
           <View style={styles.headerContent}>
             <View style={[styles.headerLeft, { flex: 1 }]}>
@@ -115,10 +115,10 @@ export default function ActivityDetailScreen() {
           </View>
         </Card>
 
-        {/* Activity Info Card */}
+        {/* Movement Info Card */}
         <Card style={styles.card}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <ThemedText style={styles.title}>Informações da Atividade</ThemedText>
+            <ThemedText style={styles.title}>Informações da Movimentação</ThemedText>
           </View>
           <View style={styles.content}>
             {task.customer && (

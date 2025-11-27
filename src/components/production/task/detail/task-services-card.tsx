@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { spacing, fontSize } from "@/constants/design-system";
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS, SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
+import { canLeaderUpdateServiceOrder } from "@/utils/permissions/entity-permissions";
 import { useServiceOrderMutations } from "@/hooks";
 import { showToast } from "@/components/ui/toast";
 import { badgeColors } from "@/lib/theme/extended-colors";
@@ -17,17 +18,21 @@ import { IconTools } from "@tabler/icons-react-native";
 
 interface TaskServicesCardProps {
   services: ServiceOrder[];
+  taskSectorId?: string | null;
 }
 
-export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services }) => {
+export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, taskSectorId }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { update } = useServiceOrderMutations();
 
-  // Check if user has admin or leader privileges
+  // Check if user can edit service order status
+  // ADMIN: can always edit
+  // LEADER: can only edit for tasks in their MANAGED sector (NOT null sectors)
+  // PRODUCTION and others: cannot edit (show badge only)
   const canEditStatus = user && (
     hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) ||
-    hasPrivilege(user, SECTOR_PRIVILEGES.LEADER)
+    canLeaderUpdateServiceOrder(user, taskSectorId)
   );
 
   // Status options for combobox
@@ -76,9 +81,7 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services }) 
   return (
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={[styles.iconWrapper, { backgroundColor: colors.primary + "10" }]}>
-          <IconTools size={18} color={colors.primary} />
-        </View>
+<IconTools size={20} color={colors.primary} />
         <ThemedText style={styles.title}>Serviços</ThemedText>
         <Badge variant="secondary" style={styles.countBadge}>
           {validServices.length}
@@ -153,13 +156,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-  },
-  iconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
   },
   title: {
     fontSize: fontSize.lg,

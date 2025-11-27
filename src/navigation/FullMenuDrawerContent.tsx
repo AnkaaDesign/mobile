@@ -10,7 +10,9 @@ import {
   Animated,
   Platform,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from 'react-native';
+import { selectionHaptic, impactHaptic, lightImpactHaptic } from '@/utils/haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useRouter, usePathname } from 'expo-router';
@@ -73,6 +75,7 @@ function FullMenuDrawerContent({
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [navigatingItemId, setNavigatingItemId] = useState<string | null>(null);
+  const [userMenuNavigating, setUserMenuNavigating] = useState<string | null>(null);
   const chevronAnimations = useRef<Record<string, Animated.Value>>({});
 
   // Filter menu items based on user privileges
@@ -97,6 +100,9 @@ function FullMenuDrawerContent({
   // Toggle submenu with animation
   const toggleSubmenu = useCallback(
     (itemId: string) => {
+      // Instant haptic feedback for submenu toggle
+      selectionHaptic();
+
       setExpandedMenus((prev) => {
         const newExpanded = { ...prev };
         const isCurrentlyExpanded = prev[itemId];
@@ -218,6 +224,10 @@ function FullMenuDrawerContent({
   // Main item click handler
   const handleMainItemClick = useCallback(
     (item: MenuItem) => {
+      // Instant haptic feedback - fires immediately on touch
+      impactHaptic();
+
+      // Instant visual feedback
       setNavigatingItemId(item.id);
 
       requestAnimationFrame(() => {
@@ -226,7 +236,8 @@ function FullMenuDrawerContent({
           navigateToPath(targetPath);
         }
 
-        setTimeout(() => setNavigatingItemId(null), 800);
+        // Reset navigation state after navigation completes
+        setTimeout(() => setNavigatingItemId(null), 1500);
       });
     },
     [navigateToPath],
@@ -350,17 +361,29 @@ function FullMenuDrawerContent({
               delayLongPress={500}
               style={({ pressed }) => ({
                 flex: 1,
-                transform: pressed || isNavigating ? [{ scale: 0.98 }] : [{ scale: 1 }],
-                opacity: isNavigating ? 0.7 : 1,
-                backgroundColor: (pressed || isNavigating) && !isActive
-                  ? getPressedBackgroundColor(isDarkMode)
-                  : "transparent",
+                transform: pressed ? [{ scale: 0.96 }] : isNavigating ? [{ scale: 0.98 }] : [{ scale: 1 }],
+                opacity: pressed ? 0.7 : isNavigating ? 0.85 : 1,
+                backgroundColor: pressed
+                  ? (isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.15)")
+                  : isNavigating && !isActive
+                    ? (isDarkMode ? "rgba(21, 128, 61, 0.1)" : "rgba(21, 128, 61, 0.08)")
+                    : "transparent",
+                borderRadius: 6,
               })}
               hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
             >
               <View style={[styles.menuItemContent, { paddingLeft }]}>
                 <View style={styles.menuItemLeft}>
-                  {getIconComponentLocal(item.icon, isActive ? "onPrimary" : "navigation")}
+                  {/* Show loading indicator when navigating, otherwise show icon */}
+                  {isNavigating ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={isActive ? "#fafafa" : "#15803d"}
+                      style={{ width: 20, height: 20 }}
+                    />
+                  ) : (
+                    getIconComponentLocal(item.icon, isActive ? "onPrimary" : "navigation")
+                  )}
                   <Text
                     style={[
                       styles.menuItemText,
@@ -375,10 +398,17 @@ function FullMenuDrawerContent({
                   </Text>
                 </View>
                 <View style={styles.menuItemRight}>
-                  {!hasChildren && (
+                  {/* Show loading indicator on the right when navigating */}
+                  {isNavigating && !hasChildren && (
+                    <Text style={{ fontSize: 11, color: "#15803d", marginRight: 4 }}>
+                      Carregando...
+                    </Text>
+                  )}
+                  {!hasChildren && !isNavigating && (
                     <Pressable
                       onPress={(e) => {
                         e.stopPropagation();
+                        lightImpactHaptic();
                         toggleFavorite(item.id);
                       }}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -443,10 +473,18 @@ function FullMenuDrawerContent({
         {/* User profile section */}
         <View style={styles.userSection}>
           <Pressable
-            onPress={() => setShowUserMenu(!showUserMenu)}
+            onPress={() => {
+              selectionHaptic();
+              setShowUserMenu(!showUserMenu);
+            }}
             style={({ pressed }) => [
               styles.userProfile,
-              pressed && { opacity: 0.8 },
+              pressed && {
+                opacity: 0.7,
+                transform: [{ scale: 0.98 }],
+                backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
+                borderRadius: 8,
+              },
             ]}
           >
             <View style={styles.userAvatar}>
@@ -472,34 +510,62 @@ function FullMenuDrawerContent({
             <View style={[styles.userMenu, { backgroundColor: isDarkMode ? "#171717" : "#f5f5f5" }]}>
               <Pressable
                 onPress={() => {
+                  impactHaptic();
+                  setUserMenuNavigating('profile');
                   router.push('/(tabs)/pessoal/meu-perfil' as any);
                   setShowUserMenu(false);
                   navigation?.closeDrawer?.();
+                  setTimeout(() => setUserMenuNavigating(null), 1500);
                 }}
+                disabled={userMenuNavigating === 'profile'}
                 style={({ pressed }) => [
                   styles.userMenuItem,
-                  pressed && { backgroundColor: isDarkMode ? "#262626" : "#e5e5e5" },
+                  pressed && {
+                    backgroundColor: isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.15)",
+                    transform: [{ scale: 0.97 }],
+                  },
+                  userMenuNavigating === 'profile' && {
+                    backgroundColor: isDarkMode ? "rgba(21, 128, 61, 0.1)" : "rgba(21, 128, 61, 0.08)",
+                  },
                 ]}
               >
-                <Icon name="user" size="sm" variant="muted" />
+                {userMenuNavigating === 'profile' ? (
+                  <ActivityIndicator size="small" color="#15803d" style={{ width: 16, height: 16 }} />
+                ) : (
+                  <Icon name="user" size="sm" variant="muted" />
+                )}
                 <Text style={[styles.userMenuText, { color: isDarkMode ? "#e5e5e5" : "#262626" }]}>
-                  Meu Perfil
+                  {userMenuNavigating === 'profile' ? 'Carregando...' : 'Meu Perfil'}
                 </Text>
               </Pressable>
               <Pressable
                 onPress={() => {
+                  impactHaptic();
+                  setUserMenuNavigating('settings');
                   router.push('/(tabs)/configuracoes' as any);
                   setShowUserMenu(false);
                   navigation?.closeDrawer?.();
+                  setTimeout(() => setUserMenuNavigating(null), 1500);
                 }}
+                disabled={userMenuNavigating === 'settings'}
                 style={({ pressed }) => [
                   styles.userMenuItem,
-                  pressed && { backgroundColor: isDarkMode ? "#262626" : "#e5e5e5" },
+                  pressed && {
+                    backgroundColor: isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.15)",
+                    transform: [{ scale: 0.97 }],
+                  },
+                  userMenuNavigating === 'settings' && {
+                    backgroundColor: isDarkMode ? "rgba(21, 128, 61, 0.1)" : "rgba(21, 128, 61, 0.08)",
+                  },
                 ]}
               >
-                <Icon name="settings" size="sm" variant="muted" />
+                {userMenuNavigating === 'settings' ? (
+                  <ActivityIndicator size="small" color="#15803d" style={{ width: 16, height: 16 }} />
+                ) : (
+                  <Icon name="settings" size="sm" variant="muted" />
+                )}
                 <Text style={[styles.userMenuText, { color: isDarkMode ? "#e5e5e5" : "#262626" }]}>
-                  Configurações
+                  {userMenuNavigating === 'settings' ? 'Carregando...' : 'Configurações'}
                 </Text>
               </Pressable>
             </View>

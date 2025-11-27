@@ -83,9 +83,7 @@ export function OrderDocumentsCard({ order }: OrderDocumentsCardProps) {
       {/* Header */}
       <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
-          <View style={[styles.iconContainer, { backgroundColor: colors.primary + "20" }]}>
-            <IconFileText size={20} color={colors.primary} />
-          </View>
+          <IconFileText size={20} color={colors.mutedForeground} />
           <ThemedText style={styles.cardTitle}>Documentos</ThemedText>
         </View>
         {hasDocuments && (
@@ -205,7 +203,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
+    marginHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
   },
@@ -214,16 +212,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
   },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   cardTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
+    fontSize: fontSize.lg,
+    fontWeight: "500" as const,
   },
   viewModeButtons: {
     flexDirection: "row",

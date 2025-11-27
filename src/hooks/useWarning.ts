@@ -1,7 +1,7 @@
 // packages/hooks/src/useWarning.ts
 
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { createWarning, deleteWarning, getWarningById, getWarnings, getMyWarnings, updateWarning, batchCreateWarnings, batchUpdateWarnings, batchDeleteWarnings } from '@/api-client';
+import { createWarning, deleteWarning, getWarningById, getWarnings, getMyWarnings, getTeamWarnings, updateWarning, batchCreateWarnings, batchUpdateWarnings, batchDeleteWarnings } from '@/api-client';
 import type {
   WarningCreateFormData,
   WarningUpdateFormData,
@@ -140,6 +140,52 @@ export function useMyWarningsInfinite(params?: Partial<WarningGetManyFormData> &
   const refresh = () => {
     queryClient.invalidateQueries({
       queryKey: [...warningKeys.all, 'my-warnings', 'infinite', restParams],
+    });
+  };
+
+  return {
+    ...query,
+    refresh,
+  };
+}
+
+// Hook for team warnings (team leader's team members)
+export const useTeamWarnings = createSpecializedQueryHook<Partial<WarningGetManyFormData>, WarningGetManyResponse>({
+  queryKeyFn: (filters) => [...warningKeys.all, 'team-warnings', filters],
+  queryFn: (filters) => getTeamWarnings(filters),
+  staleTime: 1000 * 60 * 5,
+});
+
+// Hook for infinite query of team warnings
+export function useTeamWarningsInfinite(params?: Partial<WarningGetManyFormData> & { enabled?: boolean }) {
+  const queryClient = useQueryClient();
+  const { enabled, ...restParams } = params || {};
+
+  const query = useInfiniteQuery({
+    queryKey: [...warningKeys.all, 'team-warnings', 'infinite', restParams],
+    queryFn: async ({ pageParam = 1 }) => {
+      const queryParams = {
+        ...restParams,
+        page: pageParam,
+        limit: restParams.limit || 25,
+      } as WarningGetManyFormData;
+      return getTeamWarnings(queryParams);
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.meta) return undefined;
+      return lastPage.meta.hasNextPage ? lastPage.meta.page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 1000 * 60 * 5,
+    placeholderData: (previousData) => previousData,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    enabled: enabled !== false,
+  });
+
+  const refresh = () => {
+    queryClient.invalidateQueries({
+      queryKey: [...warningKeys.all, 'team-warnings', 'infinite', restParams],
     });
   };
 

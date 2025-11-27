@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { IconLogin, IconShieldCheck, IconKey, IconClock } from "@tabler/icons-react-native";
 
 interface LoginInfoCardProps {
@@ -20,9 +20,7 @@ export function LoginInfoCard({ employee }: LoginInfoCardProps) {
     <Card style={styles.card}>
       <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
         <View style={styles.titleRow}>
-          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-            <IconLogin size={18} color={colors.primary} />
-          </View>
+          <IconLogin size={18} color="#16a34a" />
           <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
             Informações de Login
           </ThemedText>
@@ -145,14 +143,7 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
+    gap: spacing.sm,
   },
   titleText: {
     fontSize: fontSize.lg,

@@ -240,6 +240,9 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
   // Track which sides were actually modified by the user (like web implementation)
   const [modifiedLayoutSides, setModifiedLayoutSides] = useState<Set<"left" | "right" | "back">>(new Set());
 
+  // Layout width validation error (same as web implementation)
+  const [layoutWidthError, setLayoutWidthError] = useState<string | null>(null);
+
   // Update layouts when existingLayouts prop changes (important for when data loads asynchronously)
   useEffect(() => {
     if (existingLayouts) {
@@ -248,6 +251,38 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
       setIsLayoutOpen(true); // Auto-open the layout section when data loads
     }
   }, [existingLayouts]);
+
+  // Real-time validation of layout width balance (same as web implementation)
+  useEffect(() => {
+    if (!isLayoutOpen) {
+      setLayoutWidthError(null);
+      return;
+    }
+
+    // Get sections from current layout state
+    const leftLayout = layouts.left;
+    const rightLayout = layouts.right;
+    const leftSections = leftLayout?.sections;
+    const rightSections = rightLayout?.sections;
+
+    // Only validate if both sides exist and have sections
+    if (leftSections && leftSections.length > 0 && rightSections && rightSections.length > 0) {
+      const leftTotalWidth = leftSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
+      const rightTotalWidth = rightSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
+      const widthDifference = Math.abs(leftTotalWidth - rightTotalWidth);
+      const maxAllowedDifference = 0.04; // 4cm in meters
+
+      if (widthDifference > maxAllowedDifference) {
+        const errorMessage = `O layout possui diferença de largura maior que 4cm entre os lados. Lado Motorista: ${leftTotalWidth.toFixed(2)}m, Lado Sapo: ${rightTotalWidth.toFixed(2)}m (diferença de ${(widthDifference * 100).toFixed(1)}cm). Ajuste as medidas antes de enviar o formulário.`;
+        setLayoutWidthError(errorMessage);
+      } else {
+        setLayoutWidthError(null);
+      }
+    } else {
+      // Clear error if one side doesn't have sections
+      setLayoutWidthError(null);
+    }
+  }, [layouts, isLayoutOpen]);
 
   // Use useEditForm for edit mode with change detection, regular useForm for create mode
   const defaultFormValues = {
@@ -1037,7 +1072,18 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                     }));
                   }}
                   disabled={isSubmitting}
+                  embedded={true}
                 />
+
+                {/* Layout Width Validation Error */}
+                {layoutWidthError && (
+                  <View style={[styles.layoutValidationError, { backgroundColor: colors.destructive + '15', borderColor: colors.destructive }]}>
+                    <Icon name="alert-triangle" size={18} color={colors.destructive} />
+                    <ThemedText style={[styles.layoutValidationErrorText, { color: colors.destructive }]}>
+                      {layoutWidthError}
+                    </ThemedText>
+                  </View>
+                )}
               </View>
             )}
           </Card>
@@ -1102,13 +1148,15 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
       <SimpleFormActionBar
         onCancel={onCancel}
         onSubmit={() => {
-          console.log('[TaskForm] Submit button pressed');
-          console.log('[TaskForm] Form state:', {
-            isValid: form.formState.isValid,
-            isDirty: form.formState.isDirty,
-            errors: form.formState.errors,
-            isSubmitting: form.formState.isSubmitting,
-          });
+          // Check for layout width error before submitting
+          if (layoutWidthError) {
+            Alert.alert(
+              "Erro de Layout",
+              "Corrija os erros de layout antes de enviar o formulário.",
+              [{ text: "OK" }]
+            );
+            return;
+          }
 
           // Trigger form validation and submission
           form.handleSubmit(
@@ -1175,6 +1223,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           )();
         }}
         isSubmitting={isSubmitting}
+        canSubmit={!layoutWidthError}
         submitLabel={mode === "create" ? "Salvar Tarefa" : "Salvar Alterações"}
       />
     </ThemedView>
@@ -1377,5 +1426,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  layoutValidationError: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    marginTop: spacing.md,
+  },
+  layoutValidationErrorText: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    lineHeight: fontSize.sm * 1.5,
   },
 });

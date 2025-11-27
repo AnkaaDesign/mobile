@@ -55,11 +55,11 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
         key: 'status',
         label: 'STATUS',
         sortable: true,
-        width: 1.0,
+        width: 1.3,
         align: 'center',
         render: (borrow) => BORROW_STATUS_LABELS[borrow.status] || borrow.status,
         format: 'badge',
-        component: 'status-badge',
+        badgeEntity: 'BORROW',
       },
       {
         key: 'item.uniCode',
@@ -125,7 +125,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
         width: 1.3,
         align: 'left',
         render: (borrow) => borrow.createdAt,
-        format: 'date',
+        format: 'datetime-multiline',
       },
       {
         key: 'returnedAt',

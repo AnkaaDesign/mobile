@@ -13,6 +13,7 @@ import type { ORDER_BY_DIRECTION, TRUCK_MANUFACTURER } from '@/constants';
 export interface Truck extends BaseEntity {
   // Identification
   plate: string;
+  chassisNumber: string | null;
   model: string;
   manufacturer: TRUCK_MANUFACTURER;
 

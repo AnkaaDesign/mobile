@@ -776,6 +776,33 @@ export const deploymentKeys = {
 };
 
 // =====================================================
+// Truck Query Keys
+// =====================================================
+
+export const truckKeys = {
+  all: ["trucks"] as const,
+  lists: () => ["trucks", "list"] as const,
+  list: (filters?: any) => (filters ? (["trucks", "list", filters] as const) : (["trucks", "list"] as const)),
+  details: () => ["trucks", "detail"] as const,
+  detail: (id: string, include?: any) => (include ? (["trucks", "detail", id, include] as const) : (["trucks", "detail", id] as const)),
+  byIds: (ids: string[]) => ["trucks", "byIds", ids] as const,
+  byTask: (taskId: string) => ["trucks", "byTask", taskId] as const,
+};
+
+// =====================================================
+// Garage Query Keys
+// =====================================================
+
+export const garageKeys = {
+  all: ["garages"] as const,
+  lists: () => ["garages", "list"] as const,
+  list: (filters?: any) => (filters ? (["garages", "list", filters] as const) : (["garages", "list"] as const)),
+  details: () => ["garages", "detail"] as const,
+  detail: (id: string, include?: any) => (include ? (["garages", "detail", id, include] as const) : (["garages", "detail", id] as const)),
+  byIds: (ids: string[]) => ["garages", "byIds", ids] as const,
+};
+
+// =====================================================
 // Server Query Keys
 // =====================================================
 

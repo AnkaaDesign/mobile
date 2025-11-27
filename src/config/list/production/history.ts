@@ -6,10 +6,17 @@ import type { Task, User } from '@/types'
 import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
+  SECTOR_PRIVILEGES,
 } from '@/constants'
 import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
 import { PAINT_FINISH } from '@/constants/enums'
+
+// Helper to check if user is FINANCIAL or ADMIN
+const isFinancialOrAdmin = (user: any): boolean => {
+  const privilege = user?.sector?.privileges
+  return privilege === SECTOR_PRIVILEGES.FINANCIAL || privilege === SECTOR_PRIVILEGES.ADMIN
+}
 
 export const historyListConfig: ListConfig<Task> = {
   key: 'production-history',
@@ -42,6 +49,8 @@ export const historyListConfig: ListConfig<Task> = {
       },
     },
     where: {
+      // Default: show COMPLETED, INVOICED and SETTLED for all users
+      // FINANCIAL/ADMIN can change this using the status filter
       status: {
         in: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED],
       },
@@ -250,10 +259,6 @@ export const historyListConfig: ListConfig<Task> = {
             value: TASK_STATUS.COMPLETED,
           },
           {
-            label: TASK_STATUS_LABELS[TASK_STATUS.CANCELLED],
-            value: TASK_STATUS.CANCELLED,
-          },
-          {
             label: TASK_STATUS_LABELS[TASK_STATUS.INVOICED],
             value: TASK_STATUS.INVOICED,
           },
@@ -261,9 +266,15 @@ export const historyListConfig: ListConfig<Task> = {
             label: TASK_STATUS_LABELS[TASK_STATUS.SETTLED],
             value: TASK_STATUS.SETTLED,
           },
+          {
+            label: TASK_STATUS_LABELS[TASK_STATUS.CANCELLED],
+            value: TASK_STATUS.CANCELLED,
+          },
         ],
         placeholder: 'Selecione os status',
         defaultValue: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED],
+        // Only FINANCIAL and ADMIN can see status filter
+        canView: isFinancialOrAdmin,
       },
       {
         key: 'customerIds',
@@ -384,6 +395,8 @@ export const historyListConfig: ListConfig<Task> = {
         label: 'Preço',
         type: 'number-range',
         placeholder: { min: 'Mín', max: 'Máx' },
+        // Only FINANCIAL and ADMIN can see price filter
+        canView: isFinancialOrAdmin,
       },
     ],
   },

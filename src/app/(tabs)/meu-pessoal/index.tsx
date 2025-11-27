@@ -14,6 +14,7 @@ import {
   IconPackage,
   IconClock,
   IconShieldCheck,
+  IconFingerprint,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -45,11 +46,11 @@ export default function MeuPessoalScreen() {
       available: true,
     },
     {
-      id: "activities",
-      title: "Atividades",
-      description: "Acompanhe as atividades da equipe",
+      id: "movements",
+      title: "Movimentações",
+      description: "Acompanhe as movimentações da equipe",
       icon: <IconClock size={24} color={colors.primary} />,
-      route: "/(tabs)/meu-pessoal/atividades",
+      route: "/(tabs)/meu-pessoal/movimentacoes",
       available: true,
     },
     {
@@ -82,6 +83,14 @@ export default function MeuPessoalScreen() {
       description: "Empréstimos de equipamentos",
       icon: <IconPackage size={24} color={colors.primary} />,
       route: "/(tabs)/meu-pessoal/emprestimos",
+      available: true,
+    },
+    {
+      id: "calculations",
+      title: "Controle de Ponto",
+      description: "Visualize os pontos da equipe",
+      icon: <IconFingerprint size={24} color={colors.primary} />,
+      route: "/(tabs)/meu-pessoal/calculos",
       available: true,
     },
   ];

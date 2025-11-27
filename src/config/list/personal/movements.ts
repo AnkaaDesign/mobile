@@ -7,9 +7,9 @@ import {
   ACTIVITY_REASON_LABELS,
 } from '@/constants'
 
-export const personalActivitiesListConfig: ListConfig<Activity> = {
-  key: 'personal-activities',
-  title: 'Minhas Atividades',
+export const personalMovementsListConfig: ListConfig<Activity> = {
+  key: 'personal-movements',
+  title: 'Minhas Movimentações',
 
   query: {
     hook: 'useMyActivitiesInfiniteMobile',
@@ -143,13 +143,13 @@ export const personalActivitiesListConfig: ListConfig<Activity> = {
   },
 
   search: {
-    placeholder: 'Buscar atividades...',
+    placeholder: 'Buscar movimentações...',
     debounce: 300,
   },
 
   export: {
-    title: 'Minhas Atividades',
-    filename: 'minhas-atividades',
+    title: 'Minhas Movimentações',
+    filename: 'minhas-movimentacoes',
     formats: ['csv', 'json', 'pdf'],
     columns: [
       { key: 'itemName', label: 'Item', path: 'item.name' },
@@ -168,7 +168,7 @@ export const personalActivitiesListConfig: ListConfig<Activity> = {
 
   emptyState: {
     icon: 'clock',
-    title: 'Nenhuma atividade encontrada',
-    description: 'Você não possui atividades registradas',
+    title: 'Nenhuma movimentação encontrada',
+    description: 'Você não possui movimentações registradas',
   },
 }

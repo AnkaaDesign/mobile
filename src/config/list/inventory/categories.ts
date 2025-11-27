@@ -46,7 +46,7 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
         width: 0.8,
         align: 'center',
         render: (category) => String((category as any)._count?.items || 0),
-        format: 'badge',
+        format: 'count-badge',
       },
       {
         key: 'createdAt',

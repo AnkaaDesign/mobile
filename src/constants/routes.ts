@@ -502,9 +502,9 @@ export const routes = {
       details: (id: string) => `/pessoal/meus-emprestimos/detalhes/${id}`,
       root: "/pessoal/meus-emprestimos",
     },
-    myActivities: {
-      details: (id: string) => `/pessoal/minhas-atividades/detalhes/${id}`,
-      root: "/pessoal/minhas-atividades",
+    myMovements: {
+      details: (id: string) => `/pessoal/minhas-movimentacoes/detalhes/${id}`,
+      root: "/pessoal/minhas-movimentacoes",
     },
     myBonuses: {
       root: "/pessoal/meu-bonus",

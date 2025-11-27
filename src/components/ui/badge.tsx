@@ -30,6 +30,8 @@ export interface BadgeProps {
     | "orange"
     | "green"
     | "teal"
+    | "yellow"
+    | "amber"
     | "indigo"
     | "pink";
   size?: "default" | "sm" | "md" | "lg";
@@ -39,12 +41,12 @@ export interface BadgeProps {
 }
 
 const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeProps["size"] = "default", colors: any, isDark: boolean): ViewStyle => {
-  // Size-based padding with MORE vertical padding to fix Android text cutoff
-  const sizePadding: Record<string, { paddingHorizontal: number; paddingVertical: number; minHeight: number }> = {
-    sm: { paddingHorizontal: 8, paddingVertical: 6, minHeight: 24 },
-    default: { paddingHorizontal: 10, paddingVertical: 8, minHeight: 28 },
-    md: { paddingHorizontal: 10, paddingVertical: 8, minHeight: 28 },
-    lg: { paddingHorizontal: 12, paddingVertical: 10, minHeight: 32 },
+  // Size-based padding - increased for better visual appearance
+  const sizePadding: Record<string, { paddingHorizontal: number; paddingVertical: number }> = {
+    sm: { paddingHorizontal: 8, paddingVertical: 6 },       // Increased to 6
+    default: { paddingHorizontal: 10, paddingVertical: 7 }, // Increased to 7
+    md: { paddingHorizontal: 10, paddingVertical: 7 },      // Increased to 7
+    lg: { paddingHorizontal: 12, paddingVertical: 8 },      // Increased to 8
   };
 
   const padding = sizePadding[size || "default"] || sizePadding.default;
@@ -53,11 +55,12 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    alignSelf: "flex-start", // Prevent horizontal stretching
+    flexGrow: 0,             // Prevent growing to fill container
+    flexShrink: 0,           // Prevent shrinking
     borderRadius: borderRadius.DEFAULT,
-    borderWidth: 1,
     paddingHorizontal: padding.paddingHorizontal,
     paddingVertical: padding.paddingVertical,
-    minHeight: padding.minHeight, // Ensure minimum height for text
   };
 
   // Safe border color with fallback
@@ -74,11 +77,11 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
       borderColor: "transparent",
     },
     muted: {
-      backgroundColor: extendedColors.neutral[500],
-      borderColor: "transparent",
+      backgroundColor: extendedColors.neutral[400], // Matches web bg-neutral-400
     },
     outline: {
       backgroundColor: "transparent",
+      borderWidth: 1,
       borderColor: borderColor,
     },
 
@@ -162,7 +165,15 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
       borderColor: "transparent",
     },
     teal: {
-      backgroundColor: extendedColors.teal[600],
+      backgroundColor: extendedColors.teal[500], // Matches web teal-500
+      borderColor: "transparent",
+    },
+    yellow: {
+      backgroundColor: extendedColors.yellow[500], // Matches web yellow-500
+      borderColor: "transparent",
+    },
+    amber: {
+      backgroundColor: extendedColors.amber[500], // Matches web amber-500
       borderColor: "transparent",
     },
     indigo: {
@@ -185,12 +196,14 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
 };
 
 const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: BadgeProps["size"] = "default", colors: any, _isDark: boolean): TextStyle => {
-  // Size-based font sizes with MUCH taller line heights to prevent cutoff
+  // Size-based font sizes matching web Tailwind EXACTLY
+  // Web: sm=text-[0.688rem]=11px, default=text-xs=12px, lg=text-sm=14px
+  // LineHeight kept tight to minimize badge height
   const sizeFont: Record<string, { fontSize: number; lineHeight: number }> = {
-    sm: { fontSize: 10, lineHeight: 14 },
-    default: { fontSize: fontSize.xs, lineHeight: 16 },
-    md: { fontSize: fontSize.xs, lineHeight: 16 },
-    lg: { fontSize: fontSize.sm, lineHeight: 18 },
+    sm: { fontSize: 11, lineHeight: 13 },     // text-[0.688rem] = 11px
+    default: { fontSize: 12, lineHeight: 14 }, // text-xs = 12px
+    md: { fontSize: 12, lineHeight: 14 },      // text-xs = 12px
+    lg: { fontSize: 14, lineHeight: 17 },      // text-sm = 14px
   };
 
   const baseStyles: TextStyle = {
@@ -213,16 +226,16 @@ const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: Ba
       color: white,
     },
     primary: {
-      color: primaryForeground,
+      color: white, // Always white on blue background
     },
     secondary: {
-      color: secondaryForeground,
+      color: secondaryForeground, // Dark text on light background
     },
     destructive: {
       color: white,
     },
     outline: {
-      color: foreground,
+      color: foreground, // Text matches theme foreground
     },
     success: {
       color: white,
@@ -273,6 +286,12 @@ const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: Ba
       color: white,
     },
     teal: {
+      color: white,
+    },
+    yellow: {
+      color: white,
+    },
+    amber: {
       color: white,
     },
     indigo: {
@@ -332,15 +351,18 @@ function Badge(props: BadgeProps) {
     badgeStyles = {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
+      alignSelf: "flex-start",
+      flexGrow: 0,
+      flexShrink: 0,
       paddingHorizontal: 8,
-      paddingVertical: 4,
+      paddingVertical: 2, // Match sm size
       borderRadius: 4,
       backgroundColor: "#6b7280",
-      borderWidth: 1,
-      borderColor: "transparent",
     };
     badgeTextStyles = {
-      fontSize: 12,
+      fontSize: 11,
+      lineHeight: 14,
       fontWeight: "500",
       color: "#ffffff",
     };
@@ -360,16 +382,30 @@ function Badge(props: BadgeProps) {
       );
     }
 
-    // For non-text children, wrap Text components with styles
+    // For React element children, apply badge text styles
+    // This handles Text, ThemedText, and any other text-like components
     return React.Children.map(children, (child) => {
-      if (React.isValidElement(child) && child.type === Text) {
-        const element = child as React.ReactElement<{ style?: TextStyle; numberOfLines?: number; ellipsizeMode?: "head" | "middle" | "tail" | "clip"; allowFontScaling?: boolean }>;
-        return React.cloneElement(element, {
-          style: StyleSheet.flatten([badgeTextStyles, element.props?.style, textStyle].filter(Boolean)),
-          numberOfLines: 1,
-          ellipsizeMode: "tail" as const,
-          allowFontScaling: false,
-        });
+      if (React.isValidElement(child)) {
+        const element = child as React.ReactElement<{ style?: TextStyle; className?: string }>;
+        const childStyle = element.props?.style;
+        const flatChildStyle = childStyle ? StyleSheet.flatten(childStyle) : {};
+
+        // If child has explicit color, respect it (for custom-styled badges like paint catalog)
+        // Otherwise, use badge's text color
+        const hasExplicitColor = flatChildStyle && 'color' in flatChildStyle;
+
+        if (hasExplicitColor) {
+          // Child has explicit color - only apply non-color badge text styles
+          const { color: _badgeColor, ...badgeTextStylesWithoutColor } = badgeTextStyles;
+          return React.cloneElement(element, {
+            style: StyleSheet.flatten([badgeTextStylesWithoutColor, childStyle, textStyle].filter(Boolean)),
+          });
+        } else {
+          // No explicit color - apply full badge text styles (including color)
+          return React.cloneElement(element, {
+            style: StyleSheet.flatten([childStyle, badgeTextStyles, textStyle].filter(Boolean)),
+          });
+        }
       }
       return child;
     });
@@ -383,14 +419,6 @@ function Badge(props: BadgeProps) {
       style={StyleSheet.flatten([
         badgeStyles,
         style,
-        // CRITICAL: Force override any conflicting NativeWind styles that cause text cutoff
-        {
-          minHeight: badgeStyles.minHeight,
-          paddingVertical: badgeStyles.paddingVertical,
-          paddingHorizontal: badgeStyles.paddingHorizontal,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }
       ].filter(Boolean))}
       {...safeProps}
     >

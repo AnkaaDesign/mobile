@@ -1,6 +1,5 @@
-
 import { View, StyleSheet } from "react-native";
-import { Icon } from "@/components/ui/icon";
+import { IconAlertTriangleFilled } from "@tabler/icons-react-native";
 import type { Item } from '../../../../types';
 
 import { determineStockLevel } from "@/utils";
@@ -17,7 +16,7 @@ export function StockStatusIndicator({ item, hasActiveOrder = false }: StockStat
   // Determine stock level using the utility function
   const stockLevel = determineStockLevel(quantity, item.reorderPoint || null, item.maxQuantity || null, hasActiveOrder);
 
-  // Get the appropriate color for the stock level
+  // Get the appropriate color for the stock level (matching web exactly)
   const getColor = () => {
     switch (stockLevel) {
       case STOCK_LEVEL.NEGATIVE_STOCK:
@@ -41,7 +40,7 @@ export function StockStatusIndicator({ item, hasActiveOrder = false }: StockStat
 
   return (
     <View style={styles.triangleIcon}>
-      <Icon name="alertTriangle" size={16} color={color} />
+      <IconAlertTriangleFilled size={16} color={color} />
     </View>
   );
 }

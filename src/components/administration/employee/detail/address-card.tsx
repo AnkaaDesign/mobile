@@ -22,9 +22,7 @@ export function AddressCard({ employee }: AddressCardProps) {
     <Card style={styles.card}>
       <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
         <View style={styles.titleRow}>
-          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-            <IconUser size={18} color={colors.primary} />
-          </View>
+          <IconUser size={18} color="#16a34a" />
           <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
             Informações Pessoais
           </ThemedText>
@@ -175,14 +173,7 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
+    gap: spacing.sm,
   },
   titleText: {
     fontSize: fontSize.lg,
@@ -236,6 +227,7 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: "center",
+    justifyContent: "center",
     paddingVertical: spacing.xl,
   },
   emptyIcon: {
@@ -250,6 +242,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
     marginBottom: spacing.xs,
+    textAlign: "center",
   },
   emptyDescription: {
     fontSize: fontSize.sm,

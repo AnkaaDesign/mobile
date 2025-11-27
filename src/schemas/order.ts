@@ -11,73 +11,12 @@ import { ORDER_STATUS, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, MONTH_OCCURRENCE } f
 
 export const orderIncludeSchema = z
   .object({
-    // Direct Order relations
-    budget: z
-      .union([
-        z.boolean(),
-        z.object({
-          include: z
-            .object({
-              tasksArtworks: z.boolean().optional(),
-              customerLogo: z.boolean().optional(),
-              taskBudget: z.boolean().optional(),
-              taskNfe: z.boolean().optional(),
-              supplierLogo: z.boolean().optional(),
-              orderNfe: z.boolean().optional(),
-              orderBudget: z.boolean().optional(),
-              observations: z.boolean().optional(),
-              warning: z.boolean().optional(),
-              airbrushingReceipts: z.boolean().optional(),
-              airbrushingNfes: z.boolean().optional(),
-            })
-            .optional(),
-        }),
-      ])
-      .optional(),
-    nfe: z
-      .union([
-        z.boolean(),
-        z.object({
-          include: z
-            .object({
-              tasksArtworks: z.boolean().optional(),
-              customerLogo: z.boolean().optional(),
-              taskBudget: z.boolean().optional(),
-              taskNfe: z.boolean().optional(),
-              supplierLogo: z.boolean().optional(),
-              orderNfe: z.boolean().optional(),
-              orderBudget: z.boolean().optional(),
-              observations: z.boolean().optional(),
-              warning: z.boolean().optional(),
-              airbrushingReceipts: z.boolean().optional(),
-              airbrushingNfes: z.boolean().optional(),
-            })
-            .optional(),
-        }),
-      ])
-      .optional(),
-    receipt: z
-      .union([
-        z.boolean(),
-        z.object({
-          include: z
-            .object({
-              tasksArtworks: z.boolean().optional(),
-              customerLogo: z.boolean().optional(),
-              taskBudget: z.boolean().optional(),
-              taskNfe: z.boolean().optional(),
-              supplierLogo: z.boolean().optional(),
-              orderNfe: z.boolean().optional(),
-              orderBudget: z.boolean().optional(),
-              observations: z.boolean().optional(),
-              warning: z.boolean().optional(),
-              airbrushingReceipts: z.boolean().optional(),
-              airbrushingNfes: z.boolean().optional(),
-            })
-            .optional(),
-        }),
-      ])
-      .optional(),
+    // Direct Order relations - File arrays
+    budgets: z.boolean().optional(),
+    invoices: z.boolean().optional(),
+    invoiceReimbursements: z.boolean().optional(),
+    receipts: z.boolean().optional(),
+    reimbursements: z.boolean().optional(),
     supplier: z
       .union([
         z.boolean(),
@@ -118,7 +57,25 @@ export const orderIncludeSchema = z
         z.object({
           include: z
             .object({
-              item: z.boolean().optional(),
+              item: z
+                .union([
+                  z.boolean(),
+                  z.object({
+                    include: z
+                      .object({
+                        brand: z.boolean().optional(),
+                        category: z.boolean().optional(),
+                        supplier: z.boolean().optional(),
+                        measures: z.boolean().optional(),
+                        paints: z.boolean().optional(),
+                        activities: z.boolean().optional(),
+                        borrows: z.boolean().optional(),
+                        orderItems: z.boolean().optional(),
+                      })
+                      .optional(),
+                  }),
+                ])
+                .optional(),
               order: z.boolean().optional(),
               activities: z.boolean().optional(),
             })
@@ -172,6 +129,7 @@ export const orderItemIncludeSchema = z
               brand: z.boolean().optional(),
               category: z.boolean().optional(),
               supplier: z.boolean().optional(),
+              measures: z.boolean().optional(),
               activities: z.boolean().optional(),
               borrows: z.boolean().optional(),
               orderItems: z.boolean().optional(),
@@ -186,9 +144,11 @@ export const orderItemIncludeSchema = z
         z.object({
           include: z
             .object({
-              budget: z.boolean().optional(),
-              nfe: z.boolean().optional(),
-              receipt: z.boolean().optional(),
+              budgets: z.boolean().optional(),
+              invoices: z.boolean().optional(),
+              invoiceReimbursements: z.boolean().optional(),
+              receipts: z.boolean().optional(),
+              reimbursements: z.boolean().optional(),
               supplier: z.boolean().optional(),
               orderSchedule: z.boolean().optional(),
               items: z.boolean().optional(),

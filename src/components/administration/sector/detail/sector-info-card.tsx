@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { IconInfoCircle, IconShieldCheck, IconCalendar } from "@tabler/icons-react-native";
 import type { Sector } from '../../../../types';
 import { SECTOR_PRIVILEGES_LABELS } from "@/constants";
+import { getBadgeVariant } from "@/constants/badge-colors";
 import { formatDate } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
@@ -41,10 +42,8 @@ export function SectorInfoCard({ sector }: SectorInfoCardProps) {
           <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
             Privilégio
           </ThemedText>
-          <Badge variant="default" style={styles.badge}>
-            <ThemedText style={{ fontSize: fontSize.xs, color: colors.primaryForeground }}>
-              {SECTOR_PRIVILEGES_LABELS[sector.privileges]}
-            </ThemedText>
+          <Badge variant={getBadgeVariant(sector.privileges, 'SECTOR_PRIVILEGES')} style={styles.badge}>
+            {SECTOR_PRIVILEGES_LABELS[sector.privileges]}
           </Badge>
         </View>
 

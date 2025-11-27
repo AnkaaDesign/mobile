@@ -1,14 +1,168 @@
-import React, { memo } from 'react'
-import { View, Text } from 'react-native'
+import React, { memo, useState } from 'react'
+import { View, Text, useColorScheme, Image, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
+import { FileTypeIcon } from '@/components/ui/file-type-icon'
 import { formatDate, formatDateTime, formatCurrency } from '@/utils/formatters'
+import { getBadgeVariant, BADGE_COLORS, type BadgeVariant } from '@/constants/badge-colors'
+import {
+  ORDER_STATUS_LABELS,
+  USER_STATUS_LABELS,
+  TASK_STATUS_LABELS,
+  MAINTENANCE_STATUS_LABELS,
+  VACATION_STATUS_LABELS,
+  EXTERNAL_WITHDRAWAL_STATUS_LABELS,
+  BORROW_STATUS_LABELS,
+  PPE_REQUEST_STATUS_LABELS,
+  PPE_DELIVERY_STATUS_LABELS,
+  SERVICE_ORDER_STATUS_LABELS,
+} from '@/constants/enum-labels'
 import type { CellFormat } from '../types'
+import type { File as AnkaaFile } from '@/types'
+
+// Entity label maps for badge display
+const ENTITY_LABEL_MAPS: Record<string, Record<string, string>> = {
+  ORDER: ORDER_STATUS_LABELS,
+  USER: USER_STATUS_LABELS,
+  TASK: TASK_STATUS_LABELS,
+  MAINTENANCE: MAINTENANCE_STATUS_LABELS,
+  VACATION: VACATION_STATUS_LABELS,
+  EXTERNAL_WITHDRAWAL: EXTERNAL_WITHDRAWAL_STATUS_LABELS,
+  BORROW: BORROW_STATUS_LABELS,
+  PPE_REQUEST: PPE_REQUEST_STATUS_LABELS,
+  PPE_DELIVERY: PPE_DELIVERY_STATUS_LABELS,
+  SERVICE_ORDER: SERVICE_ORDER_STATUS_LABELS,
+}
+
+/**
+ * Get display label for a status value based on entity type
+ */
+function getStatusLabel(value: string, entity?: string): string {
+  if (!entity || !ENTITY_LABEL_MAPS[entity]) {
+    return value
+  }
+  return ENTITY_LABEL_MAPS[entity][value] || value
+}
+
+/**
+ * Get thumbnail URL for a file
+ */
+function getFileThumbnailUrl(file: AnkaaFile, size: 'small' | 'medium' | 'large' = 'small'): string {
+  const apiUrl = (global as { __ANKAA_API_URL__?: string }).__ANKAA_API_URL__ || 'http://localhost:3030'
+
+  if (file.thumbnailUrl) {
+    if (file.thumbnailUrl.startsWith('http://') || file.thumbnailUrl.startsWith('https://')) {
+      const urlObj = new URL(file.thumbnailUrl)
+      return `${apiUrl}${urlObj.pathname}?size=${size}`
+    }
+    return `${apiUrl}/files/thumbnail/${file.id}?size=${size}`
+  }
+
+  // For images without thumbnails, use serve endpoint
+  const imageMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+  if (imageMimeTypes.includes(file.mimetype?.toLowerCase() || '')) {
+    return `${apiUrl}/files/serve/${file.id}`
+  }
+
+  return ''
+}
+
+/**
+ * File Thumbnail Component for table cells
+ */
+const FileThumbnail = memo(function FileThumbnail({
+  file,
+  onPress,
+}: {
+  file: AnkaaFile
+  onPress?: () => void
+}) {
+  const [thumbnailError, setThumbnailError] = useState(false)
+  const [thumbnailLoading, setThumbnailLoading] = useState(true)
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
+
+  const thumbnailUrl = getFileThumbnailUrl(file, 'small')
+  const hasThumbnail = !!thumbnailUrl
+  const filename = file.filename || file.key || 'arquivo'
+
+  // Use consistent light background for image thumbnails (same as modal preview)
+  // This ensures visual consistency between table preview and full modal view
+  const thumbnailBgColor = '#e5e5e5' // neutral-200 - always light for image visibility
+
+  const content = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <View style={{
+        width: 40,
+        height: 40,
+        borderRadius: 6,
+        backgroundColor: thumbnailBgColor,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+      }}>
+        {hasThumbnail && !thumbnailError ? (
+          <>
+            <Image
+              source={{ uri: thumbnailUrl, cache: 'reload' }}
+              style={{ width: 40, height: 40 }}
+              onLoad={() => setThumbnailLoading(false)}
+              onError={() => {
+                setThumbnailError(true)
+                setThumbnailLoading(false)
+              }}
+              resizeMode="cover"
+            />
+            {thumbnailLoading && (
+              <View style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: thumbnailBgColor,
+              }}>
+                <ActivityIndicator size="small" color="#737373" />
+              </View>
+            )}
+          </>
+        ) : (
+          <FileTypeIcon filename={filename} mimeType={file.mimetype} size="sm" />
+        )}
+      </View>
+      <ThemedText style={{ fontSize: 12, flex: 1 }} numberOfLines={2} ellipsizeMode="middle">
+        {filename}
+      </ThemedText>
+    </View>
+  )
+
+  if (onPress) {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
+        delayPressIn={100} // Allow swipe gestures to be detected first
+      >
+        {content}
+      </TouchableOpacity>
+    )
+  }
+
+  return content
+})
 
 interface CellContentProps {
   value: any
   format?: CellFormat
   style?: any
+  badgeEntity?: string // Entity type for badge color resolution (e.g., 'ORDER', 'TASK', 'USER')
+  component?: string // Special component to render (e.g., 'file-thumbnail')
+  onCellPress?: () => void // Callback when cell is pressed (for file-thumbnail)
 }
+
+// Export FileThumbnail for external use
+export { FileThumbnail }
 
 /**
  * Renders cell content with proper formatting
@@ -18,7 +172,18 @@ export const CellContent = memo(function CellContent({
   value,
   format,
   style,
+  badgeEntity,
+  component,
+  onCellPress,
 }: CellContentProps) {
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
+
+  // Handle special component types first
+  if (component === 'file-thumbnail' && value && typeof value === 'object' && 'id' in value) {
+    return <FileThumbnail file={value as AnkaaFile} onPress={onCellPress} />
+  }
+
   // Safety check - if no value and no format, return empty text
   if (value === undefined && !format) {
     return <ThemedText style={[{ fontSize: 12 }, style]} numberOfLines={2} ellipsizeMode="tail">-</ThemedText>
@@ -115,29 +280,64 @@ export const CellContent = memo(function CellContent({
         </ThemedText>
       )
 
+    case 'count-badge':
+      // Fixed-width default badge for count values (like itemsCount, taskCount)
+      // Matches web: bg-neutral-500 (#737373)
+      // Dark mode: lighter gray (#a3a3a3 neutral-400) for visibility
+      return (
+        <View style={{
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          borderRadius: 4,
+          backgroundColor: isDark ? '#a3a3a3' : '#737373',
+          minWidth: 40,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <Text style={{
+            fontSize: 12,
+            fontWeight: '600',
+            color: '#ffffff',
+            textAlign: 'center',
+          }}>
+            {value != null ? String(value) : '0'}
+          </Text>
+        </View>
+      )
+
     case 'badge':
     case 'status':
       try {
         // Ensure value is safely converted to string
         const stringValue = value != null && value !== '' ? String(value) : '-'
-        const variant = getStatusVariant(stringValue) || 'default'
 
-        // Create a simple text badge without using the Badge component temporarily
-        // to avoid the undefined props issue
+        // For numeric badges without entity (like itemsCount), always use default (gray)
+        const isNumericWithoutEntity = !badgeEntity && !isNaN(Number(stringValue))
+
+        // Use centralized badge configuration with entity context
+        const variant = isNumericWithoutEntity
+          ? 'default' as BadgeVariant
+          : getBadgeVariant(stringValue, badgeEntity as any) as BadgeVariant
+        const badgeColors = BADGE_COLORS[variant] || BADGE_COLORS.default
+
+        // Get human-readable label for display
+        const displayLabel = getStatusLabel(stringValue, badgeEntity)
+
+        // Create a simple text badge with correct colors from centralized config
         return (
           <View style={{
             paddingHorizontal: 8,
             paddingVertical: 4,
             borderRadius: 4,
-            backgroundColor: getBadgeColor(variant),
+            backgroundColor: badgeColors.bg,
             alignSelf: 'flex-start',
           }}>
             <Text style={{
               fontSize: 12,
               fontWeight: '600',
-              color: '#fff',
+              color: badgeColors.text,
             }}>
-              {stringValue}
+              {displayLabel}
             </Text>
           </View>
         )
@@ -158,52 +358,3 @@ export const CellContent = memo(function CellContent({
       )
   }
 })
-
-/**
- * Determine badge variant based on status text
- */
-function getStatusVariant(status: string | null | undefined): 'default' | 'secondary' | 'success' | 'warning' | 'destructive' {
-  // Safety check for null/undefined
-  if (!status || typeof status !== 'string') {
-    return 'secondary'
-  }
-
-  const lowerStatus = status.toLowerCase()
-
-  if (lowerStatus.includes('active') || lowerStatus.includes('ativo') ||
-      lowerStatus.includes('approved') || lowerStatus.includes('aprovado') ||
-      lowerStatus.includes('completed') || lowerStatus.includes('concluído')) {
-    return 'success'
-  }
-
-  if (lowerStatus.includes('pending') || lowerStatus.includes('pendente') ||
-      lowerStatus.includes('processing') || lowerStatus.includes('processando')) {
-    return 'warning'
-  }
-
-  if (lowerStatus.includes('inactive') || lowerStatus.includes('inativo') ||
-      lowerStatus.includes('cancelled') || lowerStatus.includes('cancelado') ||
-      lowerStatus.includes('rejected') || lowerStatus.includes('rejeitado')) {
-    return 'destructive'
-  }
-
-  return 'default'
-}
-
-/**
- * Get badge background color based on variant
- */
-function getBadgeColor(variant: string): string {
-  switch (variant) {
-    case 'success':
-      return '#22c55e' // green
-    case 'warning':
-      return '#f59e0b' // amber
-    case 'destructive':
-      return '#ef4444' // red
-    case 'secondary':
-      return '#6b7280' // gray
-    default:
-      return '#3b82f6' // blue
-  }
-}

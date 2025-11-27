@@ -1,8 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useAuth } from "@/contexts/auth-context";
-import { useUser } from "@/hooks";
+import { useUser, useCurrentUser } from "@/hooks";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -57,16 +56,16 @@ export default function TeamMemberDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
-  const { user: currentUser } = useAuth();
+  const { data: currentUser, isLoading: isLoadingCurrentUser } = useCurrentUser();
 
   const id = params?.id || "";
 
   // Check if user is a team leader
-  const isTeamLeader = currentUser?.managedSectorId || false;
+  const isTeamLeader = !!currentUser?.managedSectorId;
 
   const {
     data: response,
-    isLoading,
+    isLoading: isLoadingMember,
     error,
     refetch,
   } = useUser(id, {
@@ -81,12 +80,12 @@ export default function TeamMemberDetailScreen() {
       preference: true,
       _count: {
         select: {
-          tasks: true,
           activities: true,
           borrows: true,
           vacations: true,
           warningsCollaborator: true,
-          commissions: true,
+          ppeDeliveries: true,
+          bonuses: true,
         },
       },
     },
@@ -102,6 +101,24 @@ export default function TeamMemberDetailScreen() {
       showToast({ message: "Dados atualizados com sucesso", type: "success" });
     });
   }, [refetch]);
+
+  // Combined loading state
+  const isLoading = isLoadingCurrentUser || isLoadingMember;
+
+  // Show loading while fetching current user or member data
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Card style={styles.loadingCard}>
+            <ThemedText style={{ color: colors.mutedForeground }}>
+              Carregando dados do colaborador...
+            </ThemedText>
+          </Card>
+        </View>
+      </ThemedView>
+    );
+  }
 
   // Show access denied if not a team leader
   if (!isTeamLeader) {
@@ -121,20 +138,6 @@ export default function TeamMemberDetailScreen() {
             <Button onPress={() => router.back()}>
               <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
             </Button>
-          </Card>
-        </View>
-      </ThemedView>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <ThemedView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Card style={styles.loadingCard}>
-            <ThemedText style={{ color: colors.mutedForeground }}>
-              Carregando dados do colaborador...
-            </ThemedText>
           </Card>
         </View>
       </ThemedView>
@@ -406,15 +409,6 @@ export default function TeamMemberDetailScreen() {
             </View>
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
-                <IconClipboard size={24} color={colors.primary} />
-                <ThemedText style={[styles.statValue, { color: colors.foreground }]}>
-                  {member._count.tasks || 0}
-                </ThemedText>
-                <ThemedText style={[styles.statLabel, { color: colors.mutedForeground }]}>
-                  Tarefas
-                </ThemedText>
-              </View>
-              <View style={styles.statItem}>
                 <IconClock size={24} color={colors.primary} />
                 <ThemedText style={[styles.statValue, { color: colors.foreground }]}>
                   {member._count.activities || 0}
@@ -451,12 +445,21 @@ export default function TeamMemberDetailScreen() {
                 </ThemedText>
               </View>
               <View style={styles.statItem}>
-                <IconStar size={24} color={colors.success} />
+                <IconClipboard size={24} color={colors.primary} />
                 <ThemedText style={[styles.statValue, { color: colors.foreground }]}>
-                  {member._count.commissions || 0}
+                  {member._count.ppeDeliveries || 0}
                 </ThemedText>
                 <ThemedText style={[styles.statLabel, { color: colors.mutedForeground }]}>
-                  Comissões
+                  EPIs
+                </ThemedText>
+              </View>
+              <View style={styles.statItem}>
+                <IconStar size={24} color={colors.success} />
+                <ThemedText style={[styles.statValue, { color: colors.foreground }]}>
+                  {member._count.bonuses || 0}
+                </ThemedText>
+                <ThemedText style={[styles.statLabel, { color: colors.mutedForeground }]}>
+                  Bonificações
                 </ThemedText>
               </View>
             </View>

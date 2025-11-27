@@ -26,11 +26,11 @@ export default function SettingsScreen() {
       route: `/(tabs)${routes.personal.myBorrows.root}`,
     },
     {
-      id: "activities",
-      title: "Minhas Atividades",
-      subtitle: "Histórico de atividades",
+      id: "movements",
+      title: "Minhas Movimentações",
+      subtitle: "Histórico de movimentações",
       icon: IconActivity,
-      route: `/(tabs)${routes.personal.myActivities.root}`,
+      route: `/(tabs)${routes.personal.myMovements.root}`,
     },
     {
       id: "ppes",

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SHIRT_SIZE_LABELS, PANTS_SIZE_LABELS, BOOT_SIZE_LABELS } from "@/constants";
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { extendedColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -66,10 +66,8 @@ const createColumnDefinitions = (): TableColumn[] => [
     accessor: (size: PpeSize) => (
       <View style={styles.centerAlign}>
         {size.shirts ? (
-          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.info.background, borderWidth: 0 }}>
-            <ThemedText style={{ color: badgeColors.info.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
-              {SHIRT_SIZE_LABELS[size.shirts] || size.shirts}
-            </ThemedText>
+          <Badge variant="info" size="sm">
+            {SHIRT_SIZE_LABELS[size.shirts] || size.shirts}
           </Badge>
         ) : (
           <Icon name="minus" size="sm" variant="muted" />
@@ -86,10 +84,8 @@ const createColumnDefinitions = (): TableColumn[] => [
     accessor: (size: PpeSize) => (
       <View style={styles.centerAlign}>
         {size.pants ? (
-          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.info.background, borderWidth: 0 }}>
-            <ThemedText style={{ color: badgeColors.info.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
-              {PANTS_SIZE_LABELS[size.pants] || size.pants}
-            </ThemedText>
+          <Badge variant="info" size="sm">
+            {PANTS_SIZE_LABELS[size.pants] || size.pants}
           </Badge>
         ) : (
           <Icon name="minus" size="sm" variant="muted" />
@@ -106,10 +102,8 @@ const createColumnDefinitions = (): TableColumn[] => [
     accessor: (size: PpeSize) => (
       <View style={styles.centerAlign}>
         {size.boots ? (
-          <Badge variant="secondary" size="sm" style={{ backgroundColor: badgeColors.info.background, borderWidth: 0 }}>
-            <ThemedText style={{ color: badgeColors.info.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
-              {BOOT_SIZE_LABELS[size.boots] || size.boots}
-            </ThemedText>
+          <Badge variant="info" size="sm">
+            {BOOT_SIZE_LABELS[size.boots] || size.boots}
           </Badge>
         ) : (
           <Icon name="minus" size="sm" variant="muted" />
@@ -130,14 +124,10 @@ const createColumnDefinitions = (): TableColumn[] => [
       return (
         <View style={styles.centerAlign}>
           {hasAllSizes ? (
-            <Badge variant="default" size="sm" style={{ backgroundColor: badgeColors.success.background, borderWidth: 0 }}>
-              <ThemedText style={{ color: badgeColors.success.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>Completo</ThemedText>
-            </Badge>
+            <Badge variant="success" size="sm">Completo</Badge>
           ) : (
-            <Badge variant="destructive" size="sm" style={{ backgroundColor: badgeColors.warning.background, borderWidth: 0 }}>
-              <ThemedText style={{ color: badgeColors.warning.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
-                {missingCount} faltando
-              </ThemedText>
+            <Badge variant="warning" size="sm">
+              {missingCount} faltando
             </Badge>
           )}
         </View>

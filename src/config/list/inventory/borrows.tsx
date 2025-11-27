@@ -75,9 +75,9 @@ export const borrowsListConfig: ListConfig<Borrow> = {
       },
       {
         key: 'quantity',
-        label: 'QUANTIDADE',
+        label: 'QNT',
         sortable: true,
-        width: 1.0,
+        width: 0.8,
         align: 'center',
         render: (borrow) => borrow.quantity,
         format: 'number',
@@ -86,8 +86,8 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         key: 'status',
         label: 'STATUS',
         sortable: true,
-        width: 1.5,
-        align: 'center',
+        width: 1.2,
+        align: 'left',
         render: (borrow) => {
           const variant = getBadgeVariant(borrow.status, 'BORROW')
           const label = BORROW_STATUS_LABELS[borrow.status as keyof typeof BORROW_STATUS_LABELS] || borrow.status
@@ -95,7 +95,6 @@ export const borrowsListConfig: ListConfig<Borrow> = {
             <Badge
               variant={variant}
               size="sm"
-              style={{ alignSelf: 'center' }}
             >
               {label}
             </Badge>

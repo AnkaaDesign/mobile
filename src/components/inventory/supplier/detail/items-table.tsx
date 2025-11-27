@@ -165,6 +165,7 @@ export function ItemsTable({ supplier, maxHeight = 500 }: ItemsTableProps) {
                 visibleColumnKeys={visibleColumnKeys}
                 onEndReached={() => canLoadMore && loadMore()}
                 onEndReachedThreshold={0.5}
+                disableVirtualization={true}
                 ListFooterComponent={
                   isFetchingNextPage ? (
                     <View style={styles.footerLoader}>

@@ -1,139 +1,237 @@
-import { View, Linking } from "react-native";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Icon } from "@/components/ui/icon";
-import { Text } from "@/components/ui/text";
-import { Button } from "@/components/ui/button";
+import { View, StyleSheet, Linking, TouchableOpacity } from "react-native";
+import { Card } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
+import { useTheme } from "@/lib/theme";
+import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { IconPhone, IconMail, IconPhoneCall, IconWorld, IconBrandWhatsapp } from "@tabler/icons-react-native";
 import type { Supplier } from "@/types";
-import { cn } from "@/lib/utils";
 import { formatBrazilianPhone } from "@/utils";
+import { showToast } from "@/components/ui/toast";
 
 interface ContactDetailsCardProps {
   supplier: Supplier;
-  className?: string;
 }
 
-export function ContactDetailsCard({ supplier, className }: ContactDetailsCardProps) {
-  const handleEmailPress = (email: string) => {
-    Linking.openURL(`mailto:${email}`);
-  };
+export function ContactDetailsCard({ supplier }: ContactDetailsCardProps) {
+  const { colors } = useTheme();
 
   const handlePhonePress = (phone: string) => {
-    Linking.openURL(`tel:${phone}`);
+    const cleanPhone = phone.replace(/\D/g, "");
+    Linking.openURL(`tel:${cleanPhone}`).catch(() => {
+      showToast({
+        message: "Não foi possível abrir o discador",
+        type: "error",
+      });
+    });
   };
 
   const handleWhatsAppPress = (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, "");
     const whatsappNumber = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-    Linking.openURL(`https://wa.me/${whatsappNumber}`);
+    Linking.openURL(`https://wa.me/${whatsappNumber}`).catch(() => {
+      showToast({
+        message: "Não foi possível abrir o WhatsApp",
+        type: "error",
+      });
+    });
+  };
+
+  const handleEmailPress = (email: string) => {
+    Linking.openURL(`mailto:${email}`).catch(() => {
+      showToast({
+        message: "Não foi possível abrir o cliente de email",
+        type: "error",
+      });
+    });
   };
 
   const handleWebsitePress = (site: string) => {
     const url = site.startsWith("http") ? site : `https://${site}`;
-    Linking.openURL(url);
+    Linking.openURL(url).catch(() => {
+      showToast({
+        message: "Não foi possível abrir o site",
+        type: "error",
+      });
+    });
   };
 
-  return (
-    <Card className={cn("shadow-sm border border-border flex flex-col", className)} level={1}>
-      <CardHeader className="pb-6">
-        <CardTitle className="flex items-center gap-3 text-xl">
-          <View className="p-2 rounded-lg bg-primary/10">
-            <Icon name="phone-call" size={20} className="text-primary" />
+  const hasContactInfo = supplier.email || (supplier.phones && supplier.phones.length > 0) || supplier.site;
+
+  if (!hasContactInfo) {
+    return (
+      <Card style={styles.card}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconPhoneCall size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Informações de Contato</ThemedText>
           </View>
-          <Text className="text-xl font-semibold">Informações de Contato</Text>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0 flex-1">
-        <View className="space-y-6">
-          {/* Email Section */}
-          {supplier.email && (
-            <View>
-              <Text className="text-base font-semibold mb-4 text-foreground">E-mail</Text>
-              <View className="flex flex-row justify-between items-center bg-muted/50 rounded-lg px-4 py-3">
-                <View className="flex flex-row items-center gap-2">
-                  <Icon name="mail" size={16} />
-                  <Text className="text-sm font-medium text-muted-foreground">E-mail Principal</Text>
-                </View>
-                <Button
-                  variant="link"
-                  onPress={() => handleEmailPress(supplier.email!)}
-                  className="p-0 h-auto"
-                >
-                  <Text className="text-sm font-semibold text-green-600">{supplier.email}</Text>
-                </Button>
-              </View>
-            </View>
-          )}
-
-          {/* Phone Numbers Section */}
-          {supplier.phones && supplier.phones.length > 0 && (
-            <View className={supplier.email ? "pt-6 border-t border-border/50" : ""}>
-              <Text className="text-base font-semibold mb-4 text-foreground">Telefones</Text>
-              <View className="space-y-3">
-                {supplier.phones.map((phone, index) => (
-                  <View key={index} className="flex flex-row justify-between items-center bg-muted/50 rounded-lg px-4 py-3">
-                    <View className="flex flex-row items-center gap-2">
-                      <Icon name="phone" size={16} />
-                      <Text className="text-sm font-medium text-muted-foreground">
-                        Telefone {supplier.phones!.length > 1 ? `${index + 1}` : ""}
-                      </Text>
-                    </View>
-                    <View className="flex flex-row items-center gap-3">
-                      <Button
-                        variant="link"
-                        onPress={() => handlePhonePress(phone)}
-                        className="p-0 h-auto"
-                      >
-                        <Text className="text-sm font-semibold text-green-600 font-mono">
-                          {formatBrazilianPhone(phone)}
-                        </Text>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onPress={() => handleWhatsAppPress(phone)}
-                        className="p-1"
-                      >
-                        <Icon name="brand-whatsapp" size={20} className="text-green-600" />
-                      </Button>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* Website Section */}
-          {supplier.site && (
-            <View className={supplier.email || (supplier.phones && supplier.phones.length > 0) ? "pt-6 border-t border-border/50" : ""}>
-              <Text className="text-base font-semibold mb-4 text-foreground">Website</Text>
-              <View className="flex flex-row justify-between items-center bg-muted/50 rounded-lg px-4 py-3">
-                <View className="flex flex-row items-center gap-2">
-                  <Icon name="world" size={16} />
-                  <Text className="text-sm font-medium text-muted-foreground">Site</Text>
-                </View>
-                <Button
-                  variant="link"
-                  onPress={() => handleWebsitePress(supplier.site!)}
-                  className="p-0 h-auto"
-                >
-                  <Text className="text-sm font-semibold text-green-600">{supplier.site}</Text>
-                </Button>
-              </View>
-            </View>
-          )}
-
-          {/* Empty State */}
-          {!supplier.email && (!supplier.phones || supplier.phones.length === 0) && !supplier.site && (
-            <View className="text-center py-8">
-              <View className="p-4 bg-muted/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Icon name="phone-call" size={32} className="text-muted-foreground" />
-              </View>
-              <Text className="text-lg font-semibold mb-2 text-foreground">Nenhuma informação de contato</Text>
-              <Text className="text-sm text-muted-foreground">Este fornecedor não possui informações de contato cadastradas.</Text>
-            </View>
-          )}
         </View>
-      </CardContent>
+        <View style={styles.content}>
+          <View style={styles.emptyState}>
+            <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted + "30" }])}>
+              <IconPhoneCall size={32} color={colors.mutedForeground} />
+            </View>
+            <ThemedText style={StyleSheet.flatten([styles.emptyTitle, { color: colors.foreground }])}>
+              Nenhuma informação de contato
+            </ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.emptyDescription, { color: colors.mutedForeground }])}>
+              Este fornecedor não possui informações de contato cadastradas.
+            </ThemedText>
+          </View>
+        </View>
+      </Card>
+    );
+  }
+
+  return (
+    <Card style={styles.card}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconPhoneCall size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Informações de Contato</ThemedText>
+        </View>
+      </View>
+      <View style={styles.content}>
+        {/* Email */}
+        {supplier.email && (
+          <TouchableOpacity
+            onPress={() => handleEmailPress(supplier.email!)}
+            style={StyleSheet.flatten([styles.infoItem])}
+            activeOpacity={0.7}
+          >
+            <IconMail size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>E-mail</ThemedText>
+              <ThemedText style={[styles.value, { color: "#16a34a" }]}>
+                {supplier.email}
+              </ThemedText>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Phone Numbers */}
+        {supplier.phones && supplier.phones.length > 0 && (
+          <>
+            {supplier.phones.map((phone, index) => (
+              <View
+                key={index}
+                style={styles.infoItem}
+              >
+                <IconPhone size={20} color={colors.mutedForeground} />
+                <View style={styles.infoText}>
+                  <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
+                    Telefone{supplier.phones!.length > 1 ? ` ${index + 1}` : ""}
+                  </ThemedText>
+                  <View style={styles.phoneRow}>
+                    <TouchableOpacity onPress={() => handlePhonePress(phone)} activeOpacity={0.7}>
+                      <ThemedText style={[styles.value, { color: "#16a34a" }]}>
+                        {formatBrazilianPhone(phone)}
+                      </ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleWhatsAppPress(phone)}
+                      activeOpacity={0.7}
+                      style={styles.whatsappIcon}
+                    >
+                      <IconBrandWhatsapp size={18} color="#16a34a" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </>
+        )}
+
+        {/* Website */}
+        {supplier.site && (
+          <TouchableOpacity
+            onPress={() => handleWebsitePress(supplier.site!)}
+            style={styles.infoItem}
+            activeOpacity={0.7}
+          >
+            <IconWorld size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Website</ThemedText>
+              <ThemedText style={[styles.value, { color: "#16a34a" }]}>
+                {supplier.site}
+              </ThemedText>
+            </View>
+          </TouchableOpacity>
+        )}
+      </View>
     </Card>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+  infoItem: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    alignItems: "flex-start",
+  },
+  infoText: {
+    flex: 1,
+    gap: 2,
+  },
+  label: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+  },
+  value: {
+    fontSize: fontSize.sm,
+    fontWeight: "600",
+  },
+  phoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  whatsappIcon: {
+    padding: spacing.xs / 2,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: spacing.xxl,
+    gap: spacing.md,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  emptyTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+  },
+  emptyDescription: {
+    fontSize: fontSize.sm,
+    textAlign: "center",
+    paddingHorizontal: spacing.xl,
+  },
+});

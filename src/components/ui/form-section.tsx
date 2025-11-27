@@ -283,6 +283,7 @@ const cardStyles = StyleSheet.create({
     borderRadius: formLayout.cardBorderRadius, // 12px
     borderWidth: formLayout.borderWidth, // 1px
     overflow: "hidden",
+    marginBottom: formSpacing.cardMarginBottom, // 16px - spacing between cards
   },
   header: {
     paddingHorizontal: formSpacing.cardPadding, // 16px

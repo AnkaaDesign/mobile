@@ -1,3 +1,6 @@
+import React from 'react'
+import { View, StyleSheet } from 'react-native'
+import { IconAlertTriangleFilled } from '@tabler/icons-react-native'
 import type { ListConfig } from '@/components/list/types'
 import type { Item } from '@/types'
 import {
@@ -11,7 +14,40 @@ import {
   ITEM_CATEGORY_TYPE_LABELS,
 } from '@/constants'
 import { canEditItems } from '@/utils/permissions/entity-permissions'
-import { getStockLevelIcon } from '@/utils/stock-level'
+import { determineStockLevel } from '@/utils'
+import { ThemedText } from '@/components/ui/themed-text'
+
+const styles = StyleSheet.create({
+  quantityCell: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  quantityText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+})
+
+// Get stock level color (matching web exactly)
+const getStockLevelColor = (stockLevel: string): string => {
+  switch (stockLevel) {
+    case STOCK_LEVEL.NEGATIVE_STOCK:
+      return '#737373' // neutral-500
+    case STOCK_LEVEL.OUT_OF_STOCK:
+      return '#b91c1c' // red-700
+    case STOCK_LEVEL.CRITICAL:
+      return '#f97316' // orange-500
+    case STOCK_LEVEL.LOW:
+      return '#eab308' // yellow-500
+    case STOCK_LEVEL.OPTIMAL:
+      return '#15803d' // green-700
+    case STOCK_LEVEL.OVERSTOCKED:
+      return '#9333ea' // purple-600
+    default:
+      return '#737373' // neutral-500
+  }
+}
 
 export const itemsListConfig: ListConfig<Item> = {
   key: 'inventory-items',
@@ -78,12 +114,30 @@ export const itemsListConfig: ListConfig<Item> = {
       },
       {
         key: 'quantity',
-        label: 'QUANTIDADE',
+        label: 'QNT',
         sortable: true,
         width: 0.9,
         align: 'left',
-        render: (item) => String(item.quantity || 0),
-        component: 'quantity-with-status',
+        render: (item) => {
+          const quantity = item.quantity || 0
+          const stockLevel = determineStockLevel(
+            quantity,
+            item.reorderPoint || null,
+            item.maxQuantity || null,
+            false
+          )
+          const color = getStockLevelColor(stockLevel)
+          const formattedQuantity = quantity % 1 === 0
+            ? quantity.toLocaleString('pt-BR')
+            : quantity.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+          return (
+            <View style={styles.quantityCell}>
+              <IconAlertTriangleFilled size={16} color={color} />
+              <ThemedText style={styles.quantityText}>{formattedQuantity}</ThemedText>
+            </View>
+          )
+        },
       },
       {
         key: 'monthlyConsumption',
@@ -218,7 +272,7 @@ export const itemsListConfig: ListConfig<Item> = {
         width: 1.0,
         align: 'center',
         render: (item) => String((item as any)._count?.activities || 0),
-        format: 'badge',
+        format: 'count-badge',
       },
       {
         key: 'createdAt',

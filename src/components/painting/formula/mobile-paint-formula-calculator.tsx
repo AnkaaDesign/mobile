@@ -7,10 +7,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
-import { formatCurrency, formatNumberWithDecimals } from "@/utils";
+import { formatNumberWithDecimals } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import type { PaintFormula, Item } from "../../../types";
-import { IconAlertTriangle, IconCheck, IconX, IconAlertCircle, IconLoader2, IconCurrencyDollar, IconAdjustments } from "@tabler/icons-react-native";
+import { IconAlertTriangle, IconCheck, IconX, IconAlertCircle, IconLoader2, IconCurrencyDollar, IconAdjustments, IconCalculator } from "@tabler/icons-react-native";
 import { usePaintProductionMutations, useKeyboardAwareScroll } from "@/hooks";
 import { useItems } from "../../../hooks";
 import { showToast } from "@/components/ui/toast";
@@ -323,10 +323,12 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
 
       if (result?.data?.id) {
         showToast({
-          title: "Produção iniciada!",
+          title: "Produção registrada com sucesso!",
+          description: `${parseFloat(desiredVolume) / 1000}L de tinta produzidos`,
           variant: "success",
         });
-        router.push("/pintura/catalogo/listar");
+        // Reset form state after successful production
+        setSelectedComponents([]);
       }
     } catch (error) {
       console.error("Error creating production:", error);
@@ -352,17 +354,26 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
         scrollEventThrottle={16}
       >
         <KeyboardAwareFormProvider value={keyboardContextValue}>
-          <View style={styles.container}>
-            {/* Controls Section */}
-            <View style={styles.controls}>
-              {/* Volume Input */}
-              <View
-                style={styles.inputSection}
-                onLayout={(e) => handlers.handleFieldLayout('volumeInput', e)}
-              >
-                <Text style={[styles.label, { color: colors.foreground }]}>
-                  Volume Desejado (ml)
-                </Text>
+          <Card style={styles.card}>
+            {/* Card Header */}
+            <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
+              <IconCalculator size={20} color={colors.primary} />
+              <Text style={[styles.cardTitle, { color: colors.foreground }]}>
+                Calculadora de Produção
+              </Text>
+            </View>
+
+            <View style={styles.container}>
+              {/* Controls Section */}
+              <View style={styles.controls}>
+                {/* Volume Input */}
+                <View
+                  style={styles.inputSection}
+                  onLayout={(e) => handlers.handleFieldLayout('volumeInput', e)}
+                >
+                  <Text style={[styles.label, { color: colors.foreground }]}>
+                    Volume Desejado (ml)
+                  </Text>
                 <Input
                   value={desiredVolume}
                   onChangeText={setDesiredVolume}
@@ -615,25 +626,8 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
         )}
       </Button>
 
-      {/* Specs Card */}
-      <Card style={styles.specsCard}>
-        <View style={styles.specsRow}>
-          <View style={styles.specItem}>
-            <Text style={[styles.specLabel, { color: colors.mutedForeground }]}>Densidade</Text>
-            <Text style={[styles.specValue, { color: colors.foreground }]}>
-              {formatNumberWithDecimals(Number(formula.density), 3)} g/ml
-            </Text>
-          </View>
-          <View style={styles.specItem}>
-            <Text style={[styles.specLabel, { color: colors.mutedForeground }]}>Preço por Litro</Text>
-            <Text style={[styles.specValue, { color: colors.foreground }]}>
-              {formatCurrency(totals.pricePerLiter)}
-            </Text>
-          </View>
-        </View>
-      </Card>
-
-          </View>
+            </View>
+          </Card>
         </KeyboardAwareFormProvider>
       </ScrollView>
 
@@ -739,9 +733,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: formSpacing.containerPaddingHorizontal,
-    paddingTop: formSpacing.containerPaddingVertical,
     paddingBottom: 0,
+  },
+  card: {
+    padding: 16,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   container: {
     gap: 16,
@@ -872,26 +879,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   totalText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  specsCard: {
-    padding: 16,
-  },
-  specsRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  specItem: {
-    flex: 1,
-    gap: 4,
-  },
-  specLabel: {
-    fontSize: 10,
-    fontWeight: "500",
-    textTransform: "uppercase",
-  },
-  specValue: {
     fontSize: 14,
     fontWeight: "600",
   },

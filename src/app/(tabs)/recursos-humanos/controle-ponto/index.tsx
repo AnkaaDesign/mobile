@@ -86,6 +86,14 @@ export default function TimeEntriesListScreen() {
     ];
   }, [usersData]);
 
+  // Set first user as default when users are loaded and no user is selected
+  useEffect(() => {
+    if (usersData?.data && usersData.data.length > 0 && !selectedUserId) {
+      const firstUserId = usersData.data[0].id;
+      setSelectedUserId(firstUserId);
+    }
+  }, [usersData, selectedUserId]);
+
   // Calculate period dates (26th to 25th - same as calculos)
   const periodDates = useMemo(() => {
     const year = selectedDate.getFullYear();
@@ -263,7 +271,7 @@ export default function TimeEntriesListScreen() {
 
           {/* Month Navigator + Column Button */}
           <View style={styles.controlsRow}>
-            <View style={[styles.monthSelector, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.monthSelector, { backgroundColor: colors.input, borderColor: colors.border }]}>
               <TouchableOpacity
                 style={[styles.navButton, { backgroundColor: colors.muted }]}
                 onPress={handlePreviousMonth}
@@ -289,7 +297,7 @@ export default function TimeEntriesListScreen() {
             </View>
 
             <TouchableOpacity
-              style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              style={[styles.columnButton, { backgroundColor: colors.input, borderColor: colors.border }]}
               onPress={() => setIsColumnPanelOpen(true)}
             >
               <IconList size={20} color={colors.foreground} />
@@ -332,13 +340,12 @@ const styles = StyleSheet.create({
   headerContainer: {
     paddingHorizontal: 8,
     paddingVertical: 8,
-    gap: 0,
+    gap: 8,
   },
   controlsRow: {
     flexDirection: "row",
     gap: 8,
     alignItems: "stretch",
-    marginTop: -8,
   },
   monthSelector: {
     flex: 1,

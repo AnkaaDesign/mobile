@@ -274,18 +274,8 @@ export const customersListConfig: ListConfig<Customer> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (customer: Customer) => {
-          const count = (customer as any)._count?.tasks || 0
-          return (
-            <Badge
-              variant="muted"
-              size="sm"
-              style={{ alignSelf: 'center', minWidth: 40, justifyContent: 'center' }}
-            >
-              {String(count)}
-            </Badge>
-          )
-        },
+        render: (customer: Customer) => String((customer as any)._count?.tasks || 0),
+        format: 'count-badge',
       },
     ],
     defaultVisible: ['fantasyName', 'cnpj', 'taskCount'],

@@ -511,12 +511,13 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
           : [...selectedValues, optionValue];
         onValueChange?.(newValues);
       } else {
-        const newValue = value === optionValue ? undefined : optionValue;
+        // Only toggle off if clearable is true, otherwise just select
+        const newValue = clearable && value === optionValue ? undefined : optionValue;
         onValueChange?.(newValue);
         handleClose();
       }
     },
-    [isMultiple, selectedValues, value, onValueChange, handleClose],
+    [isMultiple, selectedValues, value, onValueChange, handleClose, clearable],
   );
 
   const handleCreate = useCallback(async () => {

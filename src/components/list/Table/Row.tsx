@@ -113,6 +113,9 @@ export const Row = memo(function Row<T extends { id: string }>({
                       value={column.render(item)}
                       format={column.format}
                       style={column.style}
+                      badgeEntity={column.badgeEntity}
+                      component={column.component}
+                      onCellPress={column.onCellPress ? () => column.onCellPress!(item) : undefined}
                     />
                   </Cell>
                 ))}
@@ -152,6 +155,9 @@ export const Row = memo(function Row<T extends { id: string }>({
                   value={column.render(item)}
                   format={column.format}
                   style={column.style}
+                  badgeEntity={column.badgeEntity}
+                  component={column.component}
+                  onCellPress={column.onCellPress ? () => column.onCellPress!(item) : undefined}
                 />
               </Cell>
             ))}

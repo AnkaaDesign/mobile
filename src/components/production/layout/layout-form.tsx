@@ -125,6 +125,8 @@ interface LayoutFormProps {
   };
   onChange: (side: 'left' | 'right' | 'back', data: LayoutCreateFormData) => void;
   disabled?: boolean;
+  /** When true, disables the internal ScrollView and KeyboardAvoidingView (use when nested in another scrollable) */
+  embedded?: boolean;
 }
 
 interface Door {
@@ -149,10 +151,10 @@ const getPhotoUrl = (photoId: string | null): string | undefined => {
   return `${apiUrl}/files/serve/${photoId}`;
 };
 
-export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }: LayoutFormProps) {
+export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, embedded = false }: LayoutFormProps) {
   const { colors } = useTheme();
 
-  // Keyboard-aware scrolling
+  // Keyboard-aware scrolling (only used when not embedded)
   const { handlers, refs } = useKeyboardAwareScroll();
 
   // Memoize keyboard context value
@@ -303,6 +305,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
 
   // CRITICAL: Emit initial state to parent when selected side changes
   // This ensures parent knows the default values
+  // Using setTimeout to avoid "Cannot update a component while rendering" error
   useEffect(() => {
     console.log('[LayoutForm Mobile] Initial state emission check', {
       selectedSide,
@@ -327,33 +330,40 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
       return;
     }
 
-    const state = sideStates[selectedSide];
-    const segments = calculateSegments(state.doors, state.totalWidth);
+    // Use requestAnimationFrame to defer the state update and avoid the React warning
+    // "Cannot update a component while rendering a different component"
+    // requestAnimationFrame ensures the update happens after React finishes rendering
+    const frameId = requestAnimationFrame(() => {
+      const state = sideStates[selectedSide];
+      const segments = calculateSegments(state.doors, state.totalWidth);
 
-    const sections = segments.map((segment, index) => ({
-      width: segment.width / 100,
-      isDoor: segment.type === 'door',
-      doorOffset: segment.type === 'door' && segment.door ? segment.door.offsetTop / 100 : null,
-      position: index
-    }));
+      const sections = segments.map((segment, index) => ({
+        width: segment.width / 100,
+        isDoor: segment.type === 'door',
+        doorOffset: segment.type === 'door' && segment.door ? segment.door.offsetTop / 100 : null,
+        position: index
+      }));
 
-    const layoutDataToEmit: LayoutCreateFormData = {
-      height: state.height / 100,
-      sections,
-      photoId: state.photoId || null,
-    };
+      const layoutDataToEmit: LayoutCreateFormData = {
+        height: state.height / 100,
+        sections,
+        photoId: state.photoId || null,
+      };
 
-    console.log('[LayoutForm Mobile] ✅ Emitting initial state:', {
-      selectedSide,
-      sectionsCount: sections.length,
-      height: layoutDataToEmit.height,
+      console.log('[LayoutForm Mobile] Emitting initial state:', {
+        selectedSide,
+        sectionsCount: sections.length,
+        height: layoutDataToEmit.height,
+      });
+
+      // Mark this side as having emitted state
+      initialStateEmittedRef.current[selectedSide] = true;
+
+      // Emit to parent
+      onChange(selectedSide, layoutDataToEmit);
     });
 
-    // Mark this side as having emitted state
-    initialStateEmittedRef.current[selectedSide] = true;
-
-    // Emit to parent
-    onChange(selectedSide, layoutDataToEmit);
+    return () => cancelAnimationFrame(frameId);
   }, [selectedSide, onChange]);
 
   // Calculate segments (sections between doors)
@@ -753,22 +763,9 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
     );
   }
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-    >
-      <ScrollView
-        ref={refs.scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        onLayout={handlers.handleScrollViewLayout}
-        onScroll={handlers.handleScroll}
-        scrollEventThrottle={16}
-      >
-        <KeyboardAwareFormProvider value={keyboardContextValue}>
+  // The main form content
+  const formContent = (
+    <>
       {/* Total Width Display */}
       <View style={[styles.totalWidthContainer, { backgroundColor: colors.primary + '20', borderRadius: borderRadius.md }]}>
         <ThemedText style={[styles.totalWidthLabel, { color: colors.mutedForeground }]}>
@@ -1010,7 +1007,37 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
         </Button>
       )}
 
-      <View style={{ height: spacing.xl }} />
+      {!embedded && <View style={{ height: spacing.xl }} />}
+    </>
+  );
+
+  // When embedded, just return the content without wrapper ScrollView/KeyboardAvoidingView
+  if (embedded) {
+    return (
+      <View style={styles.embeddedContainer}>
+        {formContent}
+      </View>
+    );
+  }
+
+  // Standalone mode with its own scrolling
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
+      <ScrollView
+        ref={refs.scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        onLayout={handlers.handleScrollViewLayout}
+        onScroll={handlers.handleScroll}
+        scrollEventThrottle={16}
+      >
+        <KeyboardAwareFormProvider value={keyboardContextValue}>
+          {formContent}
         </KeyboardAwareFormProvider>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -1020,6 +1047,9 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  embeddedContainer: {
+    // No flex: 1 when embedded - let parent control sizing
   },
   scrollView: {
     flex: 1,

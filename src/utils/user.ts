@@ -186,7 +186,7 @@ export function getUserStatusBadgeText(user: User): string {
   const statusLabels: Record<USER_STATUS, string> = {
     [USER_STATUS.EXPERIENCE_PERIOD_1]: "Exp1",
     [USER_STATUS.EXPERIENCE_PERIOD_2]: "Exp2",
-    [USER_STATUS.CONTRACTED]: "Contratado",
+    [USER_STATUS.EFFECTED]: "Efetivado",
     [USER_STATUS.DISMISSED]: "Demitido",
   };
 

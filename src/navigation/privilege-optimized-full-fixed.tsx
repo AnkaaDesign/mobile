@@ -28,7 +28,12 @@ const ALL_ROUTES = [
   { name: "inicio", title: "Início" },
   { name: "pessoal/meu-perfil", title: "Meu Perfil" }, // Fixed: was meu-perfil
   { name: "configuracoes", title: "Configurações" },
+
+  // Catalogo - View-only for Leaders (separate from Pintura module)
   { name: "catalogo", title: "Catálogo" },
+  { name: "catalogo/index", title: "Catálogo" },
+  { name: "catalogo/listar", title: "Catálogo de Tintas" },
+  { name: "catalogo/detalhes/[id]", title: "Detalhes da Tinta" },
 
   // Administration
   { name: "administracao/index", title: "Administração" },
@@ -151,6 +156,7 @@ const ALL_ROUTES = [
   { name: "producao/cronograma/operacoes-em-lote", title: "Operações em Lote" },
   { name: "producao/cronograma/detalhes/[id]", title: "Detalhes do Cronograma" },
   { name: "producao/cronograma/editar/[id]", title: "Editar Cronograma" },
+  { name: "producao/cronograma/layout/[id]", title: "Layout do Caminhao" },
   { name: "producao/aerografia/index", title: "Aerografia" },
   { name: "producao/aerografia/cadastrar", title: "Cadastrar Aerografia" },
   { name: "producao/aerografia/listar", title: "Aerografias" },
@@ -266,9 +272,15 @@ const ALL_ROUTES = [
 
   // My Team
   { name: "meu-pessoal/index", title: "Meu Pessoal" },
-  { name: "meu-pessoal/advertencias", title: "Advertências" },
-  { name: "meu-pessoal/emprestimos", title: "Empréstimos" },
-  { name: "meu-pessoal/ferias", title: "Férias" },
+  { name: "meu-pessoal/movimentacoes", title: "Movimentações da Equipe" },
+  { name: "meu-pessoal/advertencias", title: "Advertências da Equipe" },
+  { name: "meu-pessoal/emprestimos", title: "Empréstimos da Equipe" },
+  { name: "meu-pessoal/epis", title: "EPIs da Equipe" },
+  { name: "meu-pessoal/epis/detalhes/[id]", title: "Detalhes do EPI" },
+  { name: "meu-pessoal/ferias", title: "Férias da Equipe" },
+  { name: "meu-pessoal/ferias/detalhes/[id]", title: "Detalhes das Férias" },
+  { name: "meu-pessoal/usuarios", title: "Membros da Equipe" },
+  { name: "meu-pessoal/calculos", title: "Controle de Ponto" },
 
   // Minha Equipe (My Team - for team leaders only)
   { name: "minha-equipe/index", title: "Minha Equipe" },
@@ -286,8 +298,9 @@ const ALL_ROUTES = [
   { name: "pessoal/meus-epis/detalhes/[id]", title: "Detalhes do EPI" },
   { name: "pessoal/meus-emprestimos/index", title: "Meus Empréstimos" },
   { name: "pessoal/meus-emprestimos/detalhes/[id]", title: "Detalhes do Empréstimo" },
-  { name: "pessoal/minhas-atividades/index", title: "Minhas Atividades" },
-  { name: "pessoal/minhas-atividades/detalhes/[id]", title: "Detalhes da Atividade" },
+  { name: "pessoal/minhas-movimentacoes/index", title: "Minhas Movimentações" },
+  { name: "pessoal/minhas-movimentacoes/listar", title: "Minhas Movimentações" },
+  { name: "pessoal/minhas-movimentacoes/detalhes/[id]", title: "Detalhes da Movimentação" },
   { name: "pessoal/minhas-advertencias/index", title: "Minhas Advertências" },
   { name: "pessoal/minhas-advertencias/detalhes/[id]", title: "Detalhes da Advertência" },
   { name: "pessoal/meus-bonus/index", title: "Meus Bônus" },
@@ -405,8 +418,18 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     const path = route.name;
 
     // Core routes always accessible
-    if (['inicio', 'pessoal/meu-perfil', 'configuracoes', 'catalogo'].includes(path)) {
+    if (['inicio', 'pessoal/meu-perfil', 'configuracoes'].includes(path)) {
       return true;
+    }
+
+    // Catalogo routes - accessible for LEADER and DESIGNER users (view-only catalog)
+    if (path === 'catalogo' || path.startsWith('catalogo/')) {
+      // Leaders and Designers get access to the view-only catalog
+      if (userPrivileges.includes(SECTOR_PRIVILEGES.LEADER) ||
+          userPrivileges.includes(SECTOR_PRIVILEGES.DESIGNER)) {
+        return true;
+      }
+      return false;
     }
 
     // Check module-based access
@@ -429,14 +452,12 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     }
     if (userPrivileges.includes(SECTOR_PRIVILEGES.LEADER) && (
       path.startsWith('meu-pessoal/') ||
-      path.startsWith('producao/') ||
-      path.startsWith('pintura/')
+      path.startsWith('producao/')
+      // Note: LEADER users should use /catalogo (view-only) instead of /pintura
     )) {
       return true;
     }
-    if (userPrivileges.includes(SECTOR_PRIVILEGES.DESIGNER) && path.startsWith('pintura/')) {
-      return true;
-    }
+    // Note: DESIGNER users should use /catalogo (view-only) instead of /pintura
     if (userPrivileges.includes(SECTOR_PRIVILEGES.MAINTENANCE) && (
       path.startsWith('manutencao/') ||
       path.startsWith('estoque/manutencao/')

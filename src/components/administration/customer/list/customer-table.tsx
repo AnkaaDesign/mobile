@@ -232,16 +232,16 @@ export const createColumnDefinitions = (): TableColumn[] => [
       return (
         <View style={styles.centerAlign}>
           <Badge
-            variant={count > 0 ? "default" : "secondary"}
+            variant="secondary"
             size="sm"
             style={{
-              backgroundColor: count > 0 ? badgeColors.info.background : badgeColors.muted.background,
+              backgroundColor: badgeColors.muted.background,
               borderWidth: 0,
             }}
           >
             <ThemedText
               style={{
-                color: count > 0 ? badgeColors.info.text : badgeColors.muted.text,
+                color: badgeColors.muted.text,
                 fontSize: fontSize.xs,
                 fontWeight: fontWeight.medium,
               }}

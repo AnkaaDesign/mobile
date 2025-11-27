@@ -99,7 +99,7 @@ export function FormulaProductionsTable({
     totalCount,
   } = usePaintProductionsInfiniteMobile({
     where: {
-      paintFormulaId: formula.id,
+      formulaId: formula.id,
     },
     orderBy: { createdAt: "desc" },
     enabled: !!formula.id,

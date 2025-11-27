@@ -37,9 +37,7 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = ({ task }) => {
   return (
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={[styles.iconWrapper, { backgroundColor: colors.primary + "10" }]}>
-          <IconCalendarWeek size={18} color={colors.primary} />
-        </View>
+        <IconCalendarWeek size={20} color={colors.primary} />
         <ThemedText style={styles.title}>Datas</ThemedText>
       </View>
 
@@ -135,13 +133,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-  },
-  iconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
   },
   title: {
     fontSize: fontSize.lg,

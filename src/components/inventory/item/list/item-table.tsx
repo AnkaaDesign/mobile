@@ -131,7 +131,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
   },
   {
     key: "quantity",
-    header: "QUANTIDADE",
+    header: "QNT",
     align: "left",
     sortable: true,
     width: 0,

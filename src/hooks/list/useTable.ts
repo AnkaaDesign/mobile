@@ -24,14 +24,29 @@ export function useTable<T extends { id: string }>({
         try {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setVisibleColumns(parsed)
+            // Filter out any column keys that no longer exist in the current columns
+            const validColumnKeys = new Set(columns.map(col => col.key))
+            const validSavedColumns = parsed.filter((key: string) => validColumnKeys.has(key))
+
+            // Only use saved columns if at least one is still valid
+            if (validSavedColumns.length > 0) {
+              setVisibleColumns(validSavedColumns)
+              // If some columns were invalid, update storage with valid ones
+              if (validSavedColumns.length !== parsed.length) {
+                AsyncStorage.setItem(`table-columns-${storageKey}`, JSON.stringify(validSavedColumns))
+              }
+            } else {
+              // All saved columns are invalid, reset to defaults
+              setVisibleColumns(defaultVisible)
+              AsyncStorage.setItem(`table-columns-${storageKey}`, JSON.stringify(defaultVisible))
+            }
           }
         } catch (error) {
           console.error('Failed to parse saved columns:', error)
         }
       }
     })
-  }, [storageKey])
+  }, [storageKey, columns, defaultVisible])
 
   // Save column visibility
   const handleColumnChange = useCallback(

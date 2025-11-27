@@ -6,6 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
 import { useTheme } from "@/lib/theme";
+import { useAuth } from "@/contexts/auth-context";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconAlertCircle, IconList, IconCut } from "@tabler/icons-react-native";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
@@ -13,16 +14,28 @@ import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-sl
 import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { useCutsInfiniteMobile } from "@/hooks";
 import { CutsTable as CutsTableComponent, createColumnDefinitions } from "@/components/production/cuts/list/cuts-table";
+import { CutRequestModal } from "@/components/production/cuts/form/cut-request-modal";
+import { canRequestCutForTask } from "@/utils/permissions/entity-permissions";
 import { routes } from "@/constants";
 import { routeToMobilePath } from "@/utils/route-mapper";
+import type { Cut } from "@/types";
 
 interface CutsTableProps {
   taskId: string;
+  taskSectorId?: string | null;
   maxHeight?: number;
 }
 
-export function CutsTable({ taskId, maxHeight = 400 }: CutsTableProps) {
+export function CutsTable({ taskId, taskSectorId, maxHeight = 400 }: CutsTableProps) {
   const { colors } = useTheme();
+  const { user } = useAuth();
+
+  // Check if user can request cuts for this task
+  const canRequestCuts = canRequestCutForTask(user, taskSectorId);
+
+  // Cut request modal state
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [selectedCutForRequest, setSelectedCutForRequest] = useState<Cut | null>(null);
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -95,6 +108,21 @@ export function CutsTable({ taskId, maxHeight = 400 }: CutsTableProps) {
     // For now, we don't have a cut details page
   };
 
+  // Handle cut request - open modal with selected cut
+  const handleCutRequest = useCallback((cutId: string) => {
+    const cut = cuts.find(c => c.id === cutId);
+    if (cut) {
+      setSelectedCutForRequest(cut);
+      setIsRequestModalOpen(true);
+    }
+  }, [cuts]);
+
+  // Handle request modal close
+  const handleRequestModalClose = useCallback(() => {
+    setIsRequestModalOpen(false);
+    setSelectedCutForRequest(null);
+  }, []);
+
   // Don't show if no cuts and not loading
   if (!isLoading && cuts.length === 0 && !searchQuery) {
     return null;
@@ -156,7 +184,8 @@ export function CutsTable({ taskId, maxHeight = 400 }: CutsTableProps) {
               <CutsTableComponent
                 cuts={filteredCuts}
                 onCutPress={handleCutPress}
-                enableSwipeActions={false}
+                enableSwipeActions={canRequestCuts}
+                onCutRequest={canRequestCuts ? handleCutRequest : undefined}
                 visibleColumnKeys={visibleColumnKeys}
                 onEndReached={() => canLoadMore && loadMore()}
                 onEndReachedThreshold={0.5}
@@ -182,6 +211,17 @@ export function CutsTable({ taskId, maxHeight = 400 }: CutsTableProps) {
           defaultColumns={new Set(getDefaultVisibleColumns())}
         />
       </SlideInPanel>
+
+      {/* Cut Request Modal */}
+      <CutRequestModal
+        visible={isRequestModalOpen}
+        onClose={handleRequestModalClose}
+        cutItem={selectedCutForRequest}
+        onSuccess={() => {
+          // Refetch cuts after successful request
+          handleRequestModalClose();
+        }}
+      />
     </>
   );
 }

@@ -17,6 +17,16 @@ interface CustomerCardProps {
 export function CustomerCard({ customer }: CustomerCardProps) {
   const { colors } = useTheme();
 
+  // Get initials for fallback display
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
@@ -27,18 +37,24 @@ export function CustomerCard({ customer }: CustomerCardProps) {
       </View>
       <View style={styles.content}>
         <View style={styles.infoContainer}>
-          {/* Logo Section */}
-          {customer.logo && customer.logo.id && (
-            <View style={styles.logoSection}>
-              <View style={StyleSheet.flatten([styles.logoContainer, { borderColor: colors.muted, backgroundColor: colors.muted + "30" }])}>
+          {/* Logo Section - Always show with fallback */}
+          <View style={styles.logoSection}>
+            <View style={StyleSheet.flatten([styles.logoContainer, { borderColor: colors.muted, backgroundColor: colors.muted + "30" }])}>
+              {customer.logo && customer.logo.id ? (
                 <Image
                   source={{ uri: getFileUrl(customer.logo!) }}
                   style={styles.logoImage}
                   resizeMode="contain"
                 />
-              </View>
+              ) : (
+                <View style={StyleSheet.flatten([styles.logoFallback, { backgroundColor: colors.primary + "20" }])}>
+                  <ThemedText style={StyleSheet.flatten([styles.logoInitials, { color: colors.primary }])}>
+                    {getInitials(customer.fantasyName)}
+                  </ThemedText>
+                </View>
+              )}
             </View>
-          )}
+          </View>
 
           {/* Identification Section */}
           <View style={styles.section}>
@@ -188,6 +204,16 @@ const styles = StyleSheet.create({
   logoImage: {
     width: "100%",
     height: "100%",
+  },
+  logoFallback: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoInitials: {
+    fontSize: fontSize["2xl"],
+    fontWeight: fontWeight.bold,
   },
   section: {
     gap: spacing.lg,

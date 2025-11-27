@@ -1,9 +1,9 @@
 
-import { View, StyleSheet} from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { IconShirt, IconShoe, IconBoxSeam, IconMask, IconBulb, IconCertificate, IconPackage, IconUser, IconRuler } from "@tabler/icons-react-native";
-import type { Item } from '../../../../types';
+import { IconShirt, IconShoe, IconBoxSeam, IconMask, IconBulb, IconCertificate, IconPackage, IconUser, IconRuler, IconShield } from "@tabler/icons-react-native";
+import type { Item } from "../../../../types";
 import { PPE_TYPE_LABELS, PPE_SIZE_LABELS, PPE_DELIVERY_MODE_LABELS, PPE_TYPE } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
@@ -41,8 +41,11 @@ export function PpeInfoCard({ item }: PpeInfoCardProps) {
 
   return (
     <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Informações de EPI</ThemedText>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconShield size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Informações de EPI</ThemedText>
+        </View>
       </View>
       <View style={styles.content}>
         <View style={styles.innerContent}>
@@ -128,19 +131,25 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
-  sectionHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
   content: {
     gap: spacing.md,
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
   },
   innerContent: {
     gap: spacing.lg,

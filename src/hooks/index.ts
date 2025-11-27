@@ -166,6 +166,8 @@ export * from "./use-users-infinite-mobile";
 export * from "./use-vacations-infinite-mobile";
 export * from "./use-warnings-infinite-mobile";
 export * from "./use-my-warnings-infinite-mobile";
+export * from "./use-team-warnings-infinite-mobile";
+export * from "./use-team-vacations-infinite-mobile";
 export * from "./use-order-schedules-infinite-mobile";
 export * from "./use-cuts-infinite-mobile";
 export * from "./use-airbrushings-infinite-mobile";

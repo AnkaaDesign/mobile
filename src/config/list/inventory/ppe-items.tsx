@@ -1,9 +1,46 @@
+import React from 'react'
+import { View, StyleSheet } from 'react-native'
+import { IconAlertTriangleFilled } from '@tabler/icons-react-native'
 import type { ListConfig } from '@/components/list/types'
 import type { Item } from '@/types'
-import { ITEM_CATEGORY_TYPE} from '@/constants'
+import { ITEM_CATEGORY_TYPE, STOCK_LEVEL } from '@/constants'
 import { routes } from '@/constants'
 import { routeToMobilePath } from '@/utils/route-mapper'
 import { canEditItems } from '@/utils/permissions/entity-permissions'
+import { determineStockLevel } from '@/utils'
+import { ThemedText } from '@/components/ui/themed-text'
+
+const styles = StyleSheet.create({
+  quantityCell: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  quantityText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+})
+
+// Get stock level color (matching web exactly)
+const getStockLevelColor = (stockLevel: string): string => {
+  switch (stockLevel) {
+    case STOCK_LEVEL.NEGATIVE_STOCK:
+      return '#737373' // neutral-500
+    case STOCK_LEVEL.OUT_OF_STOCK:
+      return '#b91c1c' // red-700
+    case STOCK_LEVEL.CRITICAL:
+      return '#f97316' // orange-500
+    case STOCK_LEVEL.LOW:
+      return '#eab308' // yellow-500
+    case STOCK_LEVEL.OPTIMAL:
+      return '#15803d' // green-700
+    case STOCK_LEVEL.OVERSTOCKED:
+      return '#9333ea' // purple-600
+    default:
+      return '#737373' // neutral-500
+  }
+}
 
 export const ppeItemsListConfig: ListConfig<Item> = {
   key: 'inventory-ppe-items',
@@ -68,11 +105,30 @@ export const ppeItemsListConfig: ListConfig<Item> = {
       },
       {
         key: 'quantity',
-        label: 'QUANTIDADE',
+        label: 'QNT',
         sortable: true,
-        width: 1.0,
-        align: 'center',
-        render: (item) => item.quantity?.toString() || '0',
+        width: 0.9,
+        align: 'left',
+        render: (item) => {
+          const quantity = item.quantity || 0
+          const stockLevel = determineStockLevel(
+            quantity,
+            item.reorderPoint || null,
+            item.maxQuantity || null,
+            false
+          )
+          const color = getStockLevelColor(stockLevel)
+          const formattedQuantity = quantity % 1 === 0
+            ? quantity.toLocaleString('pt-BR')
+            : quantity.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+          return (
+            <View style={styles.quantityCell}>
+              <IconAlertTriangleFilled size={16} color={color} />
+              <ThemedText style={styles.quantityText}>{formattedQuantity}</ThemedText>
+            </View>
+          )
+        },
       },
       {
         key: 'brand.name',
@@ -100,7 +156,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         format: 'badge',
       },
     ],
-    defaultVisible: ['name', 'ppeType', 'ppeSize', 'quantity'],
+    defaultVisible: ['name', 'ppeSize', 'quantity'],
     rowHeight: 60,
     actions: [
       {

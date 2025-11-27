@@ -1,7 +1,8 @@
 import { useRef, useEffect, useState } from "react";
-import { Pressable, Animated, Easing } from "react-native";
+import { Pressable, Animated, Easing, ActivityIndicator } from "react-native";
 import { IconMoon, IconSun } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
+import { impactHaptic } from "@/utils/haptics";
 
 interface ThemeToggleProps {
   size?: number;
@@ -62,6 +63,9 @@ export function ThemeToggle({ size = 24}: ThemeToggleProps) {
       return; // Prevent multiple simultaneous toggles
     }
 
+    // INSTANT haptic feedback - fires immediately before any async operations
+    impactHaptic();
+
     setIsToggling(true);
     try {
       // Toggle between light and dark (not including system for simplicity)
@@ -102,8 +106,15 @@ export function ThemeToggle({ size = 24}: ThemeToggleProps) {
         alignItems: "center",
         justifyContent: "center",
         borderRadius: 8,
-        backgroundColor: pressed ? pressedBackgroundColor : "transparent",
-        opacity: isToggling ? 0.5 : 1,
+        // More pronounced visual feedback
+        backgroundColor: pressed
+          ? (isDark ? "rgba(21, 128, 61, 0.25)" : "rgba(21, 128, 61, 0.15)")
+          : isToggling
+            ? (isDark ? "rgba(21, 128, 61, 0.15)" : "rgba(21, 128, 61, 0.1)")
+            : "transparent",
+        // Scale feedback for instant visual response
+        transform: pressed ? [{ scale: 0.9 }] : isToggling ? [{ scale: 0.95 }] : [{ scale: 1 }],
+        opacity: pressed ? 0.8 : isToggling ? 0.7 : 1,
         zIndex: 999, // Ensure it's on top
       })}
       accessibilityRole="button"
@@ -121,25 +132,36 @@ export function ThemeToggle({ size = 24}: ThemeToggleProps) {
           justifyContent: "center",
         }}
       >
-        {/* Sun Icon */}
-        <Animated.View
-          style={{
-            position: "absolute",
-            transform: [{ scale: sunScale }, { rotate: sunRotationDegrees }],
-          }}
-        >
-          <IconSun size={size} color={iconColor} />
-        </Animated.View>
+        {/* Show loading indicator when toggling */}
+        {isToggling ? (
+          <ActivityIndicator
+            size="small"
+            color="#15803d"
+            style={{ position: "absolute" }}
+          />
+        ) : (
+          <>
+            {/* Sun Icon */}
+            <Animated.View
+              style={{
+                position: "absolute",
+                transform: [{ scale: sunScale }, { rotate: sunRotationDegrees }],
+              }}
+            >
+              <IconSun size={size} color={iconColor} />
+            </Animated.View>
 
-        {/* Moon Icon */}
-        <Animated.View
-          style={{
-            position: "absolute",
-            transform: [{ scale: moonScale }, { rotate: moonRotationDegrees }],
-          }}
-        >
-          <IconMoon size={size} color={iconColor} />
-        </Animated.View>
+            {/* Moon Icon */}
+            <Animated.View
+              style={{
+                position: "absolute",
+                transform: [{ scale: moonScale }, { rotate: moonRotationDegrees }],
+              }}
+            >
+              <IconMoon size={size} color={iconColor} />
+            </Animated.View>
+          </>
+        )}
       </Animated.View>
     </Pressable>
   );

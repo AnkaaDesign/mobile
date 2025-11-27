@@ -812,11 +812,13 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
           const isBatchOperation = config?.url?.includes("/batch");
           // Skip notifications for file uploads - they should be handled by upload components
           const isFileUpload = config?.url?.includes("/files/upload");
+          // Skip notifications for my-secullum-calculations - handled by component with friendly message
+          const isMySecullumCalculations = config?.url?.includes("/my-secullum-calculations");
 
           // Check if we should show this toast (deduplication check)
           const shouldShow = retryTracker.shouldShowToast(metadata.url, metadata.method, errorInfo.message);
 
-          if (!isBatchOperation && !isFileUpload && shouldShow) {
+          if (!isBatchOperation && !isFileUpload && !isMySecullumCalculations && shouldShow) {
             // For rate limit errors, show specialized message
             if (errorInfo.category === ErrorCategory.RATE_LIMIT) {
               notify.error("Limite de Requisições", errorInfo.message, {
@@ -950,6 +952,8 @@ const handleApiError = (error: unknown): ErrorInfo => {
       // Try nested error structures common in NestJS
       errorData.response?.message,
       errorData.response?.error,
+      // Try validation errors array (from Zod validation pipe) - join them for display
+      Array.isArray(errorData.errors) && errorData.errors.length > 0 ? errorData.errors.join("\n") : null,
       // Try specific error fields
       errorData.error,
       errorData.detail,

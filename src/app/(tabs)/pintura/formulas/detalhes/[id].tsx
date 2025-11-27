@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -9,21 +9,12 @@ import { useAuth } from "@/contexts/auth-context";
 import { usePaintFormula, usePaintFormulaMutations } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege, formatCurrency, formatDateTime } from "@/utils";
+import { hasPrivilege, formatDateTime } from "@/utils";
 import { showToast } from "@/components/ui/toast";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MobilePaintFormulaCalculator } from "@/components/painting/formula/mobile-paint-formula-calculator";
-import { FormulaComponentsTable } from "@/components/painting/formula/detail/components-table";
-import { FormulaProductionsTable } from "@/components/painting/formula/detail/productions-table";
-import {
-  IconFlask,
-  IconRefresh,
-  IconEdit,
-  IconTrash,
-  IconDroplet,
-  IconClipboardList,
-} from "@tabler/icons-react-native";
+import { IconBuildingFactory } from "@tabler/icons-react-native";
 
 export default function FormulaDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -160,19 +151,52 @@ export default function FormulaDetailsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.content}>
-        {/* Production Calculator - Main Focus */}
+        {/* Production Calculator - Main Focus (already displays components inline) */}
         {formula.components && formula.components.length > 0 && (
           <MobilePaintFormulaCalculator formula={formula} />
         )}
 
-        {/* Components Table */}
-        <FormulaComponentsTable formula={formula} maxHeight={400} />
-
-        {/* Productions Table */}
-        <FormulaProductionsTable formula={formula} maxHeight={400} />
+        {/* Productions Summary Card - Simple and Clean */}
+        {formula._count?.paintProduction !== undefined && formula._count.paintProduction > 0 && (
+          <Card style={styles.card}>
+            <View style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}>
+              <IconBuildingFactory size={20} color={colors.primary} />
+              <ThemedText style={styles.sectionTitle}>Histórico de Produção</ThemedText>
+              <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
+                {formula._count.paintProduction}
+              </Badge>
+            </View>
+            <View style={styles.itemDetails}>
+              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.mutedForeground }])}>
+                Esta fórmula foi utilizada em {formula._count.paintProduction} {formula._count.paintProduction === 1 ? "produção" : "produções"}.
+              </ThemedText>
+              {formula.paintProduction && formula.paintProduction.length > 0 && (
+                <View style={styles.productionsList}>
+                  {formula.paintProduction.slice(0, 3).map((production: any) => (
+                    <View key={production.id} style={[styles.productionItem, { backgroundColor: colors.muted + '30' }]}>
+                      <Badge variant="outline">
+                        <ThemedText style={styles.productionVolume}>
+                          {production.volumeLiters?.toFixed(2)} L
+                        </ThemedText>
+                      </Badge>
+                      <ThemedText style={[styles.productionDate, { color: colors.mutedForeground }]}>
+                        {formatDateTime(production.createdAt)}
+                      </ThemedText>
+                    </View>
+                  ))}
+                  {formula._count.paintProduction > 3 && (
+                    <ThemedText style={[styles.moreProductions, { color: colors.primary }]}>
+                      + {formula._count.paintProduction - 3} mais produções
+                    </ThemedText>
+                  )}
+                </View>
+              )}
+            </View>
+          </Card>
+        )}
 
         {/* Bottom spacing for mobile navigation */}
-        <View style={{ height: spacing.xxl * 2 }} />
+        <View style={{ height: spacing.lg }} />
       </View>
     </ScrollView>
   );
@@ -187,31 +211,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     gap: spacing.lg,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.md,
-  },
-  headerLeft: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  formulaTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
   },
   card: {
     padding: spacing.md,
@@ -229,17 +228,6 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
     flex: 1,
   },
-  detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 4,
-  },
-  detailLabel: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
-    width: 120,
-    fontWeight: "500",
-  },
   detailValue: {
     fontSize: fontSize.sm,
     fontWeight: "400",
@@ -248,91 +236,29 @@ const styles = StyleSheet.create({
   itemDetails: {
     gap: spacing.sm,
   },
-  badgeContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
+  productionsList: {
     marginTop: spacing.md,
-  },
-  typeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  brandBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  colorBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  colorSwatch: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.1)",
-  },
-  badgeText: {
-    fontSize: fontSize.xs,
-  },
-  componentsList: {
     gap: spacing.sm,
   },
-  componentCard: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-  },
-  componentCardMargin: {
-    marginBottom: spacing.xs,
-  },
-  componentHeader: {
+  productionItem: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  componentInfo: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  componentName: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.xs,
-  },
-  componentCode: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  componentCodeText: {
-    fontSize: fontSize.xs,
-    opacity: 0.6,
-  },
-  componentRatio: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(0, 122, 255, 0.1)",
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
   },
-  ratioText: {
+  productionVolume: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
+    fontWeight: fontWeight.medium,
   },
-  componentBadges: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  componentBadgeText: {
+  productionDate: {
     fontSize: fontSize.xs,
+  },
+  moreProductions: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    textAlign: "center",
+    marginTop: spacing.xs,
   },
 });

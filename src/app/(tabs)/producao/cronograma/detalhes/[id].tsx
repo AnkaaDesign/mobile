@@ -16,29 +16,27 @@ import { TaskInfoCard } from "@/components/production/task/detail/task-info-card
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
 import { TruckLayoutPreview } from "@/components/production/layout/truck-layout-preview";
 
-import { TaskPaintCard } from "@/components/production/task/detail/task-paint-card";
+import { TaskGeneralPaintCard } from "@/components/production/task/detail/task-general-paint-card";
+import { TaskLogoPaintsCard } from "@/components/production/task/detail/task-logo-paints-card";
 import { TaskGroundPaintsCard } from "@/components/production/task/detail/task-ground-paints-card";
 import { ObservationsTable } from "@/components/production/task/detail/observations-table";
 import { CutsTable } from "@/components/production/task/detail/cuts-table";
-import { ServicesTable } from "@/components/production/task/detail/services-table";
+import { TaskServicesCard } from "@/components/production/task/detail/task-services-card";
 import { AirbrushingsTable } from "@/components/production/task/detail/airbrushings-table";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TouchableOpacity } from "react-native";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { FileItem, useFileViewer} from "@/components/file";
 import {
-
-
   IconFileText,
   IconCalendarEvent,
-
-
   IconEdit,
   IconTrash,
   IconHistory,
   IconFiles,
   IconLayoutGrid,
+  IconList,
   IconCurrencyReal,
   IconFile,
   IconAlertCircle
@@ -273,29 +271,37 @@ export default function ScheduleDetailsScreen() {
 
           {/* Truck Layout - Only for Admin, Logistic, and Leader */}
           {canViewTruckLayout && (task as any)?.truck && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <View style={styles.titleRow}>
-                    <IconLayoutGrid size={20} color={colors.primary} />
-                    <ThemedText style={styles.titleText}>Layout do Caminhão</ThemedText>
-                  </View>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <IconLayoutGrid size={20} color={colors.primary} />
+                <ThemedText style={styles.sectionTitle}>Layout do Caminhão</ThemedText>
+              </View>
+              <View style={styles.sectionContent}>
                 <TruckLayoutPreview truckId={(task as any).truck.id} taskName={task.name} />
-              </CardContent>
+              </View>
             </Card>
           )}
 
-          {/* Services Table */}
-          <ServicesTable taskId={id as string} maxHeight={400} />
+          {/* Services */}
+          {task.services && task.services.length > 0 && (
+            <TaskServicesCard services={task.services} taskSectorId={task.sectorId} />
+          )}
 
-          {/* Paints - Tintas */}
-          {((task as any)?.generalPainting || ((task as any)?.logoPaints && (task as any).logoPaints.length > 0)) && (
-            <TaskPaintCard
-              generalPainting={(task as any)?.generalPainting}
-              logoPaints={(task as any)?.logoPaints}
+          {/* General Painting */}
+          {(task as any)?.generalPainting && (
+            <TaskGeneralPaintCard
+              paint={(task as any).generalPainting}
+              onPaintPress={(_paintId) => {
+                // Navigate to paint details if needed
+                // router.push(`/painting/catalog/details/${paintId}`);
+              }}
+            />
+          )}
+
+          {/* Logo Paints */}
+          {(task as any)?.logoPaints && (task as any).logoPaints.length > 0 && (
+            <TaskLogoPaintsCard
+              paints={(task as any).logoPaints}
               onPaintPress={(_paintId) => {
                 // Navigate to paint details if needed
                 // router.push(`/painting/catalog/details/${paintId}`);
@@ -315,332 +321,314 @@ export default function ScheduleDetailsScreen() {
 
           {/* Artworks Section */}
           {(task as any)?.artworks && (task as any).artworks.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <View style={styles.titleRow}>
-                    <IconFiles size={20} color={colors.primary} />
-                    <ThemedText style={styles.titleText}>Artes</ThemedText>
-                    <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                      {(task as any).artworks.length}
-                    </Badge>
-                  </View>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-              <View style={styles.viewModeControls}>
-                {(task as any).artworks.length > 1 && (
-                  <TouchableOpacity
-                    style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
-                    onPress={async () => {
-                      for (const file of (task as any).artworks) {
-                        try {
-                          await fileViewer.actions.downloadFile(file);
-                        } catch (error) {
-                          console.error("Error downloading file:", error);
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <IconFiles size={20} color={colors.primary} />
+                <ThemedText style={styles.sectionTitle}>Artes</ThemedText>
+                <Badge variant="secondary">
+                  {(task as any).artworks.length}
+                </Badge>
+              </View>
+              <View style={styles.sectionContent}>
+                <View style={styles.viewModeControls}>
+                  {(task as any).artworks.length > 1 && (
+                    <TouchableOpacity
+                      style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
+                      onPress={async () => {
+                        for (const file of (task as any).artworks) {
+                          try {
+                            await fileViewer.actions.downloadFile(file);
+                          } catch (error) {
+                            console.error("Error downloading file:", error);
+                          }
                         }
-                      }
-                      showToast({ message: `${(task as any).artworks.length} arquivos baixados`, type: "success" });
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <IconDownload size={16} color={colors.primaryForeground} />
-                    <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
-                      Baixar Todos
-                    </ThemedText>
-                  </TouchableOpacity>
-                )}
-                <View style={styles.viewModeButtons}>
-                  <TouchableOpacity
-                    style={[
-                      styles.viewModeButton,
-                      { backgroundColor: artworksViewMode === "list" ? colors.primary : colors.muted }
-                    ]}
-                    onPress={() => setArtworksViewMode("list")}
-                    activeOpacity={0.7}
-                  >
-                    <IconList size={16} color={artworksViewMode === "list" ? colors.primaryForeground : colors.foreground} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.viewModeButton,
-                      { backgroundColor: artworksViewMode === "grid" ? colors.primary : colors.muted }
-                    ]}
-                    onPress={() => setArtworksViewMode("grid")}
-                    activeOpacity={0.7}
-                  >
-                    <IconLayoutGrid size={16} color={artworksViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
-                  </TouchableOpacity>
+                        showToast({ message: `${(task as any).artworks.length} arquivos baixados`, type: "success" });
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <IconDownload size={16} color={colors.primaryForeground} />
+                      <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
+                        Baixar Todos
+                      </ThemedText>
+                    </TouchableOpacity>
+                  )}
+                  <View style={styles.viewModeButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewModeButton,
+                        { backgroundColor: artworksViewMode === "list" ? colors.primary : colors.muted }
+                      ]}
+                      onPress={() => setArtworksViewMode("list")}
+                      activeOpacity={0.7}
+                    >
+                      <IconList size={16} color={artworksViewMode === "list" ? colors.primaryForeground : colors.foreground} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewModeButton,
+                        { backgroundColor: artworksViewMode === "grid" ? colors.primary : colors.muted }
+                      ]}
+                      onPress={() => setArtworksViewMode("grid")}
+                      activeOpacity={0.7}
+                    >
+                      <IconLayoutGrid size={16} color={artworksViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <View style={artworksViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+                  {(task as any).artworks.map((file: any, index: number) => (
+                    <FileItem
+                      key={file.id}
+                      file={file}
+                      viewMode={artworksViewMode}
+                      baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                      onPress={() => {
+                        fileViewer.actions.viewFiles((task as any).artworks, index);
+                      }}
+                    />
+                  ))}
                 </View>
               </View>
-              <View style={artworksViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                {(task as any).artworks.map((file: any, index: number) => (
-                  <FileItem
-                    key={file.id}
-                    file={file}
-                    viewMode={artworksViewMode}
-                    baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                    onPress={() => {
-                      fileViewer.actions.viewFiles((task as any).artworks, index);
-                    }}
-                  />
-                ))}
-              </View>
-              </CardContent>
             </Card>
           )}
 
           {/* Documents Section - Only for Admin and Financial */}
           {canViewDocuments && ((task as any)?.budgets || (task as any)?.invoices || (task as any)?.receipts) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <View style={styles.titleRow}>
-                    <IconFileText size={20} color={colors.primary} />
-                    <ThemedText style={styles.titleText}>Documentos</ThemedText>
-                    <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                      {[...((task as any).budgets || []), ...((task as any).invoices || []), ...((task as any).receipts || [])].length}
-                    </Badge>
-                  </View>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-              <View style={styles.viewModeControls}>
-                <View style={styles.viewModeButtons}>
-                  <TouchableOpacity
-                    style={[
-                      styles.viewModeButton,
-                      { backgroundColor: documentsViewMode === "list" ? colors.primary : colors.muted }
-                    ]}
-                    onPress={() => setDocumentsViewMode("list")}
-                    activeOpacity={0.7}
-                  >
-                    <IconList size={16} color={documentsViewMode === "list" ? colors.primaryForeground : colors.foreground} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.viewModeButton,
-                      { backgroundColor: documentsViewMode === "grid" ? colors.primary : colors.muted }
-                    ]}
-                    onPress={() => setDocumentsViewMode("grid")}
-                    activeOpacity={0.7}
-                  >
-                    <IconLayoutGrid size={16} color={documentsViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
-                  </TouchableOpacity>
-                </View>
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <IconFileText size={20} color={colors.primary} />
+                <ThemedText style={styles.sectionTitle}>Documentos</ThemedText>
+                <Badge variant="secondary">
+                  {[...((task as any).budgets || []), ...((task as any).invoices || []), ...((task as any).receipts || [])].length}
+                </Badge>
               </View>
-
-              {/* Budgets */}
-              {(task as any).budgets && (task as any).budgets.length > 0 && (
-                <View style={styles.documentSection}>
-                  <View style={styles.documentSectionHeader}>
-                    <IconCurrencyReal size={16} color={colors.mutedForeground} />
-                    <ThemedText style={styles.documentSectionTitle}>Orçamentos</ThemedText>
-                  </View>
-                  <View style={documentsViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                    {(task as any).budgets.map((file: any) => (
-                      <FileItem
-                        key={file.id}
-                        file={file}
-                        viewMode={documentsViewMode}
-                        baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                        onPress={() => fileViewer.actions.viewFile(file)}
-                      />
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Invoices */}
-              {(task as any).invoices && (task as any).invoices.length > 0 && (
-                <View style={styles.documentSection}>
-                  <View style={styles.documentSectionHeader}>
-                    <IconFileText size={16} color={colors.mutedForeground} />
-                    <ThemedText style={styles.documentSectionTitle}>Notas Fiscais</ThemedText>
-                  </View>
-                  <View style={documentsViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                    {(task as any).invoices.map((file: any) => (
-                      <FileItem
-                        key={file.id}
-                        file={file}
-                        viewMode={documentsViewMode}
-                        baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                        onPress={() => fileViewer.actions.viewFile(file)}
-                      />
-                    ))}
+              <View style={styles.sectionContent}>
+                <View style={styles.viewModeControls}>
+                  <View style={styles.viewModeButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewModeButton,
+                        { backgroundColor: documentsViewMode === "list" ? colors.primary : colors.muted }
+                      ]}
+                      onPress={() => setDocumentsViewMode("list")}
+                      activeOpacity={0.7}
+                    >
+                      <IconList size={16} color={documentsViewMode === "list" ? colors.primaryForeground : colors.foreground} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewModeButton,
+                        { backgroundColor: documentsViewMode === "grid" ? colors.primary : colors.muted }
+                      ]}
+                      onPress={() => setDocumentsViewMode("grid")}
+                      activeOpacity={0.7}
+                    >
+                      <IconLayoutGrid size={16} color={documentsViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
+                    </TouchableOpacity>
                   </View>
                 </View>
-              )}
 
-              {/* Receipts */}
-              {(task as any).receipts && (task as any).receipts.length > 0 && (
-                <View style={styles.documentSection}>
-                  <View style={styles.documentSectionHeader}>
-                    <IconFile size={16} color={colors.mutedForeground} />
-                    <ThemedText style={styles.documentSectionTitle}>Recibos</ThemedText>
+                {/* Budgets */}
+                {(task as any).budgets && (task as any).budgets.length > 0 && (
+                  <View style={styles.documentSection}>
+                    <View style={styles.documentSectionHeader}>
+                      <IconCurrencyReal size={16} color={colors.mutedForeground} />
+                      <ThemedText style={styles.documentSectionTitle}>Orçamentos</ThemedText>
+                    </View>
+                    <View style={documentsViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+                      {(task as any).budgets.map((file: any) => (
+                        <FileItem
+                          key={file.id}
+                          file={file}
+                          viewMode={documentsViewMode}
+                          baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                          onPress={() => fileViewer.actions.viewFile(file)}
+                        />
+                      ))}
+                    </View>
                   </View>
-                  <View style={documentsViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                    {(task as any).receipts.map((file: any) => (
-                      <FileItem
-                        key={file.id}
-                        file={file}
-                        viewMode={documentsViewMode}
-                        baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                        onPress={() => fileViewer.actions.viewFile(file)}
-                      />
-                    ))}
+                )}
+
+                {/* Invoices */}
+                {(task as any).invoices && (task as any).invoices.length > 0 && (
+                  <View style={styles.documentSection}>
+                    <View style={styles.documentSectionHeader}>
+                      <IconFileText size={16} color={colors.mutedForeground} />
+                      <ThemedText style={styles.documentSectionTitle}>Notas Fiscais</ThemedText>
+                    </View>
+                    <View style={documentsViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+                      {(task as any).invoices.map((file: any) => (
+                        <FileItem
+                          key={file.id}
+                          file={file}
+                          viewMode={documentsViewMode}
+                          baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                          onPress={() => fileViewer.actions.viewFile(file)}
+                        />
+                      ))}
+                    </View>
                   </View>
-                </View>
-              )}
-              </CardContent>
+                )}
+
+                {/* Receipts */}
+                {(task as any).receipts && (task as any).receipts.length > 0 && (
+                  <View style={styles.documentSection}>
+                    <View style={styles.documentSectionHeader}>
+                      <IconFile size={16} color={colors.mutedForeground} />
+                      <ThemedText style={styles.documentSectionTitle}>Recibos</ThemedText>
+                    </View>
+                    <View style={documentsViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+                      {(task as any).receipts.map((file: any) => (
+                        <FileItem
+                          key={file.id}
+                          file={file}
+                          viewMode={documentsViewMode}
+                          baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                          onPress={() => fileViewer.actions.viewFile(file)}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
             </Card>
           )}
 
           {/* Budget Table - Only for Admin and Financial */}
           {canViewDocuments && (task as any)?.budget && (task as any).budget.items && (task as any).budget.items.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <View style={styles.titleRow}>
-                    <IconCurrencyReal size={20} color={colors.primary} />
-                    <ThemedText style={styles.titleText}>Orçamento Detalhado</ThemedText>
-                  </View>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-              {/* Budget Expiry Date */}
-              {(task as any).budget.expiresIn && (
-                <View style={[styles.budgetExpiryContainer, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-                  <IconCalendarEvent size={16} color={colors.mutedForeground} />
-                  <View style={styles.budgetExpiryContent}>
-                    <ThemedText style={[styles.budgetExpiryLabel, { color: colors.mutedForeground }]}>
-                      Validade do Orçamento
-                    </ThemedText>
-                    <ThemedText style={[styles.budgetExpiryDate, { color: colors.foreground }]}>
-                      {formatDate((task as any).budget.expiresIn)}
-                    </ThemedText>
-                  </View>
-                </View>
-              )}
-
-              {/* Budget Table */}
-              <View style={styles.budgetTableContainer}>
-                {/* Table Header */}
-                <View style={[styles.budgetTableHeader, { backgroundColor: colors.muted, borderBottomColor: colors.border }]}>
-                  <ThemedText style={[styles.budgetTableHeaderText, styles.budgetTableDescriptionColumn, { color: colors.foreground }]}>
-                    Descrição
-                  </ThemedText>
-                  <ThemedText style={[styles.budgetTableHeaderText, styles.budgetTableAmountColumn, { color: colors.foreground }]}>
-                    Valor
-                  </ThemedText>
-                </View>
-
-                {/* Table Body */}
-                <View style={styles.budgetTableBody}>
-                  {(task as any).budget.items.map((item: any, index: number) => (
-                    <View
-                      key={item.id}
-                      style={[
-                        styles.budgetTableRow,
-                        { borderBottomColor: colors.border },
-                        index === (task as any).budget.items.length - 1 && styles.budgetTableRowLast
-                      ]}
-                    >
-                      <ThemedText style={[styles.budgetTableCell, styles.budgetTableDescriptionColumn, { color: colors.foreground }]}>
-                        {item.description}
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <IconCurrencyReal size={20} color={colors.primary} />
+                <ThemedText style={styles.sectionTitle}>Orçamento Detalhado</ThemedText>
+              </View>
+              <View style={styles.sectionContent}>
+                {/* Budget Expiry Date */}
+                {(task as any).budget.expiresIn && (
+                  <View style={[styles.budgetExpiryContainer, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+                    <IconCalendarEvent size={16} color={colors.mutedForeground} />
+                    <View style={styles.budgetExpiryContent}>
+                      <ThemedText style={[styles.budgetExpiryLabel, { color: colors.mutedForeground }]}>
+                        Validade do Orçamento
                       </ThemedText>
-                      <ThemedText style={[styles.budgetTableCell, styles.budgetTableAmountColumn, { color: colors.foreground }]}>
-                        {formatCurrency(item.amount)}
+                      <ThemedText style={[styles.budgetExpiryDate, { color: colors.foreground }]}>
+                        {formatDate((task as any).budget.expiresIn)}
                       </ThemedText>
                     </View>
-                  ))}
-                </View>
+                  </View>
+                )}
 
-                {/* Total Row */}
-                <View style={[styles.budgetTotalRow, { backgroundColor: colors.primary + '10', borderTopColor: colors.primary }]}>
-                  <ThemedText style={[styles.budgetTotalLabel, { color: colors.foreground }]}>
-                    TOTAL
-                  </ThemedText>
-                  <ThemedText style={[styles.budgetTotalValue, { color: colors.primary }]}>
-                    {formatCurrency((task as any).budget.total)}
-                  </ThemedText>
+                {/* Budget Table */}
+                <View style={styles.budgetTableContainer}>
+                  {/* Table Header */}
+                  <View style={[styles.budgetTableHeader, { backgroundColor: colors.muted, borderBottomColor: colors.border }]}>
+                    <ThemedText style={[styles.budgetTableHeaderText, styles.budgetTableDescriptionColumn, { color: colors.foreground }]}>
+                      Descrição
+                    </ThemedText>
+                    <ThemedText style={[styles.budgetTableHeaderText, styles.budgetTableAmountColumn, { color: colors.foreground }]}>
+                      Valor
+                    </ThemedText>
+                  </View>
+
+                  {/* Table Body */}
+                  <View style={styles.budgetTableBody}>
+                    {(task as any).budget.items.map((item: any, index: number) => (
+                      <View
+                        key={item.id}
+                        style={[
+                          styles.budgetTableRow,
+                          { borderBottomColor: colors.border },
+                          index === (task as any).budget.items.length - 1 && styles.budgetTableRowLast
+                        ]}
+                      >
+                        <ThemedText style={[styles.budgetTableCell, styles.budgetTableDescriptionColumn, { color: colors.foreground }]}>
+                          {item.description}
+                        </ThemedText>
+                        <ThemedText style={[styles.budgetTableCell, styles.budgetTableAmountColumn, { color: colors.foreground }]}>
+                          {formatCurrency(item.amount)}
+                        </ThemedText>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* Total Row */}
+                  <View style={[styles.budgetTotalRow, { backgroundColor: colors.primary + '10', borderTopColor: colors.primary }]}>
+                    <ThemedText style={[styles.budgetTotalLabel, { color: colors.foreground }]}>
+                      TOTAL
+                    </ThemedText>
+                    <ThemedText style={[styles.budgetTotalValue, { color: colors.primary }]}>
+                      {formatCurrency((task as any).budget.total)}
+                    </ThemedText>
+                  </View>
                 </View>
               </View>
-              </CardContent>
             </Card>
           )}
 
           {/* Financial summary - Only for Admin and Financial */}
           {canViewDocuments && task.price && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <View style={styles.titleRow}>
-                    <ThemedText style={styles.titleText}>Valor Total</ThemedText>
-                  </View>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <IconCurrencyReal size={20} color={colors.primary} />
+                <ThemedText style={styles.sectionTitle}>Valor Total</ThemedText>
+              </View>
+              <View style={styles.sectionContent}>
                 <ThemedText style={StyleSheet.flatten([styles.summaryValue, { color: colors.primary }])}>
                   {formatCurrency(task.price)}
                 </ThemedText>
-              </CardContent>
+              </View>
             </Card>
           )}
 
           {/* Cuts Table - Hidden for Financial sector users */}
-          {!isFinancialSector && <CutsTable taskId={id as string} maxHeight={400} />}
+          {/* LEADER can swipe to request new cuts for tasks in their managed sector */}
+          {!isFinancialSector && <CutsTable taskId={id as string} taskSectorId={task.sectorId} maxHeight={400} />}
 
           {/* Observation Card */}
           {(task as any)?.observation && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <View style={styles.titleRow}>
-                    <IconAlertCircle size={20} color="#f59e0b" />
-                    <ThemedText style={styles.titleText}>Observação</ThemedText>
-                    {(task as any).observation.files && (task as any).observation.files.length > 0 && (
-                      <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                        {(task as any).observation.files.length}
-                      </Badge>
-                    )}
-                  </View>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-              <View style={[styles.observationContent, { backgroundColor: colors.mutedForeground + '10', borderRadius: borderRadius.md, padding: spacing.md }]}>
-                <ThemedText style={{ fontSize: fontSize.sm, color: colors.foreground }}>
-                  {(task as any).observation.description}
-                </ThemedText>
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <IconAlertCircle size={20} color="#f59e0b" />
+                <ThemedText style={styles.sectionTitle}>Observação</ThemedText>
+                {(task as any).observation.files && (task as any).observation.files.length > 0 && (
+                  <Badge variant="secondary">
+                    {(task as any).observation.files.length}
+                  </Badge>
+                )}
               </View>
-
-              {(task as any).observation.files && (task as any).observation.files.length > 0 && (
-                <View style={{ marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm }}>
-                    <IconFiles size={16} color={colors.mutedForeground} />
-                    <ThemedText style={{ fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>
-                      Arquivos Anexados
-                    </ThemedText>
-                  </View>
-                  <View style={styles.gridContainer}>
-                    {(task as any).observation.files.map((file: any, index: number) => (
-                      <FileItem
-                        key={file.id}
-                        file={file}
-                        viewMode="grid"
-                        baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                        onPress={() => {
-                          fileViewer.actions.viewFiles((task as any).observation.files, index);
-                        }}
-                        showFilename={false}
-                        showFileSize={false}
-                        showRelativeTime={false}
-                      />
-                    ))}
-                  </View>
+              <View style={styles.sectionContent}>
+                <View style={[styles.observationContent, { backgroundColor: colors.mutedForeground + '10', borderRadius: borderRadius.md, padding: spacing.md }]}>
+                  <ThemedText style={{ fontSize: fontSize.sm, color: colors.foreground }}>
+                    {(task as any).observation.description}
+                  </ThemedText>
                 </View>
-              )}
-              </CardContent>
+
+                {(task as any).observation.files && (task as any).observation.files.length > 0 && (
+                  <View style={{ marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm }}>
+                      <IconFiles size={16} color={colors.mutedForeground} />
+                      <ThemedText style={{ fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>
+                        Arquivos Anexados
+                      </ThemedText>
+                    </View>
+                    <View style={styles.gridContainer}>
+                      {(task as any).observation.files.map((file: any, index: number) => (
+                        <FileItem
+                          key={file.id}
+                          file={file}
+                          viewMode="grid"
+                          baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                          onPress={() => {
+                            fileViewer.actions.viewFiles((task as any).observation.files, index);
+                          }}
+                          showFilename={false}
+                          showFileSize={false}
+                          showRelativeTime={false}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
             </Card>
           )}
 
@@ -652,16 +640,12 @@ export default function ScheduleDetailsScreen() {
 
           {/* Changelog History - Only for Admin/Financial (all changes) or Leader (sector changes) */}
           {(canViewDocuments || hasPrivilege(user, SECTOR_PRIVILEGES.LEADER)) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <View style={styles.titleRow}>
-                    <IconHistory size={20} color={colors.primary} />
-                    <ThemedText style={styles.titleText}>Histórico de Alterações</ThemedText>
-                  </View>
-                </CardTitle>
-              </CardHeader>
-              <CardContent style={{ paddingHorizontal: 0 }}>
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <IconHistory size={20} color={colors.primary} />
+                <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
+              </View>
+              <View style={styles.sectionContent}>
                 <ChangelogTimeline
                   entityType={CHANGE_LOG_ENTITY_TYPE.TASK}
                   entityId={task.id}
@@ -669,7 +653,7 @@ export default function ScheduleDetailsScreen() {
                   entityCreatedAt={task.createdAt}
                   maxHeight={400}
                 />
-              </CardContent>
+              </View>
             </Card>
           )}
 
@@ -723,6 +707,25 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
+  },
+  sectionCard: {
+    padding: spacing.md,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    flex: 1,
+  },
+  sectionContent: {
+    gap: spacing.md,
   },
   titleRow: {
     flexDirection: "row",
