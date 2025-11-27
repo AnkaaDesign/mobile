@@ -2,13 +2,13 @@ import { useRouter } from "expo-router";
 import { Alert } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
 import { BorrowBatchCreateForm } from "@/components/inventory/borrow/form";
-import { useBorrowMutations } from "@/hooks";
+import { useBorrowBatchMutations } from "@/hooks";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 
 export default function EstoqueEmprestimosCadastrarScreen() {
   const router = useRouter();
-  const { batchCreateAsync, isBatchCreating } = useBorrowMutations();
+  const { batchCreateAsync, isLoading: isBatchCreating } = useBorrowBatchMutations();
 
   const handleSubmit = async (data: {
     userId: string;

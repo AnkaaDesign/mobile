@@ -67,12 +67,17 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       name: apiData.name,
       uniCode: apiData.uniCode,
       quantity: apiData.quantity,
+      reorderPoint: apiData.reorderPoint,
+      reorderQuantity: apiData.reorderQuantity,
       maxQuantity: apiData.maxQuantity,
       boxQuantity: apiData.boxQuantity,
       icms: apiData.icms,
       ipi: apiData.ipi,
+      measures: apiData.measures || [], // Include measures array
       barcodes: apiData.barcodes || [],
       shouldAssignToUser: apiData.shouldAssignToUser,
+      abcCategory: apiData.abcCategory,
+      xyzCategory: apiData.xyzCategory,
       brandId: apiData.brandId,
       categoryId: apiData.categoryId,
       supplierId: apiData.supplierId,
@@ -94,7 +99,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
     originalData: item,
     onSubmit,
     mapDataToForm,
-    fieldsToOmitIfUnchanged: ["barcodes"], // Don't send barcodes if unchanged
+    fieldsToOmitIfUnchanged: ["barcodes", "measures"], // Don't send barcodes or measures if unchanged
   });
 
   // Form will be provided through context to child components
@@ -105,11 +110,16 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
     handleSubmit: form.handleSubmitChanges,
   };
 
-  // Ensure barcodes is initialized as an array
+  // Ensure barcodes and measures are initialized as arrays
   useEffect(() => {
     const currentBarcodes = form.getValues("barcodes");
     if (!Array.isArray(currentBarcodes)) {
       form.setValue("barcodes", [], { shouldValidate: false });
+    }
+
+    const currentMeasures = form.getValues("measures");
+    if (!Array.isArray(currentMeasures)) {
+      form.setValue("measures", [], { shouldValidate: false });
     }
   }, [form]);
 
@@ -220,7 +230,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
             canSubmit={!isSubmitting}
-            submitLabel="Salvar"
+            submitLabel="Atualizar"
           />
         </KeyboardAvoidingView>
       </SafeAreaView>

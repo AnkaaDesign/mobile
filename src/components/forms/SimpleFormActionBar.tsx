@@ -59,7 +59,7 @@ export function SimpleFormActionBar({
   isSubmitting = false,
   canSubmit = true,
   cancelLabel = "Cancelar",
-  submitLabel = "Salvar",
+  submitLabel = "Cadastrar",
   submittingLabel = "Salvando...",
   showCancel = true,
   style,

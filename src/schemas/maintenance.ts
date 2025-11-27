@@ -923,15 +923,23 @@ export const maintenanceCreateSchema = z
       .default(MAINTENANCE_STATUS.PENDING),
     itemId: z.string().uuid("Item inválido"),
     maintenanceScheduleId: z.string().uuid("Cronograma de manutenção inválido").optional(),
-    scheduledFor: z.coerce.date({ required_error: "Data agendada é obrigatória", invalid_type_error: "Data inválida" }),
+    scheduledFor: z.coerce.date({ invalid_type_error: "Data inválida", required_error: "Data agendada é obrigatória" }),
     itemsNeeded: z
       .array(
         z.object({
-          itemId: z.string().uuid("Item inválido"),
+          itemId: z.string().min(1, "Item é obrigatório"),
           quantity: z.number().positive("Quantidade deve ser positiva").default(1),
         }),
       )
-      .optional(),
+      .optional()
+      .nullable()
+      .default([])
+      .transform((items) => {
+        // Handle null/undefined
+        if (!items || items.length === 0) return [];
+        // Filter out items with empty or invalid itemId
+        return items.filter((item) => item.itemId && item.itemId.trim() !== "");
+      }),
     // Auto-creation field
     originalMaintenanceId: z.string().uuid("Manutenção original inválida").optional(),
   })

@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { Text } from "@/components/ui/text";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -29,14 +30,10 @@ interface BonusFormProps {
   onCancel?: () => void;
 }
 
-const PERFORMANCE_LEVELS = [
-  { value: "0", label: "Nível 0" },
-  { value: "1", label: "Nível 1" },
-  { value: "2", label: "Nível 2" },
-  { value: "3", label: "Nível 3" },
-  { value: "4", label: "Nível 4" },
-  { value: "5", label: "Nível 5" },
-];
+const PERFORMANCE_LEVELS = Array.from({ length: 6 }, (_, i) => ({
+  value: i.toString(),
+  label: i === 0 ? "0 - Sem bonificação" : `${i}`,
+}));
 
 export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) {
   const router = useRouter();
@@ -60,9 +57,9 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
       mode === "create"
         ? {
             year: currentYear,
-            month: currentMonth === 1 ? 12 : currentMonth - 1,
+            month: currentMonth,
             userId: "",
-            performanceLevel: 3,
+            performanceLevel: 0,
             baseBonus: 0,
           }
         : {
@@ -107,24 +104,24 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
       label: user.name + (user.position ? ` - ${user.position.name}` : ""),
     })) || [];
 
-  const yearOptions: ComboboxOption[] = Array.from({ length: 3 }, (_, i) => {
-    const year = currentYear - i;
+  const yearOptions: ComboboxOption[] = Array.from({ length: 4 }, (_, i) => {
+    const year = currentYear - 2 + i;
     return { value: year.toString(), label: year.toString() };
   });
 
   const monthOptions: ComboboxOption[] = [
-    { value: "1", label: "Janeiro" },
-    { value: "2", label: "Fevereiro" },
-    { value: "3", label: "Março" },
-    { value: "4", label: "Abril" },
-    { value: "5", label: "Maio" },
-    { value: "6", label: "Junho" },
-    { value: "7", label: "Julho" },
-    { value: "8", label: "Agosto" },
-    { value: "9", label: "Setembro" },
-    { value: "10", label: "Outubro" },
-    { value: "11", label: "Novembro" },
-    { value: "12", label: "Dezembro" },
+    { value: "1", label: "1 - Janeiro" },
+    { value: "2", label: "2 - Fevereiro" },
+    { value: "3", label: "3 - Março" },
+    { value: "4", label: "4 - Abril" },
+    { value: "5", label: "5 - Maio" },
+    { value: "6", label: "6 - Junho" },
+    { value: "7", label: "7 - Julho" },
+    { value: "8", label: "8 - Agosto" },
+    { value: "9", label: "9 - Setembro" },
+    { value: "10", label: "10 - Outubro" },
+    { value: "11", label: "11 - Novembro" },
+    { value: "12", label: "12 - Dezembro" },
   ];
 
   const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
@@ -152,33 +149,8 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
           scrollEventThrottle={16}
         >
           <KeyboardAwareFormProvider value={keyboardContextValue}>
-          <FormCard title="Informações do Bônus">
-          {/* User Selection */}
-          <FormFieldGroup
-            label="Colaborador"
-            required
-            error={form.formState.errors.userId?.message}
-          >
-            <Controller
-              control={form.control}
-              name="userId"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <Combobox
-                  options={userOptions}
-                  value={value}
-                  onValueChange={onChange}
-                  placeholder="Selecione o colaborador"
-                  searchPlaceholder="Buscar colaborador..."
-                  disabled={isLoading}
-                  searchable
-                  clearable={false}
-                  error={error?.message}
-                />
-              )}
-            />
-          </FormFieldGroup>
-
-          {/* Year and Month */}
+          {/* Period Section */}
+          <FormCard title="Período" subtitle="Defina o período de referência da bonificação">
           <FormRow>
             <FormFieldGroup
               label="Ano"
@@ -226,53 +198,95 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
               />
             </FormFieldGroup>
           </FormRow>
+          </FormCard>
 
-          {/* Performance Level */}
+          {/* Employee Section */}
+          <FormCard title="Funcionário" subtitle="Selecione o funcionário que receberá a bonificação">
           <FormFieldGroup
-            label="Nível de Desempenho"
+            label="Funcionário"
             required
-            error={form.formState.errors.performanceLevel?.message}
+            error={form.formState.errors.userId?.message}
           >
             <Controller
               control={form.control}
-              name="performanceLevel"
+              name="userId"
               render={({ field: { onChange, value }, fieldState: { error } }) => (
                 <Combobox
-                  options={PERFORMANCE_LEVELS}
-                  value={value?.toString() || ""}
-                  onValueChange={(val) => onChange(parseInt(val, 10))}
-                  placeholder="Selecione o nível"
+                  options={userOptions}
+                  value={value}
+                  onValueChange={onChange}
+                  placeholder="Selecione um funcionário"
+                  searchPlaceholder="Buscar funcionário..."
                   disabled={isLoading}
-                  searchable={false}
+                  searchable
                   clearable={false}
                   error={error?.message}
                 />
               )}
             />
           </FormFieldGroup>
-
-          {/* Base Bonus */}
-          <FormFieldGroup
-            label="Bônus Base"
-            required
-            error={form.formState.errors.baseBonus?.message}
-          >
-            <Controller
-              control={form.control}
-              name="baseBonus"
-              render={({ field: { onChange, value } }) => (
-                <Input
-                  type="currency"
-                  value={value ?? undefined}
-                  onChange={onChange}
-                  placeholder="R$ 0,00"
-                  editable={!isLoading}
-                  error={!!form.formState.errors.baseBonus}
-                />
-              )}
-            />
-          </FormFieldGroup>
           </FormCard>
+
+          {/* Performance and Value Section */}
+          <FormCard title="Bonificação" subtitle="Configure o nível de performance e valor base da bonificação">
+          <FormRow>
+            <FormFieldGroup
+              label="Nível de Performance"
+              required
+              error={form.formState.errors.performanceLevel?.message}
+            >
+              <Controller
+                control={form.control}
+                name="performanceLevel"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <Combobox
+                    options={PERFORMANCE_LEVELS}
+                    value={value?.toString() || ""}
+                    onValueChange={(val) => onChange(parseInt(val, 10))}
+                    placeholder="Selecione o nível"
+                    disabled={isLoading}
+                    searchable={false}
+                    clearable={false}
+                    error={error?.message}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+
+            <FormFieldGroup
+              label="Valor Base da Bonificação"
+              required
+              error={form.formState.errors.baseBonus?.message}
+            >
+              <Controller
+                control={form.control}
+                name="baseBonus"
+                render={({ field: { onChange, value } }) => (
+                  <Input
+                    type="currency"
+                    value={value ?? undefined}
+                    onChange={onChange}
+                    placeholder="0,00"
+                    editable={!isLoading}
+                    error={!!form.formState.errors.baseBonus}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+          </FormRow>
+          </FormCard>
+
+          {/* Period Display */}
+          {form.watch("year") && form.watch("month") && (
+            <View style={[styles.periodDisplay, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+              <Text style={[styles.periodLabel, { color: colors.foreground }]}>
+                Período da Bonificação:
+              </Text>
+              <Text style={[styles.periodValue, { color: colors.mutedForeground }]}>
+                26/{String(form.watch("month") - 1).padStart(2, '0')} a 25/{String(form.watch("month")).padStart(2, '0')}/{form.watch("year")}
+              </Text>
+            </View>
+          )}
           </KeyboardAwareFormProvider>
         </ScrollView>
 
@@ -281,7 +295,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
           onSubmit={form.handleSubmit(handleSubmit)}
           isSubmitting={isLoading}
           canSubmit={form.formState.isValid}
-          submitLabel={mode === "create" ? "Criar" : "Salvar"}
+          submitLabel={mode === "create" ? "Cadastrar" : "Atualizar"}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -302,8 +316,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: formSpacing.containerPaddingHorizontal,
     paddingTop: formSpacing.containerPaddingVertical,
     paddingBottom: 0, // No spacing - action bar has its own margin
+    gap: formSpacing.sectionGap,
   },
   fieldGroup: {
     gap: spacing.lg,
+  },
+  periodDisplay: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  periodLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  periodValue: {
+    fontSize: 14,
   },
 });

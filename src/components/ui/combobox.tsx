@@ -569,6 +569,33 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
     }
 
     if (selectedOptions.length === 0) {
+      // Check if there's a selected value that's not in selectedOptions (e.g., not loaded yet in async mode)
+      if (selectedValues.length > 0) {
+        // Try to get from cache for single select
+        if (!isMultiple) {
+          const cachedItem = allItemsCacheRef.current.get(selectedValues[0]);
+          if (cachedItem) {
+            return formatOptionLabel(cachedItem);
+          }
+          // If not in cache and async, show loading or truncated ID
+          if (async) {
+            return externalLoading ? loadingText : `ID: ${selectedValues[0].substring(0, 8)}...`;
+          }
+        } else {
+          // For multiple select, try to get all from cache
+          const cachedItems = selectedValues
+            .map(val => allItemsCacheRef.current.get(val))
+            .filter((item): item is TData => item !== undefined);
+
+          if (cachedItems.length > 0) {
+            if (singleMode) {
+              const label = formatOptionLabel(cachedItems[0]);
+              return showCount && cachedItems.length > 1 ? `${label} +${cachedItems.length - 1}` : label;
+            }
+            return showCount ? `${cachedItems.length} selecionado${cachedItems.length !== 1 ? "s" : ""}` : placeholder;
+          }
+        }
+      }
       return placeholder;
     }
 
@@ -581,7 +608,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
     }
 
     return formatOptionLabel(selectedOptions[0]);
-  }, [renderValue, selectedOptions, placeholder, isMultiple, singleMode, showCount, formatOptionLabel]);
+  }, [renderValue, selectedOptions, selectedValues, placeholder, isMultiple, singleMode, showCount, formatOptionLabel, async, externalLoading, loadingText]);
 
   const showCreateOption = allowCreate && search.trim() && filteredOptions.length === 0 && !filteredOptions.some((opt) => getOptionLabel(opt).toLowerCase() === search.toLowerCase());
 

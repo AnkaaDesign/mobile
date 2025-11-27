@@ -25,6 +25,9 @@ import {
   UserTasksTable,
   UserActivitiesTable,
   UserCreatedTasksTable,
+  UserLoginInfoCard,
+  UserAddressCard,
+  UserPpeSizesCard,
 } from "@/components/administration/user/detail";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
@@ -48,6 +51,7 @@ export default function UserDetailScreen() {
       position: true,
       sector: true,
       managedSector: true,
+      ppeSize: true,
       _count: {
         tasks: true,
         createdTasks: true,
@@ -140,6 +144,11 @@ export default function UserDetailScreen() {
 
           {/* Modular Components */}
           <UserCard user={user} />
+
+          {/* Personal Information Cards */}
+          <UserAddressCard user={user} />
+          <UserLoginInfoCard user={user} />
+          <UserPpeSizesCard user={user} />
 
           {/* Tasks Assigned Table */}
           <UserTasksTable user={user} maxHeight={400} />

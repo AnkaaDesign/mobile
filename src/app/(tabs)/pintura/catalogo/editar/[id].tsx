@@ -110,8 +110,9 @@ export default function EditCatalogScreen() {
       />
       <ThemedView className="flex-1">
         <PaintForm
-          mode="edit"
-          initialData={{
+          mode="update"
+          paintId={id!}
+          defaultValues={{
             name: paint.name,
             code: paint.code,
             hex: paint.hex,
@@ -124,6 +125,7 @@ export default function EditCatalogScreen() {
             paletteOrder: paint.paletteOrder,
             groundIds: paint.paintGrounds?.map((g) => g.groundPaintId) || [],
           }}
+          initialGrounds={paint.paintGrounds?.map((g) => g.groundPaint) || []}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isSubmitting={isLoading}
