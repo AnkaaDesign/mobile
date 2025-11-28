@@ -21,6 +21,11 @@ export interface LayoutsByTruckResponse {
   };
 }
 
+// Extended type for layout data with photo URI
+export interface LayoutDataWithPhoto extends LayoutCreateFormData {
+  photoUri?: string;
+}
+
 // Layout Service
 export const layoutService = {
   // Get layout by ID
@@ -39,8 +44,42 @@ export const layoutService = {
   delete: (id: string) => apiClient.delete<LayoutDeleteResponse>(`/layout/${id}`),
 
   // Create or update truck layout for specific side
-  createOrUpdateTruckLayout: (truckId: string, side: "left" | "right" | "back", data: LayoutCreateFormData) =>
-    apiClient.post<LayoutCreateResponse>(`/layout/truck/${truckId}/${side}`, data),
+  // Supports photo upload via FormData when photoUri is provided
+  createOrUpdateTruckLayout: (truckId: string, side: "left" | "right" | "back", data: LayoutDataWithPhoto) => {
+    // Check if there's a photo to upload (only backside supports photos)
+    if (data.photoUri && side === 'back') {
+      // Use FormData for file upload
+      const formData = new FormData();
+
+      // Add layout data fields
+      formData.append('height', String(data.height));
+      formData.append('layoutSections', JSON.stringify(data.layoutSections));
+      if (data.photoId) {
+        formData.append('photoId', data.photoId);
+      }
+
+      // Add photo file
+      formData.append('photo', {
+        uri: data.photoUri,
+        name: `layout-photo-${Date.now()}.jpg`,
+        type: 'image/jpeg',
+      } as any);
+
+      return apiClient.post<LayoutCreateResponse>(
+        `/layout/truck/${truckId}/${side}`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+    }
+
+    // No photo - send as JSON
+    const { photoUri, ...layoutData } = data;
+    return apiClient.post<LayoutCreateResponse>(`/layout/truck/${truckId}/${side}`, layoutData);
+  },
 
   // Generate SVG for layout
   generateSVG: (id: string) => apiClient.get(`/layout/${id}/svg`, { responseType: "blob" }),

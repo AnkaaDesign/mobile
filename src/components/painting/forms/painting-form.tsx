@@ -9,6 +9,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
 import { FormSteps, type FormStep } from "@/components/ui/form-steps";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
@@ -19,6 +20,7 @@ import { PAINT_FINISH, COLOR_PALETTE, TRUCK_MANUFACTURER } from "@/constants";
 import type { PaintFormula, Paint } from "../../../types";
 import { FormulaManager } from "../formula/formula-manager";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { TagManager } from "@/components/administration/customer/form/tag-manager";
 
 interface BaseFormProps {
   onCancel: () => void;
@@ -47,20 +49,18 @@ interface UpdateFormProps extends BaseFormProps {
 
 type PaintFormProps = CreateFormProps | UpdateFormProps;
 
-// Define steps
+// Define steps - simplified to 2 steps for mobile
 const steps: FormStep[] = [
-  { id: 1, name: "Informações Básicas", description: "Dados principais da tinta" },
-  { id: 2, name: "Preview", description: "Gerar imagem de visualização (opcional)" },
-  { id: 3, name: "Formulação", description: "Componentes e fórmulas (opcional)" },
-  { id: 4, name: "Fundo da Tinta", description: "Selecione os fundos necessários" },
+  { id: 1, name: "Informações", description: "Dados e cor da tinta" },
+  { id: 2, name: "Formulação", description: "Componentes e fórmulas (opcional)" },
 ];
 
 const FINISH_OPTIONS = [
+  { value: PAINT_FINISH.SOLID, label: "Lisa" },
   { value: PAINT_FINISH.METALLIC, label: "Metálico" },
-  { value: PAINT_FINISH.SOLID, label: "Sólido" },
   { value: PAINT_FINISH.PEARL, label: "Perolizado" },
   { value: PAINT_FINISH.MATTE, label: "Fosco" },
-  { value: PAINT_FINISH.SATIN, label: "Acetinado" },
+  { value: PAINT_FINISH.SATIN, label: "Semi Brilho" },
 ];
 
 const PALETTE_OPTIONS = [
@@ -215,19 +215,15 @@ export function PaintForm(props: PaintFormProps) {
     label: paint.name,
   })) || [];
 
-  // Filter steps based on whether paint type needs ground
-  const availableSteps = useMemo(() => {
-    if (paintType?.data?.needGround) {
-      return steps;
-    }
-    return steps.filter((step) => step.id !== 4);
-  }, [paintType?.data?.needGround]);
+  // All steps are always available (simplified 2-step flow)
+  const availableSteps = useMemo(() => steps, []);
 
-  // Step validation
+  // Step validation - simplified for 2-step flow
   const validateCurrentStep = useCallback(async (): Promise<boolean> => {
     switch (currentStep) {
       case 1:
-        const step1Valid = await form.trigger(["name", "paintTypeId", "paintBrandId", "finish"]);
+        // Validate basic info, hex color, and ground (if needed)
+        const step1Valid = await form.trigger(["name", "paintTypeId", "paintBrandId", "finish", "hex"]);
         if (!step1Valid) return false;
 
         const values = form.getValues();
@@ -235,25 +231,21 @@ export function PaintForm(props: PaintFormProps) {
           form.setError("name", { type: "manual", message: "Nome da tinta não pode ser vazio" });
           return false;
         }
-        return true;
 
-      case 2:
-        return await form.trigger(["hex"]);
-
-      case 3:
-        return true;
-
-      case 4:
+        // Validate ground selection if paint type needs it
         if (paintType?.data?.needGround) {
           const groundValid = await form.trigger("groundIds");
           if (!groundValid) return false;
 
-          const groundValues = form.getValues();
-          if (!groundValues.groundIds || groundValues.groundIds.length === 0) {
+          if (!values.groundIds || values.groundIds.length === 0) {
             form.setError("groundIds", { type: "manual", message: "Selecione pelo menos um fundo" });
             return false;
           }
         }
+        return true;
+
+      case 2:
+        // Formula step - always valid (optional)
         return true;
 
       default:
@@ -318,7 +310,7 @@ export function PaintForm(props: PaintFormProps) {
               {/* Step Indicator */}
               <FormSteps steps={availableSteps} currentStep={currentStep} />
 
-          {/* Step 1: Basic Information */}
+          {/* Step 1: Basic Information + Color + Ground */}
           {currentStep === 1 && (
             <View>
               <FormCard title="Informações Básicas" icon="IconPalette">
@@ -364,32 +356,25 @@ export function PaintForm(props: PaintFormProps) {
                   />
                 </FormFieldGroup>
 
-                {/* Finish */}
+                {/* Color Picker */}
                 <FormFieldGroup
-                  label="Acabamento"
+                  label="Cor Base"
                   required
-                  error={form.formState.errors.finish?.message}
+                  error={form.formState.errors.hex?.message}
                 >
                   <Controller
                     control={form.control}
-                    name="finish"
-                    render={({ field: { onChange, value }, fieldState: { error } }) => (
-                      <Combobox
-                        value={value}
-                        onValueChange={onChange}
-                        options={FINISH_OPTIONS}
-                        placeholder="Selecione o acabamento"
+                    name="hex"
+                    render={({ field: { onChange, value } }) => (
+                      <ColorPicker
+                        color={value || "#000000"}
+                        onColorChange={onChange}
                         disabled={isSubmitting}
-                        searchable={false}
-                        clearable={false}
-                        error={error?.message}
                       />
                     )}
                   />
                 </FormFieldGroup>
-              </FormCard>
 
-              <FormCard title="Classificação" icon="IconTag">
                 {/* Paint Type */}
                 <FormFieldGroup
                   label="Tipo de Tinta"
@@ -410,6 +395,30 @@ export function PaintForm(props: PaintFormProps) {
                         onSearchChange={setPaintTypeSearch}
                         disabled={isSubmitting || isLoadingTypes}
                         loading={isLoadingTypes}
+                        clearable={false}
+                        error={error?.message}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+
+                {/* Finish */}
+                <FormFieldGroup
+                  label="Acabamento"
+                  required
+                  error={form.formState.errors.finish?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="finish"
+                    render={({ field: { onChange, value }, fieldState: { error } }) => (
+                      <Combobox
+                        value={value}
+                        onValueChange={onChange}
+                        options={FINISH_OPTIONS}
+                        placeholder="Selecione o acabamento"
+                        disabled={isSubmitting}
+                        searchable={false}
                         clearable={false}
                         error={error?.message}
                       />
@@ -467,131 +476,81 @@ export function PaintForm(props: PaintFormProps) {
                 </FormFieldGroup>
               </FormCard>
 
-              <FormCard title="Paleta de Cores" icon="IconColorSwatch">
-                <FormRow>
-                  {/* Palette */}
+              {/* Ground Paints - shown conditionally */}
+              {paintType?.data?.needGround && (
+                <FormCard title="Seleção de Fundo" icon="IconDroplet">
                   <FormFieldGroup
-                    label="Paleta"
-                    error={form.formState.errors.palette?.message}
+                    label="Selecionar Tintas de Fundo"
+                    required
+                    error={form.formState.errors.groundIds?.message}
                   >
                     <Controller
                       control={form.control}
-                      name="palette"
+                      name="groundIds"
                       render={({ field: { onChange, value }, fieldState: { error } }) => (
                         <Combobox
-                          value={value || ""}
-                          onValueChange={(val) => onChange(val || undefined)}
-                          options={PALETTE_OPTIONS}
-                          placeholder="Selecione a paleta"
-                          searchPlaceholder="Buscar paleta..."
-                          disabled={isSubmitting}
-                          clearable
+                          mode="multiple"
+                          options={groundPaintOptions}
+                          selectedValues={Array.isArray(value) ? value : []}
+                          onValueChange={onChange}
+                          onCreate={() => {}}
+                          onSearchChange={setGroundPaintSearch}
+                          onEndReached={() => {}}
+                          placeholder="Selecione as tintas de fundo"
+                          selectedText="tintas selecionadas"
+                          searchPlaceholder="Buscar tintas..."
+                          disabled={isSubmitting || isLoadingPaints}
                           error={error?.message}
+                          initialOptions={mode === "update" ? (props.initialGrounds?.map(p => ({ value: p.id, label: p.name })) || []) : undefined}
                         />
                       )}
                     />
                   </FormFieldGroup>
+                </FormCard>
+              )}
 
-                  {/* Palette Order */}
-                  <FormFieldGroup
-                    label="Ordem na Paleta"
-                    helper="1-14"
-                    error={form.formState.errors.paletteOrder?.message}
-                  >
-                    <Controller
-                      control={form.control}
-                      name="paletteOrder"
-                      render={({ field: { onChange, value } }) => (
-                        <Input
-                          value={value?.toString() || ""}
-                          onChangeText={(text) => {
-                            const num = parseInt(text, 10);
-                            onChange(isNaN(num) ? undefined : num);
-                          }}
-                          placeholder="Ex: 1"
-                          keyboardType="numeric"
-                          editable={!isSubmitting}
-                          error={!!form.formState.errors.paletteOrder}
-                        />
-                      )}
-                    />
-                  </FormFieldGroup>
-                </FormRow>
-              </FormCard>
-
-              <FormCard title="Tags" icon="IconTags">
+              <FormCard title="Paleta de Cores" icon="IconColorSwatch">
+                {/* Palette */}
                 <FormFieldGroup
-                  label="Tags da Tinta"
-                  helper="Separe as tags com vírgula"
-                  error={form.formState.errors.tags?.message}
+                  label="Paleta"
+                  error={form.formState.errors.palette?.message}
                 >
                   <Controller
                     control={form.control}
-                    name="tags"
-                    render={({ field: { onChange, value } }) => (
-                      <Input
-                        value={Array.isArray(value) ? value.join(', ') : ''}
-                        onChangeText={(text) => {
-                          const tags = text.split(',').map(t => t.trim()).filter(t => t.length > 0)
-                          onChange(tags)
-                        }}
-                        placeholder="Ex: metalizado, premium, importada"
-                        editable={!isSubmitting}
-                        multiline
-                        error={!!form.formState.errors.tags}
+                    name="palette"
+                    render={({ field: { onChange, value }, fieldState: { error } }) => (
+                      <Combobox
+                        value={value || ""}
+                        onValueChange={(val) => onChange(val || undefined)}
+                        options={PALETTE_OPTIONS}
+                        placeholder="Selecione a paleta"
+                        searchPlaceholder="Buscar paleta..."
+                        disabled={isSubmitting}
+                        clearable
+                        error={error?.message}
                       />
                     )}
                   />
                 </FormFieldGroup>
               </FormCard>
+
+              <FormCard title="Tags" icon="IconTags">
+                <Controller
+                  control={form.control}
+                  name="tags"
+                  render={({ field: { onChange, value } }) => (
+                    <TagManager
+                      tags={Array.isArray(value) ? value : []}
+                      onChange={onChange}
+                    />
+                  )}
+                />
+              </FormCard>
             </View>
           )}
 
-          {/* Step 2: Color and Preview */}
+          {/* Step 2: Formula Management */}
           {currentStep === 2 && (
-            <FormCard title="Cor Hexadecimal" icon="IconColorPicker">
-              <FormFieldGroup
-                label="Cor Hexadecimal"
-                required
-                error={form.formState.errors.hex?.message}
-              >
-                <Controller
-                  control={form.control}
-                  name="hex"
-                  render={({ field: { onChange, value } }) => (
-                    <View style={styles.hexRow}>
-                      <View style={styles.hexInputContainer}>
-                        <Input
-                          value={value}
-                          onChangeText={onChange}
-                          placeholder="#FF0000"
-                          editable={!isSubmitting}
-                          autoCapitalize="characters"
-                          error={!!form.formState.errors.hex}
-                        />
-                      </View>
-                      {value && (
-                        <View style={[styles.colorPreview, { backgroundColor: value, borderColor: colors.border }]} />
-                      )}
-                    </View>
-                  )}
-                />
-              </FormFieldGroup>
-
-              {/* Color Preview */}
-              <View style={styles.previewContainer}>
-                <View
-                  style={[
-                    styles.colorPreviewLarge,
-                    { backgroundColor: form.watch("hex") || "#000000", borderColor: colors.border }
-                  ]}
-                />
-              </View>
-            </FormCard>
-          )}
-
-          {/* Step 3: Formula Management */}
-          {currentStep === 3 && (
             <FormCard title={mode === "update" ? "Adicionar Nova Fórmula" : "Formulação da Tinta"} icon="IconFlask">
               <FormulaManager
                 formulas={formulas}
@@ -599,39 +558,6 @@ export function PaintForm(props: PaintFormProps) {
                 paintId={mode === "update" ? props.paintId : undefined}
                 availableItems={sortedComponentItems}
               />
-            </FormCard>
-          )}
-
-          {/* Step 4: Ground Paints */}
-          {currentStep === 4 && paintType?.data?.needGround && (
-            <FormCard title="Seleção de Fundo" icon="IconDroplet">
-              <FormFieldGroup
-                label="Selecionar Tintas de Fundo"
-                required
-                error={form.formState.errors.groundIds?.message}
-              >
-                <Controller
-                  control={form.control}
-                  name="groundIds"
-                  render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <Combobox
-                      mode="multiple"
-                      options={groundPaintOptions}
-                      selectedValues={Array.isArray(value) ? value : []}
-                      onValueChange={onChange}
-                      onCreate={() => {}}
-                      onSearchChange={setGroundPaintSearch}
-                      onEndReached={() => {}}
-                      placeholder="Selecione as tintas de fundo"
-                      selectedText="tintas selecionadas"
-                      searchPlaceholder="Buscar tintas..."
-                      disabled={isSubmitting || isLoadingPaints}
-                      error={error?.message}
-                      initialOptions={mode === "update" ? (props.initialGrounds?.map(p => ({ value: p.id, label: p.name })) || []) : undefined}
-                    />
-                  )}
-                />
-              </FormFieldGroup>
             </FormCard>
           )}
             </KeyboardAwareFormProvider>
@@ -667,29 +593,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: formSpacing.containerPaddingHorizontal,
     paddingTop: formSpacing.containerPaddingVertical,
     paddingBottom: 0,
-  },
-  hexRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  hexInputContainer: {
-    flex: 1,
-  },
-  colorPreview: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  previewContainer: {
-    alignItems: "center",
-    marginTop: spacing.md,
-  },
-  colorPreviewLarge: {
-    width: 200,
-    height: 150,
-    borderRadius: 12,
-    borderWidth: 1,
   },
 });

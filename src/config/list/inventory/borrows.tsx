@@ -16,7 +16,10 @@ export const borrowsListConfig: ListConfig<Borrow> = {
 
   query: {
     hook: 'useBorrowsInfiniteMobile',
-    defaultSort: { field: 'createdAt', direction: 'desc' },
+    defaultSort: [
+      { field: 'status', direction: 'asc' },
+      { field: 'createdAt', direction: 'desc' },
+    ],
     pageSize: 25,
     include: {
       item: {
@@ -208,7 +211,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
 
   filters: {
     defaultValues: {
-      statusIds: [BORROW_STATUS.ACTIVE],
+      statusIds: [],
     },
     fields: [
       {

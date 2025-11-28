@@ -1203,11 +1203,11 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
   // Handle paint finish
   if (field === "finish" && entityType === CHANGE_LOG_ENTITY_TYPE.PAINT && typeof value === "string") {
     const paintFinishLabels: Record<string, string> = {
-      SOLID: "Sólido",
+      SOLID: "Lisa",
       METALLIC: "Metálico",
       PEARL: "Perolizado",
       MATTE: "Fosco",
-      SATIN: "Acetinado",
+      SATIN: "Semi Brilho",
     };
     return paintFinishLabels[value] || value;
   }

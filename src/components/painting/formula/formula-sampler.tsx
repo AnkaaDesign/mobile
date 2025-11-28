@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { useFormContext } from "react-hook-form";
-import { IconCheck, IconX } from "@tabler/icons-react-native";
+import { useFormContext, useWatch } from "react-hook-form";
+import { IconCheck } from "@tabler/icons-react-native";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,12 +17,12 @@ interface FormulaSamplerProps {
 
 export function FormulaSampler({ availableItems = [] }: FormulaSamplerProps) {
   const { colors } = useTheme();
-  const { watch, setValue } = useFormContext();
+  const { setValue, control } = useFormContext();
   const [sampleAmount, setSampleAmount] = useState<string>("");
   const [isAdjusting, setIsAdjusting] = useState(false);
 
-  // Watch all component values
-  const components = watch("components") || [];
+  // Watch all component values using useWatch for proper reactivity
+  const components = useWatch({ control, name: "components" }) || [];
 
   // Calculate current total quantity
   const currentTotal = useMemo(() => {
@@ -38,7 +38,7 @@ export function FormulaSampler({ availableItems = [] }: FormulaSamplerProps) {
 
   // Calculate remaining total after sampling
   const remainingTotal = useMemo(() => {
-    const sample = parseFloat(sampleAmount) || 0;
+    const sample = parseFloat(sampleAmount.replace(",", ".")) || 0;
     return Math.max(0, currentTotal - sample);
   }, [currentTotal, sampleAmount]);
 
@@ -81,14 +81,10 @@ export function FormulaSampler({ availableItems = [] }: FormulaSamplerProps) {
     setIsAdjusting(false);
   };
 
-  const handleCancelAdjustment = () => {
-    setSampleAmount("");
-    setIsAdjusting(false);
-  };
-
-  const handleSampleAmountChange = (value: string) => {
-    setSampleAmount(value);
-    setIsAdjusting(value.trim() !== "" && parseFloat(value) > 0);
+  const handleSampleAmountChange = (value: string | number | null) => {
+    const stringValue = value !== null && value !== undefined ? String(value) : "";
+    setSampleAmount(stringValue);
+    setIsAdjusting(stringValue.trim() !== "" && parseFloat(stringValue) > 0);
   };
 
   // Show the sampler if there are any components with meaningful data
@@ -98,7 +94,7 @@ export function FormulaSampler({ availableItems = [] }: FormulaSamplerProps) {
       components.some((c: { weightInGrams?: number }) => (c.weightInGrams || 0) > 0) || // Has at least one weight > 0
       currentTotal > 0); // Or there's a total (fallback)
 
-  const sampleValue = parseFloat(sampleAmount) || 0;
+  const sampleValue = parseFloat(sampleAmount.replace(",", ".")) || 0;
   const isValidSample = sampleValue > 0 && sampleValue < currentTotal;
 
   // Don't show anything if no components
@@ -122,31 +118,16 @@ export function FormulaSampler({ availableItems = [] }: FormulaSamplerProps) {
               placeholder="Ex: 10"
             />
           </View>
-          <View style={styles.buttonGroup}>
-            <Button
-              size="sm"
-              onPress={handleApplyAdjustment}
-              disabled={!isValidSample}
-              style={{ minWidth: 80 }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <IconCheck size={16} color={colors.primaryForeground} />
-                <Text style={{ color: colors.primaryForeground }}>Aplicar</Text>
-              </View>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={handleCancelAdjustment}
-              disabled={!isAdjusting}
-              style={{ minWidth: 80 }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <IconX size={16} color={colors.foreground} />
-                <Text>Cancelar</Text>
-              </View>
-            </Button>
-          </View>
+          <Button
+            onPress={handleApplyAdjustment}
+            disabled={!isValidSample}
+            style={styles.applyButton}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <IconCheck size={16} color={colors.primaryForeground} />
+              <Text style={{ color: colors.primaryForeground }}>Aplicar</Text>
+            </View>
+          </Button>
         </View>
         {!isValidSample && sampleValue > 0 && (
           <Text style={[styles.errorText, { color: colors.destructive }]}>
@@ -216,11 +197,11 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     gap: spacing.sm,
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
-  buttonGroup: {
-    flexDirection: 'row',
-    gap: spacing.xs,
+  applyButton: {
+    height: 42,
+    minWidth: 100,
   },
   errorText: {
     fontSize: 12,

@@ -88,9 +88,9 @@ export function FormulaManager({ formulas, onFormulasChange, paintId, availableI
   return (
     <FormProvider {...form}>
       <View style={styles.container}>
-        {/* Formula Description */}
+        {/* Formula Description - with extra top spacing */}
         <View
-          style={styles.section}
+          style={styles.descriptionSection}
           onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout('formulaDescription', e) : undefined}
         >
           <Label>
@@ -136,14 +136,15 @@ const styles = StyleSheet.create({
   container: {
     gap: spacing.lg,
   },
+  descriptionSection: {
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
   section: {
     gap: spacing.sm,
   },
   editorContainer: {
     marginTop: spacing.sm,
-  },
-  inputError: {
-    // borderColor should be set dynamically via inline style using colors.destructive
   },
   errorText: {
     fontSize: 12,

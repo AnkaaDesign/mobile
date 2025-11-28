@@ -202,13 +202,13 @@ export default function BatchOperationsScreen() {
   // Get status label
   const getStatusLabel = (status: TASK_STATUS) => {
     const labels: Record<TASK_STATUS, string> = {
-      [TASK_STATUS.PENDING]: "Pendente",
+      [TASK_STATUS.PENDING]: "Aguardando",
       [TASK_STATUS.IN_PRODUCTION]: "Em Produção",
       [TASK_STATUS.COMPLETED]: "Concluída",
       [TASK_STATUS.CANCELLED]: "Cancelada",
       [TASK_STATUS.ON_HOLD]: "Em Espera",
-      [TASK_STATUS.INVOICED]: "Faturada",
-      [TASK_STATUS.SETTLED]: "Quitada",
+      [TASK_STATUS.INVOICED]: "Faturado",
+      [TASK_STATUS.SETTLED]: "Liquidado",
     };
     return labels[status] || status;
   };

@@ -184,7 +184,7 @@ interface TaskFormProps {
 }
 
 const TASK_STATUS_OPTIONS = [
-  { value: TASK_STATUS.PENDING, label: "Pendente" },
+  { value: TASK_STATUS.PENDING, label: "Aguardando" },
   { value: TASK_STATUS.IN_PRODUCTION, label: "Em Produção" },
   { value: TASK_STATUS.ON_HOLD, label: "Em Espera" },
   { value: TASK_STATUS.COMPLETED, label: "Concluída" },
@@ -216,12 +216,14 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
   const [isObservationOpen, setIsObservationOpen] = useState(false);
 
   // Layout state - Initialize with existingLayouts if available (edit mode)
+  // Include photoUri for new photos that need to be uploaded
+  type LayoutWithPhoto = LayoutCreateFormData & { photoUri?: string };
   const [selectedLayoutSide, setSelectedLayoutSide] = useState<"left" | "right" | "back">("left");
   const [isLayoutOpen, setIsLayoutOpen] = useState(!!existingLayouts); // Auto-open if layouts exist
   const [layouts, setLayouts] = useState<{
-    left?: LayoutCreateFormData;
-    right?: LayoutCreateFormData;
-    back?: LayoutCreateFormData;
+    left?: LayoutWithPhoto;
+    right?: LayoutWithPhoto;
+    back?: LayoutWithPhoto;
   }>(() => {
     // If we have existing layouts from backend, use them
     if (existingLayouts) {
@@ -231,9 +233,9 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
 
     // Otherwise use defaults
     return {
-      left: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
-      right: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
-      back: { height: 2.42, sections: [{ width: 2.42, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+      left: { height: 2.4, layoutSections: [{ width: 8, isDoor: false, doorHeight: null, position: 0 }], photoId: null },
+      right: { height: 2.4, layoutSections: [{ width: 8, isDoor: false, doorHeight: null, position: 0 }], photoId: null },
+      back: { height: 2.42, layoutSections: [{ width: 2.42, isDoor: false, doorHeight: null, position: 0 }], photoId: null },
     };
   });
 
@@ -259,13 +261,13 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
       return;
     }
 
-    // Get sections from current layout state
+    // Get layoutSections from current layout state
     const leftLayout = layouts.left;
     const rightLayout = layouts.right;
-    const leftSections = leftLayout?.sections;
-    const rightSections = rightLayout?.sections;
+    const leftSections = leftLayout?.layoutSections;
+    const rightSections = rightLayout?.layoutSections;
 
-    // Only validate if both sides exist and have sections
+    // Only validate if both sides exist and have layoutSections
     if (leftSections && leftSections.length > 0 && rightSections && rightSections.length > 0) {
       const leftTotalWidth = leftSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
       const rightTotalWidth = rightSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
@@ -421,8 +423,11 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
         }
       }
 
+    // Check if backside layout has a photo to upload (only backside supports photos)
+    const hasLayoutPhotos = isLayoutOpen && layouts.back?.photoUri;
+
     // If we have files, convert to FormData with context for proper file organization
-    if (artworkFiles.length > 0 || observationFiles.length > 0) {
+    if (artworkFiles.length > 0 || observationFiles.length > 0 || hasLayoutPhotos) {
       // Prepare files with proper structure
       const files: Record<string, any[]> = {};
 
@@ -483,14 +488,26 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
 
         for (const side of modifiedLayoutSides) {
           const sideData = layouts[side];
-          if (sideData && sideData.sections && sideData.sections.length > 0) {
+          if (sideData && sideData.layoutSections && sideData.layoutSections.length > 0) {
             const sideName = side === 'left' ? 'leftSide' : side === 'right' ? 'rightSide' : 'backSide';
             truckLayoutData[sideName] = {
               height: sideData.height,
-              sections: sideData.sections,
+              layoutSections: sideData.layoutSections,
               photoId: sideData.photoId || null,
             };
             console.log(`[TaskForm] Added modified ${sideName} to payload`);
+
+            // Add layout photo if present (only backside supports photos)
+            if (side === 'back' && sideData.photoUri) {
+              // Backend expects: layoutPhotos.backSide
+              // Create a file-like object for the photo
+              files[`layoutPhotos.${sideName}`] = [{
+                uri: sideData.photoUri,
+                name: `layout-${sideName}-${Date.now()}.jpg`,
+                type: 'image/jpeg',
+              }];
+              console.log(`[TaskForm] Added layout photo for ${sideName}:`, sideData.photoUri);
+            }
           }
         }
 
@@ -542,11 +559,11 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
 
         for (const side of modifiedLayoutSides) {
           const sideData = layouts[side];
-          if (sideData && sideData.sections && sideData.sections.length > 0) {
+          if (sideData && sideData.layoutSections && sideData.layoutSections.length > 0) {
             const sideName = side === 'left' ? 'leftSide' : side === 'right' ? 'rightSide' : 'backSide';
             truckLayoutData[sideName] = {
               height: sideData.height,
-              sections: sideData.sections,
+              layoutSections: sideData.layoutSections,
               photoId: sideData.photoId || null,
             };
             console.log(`[TaskForm] Added modified ${sideName} to payload (JSON)`);
@@ -981,7 +998,14 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                 <Button
                   variant="outline"
                   size="sm"
-                  onPress={() => setIsLayoutOpen(true)}
+                  onPress={() => {
+                    setIsLayoutOpen(true);
+                    // When adding a new layout (no existing layouts), mark all sides as modified
+                    // so they all get created with default values
+                    if (!existingLayouts) {
+                      setModifiedLayoutSides(new Set(['left', 'right', 'back']));
+                    }
+                  }}
                   disabled={isSubmitting}
                 >
                   <Icon name="plus" size={16} color={colors.foreground} />
@@ -995,9 +1019,9 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                   onPress={() => {
                     setIsLayoutOpen(false);
                     setLayouts({
-                      left: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
-                      right: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
-                      back: { height: 2.42, sections: [{ width: 2.42, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+                      left: { height: 2.4, layoutSections: [{ width: 8, isDoor: false, doorHeight: null, position: 0 }], photoId: null },
+                      right: { height: 2.4, layoutSections: [{ width: 8, isDoor: false, doorHeight: null, position: 0 }], photoId: null },
+                      back: { height: 2.42, layoutSections: [{ width: 2.42, isDoor: false, doorHeight: null, position: 0 }], photoId: null },
                     });
                     setModifiedLayoutSides(new Set());
                   }}
@@ -1061,15 +1085,31 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                   selectedSide={selectedLayoutSide}
                   layouts={layouts}
                   onChange={(side, layoutData) => {
+                    console.log('[TaskForm] 📥 Received onChange from LayoutForm:', {
+                      side,
+                      hasPhotoUri: !!(layoutData as any).photoUri,
+                      photoUri: (layoutData as any).photoUri,
+                      hasPhotoId: !!layoutData.photoId,
+                      photoId: layoutData.photoId,
+                      layoutSectionsCount: layoutData.layoutSections?.length,
+                    });
                     setModifiedLayoutSides((prev) => {
                       const newSet = new Set(prev);
                       newSet.add(side);
                       return newSet;
                     });
-                    setLayouts((prev) => ({
-                      ...prev,
-                      [side]: layoutData,
-                    }));
+                    setLayouts((prev) => {
+                      const newLayouts = {
+                        ...prev,
+                        [side]: layoutData,
+                      };
+                      console.log('[TaskForm] 📦 Updated layouts state:', {
+                        side,
+                        newLayoutPhotoUri: (newLayouts[side] as any)?.photoUri,
+                        newLayoutPhotoId: newLayouts[side]?.photoId,
+                      });
+                      return newLayouts;
+                    });
                   }}
                   disabled={isSubmitting}
                   embedded={true}

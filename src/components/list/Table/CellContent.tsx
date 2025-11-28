@@ -323,7 +323,56 @@ export const CellContent = memo(function CellContent({
         // Get human-readable label for display
         const displayLabel = getStatusLabel(stringValue, badgeEntity)
 
-        // Create a simple text badge with correct colors from centralized config
+        // Split into words for multi-line display (max 2 lines)
+        const words = displayLabel.split(' ')
+        const hasMultipleWords = words.length > 1
+
+        // For multi-word labels, render each word on its own line (max 2 lines)
+        if (hasMultipleWords) {
+          // First line: all words except last, Second line: last word
+          const line1 = words.slice(0, -1).join(' ')
+          const line2 = words[words.length - 1]
+
+          return (
+            <View style={{
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 4,
+              backgroundColor: badgeColors.bg,
+              alignSelf: 'flex-start',
+              maxWidth: 95,
+            }}>
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: '600',
+                  color: badgeColors.text,
+                  textAlign: 'left',
+                  lineHeight: 14,
+                }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {line1}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: '600',
+                  color: badgeColors.text,
+                  textAlign: 'left',
+                  lineHeight: 14,
+                }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {line2}
+              </Text>
+            </View>
+          )
+        }
+
+        // Single word - simple badge
         return (
           <View style={{
             paddingHorizontal: 8,

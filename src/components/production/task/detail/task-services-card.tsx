@@ -7,12 +7,11 @@ import { Combobox } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { spacing, fontSize } from "@/constants/design-system";
-import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS, SECTOR_PRIVILEGES } from "@/constants";
+import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS, SECTOR_PRIVILEGES, getBadgeVariant } from "@/constants";
 import { hasPrivilege } from "@/utils";
 import { canLeaderUpdateServiceOrder } from "@/utils/permissions/entity-permissions";
 import { useServiceOrderMutations } from "@/hooks";
 import { showToast } from "@/components/ui/toast";
-import { badgeColors } from "@/lib/theme/extended-colors";
 import type { ServiceOrder } from '../../../../types';
 import { IconTools } from "@tabler/icons-react-native";
 
@@ -57,19 +56,6 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
     }
   };
 
-  // Get badge variant based on status
-  const getStatusVariant = (status: SERVICE_ORDER_STATUS) => {
-    switch (status) {
-      case SERVICE_ORDER_STATUS.COMPLETED:
-        return "success";
-      case SERVICE_ORDER_STATUS.IN_PROGRESS:
-        return "warning";
-      case SERVICE_ORDER_STATUS.CANCELLED:
-        return "destructive";
-      default:
-        return "default";
-    }
-  };
 
   // Filter out services with missing data to prevent errors
   const validServices = services.filter(s => s && s.id && s.status && s.description);
@@ -90,8 +76,8 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
 
       <View style={styles.content}>
         {validServices.map((service, index) => {
-          const statusVariant = getStatusVariant(service.status);
-          const badgeColor = badgeColors[statusVariant];
+          // Use centralized badge configuration
+          const badgeVariant = getBadgeVariant(service.status, "SERVICE_ORDER");
           const statusLabel = SERVICE_ORDER_STATUS_LABELS[service.status] || service.status;
 
           return (
@@ -125,16 +111,8 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
                   />
                 </View>
               ) : (
-                <Badge
-                  variant={statusVariant}
-                  style={styles.statusBadge}
-                >
-                  <ThemedText style={[
-                    styles.statusBadgeText,
-                    badgeColor?.text ? { color: badgeColor.text } : { color: colors.foreground }
-                  ]}>
-                    {statusLabel}
-                  </ThemedText>
+                <Badge variant={badgeVariant} style={styles.statusBadge}>
+                  {statusLabel}
                 </Badge>
               )}
             </View>

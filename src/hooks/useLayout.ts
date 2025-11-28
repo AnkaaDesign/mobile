@@ -1,7 +1,7 @@
 // packages/hooks/src/useLayout.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { layoutService } from '@/api-client';
+import { layoutService, type LayoutDataWithPhoto } from '@/api-client';
 import type { LayoutCreateFormData, LayoutUpdateFormData } from '@/schemas';
 
 // Query keys
@@ -96,7 +96,7 @@ export const useLayoutMutations = () => {
   });
 
   const createOrUpdateTruckLayoutMutation = useMutation({
-    mutationFn: ({ truckId, side, data }: { truckId: string; side: "left" | "right" | "back"; data: LayoutCreateFormData }) =>
+    mutationFn: ({ truckId, side, data }: { truckId: string; side: "left" | "right" | "back"; data: LayoutDataWithPhoto }) =>
       layoutService.createOrUpdateTruckLayout(truckId, side, data),
     onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: layoutQueryKeys.all });

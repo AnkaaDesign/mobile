@@ -1,6 +1,6 @@
 
-import { Stack, useLocalSearchParams } from "expo-router";
-import { ScrollView, View, StyleSheet } from "react-native";
+import { Stack, useLocalSearchParams, router } from "expo-router";
+import { ScrollView, View, StyleSheet, TouchableOpacity } from "react-native";
 import { usePaintDetail } from '../../../../../hooks';
 import { PaintCatalogCard, PaintFormulaDetail, MobileProductionCalculator } from "@/components/painting";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -13,7 +13,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "@/lib/theme/theme-provider";
-import { spacing, fontSize } from "@/constants/design-system";
+import { useAuth } from "@/contexts/auth-context";
+import { SECTOR_PRIVILEGES } from "@/constants";
+import { hasPrivilege } from "@/utils";
+import { spacing, fontSize, borderRadius } from "@/constants/design-system";
+import { IconEdit } from "@tabler/icons-react-native";
 
 const styles = StyleSheet.create({
   card: {
@@ -39,11 +43,27 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.sm,
   },
+  editButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
 
 export default function PaintDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { data: user } = useAuth();
+
+  // Check user permissions
+  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
+
+  // Handle edit
+  const handleEdit = () => {
+    router.push(`/producao/tintas/editar/${id}`);
+  };
 
   const {
     data: paintResponse,
@@ -140,6 +160,15 @@ export default function PaintDetailsScreen() {
                 <Icon name="factory" size={20} color={colors.mutedForeground} />
                 <ThemedText style={styles.title}>Tinta para Produção</ThemedText>
               </View>
+              {canEdit && (
+                <TouchableOpacity
+                  onPress={handleEdit}
+                  style={[styles.editButton, { backgroundColor: colors.primary }]}
+                  activeOpacity={0.7}
+                >
+                  <IconEdit size={18} color={colors.primaryForeground} />
+                </TouchableOpacity>
+              )}
             </View>
             <View style={styles.content}>
               <ThemedText className="text-sm text-muted-foreground">Informações técnicas e cálculos para produção industrial</ThemedText>

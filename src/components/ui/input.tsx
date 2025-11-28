@@ -1,5 +1,5 @@
 import * as React from "react";
-import { TextInput, View, ViewStyle, TextStyle, TextInputProps, Animated, StyleSheet, ActivityIndicator, LayoutChangeEvent } from "react-native";
+import { TextInput, View, ViewStyle, TextStyle, TextInputProps, Animated, StyleSheet, ActivityIndicator, LayoutChangeEvent, Text } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, fontSize, transitions } from "@/constants/design-system";
 import { useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
@@ -82,6 +82,8 @@ export interface InputProps extends Omit<TextInputProps, "value" | "onChangeText
   // Keyboard-aware form integration
   // Unique identifier for this field to enable keyboard-aware scrolling
   fieldKey?: string;
+  // Suffix text to display after the input value (e.g., "g", "kg", "ml")
+  suffix?: string;
 }
 
 const Input = React.forwardRef<TextInput, InputProps>(
@@ -110,6 +112,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
       step,
       loading = false,
       fieldKey,
+      suffix,
       ...props
     },
     ref,
@@ -754,7 +757,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
     const baseInputStyles: TextStyle = {
       flex: 1,
       paddingHorizontal: 12,
-      paddingRight: withIcon || loading || (type === "cep" && showCepLoading && isCepLoading) ? 40 : 12,
+      paddingRight: withIcon || loading || (type === "cep" && showCepLoading && isCepLoading) ? 40 : suffix ? 30 : 12,
       paddingVertical: 0,
       fontSize: fontSize.base,
       color: colors.foreground,
@@ -842,6 +845,13 @@ const Input = React.forwardRef<TextInput, InputProps>(
               accessibilityValue={{ text: String(internalValue || '') }}
             />
 
+            {/* Suffix */}
+            {suffix && (
+              <View style={styles.suffixContainer}>
+                <Text style={[styles.suffixText, { color: colors.mutedForeground }]}>{suffix}</Text>
+              </View>
+            )}
+
             {/* Loading indicator */}
             {isLoading && (
               <View style={styles.iconContainer}>
@@ -865,6 +875,18 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
+  },
+  suffixContainer: {
+    position: "absolute",
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  suffixText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
 

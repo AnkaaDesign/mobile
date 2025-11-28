@@ -84,19 +84,19 @@ export default function CreateScheduleScreen() {
 
           // Transform layout data to match API schema
           const transformLayoutForAPI = (layoutData: any) => {
-            if (!layoutData?.sections) return null;
+            if (!layoutData?.layoutSections) return null;
 
             // CRITICAL FIX: Clone the object to ensure arrays don't get corrupted by Axios (aligned with web)
-            const sections = layoutData.sections.map((section: any, index: number) => ({
+            const layoutSections = layoutData.layoutSections.map((section: any, index: number) => ({
               width: section.width,
               isDoor: section.isDoor,
-              doorOffset: section.isDoor ? section.doorOffset : null,
+              doorHeight: section.isDoor ? section.doorHeight : null,
               position: index,
             }));
 
             const transformed = {
               height: layoutData.height,
-              sections,
+              layoutSections,
               photoId: layoutData.photoId || null,
             };
 
@@ -109,7 +109,7 @@ export default function CreateScheduleScreen() {
           const rightLayout = layoutsToCreate.right || layoutsToCreate.rightSide;
           const backLayout = layoutsToCreate.back || layoutsToCreate.backSide;
 
-          if (leftLayout?.sections?.length > 0) {
+          if (leftLayout?.layoutSections?.length > 0) {
             const leftLayoutData = transformLayoutForAPI(leftLayout);
             if (leftLayoutData) {
               console.log('[CreateSchedule] Adding left layout:', leftLayoutData);
@@ -119,7 +119,7 @@ export default function CreateScheduleScreen() {
             }
           }
 
-          if (rightLayout?.sections?.length > 0) {
+          if (rightLayout?.layoutSections?.length > 0) {
             const rightLayoutData = transformLayoutForAPI(rightLayout);
             if (rightLayoutData) {
               console.log('[CreateSchedule] Adding right layout:', rightLayoutData);
@@ -129,7 +129,7 @@ export default function CreateScheduleScreen() {
             }
           }
 
-          if (backLayout?.sections?.length > 0) {
+          if (backLayout?.layoutSections?.length > 0) {
             const backLayoutData = transformLayoutForAPI(backLayout);
             if (backLayoutData) {
               console.log('[CreateSchedule] Adding back layout:', backLayoutData);

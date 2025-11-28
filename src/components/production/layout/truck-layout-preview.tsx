@@ -109,30 +109,31 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
               stroke="#000" stroke-width="3"/>`;
       });
     } else if (layout.layoutSections) {
-      // Handle both new LayoutSection entity format and old sections format
+      // Handle LayoutSection entity format with doorHeight
       let sectionPos = 0;
       sections.forEach((section: any) => {
         const sectionWidth = section.width * 100;
         const sectionX = margin + sectionPos;
 
         // Check if this section is a door
-        if (section.isDoor && section.doorOffset !== null && section.doorOffset !== undefined) {
-          const doorOffsetTop = section.doorOffset * 100;
-          const doorY = margin + doorOffsetTop;
+        // doorHeight is measured from bottom of layout to top of door opening
+        if (section.isDoor && section.doorHeight !== null && section.doorHeight !== undefined) {
+          const doorHeightCm = section.doorHeight * 100;
+          const doorTopY = margin + (height - doorHeightCm);
 
           // Left vertical line of door
           svg += `
-          <line x1="${sectionX}" y1="${doorY}" x2="${sectionX}" y2="${margin + height}"
+          <line x1="${sectionX}" y1="${doorTopY}" x2="${sectionX}" y2="${margin + height}"
                 stroke="#000" stroke-width="3"/>`;
 
           // Right vertical line of door
           svg += `
-          <line x1="${sectionX + sectionWidth}" y1="${doorY}" x2="${sectionX + sectionWidth}" y2="${margin + height}"
+          <line x1="${sectionX + sectionWidth}" y1="${doorTopY}" x2="${sectionX + sectionWidth}" y2="${margin + height}"
                 stroke="#000" stroke-width="3"/>`;
 
           // Top horizontal line of door
           svg += `
-          <line x1="${sectionX}" y1="${doorY}" x2="${sectionX + sectionWidth}" y2="${doorY}"
+          <line x1="${sectionX}" y1="${doorTopY}" x2="${sectionX + sectionWidth}" y2="${doorTopY}"
                 stroke="#000" stroke-width="3"/>`;
         }
 

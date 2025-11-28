@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { showToast } from "@/components/ui/toast";
@@ -6,13 +7,17 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { SkeletonCard } from "@/components/ui/loading";
-import { usePaint, usePaintMutations } from "@/hooks";
+import { usePaint, usePaintMutations, usePaintFormulaMutations } from "@/hooks";
 import { spacing } from "@/constants/design-system";
+import type { PaintUpdateFormData } from "@/schemas";
+import type { PaintFormula } from "@/types";
 
 export default function EditPaintScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { updateAsync, isLoading } = usePaintMutations();
+  const { updateAsync, isLoading: isPaintLoading } = usePaintMutations();
+  const { createAsync: createFormulaAsync, isLoading: isFormulaLoading } = usePaintFormulaMutations();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     data: response,
@@ -27,30 +32,79 @@ export default function EditPaintScreen() {
           groundPaint: true,
         },
       },
+      formulas: {
+        include: {
+          components: {
+            include: {
+              item: true,
+            },
+          },
+        },
+      },
     },
   });
 
   const paint = response?.data;
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: PaintUpdateFormData, newFormulas?: PaintFormula[]) => {
     if (!id) return;
 
+    setIsSubmitting(true);
     try {
+      // Step 1: Update the paint
       const result = await updateAsync({ id, data });
 
-      if (result.success) {
-        showToast({
-          message: "Tinta atualizada com sucesso!",
-          type: "success",
-        });
-        router.back();
+      if (!result.success) {
+        throw new Error("Falha ao atualizar tinta");
       }
+
+      // Step 2: Create new formulas if provided
+      if (newFormulas && newFormulas.length > 0) {
+        for (const formula of newFormulas) {
+          // Calculate total weight for ratio conversion
+          const totalWeight = formula.components?.reduce((sum, c) => sum + (c.weightInGrams || 0), 0) || 0;
+
+          if (totalWeight > 0 && formula.components && formula.components.length > 0) {
+            // Convert weightInGrams to ratio (percentage)
+            const componentsWithRatio = formula.components
+              .filter((c) => c.itemId && c.weightInGrams && c.weightInGrams > 0)
+              .map((c) => ({
+                itemId: c.itemId,
+                ratio: ((c.weightInGrams || 0) / totalWeight) * 100,
+              }));
+
+            // Only create formula if we have valid components
+            if (componentsWithRatio.length > 0) {
+              const formulaData = {
+                description: formula.description || "Fórmula Principal",
+                paintId: id,
+                components: componentsWithRatio,
+              };
+
+              try {
+                await createFormulaAsync(formulaData);
+              } catch (formulaError) {
+                console.error("Error creating formula:", formulaError);
+                // Continue with other formulas even if one fails
+              }
+            }
+          }
+        }
+      }
+
+      showToast({
+        message: "Tinta atualizada com sucesso!",
+        type: "success",
+      });
+      router.back();
     } catch (error) {
       console.error("Error updating paint:", error);
       showToast({
         message: "Erro ao atualizar tinta",
         type: "error",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -112,8 +166,9 @@ export default function EditPaintScreen() {
       />
       <ThemedView className="flex-1">
         <PaintForm
-          mode="edit"
-          initialData={{
+          mode="update"
+          paintId={id!}
+          defaultValues={{
             name: paint.name,
             code: paint.code,
             hex: paint.hex,
@@ -126,9 +181,11 @@ export default function EditPaintScreen() {
             paletteOrder: paint.paletteOrder,
             groundIds: paint.paintGrounds?.map((g) => g.groundPaintId) || [],
           }}
+          existingFormulas={paint.formulas}
+          initialGrounds={paint.paintGrounds?.map((g) => g.groundPaint).filter(Boolean) as any}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
-          isSubmitting={isLoading}
+          isSubmitting={isSubmitting || isPaintLoading || isFormulaLoading}
         />
       </ThemedView>
     </>

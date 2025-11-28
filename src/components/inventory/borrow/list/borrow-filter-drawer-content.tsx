@@ -59,7 +59,7 @@ export function BorrowFilterDrawerContent({
   );
 
   const [localFilters, setLocalFilters] = useState<FilterState>(() => ({
-    statusIds: filters.statusIds || [BORROW_STATUS.ACTIVE],
+    statusIds: filters.statusIds || [],
     itemIds: filters.itemIds || [],
     userIds: filters.userIds || [],
     createdAfter: filters.createdAt?.gte,
@@ -108,7 +108,7 @@ export function BorrowFilterDrawerContent({
   }, [localFilters, onFiltersChange, handleClose]);
 
   const handleClear = useCallback(() => {
-    setLocalFilters({ statusIds: [BORROW_STATUS.ACTIVE] });
+    setLocalFilters({ statusIds: [] });
     onClear();
   }, [onClear]);
 

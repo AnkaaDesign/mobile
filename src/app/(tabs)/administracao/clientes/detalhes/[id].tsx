@@ -47,11 +47,7 @@ export default function CustomerDetailScreen() {
       logo: true,
       tasks: {
         include: {
-          services: {
-            include: {
-              task: true,
-            },
-          },
+          services: true,
         },
       },
     },

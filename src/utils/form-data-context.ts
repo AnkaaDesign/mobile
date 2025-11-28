@@ -40,6 +40,12 @@ export function createFormDataWithContext(
       return;
     }
 
+    // Handle Date objects FIRST (before object check, since Date instanceof Object is true)
+    if (value instanceof Date) {
+      formData.append(key, value.toISOString());
+      return;
+    }
+
     // Handle arrays (e.g., services, paintIds)
     if (Array.isArray(value)) {
       // Check if it's an array of objects or primitives
@@ -56,12 +62,6 @@ export function createFormDataWithContext(
     // Handle objects
     if (typeof value === "object" && value !== null) {
       formData.append(key, JSON.stringify(value));
-      return;
-    }
-
-    // Handle Date objects
-    if (value instanceof Date) {
-      formData.append(key, value.toISOString());
       return;
     }
 

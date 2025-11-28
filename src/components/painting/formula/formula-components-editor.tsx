@@ -1,16 +1,20 @@
 import { useEffect, useMemo } from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet, useWindowDimensions } from "react-native";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { IconTrash, IconPlus } from "@tabler/icons-react-native";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { Text } from "@/components/ui/text";
-import { Label } from "@/components/ui/label";
+import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row";
+import type { SwipeAction } from "@/components/ui/reanimated-swipeable-row";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { paintFormulaComponentService } from "@/api-client/paint";
 import type { Item } from "../../../types";
+
+// Breakpoint for tablet detection
+const TABLET_BREAKPOINT = 768;
 
 interface FormulaComponentsEditorProps {
   availableItems?: Item[];
@@ -19,6 +23,8 @@ interface FormulaComponentsEditorProps {
 
 export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }: FormulaComponentsEditorProps) {
   const { colors } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const isTablet = screenWidth >= TABLET_BREAKPOINT;
   const { control, setValue, watch } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -76,9 +82,9 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
     }
   }, [fields.length, append]);
 
-  const handleAmountChange = (index: number, value: string) => {
-    // Allow empty string for clearing
-    if (value === "") {
+  const handleAmountChange = (index: number, value: string | null | undefined) => {
+    // Allow empty string or null for clearing
+    if (!value || value === "") {
       setValue(`components.${index}.weightInGrams`, 0);
       setValue(`components.${index}.rawInput`, "");
       return;
@@ -87,10 +93,19 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
     // Store the raw input value for display
     setValue(`components.${index}.rawInput`, value);
 
-    // Parse the number (handle comma as decimal separator)
-    const numericValue = parseFloat(value.replace(",", "."));
-    if (!isNaN(numericValue)) {
-      const rounded = Math.round(numericValue * 100) / 100; // 2 decimal places
+    // Parse and sum all numbers separated by spaces (e.g., "40 5" = 45)
+    const stringValue = String(value).replace(",", ".");
+    const parts = stringValue.split(/\s+/).filter(part => part.trim() !== "");
+    let total = 0;
+    for (const part of parts) {
+      const num = parseFloat(part.replace(",", "."));
+      if (!isNaN(num)) {
+        total += num;
+      }
+    }
+
+    if (total > 0 || parts.length > 0) {
+      const rounded = Math.round(total * 100) / 100; // 2 decimal places
       setValue(`components.${index}.weightInGrams`, rounded);
     }
   };
@@ -99,28 +114,35 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
     const rawInput = watch(`components.${index}.rawInput`);
     const itemId = watch(`components.${index}.itemId`);
 
-    if (rawInput) {
-      const numericValue = parseFloat(rawInput.replace(",", "."));
-      if (!isNaN(numericValue)) {
-        const finalWeight = Math.round(numericValue * 100) / 100;
-        setValue(`components.${index}.weightInGrams`, finalWeight);
-        // Display with comma as decimal separator
-        setValue(`components.${index}.rawInput`, finalWeight.toString().replace(".", ","));
+    if (rawInput && typeof rawInput === 'string') {
+      // Parse and sum all numbers separated by spaces (e.g., "40 5" = 45)
+      const parts = rawInput.split(/\s+/).filter(part => part.trim() !== "");
+      let total = 0;
+      for (const part of parts) {
+        const num = parseFloat(part.replace(",", "."));
+        if (!isNaN(num)) {
+          total += num;
+        }
+      }
 
-        // Call API to deduct inventory if we have a valid weight and item
-        if (finalWeight > 0 && itemId) {
-          // Only pass formulaPaintId if it's a real UUID (not temp ID)
-          const isRealFormula = formulaPaintId && !formulaPaintId.startsWith('temp-');
+      const finalWeight = Math.round(total * 100) / 100;
+      setValue(`components.${index}.weightInGrams`, finalWeight);
+      // Display the summed value with comma as decimal separator
+      setValue(`components.${index}.rawInput`, finalWeight.toString().replace(".", ","));
 
-          try {
-            await paintFormulaComponentService.deductForFormulationTest({
-              itemId,
-              weight: finalWeight,
-              ...(isRealFormula && { formulaPaintId }),
-            });
-          } catch (error) {
-            console.error("Error deducting inventory:", error);
-          }
+      // Call API to deduct inventory if we have a valid weight and item
+      if (finalWeight > 0 && itemId) {
+        // Only pass formulaPaintId if it's a real UUID (not temp ID)
+        const isRealFormula = formulaPaintId && !formulaPaintId.startsWith('temp-');
+
+        try {
+          await paintFormulaComponentService.deductForFormulationTest({
+            itemId,
+            weight: finalWeight,
+            ...(isRealFormula && { formulaPaintId }),
+          });
+        } catch (error) {
+          console.error("Error deducting inventory:", error);
         }
       }
     }
@@ -142,10 +164,114 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
     return ratio.toFixed(2);
   };
 
+  // Handle delete for a component row
+  const handleDelete = (index: number) => {
+    if (fields.length > 1) {
+      remove(index);
+    } else {
+      // Clear the inputs for the only row instead of removing it
+      setValue(`components.${index}.itemId`, "");
+      setValue(`components.${index}.weightInGrams`, 0);
+      setValue(`components.${index}.rawInput`, "");
+    }
+  };
+
+  // Create delete action for swipeable row
+  const createDeleteAction = (index: number): SwipeAction[] => [{
+    key: "delete",
+    label: "Excluir",
+    icon: <IconTrash size={20} color="#FFFFFF" />,
+    backgroundColor: colors.destructive,
+    onPress: () => handleDelete(index),
+  }];
+
+  // Render a component row (tablet layout with trash and ratio)
+  const renderTabletRow = (field: { id: string }, index: number) => (
+    <View key={field.id} style={styles.componentRow}>
+      {/* Component Selector */}
+      <View style={{ flex: 1, marginRight: spacing.sm }}>
+        <Combobox
+          options={getComboboxOptionsForRow(index)}
+          value={watch(`components.${index}.itemId`)}
+          onValueChange={(value) => setValue(`components.${index}.itemId`, value || "")}
+          placeholder="Selecione um componente"
+          emptyText="Nenhum item disponível"
+          searchPlaceholder="Buscar componente..."
+        />
+      </View>
+
+      {/* Ratio Display */}
+      <View style={{ width: 80, marginRight: spacing.sm }}>
+        <Input
+          value={calculateRatio(index)}
+          editable={false}
+          style={[styles.ratioInput, { color: colors.mutedForeground }]}
+        />
+      </View>
+
+      {/* Weight Input */}
+      <View style={{ width: 100, marginRight: spacing.sm }}>
+        <Input
+          value={watch(`components.${index}.rawInput`) || watch(`components.${index}.weightInGrams`)?.toString() || ""}
+          onChangeText={(value) => handleAmountChange(index, value)}
+          onBlur={() => handleAmountBlur(index)}
+          keyboardType="decimal-pad"
+          placeholder="0"
+          style={styles.weightInput}
+        />
+      </View>
+
+      {/* Delete Button */}
+      <TouchableOpacity
+        onPress={() => handleDelete(index)}
+        style={styles.deleteButton}
+      >
+        <IconTrash size={20} color={colors.destructive} />
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Render a component row (phone layout - no ratio, no trash, swipe to delete)
+  const renderPhoneRow = (field: { id: string }, index: number) => (
+    <View key={field.id} style={styles.phoneRowWrapper}>
+      <ReanimatedSwipeableRow
+        rightActions={createDeleteAction(index)}
+        actionWidth={80}
+      >
+        <View style={styles.phoneComponentRow}>
+          {/* Component Selector */}
+          <View style={styles.phoneComponentSelector}>
+            <Combobox
+              options={getComboboxOptionsForRow(index)}
+              value={watch(`components.${index}.itemId`)}
+              onValueChange={(value) => setValue(`components.${index}.itemId`, value || "")}
+              placeholder="Selecione um componente"
+              emptyText="Nenhum item disponível"
+              searchPlaceholder="Buscar componente..."
+            />
+          </View>
+
+          {/* Weight Input */}
+          <View style={styles.phoneWeightContainer}>
+            <Input
+              value={watch(`components.${index}.rawInput`) || watch(`components.${index}.weightInGrams`)?.toString() || ""}
+              onChangeText={(value) => handleAmountChange(index, value)}
+              onBlur={() => handleAmountBlur(index)}
+              keyboardType="decimal-pad"
+              placeholder="0"
+              style={styles.phoneWeightInput}
+              suffix="g"
+            />
+          </View>
+        </View>
+      </ReanimatedSwipeableRow>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      {/* Header Row */}
-      {fields.length > 0 && (
+      {/* Header Row - only on tablet */}
+      {isTablet && fields.length > 0 && (
         <View style={styles.headerRow}>
           <Text style={[styles.headerText, { flex: 1 }]}>Componente</Text>
           <Text style={[styles.headerText, { width: 80 }]}>Proporção (%)</Text>
@@ -156,60 +282,20 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
 
       {/* Component Rows */}
       {fields.length > 0 && (
-        <View style={styles.componentsList}>
-          {fields.map((field, index) => (
-            <View key={field.id} style={styles.componentRow}>
-              {/* Component Selector */}
-              <View style={{ flex: 1, marginRight: spacing.sm }}>
-                <Combobox
-                  options={getComboboxOptionsForRow(index)}
-                  value={watch(`components.${index}.itemId`)}
-                  onValueChange={(value) => setValue(`components.${index}.itemId`, value || "")}
-                  placeholder="Selecione um componente"
-                  emptyText="Nenhum item disponível"
-                  searchPlaceholder="Buscar componente..."
-                />
-              </View>
+        <View style={[styles.componentsList, !isTablet && styles.phoneComponentsList]}>
+          {fields.map((field, index) =>
+            isTablet ? renderTabletRow(field, index) : renderPhoneRow(field, index)
+          )}
+        </View>
+      )}
 
-              {/* Ratio Display */}
-              <View style={{ width: 80, marginRight: spacing.sm }}>
-                <Input
-                  value={calculateRatio(index)}
-                  editable={false}
-                  style={[styles.ratioInput, { color: colors.mutedForeground }]}
-                />
-              </View>
-
-              {/* Weight Input */}
-              <View style={{ width: 100, marginRight: spacing.sm }}>
-                <Input
-                  value={watch(`components.${index}.rawInput`) || watch(`components.${index}.weightInGrams`)?.toString() || ""}
-                  onChangeText={(value) => handleAmountChange(index, value)}
-                  onBlur={() => handleAmountBlur(index)}
-                  keyboardType="decimal-pad"
-                  placeholder="0"
-                  style={styles.weightInput}
-                />
-              </View>
-
-              {/* Delete Button */}
-              <TouchableOpacity
-                onPress={() => {
-                  if (fields.length > 1) {
-                    remove(index);
-                  } else {
-                    // Clear the inputs for the only row instead of removing it
-                    setValue(`components.${index}.itemId`, "");
-                    setValue(`components.${index}.weightInGrams`, 0);
-                    setValue(`components.${index}.rawInput`, "");
-                  }
-                }}
-                style={styles.deleteButton}
-              >
-                <IconTrash size={20} color={colors.destructive} />
-              </TouchableOpacity>
-            </View>
-          ))}
+      {/* Total Weight Footer */}
+      {fields.length > 0 && calculateTotalWeight() > 0 && (
+        <View style={[styles.totalRow, { borderTopColor: colors.border }]}>
+          <Text style={[styles.totalLabel, { color: colors.mutedForeground }]}>Total:</Text>
+          <Text style={[styles.totalValue, { color: colors.foreground }]}>
+            {calculateTotalWeight().toFixed(2)} g
+          </Text>
         </View>
       )}
 
@@ -246,6 +332,9 @@ const styles = StyleSheet.create({
   componentsList: {
     gap: spacing.sm,
   },
+  phoneComponentsList: {
+    gap: spacing.md,
+  },
   componentRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -266,5 +355,41 @@ const styles = StyleSheet.create({
   },
   addButton: {
     marginTop: spacing.sm,
+  },
+  // Phone-specific styles
+  phoneRowWrapper: {
+    // No styling - transparent wrapper
+  },
+  phoneComponentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  phoneComponentSelector: {
+    flex: 1,
+  },
+  phoneWeightContainer: {
+    width: 80,
+  },
+  phoneWeightInput: {
+    textAlign: 'right',
+    fontSize: 14,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.xs,
+    borderTopWidth: 1,
+    gap: spacing.sm,
+  },
+  totalLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  totalValue: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

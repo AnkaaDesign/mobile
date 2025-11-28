@@ -31,13 +31,14 @@ const PrivilegeBadge = memo<{ privilege: SECTOR_PRIVILEGES; isDark: boolean }>(
     const getPrivilegeColor = () => {
       switch (privilege) {
         case SECTOR_PRIVILEGES.ADMIN: return '#dc2626'; // red
-        case SECTOR_PRIVILEGES.LEADER: return '#ea580c'; // orange
-        case SECTOR_PRIVILEGES.HUMAN_RESOURCES: return '#9333ea'; // purple
-        case SECTOR_PRIVILEGES.FINANCIAL: return '#0891b2'; // cyan
+        case SECTOR_PRIVILEGES.LEADER: return '#2563eb'; // blue (same as production)
         case SECTOR_PRIVILEGES.PRODUCTION: return '#2563eb'; // blue
+        case SECTOR_PRIVILEGES.HUMAN_RESOURCES: return '#9333ea'; // purple
+        case SECTOR_PRIVILEGES.FINANCIAL: return '#9333ea'; // purple (same as HR)
+        case SECTOR_PRIVILEGES.DESIGNER: return '#9333ea'; // purple (same as HR)
+        case SECTOR_PRIVILEGES.LOGISTIC: return '#9333ea'; // purple (same as HR)
+        case SECTOR_PRIVILEGES.MAINTENANCE: return '#f97316'; // orange
         case SECTOR_PRIVILEGES.WAREHOUSE: return '#16a34a'; // green
-        case SECTOR_PRIVILEGES.MAINTENANCE: return '#d97706'; // amber
-        case SECTOR_PRIVILEGES.DESIGNER: return '#ec4899'; // pink
         default: return '#6b7280'; // gray
       }
     };

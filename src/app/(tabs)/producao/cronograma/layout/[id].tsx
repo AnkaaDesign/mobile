@@ -58,16 +58,17 @@ export default function LayoutOnlyEditScreen() {
     enabled: !!truckId,
   });
 
-  // Layout state
+  // Layout state - Include photoUri for new photos that need to be uploaded
+  type LayoutWithPhoto = LayoutCreateFormData & { photoUri?: string };
   const [selectedLayoutSide, setSelectedLayoutSide] = useState<"left" | "right" | "back">("left");
   const [layouts, setLayouts] = useState<{
-    left?: LayoutCreateFormData;
-    right?: LayoutCreateFormData;
-    back?: LayoutCreateFormData;
+    left?: LayoutWithPhoto;
+    right?: LayoutWithPhoto;
+    back?: LayoutWithPhoto;
   }>({
-    left: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
-    right: { height: 2.4, sections: [{ width: 8, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
-    back: { height: 2.42, sections: [{ width: 2.42, isDoor: false, doorOffset: null, position: 0 }], photoId: null },
+    left: { height: 2.4, layoutSections: [{ width: 8, isDoor: false, doorHeight: null, position: 0 }], photoId: null },
+    right: { height: 2.4, layoutSections: [{ width: 8, isDoor: false, doorHeight: null, position: 0 }], photoId: null },
+    back: { height: 2.42, layoutSections: [{ width: 2.42, isDoor: false, doorHeight: null, position: 0 }], photoId: null },
   });
 
   // Track which sides were modified
@@ -86,10 +87,10 @@ export default function LayoutOnlyEditScreen() {
     if (layoutsData.leftSideLayout?.layoutSections) {
       transformedLayouts.left = {
         height: layoutsData.leftSideLayout.height,
-        sections: layoutsData.leftSideLayout.layoutSections.map((s: any) => ({
+        layoutSections: layoutsData.leftSideLayout.layoutSections.map((s: any) => ({
           width: s.width,
           isDoor: s.isDoor,
-          doorOffset: s.doorOffset,
+          doorHeight: s.doorHeight,
           position: s.position,
         })),
         photoId: layoutsData.leftSideLayout.photoId,
@@ -100,10 +101,10 @@ export default function LayoutOnlyEditScreen() {
     if (layoutsData.rightSideLayout?.layoutSections) {
       transformedLayouts.right = {
         height: layoutsData.rightSideLayout.height,
-        sections: layoutsData.rightSideLayout.layoutSections.map((s: any) => ({
+        layoutSections: layoutsData.rightSideLayout.layoutSections.map((s: any) => ({
           width: s.width,
           isDoor: s.isDoor,
-          doorOffset: s.doorOffset,
+          doorHeight: s.doorHeight,
           position: s.position,
         })),
         photoId: layoutsData.rightSideLayout.photoId,
@@ -114,10 +115,10 @@ export default function LayoutOnlyEditScreen() {
     if (layoutsData.backSideLayout?.layoutSections) {
       transformedLayouts.back = {
         height: layoutsData.backSideLayout.height,
-        sections: layoutsData.backSideLayout.layoutSections.map((s: any) => ({
+        layoutSections: layoutsData.backSideLayout.layoutSections.map((s: any) => ({
           width: s.width,
           isDoor: s.isDoor,
-          doorOffset: s.doorOffset,
+          doorHeight: s.doorHeight,
           position: s.position,
         })),
         photoId: layoutsData.backSideLayout.photoId,
@@ -139,13 +140,13 @@ export default function LayoutOnlyEditScreen() {
 
   // Real-time validation of layout width balance
   useEffect(() => {
-    // Get sections from current layout state
+    // Get layoutSections from current layout state
     const leftLayout = layouts.left;
     const rightLayout = layouts.right;
-    const leftSections = leftLayout?.sections;
-    const rightSections = rightLayout?.sections;
+    const leftSections = leftLayout?.layoutSections;
+    const rightSections = rightLayout?.layoutSections;
 
-    // Only validate if both sides exist and have sections
+    // Only validate if both sides exist and have layoutSections
     if (leftSections && leftSections.length > 0 && rightSections && rightSections.length > 0) {
       const leftTotalWidth = leftSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
       const rightTotalWidth = rightSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
@@ -168,6 +169,13 @@ export default function LayoutOnlyEditScreen() {
 
   // Check if any layout exists
   const hasExistingLayout = !!(existingLayouts?.left || existingLayouts?.right || existingLayouts?.back);
+
+  // When there's no existing layout, mark all sides as modified to create them with defaults
+  useEffect(() => {
+    if (!hasExistingLayout && hasTruck && modifiedLayoutSides.size === 0) {
+      setModifiedLayoutSides(new Set(['left', 'right', 'back']));
+    }
+  }, [hasExistingLayout, hasTruck, modifiedLayoutSides.size]);
 
   const handleSubmit = async () => {
     if (!truckId) {
@@ -195,7 +203,14 @@ export default function LayoutOnlyEditScreen() {
 
       for (const side of modifiedLayoutSides) {
         const layoutData = layouts[side];
-        if (layoutData && layoutData.sections && layoutData.sections.length > 0) {
+        if (layoutData && layoutData.layoutSections && layoutData.layoutSections.length > 0) {
+          console.log(`[LayoutOnlyEdit] 💾 Saving ${side} layout:`, {
+            hasPhotoUri: !!(layoutData as any).photoUri,
+            photoUri: (layoutData as any).photoUri,
+            hasPhotoId: !!layoutData.photoId,
+            photoId: layoutData.photoId,
+            sectionsCount: layoutData.layoutSections.length,
+          });
           savePromises.push(
             createOrUpdateTruckLayout({
               truckId,
@@ -439,6 +454,13 @@ export default function LayoutOnlyEditScreen() {
                     selectedSide={selectedLayoutSide}
                     layouts={layouts}
                     onChange={(side, layoutData) => {
+                      console.log('[LayoutOnlyEdit] 📥 Received onChange:', {
+                        side,
+                        hasPhotoUri: !!(layoutData as any).photoUri,
+                        photoUri: (layoutData as any).photoUri,
+                        hasPhotoId: !!layoutData.photoId,
+                        photoId: layoutData.photoId,
+                      });
                       setModifiedLayoutSides((prev) => {
                         const newSet = new Set(prev);
                         newSet.add(side);

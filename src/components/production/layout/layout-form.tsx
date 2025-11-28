@@ -116,14 +116,17 @@ const MeasurementInput = React.memo(({
   );
 });
 
+// Extended type to include photoUri for new photos that haven't been uploaded yet
+type LayoutDataWithPhoto = LayoutCreateFormData & { photoUri?: string };
+
 interface LayoutFormProps {
   selectedSide: 'left' | 'right' | 'back';
   layouts: {
-    left?: LayoutCreateFormData;
-    right?: LayoutCreateFormData;
-    back?: LayoutCreateFormData;
+    left?: LayoutDataWithPhoto;
+    right?: LayoutDataWithPhoto;
+    back?: LayoutDataWithPhoto;
   };
-  onChange: (side: 'left' | 'right' | 'back', data: LayoutCreateFormData) => void;
+  onChange: (side: 'left' | 'right' | 'back', data: LayoutDataWithPhoto) => void;
   disabled?: boolean;
   /** When true, disables the internal ScrollView and KeyboardAvoidingView (use when nested in another scrollable) */
   embedded?: boolean;
@@ -133,15 +136,19 @@ interface Door {
   id: string;
   position: number; // Position from left edge in cm
   width: number; // Door width in cm
-  offsetTop: number; // Space from top in cm
+  doorHeight: number; // Height of the door from bottom of layout in cm
 }
 
 interface SideState {
   height: number;
   totalWidth: number;
   doors: Door[];
-  photoUri?: string;
-  photoId?: string | null;
+}
+
+// Store photo state separately (like web implementation) to avoid sync issues
+interface PhotoState {
+  imageUri?: string;  // Local URI for preview (from camera/gallery)
+  photoId?: string | null;  // ID from backend (existing photo)
 }
 
 // Helper function to convert photoId to URL
@@ -182,6 +189,10 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     back: false,
   });
 
+  // Store photo state SEPARATELY from layout state (like web implementation)
+  // This prevents sync issues when layout state updates
+  const [photoState, setPhotoState] = useState<PhotoState>({});
+
   // Initialize side states from layouts prop
   const [sideStates, setSideStates] = useState<Record<'left' | 'right' | 'back', SideState>>(() => {
     const initialStates: Record<'left' | 'right' | 'back', SideState> = {
@@ -193,30 +204,29 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     // Initialize from layouts prop if available
     Object.keys(layouts).forEach((side) => {
       const layoutData = layouts[side as 'left' | 'right' | 'back'];
-      if (layoutData?.sections) {
+      if (layoutData?.layoutSections) {
+        // Photo is handled separately in photoState
         const state: SideState = {
           height: (layoutData.height || 2.4) * 100,
           totalWidth: 0,
           doors: [],
-          photoId: layoutData.photoId || null,
-          photoUri: getPhotoUrl(layoutData.photoId || null)
         };
 
-        const sections = layoutData.sections;
-        const total = sections.reduce((sum, s) => sum + s.width * 100, 0);
+        const layoutSections = layoutData.layoutSections;
+        const total = layoutSections.reduce((sum, s) => sum + s.width * 100, 0);
         state.totalWidth = total || 800;
 
         // Extract doors from sections
         const extractedDoors: Door[] = [];
         let currentPos = 0;
 
-        sections.forEach((section, idx) => {
+        layoutSections.forEach((section, idx) => {
           if (section.isDoor) {
             extractedDoors.push({
               id: `door-${side}-${idx}-${Date.now()}`,
               position: currentPos,
               width: section.width * 100,
-              offsetTop: (section.doorOffset || 0.5) * 100
+              doorHeight: (section.doorHeight || 1.9) * 100
             });
           }
           currentPos += section.width * 100;
@@ -233,6 +243,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
   const currentState = sideStates[selectedSide];
 
   // CRITICAL: Sync state when layouts prop changes (e.g., when backend data arrives)
+  // Photo state is synced separately below
   useEffect(() => {
     if (!layouts) return;
 
@@ -257,30 +268,29 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       // Sync each side that has data in layouts prop
       Object.keys(layouts).forEach((side) => {
         const layoutData = layouts[side as 'left' | 'right' | 'back'];
-        if (layoutData?.sections && Array.isArray(layoutData.sections)) {
+        if (layoutData?.layoutSections && Array.isArray(layoutData.layoutSections)) {
+          // Photo is handled separately in photoState
           const state: SideState = {
             height: (layoutData.height || 2.4) * 100,
             totalWidth: 0,
             doors: [],
-            photoId: layoutData.photoId || null,
-            photoUri: getPhotoUrl(layoutData.photoId || null)
           };
 
-          const sections = layoutData.sections;
-          const total = sections.reduce((sum, s) => sum + s.width * 100, 0);
+          const layoutSections = layoutData.layoutSections;
+          const total = layoutSections.reduce((sum, s) => sum + s.width * 100, 0);
           state.totalWidth = total || (side === 'back' ? 242 : 800);
 
           // Extract doors from sections
           const extractedDoors: Door[] = [];
           let currentPos = 0;
 
-          sections.forEach((section, idx) => {
+          layoutSections.forEach((section, idx) => {
             if (section.isDoor) {
               extractedDoors.push({
                 id: `door-${side}-${idx}-${Date.now()}-${Math.random()}`,
                 position: currentPos,
                 width: section.width * 100,
-                offsetTop: (section.doorOffset || 0.5) * 100
+                doorHeight: (section.doorHeight || 1.9) * 100
               });
             }
             currentPos += section.width * 100;
@@ -294,7 +304,6 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
             height: state.height,
             totalWidth: state.totalWidth,
             doorsCount: state.doors.length,
-            photoId: state.photoId,
           });
         }
       });
@@ -302,6 +311,69 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       return hasChanges ? newStates : prev;
     });
   }, [layouts]);
+
+  // Separate effect for syncing photo state from layout (back side only)
+  // This runs independently to avoid circular dependency issues (like web implementation)
+  useEffect(() => {
+    if (!layouts) return;
+
+    // For back side only, sync photo from layout
+    if (selectedSide !== 'back') {
+      return;
+    }
+
+    const backLayout = layouts.back;
+
+    console.log('[LayoutForm Mobile PHOTO SYNC] Checking photo sync', {
+      hasBackLayout: !!backLayout,
+      backLayoutPhotoId: backLayout?.photoId,
+      backLayoutPhotoUri: backLayout?.photoUri,
+      currentPhotoStateId: photoState.photoId,
+      currentPhotoStateUri: photoState.imageUri,
+    });
+
+    // If user has selected a new file (has imageUri but no photoId), don't overwrite it
+    if (photoState.imageUri && !photoState.photoId) {
+      console.log('[LayoutForm Mobile PHOTO SYNC] ⏭️ Skipping - user has selected a new photo');
+      return;
+    }
+
+    // Check if parent has a new photo URI (from user selection in this session)
+    if (backLayout?.photoUri) {
+      if (photoState.imageUri === backLayout.photoUri) {
+        console.log('[LayoutForm Mobile PHOTO SYNC] ⏭️ Skipping - photo already synced');
+        return;
+      }
+
+      console.log('[LayoutForm Mobile PHOTO SYNC] ✅ Syncing new photo from parent:', backLayout.photoUri);
+      setPhotoState({
+        imageUri: backLayout.photoUri,
+        photoId: backLayout.photoId || null,
+      });
+      return;
+    }
+
+    // Check if backend has an existing photo (photoId)
+    if (backLayout?.photoId) {
+      if (photoState.photoId === backLayout.photoId) {
+        console.log('[LayoutForm Mobile PHOTO SYNC] ⏭️ Skipping - backend photo already synced');
+        return;
+      }
+
+      console.log('[LayoutForm Mobile PHOTO SYNC] ✅ Syncing existing photo from backend:', backLayout.photoId);
+      setPhotoState({
+        imageUri: getPhotoUrl(backLayout.photoId),
+        photoId: backLayout.photoId,
+      });
+      return;
+    }
+
+    // Layout has no photo - clear photoState only if it had a photoId (not a new user-selected photo)
+    if (photoState.photoId && !photoState.imageUri) {
+      console.log('[LayoutForm Mobile PHOTO SYNC] ❌ Clearing photo state - layout has no photo');
+      setPhotoState({});
+    }
+  }, [layouts, selectedSide, photoState.photoId, photoState.imageUri]);
 
   // CRITICAL: Emit initial state to parent when selected side changes
   // This ensures parent knows the default values
@@ -323,9 +395,9 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       return;
     }
 
-    // Skip if we have a layout prop with sections (already synced)
+    // Skip if we have a layout prop with layoutSections (already synced)
     const layoutData = layouts[selectedSide];
-    if (layoutData && layoutData.sections) {
+    if (layoutData && layoutData.layoutSections) {
       initialStateEmittedRef.current[selectedSide] = true;
       return;
     }
@@ -337,23 +409,26 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       const state = sideStates[selectedSide];
       const segments = calculateSegments(state.doors, state.totalWidth);
 
-      const sections = segments.map((segment, index) => ({
+      const layoutSections = segments.map((segment, index) => ({
         width: segment.width / 100,
         isDoor: segment.type === 'door',
-        doorOffset: segment.type === 'door' && segment.door ? segment.door.offsetTop / 100 : null,
+        doorHeight: segment.type === 'door' && segment.door ? segment.door.doorHeight / 100 : null,
         position: index
       }));
 
-      const layoutDataToEmit: LayoutCreateFormData = {
+      // Include photo from separate photoState (only for back side)
+      const layoutDataToEmit: LayoutDataWithPhoto = {
         height: state.height / 100,
-        sections,
-        photoId: state.photoId || null,
+        layoutSections,
+        photoId: selectedSide === 'back' ? (photoState.photoId || null) : null,
+        photoUri: selectedSide === 'back' ? photoState.imageUri : undefined,
       };
 
       console.log('[LayoutForm Mobile] Emitting initial state:', {
         selectedSide,
-        sectionsCount: sections.length,
+        layoutSectionsCount: layoutSections.length,
         height: layoutDataToEmit.height,
+        hasPhotoUri: !!layoutDataToEmit.photoUri,
       });
 
       // Mark this side as having emitted state
@@ -364,7 +439,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     });
 
     return () => cancelAnimationFrame(frameId);
-  }, [selectedSide, onChange]);
+  }, [selectedSide, onChange, photoState]);
 
   // Calculate segments (sections between doors)
   const calculateSegments = (doors: Door[], totalWidth: number) => {
@@ -431,6 +506,9 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     hasPendingChangesRef.current = true;
     console.log('[LayoutForm Mobile] Recorded user interaction');
 
+    // Set saving flag to prevent state reset during save
+    isSavingRef.current = true;
+
     setSideStates(prev => {
       const newState = {
         ...prev,
@@ -440,48 +518,52 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
         }
       };
 
-      const state = newState[selectedSide];
-      const updatedSegments = calculateSegments(state.doors, state.totalWidth);
-
-      const sections = updatedSegments.map((segment, index) => ({
-        width: segment.width / 100,
-        isDoor: segment.type === 'door',
-        doorOffset: segment.type === 'door' && segment.door ? segment.door.offsetTop / 100 : null,
-        position: index
-      }));
-
-      const layoutData: LayoutCreateFormData = {
-        height: state.height / 100,
-        sections,
-        photoId: state.photoId || null,
-      };
-
-      console.log('[LayoutForm Mobile] ✅ Emitting changes:', {
-        selectedSide,
-        sectionsCount: sections.length,
-        totalWidth: sections.reduce((sum, s) => sum + s.width, 0),
-      });
-
-      // Set saving flag to prevent state reset during save
-      isSavingRef.current = true;
-
-      onChange(selectedSide, layoutData);
-
-      // Reset flag after a delay
+      // Schedule the onChange callback to run after state update completes
+      // This avoids the "Cannot update a component while rendering" warning
       setTimeout(() => {
-        isSavingRef.current = false;
-      }, 500);
+        const state = newState[selectedSide];
+        const updatedSegments = calculateSegments(state.doors, state.totalWidth);
+
+        const layoutSections = updatedSegments.map((segment, index) => ({
+          width: segment.width / 100,
+          isDoor: segment.type === 'door',
+          doorHeight: segment.type === 'door' && segment.door ? segment.door.doorHeight / 100 : null,
+          position: index
+        }));
+
+        // Include photo from separate photoState (only for back side)
+        const layoutData: LayoutDataWithPhoto = {
+          height: state.height / 100,
+          layoutSections,
+          photoId: selectedSide === 'back' ? (photoState.photoId || null) : null,
+          photoUri: selectedSide === 'back' ? photoState.imageUri : undefined,
+        };
+
+        console.log('[LayoutForm Mobile] ✅ Emitting changes:', {
+          selectedSide,
+          layoutSectionsCount: layoutSections.length,
+          totalWidth: layoutSections.reduce((sum, s) => sum + s.width, 0),
+          hasPhotoUri: !!layoutData.photoUri,
+        });
+
+        onChange(selectedSide, layoutData);
+
+        // Reset saving flag after a delay
+        setTimeout(() => {
+          isSavingRef.current = false;
+        }, 500);
+      }, 0);
 
       return newState;
     });
-  }, [selectedSide, onChange]);
+  }, [selectedSide, onChange, photoState]);
 
   // Add a new door with smart positioning (matches web implementation)
   const addDoor = useCallback(() => {
     if (!currentState || selectedSide === 'back') return;
 
     const doorWidth = 100; // Default door width in cm
-    const doorOffset = 50; // Default offset from top
+    const defaultDoorHeight = 190; // Default door height from bottom in cm (1.90m)
 
     let position: number;
     const doors = currentState.doors;
@@ -505,7 +587,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
           id: `door-${selectedSide}-${Date.now()}-${Math.random()}`,
           position: Math.round(Math.max(0, Math.min(position, currentState.totalWidth - doorWidth))),
           width: Math.round(doorWidth),
-          offsetTop: Math.round(doorOffset)
+          doorHeight: Math.round(defaultDoorHeight)
         }
       ];
 
@@ -550,7 +632,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       id: `door-${selectedSide}-${Date.now()}-${Math.random()}`,
       position: Math.round(Math.max(0, Math.min(position, currentState.totalWidth - doorWidth))),
       width: Math.round(doorWidth),
-      offsetTop: Math.round(doorOffset)
+      doorHeight: Math.round(defaultDoorHeight)
     };
 
     updateCurrentSide({ doors: [...doors, newDoor] });
@@ -562,14 +644,15 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     updateCurrentSide({ doors: currentState.doors.filter(d => d.id !== doorId) });
   }, [currentState, updateCurrentSide]);
 
-  // Update door offset (direct value in cm)
-  const updateDoorOffset = useCallback((doorId: string, offsetCm: number) => {
+  // Update door height (direct value in cm)
+  const updateDoorHeight = useCallback((doorId: string, heightCm: number) => {
     if (!currentState) return;
 
-    const clampedOffset = Math.max(0, Math.min(currentState.height - 50, offsetCm));
+    // Door height must be between 50cm and the layout height
+    const clampedHeight = Math.max(50, Math.min(currentState.height, heightCm));
 
     const updatedDoors = currentState.doors.map(d =>
-      d.id === doorId ? { ...d, offsetTop: clampedOffset } : d
+      d.id === doorId ? { ...d, doorHeight: clampedHeight } : d
     );
     updateCurrentSide({ doors: updatedDoors });
   }, [currentState, updateCurrentSide]);
@@ -621,8 +704,50 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     updateCurrentSide({ height: heightCm });
   }, [updateCurrentSide]);
 
-  // Handle photo upload for back side
+  // Handle photo upload for back side (like web implementation - separate from layout state)
   const handlePhotoUpload = useCallback(async () => {
+    // Helper function to process the selected photo
+    const processPhoto = (imageUri: string) => {
+      console.log('[LayoutForm Mobile] Photo selected:', imageUri);
+
+      // Store photo in separate photoState (not in sideStates)
+      const newPhotoState = { imageUri, photoId: null };
+      setPhotoState(newPhotoState);
+
+      showToast({ message: 'Foto adicionada - será salva ao submeter', type: 'success' });
+
+      // CRITICAL: Mark as having pending changes to prevent backend resets
+      lastUserInteractionRef.current = Date.now();
+      hasPendingChangesRef.current = true;
+      console.log('[LayoutForm Mobile] Photo upload - marked as pending changes');
+
+      // Trigger parent notification to include the photo
+      if (!currentState) return;
+
+      const segments = calculateSegments(currentState.doors, currentState.totalWidth);
+      const layoutSections = segments.map((segment, index) => ({
+        width: segment.width / 100,
+        isDoor: segment.type === 'door',
+        doorHeight: segment.type === 'door' && segment.door ? segment.door.doorHeight / 100 : null,
+        position: index
+      }));
+
+      const layoutData: LayoutDataWithPhoto = {
+        height: currentState.height / 100,
+        layoutSections,
+        photoId: null, // New photo, no ID yet
+        photoUri: imageUri, // This is the key - include the new URI
+      };
+
+      console.log('[LayoutForm Mobile] Emitting layout with photo:', {
+        hasPhotoUri: !!imageUri,
+        layoutSectionsCount: layoutSections.length,
+      });
+
+      // Notify parent immediately with photo
+      onChange(selectedSide, layoutData);
+    };
+
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
 
@@ -648,14 +773,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
               });
 
               if (!result.canceled && result.assets[0]) {
-                setSideStates(prev => ({
-                  ...prev,
-                  [selectedSide]: {
-                    ...prev[selectedSide],
-                    photoUri: result.assets[0].uri
-                  }
-                }));
-                showToast({ message: 'Foto adicionada com sucesso', type: 'success' });
+                processPhoto(result.assets[0].uri);
               }
             }
           },
@@ -668,14 +786,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
               });
 
               if (!result.canceled && result.assets[0]) {
-                setSideStates(prev => ({
-                  ...prev,
-                  [selectedSide]: {
-                    ...prev[selectedSide],
-                    photoUri: result.assets[0].uri
-                  }
-                }));
-                showToast({ message: 'Foto adicionada com sucesso', type: 'success' });
+                processPhoto(result.assets[0].uri);
               }
             }
           },
@@ -686,7 +797,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       console.error('Error picking image:', error);
       showToast({ message: 'Erro ao adicionar foto', type: 'error' });
     }
-  }, [selectedSide]);
+  }, [selectedSide, currentState, onChange]);
 
   // Calculate display scale for mobile
   const maxDisplayWidth = 300;
@@ -703,7 +814,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
 
     const sourceState = sideStates[fromSide];
 
-    // Deep copy the source state
+    // Deep copy the source state (photo is handled separately, not copied)
     const copiedState: SideState = {
       height: sourceState.height,
       totalWidth: sourceState.totalWidth,
@@ -711,7 +822,6 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
         ...door,
         id: `door-${selectedSide}-${Date.now()}-${Math.random()}` // New IDs for copied doors
       })),
-      photoUri: sourceState.photoUri,
     };
 
     updateCurrentSide(copiedState);
@@ -736,11 +846,11 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       };
     });
 
+    // Photo is handled separately, not mirrored
     const mirroredState: SideState = {
       height: sourceState.height,
       totalWidth: sourceState.totalWidth,
       doors: mirroredDoors,
-      photoUri: sourceState.photoUri,
     };
 
     updateCurrentSide(mirroredState);
@@ -789,15 +899,15 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
                 width: currentState.totalWidth * scale,
                 height: currentState.height * scale,
                 borderColor: colors.foreground,
-                backgroundColor: currentState.photoUri ? 'transparent' : colors.background,
+                backgroundColor: (selectedSide === 'back' && photoState.imageUri) ? 'transparent' : colors.background,
               }
             ]}
           >
             {/* Background photo for back side */}
-            {selectedSide === 'back' && currentState.photoUri && (
+            {selectedSide === 'back' && photoState.imageUri && (
               <View style={StyleSheet.absoluteFill}>
                 <Image
-                  source={{ uri: currentState.photoUri }}
+                  source={{ uri: photoState.imageUri }}
                   style={{ width: '100%', height: '100%', opacity: 0.5 }}
                   resizeMode="cover"
                 />
@@ -806,10 +916,15 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
 
             {/* Render doors (only for sides, not back) */}
             {selectedSide !== 'back' && currentState.doors.map(door => {
-              // Clamp door offset to prevent extrapolation
-              const clampedOffset = Math.max(0, Math.min(door.offsetTop, currentState.height - 10));
-              // Subtract 1cm (converted to pixels via scale) to prevent overflow from 2px border
-              const doorHeight = currentState.height - clampedOffset - 1;
+              // doorHeight is measured from bottom of layout to top of door opening
+              // So the door top position = layout height - door height
+              const doorTopPosition = currentState.height - door.doorHeight;
+              // Clamp to prevent overflow
+              const clampedTopPosition = Math.max(0, doorTopPosition);
+              // Calculate visual height - ensure door doesn't extend past bottom border
+              // The container has a 2px border, so we need to stop 2px before the bottom
+              const maxVisualHeight = currentState.height - clampedTopPosition;
+              const doorVisualHeight = Math.min(door.doorHeight, maxVisualHeight) * scale - 2;
 
               return (
                 <View key={door.id}>
@@ -818,9 +933,9 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
                     style={{
                       position: 'absolute',
                       left: door.position * scale,
-                      top: clampedOffset * scale,
+                      top: clampedTopPosition * scale,
                       width: 2,
-                      height: doorHeight * scale,
+                      height: doorVisualHeight,
                       backgroundColor: colors.foreground,
                     }}
                   />
@@ -830,9 +945,9 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
                     style={{
                       position: 'absolute',
                       left: (door.position + door.width) * scale - 2,
-                      top: clampedOffset * scale,
+                      top: clampedTopPosition * scale,
                       width: 2,
-                      height: doorHeight * scale,
+                      height: doorVisualHeight,
                       backgroundColor: colors.foreground,
                     }}
                   />
@@ -842,7 +957,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
                     style={{
                       position: 'absolute',
                       left: door.position * scale,
-                      top: clampedOffset * scale,
+                      top: clampedTopPosition * scale,
                       width: door.width * scale,
                       height: 2,
                       backgroundColor: colors.foreground,
@@ -855,7 +970,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
                       styles.removeDoorButton,
                       {
                         left: (door.position + door.width / 2) * scale - 12,
-                        top: (clampedOffset + doorHeight / 2) * scale - 12,
+                        top: (clampedTopPosition * scale + doorVisualHeight / 2) - 12,
                         backgroundColor: colors.destructive,
                       }
                     ]}
@@ -960,7 +1075,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
         });
       })()}
 
-      {/* Door Offset Inputs - Only shown for doors on sides */}
+      {/* Door Height Inputs - Only shown for doors on sides */}
       {selectedSide !== 'back' && currentState.doors.map((door, index) => (
         <Card key={door.id} style={styles.inputCard}>
           <View style={styles.fieldRow}>
@@ -968,12 +1083,12 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
               Altura Porta {index + 1}
             </ThemedText>
             <MeasurementInput
-              value={door.offsetTop}
-              onChange={(value) => updateDoorOffset(door.id, value)}
-              placeholder="0,50"
+              value={door.doorHeight}
+              onChange={(value) => updateDoorHeight(door.id, value)}
+              placeholder="1,90"
               disabled={disabled}
-              min={0}
-              max={currentState.height - 50}
+              min={50}
+              max={currentState.height}
             />
           </View>
         </Card>
@@ -1002,7 +1117,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
         >
           <Icon name="camera" size={16} color={colors.foreground} />
           <ThemedText style={{ marginLeft: spacing.xs }}>
-            {currentState.photoUri ? 'Alterar Foto' : 'Adicionar Foto'}
+            {photoState.imageUri ? 'Alterar Foto' : 'Adicionar Foto'}
           </ThemedText>
         </Button>
       )}

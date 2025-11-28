@@ -79,10 +79,10 @@ export default function EditScheduleScreen() {
     if (layoutsData.leftSideLayout?.layoutSections) {
       layouts.left = {
         height: layoutsData.leftSideLayout.height,
-        sections: layoutsData.leftSideLayout.layoutSections.map((s: any) => ({
+        layoutSections: layoutsData.leftSideLayout.layoutSections.map((s: any) => ({
           width: s.width,
           isDoor: s.isDoor,
-          doorOffset: s.doorOffset,
+          doorHeight: s.doorHeight,
           position: s.position,
         })),
         photoId: layoutsData.leftSideLayout.photoId,
@@ -93,10 +93,10 @@ export default function EditScheduleScreen() {
     if (layoutsData.rightSideLayout?.layoutSections) {
       layouts.right = {
         height: layoutsData.rightSideLayout.height,
-        sections: layoutsData.rightSideLayout.layoutSections.map((s: any) => ({
+        layoutSections: layoutsData.rightSideLayout.layoutSections.map((s: any) => ({
           width: s.width,
           isDoor: s.isDoor,
-          doorOffset: s.doorOffset,
+          doorHeight: s.doorHeight,
           position: s.position,
         })),
         photoId: layoutsData.rightSideLayout.photoId,
@@ -107,10 +107,10 @@ export default function EditScheduleScreen() {
     if (layoutsData.backSideLayout?.layoutSections) {
       layouts.back = {
         height: layoutsData.backSideLayout.height,
-        sections: layoutsData.backSideLayout.layoutSections.map((s: any) => ({
+        layoutSections: layoutsData.backSideLayout.layoutSections.map((s: any) => ({
           width: s.width,
           isDoor: s.isDoor,
-          doorOffset: s.doorOffset,
+          doorHeight: s.doorHeight,
           position: s.position,
         })),
         photoId: layoutsData.backSideLayout.photoId,

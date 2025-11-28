@@ -47,6 +47,8 @@ export interface BadgeProps {
     | "blue"
     | "orange"
     | "green"
+    | "gray"
+    | "cyan"
     // Deprecated (keep for backward compatibility)
     | "success"
     | "destructive"
@@ -246,6 +248,14 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
       backgroundColor: extendedColors.green[700],
       borderColor: "transparent",
     },
+    gray: {
+      backgroundColor: "#737373", // neutral-500 (matching web)
+      borderColor: "transparent",
+    },
+    cyan: {
+      backgroundColor: "#06b6d4", // cyan-500
+      borderColor: "transparent",
+    },
 
     // ===== DEPRECATED - Keep for backward compatibility =====
     success: {
@@ -355,6 +365,8 @@ const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: Ba
     blue: { color: white },
     orange: { color: white },
     green: { color: white },
+    gray: { color: white },
+    cyan: { color: white },
 
     // Deprecated variants - all white text
     success: { color: white },

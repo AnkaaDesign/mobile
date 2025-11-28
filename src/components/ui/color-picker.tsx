@@ -1,12 +1,16 @@
-import { useState, useCallback, useEffect } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Platform } from 'react-native';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Pressable, Modal, ActivityIndicator, InteractionManager } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 import ColorPicker, { Panel1, HueSlider, Preview } from 'reanimated-color-picker';
+import type { returnedResults } from 'reanimated-color-picker';
+import { IconCheck, IconX } from '@tabler/icons-react-native';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from './themed-text';
 import { Button } from './button';
+import { Text } from './text';
 import { spacing, fontSize, borderRadius } from '@/constants/design-system';
-import { IconX } from '@tabler/icons-react-native';
+import { formSpacing, formLayout } from '@/constants/form-styles';
 
 interface ColorPickerComponentProps {
   color: string;
@@ -38,39 +42,56 @@ export function ColorPickerComponent({ color, onColorChange, label, disabled = f
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tempColor, setTempColor] = useState(() => ensureValidColor(color));
   const [pickerReady, setPickerReady] = useState(false);
+  const [pickerMounted, setPickerMounted] = useState(false);
+  const interactionRef = useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | null>(null);
 
-  // Handle modal show event - safer than timer
+  // Handle modal show event - wait for interactions to complete before mounting picker
   const handleModalShow = useCallback(() => {
-    // Small delay after modal is shown to ensure layout is complete
-    const timer = setTimeout(() => {
-      setPickerReady(true);
-    }, 100);
-    return () => clearTimeout(timer);
+    // Use InteractionManager to wait for modal animation to complete
+    interactionRef.current = InteractionManager.runAfterInteractions(() => {
+      setPickerMounted(true);
+      // Additional small delay for the picker to initialize
+      setTimeout(() => {
+        setPickerReady(true);
+      }, 100);
+    });
   }, []);
 
-  // Reset picker ready state when modal closes
+  // Reset picker state when modal closes
   useEffect(() => {
     if (!isModalOpen) {
       setPickerReady(false);
+      setPickerMounted(false);
+      if (interactionRef.current) {
+        interactionRef.current.cancel();
+        interactionRef.current = null;
+      }
     }
   }, [isModalOpen]);
 
-  const handleColorSelect = useCallback((result: { hex: string }) => {
-    const hexColor = result.hex.toUpperCase();
-    // Only update if it's a valid 6-digit hex
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (interactionRef.current) {
+        interactionRef.current.cancel();
+      }
+    };
+  }, []);
+
+  // Helper function to update color on JS thread
+  const updateTempColor = useCallback((hexColor: string) => {
     if (isValidHex(hexColor)) {
       setTempColor(hexColor);
     }
   }, []);
 
-  const handleHexInputChange = (inputValue: string) => {
-    let hex = inputValue;
-    if (!hex.startsWith('#')) {
-      hex = '#' + hex;
-    }
-    hex = hex.slice(0, 7).toUpperCase();
-    setTempColor(hex);
-  };
+  // Worklet callback for color picker - runs on UI thread
+  const handleColorSelect = useCallback((result: returnedResults) => {
+    'worklet';
+    const hexColor = result.hex.toUpperCase();
+    // Use runOnJS to update state from UI thread
+    runOnJS(updateTempColor)(hexColor);
+  }, [updateTempColor]);
 
   const handleApply = () => {
     if (isValidHex(tempColor)) {
@@ -127,110 +148,95 @@ export function ColorPickerComponent({ color, onColorChange, label, disabled = f
         </TouchableOpacity>
       </View>
 
-      {/* Color Picker Modal */}
+      {/* Color Picker Modal - Centered with fade effect */}
       <Modal
         visible={isModalOpen}
-        animationType="fade"
+        animationType="none"
         transparent={true}
         onRequestClose={handleCancel}
         onShow={handleModalShow}
         statusBarTranslucent
       >
-        <View style={styles.gestureRoot}>
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={handleCancel}
-          >
-            <TouchableOpacity
-              activeOpacity={1}
-              onPress={(e) => e.stopPropagation()}
-              style={[styles.modalContent, { backgroundColor: colors.background }]}
+        <GestureHandlerRootView style={styles.gestureRoot}>
+          <View style={styles.modalOverlay}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={handleCancel}
+            />
+            <View
+              style={[
+                styles.modalContent,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                },
+              ]}
             >
-              {/* Header */}
+              {/* Header - compact */}
               <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
                 <ThemedText style={[styles.modalTitle, { color: colors.foreground }]}>
                   Selecionar Cor
                 </ThemedText>
                 <TouchableOpacity onPress={handleCancel} style={styles.closeButton}>
-                  <IconX size={24} color={colors.foreground} />
+                  <IconX size={20} color={colors.foreground} />
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.modalBody}>
-                {/* Color Picker - only render when ready, wrapped in its own gesture context */}
-                {pickerReady ? (
-                  <GestureHandlerRootView style={styles.pickerContainer}>
+              {/* Only mount picker after modal animation completes */}
+              {pickerMounted && pickerReady ? (
+                <>
+                  <View style={styles.modalBody}>
                     <ColorPicker
                       value={tempColor}
                       onComplete={handleColorSelect}
                       style={styles.colorPicker}
                       boundedThumb
                     >
-                      <Preview style={styles.preview} hideInitialColor />
+                      <Preview style={styles.preview} hideInitialColor hideText />
                       <Panel1 style={styles.panel} />
                       <HueSlider style={styles.hueSlider} />
                     </ColorPicker>
-                  </GestureHandlerRootView>
-                ) : (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                    <ThemedText style={{ color: colors.mutedForeground, marginTop: spacing.md }}>
-                      Carregando...
-                    </ThemedText>
                   </View>
-                )}
 
-                {/* Hex Input */}
-                <View style={styles.hexInputSection}>
-                  <ThemedText style={[styles.sectionLabel, { color: colors.foreground }]}>
-                    Codigo Hexadecimal
-                  </ThemedText>
-                  <TextInput
+                  {/* Action Bar - same style as paint form */}
+                  <View
                     style={[
-                      styles.hexInput,
+                      styles.actionBar,
                       {
-                        backgroundColor: colors.background,
                         borderColor: colors.border,
-                        color: colors.foreground,
+                        backgroundColor: colors.card,
                       },
                     ]}
-                    value={tempColor}
-                    onChangeText={handleHexInputChange}
-                    placeholder="#000000"
-                    placeholderTextColor={colors.mutedForeground}
-                    maxLength={7}
-                    autoCapitalize="characters"
-                  />
-                  {!isValidHex(tempColor) && (
-                    <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
-                      Cor invalida. Use o formato #RRGGBB
-                    </ThemedText>
-                  )}
-                </View>
-              </View>
+                  >
+                    <View style={styles.buttonWrapper}>
+                      <Button variant="outline" onPress={handleCancel}>
+                        <IconX size={18} color={colors.mutedForeground} />
+                        <Text style={styles.buttonText}>Cancelar</Text>
+                      </Button>
+                    </View>
 
-              {/* Footer Actions */}
-              <View style={[styles.modalFooter, { borderTopColor: colors.border }]}>
-                <Button
-                  variant="outline"
-                  onPress={handleCancel}
-                  style={styles.footerButton}
-                >
-                  <ThemedText style={{ color: colors.foreground }}>Cancelar</ThemedText>
-                </Button>
-                <Button
-                  variant="default"
-                  onPress={handleApply}
-                  style={styles.footerButton}
-                  disabled={!isValidHex(tempColor)}
-                >
-                  <ThemedText style={{ color: colors.primaryForeground }}>Aplicar</ThemedText>
-                </Button>
-              </View>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </View>
+                    <View style={styles.buttonWrapper}>
+                      <Button
+                        variant="default"
+                        onPress={handleApply}
+                        disabled={!isValidHex(tempColor)}
+                      >
+                        <IconCheck size={18} color={colors.primaryForeground} />
+                        <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
+                          Aplicar
+                        </Text>
+                      </Button>
+                    </View>
+                  </View>
+                </>
+              ) : (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                </View>
+              )}
+            </View>
+          </View>
+        </GestureHandlerRootView>
       </Modal>
     </>
   );
@@ -269,40 +275,46 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontFamily: 'monospace',
   },
+  // Centered modal overlay
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
   },
+  // Centered modal content with rounded corners
   modalContent: {
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
+    borderRadius: formLayout.cardBorderRadius,
+    borderWidth: formLayout.borderWidth,
+    width: '100%',
+    maxWidth: 400,
     maxHeight: '90%',
+    overflow: 'hidden',
   },
+  // Compact header
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: spacing.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
   },
   modalTitle: {
-    fontSize: fontSize.xl,
+    fontSize: fontSize.lg,
     fontWeight: '600',
   },
   closeButton: {
     padding: spacing.xs,
   },
   modalBody: {
-    padding: spacing.lg,
+    padding: spacing.md,
   },
   loadingContainer: {
-    height: 320,
+    height: 300,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  pickerContainer: {
-    width: '100%',
   },
   colorPicker: {
     width: '100%',
@@ -320,34 +332,18 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: borderRadius.md,
   },
-  hexInputSection: {
-    marginTop: spacing.lg,
-  },
-  sectionLabel: {
-    fontSize: fontSize.base,
-    fontWeight: '500',
-    marginBottom: spacing.sm,
-  },
-  hexInput: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    fontSize: fontSize.base,
-    fontFamily: 'monospace',
-  },
-  errorText: {
-    fontSize: fontSize.sm,
-    marginTop: spacing.xs,
-  },
-  modalFooter: {
+  // Action bar - same style as SimpleFormActionBar
+  actionBar: {
     flexDirection: 'row',
-    padding: spacing.lg,
-    gap: spacing.sm,
-    borderTopWidth: 1,
+    gap: formSpacing.rowGap,
+    padding: formSpacing.actionBarPadding,
+    borderTopWidth: formLayout.borderWidth,
   },
-  footerButton: {
+  buttonWrapper: {
     flex: 1,
-    height: 48,
-    minHeight: 48,
+  },
+  buttonText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
