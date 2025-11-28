@@ -12,6 +12,8 @@ import { bonusKeys, useTasks } from "@/hooks";
 import { formatCurrency } from "@/utils";
 import { TASK_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, getBadgeVariant } from "@/constants";
 import { TasksModal } from "@/components/bonus/TasksModal";
+import { Icon } from "@/components/ui/icon";
+import { spacing, fontSize } from "@/constants/design-system";
 import type { Bonus, Task } from "@/types";
 
 // Helper to get Portuguese month name
@@ -304,41 +306,54 @@ export default function BonusDetailScreen() {
 
         {/* Bonus Amount Card */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <ThemedText style={styles.sectionTitle}>Valor do Bônus</ThemedText>
-          <ThemedText style={[styles.bonusAmount, { color: colors.success }]}>
-            {formatCurrency(bonusValue)}
-          </ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <Icon name="IconCurrencyDollar" size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Valor do Bônus</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
+            <ThemedText style={[styles.bonusAmount, { color: colors.success }]}>
+              {formatCurrency(bonusValue)}
+            </ThemedText>
 
-          {hasDiscounts && (
-            <View style={[styles.discountInfo, { borderTopColor: colors.border }]}>
-              <View style={styles.detailRow}>
-                <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-                  Valor Base:
-                </ThemedText>
-                <ThemedText style={styles.detailValue}>
-                  {formatBonusAmount(bonus.baseBonus)}
-                </ThemedText>
-              </View>
-              {bonus.bonusDiscounts!.map((discount: any, index: number) => (
-                <View key={discount.id} style={styles.detailRow}>
-                  <ThemedText style={[styles.detailLabel, { color: colors.destructive }]}>
-                    Desconto {index + 1} ({discount.reference}):
+            {hasDiscounts && (
+              <View style={[styles.discountInfo, { borderTopColor: colors.border }]}>
+                <View style={styles.detailRow}>
+                  <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                    Valor Base:
                   </ThemedText>
-                  <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
-                    {discount.percentage
-                      ? `${discount.percentage}%`
-                      : formatCurrency(discount.value || 0)}
+                  <ThemedText style={styles.detailValue}>
+                    {formatBonusAmount(bonus.baseBonus)}
                   </ThemedText>
                 </View>
-              ))}
-            </View>
-          )}
+                {bonus.bonusDiscounts!.map((discount: any, index: number) => (
+                  <View key={discount.id} style={styles.detailRow}>
+                    <ThemedText style={[styles.detailLabel, { color: colors.destructive }]}>
+                      Desconto {index + 1} ({discount.reference}):
+                    </ThemedText>
+                    <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
+                      {discount.percentage
+                        ? `${discount.percentage}%`
+                        : formatCurrency(discount.value || 0)}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
         </Card>
 
         {/* Performance Details Card */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <ThemedText style={styles.sectionTitle}>Detalhes de Performance</ThemedText>
-          <View style={styles.detailsContainer}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <Icon name="IconChartLine" size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Detalhes de Performance</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
+            <View style={styles.detailsContainer}>
             <View style={styles.detailRow}>
               <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
                 Cargo:
@@ -387,12 +402,19 @@ export default function BonusDetailScreen() {
                 {formatDecimal(bonus.averageTasksPerUser)}
               </ThemedText>
             </View>
+            </View>
           </View>
         </Card>
 
         {/* Commission Status Section - Clickable badges */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <ThemedText style={styles.sectionTitle}>Status das Comissões</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <Icon name="IconCheckbox" size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Status das Comissões</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
           {commissionStats.hasDetails ? (
             <ThemedText style={[styles.sectionHint, { color: colors.mutedForeground }]}>
               Toque para ver as tarefas
@@ -455,12 +477,19 @@ export default function BonusDetailScreen() {
               </Badge>
             </TouchableOpacity>
           </View>
+          </View>
         </Card>
 
         {/* Calculation Period Card */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <ThemedText style={styles.sectionTitle}>Período de Cálculo</ThemedText>
-          <View style={styles.detailsContainer}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <Icon name="IconCalendar" size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Período de Cálculo</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
+            <View style={styles.detailsContainer}>
             <View style={styles.detailRow}>
               <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Início:</ThemedText>
               <ThemedText style={styles.detailValue}>
@@ -476,6 +505,7 @@ export default function BonusDetailScreen() {
                   ? new Date(bonus.calculationPeriodEnd).toLocaleDateString('pt-BR')
                   : '-'}
               </ThemedText>
+            </View>
             </View>
           </View>
         </Card>
@@ -512,11 +542,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   card: {
-    margin: 16,
-    marginBottom: 0,
-    padding: 20,
-    borderRadius: 12,
-    borderWidth: 1,
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
   periodInfo: {
     alignItems: "center",

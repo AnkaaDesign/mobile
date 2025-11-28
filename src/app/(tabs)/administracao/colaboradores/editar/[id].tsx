@@ -1,4 +1,3 @@
-import React from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
@@ -39,7 +38,7 @@ export default function EditCollaboratorScreen() {
     );
   }
 
-  return <CollaboratorForm mode="update" user={user} />;
+  return <CollaboratorForm mode="update" user={user?.data} />;
 }
 
 const styles = StyleSheet.create({

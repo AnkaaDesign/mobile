@@ -47,9 +47,11 @@ export function SpecificationsCard({ sector }: SpecificationsCardProps) {
 
   return (
     <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <IconInfoCircle size={20} color={colors.primary} />
-        <ThemedText style={styles.sectionTitle}>Especificações</ThemedText>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconInfoCircle size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Especificações</ThemedText>
+        </View>
       </View>
 
       {/* Basic Information */}
@@ -145,18 +147,22 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
-  sectionHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  sectionTitle: {
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: "600",
-    marginLeft: spacing.sm,
-    flex: 1,
+    fontWeight: "500",
   },
   section: {
     marginBottom: spacing.lg,

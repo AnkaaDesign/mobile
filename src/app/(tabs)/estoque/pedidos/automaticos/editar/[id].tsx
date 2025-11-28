@@ -434,6 +434,26 @@ const styles = StyleSheet.create({
   card: {
     padding: 16,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  content: {
+    gap: 8,
+  },
   fieldContainer: {
     marginBottom: 16,
   },

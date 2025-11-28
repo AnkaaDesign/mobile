@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -164,7 +164,12 @@ export default function CreateObservationScreen() {
 
             {/* Form Fields */}
             <Card style={styles.card}>
-              <ThemedText style={styles.sectionTitle}>Informações da Observação</ThemedText>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <IconAlertCircle size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Informações da Observação</ThemedText>
+                </View>
+              </View>
 
               <SimpleFormField label="Tarefa" required error={errors.taskId}>
                 <Controller
@@ -293,11 +298,19 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.md,
+    fontWeight: "500",
   },
   actionBar: {
     flexDirection: "row",

@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import { useHoliday } from "@/hooks";
 import { HolidayCard } from "@/components/personal/holiday";
 import { Card } from "@/components/ui/card";
@@ -64,16 +64,11 @@ export default function MyHolidayDetailsScreen() {
         }
       >
         {/* Header Card */}
-        <Card style={[styles.headerCard, { backgroundColor: colors.card }]}>
-          <View style={styles.headerContent}>
-            <View style={[styles.iconContainer, { backgroundColor: colors.primary + "20" }]}>
-              <IconCalendar size={32} color={colors.primary} />
-            </View>
-            <View style={styles.headerTextContainer}>
-              <ThemedText style={styles.headerTitle}>{holiday.name}</ThemedText>
-              <ThemedText style={styles.headerSubtitle}>
-                Detalhes do Feriado
-              </ThemedText>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconCalendar size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>{holiday.name}</ThemedText>
             </View>
           </View>
         </Card>
@@ -96,31 +91,24 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.md,
   },
-  headerCard: {
-    padding: spacing.lg,
+  card: {
+    padding: spacing.md,
   },
-  headerContent: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  headerLeft: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: spacing.sm,
   },
-  headerTextContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: spacing.xs,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    opacity: 0.7,
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
 });

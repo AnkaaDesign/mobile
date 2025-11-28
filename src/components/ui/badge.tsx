@@ -8,32 +8,52 @@ import { extendedColors } from "@/lib/theme/extended-colors";
 export interface BadgeProps {
   children?: React.ReactNode;
   variant?:
+    // Neutral variants
     | "default"
-    | "primary"
     | "secondary"
-    | "destructive"
-    | "outline"
-    | "success"
-    | "warning"
-    | "error"
-    | "info"
     | "muted"
-    | "pending"
-    | "active"
+    | "outline"
     | "inactive"
+    // Core semantic variants (common across entities)
     | "completed"
     | "cancelled"
-    | "onHold"
+    | "pending"
+    | "created"
+    | "active"
     | "inProgress"
+    | "processing"
+    | "approved"
+    | "rejected"
+    | "received"
+    | "delivered"
+    | "sent"
+    | "verified"
+    | "expired"
+    | "failed"
+    | "onHold"
+    | "blocked"
+    | "suspended"
+    | "returned"
+    | "lost"
+    | "bounced"
+    // Color utilities (for entity-specific or non-status use)
+    | "red"
     | "purple"
+    | "teal"
+    | "indigo"
+    | "pink"
+    | "yellow"
+    | "amber"
     | "blue"
     | "orange"
     | "green"
-    | "teal"
-    | "yellow"
-    | "amber"
-    | "indigo"
-    | "pink";
+    // Deprecated (keep for backward compatibility)
+    | "success"
+    | "destructive"
+    | "primary"
+    | "error"
+    | "info"
+    | "warning";
   size?: "default" | "sm" | "md" | "lg";
   style?: ViewStyle;
   textStyle?: TextStyle;
@@ -67,7 +87,7 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
   const borderColor = colors?.border || "#d4d4d4";
 
   const variantStyles: Record<string, ViewStyle> = {
-    // Neutral variants
+    // ===== NEUTRAL VARIANTS =====
     default: {
       backgroundColor: extendedColors.neutral[500],
       borderColor: "transparent",
@@ -77,34 +97,38 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
       borderColor: "transparent",
     },
     muted: {
-      backgroundColor: extendedColors.neutral[400], // Matches web bg-neutral-400
+      backgroundColor: extendedColors.gray[500],
+      borderColor: "transparent",
     },
     outline: {
       backgroundColor: "transparent",
       borderWidth: 1,
       borderColor: borderColor,
     },
-
-    // Primary/Info variants (Blue tones)
-    primary: {
-      backgroundColor: extendedColors.blue[700],
-      borderColor: "transparent",
-    },
-    info: {
-      backgroundColor: extendedColors.blue[700],
-      borderColor: "transparent",
-    },
-    inProgress: {
-      backgroundColor: extendedColors.blue[700],
+    inactive: {
+      backgroundColor: extendedColors.gray[500],
       borderColor: "transparent",
     },
 
-    // Success variants (Green tones)
-    success: {
+    // ===== CORE SEMANTIC VARIANTS =====
+    // Green status variants (use green-700)
+    completed: {
       backgroundColor: extendedColors.green[700],
       borderColor: "transparent",
     },
-    completed: {
+    received: {
+      backgroundColor: extendedColors.green[700],
+      borderColor: "transparent",
+    },
+    approved: {
+      backgroundColor: extendedColors.green[700],
+      borderColor: "transparent",
+    },
+    returned: {
+      backgroundColor: extendedColors.green[700],
+      borderColor: "transparent",
+    },
+    delivered: {
       backgroundColor: extendedColors.green[700],
       borderColor: "transparent",
     },
@@ -112,44 +136,102 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
       backgroundColor: extendedColors.green[700],
       borderColor: "transparent",
     },
-
-    // Warning variants (Orange/Amber tones)
-    warning: {
-      backgroundColor: extendedColors.orange[600],
+    verified: {
+      backgroundColor: extendedColors.green[700],
       borderColor: "transparent",
     },
+    sent: {
+      backgroundColor: extendedColors.green[700],
+      borderColor: "transparent",
+    },
+
+    // Red status variants (use red-700)
+    cancelled: {
+      backgroundColor: extendedColors.red[700],
+      borderColor: "transparent",
+    },
+    rejected: {
+      backgroundColor: extendedColors.red[700],
+      borderColor: "transparent",
+    },
+    lost: {
+      backgroundColor: extendedColors.red[700],
+      borderColor: "transparent",
+    },
+    failed: {
+      backgroundColor: extendedColors.red[700],
+      borderColor: "transparent",
+    },
+    bounced: {
+      backgroundColor: extendedColors.red[700],
+      borderColor: "transparent",
+    },
+    blocked: {
+      backgroundColor: extendedColors.red[700],
+      borderColor: "transparent",
+    },
+    suspended: {
+      backgroundColor: extendedColors.red[700],
+      borderColor: "transparent",
+    },
+
+    // Blue status variants (use blue-700)
+    created: {
+      backgroundColor: extendedColors.blue[700],
+      borderColor: "transparent",
+    },
+    inProgress: {
+      backgroundColor: extendedColors.blue[700],
+      borderColor: "transparent",
+    },
+    processing: {
+      backgroundColor: extendedColors.blue[700],
+      borderColor: "transparent",
+    },
+
+    // Amber status variants (use amber-600)
     pending: {
       backgroundColor: extendedColors.amber[600],
       borderColor: "transparent",
     },
+    expired: {
+      backgroundColor: extendedColors.amber[600],
+      borderColor: "transparent",
+    },
+
+    // Orange status variants (use orange-600)
     onHold: {
       backgroundColor: extendedColors.orange[600],
       borderColor: "transparent",
     },
 
-    // Error/Destructive variants (Red tones)
-    error: {
+    // ===== COLOR UTILITIES =====
+    red: {
       backgroundColor: extendedColors.red[700],
       borderColor: "transparent",
     },
-    destructive: {
-      backgroundColor: extendedColors.red[700],
-      borderColor: "transparent",
-    },
-    cancelled: {
-      backgroundColor: extendedColors.red[700],
-      borderColor: "transparent",
-    },
-
-    // Inactive variant (Gray - disabled/inactive states)
-    inactive: {
-      backgroundColor: extendedColors.neutral[500],
-      borderColor: "transparent",
-    },
-
-    // Additional color variants
     purple: {
       backgroundColor: extendedColors.purple[600],
+      borderColor: "transparent",
+    },
+    teal: {
+      backgroundColor: extendedColors.teal[500],
+      borderColor: "transparent",
+    },
+    indigo: {
+      backgroundColor: extendedColors.indigo[600],
+      borderColor: "transparent",
+    },
+    pink: {
+      backgroundColor: extendedColors.pink[600],
+      borderColor: "transparent",
+    },
+    yellow: {
+      backgroundColor: extendedColors.yellow[500],
+      borderColor: "transparent",
+    },
+    amber: {
+      backgroundColor: extendedColors.amber[500],
       borderColor: "transparent",
     },
     blue: {
@@ -161,27 +243,33 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
       borderColor: "transparent",
     },
     green: {
-      backgroundColor: extendedColors.green[600],
+      backgroundColor: extendedColors.green[700],
       borderColor: "transparent",
     },
-    teal: {
-      backgroundColor: extendedColors.teal[500], // Matches web teal-500
+
+    // ===== DEPRECATED - Keep for backward compatibility =====
+    success: {
+      backgroundColor: extendedColors.green[700], // Standardized to green-700
       borderColor: "transparent",
     },
-    yellow: {
-      backgroundColor: extendedColors.yellow[500], // Matches web yellow-500
+    destructive: {
+      backgroundColor: extendedColors.red[700], // Standardized to red-700
       borderColor: "transparent",
     },
-    amber: {
-      backgroundColor: extendedColors.amber[500], // Matches web amber-500
+    primary: {
+      backgroundColor: extendedColors.blue[700], // Standardized to blue-700
       borderColor: "transparent",
     },
-    indigo: {
-      backgroundColor: extendedColors.indigo[600],
+    error: {
+      backgroundColor: extendedColors.red[700], // Standardized to red-700
       borderColor: "transparent",
     },
-    pink: {
-      backgroundColor: extendedColors.pink[600],
+    info: {
+      backgroundColor: extendedColors.blue[700], // Standardized to blue-700
+      borderColor: "transparent",
+    },
+    warning: {
+      backgroundColor: extendedColors.orange[600], // Standardized to orange-600
       borderColor: "transparent",
     },
   };
@@ -222,84 +310,59 @@ const getBadgeTextStyles = (variant: BadgeProps["variant"] = "default", size: Ba
   const foreground = colors?.foreground || "#171717";
 
   const variantStyles: Record<string, TextStyle> = {
-    default: {
-      color: white,
-    },
-    primary: {
-      color: white, // Always white on blue background
-    },
-    secondary: {
-      color: secondaryForeground, // Dark text on light background
-    },
-    destructive: {
-      color: white,
-    },
-    outline: {
-      color: foreground, // Text matches theme foreground
-    },
-    success: {
-      color: white,
-    },
-    warning: {
-      color: white,
-    },
-    error: {
-      color: white,
-    },
-    info: {
-      color: white,
-    },
-    muted: {
-      color: white,
-    },
-    pending: {
-      color: white,
-    },
-    active: {
-      color: white,
-    },
-    inactive: {
-      color: white,
-    },
-    completed: {
-      color: white,
-    },
-    cancelled: {
-      color: white,
-    },
-    onHold: {
-      color: white,
-    },
-    inProgress: {
-      color: white,
-    },
-    purple: {
-      color: white,
-    },
-    blue: {
-      color: white,
-    },
-    orange: {
-      color: white,
-    },
-    green: {
-      color: white,
-    },
-    teal: {
-      color: white,
-    },
-    yellow: {
-      color: white,
-    },
-    amber: {
-      color: white,
-    },
-    indigo: {
-      color: white,
-    },
-    pink: {
-      color: white,
-    },
+    // Neutral variants
+    default: { color: white },
+    secondary: { color: secondaryForeground },
+    muted: { color: white },
+    outline: { color: foreground },
+    inactive: { color: white },
+
+    // Core semantic variants - all white text
+    completed: { color: white },
+    received: { color: white },
+    approved: { color: white },
+    returned: { color: white },
+    delivered: { color: white },
+    active: { color: white },
+    verified: { color: white },
+    sent: { color: white },
+
+    cancelled: { color: white },
+    rejected: { color: white },
+    lost: { color: white },
+    failed: { color: white },
+    bounced: { color: white },
+    blocked: { color: white },
+    suspended: { color: white },
+
+    created: { color: white },
+    inProgress: { color: white },
+    processing: { color: white },
+
+    pending: { color: white },
+    expired: { color: white },
+
+    onHold: { color: white },
+
+    // Color utilities - all white text
+    red: { color: white },
+    purple: { color: white },
+    teal: { color: white },
+    indigo: { color: white },
+    pink: { color: white },
+    yellow: { color: white },
+    amber: { color: white },
+    blue: { color: white },
+    orange: { color: white },
+    green: { color: white },
+
+    // Deprecated variants - all white text
+    success: { color: white },
+    destructive: { color: white },
+    primary: { color: white },
+    error: { color: white },
+    info: { color: white },
+    warning: { color: white },
   };
 
   // Safely get variant style with fallback to default

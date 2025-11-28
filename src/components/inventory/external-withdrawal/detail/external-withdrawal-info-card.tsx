@@ -88,10 +88,10 @@ export function ExternalWithdrawalInfoCard({ withdrawal }: ExternalWithdrawalInf
     <Card style={styles.card}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={[styles.iconContainer, { backgroundColor: colors.primary + "20" }]}>
-          <IconPackage size={20} color={colors.primary} />
+        <View style={styles.headerLeft}>
+          <IconPackage size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Informações da Retirada Externa</ThemedText>
         </View>
-        <ThemedText style={styles.headerTitle}>Informações da Retirada Externa</ThemedText>
         <Badge
           variant={
             isFullyReturned
@@ -269,31 +269,27 @@ export function ExternalWithdrawalInfoCard({ withdrawal }: ExternalWithdrawalInf
 
 const styles = StyleSheet.create({
   card: {
-    padding: 0,
+    padding: spacing.md,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
+  headerLeft: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: spacing.sm,
   },
-  headerTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
-    flex: 1,
-    marginLeft: spacing.sm,
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   content: {
-    padding: spacing.md,
+    gap: spacing.sm,
   },
   section: {
     marginBottom: spacing.md,

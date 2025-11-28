@@ -1,12 +1,12 @@
 
 import { View, StyleSheet } from "react-native";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { IconHistory } from "@tabler/icons-react-native";
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import type { Borrow } from "@/types";
 
 interface BorrowHistoryCardProps {
@@ -21,18 +21,14 @@ export function BorrowHistoryCard({ borrow, maxHeight = 500 }: BorrowHistoryCard
   const { colors } = useTheme();
 
   return (
-    <Card>
-      <CardHeader>
-        <View style={styles.headerContainer}>
-          <View style={StyleSheet.flatten([styles.iconContainer, { backgroundColor: colors.primary + "20" }])}>
-            <IconHistory size={20} color={colors.primary} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.title, { color: colors.foreground }])}>
-            Histórico do Empréstimo
-          </ThemedText>
+    <Card style={styles.card}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconHistory size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Histórico do Empréstimo</ThemedText>
         </View>
-      </CardHeader>
-      <CardContent>
+      </View>
+      <View style={styles.content}>
         <ChangelogTimeline
           entityType={CHANGE_LOG_ENTITY_TYPE.BORROW}
           entityId={borrow.id}
@@ -41,23 +37,33 @@ export function BorrowHistoryCard({ borrow, maxHeight = 500 }: BorrowHistoryCard
           maxHeight={maxHeight}
           limit={50}
         />
-      </CardContent>
+      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  headerContainer: {
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  iconContainer: {
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-  },
   title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
 });

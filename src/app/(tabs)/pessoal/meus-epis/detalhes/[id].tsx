@@ -111,10 +111,10 @@ export default function PpeDeliveryDetailScreen() {
         {/* Schedule Information */}
         {delivery.ppeSchedule && (
           <Card style={styles.card}>
-            <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-              <View style={styles.cardHeaderLeft}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
                 <Icon name="clock" size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.cardTitle}>Entrega Agendada</ThemedText>
+                <ThemedText style={styles.title}>Entrega Agendada</ThemedText>
               </View>
             </View>
             <View style={styles.cardContent}>
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
-  cardHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -173,14 +173,14 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  cardHeaderLeft: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  cardTitle: {
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
   },
   cardContent: {
     gap: spacing.sm,

@@ -38,9 +38,11 @@ export function ObservationInfoCard({ observation }: ObservationInfoCardProps) {
   return (
     <Card style={styles.card}>
       {/* Header */}
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <IconAlertCircle size={20} color={colors.primary} />
-        <ThemedText style={styles.sectionTitle}>Informações</ThemedText>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconAlertCircle size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Informações</ThemedText>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -128,7 +130,24 @@ export function ObservationInfoCard({ observation }: ObservationInfoCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 0,
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   sectionHeader: {
     flexDirection: "row",

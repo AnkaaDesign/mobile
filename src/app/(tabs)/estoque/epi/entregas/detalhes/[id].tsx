@@ -50,7 +50,7 @@ import {
 export default function PPEDeliveryDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { update, delete: deleteAsync } = usePpeDeliveryMutations();
   const markAsDelivered = useMarkPpeDeliveryAsDelivered();
   const [refreshing, setRefreshing] = useState(false);
@@ -314,9 +314,11 @@ export default function PPEDeliveryDetailsScreen() {
 
         {/* Status Section */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconShield size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Status da Entrega</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconShield size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Status da Entrega</ThemedText>
+            </View>
           </View>
           <View style={styles.itemDetails}>
             <View style={styles.detailRow}>
@@ -341,9 +343,11 @@ export default function PPEDeliveryDetailsScreen() {
 
         {/* Employee Information */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconUser size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Funcionário</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconUser size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Funcionário</ThemedText>
+            </View>
           </View>
           <View style={styles.itemDetails}>
             <View style={styles.detailRow}>
@@ -367,9 +371,11 @@ export default function PPEDeliveryDetailsScreen() {
 
         {/* PPE Item Information */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconPackage size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Item EPI</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconPackage size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Item EPI</ThemedText>
+            </View>
           </View>
           <View style={styles.itemDetails}>
             {delivery.item ? (
@@ -396,10 +402,10 @@ export default function PPEDeliveryDetailsScreen() {
                   </View>
                 )}
 
-                {delivery.item.ppeSize && (
+                {(delivery.item as any)?.ppeSize && (
                   <View style={styles.detailRow}>
                     <ThemedText style={styles.detailLabel}>Tamanho</ThemedText>
-                    <Badge variant="outline">{delivery.item.ppeSize}</Badge>
+                    <Badge variant="outline">{(delivery.item as any)?.ppeSize}</Badge>
                   </View>
                 )}
 
@@ -434,9 +440,11 @@ export default function PPEDeliveryDetailsScreen() {
 
         {/* Quantity and Dates Section */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconBoxMultiple size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Quantidade e Datas</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconBoxMultiple size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Quantidade e Datas</ThemedText>
+            </View>
           </View>
           <View style={styles.itemDetails}>
             <View style={StyleSheet.flatten([styles.highlightBox, { backgroundColor: colors.primary + "15" }])}>
@@ -494,9 +502,11 @@ export default function PPEDeliveryDetailsScreen() {
         {/* Stock Information */}
         {delivery.item?.quantity !== undefined && (
           <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconBoxMultiple size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Estoque</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconBoxMultiple size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Estoque</ThemedText>
+              </View>
             </View>
             <View style={styles.itemDetails}>
               <View style={styles.detailRow}>
@@ -517,9 +527,11 @@ export default function PPEDeliveryDetailsScreen() {
         {/* Review Information */}
         {delivery.reviewedByUser && (
           <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconCircleCheck size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Revisão</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconCircleCheck size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Revisão</ThemedText>
+              </View>
             </View>
             <View style={styles.itemDetails}>
               <View style={styles.detailRow}>
@@ -533,9 +545,11 @@ export default function PPEDeliveryDetailsScreen() {
         {/* Schedule Information */}
         {delivery.ppeSchedule && (
           <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconCalendarCheck size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Agendamento</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconCalendarCheck size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Agendamento</ThemedText>
+              </View>
             </View>
             <View style={styles.itemDetails}>
               <View style={styles.detailRow}>
@@ -619,9 +633,11 @@ export default function PPEDeliveryDetailsScreen() {
 
         {/* Changelog History */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconHistory size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconHistory size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
+            </View>
           </View>
           <View style={{ paddingHorizontal: spacing.md }}>
             <ChangelogTimeline
@@ -678,6 +694,18 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   sectionHeader: {
     flexDirection: "row",

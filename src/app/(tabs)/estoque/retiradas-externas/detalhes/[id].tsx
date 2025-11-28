@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, ScrollView, Alert, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { IconArrowLeft, IconEdit, IconTrash, IconRefresh, IconCheck, IconX } from "@tabler/icons-react-native";
+import { IconArrowLeft, IconEdit, IconTrash, IconRefresh, IconCheck, IconX, IconHistory } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useExternalWithdrawal, useExternalWithdrawalMutations } from "@/hooks";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -12,13 +12,13 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ExternalWithdrawalInfoCard } from "@/components/inventory/external-withdrawal/detail/external-withdrawal-info-card";
 import { ExternalWithdrawalItemsCard } from "@/components/inventory/external-withdrawal/detail/external-withdrawal-items-card";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { EXTERNAL_WITHDRAWAL_STATUS, SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
-import { spacing } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 
 export default function ExternalWithdrawalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -284,11 +284,14 @@ export default function ExternalWithdrawalDetailScreen() {
           <ExternalWithdrawalItemsCard items={withdrawal?.items || []} />
 
           {/* Changelog */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Alterações</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconHistory size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
               <ChangelogTimeline
                 entityType={CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL}
                 entityId={withdrawal.id}
@@ -296,7 +299,7 @@ export default function ExternalWithdrawalDetailScreen() {
                 entityCreatedAt={withdrawal.createdAt}
                 maxHeight={400}
               />
-            </CardContent>
+            </View>
           </Card>
 
           {/* Action Buttons */}
@@ -375,12 +378,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.xs,
   },
-  content: {
+  contentContainer: {
     flex: 1,
   },
   cardsContainer: {
     padding: spacing.md,
     gap: spacing.md,
+  },
+  card: {
+    padding: spacing.md,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
   actionsCard: {
     gap: spacing.sm,

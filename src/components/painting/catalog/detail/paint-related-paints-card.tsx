@@ -45,13 +45,15 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
-          <IconLink size={20} color={colors.primary} />
+          <IconLink size={20} color={colors.mutedForeground} />
           <ThemedText style={styles.title}>Tintas Relacionadas</ThemedText>
           <Badge variant="secondary" size="sm" style={{ marginLeft: spacing.xs }}>
             {allRelated.length}
           </Badge>
         </View>
       </View>
+
+      <View style={styles.content}>
 
       <ScrollView
         horizontal
@@ -136,6 +138,7 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
           </TouchableOpacity>
         ))}
       </ScrollView>
+      </View>
     </Card>
   );
 }
@@ -159,7 +162,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
   scrollContent: {
     gap: spacing.md,

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { Text } from "@/components/ui/text";
 import { useForm, Controller } from "react-hook-form";
@@ -12,9 +12,12 @@ import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section"
 import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
-import { spacing } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { ThemedText } from "@/components/ui";
+import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
 
 import { bonusCreateSchema, bonusUpdateSchema } from "@/schemas/bonus";
 import type { BonusCreateFormData, BonusUpdateFormData } from "@/schemas/bonus";
@@ -150,131 +153,155 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
         >
           <KeyboardAwareFormProvider value={keyboardContextValue}>
           {/* Period Section */}
-          <FormCard title="Período" subtitle="Defina o período de referência da bonificação">
-          <FormRow>
-            <FormFieldGroup
-              label="Ano"
-              required
-              error={form.formState.errors.year?.message}
-            >
-              <Controller
-                control={form.control}
-                name="year"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Combobox
-                    options={yearOptions}
-                    value={value?.toString() || ""}
-                    onValueChange={(val) => onChange(parseInt(val, 10))}
-                    placeholder="Selecione o ano"
-                    disabled={isLoading}
-                    searchable={false}
-                    clearable={false}
-                    error={error?.message}
+          <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <Icon name="IconCalendar" size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Período</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
+              <FormRow>
+                <FormFieldGroup
+                  label="Ano"
+                  required
+                  error={form.formState.errors.year?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="year"
+                    render={({ field: { onChange, value }, fieldState: { error } }) => (
+                      <Combobox
+                        options={yearOptions}
+                        value={value?.toString() || ""}
+                        onValueChange={(val) => onChange(parseInt(val, 10))}
+                        placeholder="Selecione o ano"
+                        disabled={isLoading}
+                        searchable={false}
+                        clearable={false}
+                        error={error?.message}
+                      />
+                    )}
                   />
-                )}
-              />
-            </FormFieldGroup>
+                </FormFieldGroup>
 
-            <FormFieldGroup
-              label="Mês"
-              required
-              error={form.formState.errors.month?.message}
-            >
-              <Controller
-                control={form.control}
-                name="month"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Combobox
-                    options={monthOptions}
-                    value={value?.toString() || ""}
-                    onValueChange={(val) => onChange(parseInt(val, 10))}
-                    placeholder="Selecione o mês"
-                    disabled={isLoading}
-                    searchable={false}
-                    clearable={false}
-                    error={error?.message}
+                <FormFieldGroup
+                  label="Mês"
+                  required
+                  error={form.formState.errors.month?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="month"
+                    render={({ field: { onChange, value }, fieldState: { error } }) => (
+                      <Combobox
+                        options={monthOptions}
+                        value={value?.toString() || ""}
+                        onValueChange={(val) => onChange(parseInt(val, 10))}
+                        placeholder="Selecione o mês"
+                        disabled={isLoading}
+                        searchable={false}
+                        clearable={false}
+                        error={error?.message}
+                      />
+                    )}
                   />
-                )}
-              />
-            </FormFieldGroup>
-          </FormRow>
-          </FormCard>
+                </FormFieldGroup>
+              </FormRow>
+            </View>
+          </Card>
 
           {/* Employee Section */}
-          <FormCard title="Funcionário" subtitle="Selecione o funcionário que receberá a bonificação">
-          <FormFieldGroup
-            label="Funcionário"
-            required
-            error={form.formState.errors.userId?.message}
-          >
-            <Controller
-              control={form.control}
-              name="userId"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <Combobox
-                  options={userOptions}
-                  value={value}
-                  onValueChange={onChange}
-                  placeholder="Selecione um funcionário"
-                  searchPlaceholder="Buscar funcionário..."
-                  disabled={isLoading}
-                  searchable
-                  clearable={false}
-                  error={error?.message}
+          <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <Icon name="IconUser" size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Funcionário</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
+              <FormFieldGroup
+                label="Funcionário"
+                required
+                error={form.formState.errors.userId?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name="userId"
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
+                    <Combobox
+                      options={userOptions}
+                      value={value}
+                      onValueChange={onChange}
+                      placeholder="Selecione um funcionário"
+                      searchPlaceholder="Buscar funcionário..."
+                      disabled={isLoading}
+                      searchable
+                      clearable={false}
+                      error={error?.message}
+                    />
+                  )}
                 />
-              )}
-            />
-          </FormFieldGroup>
-          </FormCard>
+              </FormFieldGroup>
+            </View>
+          </Card>
 
           {/* Performance and Value Section */}
-          <FormCard title="Bonificação" subtitle="Configure o nível de performance e valor base da bonificação">
-          <FormRow>
-            <FormFieldGroup
-              label="Nível de Performance"
-              required
-              error={form.formState.errors.performanceLevel?.message}
-            >
-              <Controller
-                control={form.control}
-                name="performanceLevel"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Combobox
-                    options={PERFORMANCE_LEVELS}
-                    value={value?.toString() || ""}
-                    onValueChange={(val) => onChange(parseInt(val, 10))}
-                    placeholder="Selecione o nível"
-                    disabled={isLoading}
-                    searchable={false}
-                    clearable={false}
-                    error={error?.message}
+          <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <Icon name="IconAward" size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Bonificação</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
+              <FormRow>
+                <FormFieldGroup
+                  label="Nível de Performance"
+                  required
+                  error={form.formState.errors.performanceLevel?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="performanceLevel"
+                    render={({ field: { onChange, value }, fieldState: { error } }) => (
+                      <Combobox
+                        options={PERFORMANCE_LEVELS}
+                        value={value?.toString() || ""}
+                        onValueChange={(val) => onChange(parseInt(val, 10))}
+                        placeholder="Selecione o nível"
+                        disabled={isLoading}
+                        searchable={false}
+                        clearable={false}
+                        error={error?.message}
+                      />
+                    )}
                   />
-                )}
-              />
-            </FormFieldGroup>
+                </FormFieldGroup>
 
-            <FormFieldGroup
-              label="Valor Base da Bonificação"
-              required
-              error={form.formState.errors.baseBonus?.message}
-            >
-              <Controller
-                control={form.control}
-                name="baseBonus"
-                render={({ field: { onChange, value } }) => (
-                  <Input
-                    type="currency"
-                    value={value ?? undefined}
-                    onChange={onChange}
-                    placeholder="0,00"
-                    editable={!isLoading}
-                    error={!!form.formState.errors.baseBonus}
+                <FormFieldGroup
+                  label="Valor Base da Bonificação"
+                  required
+                  error={form.formState.errors.baseBonus?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="baseBonus"
+                    render={({ field: { onChange, value } }) => (
+                      <Input
+                        type="currency"
+                        value={value ?? undefined}
+                        onChange={onChange}
+                        placeholder="0,00"
+                        editable={!isLoading}
+                        error={!!form.formState.errors.baseBonus}
+                      />
+                    )}
                   />
-                )}
-              />
-            </FormFieldGroup>
-          </FormRow>
-          </FormCard>
+                </FormFieldGroup>
+              </FormRow>
+            </View>
+          </Card>
 
           {/* Period Display */}
           {form.watch("year") && form.watch("month") && (
@@ -320,6 +347,29 @@ const styles = StyleSheet.create({
   },
   fieldGroup: {
     gap: spacing.lg,
+  },
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
   periodDisplay: {
     padding: 16,

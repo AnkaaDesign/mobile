@@ -146,9 +146,14 @@ export default function CreatePaintTypeScreen() {
         </Card>
 
         {/* Basic Information */}
-        <Card style={styles.formCard}>
-          <View style={styles.formSection}>
-            <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
+        <Card style={styles.card}>
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <IconTag size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Informações Básicas</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
 
             <View style={styles.fieldContainer}>
               <ThemedText style={styles.fieldLabel}>
@@ -172,12 +177,14 @@ export default function CreatePaintTypeScreen() {
         </Card>
 
         {/* Ground Configuration */}
-        <Card style={styles.formCard}>
-          <View style={styles.formSection}>
-            <View style={styles.sectionHeader}>
-              <IconDroplet size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Configuração de Fundo</ThemedText>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconDroplet size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Configuração de Fundo</ThemedText>
             </View>
+          </View>
+          <View style={styles.content}>
             <ThemedText style={[styles.sectionDescription, { color: colors.mutedForeground }]}>
               Define se este tipo de tinta requer aplicação de fundo
             </ThemedText>
@@ -213,12 +220,14 @@ export default function CreatePaintTypeScreen() {
         </Card>
 
         {/* Component Items */}
-        <Card style={styles.formCard}>
-          <View style={styles.formSection}>
-            <View style={styles.sectionHeader}>
-              <IconBoxSeam size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Componentes</ThemedText>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconBoxSeam size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Componentes</ThemedText>
             </View>
+          </View>
+          <View style={styles.content}>
             <ThemedText style={[styles.sectionDescription, { color: colors.mutedForeground }]}>
               Selecione os itens que podem ser usados como componentes em fórmulas deste tipo de tinta
             </ThemedText>
@@ -320,22 +329,29 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     lineHeight: 20,
   },
-  formCard: {
-    marginBottom: spacing.md,
+  card: {
     padding: spacing.md,
+    marginBottom: spacing.md,
   },
-  formSection: {
-    gap: spacing.md,
-  },
-  sectionHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xs,
-    marginBottom: spacing.xxs,
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
-  sectionTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
   sectionDescription: {
     fontSize: fontSize.sm,

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { View, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Dimensions } from 'react-native'
 import { useRouter } from 'expo-router'
 import {
@@ -17,18 +17,14 @@ import {
 import { ThemedView } from '@/components/ui/themed-view'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Header } from '@/components/ui/header'
 import { ErrorScreen } from '@/components/ui/error-screen'
 import { useTheme } from '@/lib/theme'
 import { useItemsInfiniteMobile } from '@/hooks/use-items-infinite-mobile'
-import { formatCurrency } from '@/utils'
 import { exportData } from '@/lib/export-utils'
 import { showToast } from '@/components/ui/toast'
 import { spacing, borderRadius, fontSize, fontWeight } from '@/constants/design-system'
 import { extendedColors } from '@/lib/theme/extended-colors'
-import { format, subDays, subMonths, startOfMonth, endOfMonth } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
 
@@ -88,8 +84,8 @@ export default function InventoryTrendsStatisticsScreen() {
   // Process items to determine trends
   const trendItems = useMemo<TrendItem[]>(() => {
     return items
-      .filter(item => item.monthlyConsumptionTrendPercent !== null)
-      .map(item => {
+      .filter((item: any) => item.monthlyConsumptionTrendPercent !== null)
+      .map((item: any) => {
         const trendPercent = item.monthlyConsumptionTrendPercent || 0
         const trendValue = (item.monthlyConsumption || 0) * (trendPercent / 100)
 

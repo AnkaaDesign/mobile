@@ -1,14 +1,14 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
 import { IconUser, IconPackage, IconCurrencyDollar, IconFileText, IconHash, IconBoxMultiple } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius } from "@/constants/design-system";
+import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_TYPE_LABELS } from "@/constants";
 import { formatCurrency } from "@/utils";
 
 import { Text } from "@/components/ui/text";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
@@ -57,15 +57,13 @@ export function ExternalWithdrawalSummaryCards({
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Basic Info Card */}
       <Card style={styles.card}>
-        <CardHeader>
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconBadge, { backgroundColor: `${colors.primary}20` }]}>
-              <IconUser size={20} color={colors.primary} />
-            </View>
-            <Text style={styles.cardTitle}>Informações da Retirada</Text>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconUser size={20} color={colors.mutedForeground} />
+            <Text style={styles.title}>Informações da Retirada</Text>
           </View>
-        </CardHeader>
-        <CardContent style={styles.cardContent}>
+        </View>
+        <View style={styles.content}>
           {/* Withdrawer */}
           <View style={[styles.infoRow, { backgroundColor: colors.muted }]}>
             <View style={styles.infoRowIcon}>
@@ -106,23 +104,21 @@ export function ExternalWithdrawalSummaryCards({
               </View>
             </View>
           )}
-        </CardContent>
+        </View>
       </Card>
 
       {/* Items Summary Card */}
       <Card style={styles.card}>
-        <CardHeader>
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconBadge, { backgroundColor: `${colors.primary}20` }]}>
-              <IconPackage size={20} color={colors.primary} />
-            </View>
-            <Text style={styles.cardTitle}>Itens da Retirada</Text>
-            <Badge variant="secondary">
-              {totalItems} {totalItems === 1 ? "item" : "itens"}
-            </Badge>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconPackage size={20} color={colors.mutedForeground} />
+            <Text style={styles.title}>Itens da Retirada</Text>
           </View>
-        </CardHeader>
-        <CardContent style={styles.cardContent}>
+          <Badge variant="secondary">
+            {totalItems} {totalItems === 1 ? "item" : "itens"}
+          </Badge>
+        </View>
+        <View style={styles.content}>
           {/* Summary Stats */}
           <View style={styles.statsGrid}>
             <View style={[styles.statCard, { backgroundColor: colors.muted }]}>
@@ -155,21 +151,19 @@ export function ExternalWithdrawalSummaryCards({
               <Text style={styles.emptyText}>Nenhum item selecionado</Text>
             </View>
           )}
-        </CardContent>
+        </View>
       </Card>
 
       {/* Total Calculation Card (for CHARGEABLE only) */}
       {type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && (
         <Card style={styles.card}>
-          <CardHeader>
-            <View style={styles.cardHeader}>
-              <View style={[styles.iconBadge, { backgroundColor: `${colors.primary}20` }]}>
-                <IconCurrencyDollar size={20} color={colors.primary} />
-              </View>
-              <Text style={styles.cardTitle}>Cálculo do Total</Text>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconCurrencyDollar size={20} color={colors.mutedForeground} />
+              <Text style={styles.title}>Cálculo do Total</Text>
             </View>
-          </CardHeader>
-          <CardContent style={styles.cardContent}>
+          </View>
+          <View style={styles.content}>
             {/* Stats Grid */}
             <View style={styles.statsGrid}>
               <View style={[styles.statCard, { backgroundColor: colors.muted }]}>
@@ -203,7 +197,7 @@ export function ExternalWithdrawalSummaryCards({
                 {formatCurrency(finalTotalPrice)}
               </Text>
             </View>
-          </CardContent>
+          </View>
         </Card>
       )}
     </ScrollView>
@@ -215,26 +209,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   card: {
+    padding: spacing.md,
     marginBottom: spacing.md,
   },
-  cardHeader: {
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  iconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
-  cardTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  cardContent: {
+  content: {
     gap: spacing.md,
   },
   infoRow: {

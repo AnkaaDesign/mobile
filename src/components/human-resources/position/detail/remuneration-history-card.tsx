@@ -21,10 +21,12 @@ export function RemunerationHistoryCard({ position }: RemunerationHistoryCardPro
     return (
       <Card style={styles.card}>
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <IconHistory size={20} color={colors.primary} />
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>
-            Histórico de Remunerações
-          </ThemedText>
+          <View style={styles.headerLeft}>
+            <IconHistory size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>
+              Histórico de Remunerações
+            </ThemedText>
+          </View>
         </View>
 
         <View style={styles.content}>
@@ -77,8 +79,8 @@ export function RemunerationHistoryCard({ position }: RemunerationHistoryCardPro
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
-          <IconHistory size={20} color={colors.primary} />
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>
+          <IconHistory size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>
             Histórico de Remunerações
           </ThemedText>
         </View>
@@ -165,13 +167,13 @@ export function RemunerationHistoryCard({ position }: RemunerationHistoryCardPro
 
 const styles = StyleSheet.create({
   card: {
-    padding: 0,
+    padding: spacing.md,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: spacing.md,
+    marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
@@ -182,13 +184,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
   },
   badgeText: {
     fontSize: fontSize.xs,
   },
   content: {
-    padding: spacing.md,
+    gap: spacing.sm,
   },
   scrollView: {
     maxHeight: 400,

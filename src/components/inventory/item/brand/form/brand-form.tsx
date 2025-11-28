@@ -89,7 +89,7 @@ export function ItemBrandForm<TMode extends "create" | "update">({ onSubmit, onC
           scrollEventThrottle={16}
         >
           <KeyboardAwareFormProvider value={keyboardContextValue}>
-            <FormCard title="Informações da Marca">
+            <FormCard title="Informações da Marca" icon="IconTag">
           <FormFieldGroup
             label="Nome da Marca"
             required={isRequired}

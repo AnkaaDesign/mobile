@@ -169,10 +169,13 @@ export default function MyNotificationDetailsScreen() {
         {/* Read Status Info */}
         {notification.seenBy && notification.seenBy.length > 0 && (
           <Card style={styles.card}>
-            <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-              <ThemedText style={styles.cardTitle}>Status de Leitura</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconBell size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Status de Leitura</ThemedText>
+              </View>
             </View>
-            <View style={styles.cardContent}>
+            <View style={styles.content}>
               {notification.seenBy.map((seen) => (
                 <View key={seen.id} style={[styles.seenRow, { borderBottomColor: colors.border }]}>
                   <View style={styles.seenInfo}>
@@ -225,19 +228,19 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   card: {
-    padding: 0,
-    overflow: "hidden",
-  },
-  cardHeader: {
     padding: spacing.md,
-    borderBottomWidth: 1,
   },
-  cardTitle: {
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
   },
-  cardContent: {
-    padding: spacing.md,
+  content: {
+    gap: spacing.sm,
   },
   seenRow: {
     paddingVertical: spacing.sm,

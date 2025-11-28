@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { View, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native'
 import { useRouter } from 'expo-router'
 import { IconChartBar, IconDownload, IconCalendar, IconTrendingUp, IconTrendingDown, IconPackage } from '@tabler/icons-react-native'
@@ -46,7 +46,7 @@ export default function InventoryConsumptionStatisticsScreen() {
   const consumptionData = useMemo(() => {
     const periodMultiplier = selectedPeriod / 30 // Convert to monthly ratio
 
-    return items.map(item => ({
+    return items.map((item: any) => ({
       ...item,
       periodConsumption: (item.monthlyConsumption || 0) * periodMultiplier,
       periodValue: ((item.monthlyConsumption || 0) * periodMultiplier) * (item.price || 0),
@@ -62,15 +62,15 @@ export default function InventoryConsumptionStatisticsScreen() {
 
   // Calculate statistics
   const statistics = useMemo(() => {
-    const totalConsumption = consumptionData.reduce((sum, item) => sum + item.periodConsumption, 0)
-    const totalValue = consumptionData.reduce((sum, item) => sum + item.periodValue, 0)
-    const itemsWithTrend = items.filter(item => item.monthlyConsumptionTrendPercent !== null)
+    const totalConsumption = consumptionData.reduce((sum: number, item: any) => sum + item.periodConsumption, 0)
+    const totalValue = consumptionData.reduce((sum: number, item: any) => sum + item.periodValue, 0)
+    const itemsWithTrend = items.filter((item: any) => item.monthlyConsumptionTrendPercent !== null)
     const avgTrend = itemsWithTrend.length > 0
-      ? itemsWithTrend.reduce((sum, item) => sum + (item.monthlyConsumptionTrendPercent || 0), 0) / itemsWithTrend.length
+      ? itemsWithTrend.reduce((sum: number, item: any) => sum + (item.monthlyConsumptionTrendPercent || 0), 0) / itemsWithTrend.length
       : 0
 
-    const increasingItems = items.filter(item => (item.monthlyConsumptionTrendPercent || 0) > 5).length
-    const decreasingItems = items.filter(item => (item.monthlyConsumptionTrendPercent || 0) < -5).length
+    const increasingItems = items.filter((item: any) => (item.monthlyConsumptionTrendPercent || 0) > 5).length
+    const decreasingItems = items.filter((item: any) => (item.monthlyConsumptionTrendPercent || 0) < -5).length
     const stableItems = items.length - increasingItems - decreasingItems
 
     return {

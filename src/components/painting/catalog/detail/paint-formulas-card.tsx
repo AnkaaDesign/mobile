@@ -1,5 +1,5 @@
 
-import { View, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
@@ -14,6 +14,7 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import * as Clipboard from 'expo-clipboard';
 import { showToast } from '@/components/ui/toast';
 import { useTheme } from '@/lib/theme';
+import { spacing, fontSize } from '@/constants/design-system';
 
 interface PaintFormulasCardProps {
   paint: Paint;
@@ -58,17 +59,18 @@ Densidade: ${formula.density != null ? `${Number(formula.density).toFixed(3)} g/
   };
 
   return (
-    <Card className="p-4">
+    <Card style={styles.card}>
       {/* Header */}
-      <View className="flex-row items-center gap-2 mb-4">
-        <View className="p-2 rounded-lg bg-primary/10">
-          <Icon name="flask" size={20} className="text-primary" />
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <Icon name="flask" size={20} style={{ color: colors.mutedForeground }} />
+          <Text style={styles.title}>
+            Fórmulas ({paint.formulas?.length || 0})
+          </Text>
         </View>
-        <Text className="text-lg font-semibold text-foreground">
-          Fórmulas ({paint.formulas?.length || 0})
-        </Text>
       </View>
 
+      <View style={styles.content}>
       {hasFormulas ? (
         <View className="gap-3">
           {/* Formula List */}
@@ -173,6 +175,33 @@ Densidade: ${formula.density != null ? `${Number(formula.density).toFixed(3)} g/
           </View>
         </View>
       )}
+      </View>
     </Card>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+});

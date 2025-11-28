@@ -106,7 +106,7 @@ export function NotificationCard({ notification }: NotificationCardProps) {
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
-          {getNotificationTypeIcon(notification.type, 24, colors.primary)}
+          {getNotificationTypeIcon(notification.type, 20, colors.mutedForeground)}
           <ThemedText style={styles.title}>Detalhes da Notificação</ThemedText>
         </View>
         <Badge variant={getImportanceBadgeVariant(notification.importance)} size="sm">
@@ -234,25 +234,24 @@ export function NotificationCard({ notification }: NotificationCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 0,
-    overflow: "hidden",
+    padding: spacing.md,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: spacing.md,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    flex: 1,
   },
   title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
   },
   content: {
     padding: spacing.md,

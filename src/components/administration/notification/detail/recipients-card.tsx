@@ -24,12 +24,10 @@ export function RecipientsCard({ notification, maxHeight = 300 }: RecipientsCard
   if (totalRecipients === 0) {
     return (
       <Card style={styles.card}>
-        <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-          <View style={styles.titleRow}>
-            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-              <IconUsers size={18} color={colors.primary} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Destinatários</ThemedText>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconUsers size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Destinatários</ThemedText>
           </View>
         </View>
         <View style={styles.content}>
@@ -41,12 +39,10 @@ export function RecipientsCard({ notification, maxHeight = 300 }: RecipientsCard
 
   return (
     <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-            <IconUsers size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconUsers size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>
             Destinatários ({readCount}/{totalRecipients})
           </ThemedText>
         </View>
@@ -92,31 +88,25 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
-  sectionHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  content: {
-    gap: spacing.md,
-  },
-  titleRow: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.md,
   },
   emptyText: {
     fontSize: fontSize.base,

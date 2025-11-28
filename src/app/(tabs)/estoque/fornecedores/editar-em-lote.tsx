@@ -11,7 +11,7 @@ import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { toast } from "@/lib/toast";
-import type { Supplier, BatchOperationResult } from "@/types";
+import type { BatchOperationResult } from "@/types";
 
 interface BatchEditData {
   // Contact fields
@@ -30,11 +30,6 @@ interface BatchEditData {
 
   // Tags
   tags?: string[];
-}
-
-interface FieldChange {
-  field: keyof BatchEditData;
-  enabled: boolean;
 }
 
 export default function SupplierBatchEditScreen() {
@@ -246,7 +241,7 @@ export default function SupplierBatchEditScreen() {
           success: result.data.totalFailed === 0,
           successCount: result.data.totalSuccess,
           failedCount: result.data.totalFailed,
-          errors: result.data.failures?.map(f =>
+          errors: result.data.failures?.map((f: { id?: string; error: string }) =>
             `${suppliers.find(s => s.id === f.id)?.fantasyName || 'Fornecedor'}: ${f.error}`
           ) || [],
         };

@@ -138,7 +138,7 @@ export default function PaintTypeDetailsScreen() {
       }
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.content}>
+      <View style={styles.contentView}>
         {/* Header Card with Title and Actions */}
         <Card>
           <CardContent style={styles.headerContent}>
@@ -180,11 +180,13 @@ export default function PaintTypeDetailsScreen() {
 
         {/* Basic Information Card */}
         <Card style={styles.card}>
-          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-            <IconInfoCircle size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconInfoCircle size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Informações Básicas</ThemedText>
+            </View>
           </View>
-          <View style={styles.itemDetails}>
+          <View style={styles.content}>
             <View style={styles.detailRow}>
               <ThemedText style={styles.detailLabel}>Nome</ThemedText>
               <ThemedText style={styles.detailValue}>{paintType.name}</ThemedText>
@@ -200,11 +202,14 @@ export default function PaintTypeDetailsScreen() {
 
         {/* Statistics Card */}
         <Card style={styles.card}>
-          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-            <IconSettings size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Estatísticas</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconSettings size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Estatísticas</ThemedText>
+            </View>
           </View>
-          <View style={styles.statisticsGrid}>
+          <View style={styles.content}>
+            <View style={styles.statisticsGrid}>
             <View style={StyleSheet.flatten([styles.statItem, { backgroundColor: colors.muted }])}>
               <IconPaint size={24} color={colors.primary} />
               <ThemedText style={styles.statValue}>{paintType._count?.paints || 0}</ThemedText>
@@ -215,15 +220,18 @@ export default function PaintTypeDetailsScreen() {
               <ThemedText style={styles.statValue}>{paintType._count?.componentItems || 0}</ThemedText>
               <ThemedText style={styles.statLabel}>Componentes</ThemedText>
             </View>
+            </View>
           </View>
         </Card>
 
         {/* Related Paints Section */}
         {paintType.paints && paintType.paints.length > 0 ? (
           <Card style={styles.card}>
-            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-              <IconBrush size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Tintas Relacionadas</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconBrush size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Tintas Relacionadas</ThemedText>
+              </View>
             </View>
             <ScrollView
               style={{ maxHeight: 400 }}
@@ -284,15 +292,19 @@ export default function PaintTypeDetailsScreen() {
           </Card>
         ) : (
           <Card style={styles.card}>
-            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-              <IconBrush size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Tintas Relacionadas</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconBrush size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Tintas Relacionadas</ThemedText>
+              </View>
             </View>
-            <View style={styles.emptyState}>
+            <View style={styles.content}>
+              <View style={styles.emptyState}>
               <IconPaint size={48} color={colors.mutedForeground} style={{ opacity: 0.5 }} />
               <ThemedText style={styles.emptyStateText}>
                 Nenhuma tinta cadastrada para este tipo
               </ThemedText>
+              </View>
             </View>
           </Card>
         )}
@@ -302,11 +314,13 @@ export default function PaintTypeDetailsScreen() {
 
         {/* Metadata Card */}
         <Card style={styles.card}>
-          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-            <IconCalendar size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Metadados</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconCalendar size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Metadados</ThemedText>
+            </View>
           </View>
-          <View style={styles.itemDetails}>
+          <View style={styles.content}>
             <View style={styles.detailRow}>
               <ThemedText style={styles.detailLabel}>Data de Criação</ThemedText>
               <ThemedText style={styles.detailValue}>
@@ -335,21 +349,11 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
-  },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: spacing.md,
-  },
-  headerLeft: {
-    flex: 1,
-    marginRight: spacing.sm,
   },
   paintTypeTitle: {
     fontSize: fontSize.xl,
@@ -369,18 +373,31 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
-  sectionHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  sectionTitle: {
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: "600",
-    marginLeft: spacing.sm,
+    fontWeight: "500",
+  },
+  contentView: {
     flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    gap: spacing.lg,
+  },
+  content: {
+    gap: spacing.sm,
   },
   itemDetails: {
     gap: spacing.sm,

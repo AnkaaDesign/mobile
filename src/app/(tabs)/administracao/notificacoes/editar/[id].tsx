@@ -1,4 +1,3 @@
-import React from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
@@ -33,7 +32,7 @@ export default function EditNotificationScreen() {
     );
   }
 
-  return <NotificationForm mode="update" notification={notification} />;
+  return <NotificationForm mode="update" notification={notification?.data} />;
 }
 
 const styles = StyleSheet.create({

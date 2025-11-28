@@ -239,7 +239,7 @@ export default function SupplierEditScreen() {
         >
         <KeyboardAwareFormProvider value={keyboardContextValue}>
         {/* Basic Information */}
-        <FormCard title="Informações Básicas">
+        <FormCard title="Informações Básicas" icon="IconBuildingStore">
           <FormFieldGroup
             label="Nome Fantasia"
             required
@@ -340,7 +340,7 @@ export default function SupplierEditScreen() {
         </FormCard>
 
         {/* Address */}
-        <FormCard title="Endereço">
+        <FormCard title="Endereço" icon="IconMapPin">
           <FormFieldGroup label="CEP" error={form.formState.errors.zipCode?.message}>
             <Controller
               control={form.control}
@@ -480,7 +480,7 @@ export default function SupplierEditScreen() {
         </FormCard>
 
         {/* Contact */}
-        <FormCard title="Contato">
+        <FormCard title="Contato" icon="IconPhone">
           <FormFieldGroup label="Telefones">
             <Controller
               control={form.control}
@@ -493,7 +493,7 @@ export default function SupplierEditScreen() {
         </FormCard>
 
         {/* Files */}
-        <FormCard title="Arquivos">
+        <FormCard title="Arquivos" icon="IconFileText">
           <FormFieldGroup label="Logo do Fornecedor">
             <FileUploadManager
               files={logoFiles}
@@ -514,7 +514,7 @@ export default function SupplierEditScreen() {
         </FormCard>
 
         {/* Tags */}
-        <FormCard title="Tags">
+        <FormCard title="Tags" icon="IconTag">
           <FormFieldGroup label="Tags do Fornecedor">
             <Controller
               control={form.control}

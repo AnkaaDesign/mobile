@@ -321,7 +321,7 @@ export function PaintForm(props: PaintFormProps) {
           {/* Step 1: Basic Information */}
           {currentStep === 1 && (
             <View>
-              <FormCard title="Informações Básicas">
+              <FormCard title="Informações Básicas" icon="IconPalette">
                 {/* Name */}
                 <FormFieldGroup
                   label="Nome da Tinta"
@@ -389,7 +389,7 @@ export function PaintForm(props: PaintFormProps) {
                 </FormFieldGroup>
               </FormCard>
 
-              <FormCard title="Classificação">
+              <FormCard title="Classificação" icon="IconTag">
                 {/* Paint Type */}
                 <FormFieldGroup
                   label="Tipo de Tinta"
@@ -467,7 +467,7 @@ export function PaintForm(props: PaintFormProps) {
                 </FormFieldGroup>
               </FormCard>
 
-              <FormCard title="Paleta de Cores">
+              <FormCard title="Paleta de Cores" icon="IconColorSwatch">
                 <FormRow>
                   {/* Palette */}
                   <FormFieldGroup
@@ -519,7 +519,7 @@ export function PaintForm(props: PaintFormProps) {
                 </FormRow>
               </FormCard>
 
-              <FormCard title="Tags">
+              <FormCard title="Tags" icon="IconTags">
                 <FormFieldGroup
                   label="Tags da Tinta"
                   helper="Separe as tags com vírgula"
@@ -549,7 +549,7 @@ export function PaintForm(props: PaintFormProps) {
 
           {/* Step 2: Color and Preview */}
           {currentStep === 2 && (
-            <FormCard title="Cor Hexadecimal">
+            <FormCard title="Cor Hexadecimal" icon="IconColorPicker">
               <FormFieldGroup
                 label="Cor Hexadecimal"
                 required
@@ -592,7 +592,7 @@ export function PaintForm(props: PaintFormProps) {
 
           {/* Step 3: Formula Management */}
           {currentStep === 3 && (
-            <FormCard title={mode === "update" ? "Adicionar Nova Fórmula" : "Formulação da Tinta"}>
+            <FormCard title={mode === "update" ? "Adicionar Nova Fórmula" : "Formulação da Tinta"} icon="IconFlask">
               <FormulaManager
                 formulas={formulas}
                 onFormulasChange={setFormulas}
@@ -604,7 +604,7 @@ export function PaintForm(props: PaintFormProps) {
 
           {/* Step 4: Ground Paints */}
           {currentStep === 4 && paintType?.data?.needGround && (
-            <FormCard title="Seleção de Fundo">
+            <FormCard title="Seleção de Fundo" icon="IconDroplet">
               <FormFieldGroup
                 label="Selecionar Tintas de Fundo"
                 required

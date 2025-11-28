@@ -1,17 +1,17 @@
-import React, { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { View, ScrollView, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconUser, IconPackage, IconFileText, IconReceipt } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius } from "@/constants/design-system";
+import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_TYPE_LABELS } from "@/constants";
 import { useExternalWithdrawalFormState } from "@/hooks/use-external-withdrawal-form-state";
 import { useExternalWithdrawalMutations } from "@/hooks";
 
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { FormLabel } from "@/components/ui/form";
@@ -197,13 +197,13 @@ export function ExternalWithdrawalCreateForm() {
   const renderStage1 = () => (
     <ScrollView style={styles.stageContainer} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       <Card style={styles.card}>
-        <CardHeader>
-          <View style={styles.cardHeaderContent}>
-            <IconUser size={20} color={colors.primary} />
-            <Text style={styles.cardTitle}>Informações da Retirada</Text>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconUser size={20} color={colors.mutedForeground} />
+            <Text style={styles.title}>Informações da Retirada</Text>
           </View>
-        </CardHeader>
-        <CardContent style={styles.cardContent}>
+        </View>
+        <View style={styles.content}>
           {/* Withdrawer Name */}
           <View style={styles.formField}>
             <FormLabel required asteriskColor="red">Nome do Retirador</FormLabel>
@@ -299,7 +299,7 @@ export function ExternalWithdrawalCreateForm() {
               />
             </View>
           </View>
-        </CardContent>
+        </View>
       </Card>
     </ScrollView>
   );
@@ -508,19 +508,27 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   card: {
-    marginBottom: spacing.md,
+    padding: spacing.md,
   },
-  cardHeaderContent: {
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   cardContent: {
-    gap: spacing.lg,
+    gap: spacing.sm,
   },
   formField: {
     gap: spacing.sm,

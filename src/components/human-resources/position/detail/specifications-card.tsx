@@ -21,10 +21,12 @@ export function SpecificationsCard({ position }: SpecificationsCardProps) {
   return (
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <IconInfoCircle size={20} color={colors.primary} />
-        <ThemedText style={[styles.title, { color: colors.foreground }]}>
-          Especificações
-        </ThemedText>
+        <View style={styles.headerLeft}>
+          <IconInfoCircle size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>
+            Especificações
+          </ThemedText>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -130,23 +132,27 @@ export function SpecificationsCard({ position }: SpecificationsCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 0,
+    padding: spacing.md,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
-    padding: spacing.md,
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.lg,
+    gap: spacing.sm,
   },
   section: {
     gap: spacing.md,

@@ -4,7 +4,7 @@ import { useLocalSearchParams, router } from "expo-router";
 import { useItemBrand } from "@/hooks";
 import { routes, CHANGE_LOG_ENTITY_TYPE, ORDER_STATUS, STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
 import { formatDate, formatCurrency, determineStockLevel } from "@/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { SkeletonCard } from "@/components/ui/loading";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -241,18 +241,14 @@ export default function BrandDetailScreen() {
       >
         <View style={styles.contentContainer}>
           {/* Basic Information Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle style={styles.sectionTitle}>
-                <View style={styles.titleRow}>
-                  <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                    <IconInfoCircle size={18} color={colors.primary} />
-                  </View>
-                  <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Informações da Marca</ThemedText>
-                </View>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconInfoCircle size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Informações da Marca</ThemedText>
+              </View>
+            </View>
+            <View style={styles.cardContent}>
               {/* Basic Information Section */}
               <View style={styles.infoSection}>
                 <ThemedText style={StyleSheet.flatten([styles.sectionLabel, { color: colors.foreground }])}>Informações Básicas</ThemedText>
@@ -293,22 +289,18 @@ export default function BrandDetailScreen() {
                   </View>
                 </View>
               </View>
-            </CardContent>
+            </View>
           </Card>
 
           {/* Related Items Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle style={styles.sectionTitle}>
-                <View style={styles.titleRow}>
-                  <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                    <IconPackage size={18} color={colors.primary} />
-                  </View>
-                  <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Produtos Relacionados</ThemedText>
-                </View>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconPackage size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Produtos Relacionados</ThemedText>
+              </View>
+            </View>
+            <View style={styles.cardContent}>
               {items.length === 0 ? (
                 <View style={styles.emptyState}>
                   <IconAlertCircle size={48} color={colors.mutedForeground} />
@@ -449,24 +441,20 @@ export default function BrandDetailScreen() {
                   </ScrollView>
                 </>
               )}
-            </CardContent>
+            </View>
           </Card>
 
           {/* Changelog Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle style={styles.sectionTitle}>
-                <View style={styles.titleRow}>
-                  <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-                    <IconHistory size={18} color={colors.primary} />
-                  </View>
-                  <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Histórico de Alterações</ThemedText>
-                </View>
-              </CardTitle>
-            </CardHeader>
-            <CardContent style={{ paddingHorizontal: 0 }}>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconHistory size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
+              </View>
+            </View>
+            <View style={styles.cardContent}>
               <ChangelogTimeline entityType={CHANGE_LOG_ENTITY_TYPE.ITEM_BRAND} entityId={brand.id} entityName={brand.name} entityCreatedAt={brand.createdAt} />
-            </CardContent>
+            </View>
           </Card>
 
           {/* Bottom spacing */}
@@ -489,6 +477,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     gap: spacing.lg,
+  },
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  cardContent: {
+    gap: spacing.sm,
   },
   fullWidthSkeleton: {
     height: 200,
@@ -517,26 +528,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: spacing.xl,
     paddingHorizontal: spacing.xl,
-  },
-  sectionTitle: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
   },
   // Basic Info Styles
   infoSection: {

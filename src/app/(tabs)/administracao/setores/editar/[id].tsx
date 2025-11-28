@@ -1,4 +1,3 @@
-import React from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
@@ -33,7 +32,7 @@ export default function EditSectorScreen() {
     );
   }
 
-  return <SectorForm mode="update" sector={sector} />;
+  return <SectorForm mode="update" sector={sector?.data} />;
 }
 
 const styles = StyleSheet.create({

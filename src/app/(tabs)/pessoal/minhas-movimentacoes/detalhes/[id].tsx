@@ -13,6 +13,8 @@ import { formatDate } from "@/utils";
 import {
   IconActivity,
   IconHistory,
+  IconCalendar,
+  IconInfo,
 } from "@tabler/icons-react-native";
 import { showToast } from "@/components/ui/toast";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
@@ -118,7 +120,10 @@ export default function MovementDetailScreen() {
         {/* Movement Info Card */}
         <Card style={styles.card}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <ThemedText style={styles.title}>Informações da Movimentação</ThemedText>
+            <View style={styles.headerLeft}>
+              <IconInfo size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Informações da Movimentação</ThemedText>
+            </View>
           </View>
           <View style={styles.content}>
             {task.customer && (
@@ -157,7 +162,10 @@ export default function MovementDetailScreen() {
         {/* Dates Card */}
         <Card style={styles.card}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <ThemedText style={styles.title}>Datas</ThemedText>
+            <View style={styles.headerLeft}>
+              <IconCalendar size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Datas</ThemedText>
+            </View>
           </View>
           <View style={styles.content}>
             {task.entryDate && (

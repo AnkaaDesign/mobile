@@ -37,10 +37,10 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType }: ExternalW
     return (
       <Card style={styles.card}>
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={[styles.iconContainer, { backgroundColor: colors.primary + "20" }]}>
-            <IconPackage size={20} color={colors.primary} />
+          <View style={styles.headerLeft}>
+            <IconPackage size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Itens Retirados</ThemedText>
           </View>
-          <ThemedText style={styles.headerTitle}>Itens Retirados</ThemedText>
           <Badge variant="secondary">0</Badge>
         </View>
         <View style={styles.emptyContainer}>
@@ -56,10 +56,10 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType }: ExternalW
     <Card style={styles.card}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={[styles.iconContainer, { backgroundColor: colors.primary + "20" }]}>
-          <IconPackage size={20} color={colors.primary} />
+        <View style={styles.headerLeft}>
+          <IconPackage size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Itens Retirados</ThemedText>
         </View>
-        <ThemedText style={styles.headerTitle}>Itens Retirados</ThemedText>
         <Badge variant="secondary">{items.length}</Badge>
       </View>
 
@@ -233,28 +233,24 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType }: ExternalW
 
 const styles = StyleSheet.create({
   card: {
-    padding: 0,
+    padding: spacing.md,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
+  headerLeft: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: spacing.sm,
   },
-  headerTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
-    flex: 1,
-    marginLeft: spacing.sm,
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   content: {
     padding: 0,

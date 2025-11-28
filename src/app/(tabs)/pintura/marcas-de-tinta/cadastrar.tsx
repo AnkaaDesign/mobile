@@ -214,6 +214,30 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     lineHeight: 20,
   },
+  card: {
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
   formCard: {
     marginBottom: spacing.md,
     padding: spacing.md,

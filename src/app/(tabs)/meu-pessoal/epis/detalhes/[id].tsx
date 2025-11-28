@@ -226,10 +226,13 @@ export default function TeamPpeDeliveryDetailScreen() {
 
         {/* Changelog Timeline */}
         <Card style={styles.card}>
-          <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-            <ThemedText style={[styles.cardTitle, { color: colors.foreground }]}>
-              Histórico de Alterações
-            </ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconShieldCheck size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>
+                Histórico de Alterações
+              </ThemedText>
+            </View>
           </View>
           <ChangelogTimeline
             entityType={CHANGE_LOG_ENTITY_TYPE.PPE_DELIVERY}
@@ -287,14 +290,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     marginTop: 2,
   },
-  cardHeader: {
-    borderBottomWidth: 1,
-    paddingBottom: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  cardTitle: {
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: "600",
+    fontWeight: "500",
   },
   errorContent: {
     alignItems: "center",

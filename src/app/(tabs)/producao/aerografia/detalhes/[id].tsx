@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconEdit, IconTrash } from "@tabler/icons-react-native";
+import { IconEdit, IconTrash, IconBrush, IconClock, IconFileText, IconTag } from "@tabler/icons-react-native";
 import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
@@ -209,8 +209,11 @@ export default function AirbrushingDetailScreen() {
 
         {/* Metadata Card */}
         <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <ThemedText style={styles.title}>Informações do Sistema</ThemedText>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <View style={styles.sectionHeaderLeft}>
+              <IconTag size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.sectionTitle}>Informações do Sistema</ThemedText>
+            </View>
           </View>
           <View style={styles.content}>
             <View style={styles.metadataContainer}>
@@ -298,6 +301,23 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  sectionHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   metadataContainer: {
     gap: spacing.md,

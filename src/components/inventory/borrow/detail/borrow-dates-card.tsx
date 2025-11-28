@@ -25,8 +25,10 @@ export const BorrowDatesCard: React.FC<BorrowDatesCardProps> = ({ borrow }) => {
   return (
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <IconCalendar size={20} color={colors.mutedForeground} />
-        <ThemedText style={styles.title}>Detalhes do Empréstimo</ThemedText>
+        <View style={styles.headerLeft}>
+          <IconCalendar size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Detalhes do Empréstimo</ThemedText>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -100,10 +102,15 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   title: {
     fontSize: fontSize.lg,

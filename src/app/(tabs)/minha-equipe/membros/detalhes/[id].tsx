@@ -245,13 +245,15 @@ export default function TeamMemberDetailScreen() {
 
         {/* Contact Information */}
         <Card style={styles.card}>
-          <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-            <IconPhone size={20} color={colors.mutedForeground} />
-            <ThemedText style={[styles.cardTitle, { color: colors.foreground }]}>
-              Informações de Contato
-            </ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconPhone size={20} color={colors.mutedForeground} />
+              <ThemedText style={[styles.title, { color: colors.foreground }]}>
+                Informações de Contato
+              </ThemedText>
+            </View>
           </View>
-          <View style={styles.cardContent}>
+          <View style={styles.content}>
             {member.email && (
               <View style={styles.infoRow}>
                 <IconMail size={16} color={colors.mutedForeground} />
@@ -296,13 +298,15 @@ export default function TeamMemberDetailScreen() {
 
         {/* Professional Information */}
         <Card style={styles.card}>
-          <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-            <IconBriefcase size={20} color={colors.mutedForeground} />
-            <ThemedText style={[styles.cardTitle, { color: colors.foreground }]}>
-              Informações Profissionais
-            </ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconBriefcase size={20} color={colors.mutedForeground} />
+              <ThemedText style={[styles.title, { color: colors.foreground }]}>
+                Informações Profissionais
+              </ThemedText>
+            </View>
           </View>
-          <View style={styles.cardContent}>
+          <View style={styles.content}>
             {member.position && (
               <View style={styles.infoRow}>
                 <IconBriefcase size={16} color={colors.mutedForeground} />
@@ -361,13 +365,15 @@ export default function TeamMemberDetailScreen() {
         {/* Documents */}
         {(member.cpf || member.pis) && (
           <Card style={styles.card}>
-            <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-              <IconIdBadge size={20} color={colors.mutedForeground} />
-              <ThemedText style={[styles.cardTitle, { color: colors.foreground }]}>
-                Documentos
-              </ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconIdBadge size={20} color={colors.mutedForeground} />
+                <ThemedText style={[styles.title, { color: colors.foreground }]}>
+                  Documentos
+                </ThemedText>
+              </View>
             </View>
-            <View style={styles.cardContent}>
+            <View style={styles.content}>
               {member.cpf && (
                 <View style={styles.infoRow}>
                   <IconIdBadge size={16} color={colors.mutedForeground} />
@@ -401,11 +407,13 @@ export default function TeamMemberDetailScreen() {
         {/* Statistics */}
         {member._count && (
           <Card style={styles.card}>
-            <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-              <IconClipboard size={20} color={colors.mutedForeground} />
-              <ThemedText style={[styles.cardTitle, { color: colors.foreground }]}>
-                Estatísticas
-              </ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconClipboard size={20} color={colors.mutedForeground} />
+                <ThemedText style={[styles.title, { color: colors.foreground }]}>
+                  Estatísticas
+                </ThemedText>
+              </View>
             </View>
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
@@ -508,24 +516,27 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   card: {
-    padding: 0,
-    overflow: "hidden",
+    padding: spacing.md,
   },
-  cardHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  cardTitle: {
-    fontSize: fontSize.base,
-    fontWeight: "600",
-    marginLeft: spacing.sm,
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
-  cardContent: {
-    padding: spacing.md,
-    gap: spacing.md,
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
   infoRow: {
     flexDirection: "row",
@@ -545,12 +556,11 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    padding: spacing.md,
+    gap: spacing.md,
   },
   statItem: {
-    width: "33.33%",
+    width: "31%",
     alignItems: "center",
-    paddingVertical: spacing.md,
   },
   statValue: {
     fontSize: fontSize.lg,

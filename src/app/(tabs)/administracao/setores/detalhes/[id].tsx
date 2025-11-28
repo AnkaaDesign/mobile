@@ -29,7 +29,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 export default function SectorDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { delete: deleteAsync } = useSectorMutations();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -206,11 +206,13 @@ export default function SectorDetailScreen() {
 
         {/* Changelog Timeline - After tables */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconHistory size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconHistory size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
+            </View>
           </View>
-          <View style={{ paddingHorizontal: spacing.md }}>
+          <View style={styles.content}>
             <ChangelogTimeline
               entityType={CHANGE_LOG_ENTITY_TYPE.SECTOR}
               entityId={sector.id}
@@ -245,8 +247,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   headerLeft: {
-    flex: 1,
-    marginRight: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   sectorTitle: {
     fontSize: fontSize.xl,
@@ -269,17 +272,16 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
-  sectionHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
-  sectionTitle: {
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: "600",
-    marginLeft: spacing.sm,
-    flex: 1,
+    fontWeight: "500",
   },
 });

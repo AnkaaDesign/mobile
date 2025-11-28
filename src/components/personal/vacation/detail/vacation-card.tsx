@@ -21,7 +21,7 @@ export function VacationCard({ vacation }: VacationCardProps) {
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
           <IconBeach size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Informações Básicas</ThemedText>
+          <ThemedText style={[styles.title, { color: colors.foreground }]}>Informações Básicas</ThemedText>
         </View>
       </View>
       <View style={styles.content}>

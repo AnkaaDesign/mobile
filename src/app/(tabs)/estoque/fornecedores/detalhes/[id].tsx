@@ -194,7 +194,7 @@ export default function SupplierDetailScreen() {
             {/* Changelog Timeline */}
             <Card style={styles.card}>
               <View style={[styles.header, { borderBottomColor: colors.border }]}>
-                <View style={styles.changelogHeaderLeft}>
+                <View style={styles.headerLeft}>
                   <IconHistory size={20} color={colors.mutedForeground} />
                   <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
                 </View>
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  changelogHeaderLeft: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
@@ -306,11 +306,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: spacing.xs,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
   },
   supplierName: {
     fontSize: fontSize.xl,

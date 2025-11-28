@@ -1,20 +1,49 @@
 
 import { Stack, useLocalSearchParams } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, StyleSheet } from "react-native";
 import { usePaintDetail } from '../../../../../hooks';
 import { PaintCatalogCard, PaintFormulaDetail, MobileProductionCalculator } from "@/components/painting";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
-import { Text } from "@/components/ui/text";
+import { Text as ThemedText } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTheme } from "@/lib/theme/theme-provider";
+import { spacing, fontSize } from "@/constants/design-system";
+
+const styles = StyleSheet.create({
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+});
 
 export default function PaintDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors } = useTheme();
 
   const {
     data: paintResponse,
@@ -105,12 +134,16 @@ export default function PaintDetailsScreen() {
       <ScrollView className="flex-1 bg-background">
         <View className="p-4">
           {/* Production Context Header */}
-          <Card className="p-4 mb-4">
-            <View className="flex-row items-center gap-2 mb-2">
-              <Icon name="factory" size={20} className="text-primary" />
-              <Text className="text-lg font-semibold text-foreground">Tinta para Produção</Text>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <Icon name="factory" size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Tinta para Produção</ThemedText>
+              </View>
             </View>
-            <Text className="text-sm text-muted-foreground">Informações técnicas e cálculos para produção industrial</Text>
+            <View style={styles.content}>
+              <ThemedText className="text-sm text-muted-foreground">Informações técnicas e cálculos para produção industrial</ThemedText>
+            </View>
           </Card>
 
           <Tabs defaultValue="overview" className="w-full">
@@ -124,34 +157,36 @@ export default function PaintDetailsScreen() {
               <PaintCatalogCard paint={paint!} />
 
               {/* Production Readiness */}
-              <Card className="p-4">
-                <View className="flex-row items-center gap-2 mb-3">
-                  <Icon name="clipboard-check" size={16} className="text-primary" />
-                  <Text className="text-base font-medium text-foreground">Status de Produção</Text>
+              <Card style={styles.card}>
+                <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                  <View style={styles.headerLeft}>
+                    <Icon name="clipboard-check" size={20} color={colors.mutedForeground} />
+                    <ThemedText style={styles.title}>Status de Produção</ThemedText>
+                  </View>
                 </View>
 
-                <View className="space-y-2">
+                <View style={styles.content}>
                   <View className="flex-row items-center justify-between">
-                    <Text className="text-sm text-muted-foreground">Fórmulas Disponíveis:</Text>
+                    <ThemedText className="text-sm text-muted-foreground">Fórmulas Disponíveis:</ThemedText>
                     <Badge variant={paint?.formulas && paint.formulas.length > 0 ? "default" : "destructive"}>{paint?.formulas?.length || 0}</Badge>
                   </View>
 
                   {bestFormula && (
                     <>
                       <View className="flex-row items-center justify-between">
-                        <Text className="text-sm text-muted-foreground">Melhor Fórmula:</Text>
-                        <Text className="text-sm font-medium">{bestFormula.description || "Sem descrição"}</Text>
+                        <ThemedText className="text-sm text-muted-foreground">Melhor Fórmula:</ThemedText>
+                        <ThemedText className="text-sm font-medium">{bestFormula.description || "Sem descrição"}</ThemedText>
                       </View>
 
                       <View className="flex-row items-center justify-between">
-                        <Text className="text-sm text-muted-foreground">Componentes:</Text>
+                        <ThemedText className="text-sm text-muted-foreground">Componentes:</ThemedText>
                         <Badge variant="secondary">{bestFormula.components?.length || 0} itens</Badge>
                       </View>
                     </>
                   )}
 
                   <View className="flex-row items-center justify-between">
-                    <Text className="text-sm text-muted-foreground">Pronto para Produção:</Text>
+                    <ThemedText className="text-sm text-muted-foreground">Pronto para Produção:</ThemedText>
                     <Badge variant={bestFormula && bestFormula.components && bestFormula.components.length > 0 ? "default" : "destructive"}>
                       {bestFormula && bestFormula.components && bestFormula.components.length > 0 ? "Sim" : "Não"}
                     </Badge>
@@ -179,15 +214,19 @@ export default function PaintDetailsScreen() {
             <TabsContent value="production" className="space-y-4">
               {bestFormula ? (
                 <>
-                  <Card className="p-4">
-                    <View className="flex-row items-center gap-2 mb-3">
-                      <Icon name="beaker" size={16} className="text-primary" />
-                      <Text className="text-base font-medium text-foreground">Fórmula Recomendada</Text>
+                  <Card style={styles.card}>
+                    <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                      <View style={styles.headerLeft}>
+                        <Icon name="beaker" size={20} color={colors.mutedForeground} />
+                        <ThemedText style={styles.title}>Fórmula Recomendada</ThemedText>
+                      </View>
                     </View>
-                    <Text className="text-sm text-muted-foreground mb-2">{bestFormula.description || "Fórmula selecionada automaticamente"}</Text>
-                    <View className="flex-row items-center gap-2">
-                      <Badge variant="secondary">{bestFormula.components?.length || 0} componentes</Badge>
-                      {bestFormula.density && <Badge variant="outline">{bestFormula.density.toFixed(4)} g/ml</Badge>}
+                    <View style={styles.content}>
+                      <ThemedText className="text-sm text-muted-foreground">{bestFormula.description || "Fórmula selecionada automaticamente"}</ThemedText>
+                      <View className="flex-row items-center gap-2">
+                        <Badge variant="secondary">{bestFormula.components?.length || 0} componentes</Badge>
+                        {bestFormula.density && <Badge variant="outline">{bestFormula.density.toFixed(4)} g/ml</Badge>}
+                      </View>
                     </View>
                   </Card>
 

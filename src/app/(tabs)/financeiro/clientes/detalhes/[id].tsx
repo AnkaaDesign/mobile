@@ -186,7 +186,7 @@ export default function FinancialCustomerDetailScreen() {
             <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
           </View>
         </View>
-        <View style={styles.content}>
+        <View style={[styles.content, { gap: spacing.md }]}>
           <ChangelogTimeline
             entityType={CHANGE_LOG_ENTITY_TYPE.CUSTOMER}
             entityId={customer.id}

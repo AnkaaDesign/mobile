@@ -205,7 +205,7 @@ export function ActivityEditForm({
               onScroll={handlers.handleScroll}
               scrollEventThrottle={16}
             >
-              <FormCard title="Informações da Movimentação">
+              <FormCard title="Informações da Movimentação" icon="IconClipboardList">
                 {/* Item field - read-only */}
                 <View style={styles.fieldGroup}>
                   <Label style={styles.fieldLabel}>Item</Label>

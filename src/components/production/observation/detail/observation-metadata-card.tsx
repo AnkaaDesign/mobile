@@ -22,9 +22,11 @@ export function ObservationMetadataCard({ createdAt, updatedAt }: ObservationMet
   return (
     <Card style={styles.card}>
       {/* Header */}
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <IconCalendar size={20} color={colors.primary} />
-        <ThemedText style={styles.sectionTitle}>Metadados</ThemedText>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconCalendar size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>Metadados</ThemedText>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -74,7 +76,24 @@ export function ObservationMetadataCard({ createdAt, updatedAt }: ObservationMet
 
 const styles = StyleSheet.create({
   card: {
-    padding: 0,
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   sectionHeader: {
     flexDirection: "row",

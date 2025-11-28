@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { router } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform} from "react-native";
 import { useForm, Controller } from "react-hook-form";
@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { IconScissors, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 
@@ -167,9 +167,9 @@ export default function CreateCuttingPlanScreen() {
         >
           {/* Header */}
           <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.xs }}>
-              <IconScissors size={20} color={colors.primary} />
-              <ThemedText style={{ fontSize: 18, fontWeight: "600" }}>Novo Plano de Recorte</ThemedText>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <IconScissors size={20} color={colors.mutedForeground} />
+              <ThemedText style={{ fontSize: fontSize.lg, fontWeight: "500" }}>Novo Plano de Recorte</ThemedText>
             </View>
             <ThemedText style={{ fontSize: 14, color: colors.muted }}>
               Preencha as informações para criar um novo plano de recorte

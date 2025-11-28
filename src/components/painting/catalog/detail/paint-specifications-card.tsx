@@ -4,7 +4,7 @@ import { Text } from '@/components/ui/text'
 import { Icon } from '@/components/ui/icon'
 import { Badge } from '@/components/ui/badge'
 import { useTheme } from '@/lib/theme'
-import { borderRadius } from '@/constants/design-system'
+import { borderRadius, spacing, fontSize } from '@/constants/design-system'
 import {
   PAINT_FINISH_LABELS,
   TRUCK_MANUFACTURER_LABELS,
@@ -99,15 +99,16 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
   const lab = rgb ? rgbToLab(rgb.r, rgb.g, rgb.b) : null
 
   return (
-    <Card className="p-4">
+    <Card style={styles.card}>
       {/* Header */}
-      <View className="flex-row items-center gap-2 mb-4">
-        <View className="p-2 rounded-lg bg-primary/10">
-          <Icon name="info" size={20} className="text-primary" />
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <Icon name="info" size={20} style={{ color: colors.mutedForeground }} />
+          <Text style={styles.title}>Especificações</Text>
         </View>
-        <Text className="text-lg font-semibold text-foreground">Especificações</Text>
       </View>
 
+      <View style={styles.content}>
       {/* Color Information */}
       <View className="gap-3 mb-4">
         <View className="flex-row items-center gap-2 mb-2">
@@ -257,11 +258,35 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
           </View>
         )}
       </View>
+      </View>
     </Card>
   )
 }
 
 const styles = StyleSheet.create({
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
   colorPreview: {
     width: 96,
     height: 96,

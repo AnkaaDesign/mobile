@@ -229,10 +229,12 @@ export default function EditComponentScreen() {
 
           {/* Current Component Info */}
           {component?.data?.item && (
-            <Card style={styles.currentComponentCard}>
-              <View style={styles.cardHeader}>
-                <IconPackage size={20} color={colors.foreground} />
-                <ThemedText style={styles.cardTitle}>Componente Atual</ThemedText>
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <IconPackage size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.title}>Componente Atual</ThemedText>
+                </View>
               </View>
               <View style={styles.currentComponentInfo}>
                 <ThemedText style={styles.currentItemName}>{component.data.item.name}</ThemedText>
@@ -248,10 +250,12 @@ export default function EditComponentScreen() {
           )}
 
           {/* Item Selection Card */}
-          <Card style={styles.formCard}>
-            <View style={styles.cardHeader}>
-              <IconPackage size={20} color={colors.foreground} />
-              <ThemedText style={styles.cardTitle}>Alterar Item</ThemedText>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconPackage size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Alterar Item</ThemedText>
+              </View>
             </View>
 
             <Controller
@@ -303,10 +307,12 @@ export default function EditComponentScreen() {
           </Card>
 
           {/* Ratio Input Card */}
-          <Card style={styles.formCard}>
-            <View style={styles.cardHeader}>
-              <IconPercentage size={20} color={colors.foreground} />
-              <ThemedText style={styles.cardTitle}>Alterar Proporção</ThemedText>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconPercentage size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Alterar Proporção</ThemedText>
+              </View>
             </View>
 
             <Controller
@@ -405,6 +411,27 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: fontSize.md,
     color: "red",
+  },
+  card: {
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   headerCard: {
     marginBottom: spacing.md,

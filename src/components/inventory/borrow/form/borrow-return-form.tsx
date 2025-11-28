@@ -1,14 +1,14 @@
 
 import { View, StyleSheet, Alert } from "react-native";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import type { Borrow } from '../../../../types';
-import { IconLoader } from "@tabler/icons-react-native";
+import { IconLoader, IconPackage, IconFileText } from "@tabler/icons-react-native";
 import { BORROW_STATUS } from "@/constants";
 
 interface BorrowReturnFormProps {
@@ -106,10 +106,13 @@ export function BorrowReturnForm({ borrow, onReturn, onMarkAsLost, onCancel, isS
       <View style={styles.content}>
         {/* Borrow Information */}
         <Card style={styles.card}>
-          <CardHeader>
-            <CardTitle>Informações do Empréstimo</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconPackage size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Informações do Empréstimo</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
             <View style={styles.fieldGroup}>
               {/* Status */}
               <View style={styles.infoRow}>
@@ -160,16 +163,19 @@ export function BorrowReturnForm({ borrow, onReturn, onMarkAsLost, onCancel, isS
                 </View>
               )}
             </View>
-          </CardContent>
+          </View>
         </Card>
 
         {/* Actions */}
         {!isReturned && !isLost && (
           <Card style={styles.card}>
-            <CardHeader>
-              <CardTitle>Ações Disponíveis</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconFileText size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Ações Disponíveis</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
               <View style={styles.actionButtons}>
                 <View style={[styles.actionButton, { backgroundColor: "#10b981" }]}>
                   <Button
@@ -217,7 +223,7 @@ export function BorrowReturnForm({ borrow, onReturn, onMarkAsLost, onCancel, isS
                   Marcar como devolvido retorna o item ao estoque. Marcar como perdido ajusta o estoque permanentemente.
                 </ThemedText>
               </View>
-            </CardContent>
+            </View>
           </Card>
         )}
 
@@ -242,6 +248,24 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: spacing.lg,
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   fieldGroup: {
     gap: spacing.md,

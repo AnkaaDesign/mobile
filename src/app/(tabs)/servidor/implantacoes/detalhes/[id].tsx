@@ -1,4 +1,4 @@
-import { View, ScrollView, RefreshControl } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Text } from "@/components/ui/text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +10,39 @@ import { useDeploymentDetail } from "@/hooks/deployment";
 import { formatDate } from "@/utils/date";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
+import { useTheme } from "@/lib/theme";
+import { spacing, fontSize } from "@/constants/design-system";
+
+const styles = StyleSheet.create({
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+});
 
 export default function DeploymentDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: deployment, isLoading, refetch, isFetching } = useDeploymentDetail(id!);
+  const { colors } = useTheme();
 
   if (isLoading || !deployment) {
     return <LoadingScreen />;
@@ -33,11 +62,14 @@ export default function DeploymentDetailsScreen() {
           </Text>
 
           {/* Status Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Status</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <Icon name="check-circle" size={20} color={colors.mutedForeground} />
+                <Text style={styles.title}>Status</Text>
+              </View>
+            </View>
+            <View style={styles.content}>
               <View className="flex-row items-center gap-2 mb-4">
                 <Badge variant={deployment.status === "COMPLETED" ? "success" : deployment.status === "FAILED" ? "destructive" : "default"}>
                   {deployment.status}
@@ -72,31 +104,34 @@ export default function DeploymentDetailsScreen() {
                   <Text className="font-medium">{formatDate(deployment.createdAt)}</Text>
                 </View>
               </View>
-            </CardContent>
+            </View>
           </Card>
 
           {/* Git Info Card */}
           {(deployment.commitSha || deployment.branch || (deployment as any).commitAuthor) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações Git</CardTitle>
-              </CardHeader>
-              <CardContent className="gap-2">
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <Icon name="git-branch" size={20} color={colors.mutedForeground} />
+                  <Text style={styles.title}>Informações Git</Text>
+                </View>
+              </View>
+              <View style={styles.content}>
                 {deployment.commitSha && (
                   <View className="flex-row items-center gap-2">
-                    <Icon name="git-commit" className="w-4 h-4" />
+                    <Icon name="git-commit" size={20} color={colors.mutedForeground} />
                     <Text className="font-mono">{deployment.commitSha}</Text>
                   </View>
                 )}
                 {deployment.branch && (
                   <View className="flex-row items-center gap-2">
-                    <Icon name="git-branch" className="w-4 h-4" />
+                    <Icon name="git-branch" size={20} color={colors.mutedForeground} />
                     <Text>{deployment.branch}</Text>
                   </View>
                 )}
                 {(deployment as any).commitAuthor && (
                   <View className="flex-row items-center gap-2">
-                    <Icon name="user" className="w-4 h-4" />
+                    <Icon name="user" size={20} color={colors.mutedForeground} />
                     <Text>{(deployment as any).commitAuthor}</Text>
                   </View>
                 )}
@@ -107,33 +142,39 @@ export default function DeploymentDetailsScreen() {
                     </Text>
                   </View>
                 )}
-              </CardContent>
+              </View>
             </Card>
           )}
 
           {/* Logs Card */}
           {deployment.deploymentLog && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Logs</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <Icon name="file-text" size={20} color={colors.mutedForeground} />
+                  <Text style={styles.title}>Logs</Text>
+                </View>
+              </View>
+              <View style={styles.content}>
                 <ScrollView horizontal>
                   <Text className="font-mono text-xs">{deployment.deploymentLog}</Text>
                 </ScrollView>
-              </CardContent>
+              </View>
             </Card>
           )}
 
           {/* Error Card */}
           {deployment.status === "FAILED" && (deployment as any).error && (
-            <Card className="border-destructive">
-              <CardHeader>
-                <CardTitle className="text-destructive">Erro</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Text className="text-destructive">{(deployment as any).error}</Text>
-              </CardContent>
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.destructive }]}>
+                <View style={styles.headerLeft}>
+                  <Icon name="alert-circle" size={20} color={colors.destructive} />
+                  <Text style={[styles.title, { color: colors.destructive }]}>Erro</Text>
+                </View>
+              </View>
+              <View style={styles.content}>
+                <Text style={{ color: colors.destructive }}>{(deployment as any).error}</Text>
+              </View>
             </Card>
           )}
         </View>

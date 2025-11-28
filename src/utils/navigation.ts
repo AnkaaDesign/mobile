@@ -324,7 +324,6 @@ function convertPortuguesePathToEnglish(portuguesePath: string): string[] {
     'requisicoes': 'requisitions',
     'simulacao-bonus': 'bonus-simulation',
     'calculos': 'calculations',
-    'controle-ponto': 'time-clock',
     'integracoes': 'integrations',
     'secullum': 'secullum',
     'registros-ponto': 'time-entries',

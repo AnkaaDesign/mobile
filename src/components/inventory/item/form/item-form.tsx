@@ -216,7 +216,7 @@ export function ItemForm(props: ItemFormProps) {
           >
             <KeyboardAwareFormProvider value={keyboardContextValue}>
             {/* Basic Information & Classification */}
-            <FormCard title="Informações Básicas">
+            <FormCard title="Informações Básicas" icon="IconPackage">
               <View style={styles.fieldGroup}>
                 <UnicodeInput disabled={isSubmitting} />
                 <NameInput disabled={isSubmitting} required={isRequired} />
@@ -234,7 +234,7 @@ export function ItemForm(props: ItemFormProps) {
             </FormCard>
 
             {/* Inventory */}
-            <FormCard title="Controle de Estoque">
+            <FormCard title="Controle de Estoque" icon="IconClipboardList">
               <View style={styles.fieldGroup}>
                 <QuantityInput disabled={isSubmitting} required={isRequired} />
                 <MaxQuantityInput disabled={isSubmitting} />
@@ -244,7 +244,7 @@ export function ItemForm(props: ItemFormProps) {
             </FormCard>
 
             {/* Pricing */}
-            <FormCard title="Preço e Taxas">
+            <FormCard title="Preço e Taxas" icon="IconCurrencyReal">
               <View style={styles.fieldGroup}>
                 <PriceInput disabled={isSubmitting} />
                 <View style={styles.fieldRow}>
@@ -265,14 +265,14 @@ export function ItemForm(props: ItemFormProps) {
             {isPPE && <PpeConfigSection disabled={isSubmitting} required={isRequired} />}
 
             {/* Tracking */}
-            <FormCard title="Rastreamento">
+            <FormCard title="Rastreamento" icon="IconBarcode">
               <View style={styles.fieldGroup}>
                 <BarcodeManager disabled={isSubmitting} />
               </View>
             </FormCard>
 
             {/* Extra Configurations */}
-            <FormCard title="Configurações Extras">
+            <FormCard title="Configurações Extras" icon="IconSettings">
               <View style={styles.fieldGroup}>
                 <AssignToUserToggle disabled={isSubmitting} />
                 <StatusToggle disabled={isSubmitting} />

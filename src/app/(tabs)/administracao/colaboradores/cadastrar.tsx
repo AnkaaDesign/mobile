@@ -1,4 +1,3 @@
-import React from "react";
 import { CollaboratorForm } from "@/components/administration/collaborator/form/collaborator-form";
 
 export default function CreateCollaboratorScreen() {

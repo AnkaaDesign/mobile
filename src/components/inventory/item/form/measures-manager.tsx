@@ -118,7 +118,7 @@ export function MeasuresManager({ disabled }: MeasuresManagerProps) {
 
   if (!fields.length && disabled) {
     return (
-      <FormCard title="Medidas do Produto">
+      <FormCard title="Medidas do Produto" icon="IconRuler">
         <View style={styles.emptyContent}>
           <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted }])}>
             <IconRuler size={24} color={colors.mutedForeground} />

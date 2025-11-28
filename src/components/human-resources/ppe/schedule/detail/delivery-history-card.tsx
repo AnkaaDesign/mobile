@@ -61,12 +61,10 @@ export function DeliveryHistoryCard({ schedule, maxHeight = 400 }: DeliveryHisto
   if (sortedDeliveries.length === 0) {
     return (
       <Card style={styles.card}>
-        <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-          <View style={styles.titleRow}>
-            <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-              <IconHistory size={18} color={colors.primary} />
-            </View>
-            <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconHistory size={20} color={colors.mutedForeground} />
+            <ThemedText style={[styles.title, { color: colors.foreground }]}>
               Histórico de Entregas
             </ThemedText>
           </View>
@@ -92,12 +90,10 @@ export function DeliveryHistoryCard({ schedule, maxHeight = 400 }: DeliveryHisto
 
   return (
     <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-            <IconHistory size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconHistory size={20} color={colors.mutedForeground} />
+          <ThemedText style={[styles.title, { color: colors.foreground }]}>
             Histórico de Entregas
           </ThemedText>
         </View>
@@ -217,29 +213,22 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
-  sectionHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
-  titleRow: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
   },
   content: {
     gap: spacing.md,

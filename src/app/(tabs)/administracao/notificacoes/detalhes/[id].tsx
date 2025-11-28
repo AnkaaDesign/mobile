@@ -160,7 +160,7 @@ export default function NotificationDetailScreen() {
 
           {/* Changelog Timeline */}
           <Card>
-            <CardContent style={{ paddingHorizontal: 0 }}>
+            <CardContent>
               <ChangelogTimeline entityType={CHANGE_LOG_ENTITY_TYPE.NOTIFICATION} entityId={notification.id} entityName={notification.title} entityCreatedAt={notification.createdAt} maxHeight={400} />
             </CardContent>
           </Card>

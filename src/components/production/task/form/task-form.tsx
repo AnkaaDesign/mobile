@@ -593,7 +593,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           <KeyboardAwareFormProvider value={keyboardContextValue}>
           <View style={styles.container}>
             {/* Basic Information */}
-            <FormCard title="Informações Básicas">
+            <FormCard title="Informações Básicas" icon="IconClipboard">
               {/* Name - Disabled for financial, warehouse, designer, logistic */}
               <SimpleFormField label="Nome da Tarefa" required error={errors.name}>
                 <Controller
@@ -807,7 +807,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
 
           {/* Additional Dates (edit mode only) */}
           {mode === "edit" && (
-          <FormCard title="Datas Adicionais">
+          <FormCard title="Datas Adicionais" icon="IconCalendar">
               {/* Started At */}
               <Controller
                 control={form.control}
@@ -921,7 +921,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           )}
 
           {/* Services */}
-          <FormCard title="Serviços">
+          <FormCard title="Serviços" icon="IconTool">
               <FormFieldGroup label="Serviços" required error={errors.services?.message}>
                 <Controller
                   control={form.control}
@@ -939,7 +939,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           </FormCard>
 
           {/* Paints */}
-          <FormCard title="Tintas">
+          <FormCard title="Tintas" icon="IconPalette">
               {/* General Painting */}
               <Controller
                 control={form.control}
@@ -1091,7 +1091,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
 
           {/* Artworks - Last section, hidden for warehouse, financial, logistic users */}
           {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
-            <FormCard title="Artes (Opcional)">
+            <FormCard title="Artes (Opcional)" icon="IconPhoto">
                 <MediaPicker
                   onSelect={handleArtworkSelect}
                   disabled={isSubmitting || artworkFiles.length >= 5}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useUser } from "@/hooks";
@@ -198,14 +198,16 @@ export default function EmployeeDetailScreen() {
         </Card>
 
         {/* Contact Information */}
-        <Card style={styles.card}>
-          <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-            <IconPhone size={20} color={colors.mutedForeground} />
-            <ThemedText style={[styles.cardTitle, { color: colors.foreground }]}>
-              Informações de Contato
-            </ThemedText>
+        <Card style={[styles.card, { padding: spacing.md }]}>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <View style={styles.sectionHeaderLeft}>
+              <IconPhone size={20} color={colors.mutedForeground} />
+              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+                Informações de Contato
+              </ThemedText>
+            </View>
           </View>
-          <View style={styles.cardContent}>
+          <View style={styles.sectionContent}>
             {employee.email && (
               <View style={styles.infoRow}>
                 <IconMail size={16} color={colors.mutedForeground} />
@@ -236,14 +238,16 @@ export default function EmployeeDetailScreen() {
         </Card>
 
         {/* Professional Information */}
-        <Card style={styles.card}>
-          <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-            <IconBriefcase size={20} color={colors.mutedForeground} />
-            <ThemedText style={[styles.cardTitle, { color: colors.foreground }]}>
-              Informações Profissionais
-            </ThemedText>
+        <Card style={[styles.card, { padding: spacing.md }]}>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <View style={styles.sectionHeaderLeft}>
+              <IconBriefcase size={20} color={colors.mutedForeground} />
+              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+                Informações Profissionais
+              </ThemedText>
+            </View>
           </View>
-          <View style={styles.cardContent}>
+          <View style={styles.sectionContent}>
             {employee.position && (
               <View style={styles.infoRow}>
                 <IconBriefcase size={16} color={colors.mutedForeground} />
@@ -393,6 +397,26 @@ const styles = StyleSheet.create({
   card: {
     padding: 0,
     overflow: "hidden",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  sectionHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  sectionContent: {
+    gap: spacing.sm,
   },
   cardHeader: {
     flexDirection: "row",

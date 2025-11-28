@@ -7,11 +7,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Textarea } from "@/components/ui/textarea";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
+import { Card } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
-import { spacing } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { IconFileText } from "@tabler/icons-react-native";
 
 import { type Service } from '../../../../types';
 import { serviceCreateSchema, serviceUpdateSchema } from '../../../../schemas';
@@ -72,29 +75,37 @@ export function ServiceForm({ service, onSubmit, onCancel, isSubmitting }: Servi
           scrollEventThrottle={16}
         >
           <KeyboardAwareFormProvider value={keyboardContextValue}>
-            <FormCard title={isEditing ? "Editar Serviço" : "Cadastrar Serviço"}>
-              <FormFieldGroup
-                label="Descrição do Serviço"
-                required
-                helper="Esta descrição será exibida ao selecionar serviços para uma tarefa"
-                error={form.formState.errors.description?.message}
-              >
-                <Controller
-                  control={form.control}
-                  name="description"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <Textarea
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      placeholder="Digite a descrição detalhada do serviço"
-                      numberOfLines={4}
-                      error={!!form.formState.errors.description}
-                    />
-                  )}
-                />
-              </FormFieldGroup>
-            </FormCard>
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <IconFileText size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>{isEditing ? "Editar Serviço" : "Cadastrar Serviço"}</ThemedText>
+                </View>
+              </View>
+              <View style={styles.content}>
+                <FormFieldGroup
+                  label="Descrição do Serviço"
+                  required
+                  helper="Esta descrição será exibida ao selecionar serviços para uma tarefa"
+                  error={form.formState.errors.description?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="description"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <Textarea
+                        value={value}
+                        onChangeText={onChange}
+                        onBlur={onBlur}
+                        placeholder="Digite a descrição detalhada do serviço"
+                        numberOfLines={4}
+                        error={!!form.formState.errors.description}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+              </View>
+            </Card>
           </KeyboardAwareFormProvider>
         </ScrollView>
 
@@ -124,5 +135,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: formSpacing.containerPaddingHorizontal,
     paddingTop: formSpacing.containerPaddingVertical,
     paddingBottom: 0, // No spacing - action bar has its own margin
+  },
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
 });

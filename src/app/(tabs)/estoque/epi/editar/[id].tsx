@@ -1,4 +1,3 @@
-import React from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
@@ -38,7 +37,7 @@ export default function EditPPEScreen() {
     );
   }
 
-  return <PPEForm mode="update" item={item} />;
+  return <PPEForm mode="update" item={item?.data} />;
 }
 
 const styles = StyleSheet.create({

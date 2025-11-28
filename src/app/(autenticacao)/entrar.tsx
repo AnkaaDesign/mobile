@@ -19,13 +19,11 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Icon } from "@/components/ui/icon";
 import { Logo } from "@/components/ui/logo";
 import { shadow, spacing } from "@/constants/design-system";
-import { useToast } from "@/hooks/use-toast";
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
   const { clearHistory } = useNavigationHistory();
-  const { error: showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -55,7 +53,6 @@ export default function LoginScreen() {
       router.replace('/(tabs)/inicio' as any);
     } catch (error: any) {
       // Extract detailed error information from the enhanced error object
-      const errorTitle = error.title || "Erro ao fazer login";
       const errorMessage = error.message || error.toString() || "Ocorreu um erro ao fazer login";
       const errorDetails = error.errors || [];
 

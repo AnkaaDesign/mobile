@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { Stack, router, useLocalSearchParams, Redirect } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";

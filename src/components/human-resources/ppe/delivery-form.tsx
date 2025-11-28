@@ -101,7 +101,7 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
           scrollEventThrottle={16}
         >
           <KeyboardAwareFormProvider value={keyboardContextValue}>
-          <FormCard title="Registrar Entrega de EPI">
+          <FormCard title="Registrar Entrega de EPI" icon="IconShield">
           <FormFieldGroup
             label="Funcionário"
             required

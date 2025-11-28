@@ -4,18 +4,18 @@ import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useActivity, useActivityMutations } from "@/hooks";
 import { hasPrivilege, formatDateTime, formatCurrency } from "@/utils";
 import { SECTOR_PRIVILEGES, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS, ACTIVITY_OPERATION, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
-import { IconArrowUp, IconArrowDown, IconRefresh } from "@tabler/icons-react-native";
+import { IconArrowUp, IconArrowDown, IconRefresh, IconBox, IconUser, IconClipboardList, IconHistory } from "@tabler/icons-react-native";
 import { ActivityDetailSkeleton } from "@/components/inventory/activity/skeleton/activity-detail-skeleton";
 
 export default function ActivityDetailScreen() {
@@ -197,11 +197,14 @@ export default function ActivityDetailScreen() {
       >
         <View style={StyleSheet.flatten([styles.content, { paddingBottom: insets.bottom + spacing.lg }])}>
           {/* Activity Info Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações da Movimentação</CardTitle>
-            </CardHeader>
-            <CardContent style={styles.cardContent}>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconBox size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Informações da Movimentação</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Operação</ThemedText>
                 <View style={styles.valueRow}>
@@ -244,15 +247,18 @@ export default function ActivityDetailScreen() {
                   {formatDateTime(activity.createdAt)}
                 </ThemedText>
               </View>
-            </CardContent>
+            </View>
           </Card>
 
           {/* Item Info Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações do Item</CardTitle>
-            </CardHeader>
-            <CardContent style={styles.cardContent}>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconBox size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Informações do Item</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Nome</ThemedText>
                 <ThemedText style={styles.value}>
@@ -310,16 +316,19 @@ export default function ActivityDetailScreen() {
                   </View>
                 </>
               )}
-            </CardContent>
+            </View>
           </Card>
 
           {/* User Info Card */}
           {activity.user && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações do Usuário</CardTitle>
-              </CardHeader>
-              <CardContent style={styles.cardContent}>
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <IconUser size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.title}>Informações do Usuário</ThemedText>
+                </View>
+              </View>
+              <View style={styles.content}>
                 <View style={styles.infoRow}>
                   <ThemedText style={styles.label}>Nome</ThemedText>
                   <ThemedText style={styles.value}>
@@ -344,17 +353,20 @@ export default function ActivityDetailScreen() {
                     </ThemedText>
                   </View>
                 )}
-              </CardContent>
+              </View>
             </Card>
           )}
 
           {/* Order Info Card */}
           {activity.order && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações do Pedido</CardTitle>
-              </CardHeader>
-              <CardContent style={styles.cardContent}>
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <IconClipboardList size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.title}>Informações do Pedido</ThemedText>
+                </View>
+              </View>
+              <View style={styles.content}>
                 <View style={styles.infoRow}>
                   <ThemedText style={styles.label}>Pedido</ThemedText>
                   <ThemedText style={styles.value}>
@@ -379,16 +391,19 @@ export default function ActivityDetailScreen() {
                     </ThemedText>
                   </View>
                 )}
-              </CardContent>
+              </View>
             </Card>
           )}
 
           {/* Changelog */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Alterações</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconHistory size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
               <ChangelogTimeline
                 entityType={CHANGE_LOG_ENTITY_TYPE.ACTIVITY}
                 entityId={activity.id}
@@ -396,7 +411,7 @@ export default function ActivityDetailScreen() {
                 entityCreatedAt={activity.createdAt}
                 maxHeight={400}
               />
-            </CardContent>
+            </View>
           </Card>
 
           {/* Actions */}
@@ -430,6 +445,26 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
     gap: spacing.xs,
+  },
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   cardContent: {
     gap: spacing.md,

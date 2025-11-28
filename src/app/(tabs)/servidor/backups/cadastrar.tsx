@@ -1,4 +1,4 @@
-import { View, ScrollView, Alert } from "react-native";
+import { View, ScrollView, Alert, StyleSheet } from "react-native";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { Text } from "@/components/ui/text";
@@ -11,9 +11,39 @@ import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { useBackupMutations } from "@/hooks/useBackup";
 import { Icon } from "@/components/ui/icon";
+import { useTheme } from "@/lib/theme";
+import { spacing, fontSize } from "@/constants/design-system";
+
+const styles = StyleSheet.create({
+  card: {
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+});
 
 export default function CreateBackupScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { create } = useBackupMutations();
 
   const [formData, setFormData] = useState({
@@ -52,11 +82,14 @@ export default function CreateBackupScreen() {
         <View className="p-4 gap-4">
           <Text className="text-2xl font-bold">Criar Novo Backup</Text>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações Básicas</CardTitle>
-            </CardHeader>
-            <CardContent className="gap-4">
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <Icon name="info" size={20} color={colors.mutedForeground} />
+                <Text style={styles.title}>Informações Básicas</Text>
+              </View>
+            </View>
+            <View style={styles.content}>
               <View>
                 <Text className="text-sm font-medium mb-2">Nome *</Text>
                 <Input
@@ -79,14 +112,17 @@ export default function CreateBackupScreen() {
                   numberOfLines={3}
                 />
               </View>
-            </CardContent>
+            </View>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Tipo de Backup</CardTitle>
-            </CardHeader>
-            <CardContent className="gap-3">
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <Icon name="layers" size={20} color={colors.mutedForeground} />
+                <Text style={styles.title}>Tipo de Backup</Text>
+              </View>
+            </View>
+            <View style={styles.content}>
               {[
                 { value: "FULL", label: "Completo", description: "Banco de dados e arquivos" },
                 { value: "DATABASE", label: "Banco de Dados", description: "Apenas dados" },
@@ -109,18 +145,21 @@ export default function CreateBackupScreen() {
                     </Text>
                   </View>
                   {formData.type === type.value && (
-                    <Icon name="check" className="w-5 h-5 text-primary-foreground" />
+                    <Icon name="check" size={20} color={colors.primary} />
                   )}
                 </Button>
               ))}
-            </CardContent>
+            </View>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Opções</CardTitle>
-            </CardHeader>
-            <CardContent className="gap-4">
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <Icon name="sliders" size={20} color={colors.mutedForeground} />
+                <Text style={styles.title}>Opções</Text>
+              </View>
+            </View>
+            <View style={styles.content}>
               <View className="flex-row items-center justify-between">
                 <View className="flex-1">
                   <Text className="font-medium">Criptografar</Text>
@@ -150,7 +189,7 @@ export default function CreateBackupScreen() {
                   }
                 />
               </View>
-            </CardContent>
+            </View>
           </Card>
 
           <View className="gap-2 pb-4">

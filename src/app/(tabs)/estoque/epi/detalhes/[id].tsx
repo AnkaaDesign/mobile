@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { View, ScrollView, Alert, RefreshControl , StyleSheet} from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,20 +9,21 @@ import { spacing } from "@/constants/design-system";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { fontSize } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { usePpeDelivery, usePpeDeliveryMutations } from "@/hooks";
 import { hasPrivilege, formatDate, formatDateTime } from "@/utils";
 import { SECTOR_PRIVILEGES, PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from "@/constants";
-import { IconRefresh, IconAlertTriangle } from "@tabler/icons-react-native";
+import { IconRefresh, IconAlertTriangle, IconShield, IconUser, IconPackage } from "@tabler/icons-react-native";
 import { PpeDetailSkeleton } from "@/components/inventory/ppe/skeleton/ppe-detail-skeleton";
 
 export default function PPEDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { data: user } = useAuth();
-  const [refreshing, setRefreshing] = React.useState(false);
+  const { user } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
   const { deleteMutation, updateMutation } = usePpeDeliveryMutations();
 
   // Permission check
@@ -224,11 +225,14 @@ export default function PPEDetailsScreen() {
       >
         <View style={StyleSheet.flatten([styles.content, { paddingBottom: insets.bottom + spacing.lg }])}>
           {/* PPE Delivery Info Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações da Entrega de EPI</CardTitle>
-            </CardHeader>
-            <CardContent style={styles.cardContent}>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconShield size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Informações da Entrega de EPI</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Status</ThemedText>
                 <Badge
@@ -273,17 +277,19 @@ export default function PPEDetailsScreen() {
                   </ThemedText>
                 </View>
               )}
-
-            </CardContent>
+            </View>
           </Card>
 
           {/* Item Info Card */}
           {ppeDelivery.item && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações do Item</CardTitle>
-              </CardHeader>
-              <CardContent style={styles.cardContent}>
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <IconPackage size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.title}>Informações do Item</ThemedText>
+                </View>
+              </View>
+              <View style={styles.content}>
                 <View style={styles.infoRow}>
                   <ThemedText style={styles.label}>Nome</ThemedText>
                   <ThemedText style={styles.value}>
@@ -326,17 +332,20 @@ export default function PPEDetailsScreen() {
                     </ThemedText>
                   </View>
                 )}
-              </CardContent>
+              </View>
             </Card>
           )}
 
           {/* User Info Card */}
           {ppeDelivery.user && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações do Usuário</CardTitle>
-              </CardHeader>
-              <CardContent style={styles.cardContent}>
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <IconUser size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.title}>Informações do Usuário</ThemedText>
+                </View>
+              </View>
+              <View style={styles.content}>
                 <View style={styles.infoRow}>
                   <ThemedText style={styles.label}>Nome</ThemedText>
                   <ThemedText style={styles.value}>
@@ -361,7 +370,7 @@ export default function PPEDetailsScreen() {
                     </ThemedText>
                   </View>
                 )}
-              </CardContent>
+              </View>
             </Card>
           )}
 
@@ -436,6 +445,26 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
     gap: spacing.xs,
+  },
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   cardContent: {
     gap: spacing.md,

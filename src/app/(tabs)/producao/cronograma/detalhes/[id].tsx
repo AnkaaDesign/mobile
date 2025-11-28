@@ -39,7 +39,8 @@ import {
   IconList,
   IconCurrencyReal,
   IconFile,
-  IconAlertCircle
+  IconAlertCircle,
+  IconDownload
 } from "@tabler/icons-react-native";
 
 export default function ScheduleDetailsScreen() {
@@ -273,8 +274,10 @@ export default function ScheduleDetailsScreen() {
           {canViewTruckLayout && (task as any)?.truck && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconLayoutGrid size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Layout do Caminhão</ThemedText>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconLayoutGrid size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Layout do Caminhão</ThemedText>
+                </View>
               </View>
               <View style={styles.sectionContent}>
                 <TruckLayoutPreview truckId={(task as any).truck.id} taskName={task.name} />
@@ -323,11 +326,13 @@ export default function ScheduleDetailsScreen() {
           {(task as any)?.artworks && (task as any).artworks.length > 0 && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconFiles size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Artes</ThemedText>
-                <Badge variant="secondary">
-                  {(task as any).artworks.length}
-                </Badge>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconFiles size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Artes</ThemedText>
+                  <Badge variant="secondary">
+                    {(task as any).artworks.length}
+                  </Badge>
+                </View>
               </View>
               <View style={styles.sectionContent}>
                 <View style={styles.viewModeControls}>
@@ -396,11 +401,13 @@ export default function ScheduleDetailsScreen() {
           {canViewDocuments && ((task as any)?.budgets || (task as any)?.invoices || (task as any)?.receipts) && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconFileText size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Documentos</ThemedText>
-                <Badge variant="secondary">
-                  {[...((task as any).budgets || []), ...((task as any).invoices || []), ...((task as any).receipts || [])].length}
-                </Badge>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconFileText size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Documentos</ThemedText>
+                  <Badge variant="secondary">
+                    {[...((task as any).budgets || []), ...((task as any).invoices || []), ...((task as any).receipts || [])].length}
+                  </Badge>
+                </View>
               </View>
               <View style={styles.sectionContent}>
                 <View style={styles.viewModeControls}>
@@ -498,8 +505,10 @@ export default function ScheduleDetailsScreen() {
           {canViewDocuments && (task as any)?.budget && (task as any).budget.items && (task as any).budget.items.length > 0 && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconCurrencyReal size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Orçamento Detalhado</ThemedText>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconCurrencyReal size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Orçamento Detalhado</ThemedText>
+                </View>
               </View>
               <View style={styles.sectionContent}>
                 {/* Budget Expiry Date */}
@@ -568,8 +577,10 @@ export default function ScheduleDetailsScreen() {
           {canViewDocuments && task.price && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconCurrencyReal size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Valor Total</ThemedText>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconCurrencyReal size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Valor Total</ThemedText>
+                </View>
               </View>
               <View style={styles.sectionContent}>
                 <ThemedText style={StyleSheet.flatten([styles.summaryValue, { color: colors.primary }])}>
@@ -587,13 +598,15 @@ export default function ScheduleDetailsScreen() {
           {(task as any)?.observation && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconAlertCircle size={20} color="#f59e0b" />
-                <ThemedText style={styles.sectionTitle}>Observação</ThemedText>
-                {(task as any).observation.files && (task as any).observation.files.length > 0 && (
-                  <Badge variant="secondary">
-                    {(task as any).observation.files.length}
-                  </Badge>
-                )}
+                <View style={styles.sectionHeaderLeft}>
+                  <IconAlertCircle size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Observação</ThemedText>
+                  {(task as any).observation.files && (task as any).observation.files.length > 0 && (
+                    <Badge variant="secondary">
+                      {(task as any).observation.files.length}
+                    </Badge>
+                  )}
+                </View>
               </View>
               <View style={styles.sectionContent}>
                 <View style={[styles.observationContent, { backgroundColor: colors.mutedForeground + '10', borderRadius: borderRadius.md, padding: spacing.md }]}>
@@ -642,8 +655,10 @@ export default function ScheduleDetailsScreen() {
           {(canViewDocuments || hasPrivilege(user, SECTOR_PRIVILEGES.LEADER)) && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <IconHistory size={20} color={colors.primary} />
-                <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconHistory size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
+                </View>
               </View>
               <View style={styles.sectionContent}>
                 <ChangelogTimeline
@@ -714,15 +729,19 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
+  sectionHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    flex: 1,
+    fontWeight: "500",
   },
   sectionContent: {
     gap: spacing.md,

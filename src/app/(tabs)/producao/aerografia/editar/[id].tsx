@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { ScrollView, View, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { ScrollView, View, Alert, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAirbrushingDetail, useAirbrushingMutations } from "@/hooks";
@@ -16,9 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
-import { IconBrush, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
+import { IconBrush, IconDeviceFloppy, IconX, IconClock, IconTag, IconFileText } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
@@ -250,69 +250,87 @@ export default function AirbrushingEditScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
-          <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.xs }}>
-              <IconBrush size={20} color={colors.primary} />
-              <ThemedText style={{ fontSize: 18, fontWeight: "600" }}>
-                Editar Airbrushing
+          <Card style={[styles.card, { marginBottom: spacing.md }]}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconBrush size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Editar Airbrushing</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
+              <ThemedText style={{ fontSize: 14, color: colors.muted }}>
+                Edite as informações do airbrushing
               </ThemedText>
             </View>
-            <ThemedText style={{ fontSize: 14, color: colors.muted }}>
-              Edite as informações do airbrushing
-            </ThemedText>
           </Card>
 
           {/* Task Information (Read-only) */}
           {airbrushing.task && (
-            <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-              <ThemedText style={{ fontSize: 16, fontWeight: "500", marginBottom: spacing.md }}>
-                Tarefa Vinculada
-              </ThemedText>
-              <View style={{ backgroundColor: colors.muted + "20", padding: spacing.sm, borderRadius: 8 }}>
-                <ThemedText style={{ fontWeight: "500" }}>
-                  {airbrushing.task.name}
-                </ThemedText>
-                {airbrushing.task.customer && (
-                  <ThemedText style={{ fontSize: 12, color: colors.muted }}>
-                    Cliente: {airbrushing.task.customer.fantasyName}
+            <Card style={[styles.card, { marginBottom: spacing.md }]}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <IconTag size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.title}>Tarefa Vinculada</ThemedText>
+                </View>
+              </View>
+              <View style={styles.content}>
+                <View style={{ backgroundColor: colors.muted + "20", padding: spacing.sm, borderRadius: 8 }}>
+                  <ThemedText style={{ fontWeight: "500" }}>
+                    {airbrushing.task.name}
                   </ThemedText>
-                )}
-                {airbrushing.task.truck && (
-                  <ThemedText style={{ fontSize: 12, color: colors.muted }}>
-                    Veículo: {airbrushing.task.truck.model} - {airbrushing.task.truck.plate}
-                  </ThemedText>
-                )}
+                  {airbrushing.task.customer && (
+                    <ThemedText style={{ fontSize: 12, color: colors.muted }}>
+                      Cliente: {airbrushing.task.customer.fantasyName}
+                    </ThemedText>
+                  )}
+                  {airbrushing.task.truck && (
+                    <ThemedText style={{ fontSize: 12, color: colors.muted }}>
+                      Veículo: {airbrushing.task.truck.model} - {airbrushing.task.truck.plate}
+                    </ThemedText>
+                  )}
+                </View>
               </View>
             </Card>
           )}
 
           {/* Status */}
-          <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-            <Label style={{ marginBottom: spacing.xs }}>Status</Label>
-            <Controller
-              control={control}
-              name="status"
-              render={({ field }) => (
-                <Combobox
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  options={Object.values(AIRBRUSHING_STATUS).map((status) => ({
-                    value: status,
-                    label: AIRBRUSHING_STATUS_LABELS[status as keyof typeof AIRBRUSHING_STATUS_LABELS],
-                  }))}
-                  placeholder="Selecione o status"
-                />
-              )}
-            />
+          <Card style={[styles.card, { marginBottom: spacing.md }]}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconFileText size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Status</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
+              <Label style={{ marginBottom: spacing.xs }}>Status</Label>
+              <Controller
+                control={control}
+                name="status"
+                render={({ field }) => (
+                  <Combobox
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    options={Object.values(AIRBRUSHING_STATUS).map((status) => ({
+                      value: status,
+                      label: AIRBRUSHING_STATUS_LABELS[status as keyof typeof AIRBRUSHING_STATUS_LABELS],
+                    }))}
+                    placeholder="Selecione o status"
+                  />
+                )}
+              />
+            </View>
           </Card>
 
           {/* Dates */}
-          <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-            <ThemedText style={{ fontSize: 16, fontWeight: "500", marginBottom: spacing.md }}>
-              Datas
-            </ThemedText>
+          <Card style={[styles.card, { marginBottom: spacing.md }]}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconClock size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Datas</ThemedText>
+              </View>
+            </View>
 
-            <View style={{ gap: spacing.md }}>
+            <View style={[styles.content, { gap: spacing.md }]}>
               <View>
                 <Label style={{ marginBottom: spacing.xs }}>Data de Início</Label>
                 <Controller
@@ -346,35 +364,43 @@ export default function AirbrushingEditScreen() {
           </Card>
 
           {/* Price */}
-          <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-            <Label style={{ marginBottom: spacing.xs }}>Preço (R$)</Label>
-            <Controller
-              control={control}
-              name="price"
-              render={({ field }) => (
-                <Input
-                  value={field.value?.toString() || ""}
-                  onChangeText={(text) => {
-                    // Allow only numbers and decimal point
-                    const cleanText = text.replace(/[^0-9.,]/g, '').replace(',', '.');
-                    const numValue = cleanText ? parseFloat(cleanText) : null;
-                    field.onChange(numValue);
-                  }}
-                  placeholder="0.00"
-                  keyboardType="decimal-pad"
-                />
+          <Card style={[styles.card, { marginBottom: spacing.md }]}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconTag size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Preço</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
+              <Label style={{ marginBottom: spacing.xs }}>Preço (R$)</Label>
+              <Controller
+                control={control}
+                name="price"
+                render={({ field }) => (
+                  <Input
+                    value={field.value?.toString() || ""}
+                    onChangeText={(text) => {
+                      // Allow only numbers and decimal point
+                      const cleanText = text.replace(/[^0-9.,]/g, '').replace(',', '.');
+                      const numValue = cleanText ? parseFloat(cleanText) : null;
+                      field.onChange(numValue);
+                    }}
+                    placeholder="0.00"
+                    keyboardType="decimal-pad"
+                  />
+                )}
+              />
+              {watchedPrice && (
+                <ThemedText style={{ fontSize: 12, color: colors.muted, marginTop: spacing.xs }}>
+                  {formatCurrency(watchedPrice)}
+                </ThemedText>
               )}
-            />
-            {watchedPrice && (
-              <ThemedText style={{ fontSize: 12, color: colors.muted, marginTop: spacing.xs }}>
-                {formatCurrency(watchedPrice)}
-              </ThemedText>
-            )}
-            {errors.price && (
-              <ThemedText style={{ color: colors.destructive, fontSize: 12, marginTop: spacing.xs }}>
-                {errors.price.message}
-              </ThemedText>
-            )}
+              {errors.price && (
+                <ThemedText style={{ color: colors.destructive, fontSize: 12, marginTop: spacing.xs }}>
+                  {errors.price.message}
+                </ThemedText>
+              )}
+            </View>
           </Card>
 
           {/* Action Buttons */}
@@ -411,3 +437,30 @@ export default function AirbrushingEditScreen() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+});

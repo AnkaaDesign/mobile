@@ -163,7 +163,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
           >
             <KeyboardAwareFormProvider value={keyboardContextValue}>
           {/* Basic Information */}
-          <FormCard title="Informações Básicas">
+          <FormCard title="Informações Básicas" icon="IconPackage">
             <View style={styles.fieldGroup}>
               <NameInput disabled={isSubmitting} required={false} />
               <UnicodeInput disabled={isSubmitting} />
@@ -171,7 +171,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
           </FormCard>
 
           {/* Categorization */}
-          <FormCard title="Classificação">
+          <FormCard title="Classificação" icon="IconTag">
             <View style={styles.fieldGroup}>
               <BrandSelector disabled={isSubmitting} required={false} initialBrand={item.brand} />
               <CategorySelector disabled={isSubmitting} required={false} initialCategory={item.category} onCategoryChange={setSelectedCategoryId} />
@@ -180,7 +180,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
           </FormCard>
 
           {/* Inventory */}
-          <FormCard title="Controle de Estoque">
+          <FormCard title="Controle de Estoque" icon="IconClipboardList">
             <View style={styles.fieldGroup}>
               <QuantityInput disabled={isSubmitting} required={false} />
               <MaxQuantityInput disabled={isSubmitting} />
@@ -190,7 +190,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
           </FormCard>
 
           {/* Pricing */}
-          <FormCard title="Preço e Impostos">
+          <FormCard title="Preço e Impostos" icon="IconCurrencyReal">
             <View style={styles.fieldGroup}>
               <PriceInput disabled={isSubmitting} />
               <View style={styles.fieldRow}>
@@ -208,7 +208,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
           <MeasuresManager disabled={isSubmitting} />
 
           {/* Tracking */}
-          <FormCard title="Rastreamento">
+          <FormCard title="Rastreamento" icon="IconBarcode">
             <View style={styles.fieldGroup}>
               <BarcodeManager disabled={isSubmitting} />
               <AssignToUserToggle disabled={isSubmitting} />
@@ -218,7 +218,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
 
           {/* PPE Configuration */}
           {isPPE && (
-            <FormCard title="Configuração de EPI">
+            <FormCard title="Configuração de EPI" icon="IconShield">
               <PpeConfigSection disabled={isSubmitting} />
             </FormCard>
           )}

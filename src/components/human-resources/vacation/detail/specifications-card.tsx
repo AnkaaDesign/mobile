@@ -58,10 +58,10 @@ export function SpecificationsCard({ vacation }: SpecificationsCardProps) {
     <Card style={styles.card}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <ThemedText style={[styles.title, { color: colors.foreground }]}>Especificações</ThemedText>
-        <ThemedText style={[styles.description, { color: colors.mutedForeground }]}>
-          Informações detalhadas das férias
-        </ThemedText>
+        <View style={styles.headerLeft}>
+          <IconTag size={20} color={colors.mutedForeground} />
+          <ThemedText style={[styles.title, { color: colors.foreground }]}>Especificações</ThemedText>
+        </View>
       </View>
 
       {/* Content */}
@@ -175,25 +175,27 @@ export function SpecificationsCard({ vacation }: SpecificationsCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 0,
+    padding: spacing.md,
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
     borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.xs,
-  },
-  description: {
-    fontSize: fontSize.sm,
+    fontWeight: "500",
   },
   content: {
-    padding: spacing.lg,
-    gap: spacing.lg,
+    gap: spacing.sm,
   },
   section: {
     gap: spacing.xs,

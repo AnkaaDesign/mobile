@@ -8,9 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { subDays, subMonths, format, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { exportData, ExportColumn } from "@/lib/export-utils";
-import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from "@/constants";
 import { extendedColors } from "@/lib/theme/extended-colors";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, borderRadius } from "@/constants/design-system";
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -143,7 +142,6 @@ export default function StockMovementStatisticsScreen() {
 
   const totalInbound = trends?.dailyVolume?.reduce((sum, day) => sum + day.incoming, 0) || 0;
   const totalOutbound = trends?.dailyVolume?.reduce((sum, day) => sum + day.outgoing, 0) || 0;
-  const totalAdjustments = trends?.dailyVolume?.reduce((sum, day) => sum + day.adjustments, 0) || 0;
   const netMovement = totalInbound - totalOutbound;
 
   return (

@@ -7,7 +7,8 @@ import { useTheme } from '@/lib/theme';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils';
 import { MAINTENANCE_STATUS, MAINTENANCE_STATUS_LABELS, SCHEDULE_FREQUENCY_LABELS, MEASURE_UNIT_LABELS } from '@/constants';
 import { useState, useCallback } from 'react';
-import { IconChevronRight, IconBox, IconPackage, IconCalendar, IconAlertCircle } from '@tabler/icons-react-native';
+import { IconChevronRight, IconBox, IconPackage, IconCalendar, IconAlertCircle, IconInfo } from '@tabler/icons-react-native';
+import { spacing, fontSize } from '@/constants/design-system';
 
 export default function MaintenanceDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -193,13 +194,13 @@ export default function MaintenanceDetailsScreen() {
         {/* Target Item Card */}
         {targetItem && (
           <Card style={styles.card}>
-            <CardHeader>
-              <View style={styles.cardTitleRow}>
-                <IconBox size={20} color={colors.primary} />
-                <CardTitle>Equipamento</CardTitle>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconBox size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Equipamento</ThemedText>
               </View>
-            </CardHeader>
-            <CardContent>
+            </View>
+            <View style={styles.content}>
               <Pressable
                 onPress={() => router.push(`/(tabs)/estoque/produtos/detalhes/${targetItem.id}` as any)}
                 style={styles.itemPressable}
@@ -255,19 +256,19 @@ export default function MaintenanceDetailsScreen() {
                   </View>
                 </View>
               </Pressable>
-            </CardContent>
+            </View>
           </Card>
         )}
 
         {/* Maintenance Items Card */}
         <Card style={styles.card}>
-          <CardHeader>
-            <View style={styles.cardTitleRow}>
-              <IconPackage size={20} color={colors.primary} />
-              <CardTitle>Itens Necessários</CardTitle>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconPackage size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Itens Necessários</ThemedText>
             </View>
-          </CardHeader>
-          <CardContent>
+          </View>
+          <View style={styles.content}>
             {maintenanceItems.length === 0 ? (
               <View style={styles.emptyState}>
                 <IconAlertCircle size={48} color={colors.mutedForeground} />
@@ -347,7 +348,7 @@ export default function MaintenanceDetailsScreen() {
                 </View>
               </>
             )}
-          </CardContent>
+          </View>
         </Card>
 
         {/* Action Buttons */}
@@ -385,7 +386,28 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   card: {
+    padding: spacing.md,
     marginBottom: 16,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
   headerRow: {
     flexDirection: 'row',

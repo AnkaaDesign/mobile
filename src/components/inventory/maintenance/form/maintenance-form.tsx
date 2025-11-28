@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -144,7 +144,7 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
             {/* Basic Information */}
             <FormCard
               title="Informações da Manutenção"
-              subtitle="Dados básicos da manutenção"
+              icon="IconTool"
             >
           {/* Name */}
           <FormFieldGroup
@@ -242,7 +242,7 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
         {/* Scheduling */}
         <FormCard
           title="Agendamento"
-          subtitle="Datas e prazos da manutenção"
+          icon="IconCalendar"
         >
           {/* Scheduled For */}
           <FormFieldGroup
@@ -339,7 +339,7 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
         {mode === "create" && (
           <FormCard
             title="Itens Necessários (Opcional)"
-            subtitle="Itens utilizados na manutenção"
+            icon="IconPackage"
           >
             {fields.map((field, index) => (
               <View key={field.id} style={styles.itemRow}>

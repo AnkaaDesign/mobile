@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { View, ScrollView, Alert, Image, Modal, Dimensions , StyleSheet} from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSecullumTimeEntries } from "@/hooks/secullum";
+import { useTheme } from "@/lib/theme";
+import { spacing, fontSize } from "@/constants/design-system";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
@@ -59,6 +61,7 @@ interface TimeEntryDetail {
 
 export default function TimeEntryDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors } = useTheme();
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -204,10 +207,12 @@ export default function TimeEntryDetailsScreen() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Employee Information */}
-        <Card style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconUser size={20} color="#3B82F6" />
-            <ThemedText style={styles.sectionTitle}>Funcionário</ThemedText>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconUser size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Funcionário</ThemedText>
+            </View>
             <View style={styles.syncBadgeContainer}>
               <Badge
                 variant={timeEntry.synced ? "success" : "warning"}
@@ -221,7 +226,7 @@ export default function TimeEntryDetailsScreen() {
             </View>
           </View>
 
-          <View style={styles.employeeInfo}>
+          <View style={styles.content}>
             <View style={styles.infoRow}>
               <ThemedText style={styles.infoLabel}>Nome:</ThemedText>
               <ThemedText style={styles.infoValue}>{timeEntry.userName}</ThemedText>
@@ -251,13 +256,15 @@ export default function TimeEntryDetailsScreen() {
         </Card>
 
         {/* Time Records */}
-        <Card style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconClock size={20} color="#3B82F6" />
-            <ThemedText style={styles.sectionTitle}>Registros de Horário</ThemedText>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconClock size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Registros de Horário</ThemedText>
+            </View>
           </View>
 
-          <View style={styles.timeRecords}>
+          <View style={styles.content}>
             {timePairs.map((pair, index) => (
               <View key={index} style={styles.timePair}>
                 <ThemedText style={styles.periodLabel}>{pair.period}</ThemedText>
@@ -284,45 +291,51 @@ export default function TimeEntryDetailsScreen() {
         </Card>
 
         {/* Summary */}
-        <Card style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconCalendar size={20} color="#3B82F6" />
-            <ThemedText style={styles.sectionTitle}>Resumo</ThemedText>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconCalendar size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Resumo</ThemedText>
+            </View>
           </View>
 
-          <View style={styles.summaryGrid}>
-            {timeEntry.totalHours && (
-              <View style={styles.summaryItem}>
-                <ThemedText style={styles.summaryLabel}>Total de Horas</ThemedText>
-                <ThemedText style={styles.summaryValue}>{timeEntry.totalHours}</ThemedText>
-              </View>
-            )}
-            {timeEntry.normalHours && (
-              <View style={styles.summaryItem}>
-                <ThemedText style={styles.summaryLabel}>Horas Normais</ThemedText>
-                <ThemedText style={styles.summaryValue}>{timeEntry.normalHours}</ThemedText>
-              </View>
-            )}
-            {timeEntry.overtimeHours && (
-              <View style={styles.summaryItem}>
-                <ThemedText style={styles.summaryLabel}>Horas Extras</ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.summaryValue, styles.overtimeValue])}>
-                  {timeEntry.overtimeHours}
-                </ThemedText>
-              </View>
-            )}
+          <View style={styles.content}>
+            <View style={styles.summaryGrid}>
+              {timeEntry.totalHours && (
+                <View style={styles.summaryItem}>
+                  <ThemedText style={styles.summaryLabel}>Total de Horas</ThemedText>
+                  <ThemedText style={styles.summaryValue}>{timeEntry.totalHours}</ThemedText>
+                </View>
+              )}
+              {timeEntry.normalHours && (
+                <View style={styles.summaryItem}>
+                  <ThemedText style={styles.summaryLabel}>Horas Normais</ThemedText>
+                  <ThemedText style={styles.summaryValue}>{timeEntry.normalHours}</ThemedText>
+                </View>
+              )}
+              {timeEntry.overtimeHours && (
+                <View style={styles.summaryItem}>
+                  <ThemedText style={styles.summaryLabel}>Horas Extras</ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.summaryValue, styles.overtimeValue])}>
+                    {timeEntry.overtimeHours}
+                  </ThemedText>
+                </View>
+              )}
+            </View>
           </View>
         </Card>
 
         {/* Location & Photo */}
         {(timeEntry.location || timeEntry.hasPhoto) && (
-          <Card style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <IconMapPin size={20} color="#3B82F6" />
-              <ThemedText style={styles.sectionTitle}>Localização & Foto</ThemedText>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconMapPin size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Localização & Foto</ThemedText>
+              </View>
             </View>
 
-            <View style={styles.locationInfo}>
+            <View style={styles.content}>
               {timeEntry.location && (
                 <View style={styles.infoRow}>
                   <ThemedText style={styles.infoLabel}>Local:</ThemedText>
@@ -363,13 +376,15 @@ export default function TimeEntryDetailsScreen() {
 
         {/* Justifications */}
         {timeEntry.justifications && timeEntry.justifications.length > 0 && (
-          <Card style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <IconEdit size={20} color="#3B82F6" />
-              <ThemedText style={styles.sectionTitle}>Justificativas</ThemedText>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconEdit size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Justificativas</ThemedText>
+              </View>
             </View>
 
-            <View style={styles.justifications}>
+            <View style={styles.content}>
               {timeEntry.justifications.map((justification, index) => (
                 <View key={index} style={styles.justificationItem}>
                   <View style={styles.justificationHeader}>
@@ -395,12 +410,14 @@ export default function TimeEntryDetailsScreen() {
         )}
 
         {/* Technical Information */}
-        <Card style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <ThemedText style={styles.sectionTitle}>Informações Técnicas</ThemedText>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <ThemedText style={styles.title}>Informações Técnicas</ThemedText>
+            </View>
           </View>
 
-          <View style={styles.technicalInfo}>
+          <View style={styles.content}>
             <View style={styles.infoRow}>
               <ThemedText style={styles.infoLabel}>ID do Registro:</ThemedText>
               <ThemedText style={styles.infoValue}>{timeEntry.id}</ThemedText>
@@ -461,6 +478,7 @@ export default function TimeEntryDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Layout
   container: {
     flex: 1,
   },
@@ -468,36 +486,39 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    gap: 16,
+    padding: spacing.md,
+    gap: spacing.md,
   },
-  section: {
-    padding: 16,
-    backgroundColor: "white",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+
+  // Card and Header Styles (Standardized Pattern)
+  card: {
+    padding: spacing.md,
   },
-  sectionHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginLeft: 8,
-    flex: 1,
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+
+  // Sync Badges
   syncBadgeContainer: {
     flexDirection: "row",
-    gap: 8,
+    gap: spacing.sm,
   },
   syncBadge: {
     paddingHorizontal: 8,
@@ -507,38 +528,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  employeeInfo: {
-    gap: 12,
-  },
+
+  // Info Rows
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   infoLabel: {
-    fontSize: 14,
+    fontSize: fontSize.sm,
     fontWeight: "500",
     color: "#6B7280",
     minWidth: 80,
   },
   infoValue: {
-    fontSize: 14,
+    fontSize: fontSize.sm,
     color: "#374151",
     flex: 1,
   },
+
+  // Time Records
   timeRecords: {
-    gap: 16,
+    gap: spacing.md,
   },
   timePair: {
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
-    paddingBottom: 16,
+    paddingBottom: spacing.md,
   },
   periodLabel: {
     fontSize: 16,
     fontWeight: "600",
     color: "#374151",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   timeRow: {
     flexDirection: "row",
@@ -549,9 +571,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   timeLabel: {
-    fontSize: 12,
+    fontSize: fontSize.xs,
     color: "#6B7280",
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   timeValue: {
     fontSize: 18,
@@ -562,32 +584,34 @@ const styles = StyleSheet.create({
     width: 2,
     height: 30,
     backgroundColor: "#E5E7EB",
-    marginHorizontal: 16,
+    marginHorizontal: spacing.md,
   },
   noRecordsText: {
-    fontSize: 14,
+    fontSize: fontSize.sm,
     color: "#6B7280",
     textAlign: "center",
     fontStyle: "italic",
   },
+
+  // Summary Grid
   summaryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 16,
+    gap: spacing.md,
   },
   summaryItem: {
     flex: 1,
     minWidth: 100,
     alignItems: "center",
-    padding: 12,
+    padding: spacing.sm,
     backgroundColor: "#F9FAFB",
     borderRadius: 8,
   },
   summaryLabel: {
-    fontSize: 12,
+    fontSize: fontSize.xs,
     color: "#6B7280",
     textAlign: "center",
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   summaryValue: {
     fontSize: 18,
@@ -598,29 +622,33 @@ const styles = StyleSheet.create({
   overtimeValue: {
     color: "#DC2626",
   },
+
+  // Location Info
   locationInfo: {
-    gap: 12,
+    gap: spacing.sm,
   },
   photoContainer: {
     alignItems: "flex-start",
-    gap: 8,
+    gap: spacing.sm,
   },
   photoButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   photoButtonText: {
     color: "#3B82F6",
     fontWeight: "500",
   },
+
+  // Justifications
   justifications: {
-    gap: 12,
+    gap: spacing.sm,
   },
   justificationItem: {
-    padding: 12,
+    padding: spacing.sm,
     backgroundColor: "#FEF3C7",
     borderRadius: 8,
     borderLeftWidth: 4,
@@ -629,33 +657,32 @@ const styles = StyleSheet.create({
   justificationHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   justificationField: {
-    fontSize: 14,
+    fontSize: fontSize.sm,
     fontWeight: "600",
     color: "#92400E",
   },
   justificationDate: {
-    fontSize: 12,
+    fontSize: fontSize.xs,
     color: "#92400E",
   },
   justificationChanges: {
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   justificationTime: {
-    fontSize: 14,
+    fontSize: fontSize.sm,
     fontWeight: "500",
     color: "#92400E",
   },
   justificationReason: {
-    fontSize: 14,
+    fontSize: fontSize.sm,
     color: "#92400E",
     fontStyle: "italic",
   },
-  technicalInfo: {
-    gap: 8,
-  },
+
+  // Modal
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.8)",
@@ -673,12 +700,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: fontSize.lg,
     fontWeight: "600",
   },
   fullscreenImage: {

@@ -41,7 +41,7 @@ export function VacationDatesCard({ vacation }: VacationDatesCardProps) {
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
           <IconCalendar size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Período de Férias</ThemedText>
+          <ThemedText style={[styles.title, { color: colors.foreground }]}>Período de Férias</ThemedText>
         </View>
       </View>
       <View style={styles.content}>

@@ -22,7 +22,7 @@ export function VacationStatusCard({ vacation }: VacationStatusCardProps) {
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
           <IconFileCheck size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Status de Aprovação</ThemedText>
+          <ThemedText style={[styles.title, { color: colors.foreground }]}>Status de Aprovação</ThemedText>
         </View>
       </View>
       <View style={styles.content}>

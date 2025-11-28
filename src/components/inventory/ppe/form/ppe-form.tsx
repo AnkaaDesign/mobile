@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -160,7 +160,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
             {/* Basic Information */}
             <FormCard
               title="Informações Básicas"
-              subtitle="Dados do equipamento de proteção individual"
+              icon="IconShield"
             >
           {/* Name */}
           <FormFieldGroup
@@ -280,7 +280,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
         {/* Stock Information */}
         <FormCard
           title="Informações de Estoque"
-          subtitle="Quantidades e pontos de reposição"
+          icon="IconClipboardList"
         >
           {/* Quantity and Max Quantity Row */}
           <FormRow>
@@ -377,7 +377,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
         {/* Delivery Configuration */}
         <FormCard
           title="Configuração de Entrega"
-          subtitle="Como o EPI é entregue aos colaboradores"
+          icon="IconTruck"
         >
           <FormRow>
             <FormFieldGroup

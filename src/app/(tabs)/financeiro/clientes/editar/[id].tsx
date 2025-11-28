@@ -4,7 +4,8 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IconReceipt2, IconDeviceFloppy, IconX, IconSearch } from "@tabler/icons-react-native";
+import { IconReceipt2, IconDeviceFloppy, IconX, IconSearch, IconBuilding, IconFileText, IconMapPin, IconPhone, IconTag } from "@tabler/icons-react-native";
+import { spacing, fontSize } from "@/constants/design-system";
 import { useCustomer, useCustomerMutations, useCnpjLookup, useCepLookup } from "@/hooks";
 import { customerUpdateSchema} from "@/schemas";
 import {
@@ -301,78 +302,89 @@ export default function FinancialCustomerEditScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}>
         {/* Basic Information */}
         <Card style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconBuilding size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
+            </View>
+          </View>
+          <View style={styles.sectionContentWrapper}>
+            <SimpleFormField label="Nome Fantasia" required error={errors.fantasyName}>
+              <Controller
+                control={control}
+                name="fantasyName"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input value={value} onChangeText={onChange} onBlur={onBlur} placeholder="Ex: Empresa LTDA" maxLength={200} error={!!errors.fantasyName} />
+                )}
+              />
+            </SimpleFormField>
 
-          <SimpleFormField label="Nome Fantasia" required error={errors.fantasyName}>
-            <Controller
-              control={control}
-              name="fantasyName"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input value={value} onChangeText={onChange} onBlur={onBlur} placeholder="Ex: Empresa LTDA" maxLength={200} error={!!errors.fantasyName} />
-              )}
-            />
-          </SimpleFormField>
+            <SimpleFormField label="Razão Social" error={errors.corporateName}>
+              <Controller
+                control={control}
+                name="corporateName"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    value={value || ""}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="Ex: Empresa LTDA ME"
+                    maxLength={200}
+                    error={!!errors.corporateName}
+                  />
+                )}
+              />
+            </SimpleFormField>
 
-          <SimpleFormField label="Razão Social" error={errors.corporateName}>
-            <Controller
-              control={control}
-              name="corporateName"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  value={value || ""}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="Ex: Empresa LTDA ME"
-                  maxLength={200}
-                  error={!!errors.corporateName}
-                />
-              )}
-            />
-          </SimpleFormField>
+            <SimpleFormField label="Email" error={errors.email}>
+              <Controller
+                control={control}
+                name="email"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    value={value || ""}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="email@exemplo.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    maxLength={100}
+                    error={!!errors.email}
+                  />
+                )}
+              />
+            </SimpleFormField>
 
-          <SimpleFormField label="Email" error={errors.email}>
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  value={value || ""}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="email@exemplo.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  maxLength={100}
-                  error={!!errors.email}
-                />
-              )}
-            />
-          </SimpleFormField>
-
-          <SimpleFormField label="Site" error={errors.site}>
-            <Controller
-              control={control}
-              name="site"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  value={value || ""}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="https://exemplo.com.br"
-                  keyboardType="url"
-                  autoCapitalize="none"
-                  error={!!errors.site}
-                />
-              )}
-            />
-          </SimpleFormField>
+            <SimpleFormField label="Site" error={errors.site}>
+              <Controller
+                control={control}
+                name="site"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    value={value || ""}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    placeholder="https://exemplo.com.br"
+                    keyboardType="url"
+                    autoCapitalize="none"
+                    error={!!errors.site}
+                  />
+                )}
+              />
+            </SimpleFormField>
+          </View>
         </Card>
 
         {/* Document */}
         <Card style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Documento</ThemedText>
-
-          <View style={styles.documentTypeContainer}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconFileText size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.sectionTitle}>Documento</ThemedText>
+            </View>
+          </View>
+          <View style={styles.sectionContentWrapper}>
+            <View style={styles.documentTypeContainer}>
             <Button
               variant={documentType === "cnpj" ? "default" : "outline"}
               onPress={() => handleDocumentTypeChange("cnpj")}
@@ -446,19 +458,32 @@ export default function FinancialCustomerEditScreen() {
               />
             </SimpleFormField>
           )}
+          </View>
         </Card>
 
         {/* Logo */}
         <Card style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Logo</ThemedText>
-          <LogoUpload value={logoFile} onChange={setLogoFile} disabled={isSubmitting} existingLogoUrl={(customer.data.logo?.url as string) || undefined} />
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconFileText size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.sectionTitle}>Logo</ThemedText>
+            </View>
+          </View>
+          <View style={styles.sectionContentWrapper}>
+            <LogoUpload value={logoFile} onChange={setLogoFile} disabled={isSubmitting} existingLogoUrl={(customer.data.logo?.url as string) || undefined} />
+          </View>
         </Card>
 
         {/* Address */}
         <Card style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Endereço</ThemedText>
-
-          <SimpleFormField label="CEP" error={errors.zipCode}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconMapPin size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.sectionTitle}>Endereço</ThemedText>
+            </View>
+          </View>
+          <View style={styles.sectionContentWrapper}>
+            <SimpleFormField label="CEP" error={errors.zipCode}>
             <Controller
               control={control}
               name="zipCode"
@@ -575,24 +600,37 @@ export default function FinancialCustomerEditScreen() {
               />
             </SimpleFormField>
           </View>
+          </View>
         </Card>
 
         {/* Contact */}
         <Card style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Contato</ThemedText>
-
-          <SimpleFormField label="Telefones">
-            <Controller control={control} name="phones" render={({ field: { onChange, value } }) => <PhoneManager phones={value || []} onChange={onChange} />} />
-          </SimpleFormField>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconPhone size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.sectionTitle}>Contato</ThemedText>
+            </View>
+          </View>
+          <View style={styles.sectionContentWrapper}>
+            <SimpleFormField label="Telefones">
+              <Controller control={control} name="phones" render={({ field: { onChange, value } }) => <PhoneManager phones={value || []} onChange={onChange} />} />
+            </SimpleFormField>
+          </View>
         </Card>
 
         {/* Tags */}
         <Card style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Tags</ThemedText>
-
-          <SimpleFormField label="Tags do Cliente">
-            <Controller control={control} name="tags" render={({ field: { onChange, value } }) => <TagManager tags={value || []} onChange={onChange} />} />
-          </SimpleFormField>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconTag size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.sectionTitle}>Tags</ThemedText>
+            </View>
+          </View>
+          <View style={styles.sectionContentWrapper}>
+            <SimpleFormField label="Tags do Cliente">
+              <Controller control={control} name="tags" render={({ field: { onChange, value } }) => <TagManager tags={value || []} onChange={onChange} />} />
+            </SimpleFormField>
+          </View>
         </Card>
       </ScrollView>
 
@@ -645,10 +683,17 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     marginTop: 16,
   },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 16,
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  sectionContentWrapper: {
+    marginTop: spacing.md,
   },
   documentTypeContainer: {
     flexDirection: "row",

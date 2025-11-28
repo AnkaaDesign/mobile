@@ -164,7 +164,7 @@ export default function HRPPEDeliveryDetailsScreen() {
 
           {/* Changelog Timeline */}
           <Card>
-            <CardContent style={{ paddingHorizontal: 0 }}>
+            <CardContent>
               <ChangelogTimeline
                 entityType={CHANGE_LOG_ENTITY_TYPE.PPE_DELIVERY}
                 entityId={delivery.id}

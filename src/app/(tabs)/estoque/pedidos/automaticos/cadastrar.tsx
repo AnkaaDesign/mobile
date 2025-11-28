@@ -4,8 +4,10 @@ import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { IconSettings, IconCalendar, IconPackage, IconInfo } from "@tabler/icons-react-native";
 import { useOrderScheduleMutations } from "@/hooks";
 import { orderScheduleCreateSchema} from '../../../../../schemas';
+import type { OrderScheduleCreateFormData } from '../../../../../schemas';
 import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 import {
   ThemedView,
@@ -13,12 +15,13 @@ import {
   Card,
   Button,
   Input,
-  
+
   Switch,
   LoadingScreen,
 } from "@/components/ui";
 import { FormHeader } from "@/components/ui/form-header";
 import { FormSection } from "@/components/ui/form-section";
+import { spacing, fontSize } from "@/constants/design-system";
 
 import { ItemMultiSelector } from "@/components/inventory/item/item-multi-selector";
 import { FrequencySelector } from "@/components/inventory/order/schedule/frequency-selector";
@@ -341,10 +344,31 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: spacing.md,
   },
   card: {
-    padding: 16,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
   fieldContainer: {
     marginBottom: 16,

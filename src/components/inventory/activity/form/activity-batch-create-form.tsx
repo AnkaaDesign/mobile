@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, Keyboard, ActivityIndicator } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useForm, Controller, FormProvider } from "react-hook-form";
@@ -436,7 +436,7 @@ export function ActivityBatchCreateForm({
                 scrollEventThrottle={16}
               >
                 {/* Configuration Card */}
-                <FormCard title="Configuração">
+                <FormCard title="Configuração" icon="IconClipboardList">
                   {/* Operation Selector */}
                   <Controller
                     control={form.control}

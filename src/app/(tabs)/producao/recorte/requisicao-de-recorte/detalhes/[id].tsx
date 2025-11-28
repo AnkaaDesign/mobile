@@ -300,11 +300,11 @@ export default function CuttingRequestDetailsScreen() {
               },
             ]}
           >
-            <View style={styles.sectionHeader}>
-              <IconAlertTriangle size={24} color={colors.destructive} />
-              <ThemedText style={[styles.sectionTitle, { color: colors.destructive, flex: 1 }]}>
-                Motivo da Requisição
-              </ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.destructive }]}>
+              <View style={styles.headerLeft}>
+                <IconAlertTriangle size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Motivo da Requisição</ThemedText>
+              </View>
             </View>
             <View style={styles.reasonContainer}>
               <ThemedText style={[styles.reasonText, { color: colors.destructive }]}>
@@ -319,9 +319,11 @@ export default function CuttingRequestDetailsScreen() {
 
         {/* Basic Information Card */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconScissors size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconScissors size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Informações Básicas</ThemedText>
+            </View>
           </View>
           <View style={styles.itemDetails}>
             {/* Status */}
@@ -363,9 +365,11 @@ export default function CuttingRequestDetailsScreen() {
         {/* File Section */}
         {cut.file && (
           <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconFile size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Arquivo de Corte</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconFile size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Arquivo de Corte</ThemedText>
+              </View>
             </View>
             <View style={styles.fileContainer}>
               <FileItem
@@ -386,11 +390,11 @@ export default function CuttingRequestDetailsScreen() {
               { backgroundColor: colors.warning + "10", borderColor: colors.warning, borderWidth: 1 },
             ]}
           >
-            <View style={styles.sectionHeader}>
-              <IconReload size={20} color={colors.warning} />
-              <ThemedText style={[styles.sectionTitle, { color: colors.warning }]}>
-                Este é um Retrabalho
-              </ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.warning }]}>
+              <View style={styles.headerLeft}>
+                <IconReload size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Este é um Retrabalho</ThemedText>
+              </View>
             </View>
             <TouchableOpacity
               style={styles.relatedCutItem}
@@ -413,9 +417,11 @@ export default function CuttingRequestDetailsScreen() {
         {/* Task Information Card */}
         {cut.task && (
           <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconClipboardList size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Informações da Tarefa</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconClipboardList size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Informações da Tarefa</ThemedText>
+              </View>
               <TouchableOpacity
                 onPress={() => router.push(`/producao/cronograma/detalhes/${cut.task!.id}`)}
                 style={styles.viewDetailsButton}
@@ -458,9 +464,11 @@ export default function CuttingRequestDetailsScreen() {
 
         {/* Dates Section */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconClock size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Datas</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconClock size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Datas</ThemedText>
+            </View>
           </View>
           <View style={styles.itemDetails}>
             <View style={styles.detailRow}>
@@ -487,12 +495,14 @@ export default function CuttingRequestDetailsScreen() {
         {/* Child Cuts (Recuts) Section */}
         {cut.childCuts && cut.childCuts.length > 0 && (
           <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconReload size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Retrabalhos Realizados</ThemedText>
-              <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                {cut.childCuts.length}
-              </Badge>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconReload size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Retrabalhos Realizados</ThemedText>
+                <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
+                  {cut.childCuts.length}
+                </Badge>
+              </View>
             </View>
             <View style={styles.itemDetails}>
               {cut.childCuts.map((childCut: any) => (
@@ -539,9 +549,11 @@ export default function CuttingRequestDetailsScreen() {
 
         {/* Changelog History */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconHistory size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconHistory size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
+            </View>
           </View>
           <View style={{ paddingHorizontal: spacing.md }}>
             <ChangelogTimeline
@@ -585,10 +597,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: spacing.md,
   },
-  headerLeft: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
   taskTitle: {
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
@@ -606,6 +614,23 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   sectionHeader: {
     flexDirection: "row",

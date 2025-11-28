@@ -12,19 +12,22 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getEconomicActivities, createEconomicActivity } from "@/api-client/economic-activity";
 import { showToast } from "@/components/ui/toast";
 import { Input, Combobox, Button } from "@/components/ui";
-import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
+import { FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
+import { Card } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
 import { PhoneManager } from "@/components/administration/customer/form/phone-manager";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
 import { LogoUpload } from "@/components/administration/customer/form/logo-upload";
 import { Text } from "@/components/ui/text";
-import { spacing } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
+import { IconBuilding, IconFileText, IconMapPin, IconPhone, IconTag } from "@tabler/icons-react-native";
 
 export default function CreateCustomerScreen() {
   const router = useRouter();
@@ -285,7 +288,14 @@ export default function CreateCustomerScreen() {
         >
         <KeyboardAwareFormProvider value={keyboardContextValue}>
         {/* Basic Information */}
-        <FormCard title="Informações Básicas">
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconBuilding size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Informações Básicas</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
           <FormFieldGroup
             label="Nome Fantasia"
             required
@@ -472,10 +482,18 @@ export default function CreateCustomerScreen() {
               )}
             />
           </FormFieldGroup>
-        </FormCard>
+          </View>
+        </Card>
 
         {/* Document */}
-        <FormCard title="Documento">
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconFileText size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Documento</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
           <FormFieldGroup label="Tipo de Documento" required error={errors.cnpj?.message || errors.cpf?.message}>
             <View style={styles.documentRow}>
               <View style={styles.documentTypeContainer}>
@@ -507,7 +525,7 @@ export default function CreateCustomerScreen() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <Input
                         value={value ? formatCNPJ(String(value)) : ""}
-                        onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
+                        onChangeText={(text) => onChange((cleanCNPJ(text) ?? "") as any)}
                         onBlur={onBlur}
                         placeholder="00.000.000/0000-00"
                         keyboardType="numeric"
@@ -524,7 +542,7 @@ export default function CreateCustomerScreen() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <Input
                         value={value ? formatCPF(String(value)) : ""}
-                        onChangeText={(text) => onChange(cleanCPF(text) || "")}
+                        onChangeText={(text) => onChange((cleanCPF(text) ?? "") as any)}
                         onBlur={onBlur}
                         placeholder="000.000.000-00"
                         keyboardType="numeric"
@@ -538,17 +556,33 @@ export default function CreateCustomerScreen() {
               </View>
             </View>
           </FormFieldGroup>
-        </FormCard>
+          </View>
+        </Card>
 
         {/* Logo */}
-        <FormCard title="Logo">
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconFileText size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Logo</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
           <FormFieldGroup label="Logo do Cliente">
             <LogoUpload value={logoFile} onChange={setLogoFile} disabled={isSubmitting} />
           </FormFieldGroup>
-        </FormCard>
+          </View>
+        </Card>
 
         {/* Address */}
-        <FormCard title="Endereço">
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconMapPin size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Endereço</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
           <FormFieldGroup label="Tipo de Logradouro" error={errors.logradouro?.message}>
             <Controller
               control={control}
@@ -576,7 +610,7 @@ export default function CreateCustomerScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   value={value ? formatCEP(String(value)) : ""}
-                  onChangeText={(text) => onChange(cleanCEP(text) || "")}
+                  onChangeText={(text) => onChange((cleanCEP(text) ?? "") as any)}
                   onBlur={onBlur}
                   placeholder="00000-000"
                   keyboardType="numeric"
@@ -699,10 +733,18 @@ export default function CreateCustomerScreen() {
               />
             </FormFieldGroup>
           </FormRow>
-        </FormCard>
+          </View>
+        </Card>
 
         {/* Contact */}
-        <FormCard title="Contato">
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconPhone size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Contato</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
           <FormFieldGroup label="Telefones">
             <Controller
               control={control}
@@ -712,10 +754,18 @@ export default function CreateCustomerScreen() {
               )}
             />
           </FormFieldGroup>
-        </FormCard>
+          </View>
+        </Card>
 
         {/* Tags */}
-        <FormCard title="Tags">
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconTag size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Tags</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
           <FormFieldGroup label="Tags do Cliente">
             <Controller
               control={control}
@@ -725,7 +775,8 @@ export default function CreateCustomerScreen() {
               )}
             />
           </FormFieldGroup>
-        </FormCard>
+          </View>
+        </Card>
         </KeyboardAwareFormProvider>
         </ScrollView>
 
@@ -754,7 +805,31 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: formSpacing.containerPaddingHorizontal,
     paddingTop: formSpacing.containerPaddingVertical,
-    paddingBottom: 0, // No spacing - action bar has its own margin
+    paddingBottom: 0,
+  },
+  card: {
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
   documentRow: {
     flexDirection: "row",

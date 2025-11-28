@@ -1,4 +1,3 @@
-import React from "react";
 import { SectorForm } from "@/components/administration/sector/form/sector-form";
 
 export default function CreateSectorScreen() {

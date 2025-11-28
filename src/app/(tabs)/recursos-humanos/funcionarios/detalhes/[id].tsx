@@ -376,131 +376,131 @@ export default function EmployeeDetailScreen() {
         </View>
 
         {/* Personal Information Card */}
-        <Card>
-          <CardContent>
-            <View style={styles.sectionHeader}>
-              <IconIdBadge size={20} color={colors.primary} />
-              <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconIdBadge size={20} color={colors.mutedForeground} />
+              <ThemedText style={[styles.title, { color: colors.foreground }]}>
                 Informações Pessoais
               </ThemedText>
             </View>
-            <View style={styles.infoGrid}>
-              <View style={styles.infoItem}>
-                <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
-                  CPF
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                  {employee.cpf || "Não informado"}
-                </ThemedText>
-              </View>
-              <View style={styles.infoItem}>
-                <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
-                  PIS
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                  {employee.pis || "Não informado"}
-                </ThemedText>
-              </View>
-              <View style={styles.infoItem}>
-                <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
-                  Data de Nascimento
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                  {employee.birth
-                    ? format(new Date(employee.birth), "dd/MM/yyyy", { locale: ptBR })
-                    : "Não informado"}
-                </ThemedText>
-              </View>
-              <View style={styles.infoItem}>
-                <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
-                  Tempo de Empresa
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                  {employmentDays} dias
-                </ThemedText>
-              </View>
+          </View>
+          <View style={styles.content}>
+            <View style={styles.infoItem}>
+              <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
+                CPF
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
+                {employee.cpf || "Não informado"}
+              </ThemedText>
             </View>
-          </CardContent>
+            <View style={styles.infoItem}>
+              <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
+                PIS
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
+                {employee.pis || "Não informado"}
+              </ThemedText>
+            </View>
+            <View style={styles.infoItem}>
+              <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
+                Data de Nascimento
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
+                {employee.birth
+                  ? format(new Date(employee.birth), "dd/MM/yyyy", { locale: ptBR })
+                  : "Não informado"}
+              </ThemedText>
+            </View>
+            <View style={styles.infoItem}>
+              <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
+                Tempo de Empresa
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
+                {employmentDays} dias
+              </ThemedText>
+            </View>
+          </View>
         </Card>
 
         {/* Contact Information Card */}
-        <Card>
-          <CardContent>
-            <View style={styles.sectionHeader}>
-              <IconPhone size={20} color={colors.primary} />
-              <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconPhone size={20} color={colors.mutedForeground} />
+              <ThemedText style={[styles.title, { color: colors.foreground }]}>
                 Informações de Contato
               </ThemedText>
             </View>
-            <View style={styles.contactGrid}>
-              {employee.email && (
-                <TouchableOpacity style={styles.contactItem} activeOpacity={0.7}>
-                  <IconMail size={18} color={colors.mutedForeground} />
-                  <ThemedText style={StyleSheet.flatten([styles.contactText, { color: colors.foreground }])}>
-                    {employee.email}
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
-              {employee.phone && (
-                <TouchableOpacity style={styles.contactItem} activeOpacity={0.7}>
-                  <IconPhone size={18} color={colors.mutedForeground} />
-                  <ThemedText style={StyleSheet.flatten([styles.contactText, { color: colors.foreground }])}>
-                    {employee.phone}
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
-            </View>
-          </CardContent>
+          </View>
+          <View style={styles.content}>
+            {employee.email && (
+              <TouchableOpacity style={styles.contactItem} activeOpacity={0.7}>
+                <IconMail size={18} color={colors.mutedForeground} />
+                <ThemedText style={StyleSheet.flatten([styles.contactText, { color: colors.foreground }])}>
+                  {employee.email}
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+            {employee.phone && (
+              <TouchableOpacity style={styles.contactItem} activeOpacity={0.7}>
+                <IconPhone size={18} color={colors.mutedForeground} />
+                <ThemedText style={StyleSheet.flatten([styles.contactText, { color: colors.foreground }])}>
+                  {employee.phone}
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
         </Card>
 
         {/* Professional Information Card */}
-        <Card>
-          <CardContent>
-            <View style={styles.sectionHeader}>
-              <IconBriefcase size={20} color={colors.primary} />
-              <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconBriefcase size={20} color={colors.mutedForeground} />
+              <ThemedText style={[styles.title, { color: colors.foreground }]}>
                 Informações Profissionais
               </ThemedText>
             </View>
-            <View style={styles.infoGrid}>
-              <View style={styles.infoItem}>
-                <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
-                  Cargo
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                  {employee.position?.name || "Não informado"}
-                </ThemedText>
-              </View>
-              <View style={styles.infoItem}>
-                <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
-                  Setor
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                  {employee.sector?.name || "Não informado"}
-                </ThemedText>
-              </View>
-              {employee.admissional && (
-                <View style={styles.infoItem}>
-                  <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
-                    Data de Admissão
-                  </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                    {format(new Date(employee.admissional), "dd/MM/yyyy", { locale: ptBR })}
-                  </ThemedText>
-                </View>
-              )}
-              {employee.dismissedAt && (
-                <View style={styles.infoItem}>
-                  <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
-                    Data de Desligamento
-                  </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                    {format(new Date(employee.dismissedAt), "dd/MM/yyyy", { locale: ptBR })}
-                  </ThemedText>
-                </View>
-              )}
+          </View>
+          <View style={styles.content}>
+            <View style={styles.infoItem}>
+              <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
+                Cargo
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
+                {employee.position?.name || "Não informado"}
+              </ThemedText>
             </View>
-          </CardContent>
+            <View style={styles.infoItem}>
+              <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
+                Setor
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
+                {employee.sector?.name || "Não informado"}
+              </ThemedText>
+            </View>
+            {employee.admissional && (
+              <View style={styles.infoItem}>
+                <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
+                  Data de Admissão
+                </ThemedText>
+                <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
+                  {format(new Date(employee.admissional), "dd/MM/yyyy", { locale: ptBR })}
+                </ThemedText>
+              </View>
+            )}
+            {employee.dismissedAt && (
+              <View style={styles.infoItem}>
+                <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
+                  Data de Desligamento
+                </ThemedText>
+                <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
+                  {format(new Date(employee.dismissedAt), "dd/MM/yyyy", { locale: ptBR })}
+                </ThemedText>
+              </View>
+            )}
+          </View>
         </Card>
 
         {/* Relation Tables */}
@@ -521,7 +521,7 @@ export default function EmployeeDetailScreen() {
               </ThemedText>
             </View>
           </CardContent>
-          <CardContent style={{ paddingHorizontal: 0 }}>
+          <CardContent>
             <ChangelogTimeline
               entityType={CHANGE_LOG_ENTITY_TYPE.USER}
               entityId={employee.id}
@@ -549,17 +549,34 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     gap: spacing.lg,
   },
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: spacing.lg,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    flex: 1,
   },
   avatarContainer: {
     width: 48,
@@ -652,17 +669,6 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: fontSize.xs,
     marginTop: 2,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-    flex: 1,
   },
   infoGrid: {
     gap: spacing.lg,

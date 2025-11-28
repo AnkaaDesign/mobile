@@ -28,7 +28,7 @@ export function VacationTimelineCard({
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
           <IconHistory size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
+          <ThemedText style={[styles.title, { color: colors.foreground }]}>Histórico de Alterações</ThemedText>
         </View>
       </View>
       <View style={styles.content}>

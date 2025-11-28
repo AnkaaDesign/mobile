@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -177,7 +177,7 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
             {/* Main Form Card */}
             <FormCard
               title="Informações da Notificação"
-              subtitle="Preencha os dados da notificação"
+              icon="IconBell"
             >
               {/* Title */}
               <FormFieldGroup

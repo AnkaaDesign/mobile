@@ -96,7 +96,7 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
           scrollEventThrottle={16}
         >
           <KeyboardAwareFormProvider value={keyboardContextValue}>
-            <FormCard title="Informações da Categoria">
+            <FormCard title="Informações da Categoria" icon="IconFolder">
           <FormFieldGroup
             label="Nome da Categoria"
             required={isRequired}

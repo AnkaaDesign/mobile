@@ -202,14 +202,16 @@ const fieldGroupStyles = StyleSheet.create({
 // Card-style form section with standardized styling
 export function FormCard({
   title,
-  subtitle,
+  description,
+  icon,
   children,
   className,
   contentClassName,
   action,
 }: {
   title?: string;
-  subtitle?: string;
+  description?: string;
+  icon?: React.ComponentProps<typeof Icon>["name"];
   children: React.ReactNode;
   className?: string;
   contentClassName?: string;
@@ -228,7 +230,7 @@ export function FormCard({
       ]}
       className={className}
     >
-      {(title || subtitle || action) && (
+      {(title || description || action) && (
         <View
           style={[
             cardStyles.header,
@@ -236,27 +238,32 @@ export function FormCard({
           ]}
         >
           <View style={cardStyles.headerContent}>
-            <View style={cardStyles.headerText}>
-              {title && (
-                <Text
-                  style={[
-                    cardStyles.title,
-                    { color: colors.foreground },
-                  ]}
-                >
-                  {title}
-                </Text>
+            <View style={cardStyles.headerLeft}>
+              {icon && (
+                <Icon name={icon} size={20} color={colors.mutedForeground} />
               )}
-              {subtitle && (
-                <Text
-                  style={[
-                    cardStyles.subtitle,
-                    { color: colors.mutedForeground },
-                  ]}
-                >
-                  {subtitle}
-                </Text>
-              )}
+              <View style={cardStyles.headerText}>
+                {title && (
+                  <Text
+                    style={[
+                      cardStyles.title,
+                      { color: colors.foreground },
+                    ]}
+                  >
+                    {title}
+                  </Text>
+                )}
+                {description && (
+                  <Text
+                    style={[
+                      cardStyles.description,
+                      { color: colors.mutedForeground },
+                    ]}
+                  >
+                    {description}
+                  </Text>
+                )}
+              </View>
             </View>
             {action && (
               <TouchableOpacity
@@ -284,31 +291,37 @@ const cardStyles = StyleSheet.create({
     borderWidth: formLayout.borderWidth, // 1px
     overflow: "hidden",
     marginBottom: formSpacing.cardMarginBottom, // 16px - spacing between cards
+    padding: formSpacing.cardPadding, // 16px - creates inset so borders don't reach edges
   },
   header: {
-    paddingHorizontal: formSpacing.cardPadding, // 16px
-    paddingVertical: formSpacing.cardHeaderContentGap + 4, // 12px
+    paddingBottom: formSpacing.cardHeaderContentGap + 4, // 12px
     borderBottomWidth: formLayout.borderWidth,
+    marginBottom: formSpacing.cardHeaderContentGap, // 8px - gap between header and content
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: formSpacing.rowGap, // 8px - consistent gap between icon and text
+    flex: 1,
+  },
   headerText: {
     flex: 1,
   },
   title: {
-    fontSize: formTypography.cardTitle.fontSize, // 16px
-    fontWeight: formTypography.cardTitle.fontWeight as any, // 600
+    fontSize: 16, // fontSize.lg equivalent
+    fontWeight: "500" as any, // Match detail page pattern
   },
-  subtitle: {
+  description: {
     fontSize: formTypography.cardSubtitle.fontSize, // 14px
     fontWeight: formTypography.cardSubtitle.fontWeight as any, // 400
-    marginTop: 2,
+    marginTop: 4,
   },
   content: {
-    padding: formSpacing.cardPadding, // 16px
     gap: formSpacing.fieldGap, // 16px - gap between form fields
   },
 });

@@ -30,7 +30,6 @@ import {
   UserPpeSizesCard,
 } from "@/components/administration/user/detail";
 import { LoadingScreen } from "@/components/ui/loading-screen";
-import { ErrorScreen } from "@/components/ui/error-screen";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function UserDetailScreen() {

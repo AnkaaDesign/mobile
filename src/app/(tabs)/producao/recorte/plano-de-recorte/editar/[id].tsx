@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform} from "react-native";
 import { useForm, Controller } from "react-hook-form";
@@ -24,7 +24,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Badge } from "@/components/ui/badge";
 import { IconScissors, IconDeviceFloppy, IconX, IconFileText } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 
@@ -246,9 +246,9 @@ export default function EditCuttingPlanScreen() {
         >
           {/* Header */}
           <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.xs }}>
-              <IconScissors size={20} color={colors.primary} />
-              <ThemedText style={{ fontSize: 18, fontWeight: "600" }}>Editar Plano de Recorte</ThemedText>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <IconScissors size={20} color={colors.mutedForeground} />
+              <ThemedText style={{ fontSize: fontSize.lg, fontWeight: "500" }}>Editar Plano de Recorte</ThemedText>
               <Badge variant="outline" style={{ marginLeft: "auto" }}>
                 {CUT_STATUS_LABELS[cut.status as CUT_STATUS]}
               </Badge>

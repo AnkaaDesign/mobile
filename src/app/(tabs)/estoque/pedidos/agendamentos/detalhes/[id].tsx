@@ -309,21 +309,27 @@ export default function OrderScheduleDetailsScreen() {
 
         {/* Basic Information - Frequency Configuration */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconCalendar size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Configuração da Frequência</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconCalendar size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Configuração da Frequência</ThemedText>
+            </View>
           </View>
-          <ScheduleInfoCard schedule={schedule} />
+          <View style={styles.content}>
+            <ScheduleInfoCard schedule={schedule} />
+          </View>
         </Card>
 
         {/* Supplier Information */}
         {schedule?.supplier && (
           <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconTruck size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Fornecedor</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconTruck size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Fornecedor</ThemedText>
+              </View>
             </View>
-            <View style={styles.cardContent}>
+            <View style={styles.content}>
               <InfoRow label="Nome" value={schedule.supplier.name || schedule.supplier.fantasyName} />
               {schedule.supplier.corporateName && (
                 <InfoRow label="Razão Social" value={schedule.supplier.corporateName} />
@@ -343,11 +349,13 @@ export default function OrderScheduleDetailsScreen() {
 
         {/* Items Information */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconPackage size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Itens ({schedule?.items?.length || 0})</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconPackage size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Itens ({schedule?.items?.length || 0})</ThemedText>
+            </View>
           </View>
-          <View style={styles.cardContent}>
+          <View style={styles.content}>
             {schedule?.items && schedule.items.length > 0 ? (
               <View style={styles.itemsList}>
                 {schedule.items.map((itemId, index) => (
@@ -367,11 +375,13 @@ export default function OrderScheduleDetailsScreen() {
 
         {/* Schedule Configuration Details */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconClock size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Configuração do Agendamento</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconClock size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Configuração do Agendamento</ThemedText>
+            </View>
           </View>
-          <View style={styles.cardContent}>
+          <View style={styles.content}>
             <InfoRow label="Contagem de Frequência" value={schedule.frequencyCount.toString()} />
 
             {schedule.specificDate && (
@@ -398,11 +408,13 @@ export default function OrderScheduleDetailsScreen() {
 
         {/* Execution Information */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconClock size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Informações de Execução</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconClock size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Informações de Execução</ThemedText>
+            </View>
           </View>
-          <View style={styles.cardContent}>
+          <View style={styles.content}>
             {schedule.nextRun && (
               <InfoRow label="Próxima Execução" value={formatDateTime(schedule.nextRun)} />
             )}
@@ -423,11 +435,13 @@ export default function OrderScheduleDetailsScreen() {
         {/* Last Order Information (if exists) */}
         {schedule.order && (
           <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconPackage size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Último Pedido Criado</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconPackage size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Último Pedido Criado</ThemedText>
+              </View>
             </View>
-            <View style={styles.cardContent}>
+            <View style={styles.content}>
               <InfoRow label="ID do Pedido" value={schedule.order.id} />
               {schedule.order.description && (
                 <InfoRow label="Descrição" value={schedule.order.description} />
@@ -448,11 +462,13 @@ export default function OrderScheduleDetailsScreen() {
         {/* Recent Order History */}
         {ordersResponse?.data && ordersResponse.data.length > 0 && (
           <Card style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <IconHistory size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Histórico de Pedidos</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconHistory size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Histórico de Pedidos</ThemedText>
+              </View>
             </View>
-            <View style={styles.cardContent}>
+            <View style={styles.content}>
               <ScheduleHistory orders={ordersResponse.data} />
             </View>
           </Card>
@@ -460,11 +476,13 @@ export default function OrderScheduleDetailsScreen() {
 
         {/* Metadata Section */}
         <Card style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <IconClock size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Informações do Sistema</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconClock size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Informações do Sistema</ThemedText>
+            </View>
           </View>
-          <View style={styles.cardContent}>
+          <View style={styles.content}>
             <InfoRow label="ID" value={schedule.id} />
             <InfoRow label="Criado em" value={formatDateTime(schedule.createdAt)} />
             <InfoRow label="Atualizado em" value={formatDateTime(schedule.updatedAt)} />
@@ -569,16 +587,20 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
-  sectionHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    gap: spacing.sm,
+    borderBottomWidth: 1,
   },
-  sectionTitle: {
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
   cardContent: {
     gap: spacing.xs,

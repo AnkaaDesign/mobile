@@ -6,12 +6,6 @@ import { useState, useCallback } from "react";
 import { formatCurrency } from "@/utils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// Types for filters and data
-interface DateRange {
-  from: Date;
-  to: Date;
-}
-
 interface TopItemsFilters {
   period: 'month' | 'quarter' | 'year';
   analysisType: 'consumption' | 'cost' | 'frequency';

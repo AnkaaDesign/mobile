@@ -186,10 +186,12 @@ export default function CreateComponentScreen() {
           </Card>
 
           {/* Item Selection Card */}
-          <Card style={styles.formCard}>
-            <View style={styles.cardHeader}>
-              <IconPackage size={20} color={colors.foreground} />
-              <ThemedText style={styles.cardTitle}>Selecionar Item</ThemedText>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconPackage size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Selecionar Item</ThemedText>
+              </View>
             </View>
 
             <Controller
@@ -241,10 +243,12 @@ export default function CreateComponentScreen() {
           </Card>
 
           {/* Ratio Input Card */}
-          <Card style={styles.formCard}>
-            <View style={styles.cardHeader}>
-              <IconPercentage size={20} color={colors.foreground} />
-              <ThemedText style={styles.cardTitle}>Proporção</ThemedText>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconPercentage size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Proporção</ThemedText>
+              </View>
             </View>
 
             <Controller
@@ -331,6 +335,27 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: fontSize.md,
     opacity: 0.7,
+  },
+  card: {
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   headerCard: {
     marginBottom: spacing.md,

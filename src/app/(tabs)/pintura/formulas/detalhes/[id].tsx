@@ -14,7 +14,7 @@ import { showToast } from "@/components/ui/toast";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MobilePaintFormulaCalculator } from "@/components/painting/formula/mobile-paint-formula-calculator";
-import { IconBuildingFactory } from "@tabler/icons-react-native";
+import { IconBuildingFactory, IconFactory } from "@tabler/icons-react-native";
 
 export default function FormulaDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -159,9 +159,11 @@ export default function FormulaDetailsScreen() {
         {/* Productions Summary Card - Simple and Clean */}
         {formula._count?.paintProduction !== undefined && formula._count.paintProduction > 0 && (
           <Card style={styles.card}>
-            <View style={StyleSheet.flatten([styles.sectionHeader, { borderBottomColor: colors.border }])}>
-              <IconBuildingFactory size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Histórico de Produção</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconFactory size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Histórico de Produção</ThemedText>
+              </View>
               <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
                 {formula._count.paintProduction}
               </Badge>
@@ -215,16 +217,33 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: "600",
+    fontWeight: "500",
     marginLeft: spacing.sm,
     flex: 1,
   },

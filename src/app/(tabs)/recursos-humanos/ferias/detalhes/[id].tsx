@@ -162,7 +162,7 @@ export default function VacationDetailScreen() {
 
           {/* Changelog Timeline */}
           <Card>
-            <CardContent style={{ paddingHorizontal: 0 }}>
+            <CardContent>
               <ChangelogTimeline
                 entityType={CHANGE_LOG_ENTITY_TYPE.VACATION}
                 entityId={id}

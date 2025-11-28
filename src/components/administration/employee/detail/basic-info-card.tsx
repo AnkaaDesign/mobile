@@ -54,10 +54,10 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
 
   return (
     <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <IconUser size={18} color="#16a34a" />
-          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <IconUser size={20} color={colors.mutedForeground} />
+          <ThemedText style={styles.title}>
             Informações Básicas
           </ThemedText>
         </View>
@@ -141,21 +141,22 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
-  sectionHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  titleRow: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  titleText: {
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
   },
   content: {
     gap: spacing.md,

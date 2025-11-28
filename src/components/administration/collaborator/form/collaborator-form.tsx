@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -205,7 +205,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
         {/* Personal Information */}
         <FormCard
           title="Informações Pessoais"
-          subtitle="Dados básicos do colaborador"
+          icon="IconUser"
         >
           {/* Name */}
           <FormFieldGroup
@@ -344,7 +344,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
         {/* Work Information */}
         <FormCard
           title="Informações de Trabalho"
-          subtitle="Cargo, setor e status do colaborador"
+          icon="IconBriefcase"
         >
           {/* Sector and Position Row */}
           <FormRow>
@@ -503,7 +503,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
         {/* Address Information */}
         <FormCard
           title="Endereço"
-          subtitle="Informações de localização do colaborador"
+          icon="IconMapPin"
         >
           {/* Address */}
           <FormFieldGroup

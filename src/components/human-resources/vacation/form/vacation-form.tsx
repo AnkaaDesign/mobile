@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useEffect, useRef } from "react";
+import { useMemo, useCallback, useEffect, useRef } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -260,7 +260,7 @@ export function VacationForm({
         >
           <KeyboardAwareFormProvider value={keyboardContextValue}>
           {/* Main Form Card */}
-          <FormCard title="Informações das Férias" description="Preencha as informações do período de férias">
+          <FormCard title="Informações das Férias" description="Preencha as informações do período de férias" icon="IconBeach">
           {/* Collective Toggle */}
           <FormFieldGroup label="Férias Coletivas" helper="Férias aplicadas a todos os colaboradores">
             <View style={styles.switchRow}>

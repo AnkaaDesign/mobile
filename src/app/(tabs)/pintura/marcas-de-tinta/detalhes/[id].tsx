@@ -179,9 +179,11 @@ export default function PaintBrandDetailsScreen() {
 
         {/* Basic Information Card */}
         <Card style={styles.card}>
-          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-            <IconInfoCircle size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeftSection}>
+              <IconInfoCircle size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Informações Básicas</ThemedText>
+            </View>
           </View>
           <View style={styles.itemDetails}>
             <View style={styles.detailRow}>
@@ -193,9 +195,11 @@ export default function PaintBrandDetailsScreen() {
 
         {/* Statistics Card */}
         <Card style={styles.card}>
-          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-            <IconSettings size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Estatísticas</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeftSection}>
+              <IconSettings size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Estatísticas</ThemedText>
+            </View>
           </View>
           <View style={styles.statisticsGrid}>
             <View style={StyleSheet.flatten([styles.statItem, { backgroundColor: colors.muted }])}>
@@ -214,9 +218,11 @@ export default function PaintBrandDetailsScreen() {
         {/* Related Paints Section */}
         {paintBrand.paints && paintBrand.paints.length > 0 ? (
           <Card style={styles.card}>
-            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-              <IconBrush size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Tintas Relacionadas</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeftSection}>
+                <IconBrush size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Tintas Relacionadas</ThemedText>
+              </View>
             </View>
             <ScrollView
               style={{ maxHeight: 400 }}
@@ -277,9 +283,11 @@ export default function PaintBrandDetailsScreen() {
           </Card>
         ) : (
           <Card style={styles.card}>
-            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-              <IconBrush size={20} color={colors.primary} />
-              <ThemedText style={styles.sectionTitle}>Tintas Relacionadas</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeftSection}>
+                <IconBrush size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Tintas Relacionadas</ThemedText>
+              </View>
             </View>
             <View style={styles.emptyState}>
               <IconPaint size={48} color={colors.mutedForeground} style={{ opacity: 0.5 }} />
@@ -295,9 +303,11 @@ export default function PaintBrandDetailsScreen() {
 
         {/* Metadata Card */}
         <Card style={styles.card}>
-          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-            <IconCalendar size={20} color={colors.primary} />
-            <ThemedText style={styles.sectionTitle}>Metadados</ThemedText>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeftSection}>
+              <IconCalendar size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Metadados</ThemedText>
+            </View>
           </View>
           <View style={styles.itemDetails}>
             <View style={styles.detailRow}>
@@ -362,6 +372,26 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeftSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  cardContent: {
+    gap: spacing.sm,
+  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -371,9 +401,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: "600",
+    fontWeight: "500",
     marginLeft: spacing.sm,
-    flex: 1,
   },
   itemDetails: {
     gap: spacing.sm,

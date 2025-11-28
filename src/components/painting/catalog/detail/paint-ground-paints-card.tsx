@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card'
 import { Text } from '@/components/ui/text'
 import { Badge } from '@/components/ui/badge'
 import { Icon } from '@/components/ui/icon'
-import { spacing } from '@/constants/design-system'
+import { spacing, fontSize } from '@/constants/design-system'
 import type { Paint } from '@/types'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
 import { useTheme } from '@/lib/theme'
@@ -20,7 +20,7 @@ interface PaintGroundPaintsCardProps {
 }
 
 export function PaintGroundPaintsCard({ paint }: PaintGroundPaintsCardProps) {
-  const { isDark } = useTheme();
+  const { colors, isDark } = useTheme();
   const badgeStyle = isDark ? BADGE_COLORS.dark : BADGE_COLORS.light;
   if (!paint.paintGrounds || paint.paintGrounds.length === 0) {
     return null
@@ -31,15 +31,16 @@ export function PaintGroundPaintsCard({ paint }: PaintGroundPaintsCardProps) {
   }
 
   return (
-    <Card className="p-4">
+    <Card style={styles.card}>
       {/* Header */}
-      <View className="flex-row items-center gap-2 mb-4">
-        <View className="p-2 rounded-lg bg-primary/10">
-          <Icon name="layers" size={20} className="text-primary" />
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={styles.headerLeft}>
+          <Icon name="layers" size={20} style={{ color: colors.mutedForeground }} />
+          <Text style={styles.title}>Fundos Recomendados</Text>
         </View>
-        <Text className="text-lg font-semibold text-foreground">Fundos Recomendados</Text>
       </View>
 
+      <View style={styles.content}>
       {/* Ground Paints List */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View className="flex-row gap-3">
@@ -96,11 +97,35 @@ export function PaintGroundPaintsCard({ paint }: PaintGroundPaintsCardProps) {
           })}
         </View>
       </ScrollView>
+      </View>
     </Card>
   )
 }
 
 const styles = StyleSheet.create({
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 3,

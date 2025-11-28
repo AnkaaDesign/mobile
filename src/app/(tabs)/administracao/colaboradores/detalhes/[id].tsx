@@ -11,7 +11,7 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import { IconUser } from "@tabler/icons-react-native";
 import { showToast } from "@/components/ui/toast";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
-import { Card as UICard, CardHeader, CardTitle, CardContent as UICardContent } from "@/components/ui/card";
+import { Card as UICard, CardHeader, CardContent as UICardContent } from "@/components/ui/card";
 import { IconHistory } from "@tabler/icons-react-native";
 
 // Import modular components
@@ -135,17 +135,17 @@ export default function EmployeeDetailsScreen() {
 
           {/* Changelog Timeline */}
           <UICard>
-            <CardHeader>
-              <CardTitle style={styles.sectionTitle}>
-                <View style={styles.titleRow}>
-                  <IconHistory size={18} color="#16a34a" />
-                  <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
+            <CardHeader style={styles.cardHeader}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <IconHistory size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.title}>
                     Histórico de Alterações
                   </ThemedText>
                 </View>
-              </CardTitle>
+              </View>
             </CardHeader>
-            <UICardContent style={{ paddingHorizontal: 0 }}>
+            <UICardContent>
               <ChangelogTimeline
                 entityType={CHANGE_LOG_ENTITY_TYPE.USER}
                 entityId={employee.id}
@@ -198,17 +198,27 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     paddingHorizontal: spacing.xl,
   },
-  sectionTitle: {
+  cardHeader: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
-  titleRow: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  titleText: {
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "500",
   },
 });

@@ -224,13 +224,13 @@ export default function OrderDetailScreen() {
 
         {/* Changelog Timeline */}
         <Card style={styles.card}>
-          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-            <View style={styles.sectionHeaderLeft}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
               <IconHistory size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
+              <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
             </View>
           </View>
-          <View style={styles.changelogContent}>
+          <View style={styles.content}>
             <ChangelogTimeline
               entityType={CHANGE_LOG_ENTITY_TYPE.ORDER}
               entityId={order.id}
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  sectionHeader: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -306,14 +306,12 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  sectionHeaderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  sectionTitle: {
+  title: {
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.medium,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
   changelogContent: {
     marginTop: spacing.sm,

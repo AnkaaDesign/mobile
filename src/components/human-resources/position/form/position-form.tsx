@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -103,7 +103,7 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
           scrollEventThrottle={16}
         >
           <KeyboardAwareFormProvider value={keyboardContextValue}>
-          <FormCard title="Informações do Cargo">
+          <FormCard title="Informações do Cargo" icon="IconBriefcase">
           {/* Name */}
           <FormFieldGroup
             label="Nome"

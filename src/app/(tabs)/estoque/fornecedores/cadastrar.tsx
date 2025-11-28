@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateSupplier, useKeyboardAwareScroll } from "@/hooks";
-import { supplierCreateSchema } from "@/schemas";
+import { supplierCreateSchema, type SupplierCreateFormData } from "@/schemas";
 import { Input, Combobox } from "@/components/ui";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
@@ -90,12 +90,12 @@ export default function SupplierCreateScreen() {
         if (data.site) formData.append("site", data.site);
 
         // Add phones as array
-        data.phones?.forEach((phone, index) => {
+        data.phones?.forEach((phone: string, index: number) => {
           formData.append(`phones[${index}]`, phone);
         });
 
         // Add tags as array
-        data.tags?.forEach((tag, index) => {
+        data.tags?.forEach((tag: string, index: number) => {
           formData.append(`tags[${index}]`, tag);
         });
 
@@ -191,7 +191,7 @@ export default function SupplierCreateScreen() {
         >
         <KeyboardAwareFormProvider value={keyboardContextValue}>
         {/* Basic Information */}
-        <FormCard title="Informações Básicas">
+        <FormCard title="Informações Básicas" icon="IconBuildingStore">
           <FormFieldGroup
             label="Nome Fantasia"
             required
@@ -221,7 +221,7 @@ export default function SupplierCreateScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   value={value ? formatCNPJ(String(value || "")) : ""}
-                  onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
+                  onChangeText={(text) => onChange((cleanCNPJ(text) ?? "") as any)}
                   onBlur={onBlur}
                   placeholder="00.000.000/0000-00"
                   keyboardType="numeric"
@@ -292,7 +292,7 @@ export default function SupplierCreateScreen() {
         </FormCard>
 
         {/* Address */}
-        <FormCard title="Endereço">
+        <FormCard title="Endereço" icon="IconMapPin">
           <FormFieldGroup label="CEP" error={form.formState.errors.zipCode?.message}>
             <Controller
               control={form.control}
@@ -300,7 +300,7 @@ export default function SupplierCreateScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   value={value ? formatZipCode(String(value || "")) : ""}
-                  onChangeText={(text) => onChange(cleanZipCode(text) || "")}
+                  onChangeText={(text) => onChange((cleanZipCode(text) ?? "") as any)}
                   onBlur={onBlur}
                   placeholder="00000-000"
                   keyboardType="numeric"
@@ -432,7 +432,7 @@ export default function SupplierCreateScreen() {
         </FormCard>
 
         {/* Contact */}
-        <FormCard title="Contato">
+        <FormCard title="Contato" icon="IconPhone">
           <FormFieldGroup label="Telefones">
             <Controller
               control={form.control}
@@ -445,7 +445,7 @@ export default function SupplierCreateScreen() {
         </FormCard>
 
         {/* Files */}
-        <FormCard title="Arquivos">
+        <FormCard title="Arquivos" icon="IconFileText">
           <FormFieldGroup label="Logo do Fornecedor">
             <FileUploadManager
               files={logoFiles}
@@ -466,7 +466,7 @@ export default function SupplierCreateScreen() {
         </FormCard>
 
         {/* Tags */}
-        <FormCard title="Tags">
+        <FormCard title="Tags" icon="IconTag">
           <FormFieldGroup label="Tags do Fornecedor">
             <Controller
               control={form.control}

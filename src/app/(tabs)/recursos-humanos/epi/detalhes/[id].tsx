@@ -241,7 +241,7 @@ export default function PPEDetailsScreen() {
 
           {/* Changelog Timeline */}
           <Card>
-            <View style={styles.changelogHeader}>
+            <CardContent style={styles.changelogHeader}>
               <View style={styles.titleRow}>
                 <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
                   <IconHistory size={18} color={colors.primary} />
@@ -250,8 +250,8 @@ export default function PPEDetailsScreen() {
                   Histórico de Alterações
                 </ThemedText>
               </View>
-            </View>
-            <View style={{ paddingHorizontal: 0 }}>
+            </CardContent>
+            <CardContent>
               <ChangelogTimeline
                 entityType={CHANGE_LOG_ENTITY_TYPE.ITEM}
                 entityId={item.id}
@@ -259,7 +259,7 @@ export default function PPEDetailsScreen() {
                 entityCreatedAt={item.createdAt}
                 maxHeight={400}
               />
-            </View>
+            </CardContent>
           </Card>
 
           {/* Related Items */}

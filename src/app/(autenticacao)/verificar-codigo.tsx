@@ -89,16 +89,6 @@ export default function VerificationCodeScreen() {
       console.log(`Código reenviado! Um novo código foi enviado por ${contactType}.`);
     } catch (error) {
       console.error("Resend failed:", error);
-
-      let errorMessage = "Falha ao reenviar o código. Tente novamente.";
-
-      if (error instanceof Error) {
-        if (error.message.includes("Limite de requisições excedido") || error.message.includes("rate limit")) {
-          errorMessage = "Muitas tentativas. Aguarde antes de solicitar um novo código.";
-        } else {
-          errorMessage = error.message;
-        }
-      }
     }
   };
 

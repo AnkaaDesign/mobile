@@ -158,10 +158,12 @@ export default function ComponentDetailsScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Component Ratio Card */}
-        <Card style={styles.ratioCard}>
-          <View style={styles.ratioHeader}>
-            <IconPercentage size={24} color={colors.primary} />
-            <ThemedText style={styles.cardTitle}>Proporção na Fórmula</ThemedText>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconPercentage size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Proporção na Fórmula</ThemedText>
+            </View>
           </View>
           <View style={styles.ratioDisplay}>
             <ThemedText style={styles.ratioValue}>
@@ -173,10 +175,12 @@ export default function ComponentDetailsScreen() {
 
         {/* Item Information Card */}
         {componentData.item && (
-          <Card style={styles.itemCard}>
-            <View style={styles.cardHeader}>
-              <IconPackage size={20} color={colors.foreground} />
-              <ThemedText style={styles.cardTitle}>Informações do Item</ThemedText>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconPackage size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Informações do Item</ThemedText>
+              </View>
             </View>
 
             <View style={styles.itemInfo}>
@@ -219,10 +223,12 @@ export default function ComponentDetailsScreen() {
 
         {/* Formula Information Card */}
         {componentData.formula && (
-          <Card style={styles.formulaCard}>
-            <View style={styles.cardHeader}>
-              <IconFlask size={20} color={colors.foreground} />
-              <ThemedText style={styles.cardTitle}>Fórmula</ThemedText>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconFlask size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Fórmula</ThemedText>
+              </View>
             </View>
 
             <View style={styles.formulaInfo}>
@@ -260,10 +266,12 @@ export default function ComponentDetailsScreen() {
         )}
 
         {/* Audit Information Card */}
-        <Card style={styles.auditCard}>
-          <View style={styles.cardHeader}>
-            <IconCalendar size={20} color={colors.foreground} />
-            <ThemedText style={styles.cardTitle}>Informações de Auditoria</ThemedText>
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconCalendar size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Informações de Auditoria</ThemedText>
+            </View>
           </View>
 
           <View style={styles.auditInfo}>
@@ -314,6 +322,26 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: spacing.md,
+  },
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
   },
   ratioCard: {
     marginBottom: spacing.md,

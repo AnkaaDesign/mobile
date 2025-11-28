@@ -1,4 +1,4 @@
-import { View, ScrollView, RefreshControl, Alert } from "react-native";
+import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
 import { useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Text } from "@/components/ui/text";
@@ -13,11 +13,40 @@ import { formatDate } from "@/utils/date";
 import { formatFileSize } from "@/utils/file-utils";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
+import { useTheme } from "@/lib/theme";
+import { spacing, fontSize } from "@/constants/design-system";
+
+const styles = StyleSheet.create({
+  card: {
+    padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
+  },
+});
 
 export default function BackupDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [isRestoring, setIsRestoring] = useState(false);
+  const { colors } = useTheme();
 
   const { data: backup, isLoading, refetch, isFetching } = useBackup(id!);
   const { restore, delete: deleteBackup } = useBackupMutations();
@@ -92,11 +121,14 @@ export default function BackupDetailsScreen() {
           </View>
 
           {/* Status Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Status</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <Icon name="info" size={20} color={colors.mutedForeground} />
+                <Text style={styles.title}>Status</Text>
+              </View>
+            </View>
+            <View style={styles.content}>
               <View className="flex-row items-center gap-2 mb-4">
                 <Badge variant={backup.status === "completed" ? "success" : backup.status === "failed" ? "destructive" : "default"}>
                   {backup.status}
@@ -106,7 +138,7 @@ export default function BackupDetailsScreen() {
                 </Badge>
                 {backup.encrypted && (
                   <Badge variant="info">
-                    <Icon name="lock" className="w-3 h-3 mr-1" />
+                    <Icon name="lock" size={16} color={colors.mutedForeground} />
                     Criptografado
                   </Badge>
                 )}
@@ -134,49 +166,58 @@ export default function BackupDetailsScreen() {
                   <Text className="font-medium">{formatDate(backup.createdAt)}</Text>
                 </View>
               </View>
-            </CardContent>
+            </View>
           </Card>
 
           {/* Details Card */}
           {backup.description && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Descrição</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <Icon name="file-text" size={20} color={colors.mutedForeground} />
+                  <Text style={styles.title}>Descrição</Text>
+                </View>
+              </View>
+              <View style={styles.content}>
                 <Text className="text-muted-foreground">{backup.description}</Text>
-              </CardContent>
+              </View>
             </Card>
           )}
 
           {/* Contents Card */}
           {(backup as any).contents && (backup as any).contents.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Conteúdo</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <Icon name="package" size={20} color={colors.mutedForeground} />
+                  <Text style={styles.title}>Conteúdo</Text>
+                </View>
+              </View>
+              <View style={styles.content}>
                 <View className="gap-2">
                   {(backup as any).contents.map((item: string, index: number) => (
                     <View key={index} className="flex-row items-center gap-2">
-                      <Icon name="check" className="w-4 h-4 text-green-500" />
+                      <Icon name="check" size={20} color={colors.mutedForeground} />
                       <Text>{item}</Text>
                     </View>
                   ))}
                 </View>
-              </CardContent>
+              </View>
             </Card>
           )}
 
           {/* Error Card */}
           {backup.status === "failed" && backup.error && (
-            <Card className="border-destructive">
-              <CardHeader>
-                <CardTitle className="text-destructive">Erro</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Text className="text-destructive">{backup.error}</Text>
-              </CardContent>
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.destructive }]}>
+                <View style={styles.headerLeft}>
+                  <Icon name="alert-circle" size={20} color={colors.destructive} />
+                  <Text style={[styles.title, { color: colors.destructive }]}>Erro</Text>
+                </View>
+              </View>
+              <View style={styles.content}>
+                <Text style={{ color: colors.destructive }}>{backup.error}</Text>
+              </View>
             </Card>
           )}
 

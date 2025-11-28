@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { IconPackage, IconCurrency, IconCalendar } from "@tabler/icons-react-native";
 import { useOrderItem, useOrderItemMutations } from "@/hooks";
 import { orderItemUpdateSchema } from '../../../../../../../schemas';
 import type { OrderItemUpdateFormData } from '../../../../../../../schemas';
@@ -177,10 +178,13 @@ export default function EditOrderItemScreen() {
           {/* Order Context */}
           {order && (
             <Card style={styles.card}>
-              <View style={styles.orderHeader}>
-                <View style={styles.orderInfo}>
-                  <ThemedText style={styles.orderTitle}>{order?.description || `Pedido #${orderId}`}</ThemedText>
-                  <ThemedText style={styles.orderSupplier}>{order?.supplier?.name}</ThemedText>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <IconPackage size={20} color={colors.mutedForeground} />
+                  <View style={{ flex: 1 }}>
+                    <ThemedText style={styles.title}>{order?.description || `Pedido #${orderId}`}</ThemedText>
+                    <ThemedText style={{ fontSize: 14, opacity: 0.7 }}>{order?.supplier?.name}</ThemedText>
+                  </View>
                 </View>
                 <View style={StyleSheet.flatten([styles.statusBadge, { backgroundColor: status.color + "20" }])}>
                   <ThemedText style={StyleSheet.flatten([styles.statusText, { color: status.color }])}>
@@ -193,12 +197,17 @@ export default function EditOrderItemScreen() {
 
           {/* Item Information (Read-only) */}
           <Card style={styles.card}>
-            <ThemedText style={styles.sectionTitle}>Item</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconPackage size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Item</ThemedText>
+              </View>
+            </View>
 
-            <View style={styles.itemInfo}>
+            <View style={styles.content}>
               <ThemedText style={styles.itemName}>{item?.name || "Item desconhecido"}</ThemedText>
 
-              <View style={styles.itemDetails}>
+              <View style={styles.content}>
                 {item?.uniCode && (
                   <View style={styles.itemDetailRow}>
                     <ThemedText style={styles.itemDetailLabel}>Código:</ThemedText>
@@ -225,7 +234,13 @@ export default function EditOrderItemScreen() {
 
           {/* Quantity and Price Editing */}
           <Card style={styles.card}>
-            <ThemedText style={styles.sectionTitle}>Quantidade e Preço</ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconCurrency size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Quantidade e Preço</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
 
             <View style={styles.formRow}>
               <View style={styles.formGroup}>
@@ -338,60 +353,73 @@ export default function EditOrderItemScreen() {
                 </View>
               )}
             </View>
+            </View>
           </Card>
 
           {/* Progress Summary */}
           <Card style={styles.card}>
-            <ThemedText style={styles.sectionTitle}>Resumo</ThemedText>
-
-            <View style={styles.progressContainer}>
-              <View style={styles.progressItem}>
-                <ThemedText style={styles.progressLabel}>Pedido</ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.progressValue, { color: colors.primary }])}>
-                  {watchedQuantity || orderItem?.data?.orderedQuantity}
-                </ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconPackage size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Resumo</ThemedText>
               </View>
+            </View>
+            <View style={styles.content}>
+              <View style={styles.progressContainer}>
+                <View style={styles.progressItem}>
+                  <ThemedText style={styles.progressLabel}>Pedido</ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.progressValue, { color: colors.primary }])}>
+                    {watchedQuantity || orderItem?.data?.orderedQuantity}
+                  </ThemedText>
+                </View>
 
-              <View style={styles.progressItem}>
-                <ThemedText style={styles.progressLabel}>Atendido</ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.progressValue, { color: colors.warning }])}>
-                  {watchedFulfilledQuantity ?? orderItem?.data?.receivedQuantity ?? 0}
-                </ThemedText>
-              </View>
+                <View style={styles.progressItem}>
+                  <ThemedText style={styles.progressLabel}>Atendido</ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.progressValue, { color: colors.warning }])}>
+                    {watchedFulfilledQuantity ?? orderItem?.data?.receivedQuantity ?? 0}
+                  </ThemedText>
+                </View>
 
-              <View style={styles.progressItem}>
-                <ThemedText style={styles.progressLabel}>Recebido</ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.progressValue, { color: colors.primary }])}>
-                  {watchedReceivedQuantity ?? orderItem?.data?.receivedQuantity ?? 0}
-                </ThemedText>
-              </View>
+                <View style={styles.progressItem}>
+                  <ThemedText style={styles.progressLabel}>Recebido</ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.progressValue, { color: colors.primary }])}>
+                    {watchedReceivedQuantity ?? orderItem?.data?.receivedQuantity ?? 0}
+                  </ThemedText>
+                </View>
 
-              <View style={styles.progressItem}>
-                <ThemedText style={styles.progressLabel}>Pendente</ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.progressValue, { color: colors.destructive }])}>
-                  {(watchedQuantity || orderItem?.data?.orderedQuantity || 0) - (watchedFulfilledQuantity ?? orderItem?.data?.receivedQuantity ?? 0)}
-                </ThemedText>
+                <View style={styles.progressItem}>
+                  <ThemedText style={styles.progressLabel}>Pendente</ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.progressValue, { color: colors.destructive }])}>
+                    {(watchedQuantity || orderItem?.data?.orderedQuantity || 0) - (watchedFulfilledQuantity ?? orderItem?.data?.receivedQuantity ?? 0)}
+                  </ThemedText>
+                </View>
               </View>
             </View>
           </Card>
 
           {/* Audit Information */}
           <Card style={styles.card}>
-            <ThemedText style={styles.sectionTitle}>Informações de Auditoria</ThemedText>
-
-            <View style={styles.auditInfo}>
-              <View style={styles.auditRow}>
-                <ThemedText style={styles.auditLabel}>Criado em:</ThemedText>
-                <ThemedText style={styles.auditValue}>
-                  {formatDate(orderItem?.data?.createdAt || new Date())}
-                </ThemedText>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconCalendar size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Informações de Auditoria</ThemedText>
               </View>
+            </View>
+            <View style={styles.content}>
+              <View style={styles.auditInfo}>
+                <View style={styles.auditRow}>
+                  <ThemedText style={styles.auditLabel}>Criado em:</ThemedText>
+                  <ThemedText style={styles.auditValue}>
+                    {formatDate(orderItem?.data?.createdAt || new Date())}
+                  </ThemedText>
+                </View>
 
-              <View style={styles.auditRow}>
-                <ThemedText style={styles.auditLabel}>Atualizado em:</ThemedText>
-                <ThemedText style={styles.auditValue}>
-                  {formatDate(orderItem?.data?.updatedAt || new Date())}
-                </ThemedText>
+                <View style={styles.auditRow}>
+                  <ThemedText style={styles.auditLabel}>Atualizado em:</ThemedText>
+                  <ThemedText style={styles.auditValue}>
+                    {formatDate(orderItem?.data?.updatedAt || new Date())}
+                  </ThemedText>
+                </View>
               </View>
             </View>
           </Card>
@@ -458,6 +486,23 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: "600",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "500",
   },
   sectionTitle: {
     fontSize: 18,

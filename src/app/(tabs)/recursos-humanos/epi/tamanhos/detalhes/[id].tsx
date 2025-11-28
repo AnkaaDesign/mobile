@@ -173,7 +173,7 @@ export default function PPESizeDetailsScreen() {
                 </View>
               </CardTitle>
             </CardHeader>
-            <CardContent style={{ paddingHorizontal: 0 }}>
+            <CardContent>
               <ChangelogTimeline
                 entityType={CHANGE_LOG_ENTITY_TYPE.PPE_SIZE}
                 entityId={ppeSize.id}

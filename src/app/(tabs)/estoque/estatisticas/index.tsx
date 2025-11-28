@@ -98,7 +98,7 @@ export default function EstatisticasScreen() {
   const calculateMovementRate = () => {
     if (!data?.overview) return 0;
     const total = data.overview.totalItems?.value || 1;
-    const stagnant = data.overview.stagnantItems?.value || 0;
+    const stagnant = data.overview.stagnantItems?.value ?? 0;
     return Math.round(((total - stagnant) / total) * 100);
   };
 

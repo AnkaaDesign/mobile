@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { Stack, useLocalSearchParams, router } from "expo-router";
 import { ScrollView, View, Alert , StyleSheet} from "react-native";
 import { useServiceDetail, useServiceMutations } from "@/hooks";
@@ -7,13 +7,14 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ServiceInfoCard } from "@/components/production/service/detail/service-info-card";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { spacing } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
-import { IconEdit, IconTrash } from "@tabler/icons-react-native";
+import { IconEdit, IconTrash, IconLightbulb } from "@tabler/icons-react-native";
 
 export default function ServiceDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -154,24 +155,23 @@ export default function ServiceDetailsScreen() {
           {/* Service Information */}
           <ServiceInfoCard service={service} />
 
-          {/* Additional sections can be added here in the future:
-              - Tasks that use this service
-              - Usage statistics
-              - Related services
-          */}
-
           {/* Placeholder for future features */}
-          <View style={styles.futureSection}>
-            <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.mutedForeground }])}>
-              Funcionalidades Futuras
-            </ThemedText>
-            <ThemedText style={StyleSheet.flatten([styles.sectionDescription, { color: colors.mutedForeground }])}>
-              • Lista de tarefas que utilizam este serviço{"\n"}
-              • Estatísticas de uso{"\n"}
-              • Serviços relacionados{"\n"}
-              • Histórico de alterações
-            </ThemedText>
-          </View>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconLightbulb size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Funcionalidades Futuras</ThemedText>
+              </View>
+            </View>
+            <View style={styles.content}>
+              <ThemedText style={{ color: colors.mutedForeground, lineHeight: 20 }}>
+                • Lista de tarefas que utilizam este serviço{"\n"}
+                • Estatísticas de uso{"\n"}
+                • Serviços relacionados{"\n"}
+                • Histórico de alterações
+              </ThemedText>
+            </View>
+          </Card>
         </ScrollView>
       </ThemedView>
     </>
@@ -193,20 +193,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.xs,
   },
-  futureSection: {
-    marginTop: spacing.xl,
-    padding: spacing.lg,
-    borderRadius: 8,
-    backgroundColor: "transparent",
+  card: {
+    padding: spacing.md,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: spacing.sm,
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
-  sectionDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontStyle: "italic",
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: fontSize.lg,
+    fontWeight: "500",
+  },
+  content: {
+    gap: spacing.sm,
   },
 });
