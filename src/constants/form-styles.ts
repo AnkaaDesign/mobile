@@ -48,6 +48,12 @@ export const formSpacing = {
 
   /** Action bar padding */
   actionBarPadding: spacing.md, // 16px
+
+  /** Screen horizontal padding */
+  screenPadding: 16,
+
+  /** Screen bottom padding */
+  screenPaddingBottom: 24,
 } as const;
 
 // =============================================================================

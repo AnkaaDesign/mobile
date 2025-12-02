@@ -18,7 +18,7 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 export default function EditObservationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { updateAsync } = useObservationMutations();
 

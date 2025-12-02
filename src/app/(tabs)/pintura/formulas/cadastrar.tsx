@@ -16,7 +16,7 @@ import {
 
 export default function CreateFormulaScreen() {
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
 
   // Check user permissions
   const canCreate = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);

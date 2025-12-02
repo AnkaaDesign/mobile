@@ -37,7 +37,7 @@ import { IconPaint } from "@tabler/icons-react-native";
 export default function CatalogoBasicoDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
 
   // Check user permissions - leaders can view, warehouse can edit

@@ -110,8 +110,8 @@ export default function CreatePPEScheduleScreen() {
                 name="isActive"
                 render={({ field: { onChange, value } }) => (
                   <Switch
-                    value={value}
-                    onValueChange={onChange}
+                    checked={value}
+                    onCheckedChange={onChange}
                     disabled={isLoading}
                   />
                 )}
@@ -154,8 +154,15 @@ export default function CreatePPEScheduleScreen() {
                 name="frequencyCount"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    value={String(value || "1")}
-                    onChangeText={(text) => onChange(text ? String(parseInt(text)) : "1")}
+                    value={String(value || 1)}
+                    onChangeText={(text) => {
+                      if (!text) {
+                        onChange(1);
+                        return;
+                      }
+                      const numValue = parseInt(String(text));
+                      onChange(isNaN(numValue) ? 1 : numValue);
+                    }}
                     onBlur={onBlur}
                     placeholder="1"
                     editable={!isLoading}

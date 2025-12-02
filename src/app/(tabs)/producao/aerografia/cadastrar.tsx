@@ -26,7 +26,7 @@ import { formatCurrency } from "@/utils";
 
 export default function AirbrushingCreateScreen() {
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createAsync } = useAirbrushingMutations();
 

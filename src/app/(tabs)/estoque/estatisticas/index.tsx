@@ -17,7 +17,7 @@ export default function EstatisticasScreen() {
   const [timePeriod] = useState(DASHBOARD_TIME_PERIOD.THIS_MONTH);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: dashboard, isLoading, error, refetch } = useInventoryDashboard({ timePeriod });
+  const { data: dashboard, isLoading, error, refetch } = useInventoryDashboard({ timePeriod, includeInactive: false });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -98,8 +98,10 @@ export default function EstatisticasScreen() {
   const calculateMovementRate = () => {
     if (!data?.overview) return 0;
     const total = data.overview.totalItems?.value || 1;
-    const stagnant = data.overview.stagnantItems?.value ?? 0;
-    return Math.round(((total - stagnant) / total) * 100);
+    // Note: stagnantItems property is not available in the API response
+    // We use a simplified calculation based on optimal items
+    const activeItems = data.overview.optimalItems?.value ?? 0;
+    return Math.round((activeItems / total) * 100);
   };
 
   const movementRate = calculateMovementRate();

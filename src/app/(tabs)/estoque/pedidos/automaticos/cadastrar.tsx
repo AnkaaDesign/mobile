@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { IconSettings, IconCalendar, IconPackage, IconInfo } from "@tabler/icons-react-native";
+import { IconSettings, IconCalendar, IconPackage, IconInfoCircle } from "@tabler/icons-react-native";
 import { useOrderScheduleMutations } from "@/hooks";
 import { orderScheduleCreateSchema} from '../../../../../schemas';
 import type { OrderScheduleCreateFormData } from '../../../../../schemas';
@@ -37,7 +37,7 @@ export default function CreateAutomaticOrderScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Check permissions

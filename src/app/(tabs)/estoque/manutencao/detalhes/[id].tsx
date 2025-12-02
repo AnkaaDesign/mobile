@@ -7,7 +7,7 @@ import { useTheme } from '@/lib/theme';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils';
 import { MAINTENANCE_STATUS, MAINTENANCE_STATUS_LABELS, SCHEDULE_FREQUENCY_LABELS, MEASURE_UNIT_LABELS } from '@/constants';
 import { useState, useCallback } from 'react';
-import { IconChevronRight, IconBox, IconPackage, IconCalendar, IconAlertCircle, IconInfo } from '@tabler/icons-react-native';
+import { IconChevronRight, IconBox, IconPackage, IconCalendar, IconAlertCircle, IconInfoCircle } from '@tabler/icons-react-native';
 import { spacing, fontSize } from '@/constants/design-system';
 
 export default function MaintenanceDetailsScreen() {
@@ -92,14 +92,14 @@ export default function MaintenanceDetailsScreen() {
   const schedule = maintenance.maintenanceSchedule;
 
   // Calculate estimated cost
-  const estimatedCost = maintenanceItems.reduce((total, mi) => {
+  const estimatedCost = maintenanceItems.reduce((total: number, mi: any) => {
     if (!mi.item) return total;
     const itemPrice = mi.item.prices && mi.item.prices.length > 0 ? mi.item.prices[0].value : 0;
     return total + itemPrice * mi.quantity;
   }, 0);
 
   // Calculate items statistics
-  const itemsWithStock = maintenanceItems.filter((mi) => mi.item && mi.item.quantity >= mi.quantity).length;
+  const itemsWithStock = maintenanceItems.filter((mi: any) => mi.item && mi.item.quantity >= mi.quantity).length;
   const itemsWithoutStock = maintenanceItems.length - itemsWithStock;
 
   // Get frequency label
@@ -107,7 +107,7 @@ export default function MaintenanceDetailsScreen() {
     const freq = maintenance.frequency || schedule?.frequency;
     const count = maintenance.frequencyCount || schedule?.frequencyCount;
     if (!freq) return '-';
-    const baseLabel = SCHEDULE_FREQUENCY_LABELS[freq] || freq;
+    const baseLabel = SCHEDULE_FREQUENCY_LABELS[freq as keyof typeof SCHEDULE_FREQUENCY_LABELS] || freq;
     return count && count > 1 ? `${baseLabel} (x${count})` : baseLabel;
   };
 
@@ -130,11 +130,11 @@ export default function MaintenanceDetailsScreen() {
                 variant={
                   maintenance.status === MAINTENANCE_STATUS.COMPLETED ? 'success' :
                   maintenance.status === MAINTENANCE_STATUS.IN_PROGRESS ? 'info' :
-                  maintenance.status === MAINTENANCE_STATUS.SCHEDULED ? 'warning' :
+                  maintenance.status === MAINTENANCE_STATUS.PENDING ? 'warning' :
                   'default'
                 }
               >
-                {MAINTENANCE_STATUS_LABELS[maintenance.status] || maintenance.status}
+                {MAINTENANCE_STATUS_LABELS[maintenance.status as keyof typeof MAINTENANCE_STATUS_LABELS] || maintenance.status}
               </Badge>
             </View>
           </CardHeader>
@@ -242,7 +242,7 @@ export default function MaintenanceDetailsScreen() {
                       <ThemedText style={styles.detailLabel}>Estoque</ThemedText>
                       <ThemedText style={styles.stockValue}>
                         {targetItem.quantity || 0}
-                        {targetItem.measureUnit && ` ${MEASURE_UNIT_LABELS[targetItem.measureUnit]}`}
+                        {targetItem.measureUnit && ` ${MEASURE_UNIT_LABELS[targetItem.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}`}
                       </ThemedText>
                     </View>
                     {targetItem.prices && targetItem.prices.length > 0 && (
@@ -294,7 +294,7 @@ export default function MaintenanceDetailsScreen() {
 
                 {/* Items List */}
                 <View style={styles.itemsList}>
-                  {maintenanceItems.map((maintenanceItem, index) => {
+                  {maintenanceItems.map((maintenanceItem: any, index: number) => {
                     const item = maintenanceItem.item;
                     const hasStock = item && item.quantity >= maintenanceItem.quantity;
 
@@ -320,7 +320,7 @@ export default function MaintenanceDetailsScreen() {
                             <View style={styles.maintenanceItemRow}>
                               <ThemedText style={styles.maintenanceItemLabel}>Necessário:</ThemedText>
                               <ThemedText style={styles.maintenanceItemValue}>
-                                {maintenanceItem.quantity} {item.measureUnit && MEASURE_UNIT_LABELS[item.measureUnit]}
+                                {maintenanceItem.quantity} {item.measureUnit && MEASURE_UNIT_LABELS[item.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}
                               </ThemedText>
                             </View>
                             <View style={styles.maintenanceItemRow}>
@@ -329,7 +329,7 @@ export default function MaintenanceDetailsScreen() {
                                 styles.maintenanceItemValue,
                                 { color: hasStock ? colors.success : colors.destructive }
                               ]}>
-                                {item.quantity || 0} {item.measureUnit && MEASURE_UNIT_LABELS[item.measureUnit]}
+                                {item.quantity || 0} {item.measureUnit && MEASURE_UNIT_LABELS[item.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}
                               </ThemedText>
                             </View>
                             {item.prices && item.prices.length > 0 && (

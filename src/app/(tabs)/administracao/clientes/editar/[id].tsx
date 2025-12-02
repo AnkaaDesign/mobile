@@ -83,10 +83,10 @@ export default function CustomerEditScreen() {
       phones: [],
       tags: [],
       logoId: null,
-      registrationStatus: null,
+      situacaoCadastral: null,
       inscricaoEstadual: null,
       economicActivityId: null,
-      streetType: null,
+      logradouro: null,
     },
   });
 
@@ -110,7 +110,7 @@ export default function CustomerEditScreen() {
         setValue("zipCode", data.zipCode, { shouldDirty: true, shouldValidate: true });
       }
       if (data.streetType) {
-        setValue("streetType", data.streetType, { shouldDirty: true, shouldValidate: true });
+        setValue("logradouro", data.streetType, { shouldDirty: true, shouldValidate: true });
       }
       if (data.address) {
         setValue("address", data.address, { shouldDirty: true, shouldValidate: true });
@@ -138,7 +138,7 @@ export default function CustomerEditScreen() {
         }
       }
       if (data.registrationStatus) {
-        setValue("registrationStatus", data.registrationStatus, { shouldDirty: true, shouldValidate: true });
+        setValue("situacaoCadastral", data.registrationStatus, { shouldDirty: true, shouldValidate: true });
       }
 
       // Handle economic activity (CNAE)
@@ -170,7 +170,7 @@ export default function CustomerEditScreen() {
   const { lookupCep } = useCepLookup({
     onSuccess: (data) => {
       if (data.streetType) {
-        setValue("streetType", data.streetType, { shouldDirty: true, shouldValidate: true });
+        setValue("logradouro", data.streetType, { shouldDirty: true, shouldValidate: true });
       }
       if (data.logradouro) {
         setValue("address", data.logradouro, { shouldDirty: true, shouldValidate: true });
@@ -189,7 +189,8 @@ export default function CustomerEditScreen() {
 
   // Economic Activity mutation
   const { mutateAsync: createActivityAsync } = useMutation({
-    mutationFn: createEconomicActivity,
+    mutationFn: (data: { code: string; description: string }) =>
+      createEconomicActivity(data, undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["economic-activities"] });
     },
@@ -243,10 +244,10 @@ export default function CustomerEditScreen() {
         phones: customerData.phones,
         tags: customerData.tags,
         logoId: customerData.logoId,
-        registrationStatus: (customerData as any)?.registrationStatus,
+        situacaoCadastral: (customerData as any)?.situacaoCadastral,
         inscricaoEstadual: customerData.inscricaoEstadual,
         economicActivityId: customerData.economicActivityId,
-        streetType: (customerData as any)?.streetType,
+        logradouro: (customerData as any)?.logradouro,
       });
 
       // Set document type based on existing data
@@ -481,10 +482,10 @@ export default function CustomerEditScreen() {
             />
           </FormFieldGroup>
 
-          <FormFieldGroup label="Situação Cadastral" error={errors.registrationStatus?.message}>
+          <FormFieldGroup label="Situação Cadastral" error={errors.situacaoCadastral?.message}>
             <Controller
               control={control}
-              name="registrationStatus"
+              name="situacaoCadastral"
               render={({ field: { onChange, value } }) => (
                 <Combobox
                   value={value || ""}
@@ -631,7 +632,7 @@ export default function CustomerEditScreen() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <Input
                         value={value ? formatCNPJ(String(value)) : ""}
-                        onChangeText={(text) => onChange((cleanCNPJ(text) ?? "") as any)}
+                        onChangeText={(text) => onChange(text ? cleanCNPJ(String(text)) ?? "" : "")}
                         onBlur={onBlur}
                         placeholder="00.000.000/0000-00"
                         keyboardType="numeric"
@@ -648,7 +649,7 @@ export default function CustomerEditScreen() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <Input
                         value={value ? formatCPF(String(value)) : ""}
-                        onChangeText={(text) => onChange((cleanCPF(text) ?? "") as any)}
+                        onChangeText={(text) => onChange(text ? cleanCPF(String(text)) ?? "" : "")}
                         onBlur={onBlur}
                         placeholder="000.000.000-00"
                         keyboardType="numeric"
@@ -689,10 +690,10 @@ export default function CustomerEditScreen() {
             </View>
           </View>
           <View style={styles.content}>
-          <FormFieldGroup label="Tipo de Logradouro" error={errors.streetType?.message}>
+          <FormFieldGroup label="Tipo de Logradouro" error={errors.logradouro?.message}>
             <Controller
               control={control}
-              name="streetType"
+              name="logradouro"
               render={({ field: { onChange, value } }) => (
                 <Combobox
                   value={value || ""}
@@ -716,7 +717,7 @@ export default function CustomerEditScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   value={value ? formatCEP(String(value)) : ""}
-                  onChangeText={(text) => onChange((cleanCEP(text) ?? "") as any)}
+                  onChangeText={(text) => onChange(text ? cleanCEP(String(text)) ?? "" : "")}
                   onBlur={onBlur}
                   placeholder="00000-000"
                   keyboardType="numeric"

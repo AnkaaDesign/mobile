@@ -37,10 +37,16 @@ export interface SimpleFormActionBarProps {
   onCancel: () => void;
   /** Called when submit button is pressed */
   onSubmit: () => void;
+  /** Alternative to onSubmit - called when save button is pressed */
+  onSave?: (e?: any) => void | Promise<void>;
   /** Whether the form is currently submitting */
   isSubmitting?: boolean;
   /** Whether the form can be submitted */
   canSubmit?: boolean;
+  /** Whether the form is currently loading */
+  isLoading?: boolean;
+  /** Whether the save button should be disabled */
+  isSaveDisabled?: boolean;
   /** Label for the cancel button */
   cancelLabel?: string;
   /** Label for the submit button */
@@ -56,8 +62,11 @@ export interface SimpleFormActionBarProps {
 export function SimpleFormActionBar({
   onCancel,
   onSubmit,
+  onSave,
   isSubmitting = false,
   canSubmit = true,
+  isLoading = false,
+  isSaveDisabled = false,
   cancelLabel = "Cancelar",
   submitLabel = "Cadastrar",
   submittingLabel = "Salvando...",
@@ -106,7 +115,7 @@ export function SimpleFormActionBar({
           <Button
             variant="outline"
             onPress={onCancel}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isLoading}
           >
             <IconX size={18} color={colors.mutedForeground} />
             <Text style={styles.buttonText}>{cancelLabel}</Text>
@@ -117,16 +126,16 @@ export function SimpleFormActionBar({
       <View style={styles.buttonWrapper}>
         <Button
           variant="default"
-          onPress={onSubmit}
-          disabled={!canSubmit || isSubmitting}
+          onPress={onSave || onSubmit}
+          disabled={!canSubmit || isSubmitting || isLoading || isSaveDisabled}
         >
-          {isSubmitting ? (
+          {isSubmitting || isLoading ? (
             <ActivityIndicator size="small" color={colors.primaryForeground} />
           ) : (
             <IconCheck size={18} color={colors.primaryForeground} />
           )}
           <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
-            {isSubmitting ? submittingLabel : submitLabel}
+            {isSubmitting || isLoading ? submittingLabel : submitLabel}
           </Text>
         </Button>
       </View>

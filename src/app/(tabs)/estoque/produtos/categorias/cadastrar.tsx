@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { showToast } from "@/components/ui/toast";
 import { ItemCategoryForm } from "@/components/inventory/item/category/form/category-form";
 import { useItemCategoryMutations } from "@/hooks";
-import { itemCategoryCreateSchema} from '../../../../../schemas';
+import { itemCategoryCreateSchema, type ItemCategoryCreateFormData } from '../../../../../schemas';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 

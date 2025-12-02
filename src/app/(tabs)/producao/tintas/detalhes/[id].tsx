@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
 export default function PaintDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
 
   // Check user permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);

@@ -18,7 +18,7 @@ export default function OrderItemDetailScreen() {
   const { orderId, id } = useLocalSearchParams<{ orderId: string; id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [_refreshing, setRefreshing] = useState(false);
 
   // Check permissions

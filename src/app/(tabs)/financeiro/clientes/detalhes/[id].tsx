@@ -44,7 +44,7 @@ export default function FinancialCustomerDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
-  const { data: user } = useAuth();
+  const { user } = useAuth();
 
   const id = params?.id || "";
 

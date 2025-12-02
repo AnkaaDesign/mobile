@@ -12,7 +12,8 @@ import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { toast } from "@/lib/toast";
-import type { Item, BatchOperationResult } from "@/types";
+import type { Item } from "@/types";
+import type { BatchOperationResult } from "@/components/common/batch-operation-result-dialog";
 
 interface BatchEditData {
   // Fields that can be batch edited
@@ -97,7 +98,7 @@ export default function ProductBatchEditScreen() {
   const { data: categoriesResponse, isLoading: isLoadingCategories } = useItemCategories({});
 
   // Fetch brands for dropdown
-  const { data: brandsData, isLoading: isLoadingBrands } = useItemBrandsInfiniteMobile({
+  const { items: brandsData, isLoading: isLoadingBrands } = useItemBrandsInfiniteMobile({
     limit: 100,
   });
 
@@ -110,7 +111,7 @@ export default function ProductBatchEditScreen() {
 
   const products = productsResponse?.data || [];
   const categories = categoriesResponse?.data || [];
-  const brands = brandsData?.pages?.flatMap(page => page.data) || [];
+  const brands = brandsData || [];
   const suppliers = suppliersResponse?.data || [];
 
   const hasValidProducts = products.length > 0;
@@ -142,16 +143,16 @@ export default function ProductBatchEditScreen() {
     }
 
     // Validate numeric fields
-    if (enabledFields.totalPrice && (batchData.totalPrice === null || batchData.totalPrice < 0)) {
+    if (enabledFields.totalPrice && ((batchData.totalPrice ?? null) === null || (batchData.totalPrice ?? 0) < 0)) {
       return "Preço total deve ser maior ou igual a zero";
     }
-    if (enabledFields.quantity && (batchData.quantity === null || batchData.quantity < 0)) {
+    if (enabledFields.quantity && ((batchData.quantity ?? null) === null || (batchData.quantity ?? 0) < 0)) {
       return "Quantidade deve ser maior ou igual a zero";
     }
-    if (enabledFields.maxQuantity && batchData.maxQuantity !== null && batchData.maxQuantity < 0) {
+    if (enabledFields.maxQuantity && (batchData.maxQuantity ?? null) !== null && (batchData.maxQuantity ?? 0) < 0) {
       return "Quantidade máxima deve ser maior ou igual a zero";
     }
-    if (enabledFields.reorderPoint && batchData.reorderPoint !== null && batchData.reorderPoint < 0) {
+    if (enabledFields.reorderPoint && (batchData.reorderPoint ?? null) !== null && (batchData.reorderPoint ?? 0) < 0) {
       return "Ponto de reposição deve ser maior ou igual a zero";
     }
 
@@ -231,7 +232,7 @@ export default function ProductBatchEditScreen() {
           success: result.data.totalFailed === 0,
           successCount: result.data.totalSuccess,
           failedCount: result.data.totalFailed,
-          errors: result.data.failures?.map(f =>
+          errors: result.data.failed?.map((f: any) =>
             `${products.find(p => p.id === f.id)?.name || 'Produto'}: ${f.error}`
           ) || [],
         };
@@ -365,8 +366,8 @@ export default function ProductBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.categoryId}
-                onValueChange={() => toggleField('categoryId')}
+                checked={enabledFields.categoryId}
+                onCheckedChange={() => toggleField('categoryId')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Categoria
@@ -395,8 +396,8 @@ export default function ProductBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.brandId}
-                onValueChange={() => toggleField('brandId')}
+                checked={enabledFields.brandId}
+                onCheckedChange={() => toggleField('brandId')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Marca
@@ -425,8 +426,8 @@ export default function ProductBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.supplierId}
-                onValueChange={() => toggleField('supplierId')}
+                checked={enabledFields.supplierId}
+                onCheckedChange={() => toggleField('supplierId')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Fornecedor
@@ -446,7 +447,7 @@ export default function ProductBatchEditScreen() {
                       <SelectItem
                         key={supplier.id}
                         value={supplier.id}
-                        label={supplier.fantasyName || supplier.legalName}
+                        label={supplier.fantasyName || supplier.corporateName || ""}
                       />
                     ))}
                   </SelectContent>
@@ -459,8 +460,8 @@ export default function ProductBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.isActive}
-                onValueChange={() => toggleField('isActive')}
+                checked={enabledFields.isActive}
+                onCheckedChange={() => toggleField('isActive')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Status
@@ -488,8 +489,8 @@ export default function ProductBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.totalPrice}
-                onValueChange={() => toggleField('totalPrice')}
+                checked={enabledFields.totalPrice}
+                onCheckedChange={() => toggleField('totalPrice')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Preço Total
@@ -511,8 +512,8 @@ export default function ProductBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.quantity}
-                onValueChange={() => toggleField('quantity')}
+                checked={enabledFields.quantity}
+                onCheckedChange={() => toggleField('quantity')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Quantidade
@@ -535,8 +536,8 @@ export default function ProductBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.maxQuantity}
-                onValueChange={() => toggleField('maxQuantity')}
+                checked={enabledFields.maxQuantity}
+                onCheckedChange={() => toggleField('maxQuantity')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Quantidade Máxima
@@ -559,8 +560,8 @@ export default function ProductBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.reorderPoint}
-                onValueChange={() => toggleField('reorderPoint')}
+                checked={enabledFields.reorderPoint}
+                onCheckedChange={() => toggleField('reorderPoint')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Ponto de Reposição

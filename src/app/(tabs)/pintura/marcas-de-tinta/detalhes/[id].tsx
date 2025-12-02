@@ -29,7 +29,7 @@ import { ComponentsTable } from "@/components/painting/paint-type/detail";
 export default function PaintBrandDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { delete: deleteAsync } = usePaintBrandMutations();
   const [refreshing, setRefreshing] = useState(false);
 

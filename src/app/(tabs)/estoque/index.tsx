@@ -17,7 +17,7 @@ export default function EstoqueScreen() {
   const [timePeriod] = useState(DASHBOARD_TIME_PERIOD.THIS_MONTH);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: dashboard, isLoading, error, refetch } = useInventoryDashboard({ timePeriod });
+  const { data: dashboard, isLoading, error, refetch } = useInventoryDashboard({ timePeriod, includeInactive: false });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -127,7 +127,7 @@ export default function EstoqueScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.inventory.suppliers.list) as any)}
+              onPress={() => router.push(routeToMobilePath(routes.inventory.suppliers.root) as any)}
               style={{
                 flex: 1,
                 minWidth: "45%",

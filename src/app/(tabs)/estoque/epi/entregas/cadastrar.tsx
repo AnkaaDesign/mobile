@@ -16,8 +16,8 @@ import { PPE_DELIVERY_STATUS } from "@/constants";
 import { PPE_DELIVERY_STATUS_LABELS } from "@/constants/enum-labels";
 
 interface PPEDeliveryCreateFormData {
-  itemId: string | null;
-  userId: string | null;
+  itemId: string;
+  userId: string;
   quantity: number;
   scheduledDate?: Date | null;
   status: string;
@@ -33,8 +33,8 @@ export default function CreatePPEDeliveryScreen() {
 
   const form = useForm<PPEDeliveryCreateFormData>({
     defaultValues: {
-      itemId: null,
-      userId: null,
+      itemId: "",
+      userId: "",
       quantity: 0,
       scheduledDate: null,
       status: PPE_DELIVERY_STATUS.PENDING,
@@ -64,7 +64,12 @@ export default function CreatePPEDeliveryScreen() {
 
   const handleSubmit = async (data: PPEDeliveryCreateFormData) => {
     try {
-      await createAsync(data);
+      // Add statusOrder property required by the API
+      const formDataWithStatusOrder = {
+        ...data,
+        statusOrder: 0,
+      };
+      await createAsync(formDataWithStatusOrder);
       router.back();
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao criar a entrega de EPI");
@@ -149,8 +154,15 @@ export default function CreatePPEDeliveryScreen() {
                 name="quantity"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    value={String(value || "")}
-                    onChangeText={(text) => onChange(text ? String(parseInt(text)) : "0")}
+                    value={String(value || 0)}
+                    onChangeText={(text) => {
+                      if (!text) {
+                        onChange(0);
+                        return;
+                      }
+                      const numValue = parseInt(String(text));
+                      onChange(isNaN(numValue) ? 0 : numValue);
+                    }}
                     onBlur={onBlur}
                     placeholder="0"
                     editable={!isLoading}

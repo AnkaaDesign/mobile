@@ -51,7 +51,7 @@ import {
 export default function CuttingPlanDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { update, delete: deleteAsync } = useCutMutations();
   const [refreshing, setRefreshing] = useState(false);
   const [requestModalVisible, setRequestModalVisible] = useState(false);

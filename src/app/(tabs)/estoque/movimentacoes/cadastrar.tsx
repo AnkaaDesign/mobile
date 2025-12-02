@@ -33,8 +33,8 @@ export default function InventoryMovementsCreateScreen() {
       const result = await batchCreateAsync({ activities });
 
       if (result?.data) {
-        const successCount = result.data.filter((r: any) => r.success).length;
-        const failCount = result.data.filter((r: any) => !r.success).length;
+        const successCount = result.data.totalSuccess;
+        const failCount = result.data.totalFailed;
 
         if (failCount === 0) {
           Alert.alert(

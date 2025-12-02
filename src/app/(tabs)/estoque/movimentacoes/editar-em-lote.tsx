@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { LoadingScreen } from "@/components/ui/loading";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import { BatchOperationResultDialog } from "@/components/common/batch-operation-result-dialog";
 
 import { useActivities, useActivityBatchMutations } from "@/hooks";
@@ -60,7 +60,7 @@ export default function BatchEditMovementsScreen() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResultDialog, setShowResultDialog] = useState(false);
-  const [batchResult, setBatchResult] = useState<BatchOperationResult | null>(null);
+  const [batchResult, setBatchResult] = useState<any | null>(null);
 
   const { batchUpdateAsync } = useActivityBatchMutations();
 
@@ -177,14 +177,14 @@ export default function BatchEditMovementsScreen() {
       if (result?.data) {
         const { totalSuccess, totalFailed } = result.data;
 
-        // Transform to BatchOperationResult format
-        const batchOperationResult: BatchOperationResult = {
+        // Transform to BatchOperationResult format (for dialog)
+        const batchOperationResult = {
           success: totalFailed === 0,
           successCount: totalSuccess,
           failedCount: totalFailed,
           errors:
-            result.data.failures?.map(
-              (f) =>
+            result.data.failed?.map(
+              (f: { id?: string; error: string }) =>
                 `${
                   activities.find((a) => a.id === f.id)?.item?.name || "Movimentação"
                 }: ${f.error}`
@@ -208,7 +208,7 @@ export default function BatchEditMovementsScreen() {
         }
       } else {
         toast.success("Movimentações atualizadas com sucesso");
-        router.replace(routeToMobilePath(routes.inventory.movements.list) as any);
+        router.replace(routeToMobilePath(routes.inventory.activities.list) as any);
       }
     } catch (error: any) {
       console.error("Error during batch update:", error);
@@ -250,7 +250,7 @@ export default function BatchEditMovementsScreen() {
     setShowResultDialog(false);
     if (batchResult?.success || (batchResult?.successCount ?? 0) > 0) {
       // Navigate back to list if there were any successes
-      router.replace(routeToMobilePath(routes.inventory.movements.list) as any);
+      router.replace(routeToMobilePath(routes.inventory.activities.list) as any);
     }
   };
 

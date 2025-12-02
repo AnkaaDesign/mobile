@@ -21,7 +21,7 @@ import {
 
 export default function EditPaintBrandScreen() {
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { update } = usePaintBrandMutations();
 

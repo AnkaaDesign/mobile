@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { IconReceipt2, IconDeviceFloppy, IconX, IconSearch, IconBuilding, IconFileText, IconMapPin, IconPhone, IconTag } from "@tabler/icons-react-native";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useCustomer, useCustomerMutations, useCnpjLookup, useCepLookup } from "@/hooks";
-import { customerUpdateSchema} from "@/schemas";
+import { customerUpdateSchema, type CustomerUpdateFormData } from "@/schemas";
 import {
   ThemedView,
   ThemedText,
@@ -407,7 +407,7 @@ export default function FinancialCustomerEditScreen() {
                     <View style={styles.inputWithIcon}>
                       <Input
                         value={value ? formatCNPJ(String(value || '')) : ""}
-                        onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
+                        onChangeText={(text) => onChange(cleanCNPJ(String(text || "")) || "")}
                         onBlur={() => {
                           onBlur();
                           handleCnpjBlur(value);
@@ -447,7 +447,7 @@ export default function FinancialCustomerEditScreen() {
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
                     value={value ? formatCPF(String(value || '')) : ""}
-                    onChangeText={(text) => onChange(cleanCPF(text) || "")}
+                    onChangeText={(text) => onChange(cleanCPF(String(text || "")) || "")}
                     onBlur={onBlur}
                     placeholder="000.000.000-00"
                     keyboardType="numeric"
@@ -492,7 +492,7 @@ export default function FinancialCustomerEditScreen() {
                   <View style={styles.inputWithIcon}>
                     <Input
                       value={value ? formatCEP(String(value || '')) : ""}
-                      onChangeText={(text) => onChange(cleanCEP(text) || "")}
+                      onChangeText={(text) => onChange(cleanCEP(String(text || "")) || "")}
                       onBlur={() => {
                         onBlur();
                         handleCepBlur(value);

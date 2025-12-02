@@ -29,7 +29,7 @@ import {
 
 export default function CreateComponentScreen() {
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { formulaId } = useLocalSearchParams<{ formulaId: string }>();
   const { create: createComponent, isLoading } = usePaintFormulaComponentMutations();
 

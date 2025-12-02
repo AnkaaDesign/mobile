@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrderSchedule, useOrderScheduleMutations } from "@/hooks";
-import { orderScheduleUpdateSchema, mapOrderScheduleToFormData } from '../../../../../../schemas';
+import { orderScheduleUpdateSchema, mapOrderScheduleToFormData, type OrderScheduleUpdateFormData, type OrderScheduleInclude } from '../../../../../../schemas';
 import type { OrderSchedule } from '../../../../../../types';
 import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS, SECTOR_PRIVILEGES, routes } from "@/constants";
 import { hasPrivilege } from "@/utils";
@@ -35,7 +35,7 @@ export default function EditAutomaticOrderScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormReady, setIsFormReady] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);

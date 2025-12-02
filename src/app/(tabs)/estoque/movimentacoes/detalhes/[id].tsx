@@ -22,7 +22,7 @@ export default function ActivityDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
   const { deleteAsync } = useActivityMutations();
 

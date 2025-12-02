@@ -22,7 +22,7 @@ import { useTheme } from "@/lib/theme";
 export default function RequestPPEScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [selectedItem, setSelectedItem] = useState<{
     id: string;
     name: string;
@@ -246,7 +246,7 @@ export default function RequestPPEScreen() {
   const itemOptions: ComboboxOption[] =
     items?.data?.map((item) => ({
       value: item.id,
-      label: `${item.name}${item.ppeSize ? ` • ${item.ppeSize}` : ""}${item.ppeCA ? ` - CA: ${item.ppeCA}` : ""}`,
+      label: `${item.name}${item.ppeCA ? ` - CA: ${item.ppeCA}` : ""}`,
     })) || [];
 
   const isLoading = requestMutation.isPending;

@@ -233,10 +233,9 @@ export default function AdministracaoScreen() {
           </Text>
           <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
             {[
-              { label: "Experiência 1/2", value: data?.userMetrics?.experiencePeriod1Users?.value ?? 0, color: "#f97316" },
-              { label: "Experiência 2/2", value: data?.userMetrics?.experiencePeriod2Users?.value ?? 0, color: "#3b82f6" },
-              { label: "Efetivado", value: data?.userMetrics?.effectedUsers?.value ?? 0, color: "#22c55e" },
-              { label: "Desligado", value: data?.userMetrics?.dismissedUsers?.value ?? 0, color: "#ef4444" },
+              { label: "Ativos", value: data?.userMetrics?.activeUsers?.value ?? 0, color: "#22c55e" },
+              { label: "Inativos", value: data?.userMetrics?.inactiveUsers?.value ?? 0, color: "#ef4444" },
+              { label: "Pendentes", value: data?.userMetrics?.pendingUsers?.value ?? 0, color: "#f97316" },
             ].map((status) => {
               const total = data?.userMetrics?.totalUsers?.value || 1;
               const percentage = Math.round((status.value / total) * 100);

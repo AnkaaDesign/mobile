@@ -28,7 +28,7 @@ import {
 
 export default function EditPaintTypeScreen() {
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { update } = usePaintTypeMutations();
 

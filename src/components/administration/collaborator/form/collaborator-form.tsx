@@ -493,7 +493,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
                 control={form.control}
                 name="verified"
                 render={({ field: { onChange, value } }) => (
-                  <Switch value={value || false} onValueChange={onChange} disabled={isLoading} />
+                  <Switch checked={value || false} onCheckedChange={onChange} disabled={isLoading} />
                 )}
               />
             </View>

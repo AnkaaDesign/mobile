@@ -129,8 +129,8 @@ function BatchEditPpeSchedulesScreen() {
 
   // Handle date change
   const handleDateChange = useCallback(
-    (index: number, newDate: Date | null) => {
-      setValue(`schedules.${index}.data.nextRun`, newDate, {
+    (index: number, newDate: Date | null | undefined) => {
+      setValue(`schedules.${index}.data.nextRun`, newDate ?? null, {
         shouldDirty: true,
         shouldTouch: true,
         shouldValidate: true,
@@ -205,7 +205,7 @@ function BatchEditPpeSchedulesScreen() {
         };
       });
 
-      const batchPayload = { schedules: updateSchedules };
+      const batchPayload = { ppeDeliverySchedules: updateSchedules };
       const result = await batchUpdateAsync(batchPayload);
 
       if (result?.data) {
@@ -407,11 +407,11 @@ function BatchEditPpeSchedulesScreen() {
                   render={({ field: { value } }) => (
                     <View>
                       <DatePicker
-                        value={value}
+                        value={value ?? undefined}
                         onChange={(date) => handleDateChange(index, date)}
                         placeholder="Selecione uma data"
-                        mode="datetime"
-                        error={!!errors.schedules?.[index]?.data?.nextRun}
+                        type="datetime"
+                        error={errors.schedules?.[index]?.data?.nextRun?.message}
                       />
                       {errors.schedules?.[index]?.data?.nextRun && (
                         <ThemedText style={[styles.errorText, { color: colors.destructive }]}>

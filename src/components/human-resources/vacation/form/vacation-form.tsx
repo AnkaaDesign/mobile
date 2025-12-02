@@ -268,7 +268,7 @@ export function VacationForm({
                 control={form.control}
                 name="isCollective"
                 render={({ field: { onChange, value } }) => (
-                  <Switch value={value || false} onValueChange={onChange} disabled={finalIsSubmitting} />
+                  <Switch checked={value || false} onCheckedChange={onChange} disabled={finalIsSubmitting} />
                 )}
               />
             </View>

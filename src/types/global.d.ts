@@ -14,3 +14,34 @@ declare const ErrorUtils: {
 
 // Ensure __DEV__ is recognized
 declare const __DEV__: boolean;
+
+/**
+ * EventSource is a web API for server-sent events (SSE).
+ * This type definition provides TypeScript support for EventSource in React Native.
+ * Note: Requires a polyfill like 'react-native-sse' or 'eventsource-polyfill' to work.
+ */
+declare class EventSource {
+  constructor(url: string, eventSourceInitDict?: EventSourceInit);
+  readonly url: string;
+  readonly readyState: number;
+  readonly withCredentials: boolean;
+  onopen: ((this: EventSource, ev: Event) => any) | null;
+  onmessage: ((this: EventSource, ev: MessageEvent) => any) | null;
+  onerror: ((this: EventSource, ev: Event) => any) | null;
+  close(): void;
+  addEventListener(type: string, listener: EventListener): void;
+  removeEventListener(type: string, listener: EventListener): void;
+  static readonly CONNECTING: number;
+  static readonly OPEN: number;
+  static readonly CLOSED: number;
+}
+
+interface EventSourceInit {
+  withCredentials?: boolean;
+}
+
+interface MessageEvent extends Event {
+  data: any;
+  origin: string;
+  lastEventId: string;
+}

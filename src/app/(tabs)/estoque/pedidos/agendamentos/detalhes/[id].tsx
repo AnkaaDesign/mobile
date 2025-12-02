@@ -25,7 +25,7 @@ import {
   ErrorScreen,
   LoadingScreen,
 } from "@/components/ui";
-import { ActionSheet} from "@/components/ui/action-sheet";
+import { ActionSheet, type ActionSheetItem } from "@/components/ui/action-sheet";
 
 import { InfoRow } from "@/components/ui/info-row";
 import { FrequencyBadge } from "@/components/inventory/order/schedule/frequency-badge";
@@ -44,7 +44,7 @@ export default function OrderScheduleDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 

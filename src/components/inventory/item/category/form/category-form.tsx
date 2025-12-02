@@ -4,7 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { itemCategoryCreateSchema, itemCategoryUpdateSchema,} from '../../../../../schemas';
+import { itemCategoryCreateSchema, itemCategoryUpdateSchema, type ItemCategoryCreateFormData, type ItemCategoryUpdateFormData } from '../../../../../schemas';
 import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";

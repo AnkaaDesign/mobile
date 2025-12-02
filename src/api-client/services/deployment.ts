@@ -1,5 +1,15 @@
 import { apiClient } from '../axiosClient';
 
+// EventSource type declaration for SSE
+declare global {
+  interface EventSource {
+    new (url: string, eventSourceInitDict?: EventSourceInit): EventSource;
+  }
+  interface EventSourceInit {
+    withCredentials?: boolean;
+  }
+}
+
 // Import proper types from packages
 import type {
   Deployment,

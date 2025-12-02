@@ -5,14 +5,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSupplierDetail, useUpdateSupplier, useKeyboardAwareScroll } from "@/hooks";
-import { supplierUpdateSchema } from "@/schemas";
+import { supplierUpdateSchema, type SupplierUpdateFormData } from "@/schemas";
 import { Input, Combobox } from "@/components/ui";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
-import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
 import { formatCNPJ, cleanCNPJ, formatZipCode, cleanZipCode } from "@/utils";
 import { PhoneManager, TagManager, FileUploadManager } from "@/components/inventory/supplier/form";
 import { formSpacing } from "@/constants/form-styles";
@@ -269,7 +268,7 @@ export default function SupplierEditScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   value={value ? formatCNPJ(String(value || "")) : ""}
-                  onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
+                  onChangeText={(text) => onChange(text ? cleanCNPJ(String(text)) ?? "" : "")}
                   onBlur={onBlur}
                   placeholder="00.000.000/0000-00"
                   keyboardType="numeric"
@@ -348,7 +347,7 @@ export default function SupplierEditScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   value={value ? formatZipCode(String(value || "")) : ""}
-                  onChangeText={(text) => onChange(cleanZipCode(text) || "")}
+                  onChangeText={(text) => onChange(text ? cleanZipCode(String(text)) ?? "" : "")}
                   onBlur={onBlur}
                   placeholder="00000-000"
                   keyboardType="numeric"

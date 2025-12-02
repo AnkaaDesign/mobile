@@ -436,7 +436,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
                   control={form.control}
                   name="isActive"
                   render={({ field: { onChange, value } }) => (
-                    <Switch value={value ?? true} onValueChange={onChange} disabled={isLoading} />
+                    <Switch checked={value ?? true} onCheckedChange={onChange} disabled={isLoading} />
                   )}
                 />
               </View>
@@ -451,7 +451,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
                   control={form.control}
                   name="shouldAssignToUser"
                   render={({ field: { onChange, value } }) => (
-                    <Switch value={value ?? true} onValueChange={onChange} disabled={isLoading} />
+                    <Switch checked={value ?? true} onCheckedChange={onChange} disabled={isLoading} />
                   )}
                 />
               </View>

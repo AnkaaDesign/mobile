@@ -19,7 +19,7 @@ import { IconBuildingFactory, IconFactory } from "@tabler/icons-react-native";
 export default function FormulaDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { delete: deleteFormula } = usePaintFormulaMutations();
   const [refreshing, setRefreshing] = useState(false);
 

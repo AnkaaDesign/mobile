@@ -12,7 +12,7 @@ import type { ServiceCreateFormData } from '../../../../schemas';
 
 export default function CreateServiceScreen() {
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { createAsync, createMutation } = useServiceMutations();
 
   // Permission check - Only admins can create services

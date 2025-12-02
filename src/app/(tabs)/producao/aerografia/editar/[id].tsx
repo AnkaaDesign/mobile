@@ -27,7 +27,7 @@ import { formatCurrency } from "@/utils";
 export default function AirbrushingEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { updateAsync } = useAirbrushingMutations();
 

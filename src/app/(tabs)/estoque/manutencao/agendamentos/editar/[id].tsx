@@ -109,7 +109,7 @@ export default function MaintenanceScheduleEditScreen() {
   const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
     onFieldLayout: () => {},
     onFieldFocus: () => {},
-    onComboboxOpen: () => {},
+    onComboboxOpen: () => false,
     onComboboxClose: () => {},
   }), []);
 
@@ -191,9 +191,13 @@ export default function MaintenanceScheduleEditScreen() {
                   name="frequencyCount"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                      value={value?.toString() || "1"}
+                      value={String(value || 1)}
                       onChangeText={(val) => {
-                        const numValue = parseInt(val);
+                        if (!val) {
+                          onChange(1);
+                          return;
+                        }
+                        const numValue = parseInt(String(val));
                         onChange(isNaN(numValue) || numValue < 1 ? 1 : numValue);
                       }}
                       onBlur={onBlur}
@@ -219,7 +223,7 @@ export default function MaintenanceScheduleEditScreen() {
                       onChange={onChange}
                       placeholder="Selecione a data"
                       disabled={isLoading}
-                      mode="datetime"
+                      type="datetime"
                     />
                   )}
                 />

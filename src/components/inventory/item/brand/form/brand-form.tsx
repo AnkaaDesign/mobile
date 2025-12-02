@@ -4,7 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import type { DefaultValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { itemBrandCreateSchema, itemBrandUpdateSchema,} from '../../../../../schemas';
+import { itemBrandCreateSchema, itemBrandUpdateSchema, type ItemBrandCreateFormData, type ItemBrandUpdateFormData } from '../../../../../schemas';
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";

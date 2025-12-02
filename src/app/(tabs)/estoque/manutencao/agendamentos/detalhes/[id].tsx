@@ -81,7 +81,7 @@ export default function MaintenanceScheduleDetailsScreen() {
                 'default'
               }
             >
-              {MAINTENANCE_STATUS_LABELS[schedule.status] || schedule.status}
+              {MAINTENANCE_STATUS_LABELS[schedule.status as keyof typeof MAINTENANCE_STATUS_LABELS] || schedule.status}
             </Badge>
           </View>
 
@@ -99,7 +99,7 @@ export default function MaintenanceScheduleDetailsScreen() {
                 <View style={styles.infoRow}>
                   <ThemedText style={styles.infoLabel}>Frequência:</ThemedText>
                   <ThemedText style={styles.infoValue}>
-                    {schedule.frequency ? SCHEDULE_FREQUENCY_LABELS[schedule.frequency] : '-'}
+                    {schedule.frequency ? SCHEDULE_FREQUENCY_LABELS[schedule.frequency as keyof typeof SCHEDULE_FREQUENCY_LABELS] : '-'}
                   </ThemedText>
                 </View>
 
@@ -142,7 +142,7 @@ export default function MaintenanceScheduleDetailsScreen() {
                 </View>
 
                 <View style={styles.content}>
-                  {schedule.triggeredSchedules.map((execution, index) => (
+                  {schedule.triggeredSchedules.map((execution: any, index: number) => (
                     <View
                       key={index}
                       style={[
@@ -159,7 +159,7 @@ export default function MaintenanceScheduleDetailsScreen() {
                       <View style={styles.executionRow}>
                         <ThemedText style={styles.executionStatus}>Status:</ThemedText>
                         <Badge variant={execution.status === 'FINISHED' ? 'success' : 'default'} size="sm">
-                          {MAINTENANCE_STATUS_LABELS[execution.status] || execution.status}
+                          {MAINTENANCE_STATUS_LABELS[execution.status as keyof typeof MAINTENANCE_STATUS_LABELS] || execution.status}
                         </Badge>
                       </View>
                     </View>

@@ -34,7 +34,7 @@ import { hasPrivilege } from "@/utils";
 export default function EditCuttingRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { update } = useCutMutations();
 

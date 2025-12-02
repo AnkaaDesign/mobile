@@ -166,7 +166,7 @@ async function retryWithBackoff<T>(
       }
 
       // Wait before retrying (with exponential backoff)
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      await new Promise<void>((resolve) => setTimeout(resolve, delay));
       delay *= config.multiplier;
     }
   }

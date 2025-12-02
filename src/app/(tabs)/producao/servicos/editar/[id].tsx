@@ -14,7 +14,7 @@ import type { ServiceUpdateFormData } from '../../../../../schemas';
 export default function EditServiceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { update, updateMutation } = useServiceMutations();
 
   const {

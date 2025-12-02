@@ -29,12 +29,12 @@ export default function EditPPEScheduleScreen() {
 
   const form = useForm({
     defaultValues: schedule ? {
-      name: schedule.name,
-      frequency: schedule.frequency,
-      frequencyCount: schedule.frequencyCount,
-      assignmentType: schedule.assignmentType,
-      ppeTypes: schedule.ppeTypes || [],
-      isActive: schedule.isActive,
+      name: (schedule as any).name,
+      frequency: (schedule as any).frequency,
+      frequencyCount: (schedule as any).frequencyCount,
+      assignmentType: (schedule as any).assignmentType,
+      ppeTypes: (schedule as any).ppeTypes || [],
+      isActive: (schedule as any).isActive,
     } : {
       name: "",
       frequency: SCHEDULE_FREQUENCY.MONTHLY,
@@ -113,7 +113,7 @@ export default function EditPPEScheduleScreen() {
             <FormFieldGroup
               label="Nome do Agendamento"
               required
-              error={form.formState.errors.name?.message}
+              error={form.formState.errors.name?.message as string | undefined}
             >
               <Controller
                 control={form.control}
@@ -138,8 +138,8 @@ export default function EditPPEScheduleScreen() {
                 name="isActive"
                 render={({ field: { onChange, value } }) => (
                   <Switch
-                    value={value}
-                    onValueChange={onChange}
+                    checked={value}
+                    onCheckedChange={onChange}
                     disabled={isLoading}
                   />
                 )}
@@ -153,7 +153,7 @@ export default function EditPPEScheduleScreen() {
             <FormFieldGroup
               label="Frequência"
               required
-              error={form.formState.errors.frequency?.message}
+              error={form.formState.errors.frequency?.message as string | undefined}
             >
               <Controller
                 control={form.control}
@@ -175,15 +175,22 @@ export default function EditPPEScheduleScreen() {
             {/* Frequency Count */}
             <FormFieldGroup
               label="Quantidade"
-              error={form.formState.errors.frequencyCount?.message}
+              error={form.formState.errors.frequencyCount?.message as string | undefined}
             >
               <Controller
                 control={form.control}
                 name="frequencyCount"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    value={String(value || "1")}
-                    onChangeText={(text) => onChange(text ? String(parseInt(text)) : "1")}
+                    value={String(value || 1)}
+                    onChangeText={(text) => {
+                      if (!text) {
+                        onChange(1);
+                        return;
+                      }
+                      const numValue = parseInt(String(text));
+                      onChange(isNaN(numValue) ? 1 : numValue);
+                    }}
                     onBlur={onBlur}
                     placeholder="1"
                     editable={!isLoading}
@@ -198,7 +205,7 @@ export default function EditPPEScheduleScreen() {
             <FormFieldGroup
               label="Tipo de Atribuição"
               required
-              error={form.formState.errors.assignmentType?.message}
+              error={form.formState.errors.assignmentType?.message as string | undefined}
             >
               <Controller
                 control={form.control}
@@ -223,7 +230,7 @@ export default function EditPPEScheduleScreen() {
             {/* PPE Types */}
             <FormFieldGroup
               label="Selecione os tipos de EPI"
-              error={form.formState.errors.ppeTypes?.message}
+              error={form.formState.errors.ppeTypes?.message as string | undefined}
             >
               <Controller
                 control={form.control}

@@ -5,7 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formatDateTime } from "@/utils";
 import type { Service } from '../../../../types';
-import { IconFileDescription, IconClock, IconInfo } from "@tabler/icons-react-native";
+import { IconFileDescription, IconClock, IconInfoCircle } from "@tabler/icons-react-native";
 
 interface ServiceInfoCardProps {
   service: Service;
@@ -18,7 +18,7 @@ export function ServiceInfoCard({ service }: ServiceInfoCardProps) {
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
-          <IconInfo size={20} color={colors.mutedForeground} />
+          <IconInfoCircle size={20} color={colors.mutedForeground} />
           <ThemedText style={styles.title}>Informações do Serviço</ThemedText>
         </View>
       </View>

@@ -31,7 +31,7 @@ export default function MeuPessoalScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
 
   // Check if user is a team leader (has managedSectorId)
   const isTeamLeader = user?.managedSectorId || false;

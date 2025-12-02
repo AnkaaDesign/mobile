@@ -39,7 +39,6 @@ export * from "./file";
 export * from "./garage";
 export * from "./holiday";
 export * from "./item";
-export * from "./item-brand";
 export * from "./item-category";
 export * from "./item-price";
 export * from "./maintenance";

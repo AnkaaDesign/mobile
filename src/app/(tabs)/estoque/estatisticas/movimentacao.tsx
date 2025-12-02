@@ -490,7 +490,7 @@ export default function StockMovementStatisticsScreen() {
                   extendedColors.purple,
                   extendedColors.orange,
                   extendedColors.pink,
-                  extendedColors.cyan,
+                  extendedColors.teal,
                 ];
                 const typeColor = colorOptions[colorIndex];
 
@@ -808,7 +808,9 @@ export default function StockMovementStatisticsScreen() {
                     gap: spacing.sm,
                   }}
                 >
-                  <Icon name="check-circle" size={16} color={colors.primary} style={{ marginTop: 2 }} />
+                  <View style={{ marginTop: 2 }}>
+                    <Icon name="check-circle" size={16} color={colors.primary} />
+                  </View>
                   <Text style={{ fontSize: 13, color: colors.foreground, flex: 1 }}>
                     {recommendation}
                   </Text>

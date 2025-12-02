@@ -221,7 +221,7 @@ export default function SupplierCreateScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   value={value ? formatCNPJ(String(value || "")) : ""}
-                  onChangeText={(text) => onChange((cleanCNPJ(text) ?? "") as any)}
+                  onChangeText={(text) => onChange(text ? cleanCNPJ(String(text)) ?? "" : "")}
                   onBlur={onBlur}
                   placeholder="00.000.000/0000-00"
                   keyboardType="numeric"
@@ -300,7 +300,7 @@ export default function SupplierCreateScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   value={value ? formatZipCode(String(value || "")) : ""}
-                  onChangeText={(text) => onChange((cleanZipCode(text) ?? "") as any)}
+                  onChangeText={(text) => onChange(text ? cleanZipCode(String(text)) ?? "" : "")}
                   onBlur={onBlur}
                   placeholder="00000-000"
                   keyboardType="numeric"

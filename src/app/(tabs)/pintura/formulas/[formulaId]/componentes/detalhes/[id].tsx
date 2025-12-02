@@ -25,7 +25,7 @@ import {
 
 export default function ComponentDetailsScreen() {
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { formulaId, id } = useLocalSearchParams<{ formulaId: string; id: string }>();
   const { delete: deleteComponent } = usePaintFormulaComponentMutations();
 

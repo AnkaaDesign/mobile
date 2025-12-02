@@ -27,7 +27,7 @@ import { IconEdit, IconTrash, IconPaint } from "@tabler/icons-react-native";
 export default function CatalogDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { delete: deletePaint } = usePaintMutations();
   const [refreshing, setRefreshing] = React.useState(false);
 

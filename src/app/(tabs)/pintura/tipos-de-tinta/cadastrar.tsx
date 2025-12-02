@@ -28,7 +28,7 @@ import {
 
 export default function CreatePaintTypeScreen() {
   const { colors } = useTheme();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const { create } = usePaintTypeMutations();
 
   const [isSubmitting, setIsSubmitting] = useState(false);

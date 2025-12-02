@@ -25,7 +25,7 @@ export default function ExternalWithdrawalDetailScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { data: user } = useAuth();
+  const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   // Check permissions

@@ -64,7 +64,7 @@ export default function MaintenanceScheduleBatchEditScreen() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResultDialog, setShowResultDialog] = useState(false);
-  const [batchResult, setBatchResult] = useState<BatchOperationResult | null>(null);
+  const [batchResult, setBatchResult] = useState<any | null>(null);
 
   // Track which fields are enabled for batch editing
   const [enabledFields, setEnabledFields] = useState<Record<keyof BatchEditData, boolean>>({
@@ -219,14 +219,14 @@ export default function MaintenanceScheduleBatchEditScreen() {
       const result = await batchUpdate(payload);
 
       if (result?.data) {
-        // Transform to BatchOperationResult format
-        const batchOperationResult: BatchOperationResult = {
+        // Transform to BatchOperationResult format (for dialog)
+        const batchOperationResult = {
           success: result.data.totalFailed === 0,
           successCount: result.data.totalSuccess,
           failedCount: result.data.totalFailed,
           errors:
-            result.data.failures?.map(
-              (f) => `${schedules.find((s) => s.id === f.id)?.name || "Agendamento"}: ${f.error}`
+            result.data.failed?.map(
+              (f: { id?: string; error: string }) => `${schedules.find((s) => s.id === f.id)?.name || "Agendamento"}: ${f.error}`
             ) || [],
         };
 
@@ -366,7 +366,7 @@ export default function MaintenanceScheduleBatchEditScreen() {
           {/* Status Field */}
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
-              <Switch value={enabledFields.status} onValueChange={() => toggleField("status")} />
+              <Switch checked={enabledFields.status} onCheckedChange={() => toggleField("status")} />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Status
               </ThemedText>
@@ -394,8 +394,8 @@ export default function MaintenanceScheduleBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.isActive}
-                onValueChange={() => toggleField("isActive")}
+                checked={enabledFields.isActive}
+                onCheckedChange={() => toggleField("isActive")}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Agendamento Ativo
@@ -422,7 +422,7 @@ export default function MaintenanceScheduleBatchEditScreen() {
           {/* Next Run Date Field */}
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
-              <Switch value={enabledFields.nextRun} onValueChange={() => toggleField("nextRun")} />
+              <Switch checked={enabledFields.nextRun} onCheckedChange={() => toggleField("nextRun")} />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Próxima Execução
               </ThemedText>
@@ -430,7 +430,6 @@ export default function MaintenanceScheduleBatchEditScreen() {
             {enabledFields.nextRun && (
               <View style={styles.fieldInput}>
                 <DateTimePicker
-                  mode="datetime"
                   value={batchData.nextRun || new Date()}
                   onChange={(date) => updateBatchData("nextRun", date)}
                   minimumDate={new Date()}
@@ -443,8 +442,8 @@ export default function MaintenanceScheduleBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.rescheduleReason}
-                onValueChange={() => toggleField("rescheduleReason")}
+                checked={enabledFields.rescheduleReason}
+                onCheckedChange={() => toggleField("rescheduleReason")}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Motivo do Reagendamento
@@ -486,8 +485,8 @@ export default function MaintenanceScheduleBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.lastRescheduleDate}
-                onValueChange={() => toggleField("lastRescheduleDate")}
+                checked={enabledFields.lastRescheduleDate}
+                onCheckedChange={() => toggleField("lastRescheduleDate")}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Data do Reagendamento
@@ -496,7 +495,6 @@ export default function MaintenanceScheduleBatchEditScreen() {
             {enabledFields.lastRescheduleDate && (
               <View style={styles.fieldInput}>
                 <DateTimePicker
-                  mode="datetime"
                   value={batchData.lastRescheduleDate || new Date()}
                   onChange={(date) => updateBatchData("lastRescheduleDate", date)}
                   maximumDate={new Date()}

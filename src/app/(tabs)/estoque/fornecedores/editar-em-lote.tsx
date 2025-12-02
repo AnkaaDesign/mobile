@@ -40,7 +40,7 @@ export default function SupplierBatchEditScreen() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResultDialog, setShowResultDialog] = useState(false);
-  const [batchResult, setBatchResult] = useState<BatchOperationResult | null>(null);
+  const [batchResult, setBatchResult] = useState<any | null>(null);
 
   // Track which fields are enabled for batch editing
   const [enabledFields, setEnabledFields] = useState<Record<keyof BatchEditData, boolean>>({
@@ -84,19 +84,15 @@ export default function SupplierBatchEditScreen() {
     data: suppliersResponse,
     isLoading: isLoadingSuppliers,
     error: suppliersError,
-  } = useSuppliers(
-    {
-      where: {
-        id: { in: supplierIds },
-      },
-      include: {
-        logo: true,
-      },
+  } = useSuppliers({
+    where: {
+      id: { in: supplierIds },
     },
-    {
-      enabled: supplierIds.length > 0,
-    }
-  );
+    include: {
+      logo: true,
+    },
+    enabled: supplierIds.length > 0,
+  });
 
   const { mutateAsync: batchUpdate } = useBatchUpdateSuppliers();
 
@@ -236,12 +232,12 @@ export default function SupplierBatchEditScreen() {
       const result = await batchUpdate(payload);
 
       if (result?.data) {
-        // Transform to BatchOperationResult format
-        const batchOperationResult: BatchOperationResult = {
+        // Transform to BatchOperationResult format (for dialog)
+        const batchOperationResult = {
           success: result.data.totalFailed === 0,
           successCount: result.data.totalSuccess,
           failedCount: result.data.totalFailed,
-          errors: result.data.failures?.map((f: { id?: string; error: string }) =>
+          errors: result.data.failed?.map((f: { id?: string; error: string }) =>
             `${suppliers.find(s => s.id === f.id)?.fantasyName || 'Fornecedor'}: ${f.error}`
           ) || [],
         };
@@ -375,8 +371,8 @@ export default function SupplierBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.email}
-                onValueChange={() => toggleField('email')}
+                checked={enabledFields.email}
+                onCheckedChange={() => toggleField('email')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Email
@@ -399,8 +395,8 @@ export default function SupplierBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.site}
-                onValueChange={() => toggleField('site')}
+                checked={enabledFields.site}
+                onCheckedChange={() => toggleField('site')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Site
@@ -409,7 +405,7 @@ export default function SupplierBatchEditScreen() {
             {enabledFields.site && (
               <View style={styles.fieldInput}>
                 <Input
-                  type="url"
+                  type="text"
                   value={batchData.site || ''}
                   onChange={(value) => updateBatchData('site', value || null)}
                   placeholder="https://exemplo.com"
@@ -423,8 +419,8 @@ export default function SupplierBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.phone}
-                onValueChange={() => toggleField('phone')}
+                checked={enabledFields.phone}
+                onCheckedChange={() => toggleField('phone')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Telefone
@@ -447,8 +443,8 @@ export default function SupplierBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.zipCode}
-                onValueChange={() => toggleField('zipCode')}
+                checked={enabledFields.zipCode}
+                onCheckedChange={() => toggleField('zipCode')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 CEP
@@ -457,7 +453,7 @@ export default function SupplierBatchEditScreen() {
             {enabledFields.zipCode && (
               <View style={styles.fieldInput}>
                 <Input
-                  type="zipCode"
+                  type="cep"
                   value={batchData.zipCode || ''}
                   onChange={(value) => updateBatchData('zipCode', value || null)}
                   placeholder="00000-000"
@@ -471,8 +467,8 @@ export default function SupplierBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.address}
-                onValueChange={() => toggleField('address')}
+                checked={enabledFields.address}
+                onCheckedChange={() => toggleField('address')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Endereço
@@ -493,8 +489,8 @@ export default function SupplierBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.addressNumber}
-                onValueChange={() => toggleField('addressNumber')}
+                checked={enabledFields.addressNumber}
+                onCheckedChange={() => toggleField('addressNumber')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Número
@@ -516,8 +512,8 @@ export default function SupplierBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.addressComplement}
-                onValueChange={() => toggleField('addressComplement')}
+                checked={enabledFields.addressComplement}
+                onCheckedChange={() => toggleField('addressComplement')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Complemento
@@ -538,8 +534,8 @@ export default function SupplierBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.neighborhood}
-                onValueChange={() => toggleField('neighborhood')}
+                checked={enabledFields.neighborhood}
+                onCheckedChange={() => toggleField('neighborhood')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Bairro
@@ -560,8 +556,8 @@ export default function SupplierBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.city}
-                onValueChange={() => toggleField('city')}
+                checked={enabledFields.city}
+                onCheckedChange={() => toggleField('city')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Cidade
@@ -582,8 +578,8 @@ export default function SupplierBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.state}
-                onValueChange={() => toggleField('state')}
+                checked={enabledFields.state}
+                onCheckedChange={() => toggleField('state')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Estado
@@ -616,8 +612,8 @@ export default function SupplierBatchEditScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.fieldHeader}>
               <Switch
-                value={enabledFields.tags}
-                onValueChange={() => toggleField('tags')}
+                checked={enabledFields.tags}
+                onCheckedChange={() => toggleField('tags')}
               />
               <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
                 Tags
@@ -631,8 +627,8 @@ export default function SupplierBatchEditScreen() {
                 <Input
                   value={(batchData.tags || []).join(', ')}
                   onChange={(value) => {
-                    const tagsArray = value ? value.split(',').map(t => t.trim()).filter(Boolean) : [];
-                    updateBatchData('tags', tagsArray);
+                    const tags = typeof value === 'string' ? value.split(',').map((t: string) => t.trim()) : [];
+                    updateBatchData('tags', tags.filter(Boolean));
                   }}
                   placeholder="tag1, tag2, tag3"
                 />

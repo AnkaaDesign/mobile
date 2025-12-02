@@ -78,13 +78,13 @@ export default function TeamMemberDetailScreen() {
       sector: true,
       ppeSize: true,
       preference: true,
+      borrows: true,
       _count: {
         select: {
           activities: true,
-          borrows: true,
           vacations: true,
-          warningsCollaborator: true,
-          ppeDeliveries: true,
+          warnings: true,
+          ppeRequests: true,
           bonuses: true,
         },
       },
@@ -209,8 +209,8 @@ export default function TeamMemberDetailScreen() {
         <Card style={styles.headerCard}>
           <View style={styles.headerContent}>
             <Avatar
-              source={member.avatar?.url ? { uri: member.avatar.url } : undefined}
-              fallback={member.name?.[0]?.toUpperCase() || "U"}
+              uri={member.avatar?.url}
+              name={member.name}
               size="lg"
               style={{ width: 80, height: 80, borderRadius: 40 }}
             />
@@ -428,7 +428,7 @@ export default function TeamMemberDetailScreen() {
               <View style={styles.statItem}>
                 <IconPackage size={24} color={colors.primary} />
                 <ThemedText style={[styles.statValue, { color: colors.foreground }]}>
-                  {member._count.borrows || 0}
+                  {member.borrows?.length || 0}
                 </ThemedText>
                 <ThemedText style={[styles.statLabel, { color: colors.mutedForeground }]}>
                   Empréstimos
@@ -446,7 +446,7 @@ export default function TeamMemberDetailScreen() {
               <View style={styles.statItem}>
                 <IconAlertTriangle size={24} color={colors.warning} />
                 <ThemedText style={[styles.statValue, { color: colors.foreground }]}>
-                  {member._count.warningsCollaborator || 0}
+                  {member._count?.warnings || 0}
                 </ThemedText>
                 <ThemedText style={[styles.statLabel, { color: colors.mutedForeground }]}>
                   Advertências
@@ -455,7 +455,7 @@ export default function TeamMemberDetailScreen() {
               <View style={styles.statItem}>
                 <IconClipboard size={24} color={colors.primary} />
                 <ThemedText style={[styles.statValue, { color: colors.foreground }]}>
-                  {member._count.ppeDeliveries || 0}
+                  {member._count?.ppeRequests || 0}
                 </ThemedText>
                 <ThemedText style={[styles.statLabel, { color: colors.mutedForeground }]}>
                   EPIs

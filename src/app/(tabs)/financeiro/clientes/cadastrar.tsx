@@ -188,7 +188,8 @@ export default function FinancialCustomerCreateScreen() {
 
   // Economic Activity mutation
   const { mutateAsync: createActivityAsync } = useMutation({
-    mutationFn: createEconomicActivity,
+    mutationFn: (data: { code: string; description: string }) =>
+      createEconomicActivity(data, undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["economic-activities"] });
     },
@@ -370,7 +371,7 @@ export default function FinancialCustomerCreateScreen() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <Input
                         value={value ? formatCNPJ(String(value)) : ""}
-                        onChangeText={(text) => onChange(cleanCNPJ(text) || "")}
+                        onChangeText={(text) => onChange(cleanCNPJ(String(text || "")) || "")}
                         onBlur={onBlur}
                         placeholder="00.000.000/0000-00"
                         keyboardType="numeric"
@@ -387,7 +388,7 @@ export default function FinancialCustomerCreateScreen() {
                     render={({ field: { onChange, onBlur, value } }) => (
                       <Input
                         value={value ? formatCPF(String(value)) : ""}
-                        onChangeText={(text) => onChange(cleanCPF(text) || "")}
+                        onChangeText={(text) => onChange(cleanCPF(String(text || "")) || "")}
                         onBlur={onBlur}
                         placeholder="000.000.000-00"
                         keyboardType="numeric"
@@ -528,7 +529,7 @@ export default function FinancialCustomerCreateScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   value={value ? formatCEP(String(value)) : ""}
-                  onChangeText={(text) => onChange(cleanCEP(text) || "")}
+                  onChangeText={(text) => onChange(cleanCEP(String(text || "")) || "")}
                   onBlur={onBlur}
                   placeholder="00000-000"
                   keyboardType="numeric"

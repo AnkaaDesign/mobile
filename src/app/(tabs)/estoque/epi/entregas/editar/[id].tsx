@@ -17,11 +17,10 @@ import { PPE_DELIVERY_STATUS } from "@/constants";
 import { PPE_DELIVERY_STATUS_LABELS } from "@/constants/enum-labels";
 
 interface PPEDeliveryUpdateFormData {
-  itemId: string | null;
-  userId: string | null;
-  quantity: number;
+  itemId?: string;
+  quantity?: number;
   scheduledDate?: Date | null;
-  status: string;
+  status?: string;
 }
 
 export default function EditPPEDeliveryScreen() {
@@ -42,13 +41,11 @@ export default function EditPPEDeliveryScreen() {
 
   const form = useForm<PPEDeliveryUpdateFormData>({
     defaultValues: delivery?.data ? {
-      itemId: delivery.data.itemId,
-      userId: delivery.data.userId,
+      itemId: delivery.data.itemId ?? undefined,
       quantity: delivery.data.quantity,
       status: delivery.data.status,
     } : {
-      itemId: null,
-      userId: null,
+      itemId: undefined,
       quantity: 0,
       status: PPE_DELIVERY_STATUS.PENDING,
     },
@@ -155,27 +152,19 @@ export default function EditPPEDeliveryScreen() {
               />
             </FormFieldGroup>
 
-            {/* User */}
+            {/* User - Read-only, cannot be changed after creation */}
             <FormFieldGroup
               label="Funcionário"
               required
-              error={form.formState.errors.userId?.message}
             >
-              <Controller
-                control={form.control}
-                name="userId"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Combobox
-                    options={userOptions}
-                    value={value || undefined}
-                    onValueChange={onChange}
-                    placeholder="Selecione o funcionário"
-                    disabled={isLoading}
-                    searchable
-                    clearable
-                    error={error?.message}
-                  />
-                )}
+              <Combobox
+                options={userOptions}
+                value={delivery?.data?.userId || undefined}
+                onValueChange={() => {}} // Read-only
+                placeholder="Selecione o funcionário"
+                disabled={true}
+                searchable
+                clearable={false}
               />
             </FormFieldGroup>
 
@@ -190,8 +179,15 @@ export default function EditPPEDeliveryScreen() {
                 name="quantity"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    value={String(value || "")}
-                    onChangeText={(text) => onChange(text ? String(parseInt(text)) : "0")}
+                    value={String(value || 0)}
+                    onChangeText={(text) => {
+                      if (!text) {
+                        onChange(0);
+                        return;
+                      }
+                      const numValue = parseInt(String(text));
+                      onChange(isNaN(numValue) ? 0 : numValue);
+                    }}
                     onBlur={onBlur}
                     placeholder="0"
                     editable={!isLoading}

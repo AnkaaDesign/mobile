@@ -14,7 +14,7 @@ import {
   IconActivity,
   IconHistory,
   IconCalendar,
-  IconInfo,
+  IconInfoCircle,
 } from "@tabler/icons-react-native";
 import { showToast } from "@/components/ui/toast";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
@@ -121,7 +121,7 @@ export default function MovementDetailScreen() {
         <Card style={styles.card}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <View style={styles.headerLeft}>
-              <IconInfo size={20} color={colors.mutedForeground} />
+              <IconInfoCircle size={20} color={colors.mutedForeground} />
               <ThemedText style={styles.title}>Informações da Movimentação</ThemedText>
             </View>
           </View>
