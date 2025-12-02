@@ -1,0 +1,5 @@
+
+> ankaa-mobile@1.0.0 build
+> expo build
+
+Invalid project root: /home/kennedy/Documents/repositories/mobile/build
