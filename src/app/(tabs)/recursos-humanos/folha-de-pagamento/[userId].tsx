@@ -1,8 +1,9 @@
-import React, { useMemo } from "react";
-import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import React, { useMemo, useEffect, useState } from "react";
+import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { usePayrollDetailsWithBonus } from '@/hooks';
+import { IconClock, IconCheck } from "@tabler/icons-react-native";
+import { payrollService } from "@/api-client";
 import type { Payroll } from '@/types';
 import {
   ThemedView,
@@ -16,7 +17,7 @@ import {
   Badge,
   DetailHeader,
 } from "@/components/ui";
-import { formatCurrency } from '@/utils';
+import { formatCurrency, getBonusPeriod } from '@/utils';
 import { useTheme } from "@/lib/theme";
 import { SECTOR_PRIVILEGES } from '@/constants';
 import { PrivilegeGuard } from "@/components/privilege-guard";
@@ -31,144 +32,274 @@ function getMonthName(month?: number): string {
   return monthNames[monthIndex] || "";
 }
 
+// Parse live-ID format: live-{userId}-{year}-{month}
+function parseLiveId(id: string): { isLive: boolean; userId?: string; year?: number; month?: number } {
+  if (id.startsWith('live-')) {
+    const parts = id.split('-');
+    if (parts.length >= 4) {
+      return {
+        isLive: true,
+        userId: parts[1],
+        year: parseInt(parts[2]),
+        month: parseInt(parts[3]),
+      };
+    }
+  }
+  return { isLive: false };
+}
+
+// Helper to get numeric value from any type (Decimal, string, number)
+const getNumericValue = (value: any): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseFloat(value) || 0;
+  if (value?.toNumber) return value.toNumber();
+  return 0;
+};
+
+// Helper to format hours to HH:MM
+const formatHoursToHHMM = (decimalHours: number): string => {
+  const hours = Math.floor(decimalHours);
+  const minutes = Math.round((decimalHours - hours) * 60);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+};
+
 export default function PayrollDetailScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
 
-  // Get parameters from URL
-  const userId = params.userId as string;
-  const year = parseInt(params.year as string);
-  const month = parseInt(params.month as string);
+  // Get payroll ID from URL (can be UUID or live-{userId}-{year}-{month})
+  const payrollId = params.userId as string;
 
-  // Fetch payroll details
-  const { data: payrollData, isLoading, error, refetch } = usePayrollDetailsWithBonus(userId, year, month);
-  const [refreshing, setRefreshing] = React.useState(false);
+  // State for payroll data
+  const [payroll, setPayroll] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Parse the ID to determine if it's live or saved
+  const parsedId = useMemo(() => parseLiveId(payrollId), [payrollId]);
+
+  // Fetch payroll data - Backend handles both regular UUIDs and live IDs
+  useEffect(() => {
+    if (!payrollId) {
+      setError('ID da folha de pagamento não fornecido');
+      setLoading(false);
+      return;
+    }
+
+    const fetchPayroll = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Single endpoint handles both live IDs and regular UUIDs
+        // Backend's findByIdOrLive parses live IDs and returns consistent data format
+        const response = await payrollService.getById(payrollId, {
+          include: {
+            user: {
+              include: {
+                position: true,
+                sector: true,
+              },
+            },
+            position: true,
+            bonus: {
+              include: {
+                bonusDiscounts: true,
+                position: true,
+                tasks: true,
+              },
+            },
+            discounts: true,
+          },
+        });
+
+        const responseData = response.data;
+
+        // Backend returns consistent format: { success, message, data: payroll }
+        if (responseData?.success && responseData?.data) {
+          setPayroll(responseData.data);
+        } else if (responseData?.success === false) {
+          setError(responseData.message || 'Folha de pagamento não encontrada.');
+        } else {
+          setError('Folha de pagamento não encontrada.');
+        }
+      } catch (err: any) {
+        setError(err?.response?.data?.message || 'Erro ao carregar folha de pagamento.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPayroll();
+  }, [payrollId]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      // Re-fetch payroll data
+      const response = await payrollService.getById(payrollId, {
+        include: {
+          user: { include: { position: true, sector: true } },
+          position: true,
+          bonus: { include: { bonusDiscounts: true, position: true, tasks: true } },
+          discounts: true,
+        },
+      });
+      if (response.data?.success && response.data?.data) {
+        setPayroll(response.data.data);
+      }
     } finally {
       setRefreshing(false);
     }
   };
 
-  // Calculate bonus period dates (26th to 25th)
-  const getBonusPeriodDates = (year: number, month: number) => {
-    if (!year || !month) return { startDate: new Date(), endDate: new Date() };
-
-    const startDate = new Date(year, month - 2, 26, 0, 0, 0);
-    const endDate = new Date(year, month - 1, 25, 23, 59, 59);
-
-    if (month === 1) {
-      startDate.setFullYear(year - 1);
-      startDate.setMonth(11);
-    }
-
-    return { startDate, endDate };
-  };
-
-  const { startDate, endDate } = useMemo(() => {
-    return getBonusPeriodDates(year, month);
-  }, [year, month]);
-
-  // Extract statistics
-  const statistics = useMemo(() => {
-    if (!payrollData) {
-      return {
-        totalParticipants: 0,
-        totalTasks: 0,
-        totalWeightedTasks: 0,
-        averageWeightedTasks: 0,
-      };
-    }
-    // Handle both direct Payroll and wrapped response formats
-    const data = ('payroll' in (payrollData as any) ? (payrollData as any).payroll : payrollData) as Payroll;
-    const bonus = data?.bonus;
-
-    if (!bonus || typeof bonus === 'number') {
-      return {
-        totalParticipants: 0,
-        totalTasks: 0,
-        totalWeightedTasks: 0,
-        averageWeightedTasks: 0,
-      };
-    }
-
-    // Bonus is a proper Bonus object
-    const totalTasks = (bonus as any).totalTasks || 0;
-    const totalParticipants = (bonus as any).totalUsers || 0;
-    const averagePerUser = typeof bonus.ponderedTaskCount === 'object' && 'toNumber' in bonus.ponderedTaskCount
-      ? bonus.ponderedTaskCount.toNumber()
-      : Number(bonus.ponderedTaskCount) || 0;
-    const totalWeightedTasks = averagePerUser * totalParticipants;
-
-    return {
-      totalParticipants,
-      totalTasks,
-      totalWeightedTasks,
-      averageWeightedTasks: averagePerUser,
-    };
-  }, [payrollData]);
-
-  // Calculate financial totals
-  const financial = useMemo(() => {
-    if (!payrollData) {
+  // Calculate financial values with full breakdown (matching desktop)
+  const calculations = useMemo(() => {
+    if (!payroll) {
       return {
         baseRemuneration: 0,
         bonusAmount: 0,
-        totalDiscounts: 0,
+        netBonus: 0,
+        overtime50Amount: 0,
+        overtime50Hours: 0,
+        overtime100Amount: 0,
+        overtime100Hours: 0,
+        nightDifferentialAmount: 0,
+        nightHours: 0,
+        dsrAmount: 0,
         totalGross: 0,
-        netSalary: 0,
+        totalDiscounts: 0,
+        totalNet: 0,
+        inssAmount: 0,
+        inssBase: 0,
+        irrfAmount: 0,
+        irrfBase: 0,
+        fgtsAmount: 0,
       };
     }
 
-    // Handle both direct Payroll and wrapped response formats
-    const data = ('payroll' in (payrollData as any) ? (payrollData as any).payroll : payrollData) as Payroll;
-    const bonus = data?.bonus;
+    const baseRemuneration = getNumericValue(payroll.baseRemuneration) ||
+      getNumericValue(payroll.position?.baseRemuneration) ||
+      getNumericValue(payroll.user?.position?.baseRemuneration) ||
+      0;
 
-    let baseRemuneration = 0;
-    const baseRemunerationRaw = data.baseRemuneration;
-    if (baseRemunerationRaw != null) {
-      if (typeof baseRemunerationRaw === 'object' && baseRemunerationRaw && 'toNumber' in baseRemunerationRaw) {
-        baseRemuneration = (baseRemunerationRaw as any).toNumber();
-      } else if (baseRemunerationRaw) {
-        baseRemuneration = Number(baseRemunerationRaw);
-      }
+    const bonusAmount = payroll.bonus ? getNumericValue(payroll.bonus.baseBonus) : 0;
+
+    // Calculate bonus discounts (net bonus)
+    let bonusDiscounts = 0;
+    if (payroll.bonus?.bonusDiscounts && payroll.bonus.bonusDiscounts.length > 0) {
+      let currentBonusAmount = bonusAmount;
+      payroll.bonus.bonusDiscounts
+        .sort((a: any, b: any) => (a.calculationOrder || 0) - (b.calculationOrder || 0))
+        .forEach((discount: any) => {
+          if (discount.percentage) {
+            const discountValue = currentBonusAmount * (getNumericValue(discount.percentage) / 100);
+            bonusDiscounts += discountValue;
+            currentBonusAmount -= discountValue;
+          } else if (discount.value) {
+            bonusDiscounts += getNumericValue(discount.value);
+            currentBonusAmount -= getNumericValue(discount.value);
+          }
+        });
+    }
+    const netBonus = bonusAmount - bonusDiscounts;
+
+    // Get Secullum data - overtime and DSR
+    const overtime50Amount = getNumericValue(payroll.overtime50Amount);
+    const overtime50Hours = getNumericValue(payroll.overtime50Hours);
+    const overtime100Amount = getNumericValue(payroll.overtime100Amount);
+    const overtime100Hours = getNumericValue(payroll.overtime100Hours);
+    const nightDifferentialAmount = getNumericValue(payroll.nightDifferentialAmount);
+    const nightHours = getNumericValue(payroll.nightHours);
+    const dsrAmount = getNumericValue(payroll.dsrAmount);
+
+    // Tax information
+    const inssBase = getNumericValue(payroll.inssBase);
+    const inssAmount = getNumericValue(payroll.inssAmount);
+    const irrfBase = getNumericValue(payroll.irrfBase);
+    const irrfAmount = getNumericValue(payroll.irrfAmount);
+    const fgtsAmount = getNumericValue(payroll.fgtsAmount);
+
+    // Total gross includes ALL earnings
+    const totalGross = baseRemuneration + bonusAmount + overtime50Amount + overtime100Amount + nightDifferentialAmount + dsrAmount;
+
+    // Calculate payroll discounts
+    let totalDiscounts = 0;
+    if (payroll.discounts && payroll.discounts.length > 0) {
+      payroll.discounts.forEach((discount: any) => {
+        const fixedValue = getNumericValue(discount.value) || getNumericValue(discount.fixedValue);
+        if (fixedValue > 0) {
+          totalDiscounts += fixedValue;
+        } else if (discount.percentage) {
+          totalDiscounts += totalGross * (getNumericValue(discount.percentage) / 100);
+        }
+      });
     }
 
-    let bonusAmount = 0;
-    if (typeof bonus === 'number') {
-      bonusAmount = bonus;
-    } else if (bonus && typeof bonus === 'object' && 'baseBonus' in bonus) {
-      const baseBonus = bonus.baseBonus;
-      bonusAmount = typeof baseBonus === 'object' && 'toNumber' in baseBonus
-        ? baseBonus.toNumber()
-        : Number(baseBonus) || 0;
-    }
-
-    const totalDiscounts = data.discounts?.reduce((sum: number, d: any) =>
-      sum + (Number(d.value) || Number(d.percentage) || 0), 0
-    ) || 0;
-
-    const totalGross = baseRemuneration + bonusAmount;
-    const netSalary = totalGross - totalDiscounts;
+    const totalNet = totalGross - totalDiscounts - bonusDiscounts;
 
     return {
       baseRemuneration,
       bonusAmount,
-      totalDiscounts,
+      netBonus,
+      overtime50Amount,
+      overtime50Hours,
+      overtime100Amount,
+      overtime100Hours,
+      nightDifferentialAmount,
+      nightHours,
+      dsrAmount,
       totalGross,
-      netSalary,
+      totalDiscounts: totalDiscounts + bonusDiscounts,
+      totalNet,
+      inssAmount,
+      inssBase,
+      irrfAmount,
+      irrfBase,
+      fgtsAmount,
     };
-  }, [payrollData]);
+  }, [payroll]);
 
-  if (isLoading && !refreshing) {
+  // Calculate bonus period dates
+  const periodDates = useMemo(() => {
+    if (!payroll?.year || !payroll?.month) return null;
+    return getBonusPeriod(payroll.year, payroll.month);
+  }, [payroll?.year, payroll?.month]);
+
+  // Extract statistics from bonus data
+  const statistics = useMemo(() => {
+    if (!payroll?.bonus) {
+      return {
+        totalParticipants: 0,
+        totalTasks: 0,
+        totalWeightedTasks: 0,
+        averageWeightedTasks: 0,
+      };
+    }
+
+    const bonus = payroll.bonus;
+    const totalTasks = getNumericValue(bonus.totalTasks) || 0;
+    const totalParticipants = getNumericValue(bonus.totalUsers) || bonus.users?.length || 0;
+    const weightedTasks = getNumericValue(bonus.weightedTasks) || getNumericValue(bonus.ponderedTaskCount) || 0;
+    const averagePerUser = totalParticipants > 0 ? weightedTasks / totalParticipants : 0;
+
+    return {
+      totalParticipants,
+      totalTasks,
+      totalWeightedTasks: weightedTasks,
+      averageWeightedTasks: averagePerUser,
+    };
+  }, [payroll?.bonus]);
+
+  if (loading && !refreshing) {
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
           <ThemedText style={styles.loadingText}>Carregando detalhes...</ThemedText>
         </View>
       </ThemedView>
@@ -180,14 +311,14 @@ export default function PayrollDetailScreen() {
       <ThemedView style={styles.container}>
         <ErrorScreen
           message="Erro ao carregar detalhes"
-          detail={error.message}
+          detail={error}
           onRetry={handleRefresh}
         />
       </ThemedView>
     );
   }
 
-  if (!payrollData) {
+  if (!payroll) {
     return (
       <ThemedView style={styles.container}>
         <EmptyState
@@ -199,13 +330,24 @@ export default function PayrollDetailScreen() {
     );
   }
 
-  // Handle both direct Payroll and wrapped response formats
-  const data = ('payroll' in (payrollData as any) ? (payrollData as any).payroll : payrollData) as Payroll;
-  const user = data.user;
+  // Extract data
+  const user = payroll.user;
   const userName = user?.name || 'Funcionário';
-  const monthName = getMonthName(month);
-  const title = `${userName}`;
+  const monthName = getMonthName(payroll.month);
+  const year = payroll.year || new Date().getFullYear();
+  const title = userName;
   const subtitle = `${monthName} ${year}`;
+
+  // Use position saved at payroll creation, fallback to user's current
+  const position = payroll.position || payroll.bonus?.position || user?.position;
+  const sector = user?.sector;
+  const isBonifiable = position?.bonifiable ?? false;
+
+  // Check if this is a live calculation
+  const isLive = parsedId.isLive || payroll.isLive || payroll.isTemporary;
+
+  const hasPayrollDiscounts = payroll.discounts && payroll.discounts.length > 0;
+  const hasBonusDiscounts = payroll.bonus?.bonusDiscounts && payroll.bonus.bonusDiscounts.length > 0;
 
   return (
     <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL]}>
@@ -224,14 +366,37 @@ export default function PayrollDetailScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
         >
+          {/* Status Indicator */}
+          <View style={styles.statusContainer}>
+            <Badge
+              variant={isLive ? "warning" : "success"}
+              size="md"
+            >
+              <View style={styles.statusBadgeContent}>
+                {isLive ? (
+                  <IconClock size={14} color={colors.warning} />
+                ) : (
+                  <IconCheck size={14} color={colors.success} />
+                )}
+                <ThemedText style={[styles.statusText, { color: isLive ? colors.warning : colors.success }]}>
+                  {isLive ? "Cálculo Provisório" : "Confirmado"}
+                </ThemedText>
+              </View>
+            </Badge>
+          </View>
+
           {/* User Info Card */}
           <Card style={styles.card}>
             <CardHeader>
-              <CardTitle>Informações do Funcionário</CardTitle>
+              <CardTitle>Informações Gerais</CardTitle>
             </CardHeader>
             <CardContent>
               <View style={styles.infoRow}>
-                <ThemedText style={styles.infoLabel}>Nome:</ThemedText>
+                <ThemedText style={styles.infoLabel}>Nº Folha:</ThemedText>
+                <ThemedText style={styles.infoValue}>{user?.payrollNumber || '-'}</ThemedText>
+              </View>
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.infoLabel}>Colaborador:</ThemedText>
                 <ThemedText style={styles.infoValue}>{user?.name}</ThemedText>
               </View>
               <View style={styles.infoRow}>
@@ -239,134 +404,228 @@ export default function PayrollDetailScreen() {
                 <ThemedText style={styles.infoValue}>{user?.cpf || '-'}</ThemedText>
               </View>
               <View style={styles.infoRow}>
-                <ThemedText style={styles.infoLabel}>Email:</ThemedText>
-                <ThemedText style={styles.infoValue}>{user?.email || '-'}</ThemedText>
+                <ThemedText style={styles.infoLabel}>PIS:</ThemedText>
+                <ThemedText style={styles.infoValue}>{user?.pis || '-'}</ThemedText>
               </View>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.infoLabel}>Cargo:</ThemedText>
-                <ThemedText style={styles.infoValue}>{user?.position?.name || '-'}</ThemedText>
+                <ThemedText style={styles.infoValue}>{position?.name || '-'}</ThemedText>
               </View>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.infoLabel}>Setor:</ThemedText>
-                <ThemedText style={styles.infoValue}>{user?.sector?.name || '-'}</ThemedText>
-              </View>
-              <View style={styles.infoRow}>
-                <ThemedText style={styles.infoLabel}>Performance:</ThemedText>
-                <Badge variant={(user?.performanceLevel ?? 0) > 0 ? "default" : "secondary"}>
-                  <ThemedText style={{ color: "white" }}>{user?.performanceLevel ?? 0}</ThemedText>
-                </Badge>
+                <ThemedText style={styles.infoValue}>{sector?.name || '-'}</ThemedText>
               </View>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.infoLabel}>Bonificável:</ThemedText>
-                <Badge variant={user?.position?.bonifiable ? "success" : "secondary"}>
-                  <ThemedText style={{ color: "white" }}>
-                    {user?.position?.bonifiable ? "Sim" : "Não"}
+                <Badge variant={isBonifiable ? "success" : "secondary"} size="sm">
+                  <ThemedText style={{ color: "white", fontSize: 11 }}>
+                    {isBonifiable ? "Sim" : "Não"}
                   </ThemedText>
                 </Badge>
+              </View>
+              {isBonifiable && (
+                <View style={styles.infoRow}>
+                  <ThemedText style={styles.infoLabel}>Nível Performance:</ThemedText>
+                  <Badge variant="default" size="sm">
+                    <ThemedText style={{ color: "white", fontSize: 11 }}>
+                      {payroll.bonus?.performanceLevel || user?.performanceLevel || 0}
+                    </ThemedText>
+                  </Badge>
+                </View>
+              )}
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.infoLabel}>Período:</ThemedText>
+                <ThemedText style={styles.infoValue}>{monthName}/{year}</ThemedText>
               </View>
             </CardContent>
           </Card>
 
-          {/* Remuneration Card */}
+          {/* Detailed Financial Card */}
           <Card style={styles.card}>
             <CardHeader>
-              <CardTitle>Detalhes da Remuneração</CardTitle>
+              <CardTitle>Valores</CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Base Remuneration */}
               <View style={styles.financialRow}>
-                <ThemedText style={styles.financialLabel}>Salário Base:</ThemedText>
+                <ThemedText style={styles.financialLabel}>Salário Base</ThemedText>
                 <ThemedText style={styles.financialValue}>
-                  {formatCurrency(financial.baseRemuneration)}
+                  {formatCurrency(calculations.baseRemuneration)}
                 </ThemedText>
               </View>
-              <View style={styles.financialRow}>
-                <ThemedText style={styles.financialLabel}>Bonificação:</ThemedText>
-                <ThemedText style={[styles.financialValue, { color: colors.primary }]}>
-                  {formatCurrency(financial.bonusAmount)}
-                </ThemedText>
-              </View>
-              {financial.totalDiscounts > 0 && (
+
+              {/* Overtime 50% */}
+              {calculations.overtime50Amount > 0 && (
                 <View style={styles.financialRow}>
-                  <ThemedText style={styles.financialLabel}>Descontos:</ThemedText>
-                  <ThemedText style={[styles.financialValue, { color: colors.destructive }]}>
-                    -{formatCurrency(financial.totalDiscounts)}
+                  <View style={styles.financialLabelWithRef}>
+                    <ThemedText style={styles.financialLabel}>Horas Extras 50%</ThemedText>
+                    <ThemedText style={styles.financialRef}>{formatHoursToHHMM(calculations.overtime50Hours)}</ThemedText>
+                  </View>
+                  <ThemedText style={[styles.financialValue, { color: colors.success }]}>
+                    {formatCurrency(calculations.overtime50Amount)}
                   </ThemedText>
                 </View>
               )}
+
+              {/* Overtime 100% */}
+              {calculations.overtime100Amount > 0 && (
+                <View style={styles.financialRow}>
+                  <View style={styles.financialLabelWithRef}>
+                    <ThemedText style={styles.financialLabel}>Horas Extras 100%</ThemedText>
+                    <ThemedText style={styles.financialRef}>{formatHoursToHHMM(calculations.overtime100Hours)}</ThemedText>
+                  </View>
+                  <ThemedText style={[styles.financialValue, { color: colors.success }]}>
+                    {formatCurrency(calculations.overtime100Amount)}
+                  </ThemedText>
+                </View>
+              )}
+
+              {/* Night Differential */}
+              {calculations.nightDifferentialAmount > 0 && (
+                <View style={styles.financialRow}>
+                  <View style={styles.financialLabelWithRef}>
+                    <ThemedText style={styles.financialLabel}>Adicional Noturno</ThemedText>
+                    <ThemedText style={styles.financialRef}>{formatHoursToHHMM(calculations.nightHours)}</ThemedText>
+                  </View>
+                  <ThemedText style={[styles.financialValue, { color: colors.success }]}>
+                    {formatCurrency(calculations.nightDifferentialAmount)}
+                  </ThemedText>
+                </View>
+              )}
+
+              {/* DSR */}
+              {calculations.dsrAmount > 0 && (
+                <View style={styles.financialRow}>
+                  <ThemedText style={styles.financialLabel}>Reflexo Extras DSR</ThemedText>
+                  <ThemedText style={[styles.financialValue, { color: colors.success }]}>
+                    {formatCurrency(calculations.dsrAmount)}
+                  </ThemedText>
+                </View>
+              )}
+
+              {/* Bonus */}
+              {isBonifiable && (
+                <>
+                  <View style={styles.financialRow}>
+                    <ThemedText style={styles.financialLabel}>Bônus Bruto</ThemedText>
+                    <ThemedText style={[styles.financialValue, { color: colors.success }]}>
+                      {calculations.bonusAmount > 0 ? formatCurrency(calculations.bonusAmount) : "Sem bônus"}
+                    </ThemedText>
+                  </View>
+                  {calculations.bonusAmount > 0 && calculations.netBonus !== calculations.bonusAmount && (
+                    <View style={styles.financialRow}>
+                      <ThemedText style={styles.financialLabel}>Bônus Líquido</ThemedText>
+                      <ThemedText style={[styles.financialValue, { color: colors.success }]}>
+                        {formatCurrency(calculations.netBonus)}
+                      </ThemedText>
+                    </View>
+                  )}
+                </>
+              )}
+
+              {/* Discounts */}
+              {hasPayrollDiscounts && payroll.discounts
+                .filter((discount: any) => {
+                  const desc = discount.description?.toUpperCase() || "";
+                  return !desc.includes("FGTS");
+                })
+                .map((discount: any, index: number) => {
+                  const discountValue = getNumericValue(discount.amount) ||
+                    getNumericValue(discount.value) ||
+                    getNumericValue(discount.fixedValue) ||
+                    (calculations.totalGross * (getNumericValue(discount.percentage) / 100));
+
+                  const displayDescription = discount.reference || discount.description || "Desconto";
+
+                  return (
+                    <View key={discount.id || index} style={styles.financialRow}>
+                      <ThemedText style={styles.financialLabel}>{displayDescription}</ThemedText>
+                      <ThemedText style={[styles.financialValue, { color: colors.destructive }]}>
+                        -{formatCurrency(discountValue)}
+                      </ThemedText>
+                    </View>
+                  );
+                })}
+
+              {/* FGTS Info (employer contribution - informational) */}
+              {calculations.fgtsAmount > 0 && (
+                <View style={[styles.financialRow, { backgroundColor: 'rgba(0,0,0,0.02)', marginHorizontal: -12, paddingHorizontal: 12 }]}>
+                  <View style={styles.financialLabelWithRef}>
+                    <ThemedText style={[styles.financialLabel, { fontStyle: 'italic' }]}>FGTS (Empregador)</ThemedText>
+                    <ThemedText style={styles.financialRef}>8%</ThemedText>
+                  </View>
+                  <ThemedText style={styles.financialValue}>
+                    {formatCurrency(calculations.fgtsAmount)}
+                  </ThemedText>
+                </View>
+              )}
+
+              {/* Totals */}
               <View style={[styles.financialRow, styles.separator]}>
-                <ThemedText style={styles.financialLabelTotal}>Total Bruto:</ThemedText>
+                <ThemedText style={styles.financialLabelTotal}>Total Bruto</ThemedText>
                 <ThemedText style={styles.financialValueTotal}>
-                  {formatCurrency(financial.totalGross)}
+                  {formatCurrency(calculations.totalGross)}
                 </ThemedText>
               </View>
-              <View style={styles.financialRow}>
-                <ThemedText style={styles.financialLabelTotal}>Total Líquido:</ThemedText>
-                <ThemedText style={[styles.financialValueTotal, { color: colors.primary }]}>
-                  {formatCurrency(financial.netSalary)}
+
+              {calculations.totalDiscounts > 0 && (
+                <View style={styles.financialRow}>
+                  <ThemedText style={styles.financialLabelTotal}>Total Descontos</ThemedText>
+                  <ThemedText style={[styles.financialValueTotal, { color: colors.destructive }]}>
+                    -{formatCurrency(calculations.totalDiscounts)}
+                  </ThemedText>
+                </View>
+              )}
+
+              <View style={[styles.financialRow, styles.totalNetRow, { backgroundColor: colors.primary }]}>
+                <ThemedText style={[styles.financialLabelTotal, { color: colors.background }]}>Total Líquido</ThemedText>
+                <ThemedText style={[styles.financialValueTotal, styles.totalNetValue, { color: colors.background }]}>
+                  {formatCurrency(calculations.totalNet)}
                 </ThemedText>
               </View>
             </CardContent>
           </Card>
 
           {/* Period Statistics Card - Only if bonifiable */}
-          {user?.position?.bonifiable && (
+          {isBonifiable && periodDates && (
             <Card style={styles.card}>
               <CardHeader>
                 <CardTitle>Estatísticas do Período</CardTitle>
                 <ThemedText style={styles.periodSubtitle}>
-                  {startDate.toLocaleDateString('pt-BR')} a {endDate.toLocaleDateString('pt-BR')}
+                  {periodDates.startDate.toLocaleDateString('pt-BR')} a {periodDates.endDate.toLocaleDateString('pt-BR')}
                 </ThemedText>
               </CardHeader>
               <CardContent>
                 <View style={styles.statsGrid}>
                   <View style={styles.statCard}>
                     <ThemedText style={styles.statValue}>{statistics.totalParticipants}</ThemedText>
-                    <ThemedText style={styles.statLabel}>Funcionários com Bônus</ThemedText>
+                    <ThemedText style={styles.statLabel}>Colaboradores</ThemedText>
                   </View>
                   <View style={styles.statCard}>
                     <ThemedText style={styles.statValue}>{statistics.totalTasks}</ThemedText>
-                    <ThemedText style={styles.statLabel}>Total de Tarefas</ThemedText>
+                    <ThemedText style={styles.statLabel}>Total Tarefas</ThemedText>
                   </View>
                   <View style={styles.statCard}>
                     <ThemedText style={styles.statValue}>{statistics.totalWeightedTasks.toFixed(1)}</ThemedText>
-                    <ThemedText style={styles.statLabel}>Tarefas Ponderadas</ThemedText>
+                    <ThemedText style={styles.statLabel}>Ponderadas</ThemedText>
                   </View>
                   <View style={styles.statCard}>
-                    <ThemedText style={styles.statValue}>{statistics.averageWeightedTasks.toFixed(1)}</ThemedText>
-                    <ThemedText style={styles.statLabel}>Média por Funcionário</ThemedText>
+                    <ThemedText style={styles.statValue}>{statistics.averageWeightedTasks.toFixed(2)}</ThemedText>
+                    <ThemedText style={styles.statLabel}>Média</ThemedText>
                   </View>
                 </View>
               </CardContent>
             </Card>
           )}
 
-          {/* Discounts Card */}
-          {data.discounts && data.discounts.length > 0 && (
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Descontos Aplicados</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {data.discounts.map((discount: any) => (
-                  <View key={discount.id} style={styles.discountRow}>
-                    <ThemedText style={styles.discountLabel}>{discount.reference}</ThemedText>
-                    <ThemedText style={[styles.discountValue, { color: colors.destructive }]}>
-                      -{formatCurrency(Number(discount.value) || Number(discount.percentage) || 0)}
-                    </ThemedText>
-                  </View>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
           {/* Tasks Summary - Only if bonifiable */}
           {(() => {
-            const bonus = data?.bonus;
-            const tasks = bonus && typeof bonus === 'object' && 'tasks' in bonus ? bonus.tasks : undefined;
-            return user?.position?.bonifiable && tasks && Array.isArray(tasks) && tasks.length > 0 && (
+            const bonus = payroll?.bonus;
+            const tasks = bonus?.tasks;
+            return isBonifiable && tasks && Array.isArray(tasks) && tasks.length > 0 && (
               <Card style={styles.card}>
                 <CardHeader>
-                  <CardTitle>Tarefas Realizadas ({tasks.length})</CardTitle>
+                  <CardTitle>Tarefas do Período ({tasks.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {tasks.slice(0, 10).map((task: any) => (
@@ -374,10 +633,10 @@ export default function PayrollDetailScreen() {
                       <View style={styles.taskInfo}>
                         <ThemedText style={styles.taskCustomer}>{task.customer?.fantasyName || 'Cliente'}</ThemedText>
                         <ThemedText style={styles.taskDate}>
-                          {new Date(task.createdAt).toLocaleDateString('pt-BR')}
+                          {task.finishedAt ? new Date(task.finishedAt).toLocaleDateString('pt-BR') : '-'}
                         </ThemedText>
                       </View>
-                      <Badge variant={task.commission === 'FULL_COMMISSION' ? 'default' : 'secondary'}>
+                      <Badge variant={task.commission === 'FULL_COMMISSION' ? 'default' : 'secondary'} size="sm">
                         <ThemedText style={{ color: "white", fontSize: 11 }}>
                           {task.commission === 'FULL_COMMISSION' ? '100%' : '50%'}
                         </ThemedText>
@@ -414,9 +673,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    gap: 12,
   },
   loadingText: {
     fontSize: 16,
+  },
+  statusContainer: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  statusBadgeContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   card: {
     marginBottom: 16,
@@ -446,30 +719,52 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   financialLabel: {
     fontSize: 14,
   },
+  financialLabelWithRef: {
+    flexDirection: "column",
+  },
+  financialRef: {
+    fontSize: 11,
+    opacity: 0.6,
+    marginTop: 2,
+  },
   financialValue: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: 15,
+    fontWeight: "600",
     fontFamily: "monospace",
   },
   financialLabelTotal: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
   },
   financialValueTotal: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "700",
     fontFamily: "monospace",
   },
   separator: {
-    borderTopWidth: 1,
+    borderTopWidth: 2,
     borderTopColor: "rgba(0,0,0,0.1)",
     paddingTop: 12,
     marginTop: 8,
+    borderBottomWidth: 0,
+  },
+  totalNetRow: {
+    marginTop: 8,
+    marginHorizontal: -12,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    borderRadius: 8,
+    borderBottomWidth: 0,
+  },
+  totalNetValue: {
+    fontSize: 20,
   },
   statsGrid: {
     flexDirection: "row",
@@ -493,22 +788,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     opacity: 0.7,
     textAlign: "center",
-  },
-  discountRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
-  },
-  discountLabel: {
-    fontSize: 13,
-  },
-  discountValue: {
-    fontSize: 14,
-    fontWeight: "500",
-    fontFamily: "monospace",
   },
   taskRow: {
     flexDirection: "row",

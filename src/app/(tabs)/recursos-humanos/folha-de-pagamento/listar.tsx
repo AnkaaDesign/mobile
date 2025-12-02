@@ -2,38 +2,59 @@ import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, ScrollView, RefreshControl, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { IconClock, IconCheck } from "@tabler/icons-react-native";
 import { usePayrollBonuses } from '@/hooks';
-import { ThemedView, ThemedText, ErrorScreen, EmptyState, Card, CardHeader, CardTitle, CardContent, Button } from "@/components/ui";
-import { formatCurrency } from '@/utils';
+import { ThemedView, ThemedText, ErrorScreen, EmptyState, Card, CardHeader, CardTitle, CardContent, Button, Badge } from "@/components/ui";
+import { formatCurrency, getCurrentPayrollPeriod } from '@/utils';
 import { useTheme } from "@/lib/theme";
 import { SECTOR_PRIVILEGES } from '@/constants';
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { PayrollFilterDrawerContent } from "@/components/human-resources/payroll/list/payroll-filter-drawer-content";
 import { PayrollColumnVisibilityDrawer } from "@/components/human-resources/payroll/list/payroll-column-visibility-drawer";
 
-// Get current payroll period (26th-25th cycle)
-function getCurrentPayrollPeriod() {
-  const now = new Date();
-  const currentDay = now.getDate();
-  const currentMonth = now.getMonth() + 1;
-  const currentYear = now.getFullYear();
+/**
+ * Check if bonus period has closed (26th of month after payroll month)
+ */
+function isBonusPeriodClosed(payrollMonth: number, payrollYear: number, currentDate = new Date()): boolean {
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentDay = currentDate.getDate();
 
-  // If we're before the 26th, the payroll period is the current month
-  // If we're on or after the 26th, the payroll period is the next month
-  if (currentDay < 26) {
-    return { year: currentYear, month: currentMonth };
-  } else {
-    // Move to next month
-    if (currentMonth === 12) {
-      return { year: currentYear + 1, month: 1 };
-    } else {
-      return { year: currentYear, month: currentMonth + 1 };
-    }
+  // Calculate closure date (26th of the month after payroll month)
+  let closureMonth = payrollMonth + 1;
+  let closureYear = payrollYear;
+
+  if (closureMonth > 12) {
+    closureMonth = 1;
+    closureYear = payrollYear + 1;
   }
+
+  if (currentYear > closureYear) return true;
+  if (currentYear === closureYear) {
+    if (currentMonth > closureMonth) return true;
+    if (currentMonth === closureMonth && currentDay >= 26) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Determine if a payroll is live vs saved
+ */
+function isPayrollLive(payroll: any, payrollMonth: number, payrollYear: number): boolean {
+  const hasRealPayrollId = payroll.id && !payroll.id.startsWith('00000000-');
+  const bonusPeriodClosed = isBonusPeriodClosed(payrollMonth, payrollYear);
+
+  if (!hasRealPayrollId) return true;
+  if (!bonusPeriodClosed) return true;
+  if (payroll.isLive === true || payroll.isTemporary === true) return true;
+
+  return false;
 }
 
 interface PayrollRow {
   id: string;
+  payrollId?: string;
   userId: string;
   userName: string;
   userEmail?: string;
@@ -43,10 +64,14 @@ interface PayrollRow {
   sector?: { id: string; name: string };
   performanceLevel: number;
   baseRemuneration: number;
-  bonusAmount: number;
+  bonusAmount: number;       // Gross bonus (Bônus Bruto)
+  netBonus: number;          // Net bonus after discounts (Bônus Líquido)
   totalDiscounts: number;
   netSalary: number;
   tasksCompleted: number;
+  totalWeightedTasks: number;
+  averageTasks: number;
+  isLive: boolean;           // Live calculation vs saved payroll
 }
 
 export default function PayrollListScreen() {
@@ -73,19 +98,45 @@ export default function PayrollListScreen() {
   }, [refetch]);
 
   const handlePayrollPress = useCallback((payroll: PayrollRow) => {
-    // Navigate to payroll detail
-    router.push(`/(tabs)/human-resources/payroll/${payroll.userId}?year=${year}&month=${month}` as any);
+    // Navigate to payroll detail using live-ID format (matching desktop)
+    if (payroll.isLive || !payroll.payrollId) {
+      // Live calculation - use live-{userId}-{year}-{month} format
+      const liveId = `live-${payroll.userId}-${year}-${month}`;
+      router.push(`/(tabs)/recursos-humanos/folha-de-pagamento/${liveId}` as any);
+    } else {
+      // Saved payroll - use payroll ID directly
+      router.push(`/(tabs)/recursos-humanos/folha-de-pagamento/${payroll.payrollId}` as any);
+    }
   }, [router, year, month]);
 
   // Process payroll data
   const processedPayrolls: PayrollRow[] = useMemo(() => {
     if (!payrollData || !Array.isArray(payrollData)) return [];
 
+    // Calculate period-wide statistics (same as desktop)
+    let totalTasksForPeriod = 0;
+    let eligibleUsersCount = 0;
+
+    payrollData.forEach((payroll: any) => {
+      const user = payroll.user;
+      const bonus = payroll.bonus;
+      const isEligible = user?.position?.bonifiable && (user?.performanceLevel || 0) > 0;
+
+      if (isEligible) {
+        eligibleUsersCount++;
+        if (bonus?.totalTasks !== undefined) {
+          totalTasksForPeriod = Number(bonus.totalTasks) || 0;
+        }
+      }
+    });
+
+    const averageTasksPerUser = eligibleUsersCount > 0 ? totalTasksForPeriod / eligibleUsersCount : 0;
+
     return payrollData.map((payroll: any) => {
       const user = payroll.user;
       const bonus = payroll.bonus;
 
-      // Calculate discounts
+      // Calculate payroll discounts
       const totalDiscounts = payroll.discounts && Array.isArray(payroll.discounts)
         ? payroll.discounts.reduce((sum: number, discount: any) => {
             const discountValue = discount.value ? Number(discount.value) : 0;
@@ -94,14 +145,32 @@ export default function PayrollListScreen() {
         : 0;
 
       const baseRemuneration = Number(payroll.baseRemuneration) || 0;
-      const bonusAmount = bonus?.baseBonus ? Number(bonus.baseBonus) : 0;
-      const netSalary = baseRemuneration + bonusAmount - totalDiscounts;
+      const isEligibleForBonus = user?.position?.bonifiable;
+      const bonusAmount = isEligibleForBonus && bonus?.baseBonus ? Number(bonus.baseBonus) : 0;
 
-      const isEligibleForBonus = user?.position?.bonifiable && (user?.performanceLevel || 0) > 0;
+      // Calculate net bonus (gross bonus minus bonus discounts) - matches desktop
+      let bonusDiscountsTotal = 0;
+      if (isEligibleForBonus && bonus?.bonusDiscounts && Array.isArray(bonus.bonusDiscounts)) {
+        bonus.bonusDiscounts.forEach((discount: any) => {
+          if (discount.percentage) {
+            bonusDiscountsTotal += bonusAmount * (discount.percentage / 100);
+          } else if (discount.value) {
+            bonusDiscountsTotal += Number(discount.value) || 0;
+          }
+        });
+      }
+      const netBonus = bonusAmount - bonusDiscountsTotal;
+
+      const netSalary = baseRemuneration + netBonus - totalDiscounts;
+
       const tasksCompleted = isEligibleForBonus && bonus?.totalTasks ? Number(bonus.totalTasks) : 0;
 
+      // Determine live vs saved status
+      const isLive = isPayrollLive(payroll, month, year);
+
       return {
-        id: payroll.id || user?.id,
+        id: `${payroll.id || user?.id}-${month}`,
+        payrollId: payroll.id,
         userId: user?.id,
         userName: user?.name || 'Sem nome',
         userEmail: user?.email,
@@ -112,28 +181,37 @@ export default function PayrollListScreen() {
         performanceLevel: payroll.performanceLevel || user?.performanceLevel || 0,
         baseRemuneration,
         bonusAmount,
+        netBonus,
         totalDiscounts,
         netSalary,
         tasksCompleted,
+        totalWeightedTasks: totalTasksForPeriod,
+        averageTasks: averageTasksPerUser,
+        isLive,
       };
     });
-  }, [payrollData]);
+  }, [payrollData, month, year]);
 
   // Calculate summary
   const summary = useMemo(() => {
     const totalPayroll = processedPayrolls.reduce((sum, p) => sum + p.baseRemuneration, 0);
-    const totalBonuses = processedPayrolls.reduce((sum, p) => sum + p.bonusAmount, 0);
+    const totalGrossBonuses = processedPayrolls.reduce((sum, p) => sum + p.bonusAmount, 0);
+    const totalNetBonuses = processedPayrolls.reduce((sum, p) => sum + p.netBonus, 0);
     const totalDiscounts = processedPayrolls.reduce((sum, p) => sum + p.totalDiscounts, 0);
     const totalNet = processedPayrolls.reduce((sum, p) => sum + p.netSalary, 0);
 
     return {
       totalPayroll,
-      totalBonuses,
+      totalGrossBonuses,
+      totalNetBonuses,
       totalDiscounts,
       totalNet,
       count: processedPayrolls.length,
     };
   }, [processedPayrolls]);
+
+  // Determine if current period is live or confirmed
+  const isPeriodLive = !isBonusPeriodClosed(month, year);
 
   // Get month name
   const monthName = new Date(year, month - 1).toLocaleDateString('pt-BR', { month: 'long' });
@@ -177,7 +255,25 @@ export default function PayrollListScreen() {
           {/* Header Card */}
           <Card style={styles.headerCard}>
             <CardHeader>
-              <CardTitle>Folha de Pagamento</CardTitle>
+              <View style={styles.headerTitleRow}>
+                <CardTitle>Folha de Pagamento</CardTitle>
+                <Badge
+                  variant={isPeriodLive ? "warning" : "success"}
+                  size="sm"
+                  style={styles.statusBadge}
+                >
+                  <View style={styles.statusBadgeContent}>
+                    {isPeriodLive ? (
+                      <IconClock size={12} color={colors.warning} />
+                    ) : (
+                      <IconCheck size={12} color={colors.success} />
+                    )}
+                    <ThemedText style={[styles.statusBadgeText, { color: isPeriodLive ? colors.warning : colors.success }]}>
+                      {isPeriodLive ? "Provisório" : "Confirmado"}
+                    </ThemedText>
+                  </View>
+                </Badge>
+              </View>
               <ThemedText style={styles.periodText}>{periodLabel}</ThemedText>
             </CardHeader>
             <CardContent>
@@ -238,20 +334,26 @@ export default function PayrollListScreen() {
                     </ThemedText>
                   </View>
                   <View style={styles.summaryRow}>
-                    <ThemedText style={styles.summaryLabel}>Total Bônus:</ThemedText>
-                    <ThemedText style={[styles.summaryValue, styles.summaryValueCurrency, { color: colors.primary }]}>
-                      {formatCurrency(summary.totalBonuses)}
+                    <ThemedText style={styles.summaryLabel}>Bônus Bruto:</ThemedText>
+                    <ThemedText style={[styles.summaryValue, styles.summaryValueCurrency]}>
+                      {formatCurrency(summary.totalGrossBonuses)}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <ThemedText style={styles.summaryLabel}>Bônus Líquido:</ThemedText>
+                    <ThemedText style={[styles.summaryValue, styles.summaryValueCurrency, { color: colors.success }]}>
+                      {formatCurrency(summary.totalNetBonuses)}
                     </ThemedText>
                   </View>
                   <View style={styles.summaryRow}>
                     <ThemedText style={styles.summaryLabel}>Total Descontos:</ThemedText>
                     <ThemedText style={[styles.summaryValue, styles.summaryValueCurrency, { color: colors.destructive }]}>
-                      {formatCurrency(summary.totalDiscounts)}
+                      -{formatCurrency(summary.totalDiscounts)}
                     </ThemedText>
                   </View>
                   <View style={[styles.summaryRow, styles.summaryRowTotal]}>
                     <ThemedText style={[styles.summaryLabel, styles.summaryLabelTotal]}>Total Líquido:</ThemedText>
-                    <ThemedText style={[styles.summaryValue, styles.summaryValueTotal]}>
+                    <ThemedText style={[styles.summaryValue, styles.summaryValueTotal, { color: colors.success }]}>
                       {formatCurrency(summary.totalNet)}
                     </ThemedText>
                   </View>
@@ -289,11 +391,28 @@ export default function PayrollListScreen() {
                             {formatCurrency(payroll.baseRemuneration)}
                           </ThemedText>
                         </View>
-                        {payroll.bonusAmount > 0 && (
+                        {payroll.position?.bonifiable ? (
+                          <>
+                            <View style={styles.payrollDetailRow}>
+                              <ThemedText style={styles.payrollDetailLabel}>Bônus Bruto:</ThemedText>
+                              <ThemedText style={styles.payrollDetailValue}>
+                                {payroll.bonusAmount > 0 ? formatCurrency(payroll.bonusAmount) : "Sem bônus"}
+                              </ThemedText>
+                            </View>
+                            {payroll.bonusAmount > 0 && (
+                              <View style={styles.payrollDetailRow}>
+                                <ThemedText style={styles.payrollDetailLabel}>Bônus Líquido:</ThemedText>
+                                <ThemedText style={[styles.payrollDetailValue, { color: colors.success }]}>
+                                  {formatCurrency(payroll.netBonus)}
+                                </ThemedText>
+                              </View>
+                            )}
+                          </>
+                        ) : (
                           <View style={styles.payrollDetailRow}>
                             <ThemedText style={styles.payrollDetailLabel}>Bônus:</ThemedText>
-                            <ThemedText style={[styles.payrollDetailValue, { color: colors.primary }]}>
-                              {formatCurrency(payroll.bonusAmount)}
+                            <ThemedText style={[styles.payrollDetailValue, { color: colors.mutedForeground }]}>
+                              Não elegível
                             </ThemedText>
                           </View>
                         )}
@@ -302,14 +421,6 @@ export default function PayrollListScreen() {
                             <ThemedText style={styles.payrollDetailLabel}>Descontos:</ThemedText>
                             <ThemedText style={[styles.payrollDetailValue, { color: colors.destructive }]}>
                               -{formatCurrency(payroll.totalDiscounts)}
-                            </ThemedText>
-                          </View>
-                        )}
-                        {payroll.position?.bonifiable && (
-                          <View style={styles.payrollDetailRow}>
-                            <ThemedText style={styles.payrollDetailLabel}>Tarefas:</ThemedText>
-                            <ThemedText style={styles.payrollDetailValue}>
-                              {payroll.tasksCompleted.toFixed(1)}
                             </ThemedText>
                           </View>
                         )}
@@ -356,6 +467,23 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     marginBottom: 16,
+  },
+  headerTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  statusBadge: {
+    marginLeft: 8,
+  },
+  statusBadgeContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
   },
   headerActions: {
     flexDirection: "row",

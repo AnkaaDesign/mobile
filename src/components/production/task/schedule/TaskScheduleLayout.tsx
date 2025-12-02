@@ -173,7 +173,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   }, [filteredTasks, sectors])
 
   // Convert to SectionList format
-  // For LEADER/PRODUCTION: show own sector first, then undefined, then others (if enabled)
+  // For LEADER/PRODUCTION: show own sector first, then others (if enabled), then undefined last
   const sections: SectionData[] = useMemo(() => {
     const result: SectionData[] = []
     const otherSections: SectionData[] = []
@@ -193,17 +193,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
       }
     }
 
-    // 2. Undefined sector (always shown for LEADER/PRODUCTION)
-    const undefinedTasks = tasksBySector.get('undefined')
-    if (undefinedTasks && undefinedTasks.length > 0) {
-      result.push({
-        title: 'Setor Indefinido',
-        sectorId: 'undefined',
-        data: undefinedTasks,
-      })
-    }
-
-    // 3. Other production sectors
+    // 2. Other production sectors
     sectors.forEach((sector: Sector) => {
       // Skip user's own sector (already added)
       if (sector.id === userSectorId) return
@@ -222,6 +212,16 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     // For other roles (ADMIN, etc.): always show all sectors
     if (!isLeaderOrProduction || showOtherSectors) {
       result.push(...otherSections)
+    }
+
+    // 3. Undefined sector last (always shown for LEADER/PRODUCTION)
+    const undefinedTasks = tasksBySector.get('undefined')
+    if (undefinedTasks && undefinedTasks.length > 0) {
+      result.push({
+        title: 'Setor Indefinido',
+        sectorId: 'undefined',
+        data: undefinedTasks,
+      })
     }
 
     return result
