@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS, SECTOR_PRIVILEGES, g
 import { hasPrivilege } from "@/utils";
 import { canLeaderUpdateServiceOrder } from "@/utils/permissions/entity-permissions";
 import { useServiceOrderMutations } from "@/hooks";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import type { ServiceOrder } from '../../../../types';
 import { IconTools } from "@tabler/icons-react-native";
 
@@ -49,10 +49,10 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
     console.log('[TaskServicesCard] handleStatusChange called:', { serviceOrderId, newStatus });
     try {
       await update({ id: serviceOrderId, data: { status: newStatus } });
-      showToast({ message: "Status atualizado com sucesso", type: "success" });
+      // API client already shows success alert
     } catch (error) {
       console.error("Error updating service order status:", error);
-      showToast({ message: "Erro ao atualizar status", type: "error" });
+      // API client already shows error alert
     }
   };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useUser } from "@/hooks";
 import { Card } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { IconUser, IconPhone, IconMail } from "@tabler/icons-react-native";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 export default function EmployeeEditScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -50,17 +50,17 @@ export default function EmployeeEditScreen() {
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      showToast({ message: "Nome é obrigatório", type: "error" });
+      Alert.alert("Erro", "Nome é obrigatório");
       return;
     }
 
     setIsLoading(true);
     try {
       // TODO: Implement employee update API call
-      showToast({ message: "Funcionário atualizado com sucesso", type: "success" });
+      // API client already shows success alert
       router.back();
-    } catch (error) {
-      showToast({ message: "Erro ao atualizar funcionário", type: "error" });
+    } catch (_error) {
+      // API client already shows error alert
     } finally {
       setIsLoading(false);
     }

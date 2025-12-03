@@ -80,19 +80,19 @@ export interface SectorOrderBy {
 // Response Interfaces
 // =====================
 
-export interface SectorGetUniqueResponse extends BaseGetUniqueResponse<Sector> {}
-export interface SectorGetManyResponse extends BaseGetManyResponse<Sector> {}
-export interface SectorCreateResponse extends BaseCreateResponse<Sector> {}
-export interface SectorUpdateResponse extends BaseUpdateResponse<Sector> {}
-export interface SectorDeleteResponse extends BaseDeleteResponse {}
+export type SectorGetUniqueResponse = BaseGetUniqueResponse<Sector>;
+export type SectorGetManyResponse = BaseGetManyResponse<Sector>;
+export type SectorCreateResponse = BaseCreateResponse<Sector>;
+export type SectorUpdateResponse = BaseUpdateResponse<Sector>;
+export type SectorDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface SectorBatchCreateResponse<T = any> extends BaseBatchResponse<Sector, T> {}
-export interface SectorBatchUpdateResponse<T = any> extends BaseBatchResponse<Sector, T & { id: string }> {}
-export interface SectorBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type SectorBatchCreateResponse<T = any> = BaseBatchResponse<Sector, T>;
+export type SectorBatchUpdateResponse<T = any> = BaseBatchResponse<Sector, T & { id: string }>;
+export type SectorBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // =====================
 // Form Data Types

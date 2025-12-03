@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { usePpeDeliveriesInfiniteMobile } from "@/hooks";
 import { deletePpeDelivery } from "@/api-client";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 import { ThemedView, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
 import { TeamPpeDeliveryTable, createColumnDefinitions } from "@/components/my-team/ppe-delivery/list/team-ppe-delivery-table";
@@ -170,7 +170,7 @@ export default function TeamEPIsScreen() {
 
   const handleEditDelivery = useCallback(() => {
     // TODO: Navigate to edit page when implemented
-    showToast({ message: "Edição ainda não implementada", type: "info" });
+    Alert.alert("Informação", "Edição ainda não implementada");
   }, []);
 
   const handleDeleteDelivery = useCallback(
@@ -192,10 +192,10 @@ export default function TeamEPIsScreen() {
             onPress: async () => {
               try {
                 await deletePpeDelivery(deliveryId);
-                showToast({ message: "Entrega excluída com sucesso", type: "success" });
+                // API client already shows success alert
                 refresh();
               } catch (error) {
-                showToast({ message: "Erro ao excluir entrega", type: "error" });
+                // API client already shows error alert
                 console.error("Error deleting delivery:", error);
               }
             },

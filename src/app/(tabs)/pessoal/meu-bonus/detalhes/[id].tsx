@@ -51,7 +51,7 @@ function formatShortDate(date: Date): string {
 export default function BonusDetailScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const _router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [tasksModalVisible, setTasksModalVisible] = useState(false);
   const [selectedCommissionStatus, setSelectedCommissionStatus] = useState<string | null>(null);
@@ -238,7 +238,7 @@ export default function BonusDetailScreen() {
     // Calculate from averageTasksPerUser if we have both values
     // Formula: eligibleUsers = totalPonderedTasks / averageTasksPerUser
     if (bonus?.ponderedTaskCount && bonus?.averageTasksPerUser) {
-      const ponderedCount = typeof bonus.ponderedTaskCount === 'number'
+      const _ponderedCount = typeof bonus.ponderedTaskCount === 'number'
         ? bonus.ponderedTaskCount
         : (bonus.ponderedTaskCount as any)?.toNumber?.() || 0;
       const avgTasks = typeof bonus.averageTasksPerUser === 'number'

@@ -13,11 +13,13 @@ import { Text } from "@/components/ui/text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formSpacing, formLayout } from "@/constants/form-styles";
-import { useUsers, useItems, useMultiStepForm, useKeyboardAwareScroll } from "@/hooks";
+import { useUsers, useItems, useMultiStepForm, useKeyboardAwareScroll, useBatchResultDialog } from "@/hooks";
 import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { FormSteps, FormStep } from "@/components/ui/form-steps";
 import { ItemSelectorTable } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { BorrowBatchResultModal, BorrowBatchResult } from "./borrow-batch-result-modal";
+import type { BatchOperationResult } from "@/types/common";
 import {
   IconPackage,
   IconBox,
@@ -39,7 +41,7 @@ interface BorrowBatchCreateFormProps {
   onSubmit: (data: {
     userId: string;
     items: Array<{ itemId: string; quantity: number }>;
-  }) => Promise<void>;
+  }) => Promise<BatchOperationResult<BorrowBatchResult, BorrowBatchResult> | void>;
   onCancel: () => void;
   isSubmitting?: boolean;
 }
@@ -58,6 +60,9 @@ export function BorrowBatchCreateForm({
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  // Batch result dialog state
+  const { isOpen: isResultModalOpen, result: batchResult, openDialog: openResultModal, closeDialog: closeResultModal } = useBatchResultDialog<BorrowBatchResult, BorrowBatchResult>();
 
   // Keyboard visibility tracking
   useEffect(() => {
@@ -92,6 +97,8 @@ export function BorrowBatchCreateForm({
   const multiStepForm = useMultiStepForm<BorrowBatchFormData>({
     storageKey: "@borrow_batch_form",
     totalSteps: 2,
+    // Expire after 1 hour to prevent stale data
+    expireAfterMs: 60 * 60 * 1000,
     defaultFormData: { userId: "" },
     defaultQuantity: 1,
     validateOnStepChange: true,
@@ -172,13 +179,18 @@ export function BorrowBatchCreateForm({
         return;
       }
 
-      await onSubmit({
+      const result = await onSubmit({
         userId: multiStepForm.formData.userId,
         items: items.map((item) => ({ itemId: item.id, quantity: item.quantity })),
       });
-      await multiStepForm.resetForm();
+
+      // Show result modal if result is returned, reset form after modal is shown
+      if (result) {
+        await multiStepForm.resetForm();
+        openResultModal(result);
+      }
     } catch (error) {}
-  }, [multiStepForm, onSubmit]);
+  }, [multiStepForm, onSubmit, openResultModal]);
 
   const handleCancel = useCallback(() => {
     if (multiStepForm.selectionCount > 0 || multiStepForm.formData.userId) {
@@ -445,6 +457,15 @@ export function BorrowBatchCreateForm({
             </View>
           )}
         </KeyboardAvoidingView>
+
+        {/* Batch Result Modal */}
+        <BorrowBatchResultModal
+          open={isResultModalOpen}
+          onOpenChange={(open) => !open && closeResultModal()}
+          result={batchResult}
+          operationType="create"
+          onConfirm={onCancel}
+        />
       </SafeAreaView>
     </FormProvider>
   );

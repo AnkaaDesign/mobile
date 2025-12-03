@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
-import { View, ActivityIndicator } from "react-native";
-import { showToast } from "@/components/ui/toast";
+import { View, ActivityIndicator, Alert } from "react-native";
+// import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { TaskForm } from "@/components/production/task/form/task-form";
@@ -31,11 +31,10 @@ export default function CreateScheduleScreen() {
 
       // Redirect if no permission
       if (!canCreate) {
-        showToast({
-          title: "Acesso negado",
-          message: "Você não tem permissão para criar tarefas",
-          type: "error",
-        });
+        Alert.alert(
+          "Acesso negado",
+          "Você não tem permissão para criar tarefas"
+        );
         router.replace("/producao/cronograma");
       }
     }
@@ -147,12 +146,10 @@ export default function CreateScheduleScreen() {
             } catch (layoutError: any) {
               console.error('[CreateSchedule] Error creating layouts:', layoutError);
               // Task was created successfully, show partial success message
-              showToast({
-                title: "Tarefa criada",
-                message: `Tarefa criada, mas erro ao criar layouts: ${layoutError?.message || 'Erro desconhecido'}`,
-                type: "error",
-                duration: 8000,
-              });
+              Alert.alert(
+                "Tarefa criada",
+                `Tarefa criada, mas erro ao criar layouts: ${layoutError?.message || 'Erro desconhecido'}`
+              );
               // Still navigate since task was created
               router.replace(routeToMobilePath(routes.production.schedule.root) as any);
               return;
@@ -160,27 +157,19 @@ export default function CreateScheduleScreen() {
           }
         }
 
-        showToast({
-          message: "Tarefa criada com sucesso!",
-          type: "success",
-        });
+        // API client already shows success alert
         router.replace(routeToMobilePath(routes.production.schedule.root) as any);
       } else {
         // API returned failure
         console.error('[CreateSchedule] Task creation failed:', result);
-        showToast({
-          title: "Erro ao criar tarefa",
-          message: result?.message || "Não foi possível criar a tarefa. Tente novamente.",
-          type: "error",
-        });
+        Alert.alert(
+          "Erro ao criar tarefa",
+          result?.message || "Não foi possível criar a tarefa. Tente novamente."
+        );
       }
     } catch (error: any) {
       console.error("[CreateSchedule] Error creating task:", error);
-      showToast({
-        title: "Erro ao criar tarefa",
-        message: error?.message || "Ocorreu um erro inesperado. Por favor, tente novamente.",
-        type: "error",
-      });
+      // API client already shows error alert
     }
   };
 

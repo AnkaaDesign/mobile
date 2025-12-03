@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { View, ScrollView, ActivityIndicator , StyleSheet} from "react-native";
+import { View, ScrollView, ActivityIndicator, StyleSheet, Alert } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { IconButton } from "@/components/ui/icon-button";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -11,8 +11,7 @@ import { usePaintFormulaComponent, usePaintFormulaComponentMutations } from "@/h
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege, formatDateTime } from "@/utils";
-import { showToast } from "@/components/ui/toast";
-import { Alert } from "react-native";
+// import { showToast } from "@/components/ui/toast";
 import {
   IconFlask,
   IconBarcode,
@@ -68,7 +67,7 @@ export default function ComponentDetailsScreen() {
   // Handle actions
   const handleEdit = () => {
     if (!canEdit) {
-      showToast("Você não tem permissão para editar", "error");
+      Alert.alert("Erro", "Você não tem permissão para editar");
       return;
     }
     router.push(`/pintura/formulas/${formulaId}/componentes/editar/${id}`);
@@ -76,7 +75,7 @@ export default function ComponentDetailsScreen() {
 
   const handleDelete = () => {
     if (!canDelete) {
-      showToast("Você não tem permissão para excluir", "error");
+      Alert.alert("Erro", "Você não tem permissão para excluir");
       return;
     }
 
@@ -91,10 +90,10 @@ export default function ComponentDetailsScreen() {
           onPress: async () => {
             try {
               await deleteComponent(id!);
-              showToast("Componente removido com sucesso", "success");
+              Alert.alert("Sucesso", "Componente removido com sucesso");
               router.back();
-            } catch (error) {
-              showToast("Erro ao remover componente", "error");
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },

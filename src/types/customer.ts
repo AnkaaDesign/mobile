@@ -99,17 +99,17 @@ export interface CustomerOrderBy {
 // Response Interfaces
 // =====================
 
-export interface CustomerGetUniqueResponse extends BaseGetUniqueResponse<Customer> {}
-export interface CustomerGetManyResponse extends BaseGetManyResponse<Customer> {}
-export interface CustomerCreateResponse extends BaseCreateResponse<Customer> {}
-export interface CustomerUpdateResponse extends BaseUpdateResponse<Customer> {}
-export interface CustomerDeleteResponse extends BaseDeleteResponse {}
-export interface CustomerMergeResponse extends BaseMergeResponse<Customer> {}
+export type CustomerGetUniqueResponse = BaseGetUniqueResponse<Customer>;
+export type CustomerGetManyResponse = BaseGetManyResponse<Customer>;
+export type CustomerCreateResponse = BaseCreateResponse<Customer>;
+export type CustomerUpdateResponse = BaseUpdateResponse<Customer>;
+export type CustomerDeleteResponse = BaseDeleteResponse;
+export type CustomerMergeResponse = BaseMergeResponse<Customer>;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface CustomerBatchCreateResponse extends BaseBatchResponse<Customer, unknown> {}
-export interface CustomerBatchUpdateResponse extends BaseBatchResponse<Customer, unknown> {}
-export interface CustomerBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type CustomerBatchCreateResponse = BaseBatchResponse<Customer, unknown>;
+export type CustomerBatchUpdateResponse = BaseBatchResponse<Customer, unknown>;
+export type CustomerBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

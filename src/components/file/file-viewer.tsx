@@ -9,7 +9,7 @@ import { Alert } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import type { File as AnkaaFile } from '../../types';
-import { showToast } from '@/components/ui/toast';
+// Toast removed - using Alert for user feedback
 
 // Import utilities and service
 import {
@@ -192,19 +192,17 @@ export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({
       const downloadUrl = getDownloadUrl(file, baseUrl);
       const fileUri = FileSystem.documentDirectory + file.filename;
 
-      showToast({ message: 'Baixando arquivo...', type: 'info' });
-
       const downloadResult = await FileSystem.downloadAsync(downloadUrl, fileUri);
 
       if (downloadResult.status === 200) {
-        showToast({ message: 'Arquivo baixado com sucesso!', type: 'success' });
+        Alert.alert('Sucesso', 'Arquivo baixado com sucesso!');
         return;
       } else {
         throw new Error('Download falhou');
       }
     } catch (error) {
       console.error('[File Viewer] Download error:', error);
-      showToast({ message: 'Erro ao baixar arquivo', type: 'error' });
+      Alert.alert('Erro', 'Erro ao baixar arquivo');
       throw error;
     }
   }, [baseUrl]);
@@ -220,8 +218,6 @@ export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({
         );
         return;
       }
-
-      showToast({ message: 'Preparando arquivo...', type: 'info' });
 
       // Download to cache first
       const downloadUrl = getDownloadUrl(file, baseUrl);
@@ -239,7 +235,7 @@ export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({
       }
     } catch (error) {
       console.error('[File Viewer] Share error:', error);
-      showToast({ message: 'Erro ao compartilhar arquivo', type: 'error' });
+      Alert.alert('Erro', 'Erro ao compartilhar arquivo');
     }
   }, [baseUrl]);
 
@@ -249,7 +245,7 @@ export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({
       await shareFile(file);
     } catch (error) {
       console.error('[File Viewer] Open file error:', error);
-      showToast({ message: 'Erro ao abrir arquivo', type: 'error' });
+      Alert.alert('Erro', 'Erro ao abrir arquivo');
     }
   }, [shareFile]);
 

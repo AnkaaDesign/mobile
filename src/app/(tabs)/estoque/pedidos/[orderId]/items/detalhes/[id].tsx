@@ -91,7 +91,7 @@ export default function OrderItemDetailScreen() {
             try {
               await deleteOrderItem(id!);
               router.back();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível remover o item. Tente novamente.");
             }
           },

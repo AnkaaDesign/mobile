@@ -12,8 +12,6 @@ import type {
   WebDavInfoGetUniqueResponse,
   WebDavInfoGetManyResponse,
   SystemMetricsGetUniqueResponse,
-  // @ts-ignore - This type is used in return types
-  SystemMetricsGetManyResponse,
   SystemHealthGetUniqueResponse,
   SystemHealthGetManyResponse,
   SystemServicesResponse,
@@ -24,20 +22,6 @@ import type {
   CreateUserRequest,
   CreateUserResponse,
   SetPasswordRequest,
-
-  // Entity types
-  // @ts-ignore - These types are used in return types
-  SsdHealthData,
-  // @ts-ignore - These types are used in return types
-  RaidStatus,
-  // @ts-ignore - These types are used in return types
-  BackupMetadata,
-  // @ts-ignore - These types are used in return types
-  WebDavInfo,
-  // @ts-ignore - These types are used in return types
-  SystemMetrics,
-  // @ts-ignore - These types are used in return types
-  SystemHealth,
 } from '../../types';
 
 // =====================

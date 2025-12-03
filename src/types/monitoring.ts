@@ -437,23 +437,23 @@ export interface SystemMetricsOrderBy {
 // Response Interfaces
 // =====================
 
-export interface SsdHealthDataGetUniqueResponse extends BaseGetUniqueResponse<SsdHealthData> {}
-export interface SsdHealthDataGetManyResponse extends BaseGetManyResponse<SsdHealthData> {}
+export type SsdHealthDataGetUniqueResponse = BaseGetUniqueResponse<SsdHealthData>;
+export type SsdHealthDataGetManyResponse = BaseGetManyResponse<SsdHealthData>;
 
-export interface RaidStatusGetUniqueResponse extends BaseGetUniqueResponse<RaidStatus> {}
-export interface RaidStatusGetManyResponse extends BaseGetManyResponse<RaidStatus> {}
+export type RaidStatusGetUniqueResponse = BaseGetUniqueResponse<RaidStatus>;
+export type RaidStatusGetManyResponse = BaseGetManyResponse<RaidStatus>;
 
-export interface BackupMetadataGetUniqueResponse extends BaseGetUniqueResponse<BackupMetadata> {}
-export interface BackupMetadataGetManyResponse extends BaseGetManyResponse<BackupMetadata> {}
+export type BackupMetadataGetUniqueResponse = BaseGetUniqueResponse<BackupMetadata>;
+export type BackupMetadataGetManyResponse = BaseGetManyResponse<BackupMetadata>;
 
-export interface WebDavInfoGetUniqueResponse extends BaseGetUniqueResponse<WebDavInfo> {}
-export interface WebDavInfoGetManyResponse extends BaseGetManyResponse<WebDavInfo> {}
+export type WebDavInfoGetUniqueResponse = BaseGetUniqueResponse<WebDavInfo>;
+export type WebDavInfoGetManyResponse = BaseGetManyResponse<WebDavInfo>;
 
-export interface SystemMetricsGetUniqueResponse extends BaseGetUniqueResponse<SystemMetrics> {}
-export interface SystemMetricsGetManyResponse extends BaseGetManyResponse<SystemMetrics> {}
+export type SystemMetricsGetUniqueResponse = BaseGetUniqueResponse<SystemMetrics>;
+export type SystemMetricsGetManyResponse = BaseGetManyResponse<SystemMetrics>;
 
-export interface SystemHealthGetUniqueResponse extends BaseGetUniqueResponse<SystemHealth> {}
-export interface SystemHealthGetManyResponse extends BaseGetManyResponse<SystemHealth> {}
+export type SystemHealthGetUniqueResponse = BaseGetUniqueResponse<SystemHealth>;
+export type SystemHealthGetManyResponse = BaseGetManyResponse<SystemHealth>;
 
 // Service list responses
 export interface SystemServicesResponse {

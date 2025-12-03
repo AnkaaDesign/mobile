@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, RefreshControl, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { ThemedView, ThemedText, Card, CardHeader, CardTitle, CardContent, ErrorScreen, EmptyState, Badge } from '@/components/ui';

@@ -1,7 +1,7 @@
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ItemCategoryForm } from "@/components/inventory/item/category/form/category-form";
@@ -50,13 +50,10 @@ function CategoryEditScreen() {
         data: changedData,
       });
 
-      showToast({
-        message: "Categoria atualizada com sucesso!",
-        type: "success",
-      });
+      // API client already shows success alert
       router.replace(routeToMobilePath(routes.inventory.products.categories.root) as any);
     } catch (error) {
-      // Error handled by mutation hook
+      // API client already shows error alert
       console.error("Error updating category:", error);
     }
   };

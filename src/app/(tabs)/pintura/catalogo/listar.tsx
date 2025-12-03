@@ -1,6 +1,15 @@
-import { useState, useMemo, useCallback } from "react";
-import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, StyleSheet, TextInput, ScrollView, Alert, GestureResponderEvent } from "react-native";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, StyleSheet, TextInput, ScrollView, Alert, GestureResponderEvent, useWindowDimensions } from "react-native";
+import type { FlatList as FlatListType } from "react-native";
 import { Stack, router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  runOnJS,
+  Easing,
+} from "react-native-reanimated";
 import { FAB } from "@/components/ui/fab";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
@@ -13,12 +22,13 @@ import { SECTOR_PRIVILEGES, PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } fro
 import { hasAnyPrivilege } from '../../../../utils';
 import type { Paint } from '../../../../types';
 import { useDebounce } from "@/hooks/useDebouncedSearch";
-import { useToast } from "@/hooks/use-toast";
-import { showToast } from "@/components/ui/toast";
+// import { useToast } from "@/hooks/use-toast";
+// import { showToast } from "@/components/ui/toast";
 import { SortSelector, type SortOption } from "@/components/painting/catalog/list/sort-selector";
 import { PaintFilterDrawer } from "@/components/painting/catalog/list/paint-filter-drawer";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
+import { PaintGridMinimized } from "@/components/painting/catalog/list/paint-grid-minimized";
 import { ContextMenuPopover, type ContextMenuItem } from "@/components/ui/context-menu-popover";
 import {
   IconPalette,
@@ -28,6 +38,8 @@ import {
   IconFilter,
   IconX,
   IconSearch,
+  IconLayoutGrid,
+  IconLayoutList,
 } from "@tabler/icons-react-native";
 
 // Badge colors - unified neutral, more subtle (for type, brand, finish, manufacturer)
@@ -41,18 +53,120 @@ const TAG_BADGE_COLORS = {
   dark: { bg: '#d4d4d4', text: '#262626' },   // neutral-300, neutral-800
 };
 
+// Tablet detection threshold (lowered to support smaller tablets)
+const TABLET_WIDTH_THRESHOLD = 624;
+
 export default function CatalogListScreen() {
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
+  const { width: screenWidth } = useWindowDimensions();
+  const isTablet = screenWidth >= TABLET_WIDTH_THRESHOLD;
   const badgeStyle = isDark ? BADGE_COLORS.dark : BADGE_COLORS.light;
   const tagBadgeStyle = isDark ? TAG_BADGE_COLORS.dark : TAG_BADGE_COLORS.light;
-  const { toast } = useToast();
+  // const { toast } = useToast();
   const { delete: deletePaint } = usePaintMutations();
 
   // Check user permissions - allow WAREHOUSE, LEADER, and ADMIN to edit/create
   const canCreate = hasAnyPrivilege(user, [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN]);
   const canEdit = hasAnyPrivilege(user, [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN]);
   const canDelete = hasAnyPrivilege(user, [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN]);
+
+  // View state - minimized (grid) or maximized (cards)
+  const [isMinimized, setIsMinimized] = useState(true); // Default to minimized (grid view)
+  const [viewLoaded, setViewLoaded] = useState(false);
+
+  // Load view preference from AsyncStorage on mount
+  useEffect(() => {
+    const loadViewPreference = async () => {
+      try {
+        const savedView = await AsyncStorage.getItem("paintCatalogueView");
+        if (savedView !== null) {
+          setIsMinimized(savedView === "minimized");
+        }
+      } catch (error) {
+        console.warn("Failed to load view preference:", error);
+      } finally {
+        setViewLoaded(true);
+      }
+    };
+    loadViewPreference();
+  }, []);
+
+  // Toggle view and persist preference
+  const toggleView = useCallback(async () => {
+    const newIsMinimized = !isMinimized;
+    setIsMinimized(newIsMinimized);
+    try {
+      await AsyncStorage.setItem("paintCatalogueView", newIsMinimized ? "minimized" : "maximized");
+    } catch (error) {
+      console.warn("Failed to save view preference:", error);
+    }
+  }, [isMinimized]);
+
+  // Ref for the maximized FlatList to scroll to specific items
+  const maximizedListRef = useRef<FlatListType<Paint>>(null);
+  const [scrollToPaintIndex, setScrollToPaintIndex] = useState<number | undefined>(undefined);
+  const [listReady, setListReady] = useState(false);
+
+  // Use shared value for INSTANT overlay display (UI thread, no React state delay)
+  const overlayOpacity = useSharedValue(0);
+  const isTransitioning = useRef(false);
+
+  // Animated style for overlay - updates on UI thread instantly
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
+    pointerEvents: overlayOpacity.value > 0 ? 'auto' as const : 'none' as const,
+  }));
+
+  // Show overlay instantly (runs on UI thread)
+  const showOverlay = useCallback(() => {
+    overlayOpacity.value = withTiming(1, { duration: 100, easing: Easing.out(Easing.ease) });
+  }, [overlayOpacity]);
+
+  // Hide overlay
+  const hideOverlay = useCallback(() => {
+    overlayOpacity.value = withTiming(0, { duration: 150, easing: Easing.in(Easing.ease) });
+  }, [overlayOpacity]);
+
+  // Estimated card height for getItemLayout (preview 128 + content + badges + tags + counts + margins)
+  // Adjusted based on actual scroll behavior
+  const ESTIMATED_CARD_HEIGHT = 250;
+
+  // Number of columns for maximized view
+  const maximizedNumColumns = isTablet ? 3 : 1;
+
+  // Calculate card width for tablet to prevent single cards from stretching
+  // screenWidth - padding (spacing.md * 2) - gaps (spacing.md * (numColumns - 1)) / numColumns
+  const cardWidth = isTablet
+    ? (screenWidth - spacing.md * 2 - spacing.md * (maximizedNumColumns - 1)) / maximizedNumColumns
+    : undefined;
+
+  // getItemLayout for FlatList - enables scrollToIndex to work for non-rendered items
+  // For multi-column layouts, we calculate based on row position
+  const getMaximizedItemLayout = useCallback(
+    (_: any, index: number) => {
+      const row = Math.floor(index / maximizedNumColumns);
+      return {
+        length: ESTIMATED_CARD_HEIGHT,
+        offset: ESTIMATED_CARD_HEIGHT * row,
+        index,
+      };
+    },
+    [maximizedNumColumns]
+  );
+
+  // Handle when the FlatList layout is ready
+  const handleListLayout = useCallback(() => {
+    setListReady(true);
+  }, []);
+
+  // Reset states when switching to minimized
+  useEffect(() => {
+    if (isMinimized) {
+      setListReady(false);
+      isTransitioning.current = false;
+    }
+  }, [isMinimized]);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -79,7 +193,7 @@ export default function CatalogListScreen() {
         orderBy = { name: "asc" };
         break;
       case "color":
-        orderBy = { palette: "asc", paletteOrder: "asc" };
+        orderBy = { colorOrder: "asc" };
         break;
       case "type":
         orderBy = { paintType: { name: "asc" } };
@@ -137,11 +251,6 @@ export default function CatalogListScreen() {
       whereConditions.push({ manufacturer: { in: filters.manufacturers } });
     }
 
-    // Palette filter
-    if (filters.palettes?.length > 0) {
-      whereConditions.push({ palette: { in: filters.palettes } });
-    }
-
     // Has formulas filter
     if (filters.hasFormulas !== undefined) {
       whereConditions.push({
@@ -164,6 +273,10 @@ export default function CatalogListScreen() {
     return params;
   }, [filters, debouncedSearch, currentSort]);
 
+  // Page size that's a multiple of all column counts (10, 5, 3, 1) = LCM is 30
+  // Use 60 for better performance (2 pages worth of rows)
+  const pageSize = 60;
+
   // Fetch paints
   const {
     items: paints,
@@ -176,12 +289,57 @@ export default function CatalogListScreen() {
     isFetchingNextPage,
     totalItemsLoaded,
     totalCount,
-  } = usePaintsInfiniteMobile(queryParams);
+  } = usePaintsInfiniteMobile(queryParams, pageSize);
+
+  // Handle paint press from minimized view - switch to maximized and scroll
+  // This must be defined after paints is available
+  const handleMinimizedPaintPress = useCallback((paint: Paint) => {
+    if (isTransitioning.current) return; // Prevent double-tap
+
+    const index = paints.findIndex(p => p.id === paint.id);
+    if (index !== -1) {
+      isTransitioning.current = true;
+      setScrollToPaintIndex(index);
+      setListReady(false);
+    }
+    setIsMinimized(false);
+    // Also persist the view change
+    AsyncStorage.setItem("paintCatalogueView", "maximized").catch(() => {});
+  }, [paints]);
+
+  // Callback to show overlay instantly from PaintSquare (runs on press)
+  const handlePaintPressStart = useCallback(() => {
+    if (!isTransitioning.current) {
+      showOverlay();
+    }
+  }, [showOverlay]);
+
+  // Scroll to the paint when switching to maximized view
+  useEffect(() => {
+    if (!isMinimized && scrollToPaintIndex !== undefined && maximizedListRef.current) {
+      // For multi-column layouts, calculate based on row position
+      const row = Math.floor(scrollToPaintIndex / maximizedNumColumns);
+      const offset = row * ESTIMATED_CARD_HEIGHT;
+
+      // Wait for FlatList to mount and render
+      setTimeout(() => {
+        maximizedListRef.current?.scrollToOffset({ offset, animated: true });
+
+        // Hide overlay after scroll animation completes
+        // Scroll animation takes ~300-400ms
+        setTimeout(() => {
+          hideOverlay();
+          setScrollToPaintIndex(undefined);
+          isTransitioning.current = false;
+        }, 400);
+      }, 100);
+    }
+  }, [isMinimized, scrollToPaintIndex, hideOverlay, maximizedNumColumns]);
 
   // Handle refresh
   const handleRefresh = async () => {
     await refresh();
-    toast({ title: "Catálogo atualizado", variant: "success" });
+    Alert.alert("Sucesso", "Catálogo atualizado");
   };
 
   // Context menu handler for long press
@@ -205,9 +363,9 @@ export default function CatalogListScreen() {
           onPress: async () => {
             try {
               await deletePaint(paint.id);
-              showToast({ message: "Tinta excluída com sucesso", type: "success" });
-            } catch (error) {
-              showToast({ message: "Erro ao excluir tinta", type: "error" });
+              Alert.alert("Sucesso", "Tinta excluída com sucesso");
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },
@@ -277,8 +435,13 @@ export default function CatalogListScreen() {
     const taskCount = (paint._count?.logoTasks || 0) + (paint._count?.generalPaintings || 0);
     const codeOverlayStyle = getCodeOverlayStyle(paint.hex);
 
+    // On tablet, use fixed width to prevent single cards from stretching
+    const cardStyle = cardWidth
+      ? [styles.paintCard, { width: cardWidth, flex: undefined }]
+      : styles.paintCard;
+
     return (
-      <Card style={styles.paintCard}>
+      <Card style={cardStyle}>
         {/* Touchable area for navigation - covers preview and main content */}
         <TouchableOpacity
           onPress={() => router.push(`/pintura/catalogo/detalhes/${paint.id}`)}
@@ -467,6 +630,19 @@ export default function CatalogListScreen() {
 
           {/* Action Buttons */}
           <View style={styles.actions}>
+            {/* View Toggle Button */}
+            <TouchableOpacity
+              onPress={toggleView}
+              style={[styles.actionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              activeOpacity={0.7}
+            >
+              {isMinimized ? (
+                <IconLayoutList size={20} color={colors.foreground} />
+              ) : (
+                <IconLayoutGrid size={20} color={colors.foreground} />
+              )}
+            </TouchableOpacity>
+
             {/* Sort Button */}
             <TouchableOpacity
               onPress={() => setShowSort(true)}
@@ -493,44 +669,80 @@ export default function CatalogListScreen() {
         </View>
 
         {/* Content */}
-        {isLoading ? (
+        {isLoading || !viewLoaded ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
             <ThemedText style={styles.loadingText}>Carregando catálogo...</ThemedText>
           </View>
         ) : (
-          <FlatList
-            data={paints}
-            renderItem={renderPaintCard}
-            keyExtractor={(paint) => paint.id}
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl
-                refreshing={isLoading}
-                onRefresh={handleRefresh}
-                tintColor={colors.primary}
-              />
-            }
-            onEndReached={() => {
-              if (canLoadMore && !isFetchingNextPage) {
-                loadMore();
-              }
-            }}
-            onEndReachedThreshold={0.1}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <IconPalette size={48} color={colors.muted} />
-                <ThemedText style={styles.emptyText}>Nenhuma tinta encontrada</ThemedText>
+          <>
+            {/* Minimized View - 6 column grid */}
+            {isMinimized && (
+              <View style={styles.animatedContainer}>
+                <PaintGridMinimized
+                  paints={paints}
+                  isLoading={isLoading}
+                  onPaintPressStart={handlePaintPressStart}
+                  onPaintPress={handleMinimizedPaintPress}
+                  onEndReached={() => {
+                    if (canLoadMore && !isFetchingNextPage) {
+                      loadMore();
+                    }
+                  }}
+                  isFetchingNextPage={isFetchingNextPage}
+                  numColumns={5}
+                />
               </View>
-            }
-            ListFooterComponent={
-              isFetchingNextPage ? (
-                <View style={styles.loadingMore}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                </View>
-              ) : null
-            }
-          />
+            )}
+
+            {/* Maximized View - Full cards */}
+            {!isMinimized && (
+              <View style={styles.animatedContainer}>
+              <FlatList
+                ref={maximizedListRef}
+                data={paints}
+                renderItem={renderPaintCard}
+                keyExtractor={(paint) => paint.id}
+                numColumns={maximizedNumColumns}
+                key={isTablet ? 'tablet' : 'phone'}
+                columnWrapperStyle={isTablet ? styles.cardRow : undefined}
+                contentContainerStyle={styles.listContent}
+                getItemLayout={getMaximizedItemLayout}
+                onLayout={handleListLayout}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={isLoading}
+                    onRefresh={handleRefresh}
+                    tintColor={colors.primary}
+                  />
+                }
+                onEndReached={() => {
+                  if (canLoadMore && !isFetchingNextPage) {
+                    loadMore();
+                  }
+                }}
+                onEndReachedThreshold={0.3}
+                removeClippedSubviews={!isMinimized}
+                maxToRenderPerBatch={12}
+                windowSize={10}
+                initialNumToRender={10}
+                ListEmptyComponent={
+                  <View style={styles.emptyContainer}>
+                    <IconPalette size={48} color={colors.muted} />
+                    <ThemedText style={styles.emptyText}>Nenhuma tinta encontrada</ThemedText>
+                  </View>
+                }
+                ListFooterComponent={
+                  isFetchingNextPage ? (
+                    <View style={styles.loadingMore}>
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    </View>
+                  ) : null
+                }
+              />
+              </View>
+            )}
+          </>
         )}
 
         {/* FAB */}
@@ -573,6 +785,14 @@ export default function CatalogListScreen() {
           items={contextMenuItems}
           position={contextMenuPosition}
         />
+
+        {/* Loading overlay during scroll transition - uses Reanimated for instant display */}
+        <Animated.View style={[styles.scrollingOverlay, overlayAnimatedStyle]}>
+          <View style={[styles.scrollingContent, { backgroundColor: colors.card }]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <ThemedText style={styles.scrollingText}>Carregando...</ThemedText>
+          </View>
+        </Animated.View>
       </View>
     </>
   );
@@ -580,6 +800,9 @@ export default function CatalogListScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  animatedContainer: {
     flex: 1,
   },
   header: {
@@ -648,7 +871,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     paddingBottom: 100,
   },
+  cardRow: {
+    gap: spacing.md,
+  },
   paintCard: {
+    flex: 1,
     marginBottom: spacing.md,
     padding: 0,
     overflow: "hidden",
@@ -754,5 +981,27 @@ const styles = StyleSheet.create({
   loadingMore: {
     padding: spacing.md,
     alignItems: "center",
+  },
+  scrollingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
+  },
+  scrollingContent: {
+    padding: spacing.xl,
+    borderRadius: 12,
+    alignItems: "center",
+    gap: spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  scrollingText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

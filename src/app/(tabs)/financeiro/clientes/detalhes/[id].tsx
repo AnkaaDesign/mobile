@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, FlatList, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
+import { View, FlatList, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useCustomer } from '@/hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from '@/constants';
@@ -17,7 +17,7 @@ import {
   IconReceipt2,
 } from "@tabler/icons-react-native";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 // Import modular components
 import {
@@ -84,7 +84,7 @@ export default function FinancialCustomerDetailScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 

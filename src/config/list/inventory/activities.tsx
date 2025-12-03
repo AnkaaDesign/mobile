@@ -8,6 +8,7 @@ import { ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '@/constants/e
 import { canEditItems } from '@/utils/permissions/entity-permissions'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Badge } from '@/components/ui/badge'
+import { isTabletWidth } from '@/lib/table-utils'
 
 const styles = StyleSheet.create({
   quantityContent: {
@@ -39,15 +40,6 @@ export const activitiesListConfig: ListConfig<Activity> = {
 
   table: {
     columns: [
-      {
-        key: 'operation',
-        label: 'OPERAÇÃO',
-        sortable: true,
-        width: 1.2,
-        align: 'center',
-        render: (activity) => activity.operation ? ACTIVITY_OPERATION_LABELS[activity.operation] : '-',
-        format: 'badge',
-      },
       {
         key: 'item.uniCode',
         label: 'CÓDIGO',
@@ -130,7 +122,9 @@ export const activitiesListConfig: ListConfig<Activity> = {
         format: 'datetime',
       },
     ],
-    defaultVisible: ['item.name', 'user.name', 'quantity'],
+    defaultVisible: isTabletWidth()
+      ? ['item.name', 'user.name', 'quantity', 'createdAt']
+      : ['item.name', 'user.name', 'quantity'],
     rowHeight: 72,
     actions: [
       {

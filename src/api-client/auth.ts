@@ -109,7 +109,7 @@ export const authService = {
       const decoded = jwtDecode<{ exp: number }>(token);
       const currentTime = Date.now() / 1000;
       return decoded.exp < currentTime;
-    } catch (error) {
+    } catch {
       return true; // Consider invalid tokens as expired
     }
   },

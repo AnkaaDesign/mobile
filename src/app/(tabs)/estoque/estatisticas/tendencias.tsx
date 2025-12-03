@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { View, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Dimensions } from 'react-native'
+import { View, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Dimensions, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import {
   IconTrendingUp,
@@ -22,7 +22,7 @@ import { ErrorScreen } from '@/components/ui/error-screen'
 import { useTheme } from '@/lib/theme'
 import { useItemsInfiniteMobile } from '@/hooks/use-items-infinite-mobile'
 import { exportData } from '@/lib/export-utils'
-import { showToast } from '@/components/ui/toast'
+// import { showToast } from '@/components/ui/toast'
 import { spacing, borderRadius, fontSize, fontWeight } from '@/constants/design-system'
 import { extendedColors } from '@/lib/theme/extended-colors'
 
@@ -209,7 +209,7 @@ export default function InventoryTrendsStatisticsScreen() {
     setRefreshing(true)
     await refetch()
     setRefreshing(false)
-    showToast({ message: 'Dados atualizados', type: 'success' })
+    Alert.alert('Sucesso', 'Dados atualizados')
   }, [refetch])
 
   const handleExport = useCallback(async () => {
@@ -274,9 +274,9 @@ export default function InventoryTrendsStatisticsScreen() {
         format: 'csv',
         title: 'Relatório de Tendências de Estoque',
       })
-      showToast({ message: 'Relatório exportado com sucesso', type: 'success' })
-    } catch (error) {
-      showToast({ message: 'Erro ao exportar relatório', type: 'error' })
+      Alert.alert('Sucesso', 'Relatório exportado com sucesso')
+    } catch (_error) {
+      Alert.alert('Erro', 'Erro ao exportar relatório')
     }
   }, [filteredTrendItems, selectedPeriod])
 

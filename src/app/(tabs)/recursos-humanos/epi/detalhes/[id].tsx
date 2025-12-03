@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
+import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useItem } from "@/hooks/useItem";
 import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
@@ -10,7 +10,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { IconShield, IconRefresh, IconEdit, IconHistory } from "@tabler/icons-react-native";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -122,7 +122,7 @@ export default function PPEDetailsScreen() {
     setRefreshing(true);
     refetchItem().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetchItem]);
 

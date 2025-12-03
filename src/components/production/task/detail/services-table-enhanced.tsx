@@ -28,7 +28,7 @@ import {
 } from "@tabler/icons-react-native";
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from "@/constants";
 import { useServiceOrderMutations } from "@/hooks";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
@@ -106,7 +106,7 @@ export const ServicesTableEnhanced: React.FC<ServicesTableEnhancedProps> = ({
   // Reset changes
   const handleReset = useCallback(() => {
     setServiceChanges({});
-    showToast({ message: "Alterações descartadas", type: "info" });
+    // Local operation - changes discarded without API call
   }, []);
 
   // Save changes
@@ -133,7 +133,7 @@ export const ServicesTableEnhanced: React.FC<ServicesTableEnhancedProps> = ({
         await update({ id: serviceId, data: updateData });
       }
 
-      Alert.alert("Sucesso", "Status das ordens de serviço atualizados com sucesso!");
+      // API client already shows success alert
       setServiceChanges({});
       onServicesUpdate?.();
     } catch (error) {

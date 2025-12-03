@@ -18,7 +18,7 @@ import type { PaintFormulaComponentUpdateFormData } from '../../../../../../../s
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import {
   IconFlask,
@@ -118,16 +118,16 @@ export default function EditComponentScreen() {
   // Handle form submission
   const onSubmit = async (data: PaintFormulaComponentUpdateFormData) => {
     if (!canEdit) {
-      showToast("Você não tem permissão para editar componentes", "error");
+      Alert.alert("Erro", "Você não tem permissão para editar componentes");
       return;
     }
 
     try {
       await updateComponent({ id: id!, data });
-      showToast("Componente atualizado com sucesso", "success");
+      // API client already shows success alert
       router.back();
     } catch (error: any) {
-      showToast(error.message || "Erro ao atualizar componente", "error");
+      // API client already shows error alert
     }
   };
 

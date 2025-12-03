@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, ScrollView, Modal, ActivityIndicator } from "react-native";
+import { View, ScrollView, Modal, ActivityIndicator, Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Text } from "@/components/ui/text";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TextArea } from "@/components/ui/text-area";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { useItems, usePpeSize, useRequestPpeDelivery } from '@/hooks';
 import { ppeRequestSchema, type PpeRequestFormData } from '@/schemas/ppe-request';
@@ -207,10 +207,7 @@ export function PpeRequestModal({
       const result = await requestMutation.mutateAsync(requestData);
       console.log('[PPE Request Mobile] Request successful:', result);
 
-      showToast({
-        message: "Solicitação de EPI enviada com sucesso!",
-        type: "success",
-      });
+      // API client already shows success alert
       form.reset();
       onSuccess();
     } catch (error: any) {
@@ -221,11 +218,7 @@ export function PpeRequestModal({
         data: error?.response?.data,
       });
 
-      const errorMessage = error?.response?.data?.message || "Erro ao solicitar EPI";
-      showToast({
-        message: errorMessage,
-        type: "error",
-      });
+      // API client already shows error alert
     }
   };
 

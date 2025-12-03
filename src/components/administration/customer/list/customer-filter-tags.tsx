@@ -28,9 +28,9 @@ export function CustomerFilterTags({
   searchText,
   onFilterChange,
   onSearchChange,
-  onClearAll,
+  onClearAll: _onClearAll,
 }: CustomerFilterTagsProps) {
-  const { colors, isDark } = useTheme();
+  const { colors, isDark: _isDark } = useTheme();
 
   // Build array of active filter tags
   const filterTags = useMemo((): FilterTag[] => {

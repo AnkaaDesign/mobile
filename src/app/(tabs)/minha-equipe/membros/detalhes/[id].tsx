@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useUser, useCurrentUser } from "@/hooks";
 import { Card } from "@/components/ui/card";
@@ -28,7 +28,7 @@ import {
 } from "@tabler/icons-react-native";
 import { USER_STATUS } from "@/constants";
 import { formatDate } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 // Helper function to get status label
 const getStatusLabel = (status: string) => {
@@ -98,7 +98,7 @@ export default function TeamMemberDetailScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 

@@ -63,7 +63,7 @@ export default function ServiceDetailsScreen() {
               Alert.alert("Sucesso", "Serviço excluído com sucesso", [
                 { text: "OK", onPress: () => router.back() }
               ]);
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível excluir o serviço");
             }
           },

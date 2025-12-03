@@ -10,8 +10,8 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { IconBeach, IconEdit, IconRefresh } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { TouchableOpacity } from "react-native";
-import { showToast } from "@/components/ui/toast";
+import { TouchableOpacity, Alert } from "react-native";
+// import { showToast } from "@/components/ui/toast";
 import { routeToMobilePath } from '@/utils/route-mapper';
 
 // Import modular components
@@ -53,7 +53,7 @@ export default function VacationDetailScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 

@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconEdit, IconTrash, IconHistory } from "@tabler/icons-react-native";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 // Import modular components
 import {
@@ -77,13 +77,13 @@ export default function WarningDetailScreen() {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-    showToast({ message: "Detalhes atualizados", type: "success" });
+    Alert.alert("Sucesso", "Detalhes atualizados");
   }, [refetch]);
 
   // Handle edit
   const handleEdit = () => {
     if (!canEdit) {
-      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para editar");
       return;
     }
     if (warning) {
@@ -94,7 +94,7 @@ export default function WarningDetailScreen() {
   // Handle delete
   const handleDelete = () => {
     if (!canDelete) {
-      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para excluir");
       return;
     }
 
@@ -109,10 +109,10 @@ export default function WarningDetailScreen() {
           onPress: async () => {
             try {
               await deleteAsync(id as string);
-              showToast({ message: "Advertência excluída com sucesso", type: "success" });
+              // API client already shows success alert
               router.back();
-            } catch (error) {
-              showToast({ message: "Erro ao excluir advertência", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },

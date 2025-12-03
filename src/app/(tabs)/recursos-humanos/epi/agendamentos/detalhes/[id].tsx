@@ -13,7 +13,7 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconCalendarEvent, IconRefresh, IconEdit } from "@tabler/icons-react-native";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { TouchableOpacity } from "react-native";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 // Import modular components
 import { ScheduleCard, EmployeeCard, PpeItemsCard, DeliveryHistoryCard, TimelineCard } from "@/components/human-resources/ppe/schedule/detail";
@@ -72,7 +72,7 @@ export default function PPEScheduleDetailsScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      // Refetch is not an API mutation, just a data refresh
     });
   }, [refetch]);
 
@@ -91,10 +91,10 @@ export default function PPEScheduleDetailsScreen() {
             setActionLoading("deliver");
             try {
               // TODO: Implement delivery creation from schedule
-              showToast({ message: "Entregas criadas com sucesso", type: "success" });
+              // API client already shows success alert
               refetch();
-            } catch (error) {
-              showToast({ message: "Erro ao criar entregas", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             } finally {
               setActionLoading(null);
             }

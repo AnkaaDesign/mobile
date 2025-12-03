@@ -95,7 +95,7 @@ export default function ExternalWithdrawalDetailScreen() {
             try {
               await deleteWithdrawal(id!);
               router.back();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível excluir a retirada externa");
             }
           },
@@ -124,7 +124,7 @@ export default function ExternalWithdrawalDetailScreen() {
                 data: { status: EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED },
               });
               await refetch();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível atualizar o status");
             }
           },
@@ -153,7 +153,7 @@ export default function ExternalWithdrawalDetailScreen() {
                 data: { status: EXTERNAL_WITHDRAWAL_STATUS.CHARGED },
               });
               await refetch();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível atualizar o status");
             }
           },
@@ -183,7 +183,7 @@ export default function ExternalWithdrawalDetailScreen() {
                 data: { status: EXTERNAL_WITHDRAWAL_STATUS.CANCELLED },
               });
               await refetch();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível cancelar a retirada");
             }
           },

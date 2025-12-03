@@ -14,10 +14,9 @@ import { Combobox } from "@/components/ui/combobox";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileUploadField } from "@/components/ui/file-upload-field";
-import type { FileWithPreview } from "@/components/ui/file-upload-field";
+import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { useTheme } from "@/lib/theme";
-import { showToast } from "@/lib/toast";
+// import { showToast } from "@/lib/toast";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useSuppliers, useItems, useOrderMutations, useFileUploadManager } from "@/hooks";
 import { useMultiStepForm } from "@/hooks";
@@ -82,11 +81,11 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
   const [temporaryItems, setTemporaryItems] = useState<TemporaryItem[]>([]);
 
   // File upload states
-  const [budgetFiles, setBudgetFiles] = useState<FileWithPreview[]>([]);
-  const [invoiceFiles, setInvoiceFiles] = useState<FileWithPreview[]>([]);
-  const [receiptFiles, setReceiptFiles] = useState<FileWithPreview[]>([]);
-  const [reimbursementFiles, setReimbursementFiles] = useState<FileWithPreview[]>([]);
-  const [reimbursementInvoiceFiles, setReimbursementInvoiceFiles] = useState<FileWithPreview[]>([]);
+  const [budgetFiles, setBudgetFiles] = useState<FilePickerItem[]>([]);
+  const [invoiceFiles, setInvoiceFiles] = useState<FilePickerItem[]>([]);
+  const [receiptFiles, setReceiptFiles] = useState<FilePickerItem[]>([]);
+  const [reimbursementFiles, setReimbursementFiles] = useState<FilePickerItem[]>([]);
+  const [reimbursementInvoiceFiles, setReimbursementInvoiceFiles] = useState<FilePickerItem[]>([]);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
   // Mutations
@@ -266,39 +265,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
     [],
   );
 
-  // File picker handlers
-  const handlePickFiles = useCallback(async (
-    setFiles: React.Dispatch<React.SetStateAction<FileWithPreview[]>>
-  ) => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ["application/pdf", "image/*"],
-        multiple: true,
-        copyToCacheDirectory: true,
-      });
-
-      if (result.canceled) return;
-
-      const newFiles: FileWithPreview[] = result.assets.map((asset) => ({
-        uri: asset.uri,
-        name: asset.name,
-        type: asset.mimeType || "application/octet-stream",
-        size: asset.size,
-      }));
-
-      setFiles((prev) => [...prev, ...newFiles]);
-    } catch (error) {
-      console.error("Error picking files:", error);
-      Alert.alert("Erro", "Falha ao selecionar arquivos");
-    }
-  }, []);
-
-  const handleRemoveFile = useCallback((
-    index: number,
-    setFiles: React.Dispatch<React.SetStateAction<FileWithPreview[]>>
-  ) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-  }, []);
 
   // Handle form submission
   const handleFormSubmit = useCallback(async () => {
@@ -400,7 +366,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
         }
 
         if (result.success && result.data) {
-          showToast({ type: "success", message: "Pedido criado com sucesso!" });
+          // API client already shows success alert
 
           // Clear form state
           await multiStepForm.resetForm();
@@ -666,44 +632,69 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                 <CardTitle>Documentos (Opcional)</CardTitle>
               </CardHeader>
               <CardContent>
-                <FileUploadField
-                  files={budgetFiles}
-                  onRemove={(index) => handleRemoveFile(index, setBudgetFiles)}
-                  onAdd={() => handlePickFiles(setBudgetFiles)}
+                <FilePicker
+                  value={budgetFiles}
+                  onChange={setBudgetFiles}
                   maxFiles={10}
                   label="Orçamentos"
+                  placeholder="Adicionar orçamentos"
+                  helperText="Selecione até 10 arquivos de orçamento"
+                  disabled={isSubmitting}
+                  showCamera={true}
+                  showGallery={true}
+                  showFilePicker={true}
                 />
                 <View style={styles.fieldSpacer} />
-                <FileUploadField
-                  files={invoiceFiles}
-                  onRemove={(index) => handleRemoveFile(index, setInvoiceFiles)}
-                  onAdd={() => handlePickFiles(setInvoiceFiles)}
+                <FilePicker
+                  value={invoiceFiles}
+                  onChange={setInvoiceFiles}
                   maxFiles={10}
                   label="Notas Fiscais"
+                  placeholder="Adicionar notas fiscais"
+                  helperText="Selecione até 10 notas fiscais"
+                  disabled={isSubmitting}
+                  showCamera={true}
+                  showGallery={true}
+                  showFilePicker={true}
                 />
                 <View style={styles.fieldSpacer} />
-                <FileUploadField
-                  files={receiptFiles}
-                  onRemove={(index) => handleRemoveFile(index, setReceiptFiles)}
-                  onAdd={() => handlePickFiles(setReceiptFiles)}
+                <FilePicker
+                  value={receiptFiles}
+                  onChange={setReceiptFiles}
                   maxFiles={10}
                   label="Recibos"
+                  placeholder="Adicionar recibos"
+                  helperText="Selecione até 10 recibos"
+                  disabled={isSubmitting}
+                  showCamera={true}
+                  showGallery={true}
+                  showFilePicker={true}
                 />
                 <View style={styles.fieldSpacer} />
-                <FileUploadField
-                  files={reimbursementFiles}
-                  onRemove={(index) => handleRemoveFile(index, setReimbursementFiles)}
-                  onAdd={() => handlePickFiles(setReimbursementFiles)}
+                <FilePicker
+                  value={reimbursementFiles}
+                  onChange={setReimbursementFiles}
                   maxFiles={10}
                   label="Reembolsos"
+                  placeholder="Adicionar reembolsos"
+                  helperText="Selecione até 10 arquivos de reembolso"
+                  disabled={isSubmitting}
+                  showCamera={true}
+                  showGallery={true}
+                  showFilePicker={true}
                 />
                 <View style={styles.fieldSpacer} />
-                <FileUploadField
-                  files={reimbursementInvoiceFiles}
-                  onRemove={(index) => handleRemoveFile(index, setReimbursementInvoiceFiles)}
-                  onAdd={() => handlePickFiles(setReimbursementInvoiceFiles)}
+                <FilePicker
+                  value={reimbursementInvoiceFiles}
+                  onChange={setReimbursementInvoiceFiles}
                   maxFiles={10}
                   label="Notas de Reembolso"
+                  placeholder="Adicionar notas de reembolso"
+                  helperText="Selecione até 10 notas de reembolso"
+                  disabled={isSubmitting}
+                  showCamera={true}
+                  showGallery={true}
+                  showFilePicker={true}
                 />
               </CardContent>
             </Card>

@@ -73,7 +73,7 @@ export default function SystemUsersScreen() {
               await deleteUser(username);
               Alert.alert("Sucesso", "Usuário removido com sucesso");
               refetch();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Falha ao remover usuário");
             } finally {
               setDeletingUser(null);

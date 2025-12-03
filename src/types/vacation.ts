@@ -56,16 +56,16 @@ export interface VacationOrderBy {
 // Response Interfaces
 // =====================
 
-export interface VacationGetUniqueResponse extends BaseGetUniqueResponse<Vacation> {}
-export interface VacationGetManyResponse extends BaseGetManyResponse<Vacation> {}
-export interface VacationCreateResponse extends BaseCreateResponse<Vacation> {}
-export interface VacationUpdateResponse extends BaseUpdateResponse<Vacation> {}
-export interface VacationDeleteResponse extends BaseDeleteResponse {}
+export type VacationGetUniqueResponse = BaseGetUniqueResponse<Vacation>;
+export type VacationGetManyResponse = BaseGetManyResponse<Vacation>;
+export type VacationCreateResponse = BaseCreateResponse<Vacation>;
+export type VacationUpdateResponse = BaseUpdateResponse<Vacation>;
+export type VacationDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface VacationBatchCreateResponse<T = any> extends BaseBatchResponse<Vacation, T> {}
-export interface VacationBatchUpdateResponse<T = any> extends BaseBatchResponse<Vacation, T & { id: string }> {}
-export interface VacationBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type VacationBatchCreateResponse<T = any> = BaseBatchResponse<Vacation, T>;
+export type VacationBatchUpdateResponse<T = any> = BaseBatchResponse<Vacation, T & { id: string }>;
+export type VacationBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

@@ -41,7 +41,7 @@ const activityService = {
   getMany: (params?: ActivityGetManyFormData) => {
     // Filter out empty include objects
     if (params?.include && Object.keys(params.include).length === 0) {
-      const { include, ...restParams } = params;
+      const { include: _include, ...restParams } = params;
       return getActivities(restParams);
     }
     return getActivities(params || {});

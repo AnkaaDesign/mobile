@@ -11,7 +11,7 @@ import { useBorrow, useBorrowMutations } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { BORROW_STATUS, SECTOR_PRIVILEGES, routes } from "@/constants";
 import { hasPrivilege } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { BorrowStatusCard } from "@/components/inventory/borrow/detail/borrow-status-card";
 import { BorrowItemInfoCard } from "@/components/inventory/borrow/detail/borrow-item-info-card";
@@ -64,13 +64,13 @@ export default function BorrowDetailsScreen() {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-    showToast({ message: "Detalhes atualizados", type: "success" });
+    Alert.alert("Sucesso", "Detalhes atualizados");
   };
 
   // Handle edit
   const handleEdit = () => {
     if (!canManageWarehouse) {
-      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para editar");
       return;
     }
     router.push(routeToMobilePath(routes.inventory.borrows.edit(id as string)) as any);
@@ -95,10 +95,10 @@ export default function BorrowDetailsScreen() {
                   returnedAt: new Date(),
                 },
               });
+              // API client already shows success alert
               await refetch();
-              showToast({ message: "Item devolvido com sucesso", type: "success" });
-            } catch (error) {
-              showToast({ message: "Erro ao devolver o item", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },
@@ -122,10 +122,10 @@ export default function BorrowDetailsScreen() {
                 id: id as string,
                 data: { status: BORROW_STATUS.LOST },
               });
+              // API client already shows success alert
               await refetch();
-              showToast({ message: "Item marcado como perdido", type: "success" });
-            } catch (error) {
-              showToast({ message: "Erro ao marcar o item como perdido", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },
@@ -136,7 +136,7 @@ export default function BorrowDetailsScreen() {
   // Handle delete
   const handleDelete = () => {
     if (!isAdmin) {
-      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para excluir");
       return;
     }
 
@@ -151,10 +151,10 @@ export default function BorrowDetailsScreen() {
           onPress: async () => {
             try {
               await deleteAsync(id as string);
-              showToast({ message: "Empréstimo excluído com sucesso", type: "success" });
+              // API client already shows success alert
               router.back();
-            } catch (error) {
-              showToast({ message: "Erro ao excluir empréstimo", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },

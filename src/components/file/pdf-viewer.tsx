@@ -12,13 +12,14 @@ import {
   ActivityIndicator,
   StyleSheet,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Pdf from 'react-native-pdf';
 import { IconX, IconChevronLeft, IconChevronRight, IconDownload, IconShare } from '@tabler/icons-react-native';
 import type { File as AnkaaFile } from '../../types';
 import { getFileUrl } from '../../utils/file-viewer-utils';
-import { showToast } from '../ui/toast';
+// import { showToast } from '../ui/toast';
 
 export interface PDFViewerProps {
   file: AnkaaFile;
@@ -59,10 +60,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
     console.error('[PDF Viewer] Load error:', error);
     setLoading(false);
     setError('Erro ao carregar PDF. Tente novamente ou baixe o arquivo.');
-    showToast({
-      message: 'Erro ao carregar PDF',
-      type: 'error',
-    });
+    Alert.alert('Erro', 'Erro ao carregar PDF');
   }, []);
 
   // Handle page change

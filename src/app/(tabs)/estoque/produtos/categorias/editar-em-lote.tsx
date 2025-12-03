@@ -6,19 +6,17 @@ import {
   IconTag,
   IconDeviceFloppy,
   IconX,
-  IconCheck,
   IconShield,
   IconTool,
   IconHelmet,
   IconBox
 } from "@tabler/icons-react-native";
 import { useItemCategories, useItemCategoryBatchMutations } from "@/hooks";
-import type { ItemCategory } from "@/types";
 import { ThemedView, ThemedText, Button, LoadingScreen, ErrorScreen, Input, Checkbox } from "@/components/ui";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/lib/theme";
 import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
-import { toast } from "@/lib/toast";
+// Toast removed - using Alert.alert() for user feedback, API errors handled by axiosClient
 
 interface CategoryEditData {
   id: string;
@@ -118,13 +116,13 @@ export default function CategoryBatchEditScreen() {
     const selectedCategories = categories.filter((cat) => cat.selected);
 
     if (selectedCategories.length === 0) {
-      toast.error("Selecione pelo menos uma categoria para atualizar");
+      Alert.alert("Erro", "Selecione pelo menos uma categoria para atualizar");
       return false;
     }
 
     const hasEmptyName = selectedCategories.some((cat) => !cat.name.trim());
     if (hasEmptyName) {
-      toast.error("Todas as categorias selecionadas devem ter um nome");
+      Alert.alert("Erro", "Todas as categorias selecionadas devem ter um nome");
       return false;
     }
 
@@ -168,24 +166,21 @@ export default function CategoryBatchEditScreen() {
               if (result.data) {
                 const { totalSuccess = 0, totalFailed = 0 } = result.data;
 
-                if (totalSuccess > 0) {
-                  toast.success(
+                if (totalSuccess > 0 && totalFailed === 0) {
+                  Alert.alert(
+                    "Sucesso",
                     `${totalSuccess} ${totalSuccess === 1 ? "categoria atualizada" : "categorias atualizadas"} com sucesso`
                   );
-                }
-
-                if (totalFailed > 0) {
-                  toast.error(
-                    `${totalFailed} ${totalFailed === 1 ? "categoria falhou" : "categorias falharam"} ao atualizar`
+                  router.back();
+                } else if (totalFailed > 0) {
+                  Alert.alert(
+                    "Atenção",
+                    `${totalSuccess > 0 ? `${totalSuccess} atualizada(s) com sucesso. ` : ""}${totalFailed} ${totalFailed === 1 ? "categoria falhou" : "categorias falharam"} ao atualizar`
                   );
                 }
-
-                if (totalFailed === 0) {
-                  router.back();
-                }
               }
-            } catch (error) {
-              toast.error("Erro ao atualizar categorias em lote");
+            } catch (_error) {
+              // API client already shows error alert
             } finally {
               setIsSubmitting(false);
             }

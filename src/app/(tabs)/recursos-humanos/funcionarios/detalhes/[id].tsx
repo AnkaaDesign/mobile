@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useUser } from '@/hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE, USER_STATUS } from '@/constants';
@@ -23,12 +23,12 @@ import {
   IconMail,
   IconPhone,
   IconIdBadge,
-  
-  
+
+
   IconPackage,
 } from "@tabler/icons-react-native";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { EmployeeDetailSkeleton } from "@/components/administration/employee/skeleton";
 import {
   VacationsTable,
@@ -152,7 +152,7 @@ export default function EmployeeDetailScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 

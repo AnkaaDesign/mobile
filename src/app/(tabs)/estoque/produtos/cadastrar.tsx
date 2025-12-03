@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { ItemForm } from "@/components/inventory/item/form/item-form";
 import { useItemMutations } from "@/hooks";
 import { itemCreateSchema, type ItemCreateFormData } from '../../../../schemas';
@@ -18,14 +18,11 @@ export default function ItemCreateScreen() {
       const result = await createAsync(validatedData);
 
       if (result.success) {
-        showToast({
-          message: "Item criado com sucesso!",
-          type: "success",
-        });
+        // API client already shows success alert
         router.replace(routeToMobilePath(routes.inventory.products.root) as any);
       }
     } catch (error) {
-      // Error handled by mutation hook
+      // API client already shows error alert
       console.error("Error creating item:", error);
     }
   };

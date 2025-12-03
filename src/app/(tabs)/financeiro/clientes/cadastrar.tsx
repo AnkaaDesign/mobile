@@ -10,9 +10,9 @@ import { useCepLookup } from "@/hooks/use-cep-lookup";
 import { customerCreateSchema, type CustomerCreateFormData } from "@/schemas";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getEconomicActivities, createEconomicActivity } from "@/api-client/economic-activity";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { Input, Combobox, Button } from "@/components/ui";
-import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
+import { FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
@@ -85,7 +85,7 @@ export default function FinancialCustomerCreateScreen() {
   // CNPJ Lookup Hook
   const { lookupCnpj } = useCnpjLookup({
     onSuccess: async (data) => {
-      // Autofill fields with data from Brasil API
+      // Autofill company info fields from Brasil API
       setValue("fantasyName", data.fantasyName, { shouldDirty: true, shouldValidate: true });
       if (data.corporateName) {
         setValue("corporateName", data.corporateName, { shouldDirty: true, shouldValidate: true });
@@ -93,30 +93,21 @@ export default function FinancialCustomerCreateScreen() {
       if (data.email) {
         setValue("email", data.email, { shouldDirty: true, shouldValidate: true });
       }
+
+      // Only set CEP from CNPJ - the CEP lookup will fill the rest of the address fields
+      // This ensures more accurate address data from the postal code API
       if (data.zipCode) {
         setValue("zipCode", data.zipCode, { shouldDirty: true, shouldValidate: true });
       }
-      if (data.streetType) {
-        setValue("logradouro", data.streetType, { shouldDirty: true, shouldValidate: true });
-      }
-      if (data.address) {
-        setValue("address", data.address, { shouldDirty: true, shouldValidate: true });
-      }
+
+      // Only set address number and complement from CNPJ (CEP API doesn't have these)
       if (data.addressNumber) {
         setValue("addressNumber", data.addressNumber, { shouldDirty: true, shouldValidate: true });
       }
       if (data.addressComplement) {
         setValue("addressComplement", data.addressComplement, { shouldDirty: true, shouldValidate: true });
       }
-      if (data.neighborhood) {
-        setValue("neighborhood", data.neighborhood, { shouldDirty: true, shouldValidate: true });
-      }
-      if (data.city) {
-        setValue("city", data.city, { shouldDirty: true, shouldValidate: true });
-      }
-      if (data.state) {
-        setValue("state", data.state, { shouldDirty: true, shouldValidate: true });
-      }
+
       if (data.phones && data.phones.length > 0) {
         setValue("phones", data.phones, { shouldDirty: true, shouldValidate: true });
       }
@@ -203,14 +194,8 @@ export default function FinancialCustomerCreateScreen() {
       const result = await createAsync(data);
 
       if (result?.data) {
-        Alert.alert("Sucesso", "Cliente criado com sucesso!", [
-          {
-            text: "OK",
-            onPress: () => {
-              router.replace(routeToMobilePath(routes.financial.customers.details(result.data?.id || '')) as any);
-            },
-          },
-        ]);
+        // API client already shows success alert
+        router.replace(routeToMobilePath(routes.financial.customers.details(result.data?.id || '')) as any);
       } else {
         Alert.alert("Erro", "Erro ao criar cliente");
       }
@@ -266,77 +251,6 @@ export default function FinancialCustomerCreateScreen() {
             <View style={styles.headerLeft}>
               <IconBuilding size={20} color={colors.mutedForeground} />
               <ThemedText style={styles.title}>Informações Básicas</ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-          <FormFieldGroup
-            label="Nome Fantasia"
-            required
-            error={errors.fantasyName?.message}
-          >
-            <Controller
-              control={control}
-              name="fantasyName"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="Ex: Empresa LTDA"
-                  maxLength={200}
-                  error={!!errors.fantasyName}
-                  editable={!isSubmitting}
-                />
-              )}
-            />
-          </FormFieldGroup>
-
-          <FormFieldGroup label="Razão Social" error={errors.corporateName?.message}>
-            <Controller
-              control={control}
-              name="corporateName"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  value={value || ""}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="Ex: Empresa LTDA ME"
-                  maxLength={200}
-                  error={!!errors.corporateName}
-                  editable={!isSubmitting}
-                />
-              )}
-            />
-          </FormFieldGroup>
-
-          <FormFieldGroup label="Email" error={errors.email?.message}>
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  value={value || ""}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="email@exemplo.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  maxLength={100}
-                  error={!!errors.email}
-                  editable={!isSubmitting}
-                />
-              )}
-            />
-          </FormFieldGroup>
-          </View>
-        </Card>
-
-        {/* Document & Tax Information */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconFileText size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Documento e Informações Fiscais</ThemedText>
             </View>
           </View>
           <View style={styles.content}>
@@ -401,6 +315,66 @@ export default function FinancialCustomerCreateScreen() {
                 )}
               </View>
             </View>
+          </FormFieldGroup>
+
+          <FormFieldGroup
+            label="Nome Fantasia"
+            required
+            error={errors.fantasyName?.message}
+          >
+            <Controller
+              control={control}
+              name="fantasyName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Ex: Empresa LTDA"
+                  maxLength={200}
+                  error={!!errors.fantasyName}
+                  editable={!isSubmitting}
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          <FormFieldGroup label="Razão Social" error={errors.corporateName?.message}>
+            <Controller
+              control={control}
+              name="corporateName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="Ex: Empresa LTDA ME"
+                  maxLength={200}
+                  error={!!errors.corporateName}
+                  editable={!isSubmitting}
+                />
+              )}
+            />
+          </FormFieldGroup>
+
+          <FormFieldGroup label="Email" error={errors.email?.message}>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder="email@exemplo.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  maxLength={100}
+                  error={!!errors.email}
+                  editable={!isSubmitting}
+                />
+              )}
+            />
           </FormFieldGroup>
 
           <FormFieldGroup label="Situação Cadastral" error={errors.situacaoCadastral?.message}>
@@ -488,15 +462,9 @@ export default function FinancialCustomerCreateScreen() {
                       if (result?.data?.id) {
                         setValue("economicActivityId", result.data.id, { shouldDirty: true, shouldValidate: true });
                       }
-                      showToast({
-                        message: result.message || "Atividade econômica configurada com sucesso",
-                        type: "success",
-                      });
+                      Alert.alert("Sucesso", result.message || "Atividade econômica configurada com sucesso");
                     } catch (error: any) {
-                      showToast({
-                        message: error.response?.data?.message || "Erro ao criar atividade econômica",
-                        type: "error",
-                      });
+                      // API client already shows error alert
                     }
                   }}
                   createLabel={(value) => `Criar CNAE "${value}"`}

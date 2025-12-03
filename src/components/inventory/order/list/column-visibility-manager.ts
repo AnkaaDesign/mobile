@@ -1,4 +1,5 @@
 import type { Order } from '../../../../types';
+import { getDefaultVisibleColumnsWithTablet } from '@/lib/table-utils';
 
 // Column interface matching web pattern
 export interface OrderColumn {
@@ -10,12 +11,25 @@ export interface OrderColumn {
   align?: "left" | "center" | "right";
 }
 
+// Mobile columns (< 624px)
+const MOBILE_COLUMNS = [
+  "description",
+  "supplier.fantasyName",
+  "status",
+  "totalPrice"
+];
+
+// Tablet columns (>= 624px) - adds items count and forecast
+const TABLET_COLUMNS = [
+  "description",
+  "supplier.fantasyName",
+  "status",
+  "itemsCount",
+  "forecast",
+  "totalPrice"
+];
+
 // Function to get default visible columns for orders
 export function getDefaultVisibleColumns(): Set<string> {
-  return new Set([
-    "description",
-    "supplier.fantasyName",
-    "status",
-    "totalPrice"
-  ]);
+  return getDefaultVisibleColumnsWithTablet(MOBILE_COLUMNS, TABLET_COLUMNS);
 }

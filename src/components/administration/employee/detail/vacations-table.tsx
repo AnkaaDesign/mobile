@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { View, StyleSheet, ActivityIndicator, FlatList, TouchableOpacity } from "react-native";
+import { View, StyleSheet, ActivityIndicator, FlatList } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";

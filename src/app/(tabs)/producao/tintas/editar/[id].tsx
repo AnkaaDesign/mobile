@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -92,17 +92,11 @@ export default function EditPaintScreen() {
         }
       }
 
-      showToast({
-        message: "Tinta atualizada com sucesso!",
-        type: "success",
-      });
+      // API client already shows success alert
       router.back();
     } catch (error) {
       console.error("Error updating paint:", error);
-      showToast({
-        message: "Erro ao atualizar tinta",
-        type: "error",
-      });
+      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }
@@ -177,8 +171,6 @@ export default function EditPaintScreen() {
             paintBrandId: paint.paintBrandId,
             manufacturer: paint.manufacturer,
             tags: paint.tags || [],
-            palette: paint.palette,
-            paletteOrder: paint.paletteOrder,
             groundIds: paint.paintGrounds?.map((g) => g.groundPaintId) || [],
           }}
           existingFormulas={paint.formulas}

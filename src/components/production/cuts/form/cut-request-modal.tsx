@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, ActivityIndicator } from "react-native";
+import { View, ScrollView, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, ActivityIndicator, Alert } from "react-native";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -21,7 +21,7 @@ import {
   CUT_TYPE_LABELS,
 } from "@/constants";
 import { useCutBatchMutations } from "@/hooks";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { FileItem, useFileViewer } from "@/components/file";
 import type { Cut } from "@/types";
 import {
@@ -95,10 +95,7 @@ export function CutRequestModal({
 
     if (!cutItem) {
       console.log('[CutRequestModal] No cutItem, showing error');
-      showToast({
-        message: "Nenhum corte selecionado",
-        type: "error",
-      });
+      Alert.alert("Erro", "Nenhum corte selecionado");
       return;
     }
 
@@ -138,20 +135,14 @@ export function CutRequestModal({
 
       console.log('[CutRequestModal] Response:', response);
 
-      showToast({
-        message: `${quantity} novo(s) corte(s) solicitado(s) com sucesso`,
-        type: "success",
-      });
+      // API client already shows success alert
 
       onSuccess?.(response.data.success);
       reset();
       onClose();
     } catch (error) {
       console.error('[CutRequestModal] Error:', error);
-      showToast({
-        message: "Erro ao solicitar novos cortes",
-        type: "error",
-      });
+      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }

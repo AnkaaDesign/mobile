@@ -13,8 +13,6 @@ import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { usePpeDeliveriesInfiniteMobile } from "@/hooks";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { PPE_DELIVERY_STATUS } from "@/constants";
 
 interface PpeDeliveriesTableProps {

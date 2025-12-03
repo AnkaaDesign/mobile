@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { SvgXml } from "react-native-svg";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { useLayoutsByTruck } from "@/hooks";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 interface TruckLayoutPreviewProps {
   truckId: string;
@@ -202,11 +202,11 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(fileUri);
       } else {
-        showToast({ message: "Compartilhamento não disponível", type: "error" });
+        Alert.alert("Erro", "Compartilhamento não disponível");
       }
     } catch (error) {
       console.error("Error downloading SVG:", error);
-      showToast({ message: "Erro ao gerar o layout", type: "error" });
+      Alert.alert("Erro", "Erro ao gerar o layout");
     }
   };
 

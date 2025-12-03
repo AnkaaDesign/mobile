@@ -1,4 +1,5 @@
-import { View, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
+import { useState } from "react";
+import { View, ScrollView, ActivityIndicator, StyleSheet, Alert } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +15,7 @@ import type { PaintBrandUpdateFormData } from '../../../../../schemas';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import {
   IconTag,
 } from "@tabler/icons-react-native";
@@ -57,17 +58,17 @@ export default function EditPaintBrandScreen() {
   // Handle form submission
   const onSubmit = async (data: PaintBrandUpdateFormData) => {
     if (!canEdit) {
-      showToast("Você não tem permissão para editar", "error");
+      Alert.alert("Erro", "Você não tem permissão para editar");
       return;
     }
 
     if (!id) {
-      showToast("ID da marca de tinta não encontrado", "error");
+      Alert.alert("Erro", "ID da marca de tinta não encontrado");
       return;
     }
 
     if (!isDirty) {
-      showToast("Nenhuma alteração foi feita", "info");
+      Alert.alert("Informação", "Nenhuma alteração foi feita");
       return;
     }
 
@@ -75,10 +76,10 @@ export default function EditPaintBrandScreen() {
 
     try {
       await update({ id, data });
-      showToast("Marca de tinta atualizada com sucesso", "success");
+      // API client already shows success alert
       router.back();
-    } catch (error) {
-      showToast("Erro ao atualizar marca de tinta", "error");
+    } catch (_error) {
+      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }

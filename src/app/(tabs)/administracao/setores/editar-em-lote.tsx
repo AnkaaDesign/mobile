@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconBuildingSkyscraper, IconDeviceFloppy } from "@tabler/icons-react-native";
@@ -9,7 +9,7 @@ import { ThemedView, ThemedText, Button, LoadingScreen } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { toast } from "@/lib/toast";
+// import { toast } from "@/lib/toast";
 
 export default function SectorBatchEditScreen() {
   const router = useRouter();
@@ -59,16 +59,16 @@ export default function SectorBatchEditScreen() {
       const result = await batchUpdate(data);
 
       if (result.data) {
-        toast.success(`${result.data.totalSuccess} setor${result.data.totalSuccess !== 1 ? 'es' : ''} processado${result.data.totalSuccess !== 1 ? 's' : ''}`);
+        Alert.alert("Sucesso", `${result.data.totalSuccess} setor${result.data.totalSuccess !== 1 ? 'es' : ''} processado${result.data.totalSuccess !== 1 ? 's' : ''}`);
 
         if (result.data.totalFailed > 0) {
-          toast.error(`${result.data.totalFailed} setor${result.data.totalFailed !== 1 ? 'es' : ''} falhou ao atualizar`);
+          Alert.alert("Erro", `${result.data.totalFailed} setor${result.data.totalFailed !== 1 ? 'es' : ''} falhou ao atualizar`);
         }
       }
 
       router.push(routeToMobilePath(routes.administration.sectors.root) as any);
-    } catch (error) {
-      toast.error("Erro ao atualizar setores");
+    } catch (_error) {
+      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }

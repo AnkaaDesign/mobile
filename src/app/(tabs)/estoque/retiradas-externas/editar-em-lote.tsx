@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { SkeletonCard } from "@/components/ui/loading";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { useExternalWithdrawals, useExternalWithdrawalBatchMutations } from "@/hooks";
 import { routeToMobilePath } from "@/utils/route-mapper";
@@ -161,30 +161,27 @@ function BatchEditExternalWithdrawalsScreen() {
         const { totalSuccess, totalFailed } = result.data;
 
         if (totalFailed === 0) {
-          showToast({
-            message: `${totalSuccess} retirada(s) externa(s) atualizada(s) com sucesso!`,
-            type: "success",
-          });
+          Alert.alert(
+            "Sucesso",
+            `${totalSuccess} retirada(s) externa(s) atualizada(s) com sucesso!`
+          );
           router.replace(routeToMobilePath(routes.inventory.externalWithdrawals.root) as any);
         } else {
-          showToast({
-            message: `${totalSuccess} sucesso(s), ${totalFailed} falha(s)`,
-            type: "warning",
-          });
+          Alert.alert(
+            "Erro",
+            `${totalSuccess} sucesso(s), ${totalFailed} falha(s)`
+          );
         }
       } else {
-        showToast({
-          message: "Retiradas externas atualizadas com sucesso!",
-          type: "success",
-        });
+        Alert.alert(
+          "Sucesso",
+          "Retiradas externas atualizadas com sucesso!"
+        );
         router.replace(routeToMobilePath(routes.inventory.externalWithdrawals.root) as any);
       }
     } catch (error: any) {
       console.error("Error during batch update:", error);
-      showToast({
-        message: error.message || "Erro ao atualizar retiradas externas",
-        type: "error",
-      });
+      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }
@@ -371,7 +368,7 @@ function BatchEditExternalWithdrawalsScreen() {
                 <Controller
                   control={control}
                   name={`externalWithdrawals.${index}.data.notes`}
-                  render={({ field: { value, onChange } }) => (
+                  render={({ field: { value } }) => (
                     <View>
                       <ThemedText style={styles.notesInput}>
                         {value || "Sem observações"}

@@ -18,8 +18,6 @@ import type {
   FileBatchDeleteResponse,
 } from '@/types';
 import { createEntityHooks } from "./createEntityHooks";
-import { smartCompressFile } from "@/utils/file-compression";
-import { isImageFile } from "@/utils/file-utils";
 
 // =====================================================
 // Enhanced Upload Progress Types
@@ -313,7 +311,6 @@ export const useMultiFileUpload = (options: MultiFileUploadOptions = {}) => {
             // For batch uploads, we get overall progress
             // We can estimate individual file progress
             const overallLoaded = progressEvent.loaded;
-            const overallTotal = progressEvent.total;
 
             // Update all pending/uploading files with estimated progress
             setUploads(prev => {
@@ -642,7 +639,7 @@ export const useSmartFileLoader = (_files: File[]) => {
           setLoadedPreviews((prev) => new Set(prev).add(file.id));
           return Promise.resolve(previewUrl);
         }
-      } catch (error) {
+      } catch (_error) {
         setFailedPreviews((prev) => new Set(prev).add(file.id));
         return `/api/files/serve/${file.id}`;
       }

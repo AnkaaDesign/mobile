@@ -1,17 +1,16 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
-import { View, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
+import { useState, useMemo, useEffect } from "react";
+import { View, ScrollView, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconTag, IconDeviceFloppy, IconAlertCircle } from "@tabler/icons-react-native";
 import { useItemBrands, useItemBrandBatchMutations, useItems } from "@/hooks";
-import type { ItemBrand } from "@/types";
 
 import { ThemedView, ThemedText, Button, LoadingScreen, TextInput } from "@/components/ui";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
 import { routeToMobilePath } from "@/utils/route-mapper";
-import { toast } from "@/lib/toast";
+// import { toast } from "@/lib/toast";
 
 interface BrandFormData {
   id: string;
@@ -27,7 +26,7 @@ export default function BrandBatchEditScreen() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [brandData, setBrandData] = useState<BrandFormData[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [_searchQuery, _setSearchQuery] = useState("");
 
   // Get brand IDs from URL params
   const brandIds = useMemo(() => {
@@ -115,7 +114,7 @@ export default function BrandBatchEditScreen() {
     // Validate that all brands have names
     const invalidBrands = brandData.filter((brand) => !brand.name || brand.name.trim() === "");
     if (invalidBrands.length > 0) {
-      toast.error("Todos os nomes de marcas devem ser preenchidos");
+      Alert.alert("Erro", "Todos os nomes de marcas devem ser preenchidos");
       return;
     }
 
@@ -134,14 +133,16 @@ export default function BrandBatchEditScreen() {
       const result = await batchUpdate(updatePayload);
 
       if (result.data) {
-        toast.success(
+        Alert.alert(
+          "Sucesso",
           `${result.data.totalSuccess} marca${result.data.totalSuccess !== 1 ? "s" : ""} atualizada${
             result.data.totalSuccess !== 1 ? "s" : ""
           } com sucesso`
         );
 
         if (result.data.totalFailed > 0) {
-          toast.error(
+          Alert.alert(
+            "Erro",
             `${result.data.totalFailed} marca${result.data.totalFailed !== 1 ? "s" : ""} falhou ao atualizar`
           );
         }
@@ -151,7 +152,7 @@ export default function BrandBatchEditScreen() {
         }
       }
     } catch (error) {
-      toast.error("Erro ao atualizar marcas");
+      // API client already shows error alert
       console.error("Error updating brands:", error);
     } finally {
       setIsSubmitting(false);

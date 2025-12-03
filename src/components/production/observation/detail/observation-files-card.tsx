@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { IconFiles, IconList, IconLayoutGrid, IconDownload } from "@tabler/icons-react-native";
 import { FileItem, useFileViewer} from "@/components/file";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import type { File } from "@/types";
 
 interface ObservationFilesCardProps {
@@ -31,10 +31,10 @@ export function ObservationFilesCard({ files }: ObservationFilesCardProps) {
         console.error("Error downloading file:", error);
       }
     }
-    showToast({
-      message: `${files.length} arquivo${files.length > 1 ? 's' : ''} baixado${files.length > 1 ? 's' : ''}`,
-      type: "success"
-    });
+    Alert.alert(
+      "Sucesso",
+      `${files.length} arquivo${files.length > 1 ? 's' : ''} baixado${files.length > 1 ? 's' : ''}`
+    );
   };
 
   return (

@@ -1,7 +1,6 @@
 
 import { View, ScrollView, Dimensions } from "react-native";
 import { SkeletonCard, SkeletonText } from "@/components/ui/loading";
-import { spacing, fontSize } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

@@ -14,22 +14,16 @@ import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatCNPJ, cleanCNPJ, formatZipCode, cleanZipCode } from "@/utils";
-import { PhoneManager, TagManager, FileUploadManager } from "@/components/inventory/supplier/form";
+import { PhoneManager, TagManager } from "@/components/inventory/supplier/form";
+import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { formSpacing } from "@/constants/form-styles";
-
-interface FileUpload {
-  uri: string;
-  name: string;
-  type: string;
-  size?: number;
-}
 
 export default function SupplierCreateScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [logoFiles, setLogoFiles] = useState<FileUpload[]>([]);
-  const [documentFiles, setDocumentFiles] = useState<FileUpload[]>([]);
+  const [logoFiles, setLogoFiles] = useState<FilePickerItem[]>([]);
+  const [documentFiles, setDocumentFiles] = useState<FilePickerItem[]>([]);
 
   // Keyboard-aware scrolling
   const { handlers, refs } = useKeyboardAwareScroll();
@@ -447,20 +441,30 @@ export default function SupplierCreateScreen() {
         {/* Files */}
         <FormCard title="Arquivos" icon="IconFileText">
           <FormFieldGroup label="Logo do Fornecedor">
-            <FileUploadManager
-              files={logoFiles}
+            <FilePicker
+              value={logoFiles}
               onChange={setLogoFiles}
               maxFiles={1}
-              allowImages={true}
+              placeholder="Adicionar logo"
+              helperText="Imagem do logo do fornecedor"
+              showCamera={true}
+              showGallery={true}
+              showFilePicker={false}
+              disabled={isSubmitting}
             />
           </FormFieldGroup>
 
           <FormFieldGroup label="Documentos">
-            <FileUploadManager
-              files={documentFiles}
+            <FilePicker
+              value={documentFiles}
               onChange={setDocumentFiles}
               maxFiles={5}
-              allowImages={true}
+              placeholder="Adicionar documentos"
+              helperText="PDFs, imagens e outros documentos"
+              showCamera={true}
+              showGallery={true}
+              showFilePicker={true}
+              disabled={isSubmitting}
             />
           </FormFieldGroup>
         </FormCard>

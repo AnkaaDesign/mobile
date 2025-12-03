@@ -219,7 +219,7 @@ export default function BonusSimulationScreen() {
   }, [simulatedUsers, sortField, sortDirection]);
 
   // Toggle sort
-  const handleSort = useCallback((field: SortField) => {
+  const _handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {

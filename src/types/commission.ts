@@ -57,16 +57,16 @@ export interface CommissionOrderBy {
 // Response Interfaces
 // =====================
 
-export interface CommissionGetUniqueResponse extends BaseGetUniqueResponse<Commission> {}
-export interface CommissionGetManyResponse extends BaseGetManyResponse<Commission> {}
-export interface CommissionCreateResponse extends BaseCreateResponse<Commission> {}
-export interface CommissionUpdateResponse extends BaseUpdateResponse<Commission> {}
-export interface CommissionDeleteResponse extends BaseDeleteResponse {}
+export type CommissionGetUniqueResponse = BaseGetUniqueResponse<Commission>;
+export type CommissionGetManyResponse = BaseGetManyResponse<Commission>;
+export type CommissionCreateResponse = BaseCreateResponse<Commission>;
+export type CommissionUpdateResponse = BaseUpdateResponse<Commission>;
+export type CommissionDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface CommissionBatchCreateResponse<T = any> extends BaseBatchResponse<Commission, T> {}
-export interface CommissionBatchUpdateResponse<T = any> extends BaseBatchResponse<Commission, T & { id: string }> {}
-export interface CommissionBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type CommissionBatchCreateResponse<T = any> = BaseBatchResponse<Commission, T>;
+export type CommissionBatchUpdateResponse<T = any> = BaseBatchResponse<Commission, T & { id: string }>;
+export type CommissionBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

@@ -22,7 +22,7 @@ import { routeToMobilePath } from "@/utils/route-mapper";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege, formatCurrency } from "@/utils";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -89,7 +89,7 @@ export default function OrderDetailScreen() {
     setRefreshing(true);
     try {
       await refetch();
-      showToast({ message: "Pedido atualizado", type: "success" });
+      Alert.alert("Sucesso", "Pedido atualizado");
     } finally {
       setRefreshing(false);
     }
@@ -121,9 +121,9 @@ export default function OrderDetailScreen() {
             try {
               await deleteOrder(id!);
               router.replace(routeToMobilePath(routes.inventory.orders.list) as any);
-              showToast({ message: "Pedido excluído com sucesso", type: "success" });
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível excluir o pedido");
+              Alert.alert("Sucesso", "Pedido excluído com sucesso");
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },

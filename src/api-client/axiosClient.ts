@@ -1332,7 +1332,7 @@ export const updateApiUrl = (url: string): void => {
       const instance = getSingletonInstance();
       instance.defaults.baseURL = newBaseUrl;
       console.log("[API CLIENT] Created singleton and set baseURL to:", newBaseUrl);
-    } catch (e) {
+    } catch {
       console.log("[API CLIENT] Could not create singleton yet, URL will be used on first request");
     }
   }

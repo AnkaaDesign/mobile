@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { View, TouchableOpacity, ScrollView, StyleSheet, Modal, KeyboardAvoidingView, Platform } from "react-native";
+import { View, TouchableOpacity, ScrollView, StyleSheet, Modal, KeyboardAvoidingView, Platform, Alert as RNAlert } from "react-native";
 import { useRouter } from "expo-router";
 import { Text } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
@@ -7,13 +7,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
-import { formatNumberWithDecimals } from "@/utils";
+import { formatNumberWithDecimals, formatCurrency } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import type { PaintFormula, Item } from "../../../types";
 import { IconAlertTriangle, IconCheck, IconX, IconAlertCircle, IconLoader2, IconCurrencyDollar, IconAdjustments, IconCalculator } from "@tabler/icons-react-native";
 import { usePaintProductionMutations, useKeyboardAwareScroll } from "@/hooks";
 import { useItems } from "../../../hooks";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { formSpacing } from "@/constants/form-styles";
 
@@ -305,11 +305,10 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
 
   const handleProduction = async () => {
     if (!totals.allInStock || totals.weight <= 0) {
-      showToast({
-        title: "Não é possível produzir",
-        description: totals.allInStock ? "Peso inválido" : "Estoque insuficiente",
-        variant: "error",
-      });
+      RNAlert.alert(
+        "Não é possível produzir",
+        totals.allInStock ? "Peso inválido" : "Estoque insuficiente"
+      );
       return;
     }
 
@@ -322,16 +321,13 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
       });
 
       if (result?.data?.id) {
-        showToast({
-          title: "Produção registrada com sucesso!",
-          description: `${parseFloat(desiredVolume) / 1000}L de tinta produzidos`,
-          variant: "success",
-        });
-        // Reset form state after successful production
+        // API client already shows success alert, just navigate
         setSelectedComponents([]);
+        router.push("/(tabs)/pintura/catalogo/listar");
       }
     } catch (error) {
       console.error("Error creating production:", error);
+      // API client already shows error alert
     } finally {
       setIsProducing(false);
     }

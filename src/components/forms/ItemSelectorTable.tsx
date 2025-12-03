@@ -159,6 +159,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { useItemsInfiniteMobile } from "@/hooks";
 import { formatNumber, determineStockLevel } from "@/utils";
 import { STOCK_LEVEL, ITEM_CATEGORY_TYPE } from "@/constants";
+import { isTabletWidth, TABLET_WIDTH_THRESHOLD } from "@/lib/table-utils";
 
 // ============================================================================
 // Types
@@ -274,6 +275,21 @@ const createColumns = (colors: any): ItemSelectorColumn[] => [
     render: (item) => item.category?.name || "-",
   },
   {
+    key: "measures",
+    label: "Medidas",
+    width: 2,
+    sortable: false,
+    render: (item) => {
+      if (!item.measures || item.measures.length === 0) {
+        return "-";
+      }
+      const measureText = item.measures
+        .map((m: any) => `${m.value || '-'}${m.unit || ''}`)
+        .join(' × ');
+      return measureText;
+    },
+  },
+  {
     key: "quantity",
     label: "Estoque",
     width: 2,
@@ -290,7 +306,18 @@ const createColumns = (colors: any): ItemSelectorColumn[] => [
   },
 ];
 
-const DEFAULT_VISIBLE = ["uniCode", "name", "quantity"];
+// Mobile columns (< 624px)
+const MOBILE_DEFAULT_VISIBLE = ["name", "quantity"];
+
+// Tablet columns (>= 624px)
+const TABLET_DEFAULT_VISIBLE = ["uniCode", "name", "measures", "quantity"];
+
+const getDefaultVisibleColumns = (): string[] => {
+  if (isTabletWidth()) {
+    return TABLET_DEFAULT_VISIBLE;
+  }
+  return MOBILE_DEFAULT_VISIBLE;
+};
 
 // ============================================================================
 // Sub-Components
@@ -399,6 +426,8 @@ const TableRow = memo(function TableRow({
   minQuantity,
   maxQuantity,
   index,
+  isTablet,
+  qntColumnWidth,
 }: {
   item: any;
   columns: ItemSelectorColumn[];
@@ -411,6 +440,8 @@ const TableRow = memo(function TableRow({
   minQuantity?: number;
   maxQuantity?: number;
   index: number;
+  isTablet: boolean;
+  qntColumnWidth: number;
 }) {
   const { colors } = useTheme();
   const availableStock = item.quantity || 0;
@@ -446,6 +477,43 @@ const TableRow = memo(function TableRow({
       onQuantityChange(validQuantity);
     }
   }, [localQuantity, minQuantity, maxQuantity, availableStock, onQuantityChange]);
+
+  // Render quantity input cell for tablet
+  const renderQuantityInputCell = () => {
+    if (!isSelected) {
+      return (
+        <View style={[styles.cell, styles.qntCell, { width: qntColumnWidth }]}>
+          <ThemedText style={[styles.cellText, { color: colors.mutedForeground }]}>
+            -
+          </ThemedText>
+        </View>
+      );
+    }
+    return (
+      <View style={[styles.cell, styles.qntCell, { width: qntColumnWidth }]}>
+        <TextInput
+          style={[
+            styles.quantityInputInline,
+            {
+              color: colors.foreground,
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+            },
+          ]}
+          value={localQuantity}
+          onChangeText={handleQuantityChange}
+          onBlur={handleQuantityBlur}
+          onSubmitEditing={() => {
+            handleQuantityBlur();
+            Keyboard.dismiss();
+          }}
+          keyboardType="decimal-pad"
+          returnKeyType="done"
+          selectTextOnFocus
+        />
+      </View>
+    );
+  };
 
   return (
     <TouchableOpacity
@@ -486,10 +554,12 @@ const TableRow = memo(function TableRow({
             )}
           </View>
         ))}
+        {/* Quantity input column for tablet */}
+        {showQuantityInput && isTablet && renderQuantityInputCell()}
       </View>
 
-      {/* Quantity Input - Second row when selected */}
-      {showQuantityInput && isSelected && (
+      {/* Quantity Input - Second row when selected (mobile only) */}
+      {showQuantityInput && isSelected && !isTablet && (
         <View style={[styles.quantityRow, { borderTopColor: colors.border }]}>
           <ThemedText style={[styles.quantityLabel, { color: colors.mutedForeground }]}>
             Quantidade:
@@ -575,7 +645,7 @@ export function ItemSelectorTable({
   const [sortField, setSortField] = useState<string>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    () => new Set(DEFAULT_VISIBLE)
+    () => new Set(getDefaultVisibleColumns())
   );
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -664,6 +734,12 @@ export function ItemSelectorTable({
     totalCount,
   } = useItemsInfiniteMobile(queryParams);
 
+  // Tablet detection
+  const isTablet = screenWidth >= TABLET_WIDTH_THRESHOLD;
+
+  // Qnt column width for tablet (fixed width)
+  const QNT_COLUMN_WIDTH = 80;
+
   // Calculate column widths (including quantity column)
   const displayColumns = useMemo(
     () => COLUMNS.filter((col) => visibleColumns.has(col.key)),
@@ -672,12 +748,14 @@ export function ItemSelectorTable({
 
   const columnWidths = useMemo(() => {
     // Full width minus container padding (spacing.md on each side)
-    const availableWidth = screenWidth - spacing.md * 2;
+    // Also subtract qnt column width on tablet when showQuantityInput is true
+    const qntWidth = (showQuantityInput && isTablet) ? QNT_COLUMN_WIDTH : 0;
+    const availableWidth = screenWidth - spacing.md * 2 - qntWidth;
     const totalRatio = displayColumns.reduce((sum, col) => sum + col.width, 0);
     return displayColumns.map((col) =>
       Math.floor((availableWidth * col.width) / totalRatio)
     );
-  }, [displayColumns, screenWidth]);
+  }, [displayColumns, screenWidth, isTablet, showQuantityInput]);
 
   // Handlers
   const handleSort = useCallback((field: string) => {
@@ -724,7 +802,7 @@ export function ItemSelectorTable({
   }, [onShowInactiveChange, onCategoryIdsChange, onBrandIdsChange, onSupplierIdsChange]);
 
   const handleResetColumns = useCallback(() => {
-    setVisibleColumns(new Set(DEFAULT_VISIBLE));
+    setVisibleColumns(new Set(getDefaultVisibleColumns()));
   }, []);
 
   const renderItem = useCallback(
@@ -741,9 +819,11 @@ export function ItemSelectorTable({
         minQuantity={minQuantity}
         maxQuantity={maxQuantity || item.quantity}
         index={index}
+        isTablet={isTablet}
+        qntColumnWidth={QNT_COLUMN_WIDTH}
       />
     ),
-    [selectedItems, quantities, displayColumns, columnWidths, onSelectItem, onQuantityChange, showQuantityInput, minQuantity, maxQuantity]
+    [selectedItems, quantities, displayColumns, columnWidths, onSelectItem, onQuantityChange, showQuantityInput, minQuantity, maxQuantity, isTablet]
   );
 
   const handleEndReached = useCallback(() => {
@@ -806,6 +886,19 @@ export function ItemSelectorTable({
               width={columnWidths[idx]}
             />
           ))}
+          {/* Qnt header column for tablet */}
+          {showQuantityInput && isTablet && (
+            <View style={[styles.headerCell, { width: QNT_COLUMN_WIDTH }]}>
+              <View style={styles.headerCellContent}>
+                <ThemedText
+                  style={[styles.headerText, { color: colors.foreground }]}
+                  numberOfLines={1}
+                >
+                  Qnt
+                </ThemedText>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Body */}
@@ -955,10 +1048,13 @@ const styles = StyleSheet.create({
   row: { borderBottomWidth: StyleSheet.hairlineWidth },
   rowMain: { flexDirection: "row", alignItems: "center", paddingVertical: spacing.sm, minHeight: 48 },
   cell: { paddingHorizontal: 12, justifyContent: "center" },
+  qntCell: { alignItems: "center", paddingHorizontal: 4 },
   cellText: { fontSize: fontSize.sm },
   quantityRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: StyleSheet.hairlineWidth, gap: 12 },
   quantityLabel: { fontSize: fontSize.sm, fontWeight: "500" },
   quantityInputExpanded: { flex: 1, height: 36, borderRadius: 6, borderWidth: 1, paddingHorizontal: 12, fontSize: fontSize.sm },
+  quantityInlineContainer: { marginLeft: 8, justifyContent: "center" },
+  quantityInputInline: { width: 70, borderRadius: 6, borderWidth: 1, paddingHorizontal: 4, paddingVertical: 4, fontSize: fontSize.sm, textAlign: "center" },
   tableFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, paddingHorizontal: 16, borderTopWidth: 1, minHeight: 36 },
   footerText: { fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
   emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: spacing.xl * 2 },

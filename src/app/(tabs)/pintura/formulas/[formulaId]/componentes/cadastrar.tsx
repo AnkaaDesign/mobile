@@ -18,7 +18,7 @@ import type { PaintFormulaComponentCreateFormData } from '../../../../../../sche
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import {
   IconFlask,
@@ -93,16 +93,16 @@ export default function CreateComponentScreen() {
   // Handle form submission
   const onSubmit = async (data: PaintFormulaComponentCreateFormData) => {
     if (!canCreate) {
-      showToast("Você não tem permissão para adicionar componentes", "error");
+      Alert.alert("Erro", "Você não tem permissão para adicionar componentes");
       return;
     }
 
     try {
       await createComponent(data);
-      showToast("Componente adicionado com sucesso", "success");
+      // API client already shows success alert
       router.back();
     } catch (error: any) {
-      showToast(error.message || "Erro ao adicionar componente", "error");
+      // API client already shows error alert
     }
   };
 

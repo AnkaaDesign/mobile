@@ -1,5 +1,5 @@
 
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
@@ -12,7 +12,7 @@ import type { Paint, Formula } from '../../../../types';
 import { routes } from '@/constants';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import * as Clipboard from 'expo-clipboard';
-import { showToast } from '@/components/ui/toast';
+// import { showToast } from '@/components/ui/toast';
 import { useTheme } from '@/lib/theme';
 import { spacing, fontSize } from '@/constants/design-system';
 
@@ -36,17 +36,9 @@ Preço/L: ${formula.pricePerLiter != null ? formatCurrency(Number(formula.priceP
 Densidade: ${formula.density != null ? `${Number(formula.density).toFixed(3)} g/ml` : '-'}`;
 
       await Clipboard.setStringAsync(formulaText);
-      showToast({
-        title: 'Fórmula copiada!',
-        variant: 'success',
-        duration: 3000,
-      });
+      Alert.alert("Sucesso", "Fórmula copiada!");
     } catch (error) {
-      showToast({
-        title: 'Erro ao copiar',
-        variant: 'error',
-        duration: 3000,
-      });
+      Alert.alert("Erro", "Erro ao copiar");
     }
   };
 

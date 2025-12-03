@@ -66,7 +66,7 @@ export default function CreateCuttingRequestScreen() {
     mode: "onChange",
   });
 
-  const watchedOrigin = watch("origin");
+  const _watchedOrigin = watch("origin");
 
   const onSubmit = async (data: CutCreateFormData) => {
     if (!canCreate) {

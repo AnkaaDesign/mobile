@@ -98,7 +98,7 @@ export default function ActivityDetailScreen() {
             try {
               await deleteAsync(params.id!);
               router.back();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível excluir a movimentação");
             }
           },

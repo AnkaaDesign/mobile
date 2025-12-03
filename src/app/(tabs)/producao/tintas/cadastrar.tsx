@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Stack, useRouter } from "expo-router";
-import { showToast } from "@/components/ui/toast";
+import { Alert } from "react-native";
+// import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { usePaintMutations, usePaintFormulaMutations } from "@/hooks";
@@ -59,17 +60,11 @@ export default function CreatePaintScreen() {
         }
       }
 
-      showToast({
-        message: "Tinta criada com sucesso!",
-        type: "success",
-      });
+      // API client already shows success alert
       router.back();
     } catch (error) {
       console.error("Error creating paint:", error);
-      showToast({
-        message: "Erro ao criar tinta",
-        type: "error",
-      });
+      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }

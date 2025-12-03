@@ -59,16 +59,16 @@ export interface BorrowOrderBy {
 // Response Interfaces
 // =====================
 
-export interface BorrowGetUniqueResponse extends BaseGetUniqueResponse<Borrow> {}
-export interface BorrowGetManyResponse extends BaseGetManyResponse<Borrow> {}
-export interface BorrowCreateResponse extends BaseCreateResponse<Borrow> {}
-export interface BorrowUpdateResponse extends BaseUpdateResponse<Borrow> {}
-export interface BorrowDeleteResponse extends BaseDeleteResponse {}
+export type BorrowGetUniqueResponse = BaseGetUniqueResponse<Borrow>;
+export type BorrowGetManyResponse = BaseGetManyResponse<Borrow>;
+export type BorrowCreateResponse = BaseCreateResponse<Borrow>;
+export type BorrowUpdateResponse = BaseUpdateResponse<Borrow>;
+export type BorrowDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface BorrowBatchCreateResponse<T = any> extends BaseBatchResponse<Borrow, T> {}
-export interface BorrowBatchUpdateResponse<T = any> extends BaseBatchResponse<Borrow, T & { id: string }> {}
-export interface BorrowBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type BorrowBatchCreateResponse<T = any> = BaseBatchResponse<Borrow, T>;
+export type BorrowBatchUpdateResponse<T = any> = BaseBatchResponse<Borrow, T & { id: string }>;
+export type BorrowBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

@@ -77,6 +77,7 @@ export const layoutService = {
     }
 
     // No photo - send as JSON
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { photoUri, ...layoutData } = data;
     return apiClient.post<LayoutCreateResponse>(`/layout/truck/${truckId}/${side}`, layoutData);
   },

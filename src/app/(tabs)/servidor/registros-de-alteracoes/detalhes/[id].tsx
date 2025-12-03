@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useChangeLog } from "@/hooks";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Header } from "@/components/ui/header";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { IconFileText, IconRefresh } from "@tabler/icons-react-native";
 import { TouchableOpacity } from "react-native";
 
@@ -46,7 +46,7 @@ export default function ChangeLogDetailsScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 

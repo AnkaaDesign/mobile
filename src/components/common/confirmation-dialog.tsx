@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { IconAlertTriangle, IconTrash, IconX, IconCheck } from '@tabler/icons-react-native';
+import { IconAlertTriangle, IconTrash, IconCheck } from '@tabler/icons-react-native';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
 import { useTheme } from '@/lib/theme';
-import { spacing, fontSize, fontWeight, borderRadius } from '@/constants/design-system';
+import { spacing, borderRadius } from '@/constants/design-system';
 
 export type ConfirmationVariant = 'default' | 'destructive' | 'warning' | 'success';
 

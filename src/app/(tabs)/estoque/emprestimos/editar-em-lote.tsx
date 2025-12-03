@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { NumberInput } from "@/components/ui/number-input";
 import { Combobox } from "@/components/ui/combobox";
 import { SkeletonCard } from "@/components/ui/loading";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast"; // Replaced with Alert.alert()
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { useBorrows, useBorrowBatchMutations } from "@/hooks";
 import { routeToMobilePath } from "@/utils/route-mapper";
@@ -161,30 +161,32 @@ function BatchEditLoansScreen() {
         const { totalSuccess, totalFailed } = result.data;
 
         if (totalFailed === 0) {
-          showToast({
-            message: `${totalSuccess} empréstimo(s) atualizado(s) com sucesso!`,
-            type: "success",
-          });
-          router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
+          Alert.alert(
+            "Sucesso",
+            `${totalSuccess} empréstimo(s) atualizado(s) com sucesso!`,
+            [{ text: "OK", onPress: () => router.replace(routeToMobilePath(routes.inventory.borrows.root) as any) }]
+          );
         } else {
-          showToast({
-            message: `${totalSuccess} sucesso(s), ${totalFailed} falha(s)`,
-            type: "warning",
-          });
+          Alert.alert(
+            "Atenção",
+            `${totalSuccess} sucesso(s), ${totalFailed} falha(s)`,
+            [{ text: "OK" }]
+          );
         }
       } else {
-        showToast({
-          message: "Empréstimos atualizados com sucesso!",
-          type: "success",
-        });
-        router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
+        Alert.alert(
+          "Sucesso",
+          "Empréstimos atualizados com sucesso!",
+          [{ text: "OK", onPress: () => router.replace(routeToMobilePath(routes.inventory.borrows.root) as any) }]
+        );
       }
     } catch (error: any) {
       console.error("Error during batch update:", error);
-      showToast({
-        message: error.message || "Erro ao atualizar empréstimos",
-        type: "error",
-      });
+      Alert.alert(
+        "Erro",
+        error.message || "Erro ao atualizar empréstimos",
+        [{ text: "OK" }]
+      );
     } finally {
       setIsSubmitting(false);
     }

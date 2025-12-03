@@ -76,7 +76,7 @@ export const safeLocalStorage = {
     if (isWebEnvironment()) {
       try {
         return (globalThis as any).localStorage.getItem(key);
-      } catch (error) {
+      } catch {
         return null;
       }
     }
@@ -91,7 +91,7 @@ export const safeLocalStorage = {
     if (isWebEnvironment()) {
       try {
         (globalThis as any).localStorage.setItem(key, value);
-      } catch (error) {
+      } catch {
         // Silent fail
       }
     } else {
@@ -104,7 +104,7 @@ export const safeLocalStorage = {
     if (isWebEnvironment()) {
       try {
         (globalThis as any).localStorage.removeItem(key);
-      } catch (error) {
+      } catch {
         // Silent fail
       }
     } else {
@@ -117,7 +117,7 @@ export const safeLocalStorage = {
     if (isWebEnvironment()) {
       try {
         (globalThis as any).localStorage.clear();
-      } catch (error) {
+      } catch {
         // Silent fail
       }
     } else {

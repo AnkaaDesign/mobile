@@ -10,10 +10,8 @@ import { Slider } from '@/components/ui/slider';
 import { Combobox } from '@/components/ui/combobox';
 import {
   PAINT_FINISH,
-  COLOR_PALETTE,
   TRUCK_MANUFACTURER,
   PAINT_FINISH_LABELS,
-  COLOR_PALETTE_LABELS,
   TRUCK_MANUFACTURER_LABELS,
 } from '@/constants';
 import { usePaintTypes, usePaintBrands } from '@/hooks';
@@ -24,7 +22,6 @@ interface PaintFilterDrawerProps {
     paintBrandIds?: string[];
     finishes?: string[];
     manufacturers?: string[];
-    palettes?: string[];
     hasFormulas?: boolean;
     similarColor?: string;
     similarColorThreshold?: number;
@@ -78,11 +75,6 @@ export function PaintFilterDrawer({
   const manufacturerOptions = Object.values(TRUCK_MANUFACTURER).map((manufacturer) => ({
     value: manufacturer,
     label: TRUCK_MANUFACTURER_LABELS[manufacturer] || manufacturer,
-  }));
-
-  const paletteOptions = Object.values(COLOR_PALETTE).map((palette) => ({
-    value: palette,
-    label: COLOR_PALETTE_LABELS[palette] || palette,
   }));
 
   const handleToggle = useCallback((key: string, value: boolean) => {
@@ -213,18 +205,6 @@ export function PaintFilterDrawer({
             placeholder="Montadora"
             searchPlaceholder="Buscar montadoras..."
             emptyText="Nenhuma montadora encontrada"
-          />
-        </View>
-
-        <View style={styles.filterGroup}>
-          <Combobox
-            mode="multiple"
-            options={paletteOptions}
-            value={localFilters.palettes || []}
-            onValueChange={(values) => handleChange("palettes", values)}
-            placeholder="Paleta de Cor"
-            searchPlaceholder="Buscar paletas..."
-            emptyText="Nenhuma paleta encontrada"
           />
         </View>
 

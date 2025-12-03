@@ -108,11 +108,11 @@ export interface CutWhere {
 // =====================
 
 // Cut responses
-export interface CutGetUniqueResponse extends BaseGetUniqueResponse<Cut> {}
-export interface CutGetManyResponse extends BaseGetManyResponse<Cut> {}
-export interface CutCreateResponse extends BaseCreateResponse<Cut> {}
-export interface CutUpdateResponse extends BaseUpdateResponse<Cut> {}
-export interface CutDeleteResponse extends BaseDeleteResponse {}
+export type CutGetUniqueResponse = BaseGetUniqueResponse<Cut>;
+export type CutGetManyResponse = BaseGetManyResponse<Cut>;
+export type CutCreateResponse = BaseCreateResponse<Cut>;
+export type CutUpdateResponse = BaseUpdateResponse<Cut>;
+export type CutDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Types
@@ -144,6 +144,6 @@ export interface CutBatchUpdateData {
   parentCutId?: string | null;
 }
 
-export interface CutBatchCreateResponse<T = any> extends BaseBatchResponse<Cut, T> {}
-export interface CutBatchUpdateResponse<T = any> extends BaseBatchResponse<Cut, T & { id: string }> {}
-export interface CutBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type CutBatchCreateResponse<T = any> = BaseBatchResponse<Cut, T>;
+export type CutBatchUpdateResponse<T = any> = BaseBatchResponse<Cut, T & { id: string }>;
+export type CutBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

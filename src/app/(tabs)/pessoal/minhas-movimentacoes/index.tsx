@@ -10,7 +10,7 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { ListActionButton } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
+import { spacing } from "@/constants/design-system";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PersonalActivityTable, createColumnDefinitions } from "@/components/personal/activity/list/personal-activity-table";

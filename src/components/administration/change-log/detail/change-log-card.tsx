@@ -21,7 +21,6 @@ import {
   IconArchive,
   IconCheck,
   IconX,
-  IconRefresh,
 } from "@tabler/icons-react-native";
 
 interface ChangeLogCardProps {

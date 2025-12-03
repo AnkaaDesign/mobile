@@ -10,7 +10,8 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { HistoryTableRowSwipe } from "./history-table-row-swipe";
 import { formatDate, formatChassis } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { TASK_STATUS, TASK_STATUS_LABELS } from "@/constants";
+import { TASK_STATUS, TASK_STATUS_LABELS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS } from "@/constants";
+import { getBadgeVariantFromStatus } from "@/components/ui/badge";
 import type { SortConfig } from '@/lib/sort-utils';
 import { TaskSectorModal, TaskStatusModal } from "../modals";
 
@@ -280,6 +281,31 @@ export const createColumnDefinitions = (): TableColumn[] => [
       </ThemedText>
     ),
   },
+  {
+    key: "commission",
+    header: "Comissão",
+    align: "center",
+    sortable: true,
+    width: 0,
+    accessor: (task: Task) => {
+      if (!task.commission) {
+        return (
+          <ThemedText style={styles.mutedText} numberOfLines={1}>
+            -
+          </ThemedText>
+        );
+      }
+      const variant = getBadgeVariantFromStatus(task.commission, "COMMISSION_STATUS");
+      const label = COMMISSION_STATUS_LABELS[task.commission as COMMISSION_STATUS] || task.commission;
+      return (
+        <View style={styles.centerAlign}>
+          <Badge variant={variant} size="sm">
+            <ThemedText style={styles.badgeText}>{label}</ThemedText>
+          </Badge>
+        </View>
+      );
+    },
+  },
 ];
 
 export const HistoryTable = React.memo<HistoryTableProps>(
@@ -336,6 +362,7 @@ export const HistoryTable = React.memo<HistoryTableProps>(
         services: 0.9,
         details: 2.0,
         observation: 2.0,
+        commission: 1.4,
       };
 
       // Filter to visible columns
@@ -752,8 +779,7 @@ const styles = StyleSheet.create({
   flatList: {
     flex: 1,
   },
-  row: {
-  },
+  row: {},
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch",

@@ -61,16 +61,16 @@ export interface BudgetOrderBy {
 // Response Interfaces - Budget
 // =====================
 
-export interface BudgetGetUniqueResponse extends BaseGetUniqueResponse<Budget> {}
-export interface BudgetGetManyResponse extends BaseGetManyResponse<Budget> {}
-export interface BudgetCreateResponse extends BaseCreateResponse<Budget> {}
-export interface BudgetUpdateResponse extends BaseUpdateResponse<Budget> {}
-export interface BudgetDeleteResponse extends BaseDeleteResponse {}
+export type BudgetGetUniqueResponse = BaseGetUniqueResponse<Budget>;
+export type BudgetGetManyResponse = BaseGetManyResponse<Budget>;
+export type BudgetCreateResponse = BaseCreateResponse<Budget>;
+export type BudgetUpdateResponse = BaseUpdateResponse<Budget>;
+export type BudgetDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses - Budget
 // =====================
 
-export interface BudgetBatchCreateResponse<T = any> extends BaseBatchResponse<Budget, T> {}
-export interface BudgetBatchUpdateResponse<T = any> extends BaseBatchResponse<Budget, T & { id: string }> {}
-export interface BudgetBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type BudgetBatchCreateResponse<T = any> = BaseBatchResponse<Budget, T>;
+export type BudgetBatchUpdateResponse<T = any> = BaseBatchResponse<Budget, T & { id: string }>;
+export type BudgetBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

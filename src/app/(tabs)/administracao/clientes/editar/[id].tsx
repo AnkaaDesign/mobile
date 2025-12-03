@@ -10,7 +10,7 @@ import { useCepLookup } from "@/hooks/use-cep-lookup";
 import { customerUpdateSchema, type CustomerUpdateFormData } from "@/schemas";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getEconomicActivities, createEconomicActivity, getEconomicActivityById } from "@/api-client/economic-activity";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { Input, Combobox, Button, ErrorScreen, Skeleton } from "@/components/ui";
 import { FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
@@ -21,7 +21,7 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
 import { PhoneManager } from "@/components/administration/customer/form/phone-manager";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
-import { LogoUpload } from "@/components/administration/customer/form/logo-upload";
+import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { Text } from "@/components/ui/text";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
@@ -35,7 +35,7 @@ export default function CustomerEditScreen() {
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cnpj");
-  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoFiles, setLogoFiles] = useState<FilePickerItem[]>([]);
   const [economicActivityInitialOptions, setEconomicActivityInitialOptions] = useState<Array<{ value: string; label: string }>>([]);
   const queryClient = useQueryClient();
 
@@ -97,7 +97,7 @@ export default function CustomerEditScreen() {
     onSuccess: async (data) => {
       const currentValues = watch();
 
-      // Autofill fields with data from Brasil API, allowing updates to existing data
+      // Autofill company info fields from Brasil API
       setValue("fantasyName", data.fantasyName, { shouldDirty: true, shouldValidate: true });
 
       if (data.corporateName) {
@@ -106,30 +106,21 @@ export default function CustomerEditScreen() {
       if (data.email) {
         setValue("email", data.email, { shouldDirty: true, shouldValidate: true });
       }
+
+      // Only set CEP from CNPJ - the CEP lookup will fill the rest of the address fields
+      // This ensures more accurate address data from the postal code API
       if (data.zipCode) {
         setValue("zipCode", data.zipCode, { shouldDirty: true, shouldValidate: true });
       }
-      if (data.streetType) {
-        setValue("logradouro", data.streetType, { shouldDirty: true, shouldValidate: true });
-      }
-      if (data.address) {
-        setValue("address", data.address, { shouldDirty: true, shouldValidate: true });
-      }
+
+      // Only set address number and complement from CNPJ (CEP API doesn't have these)
       if (data.addressNumber) {
         setValue("addressNumber", data.addressNumber, { shouldDirty: true, shouldValidate: true });
       }
       if (data.addressComplement) {
         setValue("addressComplement", data.addressComplement, { shouldDirty: true, shouldValidate: true });
       }
-      if (data.neighborhood) {
-        setValue("neighborhood", data.neighborhood, { shouldDirty: true, shouldValidate: true });
-      }
-      if (data.city) {
-        setValue("city", data.city, { shouldDirty: true, shouldValidate: true });
-      }
-      if (data.state) {
-        setValue("state", data.state, { shouldDirty: true, shouldValidate: true });
-      }
+
       if (data.phones && data.phones.length > 0) {
         const currentPhones = currentValues.phones || [];
         const newPhones = data.phones.filter(phone => !currentPhones.includes(phone));
@@ -272,6 +263,15 @@ export default function CustomerEditScreen() {
             console.error("Error loading economic activity:", error);
           });
       }
+
+      // Initialize logo files if existing logo
+      if (customerData.logo?.url) {
+        setLogoFiles([{
+          uri: customerData.logo.url as string,
+          name: customerData.logo.name || "logo",
+          type: customerData.logo.mimeType || "image/jpeg",
+        }]);
+      }
     }
   }, [customer, isLoading, reset]);
 
@@ -283,7 +283,7 @@ export default function CustomerEditScreen() {
       let submitData: CustomerUpdateFormData | any = data;
 
       // If we have a new logo file, create FormData
-      if (logoFile) {
+      if (logoFiles.length > 0 && logoFiles[0].uri.startsWith("file://")) {
         const formData = new FormData();
 
         // Add all form fields
@@ -301,7 +301,12 @@ export default function CustomerEditScreen() {
         });
 
         // Add the logo file
-        formData.append("logo", logoFile as any);
+        const logoFile = logoFiles[0];
+        formData.append("logo", {
+          uri: logoFile.uri,
+          name: logoFile.name,
+          type: logoFile.type,
+        } as any);
 
         submitData = formData;
       }
@@ -309,14 +314,8 @@ export default function CustomerEditScreen() {
       const result = await updateAsync({ id: id!, data: submitData as CustomerUpdateFormData });
 
       if (result?.data) {
-        Alert.alert("Sucesso", "Cliente atualizado com sucesso!", [
-          {
-            text: "OK",
-            onPress: () => {
-              router.replace(routeToMobilePath(routes.administration.customers.details(id!)) as any);
-            },
-          },
-        ]);
+        // API client already shows success alert
+        router.replace(routeToMobilePath(routes.administration.customers.details(id!)) as any);
       } else {
         Alert.alert("Erro", "Erro ao atualizar cliente");
       }
@@ -328,7 +327,8 @@ export default function CustomerEditScreen() {
   };
 
   const handleCancel = () => {
-    if (isDirty || logoFile) {
+    const hasNewLogo = logoFiles.length > 0 && logoFiles[0].uri.startsWith("file://");
+    if (isDirty || hasNewLogo) {
       Alert.alert("Descartar Alterações", "Você tem alterações não salvas. Deseja descartá-las?", [
         { text: "Continuar Editando", style: "cancel" },
         { text: "Descartar", style: "destructive", onPress: () => router.push(routeToMobilePath(routes.administration.customers.list) as any) },
@@ -403,6 +403,69 @@ export default function CustomerEditScreen() {
             </View>
           </View>
           <View style={styles.content}>
+          <FormFieldGroup label="Tipo de Documento" required error={errors.cnpj?.message || errors.cpf?.message}>
+            <View style={styles.documentRow}>
+              <View style={styles.documentTypeContainer}>
+                <Button
+                  variant={documentType === "cnpj" ? "default" : "outline"}
+                  onPress={() => handleDocumentTypeChange("cnpj")}
+                  size="sm"
+                  style={styles.documentTypeButton}
+                  disabled={isSubmitting}
+                >
+                  <Text style={[styles.buttonText, documentType === "cnpj" && { color: colors.primaryForeground }]}>CNPJ</Text>
+                </Button>
+                <Button
+                  variant={documentType === "cpf" ? "default" : "outline"}
+                  onPress={() => handleDocumentTypeChange("cpf")}
+                  size="sm"
+                  style={styles.documentTypeButton}
+                  disabled={isSubmitting}
+                >
+                  <Text style={[styles.buttonText, documentType === "cpf" && { color: colors.primaryForeground }]}>CPF</Text>
+                </Button>
+              </View>
+
+              <View style={styles.documentInputField}>
+                {documentType === "cnpj" ? (
+                  <Controller
+                    control={control}
+                    name="cnpj"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <Input
+                        value={value ? formatCNPJ(String(value)) : ""}
+                        onChangeText={(text) => onChange(text ? cleanCNPJ(String(text)) ?? "" : "")}
+                        onBlur={onBlur}
+                        placeholder="00.000.000/0000-00"
+                        keyboardType="numeric"
+                        maxLength={18}
+                        error={!!errors.cnpj}
+                        editable={!isSubmitting}
+                      />
+                    )}
+                  />
+                ) : (
+                  <Controller
+                    control={control}
+                    name="cpf"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <Input
+                        value={value ? formatCPF(String(value)) : ""}
+                        onChangeText={(text) => onChange(text ? cleanCPF(String(text)) ?? "" : "")}
+                        onBlur={onBlur}
+                        placeholder="000.000.000-00"
+                        keyboardType="numeric"
+                        maxLength={14}
+                        error={!!errors.cpf}
+                        editable={!isSubmitting}
+                      />
+                    )}
+                  />
+                )}
+              </View>
+            </View>
+          </FormFieldGroup>
+
           <FormFieldGroup
             label="Nome Fantasia"
             required
@@ -567,15 +630,9 @@ export default function CustomerEditScreen() {
                       if (result?.data?.id) {
                         setValue("economicActivityId", result.data.id, { shouldDirty: true, shouldValidate: true });
                       }
-                      showToast({
-                        message: result.message || "Atividade econômica configurada com sucesso",
-                        type: "success",
-                      });
+                      Alert.alert("Sucesso", result.message || "Atividade econômica configurada com sucesso");
                     } catch (error: any) {
-                      showToast({
-                        message: error.response?.data?.message || "Erro ao criar atividade econômica",
-                        type: "error",
-                      });
+                      // API client already shows error alert
                     }
                   }}
                   createLabel={(value) => `Criar CNAE "${value}"`}
@@ -592,80 +649,6 @@ export default function CustomerEditScreen() {
           </View>
         </Card>
 
-        {/* Document */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconFileText size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Documento</ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-          <FormFieldGroup label="Tipo de Documento" required error={errors.cnpj?.message || errors.cpf?.message}>
-            <View style={styles.documentRow}>
-              <View style={styles.documentTypeContainer}>
-                <Button
-                  variant={documentType === "cnpj" ? "default" : "outline"}
-                  onPress={() => handleDocumentTypeChange("cnpj")}
-                  size="sm"
-                  style={styles.documentTypeButton}
-                  disabled={isSubmitting}
-                >
-                  <Text style={[styles.buttonText, documentType === "cnpj" && { color: colors.primaryForeground }]}>CNPJ</Text>
-                </Button>
-                <Button
-                  variant={documentType === "cpf" ? "default" : "outline"}
-                  onPress={() => handleDocumentTypeChange("cpf")}
-                  size="sm"
-                  style={styles.documentTypeButton}
-                  disabled={isSubmitting}
-                >
-                  <Text style={[styles.buttonText, documentType === "cpf" && { color: colors.primaryForeground }]}>CPF</Text>
-                </Button>
-              </View>
-
-              <View style={styles.documentInputField}>
-                {documentType === "cnpj" ? (
-                  <Controller
-                    control={control}
-                    name="cnpj"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <Input
-                        value={value ? formatCNPJ(String(value)) : ""}
-                        onChangeText={(text) => onChange(text ? cleanCNPJ(String(text)) ?? "" : "")}
-                        onBlur={onBlur}
-                        placeholder="00.000.000/0000-00"
-                        keyboardType="numeric"
-                        maxLength={18}
-                        error={!!errors.cnpj}
-                        editable={!isSubmitting}
-                      />
-                    )}
-                  />
-                ) : (
-                  <Controller
-                    control={control}
-                    name="cpf"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <Input
-                        value={value ? formatCPF(String(value)) : ""}
-                        onChangeText={(text) => onChange(text ? cleanCPF(String(text)) ?? "" : "")}
-                        onBlur={onBlur}
-                        placeholder="000.000.000-00"
-                        keyboardType="numeric"
-                        maxLength={14}
-                        error={!!errors.cpf}
-                        editable={!isSubmitting}
-                      />
-                    )}
-                  />
-                )}
-              </View>
-            </View>
-          </FormFieldGroup>
-          </View>
-        </Card>
-
         {/* Logo */}
         <Card style={styles.card}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
@@ -676,7 +659,17 @@ export default function CustomerEditScreen() {
           </View>
           <View style={styles.content}>
           <FormFieldGroup label="Logo do Cliente">
-            <LogoUpload value={logoFile} onChange={setLogoFile} disabled={isSubmitting} existingLogoUrl={(customer.data.logo?.url as string) || undefined} />
+            <FilePicker
+              value={logoFiles}
+              onChange={setLogoFiles}
+              maxFiles={1}
+              placeholder="Adicionar logo"
+              helperText="Imagem do logo do cliente"
+              showCamera={true}
+              showGallery={true}
+              showFilePicker={false}
+              disabled={isSubmitting}
+            />
           </FormFieldGroup>
           </View>
         </Card>
@@ -891,7 +884,7 @@ export default function CustomerEditScreen() {
           onCancel={handleCancel}
           onSubmit={handleSubmit(onSubmit)}
           isSubmitting={isSubmitting}
-          canSubmit={isValid && (isDirty || !!logoFile)}
+          canSubmit={isValid && (isDirty || (logoFiles.length > 0 && logoFiles[0].uri.startsWith("file://")))}
           submitLabel="Salvar Alterações"
         />
       </KeyboardAvoidingView>

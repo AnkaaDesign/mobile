@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -9,15 +9,11 @@ import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
-import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
+import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
 import { SimpleFormActionBar } from "@/components/forms";
-import { Text } from "@/components/ui/text";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
-import { spacing } from "@/constants/design-system";
 
-import type { Maintenance } from "@/types";
-import { useMaintenance } from "@/hooks/useMaintenance";
 import { useItems } from "@/hooks/useItem";
 import { SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
@@ -61,7 +57,7 @@ export default function MaintenanceScheduleCreateScreen({
 
   const isLoading = false;
 
-  const handleSubmit = async (data: MaintenanceScheduleCreateFormData) => {
+  const handleSubmit = async (_data: MaintenanceScheduleCreateFormData) => {
     try {
       // TODO: Implement API call to create schedule
       Alert.alert("Sucesso", "Agendamento criado com sucesso");

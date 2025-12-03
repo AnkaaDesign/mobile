@@ -115,41 +115,41 @@ export interface ParkingSpotOrderBy {
 // =====================
 
 // Garage responses
-export interface GarageGetUniqueResponse extends BaseGetUniqueResponse<Garage> {}
-export interface GarageGetManyResponse extends BaseGetManyResponse<Garage> {}
-export interface GarageCreateResponse extends BaseCreateResponse<Garage> {}
-export interface GarageUpdateResponse extends BaseUpdateResponse<Garage> {}
-export interface GarageDeleteResponse extends BaseDeleteResponse {}
+export type GarageGetUniqueResponse = BaseGetUniqueResponse<Garage>;
+export type GarageGetManyResponse = BaseGetManyResponse<Garage>;
+export type GarageCreateResponse = BaseCreateResponse<Garage>;
+export type GarageUpdateResponse = BaseUpdateResponse<Garage>;
+export type GarageDeleteResponse = BaseDeleteResponse;
 
 // GarageLane responses
-export interface GarageLaneGetUniqueResponse extends BaseGetUniqueResponse<GarageLane> {}
-export interface GarageLaneGetManyResponse extends BaseGetManyResponse<GarageLane> {}
-export interface GarageLaneCreateResponse extends BaseCreateResponse<GarageLane> {}
-export interface GarageLaneUpdateResponse extends BaseUpdateResponse<GarageLane> {}
-export interface GarageLaneDeleteResponse extends BaseDeleteResponse {}
+export type GarageLaneGetUniqueResponse = BaseGetUniqueResponse<GarageLane>;
+export type GarageLaneGetManyResponse = BaseGetManyResponse<GarageLane>;
+export type GarageLaneCreateResponse = BaseCreateResponse<GarageLane>;
+export type GarageLaneUpdateResponse = BaseUpdateResponse<GarageLane>;
+export type GarageLaneDeleteResponse = BaseDeleteResponse;
 
 // ParkingSpot responses
-export interface ParkingSpotGetUniqueResponse extends BaseGetUniqueResponse<ParkingSpot> {}
-export interface ParkingSpotGetManyResponse extends BaseGetManyResponse<ParkingSpot> {}
-export interface ParkingSpotCreateResponse extends BaseCreateResponse<ParkingSpot> {}
-export interface ParkingSpotUpdateResponse extends BaseUpdateResponse<ParkingSpot> {}
-export interface ParkingSpotDeleteResponse extends BaseDeleteResponse {}
+export type ParkingSpotGetUniqueResponse = BaseGetUniqueResponse<ParkingSpot>;
+export type ParkingSpotGetManyResponse = BaseGetManyResponse<ParkingSpot>;
+export type ParkingSpotCreateResponse = BaseCreateResponse<ParkingSpot>;
+export type ParkingSpotUpdateResponse = BaseUpdateResponse<ParkingSpot>;
+export type ParkingSpotDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
 // Garage batch operations
-export interface GarageBatchCreateResponse<T = any> extends BaseBatchResponse<Garage, T> {}
-export interface GarageBatchUpdateResponse<T = any> extends BaseBatchResponse<Garage, T & { id: string }> {}
-export interface GarageBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type GarageBatchCreateResponse<T = any> = BaseBatchResponse<Garage, T>;
+export type GarageBatchUpdateResponse<T = any> = BaseBatchResponse<Garage, T & { id: string }>;
+export type GarageBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // GarageLane batch operations
-export interface GarageLaneBatchCreateResponse<T = any> extends BaseBatchResponse<GarageLane, T> {}
-export interface GarageLaneBatchUpdateResponse<T = any> extends BaseBatchResponse<GarageLane, T & { id: string }> {}
-export interface GarageLaneBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type GarageLaneBatchCreateResponse<T = any> = BaseBatchResponse<GarageLane, T>;
+export type GarageLaneBatchUpdateResponse<T = any> = BaseBatchResponse<GarageLane, T & { id: string }>;
+export type GarageLaneBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // ParkingSpot batch operations
-export interface ParkingSpotBatchCreateResponse<T = any> extends BaseBatchResponse<ParkingSpot, T> {}
-export interface ParkingSpotBatchUpdateResponse<T = any> extends BaseBatchResponse<ParkingSpot, T & { id: string }> {}
-export interface ParkingSpotBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type ParkingSpotBatchCreateResponse<T = any> = BaseBatchResponse<ParkingSpot, T>;
+export type ParkingSpotBatchUpdateResponse<T = any> = BaseBatchResponse<ParkingSpot, T & { id: string }>;
+export type ParkingSpotBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

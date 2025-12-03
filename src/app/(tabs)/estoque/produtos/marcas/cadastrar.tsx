@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { ItemBrandForm } from "@/components/inventory/item/brand/form/brand-form";
 import { useItemBrandMutations } from "@/hooks";
 import { itemBrandCreateSchema, type ItemBrandCreateFormData } from '../../../../../schemas';
@@ -18,14 +18,11 @@ export default function BrandCreateScreen() {
       const result = await createAsync(validatedData);
 
       if (result.success) {
-        showToast({
-          message: "Marca criada com sucesso!",
-          type: "success",
-        });
+        // API client already shows success alert
         router.replace(routeToMobilePath(routes.inventory.products.brands.root) as any);
       }
     } catch (error) {
-      // Error handled by mutation hook
+      // API client already shows error alert
       console.error("Error creating brand:", error);
     }
   };

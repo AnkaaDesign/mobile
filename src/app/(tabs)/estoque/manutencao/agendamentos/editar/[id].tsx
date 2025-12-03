@@ -58,7 +58,7 @@ export default function MaintenanceScheduleEditScreen() {
 
   const isLoading = scheduleLoading;
 
-  const handleSubmit = async (data: MaintenanceScheduleUpdateFormData) => {
+  const handleSubmit = async (_data: MaintenanceScheduleUpdateFormData) => {
     try {
       // TODO: Implement API call to update schedule
       Alert.alert("Sucesso", "Agendamento atualizado com sucesso");

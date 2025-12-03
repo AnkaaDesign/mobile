@@ -8,7 +8,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconShieldCheck, IconEdit, IconTrash } from "@tabler/icons-react-native";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants/enums";
 
@@ -62,7 +62,7 @@ export default function TeamPpeDeliveryDetailScreen() {
   const handleEdit = () => {
     if (delivery) {
       // TODO: Navigate to edit page when implemented
-      showToast({ message: "Edição ainda não implementada", type: "info" });
+      Alert.alert("Informação", "Edição ainda não implementada");
     }
   };
 
@@ -83,10 +83,10 @@ export default function TeamPpeDeliveryDetailScreen() {
           onPress: async () => {
             try {
               await deleteMutation.mutateAsync(delivery.id);
-              showToast({ message: "Entrega excluída com sucesso", type: "success" });
+              // API client already shows success alert
               router.back();
             } catch (error) {
-              showToast({ message: "Erro ao excluir entrega", type: "error" });
+              // API client already shows error alert
               console.error("Error deleting delivery:", error);
             }
           },
@@ -99,7 +99,7 @@ export default function TeamPpeDeliveryDetailScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 

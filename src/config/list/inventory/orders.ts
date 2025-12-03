@@ -5,6 +5,7 @@ import {
   ORDER_STATUS_LABELS,
 } from '@/constants'
 import { canEditOrders } from '@/utils/permissions/entity-permissions'
+import { isTabletWidth } from '@/lib/table-utils'
 
 
 export const ordersListConfig: ListConfig<Order> = {
@@ -124,7 +125,9 @@ export const ordersListConfig: ListConfig<Order> = {
         render: (order) => order.notes || '-',
       },
     ],
-    defaultVisible: ['description', 'status', 'itemsCount'],
+    defaultVisible: isTabletWidth()
+      ? ['description', 'status', 'itemsCount', 'forecast']
+      : ['description', 'status', 'itemsCount'],
     rowHeight: 72,
     actions: [
       {

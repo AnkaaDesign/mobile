@@ -11,7 +11,7 @@ import { Icon } from '@/components/ui/icon';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorScreen } from '@/components/ui/error-screen';
 import { SearchBar } from '@/components/ui/search-bar';
-import { useToast } from '@/hooks/use-toast';
+// import { useToast } from '@/hooks/use-toast';
 
 interface ServiceItem {
   name: string;
@@ -29,7 +29,6 @@ export default function ServerServicesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
-  useToast();
 
   // Query for services
   const { data: servicesData, isLoading, error, refetch } = useQuery({

@@ -16,7 +16,7 @@ import {
 } from "@tabler/icons-react-native";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { TouchableOpacity } from "react-native";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { hasPrivilege } from "@/utils";
@@ -80,7 +80,7 @@ export default function SectorDetailScreen() {
 
   const handleEdit = () => {
     if (!canEdit) {
-      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para editar");
       return;
     }
     if (sector) {
@@ -90,7 +90,7 @@ export default function SectorDetailScreen() {
 
   const handleDelete = () => {
     if (!canDelete) {
-      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para excluir");
       return;
     }
 
@@ -110,10 +110,10 @@ export default function SectorDetailScreen() {
           onPress: async () => {
             try {
               await deleteAsync(id);
-              showToast({ message: "Setor excluído com sucesso", type: "success" });
+              // API client already shows success alert
               router.back();
-            } catch (error) {
-              showToast({ message: "Erro ao excluir setor", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },
@@ -125,7 +125,7 @@ export default function SectorDetailScreen() {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-    showToast({ message: "Detalhes atualizados", type: "success" });
+    Alert.alert("Sucesso", "Detalhes atualizados");
   }, [refetch]);
 
   if (isLoading) {

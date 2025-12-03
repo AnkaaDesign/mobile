@@ -86,29 +86,29 @@ export interface PreferencesOrderBy {
 // =====================
 
 // NotificationPreference responses
-export interface NotificationPreferenceGetUniqueResponse extends BaseGetUniqueResponse<NotificationPreference> {}
-export interface NotificationPreferenceGetManyResponse extends BaseGetManyResponse<NotificationPreference> {}
-export interface NotificationPreferenceCreateResponse extends BaseCreateResponse<NotificationPreference> {}
-export interface NotificationPreferenceUpdateResponse extends BaseUpdateResponse<NotificationPreference> {}
-export interface NotificationPreferenceDeleteResponse extends BaseDeleteResponse {}
+export type NotificationPreferenceGetUniqueResponse = BaseGetUniqueResponse<NotificationPreference>;
+export type NotificationPreferenceGetManyResponse = BaseGetManyResponse<NotificationPreference>;
+export type NotificationPreferenceCreateResponse = BaseCreateResponse<NotificationPreference>;
+export type NotificationPreferenceUpdateResponse = BaseUpdateResponse<NotificationPreference>;
+export type NotificationPreferenceDeleteResponse = BaseDeleteResponse;
 
 // Preferences responses
-export interface PreferencesGetUniqueResponse extends BaseGetUniqueResponse<Preferences> {}
-export interface PreferencesGetManyResponse extends BaseGetManyResponse<Preferences> {}
-export interface PreferencesCreateResponse extends BaseCreateResponse<Preferences> {}
-export interface PreferencesUpdateResponse extends BaseUpdateResponse<Preferences> {}
-export interface PreferencesDeleteResponse extends BaseDeleteResponse {}
+export type PreferencesGetUniqueResponse = BaseGetUniqueResponse<Preferences>;
+export type PreferencesGetManyResponse = BaseGetManyResponse<Preferences>;
+export type PreferencesCreateResponse = BaseCreateResponse<Preferences>;
+export type PreferencesUpdateResponse = BaseUpdateResponse<Preferences>;
+export type PreferencesDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
 // NotificationPreference batch operations
-export interface NotificationPreferenceBatchCreateResponse<T = any> extends BaseBatchResponse<NotificationPreference, T> {}
-export interface NotificationPreferenceBatchUpdateResponse<T = any> extends BaseBatchResponse<NotificationPreference, T & { id: string }> {}
-export interface NotificationPreferenceBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type NotificationPreferenceBatchCreateResponse<T = any> = BaseBatchResponse<NotificationPreference, T>;
+export type NotificationPreferenceBatchUpdateResponse<T = any> = BaseBatchResponse<NotificationPreference, T & { id: string }>;
+export type NotificationPreferenceBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // Preferences batch operations
-export interface PreferencesBatchCreateResponse<T = any> extends BaseBatchResponse<Preferences, T> {}
-export interface PreferencesBatchUpdateResponse<T = any> extends BaseBatchResponse<Preferences, T & { id: string }> {}
-export interface PreferencesBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type PreferencesBatchCreateResponse<T = any> = BaseBatchResponse<Preferences, T>;
+export type PreferencesBatchUpdateResponse<T = any> = BaseBatchResponse<Preferences, T & { id: string }>;
+export type PreferencesBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

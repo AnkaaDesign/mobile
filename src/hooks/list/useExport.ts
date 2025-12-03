@@ -125,7 +125,7 @@ async function exportToJSON<T>(data: T[], config: ExportConfig): Promise<string>
 }
 
 // Helper: Export to PDF (simplified - could use react-native-html-to-pdf)
-async function exportToPDF<T>(data: T[], config: ExportConfig): Promise<string> {
+async function exportToPDF<T>(_data: T[], _config: ExportConfig): Promise<string> {
   // For now, create a simple HTML and convert to PDF
   // This would need react-native-html-to-pdf or similar library
   // Placeholder implementation:

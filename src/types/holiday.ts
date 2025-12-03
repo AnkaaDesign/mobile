@@ -27,11 +27,11 @@ export interface HolidayIncludes {
 // Response Types
 // =====================
 
-export interface HolidayGetUniqueResponse extends BaseGetUniqueResponse<Holiday> {}
-export interface HolidayGetManyResponse extends BaseGetManyResponse<Holiday> {}
-export interface HolidayCreateResponse extends BaseCreateResponse<Holiday> {}
-export interface HolidayUpdateResponse extends BaseUpdateResponse<Holiday> {}
-export interface HolidayDeleteResponse extends BaseDeleteResponse {}
-export interface HolidayBatchCreateResponse<T> extends BatchCreateResponse<T> {}
-export interface HolidayBatchUpdateResponse<T> extends BatchUpdateResponse<T> {}
-export interface HolidayBatchDeleteResponse extends BatchDeleteResponse {}
+export type HolidayGetUniqueResponse = BaseGetUniqueResponse<Holiday>;
+export type HolidayGetManyResponse = BaseGetManyResponse<Holiday>;
+export type HolidayCreateResponse = BaseCreateResponse<Holiday>;
+export type HolidayUpdateResponse = BaseUpdateResponse<Holiday>;
+export type HolidayDeleteResponse = BaseDeleteResponse;
+export type HolidayBatchCreateResponse<T> = BatchCreateResponse<T>;
+export type HolidayBatchUpdateResponse<T> = BatchUpdateResponse<T>;
+export type HolidayBatchDeleteResponse = BatchDeleteResponse;

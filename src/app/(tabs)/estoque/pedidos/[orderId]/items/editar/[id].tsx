@@ -101,7 +101,7 @@ export default function EditOrderItemScreen() {
   const onSubmit = async (data: OrderItemUpdateFormData) => {
     try {
       await update({ id: id!, data });
-    } catch (error) {
+    } catch (_error) {
       console.error("Error updating order item:", error);
       Alert.alert("Erro", "Não foi possível atualizar o item. Tente novamente.");
     }
@@ -125,7 +125,7 @@ export default function EditOrderItemScreen() {
   const handleRefresh = async () => {
     try {
       await refetch();
-    } catch (error) {
+    } catch (_error) {
       Alert.alert("Erro", "Não foi possível recarregar os dados.");
     }
   };

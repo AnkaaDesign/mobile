@@ -13,7 +13,6 @@ import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section"
 import { SimpleFormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
-import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 

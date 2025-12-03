@@ -10,7 +10,7 @@ import { usePaintType, usePaintTypeMutations } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES, PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from "@/constants";
 import { hasPrivilege, formatDate } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -72,13 +72,13 @@ export default function PaintTypeDetailsScreen() {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-    showToast({ message: "Detalhes atualizados", type: "success" });
+    Alert.alert("Sucesso", "Detalhes atualizados");
   };
 
   // Handle edit
   const handleEdit = () => {
     if (!canEdit) {
-      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para editar");
       return;
     }
     router.push(`/pintura/tipos-de-tinta/editar/${id}`);
@@ -87,7 +87,7 @@ export default function PaintTypeDetailsScreen() {
   // Handle delete
   const handleDelete = () => {
     if (!canDelete) {
-      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para excluir");
       return;
     }
 
@@ -102,10 +102,10 @@ export default function PaintTypeDetailsScreen() {
           onPress: async () => {
             try {
               await deleteAsync(id as string);
-              showToast({ message: "Tipo de tinta excluído com sucesso", type: "success" });
+              Alert.alert("Sucesso", "Tipo de tinta excluído com sucesso");
               router.back();
-            } catch (error) {
-              showToast({ message: "Erro ao excluir tipo de tinta", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },

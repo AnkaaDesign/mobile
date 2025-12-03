@@ -91,16 +91,16 @@ export interface TruckOrderBy {
 // Response Interfaces
 // =====================
 
-export interface TruckGetUniqueResponse extends BaseGetUniqueResponse<Truck> {}
-export interface TruckGetManyResponse extends BaseGetManyResponse<Truck> {}
-export interface TruckCreateResponse extends BaseCreateResponse<Truck> {}
-export interface TruckUpdateResponse extends BaseUpdateResponse<Truck> {}
-export interface TruckDeleteResponse extends BaseDeleteResponse {}
+export type TruckGetUniqueResponse = BaseGetUniqueResponse<Truck>;
+export type TruckGetManyResponse = BaseGetManyResponse<Truck>;
+export type TruckCreateResponse = BaseCreateResponse<Truck>;
+export type TruckUpdateResponse = BaseUpdateResponse<Truck>;
+export type TruckDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface TruckBatchCreateResponse<T = any> extends BaseBatchResponse<Truck, T> {}
-export interface TruckBatchUpdateResponse<T = any> extends BaseBatchResponse<Truck, T & { id: string }> {}
-export interface TruckBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type TruckBatchCreateResponse<T = any> = BaseBatchResponse<Truck, T>;
+export type TruckBatchUpdateResponse<T = any> = BaseBatchResponse<Truck, T & { id: string }>;
+export type TruckBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

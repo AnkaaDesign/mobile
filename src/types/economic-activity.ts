@@ -56,19 +56,19 @@ export interface EconomicActivityOrderBy {
 // Response Interfaces
 // =====================
 
-export interface EconomicActivityGetUniqueResponse extends BaseGetUniqueResponse<EconomicActivity> {}
-export interface EconomicActivityGetManyResponse extends BaseGetManyResponse<EconomicActivity> {}
-export interface EconomicActivityCreateResponse extends BaseCreateResponse<EconomicActivity> {}
-export interface EconomicActivityUpdateResponse extends BaseUpdateResponse<EconomicActivity> {}
-export interface EconomicActivityDeleteResponse extends BaseDeleteResponse {}
+export type EconomicActivityGetUniqueResponse = BaseGetUniqueResponse<EconomicActivity>;
+export type EconomicActivityGetManyResponse = BaseGetManyResponse<EconomicActivity>;
+export type EconomicActivityCreateResponse = BaseCreateResponse<EconomicActivity>;
+export type EconomicActivityUpdateResponse = BaseUpdateResponse<EconomicActivity>;
+export type EconomicActivityDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface EconomicActivityBatchCreateResponse<T = any> extends BaseBatchResponse<EconomicActivity, T> {}
-export interface EconomicActivityBatchUpdateResponse<T = any> extends BaseBatchResponse<EconomicActivity, T & { id: string }> {}
-export interface EconomicActivityBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type EconomicActivityBatchCreateResponse<T = any> = BaseBatchResponse<EconomicActivity, T>;
+export type EconomicActivityBatchUpdateResponse<T = any> = BaseBatchResponse<EconomicActivity, T & { id: string }>;
+export type EconomicActivityBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // =====================
 // Form Data Types

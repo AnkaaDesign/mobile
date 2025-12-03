@@ -14,12 +14,14 @@ import { FormCard } from "@/components/ui/form-section";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formSpacing, formLayout } from "@/constants/form-styles";
-import { useUsers, useOrders, useOrderItems, useItems, useMultiStepForm, useKeyboardAwareScroll } from "@/hooks";
+import { useUsers, useOrders, useOrderItems, useItems, useMultiStepForm, useKeyboardAwareScroll, useBatchResultDialog } from "@/hooks";
 import { ACTIVITY_OPERATION, ACTIVITY_REASON } from "@/constants";
 import { ACTIVITY_REASON_LABELS } from "@/constants/enum-labels";
 import { FormSteps, FormStep } from "@/components/ui/form-steps";
 import { ItemSelectorTable } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { ActivityBatchResultModal, ActivityBatchResult } from "./activity-batch-result-modal";
+import type { BatchOperationResult } from "@/types/common";
 import {
   IconArrowLeft,
   IconArrowRight,
@@ -65,7 +67,7 @@ interface ActivityBatchCreateFormProps {
     orderId?: string | null;
     orderItemId?: string | null;
     items: Array<{ itemId: string; quantity: number }>;
-  }) => Promise<void>;
+  }) => Promise<BatchOperationResult<ActivityBatchResult, ActivityBatchResult> | void>;
   onCancel: () => void;
   isSubmitting?: boolean;
 }
@@ -109,6 +111,9 @@ export function ActivityBatchCreateForm({
   const insets = useSafeAreaInsets();
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
+  // Batch result dialog state
+  const { isOpen: isResultModalOpen, result: batchResult, openDialog: openResultModal, closeDialog: closeResultModal } = useBatchResultDialog<ActivityBatchResult, ActivityBatchResult>();
+
   // Keyboard visibility tracking
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -142,6 +147,8 @@ export function ActivityBatchCreateForm({
   const multiStepForm = useMultiStepForm<ActivityBatchFormData>({
     storageKey: "@activity_batch_form",
     totalSteps: 2,
+    // Expire after 1 hour to prevent stale data
+    expireAfterMs: 60 * 60 * 1000,
     defaultFormData: {
       operation: ACTIVITY_OPERATION.OUTBOUND,
       userId: null,
@@ -319,14 +326,17 @@ export function ActivityBatchCreateForm({
         })),
       };
 
-      await onSubmit(formData);
+      const result = await onSubmit(formData);
 
-      // Clear form state on success
-      await multiStepForm.resetForm();
+      // Show result modal if result is returned, reset form after modal is shown
+      if (result) {
+        await multiStepForm.resetForm();
+        openResultModal(result);
+      }
     } catch (error) {
       // Error handled by parent component
     }
-  }, [multiStepForm, onSubmit]);
+  }, [multiStepForm, onSubmit, openResultModal]);
 
   // Handle cancel with confirmation if form has data
   const handleCancel = useCallback(() => {
@@ -689,6 +699,15 @@ export function ActivityBatchCreateForm({
             </View>
           )}
         </KeyboardAvoidingView>
+
+        {/* Batch Result Modal */}
+        <ActivityBatchResultModal
+          open={isResultModalOpen}
+          onOpenChange={(open) => !open && closeResultModal()}
+          result={batchResult}
+          operationType="create"
+          onConfirm={onCancel}
+        />
       </SafeAreaView>
     </FormProvider>
   );

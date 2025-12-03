@@ -1,5 +1,5 @@
 
-import { View, StyleSheet, Linking, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Linking, TouchableOpacity, Alert } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
@@ -7,7 +7,7 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconMapPin, IconExternalLink } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
 import { formatCEP } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 interface AddressCardProps {
   customer: Customer;
@@ -31,10 +31,7 @@ export function AddressCard({ customer }: AddressCardProps) {
     const fullAddress = addressParts.join(", ");
 
     if (!fullAddress) {
-      showToast({
-        message: "Endereço incompleto",
-        type: "warning",
-      });
+      Alert.alert("Aviso", "Endereço incompleto");
       return;
     }
 
@@ -42,10 +39,7 @@ export function AddressCard({ customer }: AddressCardProps) {
     const url = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
 
     Linking.openURL(url).catch(() => {
-      showToast({
-        message: "Não foi possível abrir o mapa",
-        type: "error",
-      });
+      Alert.alert("Erro", "Não foi possível abrir o mapa");
     });
   };
 

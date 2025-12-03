@@ -21,8 +21,7 @@ import { BatchOperationResultDialog } from "@/components/common/batch-operation-
 import { useTheme } from "@/lib/theme";
 import { routes, MAINTENANCE_SCHEDULE_STATUS, MAINTENANCE_SCHEDULE_STATUS_LABELS, RESCHEDULE_REASON } from "@/constants";
 import { routeToMobilePath } from "@/utils/route-mapper";
-import { toast } from "@/lib/toast";
-import type { BatchOperationResult } from "@/types";
+// import { toast } from "@/lib/toast";
 
 interface BatchEditData {
   // Fields that can be batch edited
@@ -31,11 +30,6 @@ interface BatchEditData {
   nextRun?: Date | null;
   rescheduleReason?: string | null;
   lastRescheduleDate?: Date | null;
-}
-
-interface FieldChange {
-  field: keyof BatchEditData;
-  enabled: boolean;
 }
 
 // Status options for maintenance schedules
@@ -162,7 +156,7 @@ export default function MaintenanceScheduleBatchEditScreen() {
     // Validate before showing confirmation
     const validationError = validateBatchData();
     if (validationError) {
-      toast.error(validationError);
+      Alert.alert("Erro", validationError);
       return;
     }
 
@@ -233,22 +227,24 @@ export default function MaintenanceScheduleBatchEditScreen() {
         setBatchResult(batchOperationResult);
         setShowResultDialog(true);
 
-        // Show toast notification
+        // Show alert notification
         if (result.data.totalSuccess > 0) {
-          toast.success(
+          Alert.alert(
+            "Sucesso",
             `${result.data.totalSuccess} agendamento${result.data.totalSuccess !== 1 ? "s" : ""} atualizado${result.data.totalSuccess !== 1 ? "s" : ""} com sucesso`
           );
         }
 
         if (result.data.totalFailed > 0) {
-          toast.error(
+          Alert.alert(
+            "Erro",
             `${result.data.totalFailed} agendamento${result.data.totalFailed !== 1 ? "s" : ""} falhou ao atualizar`
           );
         }
       }
     } catch (error) {
       console.error("Batch update error:", error);
-      toast.error("Erro ao atualizar agendamentos");
+      // API client already shows error alert
 
       // Show error in dialog
       setBatchResult({

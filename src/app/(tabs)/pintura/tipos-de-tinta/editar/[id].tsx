@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
+import { View, ScrollView, ActivityIndicator, StyleSheet, Alert } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +19,7 @@ import type { PaintTypeUpdateFormData } from '../../../../../schemas';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import {
   IconTag,
   IconDroplet,
@@ -92,17 +92,17 @@ export default function EditPaintTypeScreen() {
   // Handle form submission
   const onSubmit = async (data: PaintTypeUpdateFormData) => {
     if (!canEdit) {
-      showToast("Você não tem permissão para editar", "error");
+      Alert.alert("Acesso negado", "Você não tem permissão para editar");
       return;
     }
 
     if (!id) {
-      showToast("ID do tipo de tinta não encontrado", "error");
+      Alert.alert("Erro", "ID do tipo de tinta não encontrado");
       return;
     }
 
     if (!isDirty) {
-      showToast("Nenhuma alteração foi feita", "info");
+      Alert.alert("Informação", "Nenhuma alteração foi feita");
       return;
     }
 
@@ -110,10 +110,10 @@ export default function EditPaintTypeScreen() {
 
     try {
       await update({ id, data });
-      showToast("Tipo de tinta atualizado com sucesso", "success");
+      // API client already shows success alert
       router.back();
-    } catch (error) {
-      showToast("Erro ao atualizar tipo de tinta", "error");
+    } catch (_error) {
+      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useBorrow } from "@/hooks";
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
@@ -14,7 +14,7 @@ import {
   IconHistory,
 } from "@tabler/icons-react-native";
 import { TouchableOpacity } from "react-native";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 // Import modular components
 import {
@@ -62,10 +62,7 @@ export default function BorrowDetailScreen() {
     if (borrow) {
       // For personal borrows, users typically cannot edit them
       // But we can show a toast or navigate to a return/request edit screen
-      showToast({
-        message: "Para fazer alterações, entre em contato com o almoxarifado",
-        type: "info",
-      });
+      Alert.alert("Informação", "Para fazer alterações, entre em contato com o almoxarifado");
     }
   };
 
@@ -73,7 +70,7 @@ export default function BorrowDetailScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 

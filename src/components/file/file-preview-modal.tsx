@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
@@ -93,7 +92,7 @@ export function FilePreviewModal({
   showThumbnailStrip = true,
   showImageCounter = true,
 }: FilePreviewModalProps) {
-  const { colors, isDark } = useTheme();
+  const { colors, isDark: _isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
   // State management
@@ -396,10 +395,6 @@ export function FilePreviewModal({
         // Clamp to boundaries with decay for momentum
         const maxTranslateX = ((SCREEN_WIDTH * scale.value) - SCREEN_WIDTH) / 2;
         const maxTranslateY = ((SCREEN_HEIGHT * scale.value) - SCREEN_HEIGHT) / 2;
-
-        // Calculate final position after this pan
-        const finalX = clamp(translateX.value, -maxTranslateX, maxTranslateX);
-        const finalY = clamp(translateY.value, -maxTranslateY, maxTranslateY);
 
         // Apply decay with boundaries
         translateX.value = withDecay({

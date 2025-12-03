@@ -1,11 +1,11 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { IconAlertTriangle, IconDeviceFloppy, IconPackage } from "@tabler/icons-react-native";
+import { IconAlertTriangle, IconDeviceFloppy } from "@tabler/icons-react-native";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -20,7 +20,7 @@ import { BatchOperationResultDialog } from "@/components/common/batch-operation-
 import { useActivities, useActivityBatchMutations } from "@/hooks";
 import { useUsersInfiniteMobile } from "@/hooks/use-users-infinite-mobile";
 import { useTheme } from "@/lib/theme";
-import { toast } from "@/lib/toast";
+// import { toast } from "@/lib/toast";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import {
   routes,
@@ -29,11 +29,10 @@ import {
   ACTIVITY_REASON,
   ACTIVITY_REASON_LABELS,
   USER_STATUS,
-  SECTOR_PRIVILEGES
 } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
-import type { Activity, BatchOperationResult } from "@/types";
+import type { Activity } from "@/types";
 
 // Schema for batch edit form
 const activityBatchEditSchema = z.object({
@@ -116,7 +115,6 @@ export default function BatchEditMovementsScreen() {
   const {
     control,
     handleSubmit,
-    setValue,
     watch,
     formState: { errors, isDirty },
   } = useForm<ActivityBatchEditFormData>({
@@ -194,25 +192,27 @@ export default function BatchEditMovementsScreen() {
         setBatchResult(batchOperationResult);
         setShowResultDialog(true);
 
-        // Show toast notification
+        // Show alert notification
         if (totalSuccess > 0) {
-          toast.success(
+          Alert.alert(
+            "Sucesso",
             `${totalSuccess} movimentação${totalSuccess !== 1 ? "ões" : ""} atualizada${totalSuccess !== 1 ? "s" : ""} com sucesso`
           );
         }
 
         if (totalFailed > 0) {
-          toast.error(
+          Alert.alert(
+            "Erro",
             `${totalFailed} movimentação${totalFailed !== 1 ? "ões" : ""} falhou${totalFailed !== 1 ? "aram" : ""} ao atualizar`
           );
         }
       } else {
-        toast.success("Movimentações atualizadas com sucesso");
+        Alert.alert("Sucesso", "Movimentações atualizadas com sucesso");
         router.replace(routeToMobilePath(routes.inventory.activities.list) as any);
       }
     } catch (error: any) {
       console.error("Error during batch update:", error);
-      toast.error(error.message || "Erro ao atualizar movimentações");
+      // API client already shows error alert
 
       // Show error in dialog
       setBatchResult({
@@ -382,7 +382,7 @@ export default function BatchEditMovementsScreen() {
 
         {/* Activity Items */}
         {activities.map((activity, index) => {
-          const watchedActivity = watchedActivities[index];
+          const _watchedActivity = watchedActivities[index];
 
           return (
             <Card

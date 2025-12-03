@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { IconFilter, IconX, IconCheck } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +13,6 @@ import {
   StringFilter,
   NumericRangeFilter,
 } from '@/components/common/filters';
-import { BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from '@/constants';
 import { spacing } from '@/constants/design-system';
 import { Input } from '@/components/ui/input';
 

@@ -84,7 +84,7 @@ export default function TimeAdjustmentRequestsListScreen() {
     setRefreshing(true);
     try {
       await refetch();
-    } catch (error) {
+    } catch (_error) {
       console.error("Error refreshing requests:", error);
     } finally {
       setRefreshing(false);
@@ -108,11 +108,11 @@ export default function TimeAdjustmentRequestsListScreen() {
             try {
               await approveMutation.mutateAsync({
                 requestId: request.id,
-                data: {},
+                data: Record<string, unknown>,
               });
               Alert.alert("Sucesso", "Requisição aprovada com sucesso!");
               setSelectedRequest(null);
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível aprovar a requisição. Tente novamente.");
             }
           },
@@ -138,11 +138,11 @@ export default function TimeAdjustmentRequestsListScreen() {
             try {
               await rejectMutation.mutateAsync({
                 requestId: request.id,
-                data: {},
+                data: Record<string, unknown>,
               });
               Alert.alert("Sucesso", "Requisição rejeitada com sucesso!");
               setSelectedRequest(null);
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível rejeitar a requisição. Tente novamente.");
             }
           },

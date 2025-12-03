@@ -1,6 +1,6 @@
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -41,13 +41,11 @@ export default function EditCatalogScreen() {
       const result = await updateAsync({ id, data });
 
       if (result.success) {
-        showToast({
-          message: "Tinta atualizada com sucesso!",
-          type: "success",
-        });
+        // API client already shows success alert
         router.replace(routeToMobilePath(routes.painting.catalog.root) as any);
       }
     } catch (error) {
+      // API client already shows error alert
       console.error("Error updating paint:", error);
     }
   };
@@ -121,8 +119,6 @@ export default function EditCatalogScreen() {
             paintBrandId: paint.paintBrandId,
             manufacturer: paint.manufacturer,
             tags: paint.tags || [],
-            palette: paint.palette,
-            paletteOrder: paint.paletteOrder,
             groundIds: paint.paintGrounds?.map((g) => g.groundPaintId) || [],
           }}
           initialGrounds={paint.paintGrounds?.map((g) => g.groundPaint) || []}

@@ -71,16 +71,16 @@ export interface AirbrushingOrderBy {
 // Response Interfaces
 // =====================
 
-export interface AirbrushingGetUniqueResponse extends BaseGetUniqueResponse<Airbrushing> {}
-export interface AirbrushingGetManyResponse extends BaseGetManyResponse<Airbrushing> {}
-export interface AirbrushingCreateResponse extends BaseCreateResponse<Airbrushing> {}
-export interface AirbrushingUpdateResponse extends BaseUpdateResponse<Airbrushing> {}
-export interface AirbrushingDeleteResponse extends BaseDeleteResponse {}
+export type AirbrushingGetUniqueResponse = BaseGetUniqueResponse<Airbrushing>;
+export type AirbrushingGetManyResponse = BaseGetManyResponse<Airbrushing>;
+export type AirbrushingCreateResponse = BaseCreateResponse<Airbrushing>;
+export type AirbrushingUpdateResponse = BaseUpdateResponse<Airbrushing>;
+export type AirbrushingDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface AirbrushingBatchCreateResponse<T = any> extends BaseBatchResponse<Airbrushing, T> {}
-export interface AirbrushingBatchUpdateResponse<T = any> extends BaseBatchResponse<Airbrushing, T & { id: string }> {}
-export interface AirbrushingBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type AirbrushingBatchCreateResponse<T = any> = BaseBatchResponse<Airbrushing, T>;
+export type AirbrushingBatchUpdateResponse<T = any> = BaseBatchResponse<Airbrushing, T & { id: string }>;
+export type AirbrushingBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

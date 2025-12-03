@@ -111,7 +111,7 @@ export default function RegisterScreen() {
       <ThemedSafeAreaView style={{ flex: 1 }}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-            <ThemedScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.lg }}>
+            <ThemedScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.lg }}>
               <View style={{ maxWidth: 400, width: "100%", position: "relative" }}>
                 <View style={{ position: "absolute", right: 8, top: 8, zIndex: 1000 }}>
                   <ThemeToggle size={24} />

@@ -16,7 +16,7 @@ import { spacing } from "@/constants/design-system";
 
 import { paintCreateSchema, paintUpdateSchema, type PaintCreateFormData, type PaintUpdateFormData } from '../../../schemas';
 import { usePaintTypes, usePaintBrands, usePaints, usePaintType, useAvailableComponents, useKeyboardAwareScroll } from "@/hooks";
-import { PAINT_FINISH, COLOR_PALETTE, TRUCK_MANUFACTURER } from "@/constants";
+import { PAINT_FINISH, TRUCK_MANUFACTURER } from "@/constants";
 import type { PaintFormula, Paint } from "../../../types";
 import { FormulaManager } from "../formula/formula-manager";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
@@ -61,23 +61,6 @@ const FINISH_OPTIONS = [
   { value: PAINT_FINISH.PEARL, label: "Perolizado" },
   { value: PAINT_FINISH.MATTE, label: "Fosco" },
   { value: PAINT_FINISH.SATIN, label: "Semi Brilho" },
-];
-
-const PALETTE_OPTIONS = [
-  { value: COLOR_PALETTE.WHITE, label: "Branco" },
-  { value: COLOR_PALETTE.BLACK, label: "Preto" },
-  { value: COLOR_PALETTE.GRAY, label: "Cinza" },
-  { value: COLOR_PALETTE.SILVER, label: "Prata" },
-  { value: COLOR_PALETTE.RED, label: "Vermelho" },
-  { value: COLOR_PALETTE.BLUE, label: "Azul" },
-  { value: COLOR_PALETTE.GREEN, label: "Verde" },
-  { value: COLOR_PALETTE.YELLOW, label: "Amarelo" },
-  { value: COLOR_PALETTE.ORANGE, label: "Laranja" },
-  { value: COLOR_PALETTE.BROWN, label: "Marrom" },
-  { value: COLOR_PALETTE.BEIGE, label: "Bege" },
-  { value: COLOR_PALETTE.GOLDEN, label: "Dourado" },
-  { value: COLOR_PALETTE.PINK, label: "Rosa" },
-  { value: COLOR_PALETTE.PURPLE, label: "Roxo" },
 ];
 
 const MANUFACTURER_OPTIONS = [
@@ -128,8 +111,6 @@ export function PaintForm(props: PaintFormProps) {
     paintBrandId: null,
     manufacturer: null,
     tags: [],
-    palette: undefined,
-    paletteOrder: undefined,
     paintTypeId: "",
     groundIds: [],
     ...defaultValues,
@@ -508,31 +489,6 @@ export function PaintForm(props: PaintFormProps) {
                   </FormFieldGroup>
                 </FormCard>
               )}
-
-              <FormCard title="Paleta de Cores" icon="IconColorSwatch">
-                {/* Palette */}
-                <FormFieldGroup
-                  label="Paleta"
-                  error={form.formState.errors.palette?.message}
-                >
-                  <Controller
-                    control={form.control}
-                    name="palette"
-                    render={({ field: { onChange, value }, fieldState: { error } }) => (
-                      <Combobox
-                        value={value || ""}
-                        onValueChange={(val) => onChange(val || undefined)}
-                        options={PALETTE_OPTIONS}
-                        placeholder="Selecione a paleta"
-                        searchPlaceholder="Buscar paleta..."
-                        disabled={isSubmitting}
-                        clearable
-                        error={error?.message}
-                      />
-                    )}
-                  />
-                </FormFieldGroup>
-              </FormCard>
 
               <FormCard title="Tags" icon="IconTags">
                 <Controller

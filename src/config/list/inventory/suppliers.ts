@@ -2,6 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { Supplier } from '@/types'
 import { canEditSuppliers } from '@/utils/permissions/entity-permissions'
 import { formatBrazilianPhone, formatCNPJ } from '@/utils'
+import { isTabletWidth } from '@/lib/table-utils'
 
 export const suppliersListConfig: ListConfig<Supplier> = {
   key: 'inventory-suppliers',
@@ -132,7 +133,9 @@ export const suppliersListConfig: ListConfig<Supplier> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['fantasyName', 'itemsCount'],
+    defaultVisible: isTabletWidth()
+      ? ['fantasyName', 'cnpj', 'state', 'itemsCount']
+      : ['fantasyName', 'itemsCount'],
     rowHeight: 48,
     actions: [
       {

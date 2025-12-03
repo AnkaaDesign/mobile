@@ -18,7 +18,7 @@ import { PpeDeliveryCard, PpeItemCard, CertificateCard } from "@/components/pers
 
 export default function PpeDeliveryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
+  const _router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);

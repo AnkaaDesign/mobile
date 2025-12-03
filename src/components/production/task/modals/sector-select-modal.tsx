@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { View, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Pressable, Keyboard } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Pressable, Keyboard, Alert } from "react-native";
 import { ThemedText } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
@@ -11,7 +11,7 @@ import { SECTOR_PRIVILEGES } from "@/constants";
 import { updateTask, getSectors } from "@/api-client";
 import { queryClient } from "@/lib/query-client";
 import { taskKeys } from "@/hooks/queryKeys";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import type { Task } from "@/types";
 import {
   IconUsers,
@@ -66,10 +66,7 @@ export function SectorSelectModal({
 
   const onSubmit = async () => {
     if (!task) {
-      showToast({
-        message: "Nenhuma tarefa selecionada",
-        type: "error",
-      });
+      Alert.alert("Erro", "Nenhuma tarefa selecionada");
       return;
     }
 
@@ -81,21 +78,18 @@ export function SectorSelectModal({
 
       queryClient.invalidateQueries({ queryKey: taskKeys.all });
 
-      showToast({
-        message: selectedSectorId
+      Alert.alert(
+        "Sucesso",
+        selectedSectorId
           ? `Setor da tarefa "${task.name}" atualizado com sucesso!`
-          : `Setor da tarefa "${task.name}" removido com sucesso!`,
-        type: "success",
-      });
+          : `Setor da tarefa "${task.name}" removido com sucesso!`
+      );
 
       onSuccess?.(response.data);
       onClose();
     } catch (error: any) {
       console.error("[SectorSelectModal] Error:", error);
-      showToast({
-        message: error?.message || "Erro ao atualizar setor",
-        type: "error",
-      });
+      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }

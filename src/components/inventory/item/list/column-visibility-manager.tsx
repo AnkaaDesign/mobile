@@ -7,6 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { getDefaultVisibleColumnsWithTablet } from "@/lib/table-utils";
 import type { Item } from '../../../../types';
 
 // Column interface matching web pattern
@@ -19,19 +20,24 @@ interface ItemColumn {
   align?: "left" | "center" | "right";
 }
 
+// Mobile columns (< 624px)
+const MOBILE_COLUMNS = [
+  "name",
+  "quantity"
+];
+
+// Tablet columns (>= 624px) - adds unicode, brand, measures
+const TABLET_COLUMNS = [
+  "uniCode",
+  "name",
+  "brand.name",
+  "measures",
+  "quantity"
+];
+
 // Function to get default visible columns for items (matching web defaults)
 export function getDefaultVisibleColumns(): Set<string> {
-  return new Set([
-    "uniCode",
-    "name",
-    "brand.name",
-    "category.name",
-    "measures",
-    "quantity",
-    "monthlyConsumption",
-    "price",
-    "totalPrice"
-  ]);
+  return getDefaultVisibleColumnsWithTablet(MOBILE_COLUMNS, TABLET_COLUMNS);
 }
 
 interface ColumnVisibilityManagerProps {

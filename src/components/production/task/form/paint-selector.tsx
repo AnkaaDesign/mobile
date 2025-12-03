@@ -7,24 +7,6 @@ import { fontSize, fontWeight, spacing } from "@/constants/design-system";
 import type { Paint } from "@/types";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
 
-// Palette colors mapping
-const PALETTE_COLORS: Record<string, string> = {
-  BLACK: "#000000",
-  GRAY: "#6B7280",
-  WHITE: "#FFFFFF",
-  SILVER: "#C0C0C0",
-  GOLDEN: "#FFD700",
-  YELLOW: "#FFEB3B",
-  ORANGE: "#FF9800",
-  BROWN: "#8B4513",
-  RED: "#EF4444",
-  PINK: "#EC4899",
-  PURPLE: "#9333EA",
-  BLUE: "#3B82F6",
-  GREEN: "#22C55E",
-  BEIGE: "#F5F5DC",
-};
-
 // Paint finish labels
 const PAINT_FINISH_LABELS: Record<string, string> = {
   SOLID: "Lisa",
@@ -57,7 +39,7 @@ function PaintColorPreview({ paint, size = 24 }: PaintColorPreviewProps) {
     <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
       <PaintPreview
         paint={paint}
-        baseColor={paint.hex || PALETTE_COLORS[paint.palette || ""] || "#888888"}
+        baseColor={paint.hex || "#888888"}
         width={size}
         height={size}
         borderRadius={0}

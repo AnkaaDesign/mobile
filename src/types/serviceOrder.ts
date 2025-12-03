@@ -56,16 +56,16 @@ export interface ServiceOrderOrderBy {
 // Response Interfaces - ServiceOrder
 // =====================
 
-export interface ServiceOrderGetUniqueResponse extends BaseGetUniqueResponse<ServiceOrder> {}
-export interface ServiceOrderGetManyResponse extends BaseGetManyResponse<ServiceOrder> {}
-export interface ServiceOrderCreateResponse extends BaseCreateResponse<ServiceOrder> {}
-export interface ServiceOrderUpdateResponse extends BaseUpdateResponse<ServiceOrder> {}
-export interface ServiceOrderDeleteResponse extends BaseDeleteResponse {}
+export type ServiceOrderGetUniqueResponse = BaseGetUniqueResponse<ServiceOrder>;
+export type ServiceOrderGetManyResponse = BaseGetManyResponse<ServiceOrder>;
+export type ServiceOrderCreateResponse = BaseCreateResponse<ServiceOrder>;
+export type ServiceOrderUpdateResponse = BaseUpdateResponse<ServiceOrder>;
+export type ServiceOrderDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses - ServiceOrder
 // =====================
 
-export interface ServiceOrderBatchCreateResponse<T = any> extends BaseBatchResponse<ServiceOrder, T> {}
-export interface ServiceOrderBatchUpdateResponse<T = any> extends BaseBatchResponse<ServiceOrder, T & { id: string }> {}
-export interface ServiceOrderBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type ServiceOrderBatchCreateResponse<T = any> = BaseBatchResponse<ServiceOrder, T>;
+export type ServiceOrderBatchUpdateResponse<T = any> = BaseBatchResponse<ServiceOrder, T & { id: string }>;
+export type ServiceOrderBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

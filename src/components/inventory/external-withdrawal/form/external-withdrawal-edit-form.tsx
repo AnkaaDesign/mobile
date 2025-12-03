@@ -19,7 +19,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { FormLabel } from "@/components/ui/form";
 import { Alert } from "@/components/ui/alert";
 import { Progress as ProgressBar } from "@/components/ui/progress";
-import { FileUpload, type FileItem } from "@/components/ui/file-upload";
+import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 
 import { ExternalWithdrawalItemSelector } from "./external-withdrawal-item-selector";
 import { ExternalWithdrawalSummaryCards } from "./external-withdrawal-summary-cards";
@@ -149,8 +149,8 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
   });
 
   // File state - initialize with existing files
-  const [receiptFiles, setReceiptFiles] = useState<FileItem[]>([]);
-  const [nfeFiles, setNfeFiles] = useState<FileItem[]>([]);
+  const [receiptFiles, setReceiptFiles] = useState<FilePickerItem[]>([]);
+  const [nfeFiles, setNfeFiles] = useState<FilePickerItem[]>([]);
   const [hasFileChanges, setHasFileChanges] = useState(false);
 
   // Mutations
@@ -234,13 +234,13 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
   }, [resetForm, router]);
 
   // Handle file uploads
-  const handleReceiptUpload = useCallback((files: FileItem[]) => {
+  const handleReceiptUpload = useCallback((files: FilePickerItem[]) => {
     setReceiptFiles(files);
     setHasFileChanges(true);
     updateReceiptId(files.length > 0 ? "pending" : null);
   }, [updateReceiptId]);
 
-  const handleNfeUpload = useCallback((files: FileItem[]) => {
+  const handleNfeUpload = useCallback((files: FilePickerItem[]) => {
     setNfeFiles(files);
     setHasFileChanges(true);
     updateNfeId(files.length > 0 ? "pending" : null);
@@ -392,29 +392,31 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
 
             {/* Receipt */}
             <View style={styles.fileUploadContainer}>
-              <View style={styles.fileUploadHeader}>
-                <IconReceipt size={16} color={colors.mutedForeground} />
-                <Text style={styles.fileUploadLabel}>Recibo</Text>
-              </View>
-              <FileUpload
+              <FilePicker
                 value={receiptFiles}
                 onChange={handleReceiptUpload}
                 maxFiles={1}
-                accept="all"
+                label="Recibo"
+                placeholder="Adicionar recibo"
+                helperText="Selecione o recibo da retirada"
+                showCamera={true}
+                showGallery={true}
+                showFilePicker={true}
               />
             </View>
 
             {/* NFE */}
             <View style={styles.fileUploadContainer}>
-              <View style={styles.fileUploadHeader}>
-                <IconFileText size={16} color={colors.mutedForeground} />
-                <Text style={styles.fileUploadLabel}>Nota Fiscal</Text>
-              </View>
-              <FileUpload
+              <FilePicker
                 value={nfeFiles}
                 onChange={handleNfeUpload}
                 maxFiles={1}
-                accept="all"
+                label="Nota Fiscal"
+                placeholder="Adicionar nota fiscal"
+                helperText="Selecione a nota fiscal da retirada"
+                showCamera={true}
+                showGallery={true}
+                showFilePicker={true}
               />
             </View>
           </View>

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useUser } from "@/hooks";
 import { useAuth } from '../../../../../contexts/auth-context';
@@ -9,7 +9,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { IconUser } from "@tabler/icons-react-native";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { Card as UICard, CardHeader, CardContent as UICardContent } from "@/components/ui/card";
 import { IconHistory } from "@tabler/icons-react-native";
@@ -67,7 +67,7 @@ export default function EmployeeDetailsScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 

@@ -8,6 +8,7 @@ import {
 import { canEditBorrows } from '@/utils/permissions/entity-permissions'
 import { Badge } from '@/components/ui/badge'
 import { getBadgeVariant } from '@/constants/badge-colors'
+import { isTabletWidth } from '@/lib/table-utils'
 
 
 export const borrowsListConfig: ListConfig<Borrow> = {
@@ -132,7 +133,9 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['item.name', 'user.name', 'status'],
+    defaultVisible: isTabletWidth()
+      ? ['item.name', 'user.name', 'status', 'createdAt']
+      : ['item.name', 'user.name', 'status'],
     rowHeight: 48,
     actions: [
       {

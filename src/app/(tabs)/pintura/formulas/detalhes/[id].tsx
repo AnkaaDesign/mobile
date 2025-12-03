@@ -10,11 +10,11 @@ import { usePaintFormula, usePaintFormulaMutations } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege, formatDateTime } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MobilePaintFormulaCalculator } from "@/components/painting/formula/mobile-paint-formula-calculator";
-import { IconBuildingFactory, IconFactory } from "@tabler/icons-react-native";
+import { IconFactory } from "@tabler/icons-react-native";
 
 export default function FormulaDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -72,22 +72,22 @@ export default function FormulaDetailsScreen() {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-    showToast({ message: "Detalhes atualizados", type: "success" });
+    Alert.alert("Sucesso", "Detalhes atualizados");
   };
 
   // Handle edit
-  const handleEdit = () => {
+  const _handleEdit = () => {
     if (!canEdit) {
-      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para editar");
       return;
     }
     router.push(`/(tabs)/pintura/formulas/editar/${id}`);
   };
 
   // Handle delete
-  const handleDelete = () => {
+  const _handleDelete = () => {
     if (!canDelete) {
-      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para excluir");
       return;
     }
 
@@ -102,10 +102,10 @@ export default function FormulaDetailsScreen() {
           onPress: async () => {
             try {
               await deleteFormula(id as string);
-              showToast({ message: "Fórmula excluída com sucesso", type: "success" });
+              Alert.alert("Sucesso", "Fórmula excluída com sucesso");
               router.back();
-            } catch (error) {
-              showToast({ message: "Erro ao excluir fórmula", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },
@@ -117,13 +117,13 @@ export default function FormulaDetailsScreen() {
   const calculateTotals = () => {
     if (!formula?.components) return { totalRatio: 0, totalComponents: 0 };
 
-    const totalRatio = formula.components.reduce((sum, comp) => sum + (comp.ratio || 0), 0);
-    const totalComponents = formula.components.length;
+    const _totalRatio = formula.components.reduce((sum, comp) => sum + (comp.ratio || 0), 0);
+    const _totalComponents = formula.components.length;
 
-    return { totalRatio, totalComponents };
+    return { totalRatio: _totalRatio, totalComponents: _totalComponents };
   };
 
-  const { totalRatio, totalComponents } = calculateTotals();
+  const { totalRatio: _totalRatio2, totalComponents: _totalComponents2 } = calculateTotals();
 
   if (isLoading) {
     return <LoadingScreen message="Carregando detalhes da fórmula..." />;

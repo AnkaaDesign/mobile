@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useTaskDetail } from "@/hooks";
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
@@ -16,7 +16,7 @@ import {
   IconCalendar,
   IconInfoCircle,
 } from "@tabler/icons-react-native";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { Badge } from "@/components/ui/badge";
 import { TASK_STATUS_LABELS } from "@/constants";
@@ -48,7 +48,7 @@ export default function MovementDetailScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 

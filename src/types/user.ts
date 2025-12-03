@@ -266,17 +266,17 @@ export interface UserOrderBy {
 // Response Interfaces
 // =====================
 
-export interface UserGetUniqueResponse extends BaseGetUniqueResponse<User> {}
-export interface UserGetManyResponse extends BaseGetManyResponse<User> {}
-export interface UserCreateResponse extends BaseCreateResponse<User> {}
-export interface UserUpdateResponse extends BaseUpdateResponse<User> {}
-export interface UserDeleteResponse extends BaseDeleteResponse {}
-export interface UserMergeResponse extends BaseMergeResponse<User> {}
+export type UserGetUniqueResponse = BaseGetUniqueResponse<User>;
+export type UserGetManyResponse = BaseGetManyResponse<User>;
+export type UserCreateResponse = BaseCreateResponse<User>;
+export type UserUpdateResponse = BaseUpdateResponse<User>;
+export type UserDeleteResponse = BaseDeleteResponse;
+export type UserMergeResponse = BaseMergeResponse<User>;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface UserBatchCreateResponse<T> extends BaseBatchResponse<User, T> {}
-export interface UserBatchUpdateResponse<T> extends BaseBatchResponse<User, T & { id: string }> {}
-export interface UserBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type UserBatchCreateResponse<T> = BaseBatchResponse<User, T>;
+export type UserBatchUpdateResponse<T> = BaseBatchResponse<User, T & { id: string }>;
+export type UserBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

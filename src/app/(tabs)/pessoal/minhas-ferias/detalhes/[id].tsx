@@ -9,7 +9,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconBeach, IconTrash, IconX } from "@tabler/icons-react-native";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { canCancelVacation } from "@/utils";
 
@@ -51,7 +51,7 @@ export default function MyVacationDetailScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 
@@ -75,17 +75,11 @@ export default function MyVacationDetailScreen() {
                 },
               });
 
-              showToast({
-                message: "Férias canceladas com sucesso",
-                type: "success",
-              });
+              // API client already shows success alert
 
               refetch();
             } catch (error: any) {
-              showToast({
-                message: error?.message || "Não foi possível cancelar as férias",
-                type: "error",
-              });
+              // API client already shows error alert
             }
           },
         },
@@ -108,17 +102,11 @@ export default function MyVacationDetailScreen() {
             try {
               await deleteAsync(vacation.id);
 
-              showToast({
-                message: "Férias excluídas com sucesso",
-                type: "success",
-              });
+              // API client already shows success alert
 
               router.back();
             } catch (error: any) {
-              showToast({
-                message: error?.message || "Não foi possível excluir as férias",
-                type: "error",
-              });
+              // API client already shows error alert
             }
           },
         },

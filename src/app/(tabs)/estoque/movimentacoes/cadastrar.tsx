@@ -1,5 +1,4 @@
 import { useRouter } from "expo-router";
-import { Alert } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ActivityBatchCreateForm } from "@/components/inventory/activity/form";
 import { useActivityBatchMutations } from "@/hooks";
@@ -18,61 +17,25 @@ export default function InventoryMovementsCreateScreen() {
     orderItemId?: string | null;
     items: Array<{ itemId: string; quantity: number }>;
   }) => {
-    try {
-      // Create batch activities - one activity per item
-      const activities = data.items.map((item) => ({
-        operation: data.operation,
-        userId: data.userId,
-        itemId: item.itemId,
-        quantity: item.quantity,
-        reason: data.reason,
-        orderId: data.orderId,
-        orderItemId: data.orderItemId,
-      }));
+    // Create batch activities - one activity per item
+    const activities = data.items.map((item) => ({
+      operation: data.operation,
+      userId: data.userId,
+      itemId: item.itemId,
+      quantity: item.quantity,
+      reason: data.reason,
+      orderId: data.orderId,
+      orderItemId: data.orderItemId,
+    }));
 
-      const result = await batchCreateAsync({ activities });
+    const result = await batchCreateAsync({ activities });
 
-      if (result?.data) {
-        const successCount = result.data.totalSuccess;
-        const failCount = result.data.totalFailed;
-
-        if (failCount === 0) {
-          Alert.alert(
-            "Sucesso",
-            `${successCount} movimentação(ões) registrada(s) com sucesso!`,
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  router.replace(routeToMobilePath(routes.inventory.activities.list) as any);
-                },
-              },
-            ],
-          );
-        } else {
-          Alert.alert(
-            "Parcialmente Concluído",
-            `${successCount} sucesso(s), ${failCount} falha(s)`,
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  router.replace(routeToMobilePath(routes.inventory.activities.list) as any);
-                },
-              },
-            ],
-          );
-        }
-      } else {
-        Alert.alert("Erro", "Erro ao registrar movimentações");
-      }
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao registrar movimentações. Tente novamente.");
-    }
+    // Return the result to be displayed in the modal
+    return result?.data;
   };
 
   const handleCancel = () => {
-    router.back();
+    router.replace(routeToMobilePath(routes.inventory.activities.list) as any);
   };
 
   return (

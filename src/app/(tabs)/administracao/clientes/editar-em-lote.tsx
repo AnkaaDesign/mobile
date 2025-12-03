@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconUsers, IconDeviceFloppy } from "@tabler/icons-react-native";
@@ -9,7 +9,7 @@ import { ThemedView, ThemedText, Button, LoadingScreen } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { toast } from "@/lib/toast";
+// import { toast } from "@/lib/toast";
 
 export default function CustomerBatchEditScreen() {
   const router = useRouter();
@@ -62,16 +62,16 @@ export default function CustomerBatchEditScreen() {
       const result = await batchUpdate(data);
 
       if (result.data) {
-        toast.success(`${result.data.totalSuccess} cliente${result.data.totalSuccess !== 1 ? 's' : ''} atualizado${result.data.totalSuccess !== 1 ? 's' : ''}`);
+        Alert.alert("Sucesso", `${result.data.totalSuccess} cliente${result.data.totalSuccess !== 1 ? 's' : ''} atualizado${result.data.totalSuccess !== 1 ? 's' : ''}`);
 
         if (result.data.totalFailed > 0) {
-          toast.error(`${result.data.totalFailed} cliente${result.data.totalFailed !== 1 ? 's' : ''} falhou ao atualizar`);
+          Alert.alert("Erro", `${result.data.totalFailed} cliente${result.data.totalFailed !== 1 ? 's' : ''} falhou ao atualizar`);
         }
       }
 
       router.push(routeToMobilePath(routes.administration.customers.root) as any);
-    } catch (error) {
-      toast.error("Erro ao atualizar clientes");
+    } catch (_error) {
+      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }

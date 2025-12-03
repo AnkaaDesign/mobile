@@ -67,7 +67,7 @@ export function PpeFilterDrawerContent({
     // Add deliveries filter
     if (localFilters.hasDeliveries !== undefined) {
       where.ppeDeliveries = {
-        some: {},
+        some: Record<string, unknown>,
       };
     }
 

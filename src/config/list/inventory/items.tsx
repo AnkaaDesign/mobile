@@ -16,6 +16,7 @@ import {
 import { canEditItems } from '@/utils/permissions/entity-permissions'
 import { determineStockLevel } from '@/utils'
 import { ThemedText } from '@/components/ui/themed-text'
+import { isTabletWidth } from '@/lib/table-utils'
 
 const styles = StyleSheet.create({
   quantityCell: {
@@ -284,7 +285,9 @@ export const itemsListConfig: ListConfig<Item> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['uniCode', 'name', 'quantity'],
+    defaultVisible: isTabletWidth()
+      ? ['uniCode', 'name', 'brand.name', 'measures', 'quantity']
+      : ['uniCode', 'name', 'quantity'],
     rowHeight: 72,
     actions: [
       {

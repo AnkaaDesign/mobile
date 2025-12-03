@@ -104,7 +104,7 @@ export * from "./theme-provider";
 export * from "./theme-toggle";
 export * from "./themed-text-input";
 export * from "./themed-touchable-opacity";
-export * from "./toast";
+// Toast removed - use Alert.alert() from react-native instead
 export * from "./under-construction";
 export * from "./action-sheet";
 export * from "./detail-header";
@@ -117,5 +117,4 @@ export * from "./cnpj-input";
 export * from "./phone-input";
 export * from "./zipcode-input";
 export * from "./address-form";
-export * from "./file-upload-field";
-export * from "./media-picker";
+export * from "./file-picker";

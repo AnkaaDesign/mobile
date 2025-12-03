@@ -7,7 +7,7 @@ import { useTheme } from '@/lib/theme';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils';
 import { MAINTENANCE_STATUS, MAINTENANCE_STATUS_LABELS, SCHEDULE_FREQUENCY_LABELS, MEASURE_UNIT_LABELS } from '@/constants';
 import { useState, useCallback } from 'react';
-import { IconChevronRight, IconBox, IconPackage, IconCalendar, IconAlertCircle, IconInfoCircle } from '@tabler/icons-react-native';
+import { IconChevronRight, IconBox, IconPackage, IconCalendar, IconAlertCircle } from '@tabler/icons-react-native';
 import { spacing, fontSize } from '@/constants/design-system';
 
 export default function MaintenanceDetailsScreen() {

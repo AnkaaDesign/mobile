@@ -76,16 +76,16 @@ export interface ActivityOrderBy {
 // Response Interfaces
 // =====================
 
-export interface ActivityGetUniqueResponse extends BaseGetUniqueResponse<Activity> {}
-export interface ActivityGetManyResponse extends BaseGetManyResponse<Activity> {}
-export interface ActivityCreateResponse extends BaseCreateResponse<Activity> {}
-export interface ActivityUpdateResponse extends BaseUpdateResponse<Activity> {}
-export interface ActivityDeleteResponse extends BaseDeleteResponse {}
+export type ActivityGetUniqueResponse = BaseGetUniqueResponse<Activity>;
+export type ActivityGetManyResponse = BaseGetManyResponse<Activity>;
+export type ActivityCreateResponse = BaseCreateResponse<Activity>;
+export type ActivityUpdateResponse = BaseUpdateResponse<Activity>;
+export type ActivityDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface ActivityBatchCreateResponse<T = any> extends BaseBatchResponse<Activity, T> {}
-export interface ActivityBatchUpdateResponse<T = any> extends BaseBatchResponse<Activity, T & { id: string }> {}
-export interface ActivityBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type ActivityBatchCreateResponse<T = any> = BaseBatchResponse<Activity, T>;
+export type ActivityBatchUpdateResponse<T = any> = BaseBatchResponse<Activity, T & { id: string }>;
+export type ActivityBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

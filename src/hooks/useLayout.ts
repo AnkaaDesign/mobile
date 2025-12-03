@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { layoutService, type LayoutDataWithPhoto } from '@/api-client';
-import type { LayoutCreateFormData, LayoutUpdateFormData } from '@/schemas';
+import type { LayoutUpdateFormData } from '@/schemas';
 
 // Query keys
 export const layoutQueryKeys = {
@@ -131,7 +131,7 @@ export const useLayoutSVGDownload = () => {
   const downloadSVG = async (id: string, filename?: string) => {
     try {
       await layoutService.downloadSVG(id, filename);
-    } catch (error: any) {
+    } catch (_error: any) {
 
     }
   };

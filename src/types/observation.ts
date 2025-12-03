@@ -56,16 +56,16 @@ export interface ObservationOrderBy {
 // Response Interfaces
 // =====================
 
-export interface ObservationGetUniqueResponse extends BaseGetUniqueResponse<Observation> {}
-export interface ObservationGetManyResponse extends BaseGetManyResponse<Observation> {}
-export interface ObservationCreateResponse extends BaseCreateResponse<Observation> {}
-export interface ObservationUpdateResponse extends BaseUpdateResponse<Observation> {}
-export interface ObservationDeleteResponse extends BaseDeleteResponse {}
+export type ObservationGetUniqueResponse = BaseGetUniqueResponse<Observation>;
+export type ObservationGetManyResponse = BaseGetManyResponse<Observation>;
+export type ObservationCreateResponse = BaseCreateResponse<Observation>;
+export type ObservationUpdateResponse = BaseUpdateResponse<Observation>;
+export type ObservationDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface ObservationBatchCreateResponse<T = any> extends BaseBatchResponse<Observation, T> {}
-export interface ObservationBatchUpdateResponse<T = any> extends BaseBatchResponse<Observation, T & { id: string }> {}
-export interface ObservationBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type ObservationBatchCreateResponse<T = any> = BaseBatchResponse<Observation, T>;
+export type ObservationBatchUpdateResponse<T = any> = BaseBatchResponse<Observation, T & { id: string }>;
+export type ObservationBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

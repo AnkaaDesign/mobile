@@ -127,7 +127,7 @@ export default function OrderScheduleDetailsScreen() {
           onPress: async () => {
             try {
               await deleteSchedule(scheduleId);
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível excluir o agendamento. Tente novamente.");
             }
           },
@@ -155,7 +155,7 @@ export default function OrderScheduleDetailsScreen() {
           onPress: async () => {
             try {
               await updateSchedule({ id: scheduleId, data: { isActive: newStatus } });
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", `Não foi possível ${action} o agendamento. Tente novamente.`);
             }
           },

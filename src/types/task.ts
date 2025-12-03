@@ -203,16 +203,16 @@ export interface TaskOrderBy {
 // Response Interfaces
 // =====================
 
-export interface TaskGetUniqueResponse extends BaseGetUniqueResponse<Task> {}
-export interface TaskGetManyResponse extends BaseGetManyResponse<Task> {}
-export interface TaskCreateResponse extends BaseCreateResponse<Task> {}
-export interface TaskUpdateResponse extends BaseUpdateResponse<Task> {}
-export interface TaskDeleteResponse extends BaseDeleteResponse {}
+export type TaskGetUniqueResponse = BaseGetUniqueResponse<Task>;
+export type TaskGetManyResponse = BaseGetManyResponse<Task>;
+export type TaskCreateResponse = BaseCreateResponse<Task>;
+export type TaskUpdateResponse = BaseUpdateResponse<Task>;
+export type TaskDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface TaskBatchCreateResponse<T> extends BaseBatchResponse<Task, T> {}
-export interface TaskBatchUpdateResponse<T> extends BaseBatchResponse<Task, T & { id: string }> {}
-export interface TaskBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type TaskBatchCreateResponse<T> = BaseBatchResponse<Task, T>;
+export type TaskBatchUpdateResponse<T> = BaseBatchResponse<Task, T & { id: string }>;
+export type TaskBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

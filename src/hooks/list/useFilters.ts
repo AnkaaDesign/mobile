@@ -42,7 +42,7 @@ export function useFilters({ fields, defaultValues = {} }: UseFiltersOptions) {
   const activeCount = useMemo(() => {
     let count = 0
 
-    Object.entries(values).forEach(([key, value]) => {
+    Object.entries(values).forEach(([_key, value]) => {
       if (value === undefined || value === null) return
 
       if (Array.isArray(value)) {

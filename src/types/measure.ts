@@ -34,23 +34,23 @@ export interface MeasureIncludes {
 // Response Types
 // =====================
 
-export interface MeasureGetManyResponse extends BaseGetManyResponse<Measure> {}
+export type MeasureGetManyResponse = BaseGetManyResponse<Measure>;
 
-export interface MeasureGetUniqueResponse extends BaseGetUniqueResponse<Measure> {}
+export type MeasureGetUniqueResponse = BaseGetUniqueResponse<Measure>;
 
-export interface MeasureCreateResponse extends BaseCreateResponse<Measure> {}
+export type MeasureCreateResponse = BaseCreateResponse<Measure>;
 
-export interface MeasureUpdateResponse extends BaseUpdateResponse<Measure> {}
+export type MeasureUpdateResponse = BaseUpdateResponse<Measure>;
 
-export interface MeasureDeleteResponse extends BaseDeleteResponse {}
+export type MeasureDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Response Types
 // =====================
 
-export interface MeasureBatchCreateResponse extends BaseCreateResponse<BatchOperationResult<Measure>> {}
+export type MeasureBatchCreateResponse = BaseCreateResponse<BatchOperationResult<Measure>>;
 
-export interface MeasureBatchUpdateResponse extends BaseUpdateResponse<BatchOperationResult<Measure>> {}
+export type MeasureBatchUpdateResponse = BaseUpdateResponse<BatchOperationResult<Measure>>;
 
 export interface MeasureBatchDeleteResponse extends BaseDeleteResponse {
   data?: BatchOperationResult<string>;
@@ -68,16 +68,15 @@ export interface UnitConversionResult {
   conversionFactor: number;
 }
 
-export interface UnitConversionResponse extends BaseCreateResponse<UnitConversionResult> {}
+export type UnitConversionResponse = BaseCreateResponse<UnitConversionResult>;
 
-export interface BulkConversionResponse
-  extends BaseCreateResponse<{
-    conversions: UnitConversionResult[];
-    totalConversions: number;
-    successful: number;
-    failed: number;
-    errors?: string[];
-  }> {}
+export type BulkConversionResponse = BaseCreateResponse<{
+  conversions: UnitConversionResult[];
+  totalConversions: number;
+  successful: number;
+  failed: number;
+  errors?: string[];
+}>;
 
 // =====================
 // Measure Categories (for grouping units)

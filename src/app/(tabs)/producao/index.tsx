@@ -87,7 +87,7 @@ export default function ProducaoScreen() {
   const data = dashboard?.data;
 
   // Helper function to get trend
-  const getTrend = (metric?: { trend?: "up" | "down" | "stable"; changePercent?: number }) => {
+  const _getTrend = (metric?: { trend?: "up" | "down" | "stable"; changePercent?: number }) => {
     if (!metric) return { trend: "stable" as const, percentage: 0 };
     return {
       trend: metric.trend || ("stable" as const),

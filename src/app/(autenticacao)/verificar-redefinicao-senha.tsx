@@ -121,7 +121,7 @@ export default function VerifyPasswordCodeScreen() {
       <ThemedSafeAreaView style={{ flex: 1 }}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-            <ThemedScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.lg }}>
+            <ThemedScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.lg }}>
               <Card style={{ borderColor: "transparent", ...shadow.lg, maxWidth: 400, width: "100%" }}>
                 <ThemedView style={{ backgroundColor: "transparent", position: "absolute", right: 8, top: 8 }}>
                   <ThemeToggle size={24} />

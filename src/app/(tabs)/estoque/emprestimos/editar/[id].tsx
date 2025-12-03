@@ -1,6 +1,6 @@
-import { View } from "react-native";
+import { View, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -54,12 +54,10 @@ function BorrowEditScreen() {
         },
       });
 
-      showToast({
-        message: "Empréstimo marcado como devolvido!",
-        type: "success",
-      });
+      // API client already shows success alert
       router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
     } catch (error) {
+      // API client already shows error alert
       console.error("Error returning borrow:", error);
     }
   };
@@ -72,12 +70,10 @@ function BorrowEditScreen() {
         id,
       });
 
-      showToast({
-        message: "Empréstimo marcado como perdido!",
-        type: "success",
-      });
+      // API client already shows success alert
       router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
     } catch (error) {
+      // API client already shows error alert
       console.error("Error marking borrow as lost:", error);
     }
   };

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useHoliday } from "@/hooks/useHoliday";
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
@@ -11,7 +11,7 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconCalendar, IconRefresh, IconEdit, IconHistory } from "@tabler/icons-react-native";
 
 import { TouchableOpacity } from "react-native";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 // Import modular components
 import { HolidayCard } from "@/components/human-resources/holiday/detail";
@@ -40,7 +40,7 @@ export default function HolidayDetailScreen() {
     if (holiday) {
       // Note: The routes don't have an edit route for holidays yet
       // This would need to be added to the routes configuration
-      showToast({ message: "Edição de feriados em desenvolvimento", type: "info" });
+      Alert.alert("Informação", "Edição de feriados em desenvolvimento");
     }
   };
 
@@ -48,7 +48,7 @@ export default function HolidayDetailScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 

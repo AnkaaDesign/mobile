@@ -10,8 +10,7 @@ import { BatchOperationResultDialog } from "@/components/common/batch-operation-
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { toast } from "@/lib/toast";
-import type { BatchOperationResult } from "@/types";
+// import { toast } from "@/lib/toast";
 
 interface BatchEditData {
   // Contact fields
@@ -158,7 +157,7 @@ export default function SupplierBatchEditScreen() {
     // Validate before showing confirmation
     const validationError = validateBatchData();
     if (validationError) {
-      toast.error(validationError);
+      Alert.alert("Erro", validationError);
       return;
     }
 
@@ -245,22 +244,24 @@ export default function SupplierBatchEditScreen() {
         setBatchResult(batchOperationResult);
         setShowResultDialog(true);
 
-        // Show toast notification
+        // Show alert notification
         if (result.data.totalSuccess > 0) {
-          toast.success(
+          Alert.alert(
+            "Sucesso",
             `${result.data.totalSuccess} fornecedor${result.data.totalSuccess !== 1 ? 'es' : ''} atualizado${result.data.totalSuccess !== 1 ? 's' : ''} com sucesso`
           );
         }
 
         if (result.data.totalFailed > 0) {
-          toast.error(
+          Alert.alert(
+            "Erro",
             `${result.data.totalFailed} fornecedor${result.data.totalFailed !== 1 ? 'es' : ''} falhou ao atualizar`
           );
         }
       }
     } catch (error) {
       console.error("Batch update error:", error);
-      toast.error("Erro ao atualizar fornecedores");
+      // API client already shows error alert
 
       // Show error in dialog
       setBatchResult({

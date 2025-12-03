@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { View, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
+import { View, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -179,19 +179,12 @@ export default function LayoutOnlyEditScreen() {
 
   const handleSubmit = async () => {
     if (!truckId) {
-      showToast({
-        title: "Erro",
-        message: "Esta tarefa nao possui um caminhao associado. Layout nao pode ser salvo.",
-        type: "error",
-      });
+      Alert.alert("Erro", "Esta tarefa nao possui um caminhao associado. Layout nao pode ser salvo.");
       return;
     }
 
     if (modifiedLayoutSides.size === 0) {
-      showToast({
-        message: "Nenhuma alteracao foi feita no layout.",
-        type: "info",
-      });
+      Alert.alert("Info", "Nenhuma alteracao foi feita no layout.");
       return;
     }
 
@@ -223,19 +216,12 @@ export default function LayoutOnlyEditScreen() {
 
       await Promise.all(savePromises);
 
-      showToast({
-        message: "Layout atualizado com sucesso!",
-        type: "success",
-      });
+      // API client already shows success alert
 
       router.replace(routeToMobilePath(routes.production.schedule.root) as any);
     } catch (error: any) {
       console.error("[LayoutOnlyEdit] Error saving layout:", error);
-      showToast({
-        title: "Erro ao salvar layout",
-        message: error?.message || "Ocorreu um erro ao salvar o layout. Tente novamente.",
-        type: "error",
-      });
+      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }
@@ -255,22 +241,14 @@ export default function LayoutOnlyEditScreen() {
 
       // Check basic layout permission first
       if (!canEditLayout) {
-        showToast({
-          title: "Acesso negado",
-          message: "Voce nao tem permissao para editar layouts",
-          type: "error",
-        });
+        Alert.alert("Acesso negado", "Voce nao tem permissao para editar layouts");
         router.replace("/producao/cronograma");
         return;
       }
 
       // Check if user can edit THIS task's layout (managed sector validation)
       if (!canEditThisTaskLayout) {
-        showToast({
-          title: "Acesso negado",
-          message: "Voce so pode editar layouts de tarefas do seu setor gerenciado ou tarefas sem setor definido",
-          type: "error",
-        });
+        Alert.alert("Acesso negado", "Voce so pode editar layouts de tarefas do seu setor gerenciado ou tarefas sem setor definido");
         router.replace("/producao/cronograma");
       }
     }

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconFiles, IconList, IconLayoutGrid, IconDownload } from "@tabler/icons-react-native";
 import { FileItem, useFileViewer} from "@/components/file";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 interface AirbrushingFilesCardProps {
   airbrushing: any;
@@ -79,7 +79,7 @@ export function AirbrushingFilesCard({ airbrushing }: AirbrushingFilesCardProps)
                   console.error("Error downloading file:", error);
                 }
               }
-              showToast({ message: `${allFiles.length} arquivos baixados`, type: "success" });
+              Alert.alert("Sucesso", `${allFiles.length} arquivos baixados`);
             }}
             activeOpacity={0.7}
           >

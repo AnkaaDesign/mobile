@@ -1,5 +1,5 @@
 import React from 'react'
-import { View } from 'react-native'
+import { View, Alert } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig } from '@/components/list/types'
 import type { Task } from '@/types'
@@ -11,10 +11,10 @@ import {
   COMMISSION_STATUS,
   SERVICE_ORDER_STATUS,
 } from '@/constants'
-import { showToast } from '@/components/ui/toast'
 import { updateTask } from '@/api-client'
 import { queryClient } from '@/lib/query-client'
 import { taskKeys } from '@/hooks/queryKeys'
+import { isTabletWidth } from '@/lib/table-utils'
 
 // Helper to check if task has pending service orders
 const hasPendingServiceOrders = (task: Task): boolean => {
@@ -291,7 +291,9 @@ export const tasksListConfig: ListConfig<Task> = {
         },
       },
     ],
-    defaultVisible: ['name', 'serialNumber', 'remainingTime'],
+    defaultVisible: isTabletWidth()
+      ? ['name', 'measures', 'serialNumber', 'remainingTime']
+      : ['name', 'serialNumber', 'remainingTime'],
     rowHeight: 48,
     getRowStyle: (task, isDark) => ({
       backgroundColor: getRowBackgroundColor(task, isDark),
@@ -333,16 +335,9 @@ export const tasksListConfig: ListConfig<Task> = {
             await updateTask(task.id, updateData)
             queryClient.invalidateQueries({ queryKey: taskKeys.all })
 
-            showToast({
-              message: `Tarefa "${task.name}" iniciada com sucesso!`,
-              type: 'success',
-            })
-          } catch (error: any) {
-            showToast({
-              title: 'Erro ao iniciar tarefa',
-              message: error?.message || 'Ocorreu um erro ao iniciar a tarefa',
-              type: 'error',
-            })
+            // API client already shows success alert
+          } catch (_error) {
+            // API client already shows error alert
           }
         },
       },
@@ -360,11 +355,10 @@ export const tasksListConfig: ListConfig<Task> = {
         onPress: async (task: Task, router: any) => {
           try {
             if (hasPendingServiceOrders(task)) {
-              showToast({
-                title: 'Nao e possivel finalizar',
-                message: 'Existem ordens de servico pendentes. Finalize todas as ordens de servico antes de finalizar a tarefa.',
-                type: 'warning',
-              })
+              Alert.alert(
+                'Não é possível finalizar',
+                'Existem ordens de serviço pendentes. Finalize todas as ordens de serviço antes de finalizar a tarefa.'
+              )
               return
             }
 
@@ -375,16 +369,9 @@ export const tasksListConfig: ListConfig<Task> = {
 
             queryClient.invalidateQueries({ queryKey: taskKeys.all })
 
-            showToast({
-              message: `Tarefa "${task.name}" finalizada com sucesso!`,
-              type: 'success',
-            })
-          } catch (error: any) {
-            showToast({
-              title: 'Erro ao finalizar tarefa',
-              message: error?.message || 'Ocorreu um erro ao finalizar a tarefa',
-              type: 'error',
-            })
+            // API client already shows success alert
+          } catch (_error) {
+            // API client already shows error alert
           }
         },
       },

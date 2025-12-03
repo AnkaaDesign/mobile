@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconRefresh, IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { hasPrivilege } from "@/utils";
 
 // Import modular components
@@ -76,7 +76,7 @@ export default function PositionDetailScreen() {
 
   const handleEdit = () => {
     if (!canEdit) {
-      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para editar");
       return;
     }
     if (position) {
@@ -86,7 +86,7 @@ export default function PositionDetailScreen() {
 
   const handleDelete = () => {
     if (!canDelete) {
-      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para excluir");
       return;
     }
 
@@ -106,10 +106,10 @@ export default function PositionDetailScreen() {
           onPress: async () => {
             try {
               await deleteAsync(id as string);
-              showToast({ message: "Cargo excluído com sucesso", type: "success" });
+              // API client already shows success alert
               router.back();
-            } catch (error) {
-              showToast({ message: "Erro ao excluir cargo", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },
@@ -121,7 +121,7 @@ export default function PositionDetailScreen() {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-    showToast({ message: "Detalhes atualizados", type: "success" });
+    Alert.alert("Sucesso", "Detalhes atualizados");
   }, [refetch]);
 
   if (isLoading) {

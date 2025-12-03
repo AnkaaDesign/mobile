@@ -204,6 +204,11 @@ export * from "./use-cep-lookup";
 export * from "./useKeyboardAwareScroll";
 
 // =====================================================
+// Dialog & Modal Hooks
+// =====================================================
+export * from "./use-batch-result-dialog";
+
+// =====================================================
 // Monitoring & Utilities
 // =====================================================
 // NOTE: query-error-monitor is NOT exported here to prevent module initialization issues

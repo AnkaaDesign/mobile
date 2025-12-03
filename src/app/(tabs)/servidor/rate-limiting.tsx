@@ -66,7 +66,7 @@ export default function RateLimitingScreen() {
       } else {
         setBlockedKeys([]);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error("Failed to fetch throttler data:", error);
       setStats(null);
       setBlockedKeys([]);

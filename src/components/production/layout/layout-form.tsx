@@ -11,7 +11,7 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import type { LayoutCreateFormData } from "@/schemas";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { getApiBaseUrl } from "@/utils/file";
 
 // MeasurementInput component with local state (like web version)
@@ -714,7 +714,8 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       const newPhotoState = { imageUri, photoId: null };
       setPhotoState(newPhotoState);
 
-      showToast({ message: 'Foto adicionada - será salva ao submeter', type: 'success' });
+      // Photo selection is just a local UI change, no API call yet
+      // Photo will be uploaded when the form is submitted
 
       // CRITICAL: Mark as having pending changes to prevent backend resets
       lastUserInteractionRef.current = Date.now();
@@ -795,7 +796,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       );
     } catch (error) {
       console.error('Error picking image:', error);
-      showToast({ message: 'Erro ao adicionar foto', type: 'error' });
+      Alert.alert("Erro", "Erro ao adicionar foto");
     }
   }, [selectedSide, currentState, onChange]);
 
@@ -825,7 +826,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     };
 
     updateCurrentSide(copiedState);
-    showToast({ message: `Layout copiado do lado ${getSideLabel(fromSide)}`, type: 'success' });
+    // Layout copy is a local operation, no API call
   }, [selectedSide, sideStates, updateCurrentSide]);
 
   // Mirror from another side
@@ -854,7 +855,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     };
 
     updateCurrentSide(mirroredState);
-    showToast({ message: `Layout espelhado do lado ${getSideLabel(fromSide)}`, type: 'success' });
+    // Layout mirror is a local operation, no API call
   }, [selectedSide, sideStates, updateCurrentSide]);
 
   const getSideLabel = (side: 'left' | 'right' | 'back') => {

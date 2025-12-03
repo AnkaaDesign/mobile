@@ -140,9 +140,9 @@ export interface DeploymentGetByIdParams {
 // API Responses
 // =====================
 
-export interface DeploymentGetManyResponse extends BaseGetManyResponse<Deployment> {}
-export interface DeploymentGetUniqueResponse extends BaseGetUniqueResponse<Deployment> {}
-export interface DeploymentCreateResponse extends BaseCreateResponse<Deployment> {}
-export interface DeploymentUpdateResponse extends BaseUpdateResponse<Deployment> {}
-export interface DeploymentDeleteResponse extends BaseDeleteResponse {}
-export interface DeploymentBatchResponse extends BaseBatchResponse<Deployment> {}
+export type DeploymentGetManyResponse = BaseGetManyResponse<Deployment>;
+export type DeploymentGetUniqueResponse = BaseGetUniqueResponse<Deployment>;
+export type DeploymentCreateResponse = BaseCreateResponse<Deployment>;
+export type DeploymentUpdateResponse = BaseUpdateResponse<Deployment>;
+export type DeploymentDeleteResponse = BaseDeleteResponse;
+export type DeploymentBatchResponse = BaseBatchResponse<Deployment>;

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { View, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native'
+import { View, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { IconChartBar, IconDownload, IconCalendar, IconTrendingUp, IconTrendingDown, IconPackage } from '@tabler/icons-react-native'
 import { ThemedView } from '@/components/ui/themed-view'
@@ -12,7 +12,7 @@ import { useTheme } from '@/lib/theme'
 import { useItemsInfiniteMobile } from '@/hooks/use-items-infinite-mobile'
 import { formatCurrency } from '@/utils'
 import { exportData } from '@/lib/export-utils'
-import { showToast } from '@/components/ui/toast'
+// import { showToast } from '@/components/ui/toast'
 import { spacing, borderRadius, fontSize, fontWeight } from '@/constants/design-system'
 
 type TimePeriod = 7 | 30 | 90
@@ -88,7 +88,7 @@ export default function InventoryConsumptionStatisticsScreen() {
     setRefreshing(true)
     await refetch()
     setRefreshing(false)
-    showToast({ message: 'Dados atualizados', type: 'success' })
+    Alert.alert('Sucesso', 'Dados atualizados')
   }
 
   const handleExport = async () => {
@@ -146,9 +146,9 @@ export default function InventoryConsumptionStatisticsScreen() {
         format: 'csv',
         title: `Relatório de Consumo - ${selectedPeriod} dias`,
       })
-      showToast({ message: 'Relatório exportado com sucesso', type: 'success' })
-    } catch (error) {
-      showToast({ message: 'Erro ao exportar relatório', type: 'error' })
+      Alert.alert('Sucesso', 'Relatório exportado com sucesso')
+    } catch (_error) {
+      Alert.alert('Erro', 'Erro ao exportar relatório')
     }
   }
 

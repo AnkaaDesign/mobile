@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { View, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -34,11 +34,10 @@ export default function EditScheduleScreen() {
 
       // Redirect if no permission
       if (!canEdit) {
-        showToast({
-          title: "Acesso negado",
-          message: "Você não tem permissão para editar tarefas",
-          type: "error",
-        });
+        Alert.alert(
+          "Acesso negado",
+          "Você não tem permissão para editar tarefas"
+        );
         router.replace("/producao/cronograma");
       }
     }
@@ -131,27 +130,19 @@ export default function EditScheduleScreen() {
       console.log('[EditSchedule] API result:', result);
 
       if (result.success) {
-        showToast({
-          message: "Tarefa atualizada com sucesso!",
-          type: "success",
-        });
+        // API client already shows success alert
         router.replace(routeToMobilePath(routes.production.schedule.root) as any);
       } else {
         // API returned failure
         console.error('[EditSchedule] Task update failed:', result);
-        showToast({
-          title: "Erro ao atualizar tarefa",
-          message: result?.message || "Não foi possível atualizar a tarefa. Tente novamente.",
-          type: "error",
-        });
+        Alert.alert(
+          "Erro ao atualizar tarefa",
+          result?.message || "Não foi possível atualizar a tarefa. Tente novamente."
+        );
       }
     } catch (error: any) {
       console.error("[EditSchedule] Error updating task:", error);
-      showToast({
-        title: "Erro ao atualizar tarefa",
-        message: error?.message || "Ocorreu um erro inesperado. Por favor, tente novamente.",
-        type: "error",
-      });
+      // API client already shows error alert
     }
   };
 

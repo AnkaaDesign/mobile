@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { IconUser, IconIdBadge, IconPhone, IconMail, IconBriefcase, IconBuilding } from "@tabler/icons-react-native";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 export default function EmployeesCreateScreen() {
   const { colors } = useTheme();
@@ -26,17 +26,17 @@ export default function EmployeesCreateScreen() {
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      showToast({ message: "Nome é obrigatório", type: "error" });
+      Alert.alert("Erro", "Nome é obrigatório");
       return;
     }
 
     setIsLoading(true);
     try {
       // TODO: Implement employee creation API call
-      showToast({ message: "Funcionário criado com sucesso", type: "success" });
+      // API client already shows success alert
       router.back();
-    } catch (error) {
-      showToast({ message: "Erro ao criar funcionário", type: "error" });
+    } catch (_error) {
+      // API client already shows error alert
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Pressable, Keyboard } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Pressable, Keyboard, Alert } from "react-native";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -13,7 +13,7 @@ import { formSpacing, formLayout } from "@/constants/form-styles";
 import { useTaskMutations } from "@/hooks/useTask";
 import { TASK_STATUS } from "@/constants";
 import { queryClient } from "@/lib/query-client";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import type { Task } from "@/types";
 import {
   IconCopy,
@@ -85,10 +85,7 @@ export function TaskDuplicateModal({
 
   const onSubmit = async (data: DuplicateFormData) => {
     if (!task) {
-      showToast({
-        message: "Nenhuma tarefa selecionada",
-        type: "error",
-      });
+      Alert.alert("Erro", "Nenhuma tarefa selecionada");
       return;
     }
 
@@ -156,21 +153,14 @@ export function TaskDuplicateModal({
 
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
 
-      showToast({
-        message: `Tarefa "${task.name}" duplicada com sucesso!`,
-        type: "success",
-      });
+      // API client already shows success alert
 
       onSuccess?.(result.data);
       reset();
       onClose();
     } catch (error: any) {
       console.error("[TaskDuplicateModal] Error:", error);
-      showToast({
-        title: "Erro ao duplicar tarefa",
-        message: error?.message || "Ocorreu um erro ao duplicar a tarefa",
-        type: "error",
-      });
+      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }

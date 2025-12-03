@@ -372,33 +372,33 @@ export interface ItemOrderBy {
 // =====================
 
 // Item responses
-export interface ItemGetUniqueResponse extends BaseGetUniqueResponse<Item> {}
-export interface ItemGetManyResponse extends BaseGetManyResponse<Item> {}
-export interface ItemCreateResponse extends BaseCreateResponse<Item> {}
-export interface ItemUpdateResponse extends BaseUpdateResponse<Item> {}
-export interface ItemDeleteResponse extends BaseDeleteResponse {}
-export interface ItemMergeResponse extends BaseMergeResponse<Item> {}
+export type ItemGetUniqueResponse = BaseGetUniqueResponse<Item>;
+export type ItemGetManyResponse = BaseGetManyResponse<Item>;
+export type ItemCreateResponse = BaseCreateResponse<Item>;
+export type ItemUpdateResponse = BaseUpdateResponse<Item>;
+export type ItemDeleteResponse = BaseDeleteResponse;
+export type ItemMergeResponse = BaseMergeResponse<Item>;
 
 // ItemBrand responses
-export interface ItemBrandGetUniqueResponse extends BaseGetUniqueResponse<ItemBrand> {}
-export interface ItemBrandGetManyResponse extends BaseGetManyResponse<ItemBrand> {}
-export interface ItemBrandCreateResponse extends BaseCreateResponse<ItemBrand> {}
-export interface ItemBrandUpdateResponse extends BaseUpdateResponse<ItemBrand> {}
-export interface ItemBrandDeleteResponse extends BaseDeleteResponse {}
+export type ItemBrandGetUniqueResponse = BaseGetUniqueResponse<ItemBrand>;
+export type ItemBrandGetManyResponse = BaseGetManyResponse<ItemBrand>;
+export type ItemBrandCreateResponse = BaseCreateResponse<ItemBrand>;
+export type ItemBrandUpdateResponse = BaseUpdateResponse<ItemBrand>;
+export type ItemBrandDeleteResponse = BaseDeleteResponse;
 
 // ItemCategory responses
-export interface ItemCategoryGetUniqueResponse extends BaseGetUniqueResponse<ItemCategory> {}
-export interface ItemCategoryGetManyResponse extends BaseGetManyResponse<ItemCategory> {}
-export interface ItemCategoryCreateResponse extends BaseCreateResponse<ItemCategory> {}
-export interface ItemCategoryUpdateResponse extends BaseUpdateResponse<ItemCategory> {}
-export interface ItemCategoryDeleteResponse extends BaseDeleteResponse {}
+export type ItemCategoryGetUniqueResponse = BaseGetUniqueResponse<ItemCategory>;
+export type ItemCategoryGetManyResponse = BaseGetManyResponse<ItemCategory>;
+export type ItemCategoryCreateResponse = BaseCreateResponse<ItemCategory>;
+export type ItemCategoryUpdateResponse = BaseUpdateResponse<ItemCategory>;
+export type ItemCategoryDeleteResponse = BaseDeleteResponse;
 
 // Price responses
-export interface PriceGetUniqueResponse extends BaseGetUniqueResponse<Price> {}
-export interface PriceGetManyResponse extends BaseGetManyResponse<Price> {}
-export interface PriceCreateResponse extends BaseCreateResponse<Price> {}
-export interface PriceUpdateResponse extends BaseUpdateResponse<Price> {}
-export interface PriceDeleteResponse extends BaseDeleteResponse {}
+export type PriceGetUniqueResponse = BaseGetUniqueResponse<Price>;
+export type PriceGetManyResponse = BaseGetManyResponse<Price>;
+export type PriceCreateResponse = BaseCreateResponse<Price>;
+export type PriceUpdateResponse = BaseUpdateResponse<Price>;
+export type PriceDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // API Request Types
@@ -460,24 +460,24 @@ export interface PriceGetByIdParams {
 // =====================
 
 // Item batch operations
-export interface ItemBatchCreateResponse<T> extends BaseBatchResponse<Item, T> {}
-export interface ItemBatchUpdateResponse<T> extends BaseBatchResponse<Item, T & { id: string }> {}
-export interface ItemBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type ItemBatchCreateResponse<T> = BaseBatchResponse<Item, T>;
+export type ItemBatchUpdateResponse<T> = BaseBatchResponse<Item, T & { id: string }>;
+export type ItemBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // ItemBrand batch operations
-export interface ItemBrandBatchCreateResponse<T> extends BaseBatchResponse<ItemBrand, T> {}
-export interface ItemBrandBatchUpdateResponse<T> extends BaseBatchResponse<ItemBrand, T & { id: string }> {}
-export interface ItemBrandBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type ItemBrandBatchCreateResponse<T> = BaseBatchResponse<ItemBrand, T>;
+export type ItemBrandBatchUpdateResponse<T> = BaseBatchResponse<ItemBrand, T & { id: string }>;
+export type ItemBrandBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // ItemCategory batch operations
-export interface ItemCategoryBatchCreateResponse<T> extends BaseBatchResponse<ItemCategory, T> {}
-export interface ItemCategoryBatchUpdateResponse<T> extends BaseBatchResponse<ItemCategory, T & { id: string }> {}
-export interface ItemCategoryBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type ItemCategoryBatchCreateResponse<T> = BaseBatchResponse<ItemCategory, T>;
+export type ItemCategoryBatchUpdateResponse<T> = BaseBatchResponse<ItemCategory, T & { id: string }>;
+export type ItemCategoryBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // Price batch operations
-export interface PriceBatchCreateResponse<T> extends BaseBatchResponse<Price, T> {}
-export interface PriceBatchUpdateResponse<T> extends BaseBatchResponse<Price, T & { id: string }> {}
-export interface PriceBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type PriceBatchCreateResponse<T> = BaseBatchResponse<Price, T>;
+export type PriceBatchUpdateResponse<T> = BaseBatchResponse<Price, T & { id: string }>;
+export type PriceBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // =====================
 // Stock Management Response Types

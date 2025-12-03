@@ -1,4 +1,5 @@
 import type { Activity } from '../../../../types';
+import { getDefaultVisibleColumnsWithTablet } from '@/lib/table-utils';
 
 // Column interface matching the table pattern
 export interface ActivityColumn {
@@ -10,13 +11,24 @@ export interface ActivityColumn {
   align?: "left" | "center" | "right";
 }
 
+// Mobile columns (< 624px)
+const MOBILE_COLUMNS = [
+  "item.name",
+  "user.name",
+  "quantity"
+];
+
+// Tablet columns (>= 624px) - adds date
+const TABLET_COLUMNS = [
+  "item.name",
+  "user.name",
+  "quantity",
+  "createdAt"
+];
+
 // Function to get default visible columns for activities
 export function getDefaultVisibleColumns(): Set<string> {
-  return new Set([
-    "item.name",
-    "user.name",
-    "quantity"
-  ]);
+  return getDefaultVisibleColumnsWithTablet(MOBILE_COLUMNS, TABLET_COLUMNS);
 }
 
 // Function to get all available column keys

@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { SkeletonCard } from "@/components/ui/loading";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast"; // Replaced with Alert.alert()
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { usePpeDeliverySchedules, usePpeDeliveryScheduleBatchMutations } from "@/hooks";
 import { routeToMobilePath } from "@/utils/route-mapper";
@@ -167,10 +167,11 @@ function BatchEditPpeSchedulesScreen() {
       });
 
       if (changedSchedules.length === 0) {
-        showToast({
-          message: "Nenhuma alteração detectada",
-          type: "info",
-        });
+        Alert.alert(
+          "Informação",
+          "Nenhuma alteração detectada",
+          [{ text: "OK" }]
+        );
         setIsSubmitting(false);
         return;
       }
@@ -212,30 +213,32 @@ function BatchEditPpeSchedulesScreen() {
         const { totalSuccess, totalFailed } = result.data;
 
         if (totalFailed === 0) {
-          showToast({
-            message: `${totalSuccess} agendamento(s) atualizado(s) com sucesso!`,
-            type: "success",
-          });
-          router.replace(routeToMobilePath(routes.inventory.ppe.schedules.root) as any);
+          Alert.alert(
+            "Sucesso",
+            `${totalSuccess} agendamento(s) atualizado(s) com sucesso!`,
+            [{ text: "OK", onPress: () => router.replace(routeToMobilePath(routes.inventory.ppe.schedules.root) as any) }]
+          );
         } else {
-          showToast({
-            message: `${totalSuccess} sucesso(s), ${totalFailed} falha(s)`,
-            type: "warning",
-          });
+          Alert.alert(
+            "Atenção",
+            `${totalSuccess} sucesso(s), ${totalFailed} falha(s)`,
+            [{ text: "OK" }]
+          );
         }
       } else {
-        showToast({
-          message: "Agendamentos atualizados com sucesso!",
-          type: "success",
-        });
-        router.replace(routeToMobilePath(routes.inventory.ppe.schedules.root) as any);
+        Alert.alert(
+          "Sucesso",
+          "Agendamentos atualizados com sucesso!",
+          [{ text: "OK", onPress: () => router.replace(routeToMobilePath(routes.inventory.ppe.schedules.root) as any) }]
+        );
       }
     } catch (error: any) {
       console.error("Error during batch update:", error);
-      showToast({
-        message: error.message || "Erro ao atualizar agendamentos",
-        type: "error",
-      });
+      Alert.alert(
+        "Erro",
+        error.message || "Erro ao atualizar agendamentos",
+        [{ text: "OK" }]
+      );
     } finally {
       setIsSubmitting(false);
     }

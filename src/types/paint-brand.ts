@@ -92,17 +92,17 @@ export interface PaintBrandOrderBy {
 // =====================
 
 // PaintBrand responses
-export interface PaintBrandGetUniqueResponse extends BaseGetUniqueResponse<PaintBrand> {}
-export interface PaintBrandGetManyResponse extends BaseGetManyResponse<PaintBrand> {}
-export interface PaintBrandCreateResponse extends BaseCreateResponse<PaintBrand> {}
-export interface PaintBrandUpdateResponse extends BaseUpdateResponse<PaintBrand> {}
-export interface PaintBrandDeleteResponse extends BaseDeleteResponse {}
+export type PaintBrandGetUniqueResponse = BaseGetUniqueResponse<PaintBrand>;
+export type PaintBrandGetManyResponse = BaseGetManyResponse<PaintBrand>;
+export type PaintBrandCreateResponse = BaseCreateResponse<PaintBrand>;
+export type PaintBrandUpdateResponse = BaseUpdateResponse<PaintBrand>;
+export type PaintBrandDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
 // PaintBrand batch operations
-export interface PaintBrandBatchCreateResponse<T = any> extends BaseBatchResponse<PaintBrand, T> {}
-export interface PaintBrandBatchUpdateResponse<T = any> extends BaseBatchResponse<PaintBrand, T & { id: string }> {}
-export interface PaintBrandBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type PaintBrandBatchCreateResponse<T = any> = BaseBatchResponse<PaintBrand, T>;
+export type PaintBrandBatchUpdateResponse<T = any> = BaseBatchResponse<PaintBrand, T & { id: string }>;
+export type PaintBrandBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

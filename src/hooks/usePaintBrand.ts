@@ -104,7 +104,7 @@ export function usePaintBrandsForComponents(options?: { paintTypeId?: string; pa
             },
           },
         },
-        where: {},
+        where: Record<string, unknown>,
       };
 
       // No status filtering needed since PaintBrand doesn't have status
@@ -151,7 +151,7 @@ export function usePaintBrandsForSelection(options?: { searchTerm?: string; enab
     queryKey: paintBrandKeys.forSelection(searchTerm),
     queryFn: async () => {
       const params: PaintBrandGetManyFormData = {
-        where: {},
+        where: Record<string, unknown>,
         orderBy: {
           name: "asc",
         },
@@ -222,10 +222,10 @@ export function useDualFilteredPaintBrands(options?: { paintTypeId?: string; pai
             include: {
               paintType: true,
             },
-            where: {},
+            where: Record<string, unknown>,
           },
         },
-        where: {},
+        where: Record<string, unknown>,
       };
 
       // Build paint filters

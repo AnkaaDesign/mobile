@@ -1,16 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
-import { View, ScrollView, ActivityIndicator } from "react-native";
+import { View, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { router } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText } from "@/components/ui";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { DatePicker } from "@/components/ui/date-picker";
 import { TextArea } from "@/components/ui/text-area";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { useItems, usePpeSize, useRequestPpeDelivery } from '@/hooks';
 import { ppeRequestSchema } from '@/schemas/ppe-request';
@@ -97,7 +95,7 @@ export default function RequestPPEScreen() {
   }, [watchedItemId, items?.data]);
 
   // Validate PPE size compatibility
-  const validateSizeCompatibility = (itemId: string): { isValid: boolean; message?: string } => {
+  const _validateSizeCompatibility = (itemId: string): { isValid: boolean; message?: string } => {
     const item = items?.data?.find((i) => i.id === itemId);
     if (!item) {
       return { isValid: false, message: "Item não encontrado" };
@@ -221,10 +219,7 @@ export default function RequestPPEScreen() {
       const result = await requestMutation.mutateAsync(requestData);
       console.log('[PPE Request Screen] Request successful:', result);
 
-      showToast({
-        message: "Solicitação de EPI enviada com sucesso!",
-        type: "success",
-      });
+      // API client already shows success alert
       form.reset();
       router.back();
     } catch (error: any) {
@@ -235,11 +230,7 @@ export default function RequestPPEScreen() {
         data: error?.response?.data,
       });
 
-      const errorMessage = error?.response?.data?.message || "Erro ao solicitar EPI";
-      showToast({
-        message: errorMessage,
-        type: "error",
-      });
+      // API client already shows error alert
     }
   }, [stockAvailable, requestMutation, form, selectedItem]);
 

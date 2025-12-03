@@ -86,7 +86,7 @@ import { Text } from "@/components/ui/text";
  * ```tsx
  * const [stage, setStage] = useState(1);
  * const [formData, setFormData] = useState({});
- * const [validation, setValidation] = useState({ errors: {}, canProceed: {} });
+ * const [validation, setValidation] = useState({ errors: Record<string, unknown>, canProceed: {} });
  *
  * const handleNext = () => {
  *   if (validation.canProceed[stage]) {

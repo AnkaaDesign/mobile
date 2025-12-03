@@ -5,7 +5,6 @@ import { useForm, Controller } from "react-hook-form";
 import { useEditForm } from "@/hooks/useEditForm";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import * as DocumentPicker from "expo-document-picker";
 import { createFormDataWithContext } from "@/utils/form-data-context";
 import { Card } from "@/components/ui/card";
 import { FormCard } from "@/components/ui/form-section";
@@ -17,8 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
 import { SimpleFormField, FormFieldGroup } from "@/components/ui";
-import { MediaPicker, type MediaPickerResult } from "@/components/ui/media-picker";
-import { FileUploadField, type FileWithPreview } from "@/components/ui/file-upload-field";
+import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { SimpleFormActionBar } from "@/components/forms";
 
 import { DatePicker } from "@/components/ui/date-picker";
@@ -209,8 +207,8 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
   const isLogisticSector = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
 
   // File upload state
-  const [artworkFiles, setArtworkFiles] = useState<FileWithPreview[]>([]);
-  const [observationFiles, setObservationFiles] = useState<FileWithPreview[]>([]);
+  const [artworkFiles, setArtworkFiles] = useState<FilePickerItem[]>([]);
+  const [observationFiles, setObservationFiles] = useState<FilePickerItem[]>([]);
 
   // Observation section state
   const [isObservationOpen, setIsObservationOpen] = useState(false);
@@ -353,52 +351,9 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
     onComboboxClose: handlers.handleComboboxClose,
   }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
-  // Handle artwork file selection from MediaPickerCard
-  const handleArtworkSelect = (result: MediaPickerResult) => {
-    if (artworkFiles.length >= 5) {
-      Alert.alert("Limite atingido", "Máximo de 5 arquivos de arte permitidos.");
-      return;
-    }
-    const newFile: FileWithPreview = {
-      uri: result.uri,
-      name: result.name,
-      type: result.type,
-      size: result.size || 0,
-    };
-    setArtworkFiles([...artworkFiles, newFile]);
-  };
+  // Artwork files are now handled directly by FilePicker
 
-  const removeArtworkFile = (index: number) => {
-    setArtworkFiles(artworkFiles.filter((_, i) => i !== index));
-  };
-
-  // File picking functions for observation
-  const pickObservationFiles = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: "*/*",
-        multiple: true,
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.canceled && result.assets) {
-        const newFiles: FileWithPreview[] = result.assets.map((asset) => ({
-          uri: asset.uri,
-          name: asset.name,
-          type: asset.mimeType || "application/octet-stream",
-          size: asset.size || 0,
-        }));
-        setObservationFiles([...observationFiles, ...newFiles]);
-      }
-    } catch (error) {
-      console.error("Error picking observation files:", error);
-      Alert.alert("Erro", "Não foi possível selecionar os arquivos");
-    }
-  };
-
-  const removeObservationFile = (index: number) => {
-    setObservationFiles(observationFiles.filter((_, i) => i !== index));
-  };
+  // Observation files are now handled directly by FilePicker
 
   const handleSubmit = async (data: TaskFormData) => {
     // Prevent double submission
@@ -921,17 +876,19 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                   </SimpleFormField>
 
                   {/* Observation Files */}
-                  <View>
-                    <Label>Arquivos de Evidência (Máximo 10) *</Label>
-                    <FileUploadField
-                      files={observationFiles}
-                      onRemove={removeObservationFile}
-                      onAdd={pickObservationFiles}
-                      maxFiles={10}
-                      label="Adicionar Arquivos"
-                      disabled={isSubmitting}
-                    />
-                  </View>
+                  <FilePicker
+                    value={observationFiles}
+                    onChange={setObservationFiles}
+                    maxFiles={10}
+                    label="Arquivos de Evidência"
+                    placeholder="Adicionar arquivos"
+                    helperText="Fotos, documentos ou outros arquivos"
+                    showCamera={true}
+                    showGallery={true}
+                    showFilePicker={true}
+                    disabled={isSubmitting}
+                    required
+                  />
                 </View>
               )}
             </Card>
@@ -1132,51 +1089,17 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           {/* Artworks - Last section, hidden for warehouse, financial, logistic users */}
           {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
             <FormCard title="Artes (Opcional)" icon="IconPhoto">
-                <MediaPicker
-                  onSelect={handleArtworkSelect}
-                  disabled={isSubmitting || artworkFiles.length >= 5}
-                  placeholder="Toque para adicionar arte"
-                  helperText={`${artworkFiles.length}/5 arquivos`}
+                <FilePicker
+                  value={artworkFiles}
+                  onChange={setArtworkFiles}
+                  maxFiles={5}
+                  placeholder="Adicionar arquivos de arte"
+                  helperText="Imagens, PDFs ou outros arquivos"
                   showCamera={true}
                   showGallery={true}
                   showFilePicker={true}
-                  multiple={true}
+                  disabled={isSubmitting}
                 />
-                {artworkFiles.length > 0 && (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={{ marginTop: spacing.md }}
-                    contentContainerStyle={{ gap: spacing.sm }}
-                  >
-                    {artworkFiles.map((file, index) => (
-                      <View key={index} style={styles.artworkPreviewContainer}>
-                        {file.type?.startsWith('image/') ? (
-                          <View style={[styles.artworkImagePreview, { backgroundColor: colors.muted }]}>
-                            <Icon name="photo" size={32} color={colors.mutedForeground} />
-                            <ThemedText style={styles.artworkFileName} numberOfLines={1}>
-                              {file.name}
-                            </ThemedText>
-                          </View>
-                        ) : (
-                          <View style={[styles.artworkImagePreview, { backgroundColor: colors.muted }]}>
-                            <Icon name="file" size={32} color={colors.mutedForeground} />
-                            <ThemedText style={styles.artworkFileName} numberOfLines={1}>
-                              {file.name}
-                            </ThemedText>
-                          </View>
-                        )}
-                        <TouchableOpacity
-                          onPress={() => removeArtworkFile(index)}
-                          style={[styles.artworkRemoveButton, { backgroundColor: colors.destructive }]}
-                          disabled={isSubmitting}
-                        >
-                          <IconX size={14} color="white" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </ScrollView>
-                )}
             </FormCard>
           )}
         </View>

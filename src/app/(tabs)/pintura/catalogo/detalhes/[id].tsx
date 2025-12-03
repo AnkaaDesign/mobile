@@ -21,7 +21,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { IconEdit, IconTrash, IconPaint } from "@tabler/icons-react-native";
 
 export default function CatalogDetailsScreen() {
@@ -99,7 +99,7 @@ export default function CatalogDetailsScreen() {
   // Handle edit
   const handleEdit = () => {
     if (!canEdit) {
-      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      RNAlert.alert("Erro", "Você não tem permissão para editar");
       return;
     }
     router.push(`/pintura/catalogo/editar/${id}`);
@@ -108,7 +108,7 @@ export default function CatalogDetailsScreen() {
   // Handle delete
   const handleDelete = () => {
     if (!canDelete) {
-      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      RNAlert.alert("Erro", "Você não tem permissão para excluir");
       return;
     }
 
@@ -123,10 +123,10 @@ export default function CatalogDetailsScreen() {
           onPress: async () => {
             try {
               await deletePaint(id as string);
-              showToast({ message: "Tinta excluída com sucesso", type: "success" });
+              RNAlert.alert("Sucesso", "Tinta excluída com sucesso");
               router.back();
-            } catch (error) {
-              showToast({ message: "Erro ao excluir tinta", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },

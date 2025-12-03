@@ -19,7 +19,7 @@ interface QueryErrorStats {
 class QueryErrorMonitor {
   private stats: QueryErrorStats = {
     totalErrors: 0,
-    errorTypes: {},
+    errorTypes: Record<string, unknown>,
     networkErrors: 0,
     authErrors: 0,
     validationErrors: 0,
@@ -115,7 +115,7 @@ class QueryErrorMonitor {
   reset() {
     this.stats = {
       totalErrors: 0,
-      errorTypes: {},
+      errorTypes: Record<string, unknown>,
       networkErrors: 0,
       authErrors: 0,
       validationErrors: 0,
@@ -140,7 +140,7 @@ export const queryErrorMonitor = new QueryErrorMonitor();
 //     // Lazy initialization to avoid calling getStats during module load
 //     return {
 //       totalErrors: 0,
-//       errorTypes: {},
+//       errorTypes: Record<string, unknown>,
 //       networkErrors: 0,
 //       authErrors: 0,
 //       validationErrors: 0,

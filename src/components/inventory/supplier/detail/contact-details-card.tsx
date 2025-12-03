@@ -1,4 +1,4 @@
-import { View, StyleSheet, Linking, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Linking, TouchableOpacity, Alert } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
@@ -6,7 +6,7 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconPhone, IconMail, IconPhoneCall, IconWorld, IconBrandWhatsapp } from "@tabler/icons-react-native";
 import type { Supplier } from "@/types";
 import { formatBrazilianPhone } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 interface ContactDetailsCardProps {
   supplier: Supplier;
@@ -18,10 +18,7 @@ export function ContactDetailsCard({ supplier }: ContactDetailsCardProps) {
   const handlePhonePress = (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, "");
     Linking.openURL(`tel:${cleanPhone}`).catch(() => {
-      showToast({
-        message: "Não foi possível abrir o discador",
-        type: "error",
-      });
+      Alert.alert("Erro", "Não foi possível abrir o discador");
     });
   };
 
@@ -29,29 +26,20 @@ export function ContactDetailsCard({ supplier }: ContactDetailsCardProps) {
     const cleanPhone = phone.replace(/\D/g, "");
     const whatsappNumber = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
     Linking.openURL(`https://wa.me/${whatsappNumber}`).catch(() => {
-      showToast({
-        message: "Não foi possível abrir o WhatsApp",
-        type: "error",
-      });
+      Alert.alert("Erro", "Não foi possível abrir o WhatsApp");
     });
   };
 
   const handleEmailPress = (email: string) => {
     Linking.openURL(`mailto:${email}`).catch(() => {
-      showToast({
-        message: "Não foi possível abrir o cliente de email",
-        type: "error",
-      });
+      Alert.alert("Erro", "Não foi possível abrir o cliente de email");
     });
   };
 
   const handleWebsitePress = (site: string) => {
     const url = site.startsWith("http") ? site : `https://${site}`;
     Linking.openURL(url).catch(() => {
-      showToast({
-        message: "Não foi possível abrir o site",
-        type: "error",
-      });
+      Alert.alert("Erro", "Não foi possível abrir o site");
     });
   };
 

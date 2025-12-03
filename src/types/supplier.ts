@@ -101,16 +101,16 @@ export interface SupplierOrderBy {
 // Response Interfaces
 // =====================
 
-export interface SupplierGetUniqueResponse extends BaseGetUniqueResponse<Supplier> {}
-export interface SupplierGetManyResponse extends BaseGetManyResponse<Supplier> {}
-export interface SupplierCreateResponse extends BaseCreateResponse<Supplier> {}
-export interface SupplierUpdateResponse extends BaseUpdateResponse<Supplier> {}
-export interface SupplierDeleteResponse extends BaseDeleteResponse {}
+export type SupplierGetUniqueResponse = BaseGetUniqueResponse<Supplier>;
+export type SupplierGetManyResponse = BaseGetManyResponse<Supplier>;
+export type SupplierCreateResponse = BaseCreateResponse<Supplier>;
+export type SupplierUpdateResponse = BaseUpdateResponse<Supplier>;
+export type SupplierDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface SupplierBatchCreateResponse<T = any> extends BaseBatchResponse<Supplier, T> {}
-export interface SupplierBatchUpdateResponse<T = any> extends BaseBatchResponse<Supplier, T & { id: string }> {}
-export interface SupplierBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type SupplierBatchCreateResponse<T = any> = BaseBatchResponse<Supplier, T>;
+export type SupplierBatchUpdateResponse<T = any> = BaseBatchResponse<Supplier, T & { id: string }>;
+export type SupplierBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

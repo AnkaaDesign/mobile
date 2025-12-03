@@ -84,7 +84,7 @@ export default function RequisitionsListScreen() {
     setRefreshing(true);
     try {
       await refetch();
-    } catch (error) {
+    } catch (_error) {
       console.error("Error refreshing requests:", error);
     } finally {
       setRefreshing(false);
@@ -108,12 +108,12 @@ export default function RequisitionsListScreen() {
             try {
               await approveMutation.mutateAsync({
                 requestId: request.id,
-                data: {},
+                data: Record<string, unknown>,
               });
               Alert.alert("Sucesso", "Requisição aprovada com sucesso!");
               setSelectedRequest(null);
               await refetch();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível aprovar a requisição. Tente novamente.");
             }
           },
@@ -139,12 +139,12 @@ export default function RequisitionsListScreen() {
             try {
               await rejectMutation.mutateAsync({
                 requestId: request.id,
-                data: {},
+                data: Record<string, unknown>,
               });
               Alert.alert("Sucesso", "Requisição rejeitada com sucesso!");
               setSelectedRequest(null);
               await refetch();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível rejeitar a requisição. Tente novamente.");
             }
           },

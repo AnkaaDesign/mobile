@@ -409,41 +409,41 @@ export interface MaintenanceItemGetByIdParams {
 // =====================
 
 // Maintenance responses
-export interface MaintenanceGetUniqueResponse extends BaseGetUniqueResponse<Maintenance> {}
-export interface MaintenanceGetManyResponse extends BaseGetManyResponse<Maintenance> {}
-export interface MaintenanceCreateResponse extends BaseCreateResponse<Maintenance> {}
-export interface MaintenanceUpdateResponse extends BaseUpdateResponse<Maintenance> {}
-export interface MaintenanceDeleteResponse extends BaseDeleteResponse {}
+export type MaintenanceGetUniqueResponse = BaseGetUniqueResponse<Maintenance>;
+export type MaintenanceGetManyResponse = BaseGetManyResponse<Maintenance>;
+export type MaintenanceCreateResponse = BaseCreateResponse<Maintenance>;
+export type MaintenanceUpdateResponse = BaseUpdateResponse<Maintenance>;
+export type MaintenanceDeleteResponse = BaseDeleteResponse;
 
 // MaintenanceSchedule responses
-export interface MaintenanceScheduleGetUniqueResponse extends BaseGetUniqueResponse<MaintenanceSchedule> {}
-export interface MaintenanceScheduleGetManyResponse extends BaseGetManyResponse<MaintenanceSchedule> {}
-export interface MaintenanceScheduleCreateResponse extends BaseCreateResponse<MaintenanceSchedule> {}
-export interface MaintenanceScheduleUpdateResponse extends BaseUpdateResponse<MaintenanceSchedule> {}
-export interface MaintenanceScheduleDeleteResponse extends BaseDeleteResponse {}
+export type MaintenanceScheduleGetUniqueResponse = BaseGetUniqueResponse<MaintenanceSchedule>;
+export type MaintenanceScheduleGetManyResponse = BaseGetManyResponse<MaintenanceSchedule>;
+export type MaintenanceScheduleCreateResponse = BaseCreateResponse<MaintenanceSchedule>;
+export type MaintenanceScheduleUpdateResponse = BaseUpdateResponse<MaintenanceSchedule>;
+export type MaintenanceScheduleDeleteResponse = BaseDeleteResponse;
 
 // MaintenanceItem responses
-export interface MaintenanceItemGetUniqueResponse extends BaseGetUniqueResponse<MaintenanceItem> {}
-export interface MaintenanceItemGetManyResponse extends BaseGetManyResponse<MaintenanceItem> {}
-export interface MaintenanceItemCreateResponse extends BaseCreateResponse<MaintenanceItem> {}
-export interface MaintenanceItemUpdateResponse extends BaseUpdateResponse<MaintenanceItem> {}
-export interface MaintenanceItemDeleteResponse extends BaseDeleteResponse {}
+export type MaintenanceItemGetUniqueResponse = BaseGetUniqueResponse<MaintenanceItem>;
+export type MaintenanceItemGetManyResponse = BaseGetManyResponse<MaintenanceItem>;
+export type MaintenanceItemCreateResponse = BaseCreateResponse<MaintenanceItem>;
+export type MaintenanceItemUpdateResponse = BaseUpdateResponse<MaintenanceItem>;
+export type MaintenanceItemDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
 // Maintenance batch operations
-export interface MaintenanceBatchCreateResponse<T = any> extends BaseBatchResponse<Maintenance, T> {}
-export interface MaintenanceBatchUpdateResponse<T = any> extends BaseBatchResponse<Maintenance, T & { id: string }> {}
-export interface MaintenanceBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type MaintenanceBatchCreateResponse<T = any> = BaseBatchResponse<Maintenance, T>;
+export type MaintenanceBatchUpdateResponse<T = any> = BaseBatchResponse<Maintenance, T & { id: string }>;
+export type MaintenanceBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // MaintenanceSchedule batch operations
-export interface MaintenanceScheduleBatchCreateResponse<T = any> extends BaseBatchResponse<MaintenanceSchedule, T> {}
-export interface MaintenanceScheduleBatchUpdateResponse<T = any> extends BaseBatchResponse<MaintenanceSchedule, T & { id: string }> {}
-export interface MaintenanceScheduleBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type MaintenanceScheduleBatchCreateResponse<T = any> = BaseBatchResponse<MaintenanceSchedule, T>;
+export type MaintenanceScheduleBatchUpdateResponse<T = any> = BaseBatchResponse<MaintenanceSchedule, T & { id: string }>;
+export type MaintenanceScheduleBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // MaintenanceItem batch operations
-export interface MaintenanceItemBatchCreateResponse<T = any> extends BaseBatchResponse<MaintenanceItem, T> {}
-export interface MaintenanceItemBatchUpdateResponse<T = any> extends BaseBatchResponse<MaintenanceItem, T & { id: string }> {}
-export interface MaintenanceItemBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type MaintenanceItemBatchCreateResponse<T = any> = BaseBatchResponse<MaintenanceItem, T>;
+export type MaintenanceItemBatchUpdateResponse<T = any> = BaseBatchResponse<MaintenanceItem, T & { id: string }>;
+export type MaintenanceItemBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

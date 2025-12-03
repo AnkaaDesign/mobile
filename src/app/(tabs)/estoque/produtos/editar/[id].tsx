@@ -1,7 +1,7 @@
 import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ItemEditForm } from "@/components/inventory/item/form/item-edit-form";
@@ -55,13 +55,10 @@ function ItemEditScreen() {
         data: changedData,
       });
 
-      showToast({
-        message: "Item atualizado com sucesso!",
-        type: "success",
-      });
+      // API client already shows success alert
       router.replace(routeToMobilePath(routes.inventory.products.root) as any);
     } catch (error) {
-      // Error handled by mutation hook
+      // API client already shows error alert
       console.error("Error updating item:", error);
     }
   };

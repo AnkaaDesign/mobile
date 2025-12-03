@@ -1,10 +1,24 @@
+import { getDefaultVisibleColumnsWithTablet } from '@/lib/table-utils';
+
+// Mobile columns (< 624px)
+const MOBILE_COLUMNS = [
+  "name",                    // NOME/LOGOMARCA
+  "sector.name",             // SETOR
+  "finishedAt",              // FINALIZADO EM
+];
+
+// Tablet columns (>= 624px) - adds serial number, finished at, and commission
+const TABLET_COLUMNS = [
+  "name",                    // NOME/LOGOMARCA
+  "serialNumber",            // Nº SÉRIE
+  "sector.name",             // SETOR
+  "finishedAt",              // FINALIZADO EM
+  "commission",              // COMISSÃO
+];
+
 /**
  * Get default visible columns for task history table
  */
 export const getDefaultVisibleColumns = (): Set<string> => {
-  return new Set([
-    "name",                    // NOME/LOGOMARCA
-    "sector.name",             // SETOR
-    "finishedAt",              // FINALIZADO EM
-  ]);
+  return getDefaultVisibleColumnsWithTablet(MOBILE_COLUMNS, TABLET_COLUMNS);
 };

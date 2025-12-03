@@ -23,7 +23,7 @@ import { PortalHost } from "@rn-primitives/portal";
 import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, LogBox } from "react-native";
 import { AppStatusBar } from "@/components/app-status-bar";
-import { ToastContainer } from "@/components/ui/toast";
+// Toast system removed - API client uses native Alert/ToastAndroid via setup-notifications.ts
 import NetInfo from "@react-native-community/netinfo";
 import { updateApiUrl } from '../api-client';
 import { setupMobileNotifications } from "@/lib/setup-notifications";
@@ -205,7 +205,6 @@ export default function RootLayout() {
                           <Stack.Screen name="index" options={{ headerShown: false }} />
                         </Stack>
                         <PortalHost />
-                        <ToastContainer />
                       </>
                     )}
                         </SwipeRowProvider>

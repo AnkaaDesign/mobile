@@ -26,7 +26,7 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
 import { PhoneManager } from "@/components/administration/customer/form/phone-manager";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
-import { LogoUpload } from "@/components/administration/customer/form/logo-upload";
+import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 
 /**
  * Financial Customer Edit Screen
@@ -42,7 +42,7 @@ export default function FinancialCustomerEditScreen() {
   const insets = useSafeAreaInsets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cnpj");
-  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoFiles, setLogoFiles] = useState<FilePickerItem[]>([]);
 
   // CNPJ Lookup Hook
   const { lookupCnpj, isLoading: isLoadingCnpj } = useCnpjLookup({
@@ -181,7 +181,7 @@ export default function FinancialCustomerEditScreen() {
       let submitData: CustomerUpdateFormData | any = data;
 
       // If we have a new logo file, create FormData
-      if (logoFile) {
+      if (logoFiles.length > 0) {
         const formData = new FormData();
 
         // Add all form fields
@@ -199,7 +199,12 @@ export default function FinancialCustomerEditScreen() {
         });
 
         // Add the logo file
-        formData.append("logo", logoFile as any);
+        const logoFile = logoFiles[0];
+        formData.append("logo", {
+          uri: logoFile.uri,
+          name: logoFile.name,
+          type: logoFile.type,
+        } as any);
 
         submitData = formData;
       }
@@ -207,15 +212,9 @@ export default function FinancialCustomerEditScreen() {
       const result = await updateAsync({ id: id!, data: submitData as CustomerUpdateFormData });
 
       if (result?.data) {
-        Alert.alert("Sucesso", "Cliente atualizado com sucesso!", [
-          {
-            text: "OK",
-            onPress: () => {
-              // Navigate back to financial customer details, not administration
-              router.replace(routeToMobilePath(routes.financial.customers.details(id!)) as any);
-            },
-          },
-        ]);
+        // API client already shows success alert
+        // Navigate back to financial customer details, not administration
+        router.replace(routeToMobilePath(routes.financial.customers.details(id!)) as any);
       } else {
         Alert.alert("Erro", "Erro ao atualizar cliente");
       }
@@ -227,7 +226,7 @@ export default function FinancialCustomerEditScreen() {
   };
 
   const handleCancel = () => {
-    if (isDirty || logoFile) {
+    if (isDirty || logoFiles.length > 0) {
       Alert.alert("Descartar Alterações", "Você tem alterações não salvas. Deseja descartá-las?", [
         { text: "Continuar Editando", style: "cancel" },
         { text: "Descartar", style: "destructive", onPress: () => router.back() },
@@ -470,7 +469,23 @@ export default function FinancialCustomerEditScreen() {
             </View>
           </View>
           <View style={styles.sectionContentWrapper}>
-            <LogoUpload value={logoFile} onChange={setLogoFile} disabled={isSubmitting} existingLogoUrl={(customer.data.logo?.url as string) || undefined} />
+            <FilePicker
+              value={logoFiles}
+              onChange={setLogoFiles}
+              maxFiles={1}
+              label="Logo do Cliente"
+              placeholder="Adicionar logo"
+              helperText="Selecione uma imagem para o logo do cliente"
+              disabled={isSubmitting}
+              showCamera={true}
+              showGallery={true}
+              showFilePicker={true}
+            />
+            {customer.data.logo?.url && logoFiles.length === 0 && (
+              <ThemedText style={[styles.helperText, { color: colors.mutedForeground }]}>
+                Logo atual: {customer.data.logo.filename || 'logo.jpg'}
+              </ThemedText>
+            )}
           </View>
         </Card>
 
@@ -641,7 +656,7 @@ export default function FinancialCustomerEditScreen() {
           <ThemedText>Cancelar</ThemedText>
         </Button>
 
-        <Button variant="default" onPress={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting || (!isDirty && !logoFile)} style={styles.actionButton}>
+        <Button variant="default" onPress={handleSubmit(onSubmit)} disabled={!isValid || isSubmitting || (!isDirty && logoFiles.length === 0)} style={styles.actionButton}>
           <IconDeviceFloppy size={20} />
           <ThemedText style={{ color: "white" }}>{isSubmitting ? "Salvando..." : "Salvar Alterações"}</ThemedText>
         </Button>

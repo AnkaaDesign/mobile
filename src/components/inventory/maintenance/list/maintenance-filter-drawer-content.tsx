@@ -45,7 +45,7 @@ export function MaintenanceFilterDrawerContent({
 
   const handleApply = useCallback(() => {
     const newFilters: Partial<MaintenanceGetManyParams> = {
-      where: {},
+      where: Record<string, unknown>,
     };
 
     if (localFilters.statusIds && localFilters.statusIds.length > 0) {

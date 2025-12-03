@@ -159,22 +159,22 @@ export interface FileOrderBy {
 // Response Interfaces
 // =====================
 
-export interface FileGetUniqueResponse extends BaseGetUniqueResponse<File> {}
-export interface FileGetManyResponse extends BaseGetManyResponse<File> {}
-export interface FileCreateResponse extends BaseCreateResponse<File> {}
-export interface FileUpdateResponse extends BaseUpdateResponse<File> {}
-export interface FileDeleteResponse extends BaseDeleteResponse {}
+export type FileGetUniqueResponse = BaseGetUniqueResponse<File>;
+export type FileGetManyResponse = BaseGetManyResponse<File>;
+export type FileCreateResponse = BaseCreateResponse<File>;
+export type FileUpdateResponse = BaseUpdateResponse<File>;
+export type FileDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Multiple Upload Response
 // =====================
 
-export interface FileMultipleUploadResponse extends BaseCreateResponse<File[]> {}
+export type FileMultipleUploadResponse = BaseCreateResponse<File[]>;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface FileBatchCreateResponse<T = any> extends BaseBatchResponse<File, T> {}
-export interface FileBatchUpdateResponse<T = any> extends BaseBatchResponse<File, T & { id: string }> {}
-export interface FileBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type FileBatchCreateResponse<T = any> = BaseBatchResponse<File, T>;
+export type FileBatchUpdateResponse<T = any> = BaseBatchResponse<File, T & { id: string }>;
+export type FileBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

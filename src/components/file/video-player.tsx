@@ -13,6 +13,7 @@ import {
   StyleSheet,
   StatusBar,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
@@ -28,7 +29,7 @@ import {
 } from '@tabler/icons-react-native';
 import type { File as AnkaaFile } from '../../types';
 import { getFileUrl } from '../../utils/file-viewer-utils';
-import { showToast } from '../ui/toast';
+// import { showToast } from '../ui/toast';
 
 export interface VideoPlayerProps {
   file: AnkaaFile;
@@ -157,10 +158,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     } else if ('error' in newStatus && newStatus.error) {
       setLoading(false);
       setError('Erro ao carregar vídeo. Tente novamente ou baixe o arquivo.');
-      showToast({
-        message: 'Erro ao carregar vídeo',
-        type: 'error',
-      });
+      Alert.alert('Erro', 'Erro ao carregar vídeo');
     }
   }, []);
 

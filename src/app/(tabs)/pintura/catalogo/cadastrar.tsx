@@ -1,5 +1,6 @@
 import { Stack, useRouter } from "expo-router";
-import { showToast } from "@/components/ui/toast";
+import { Alert } from "react-native";
+// import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { usePaintMutations } from "@/hooks";
@@ -15,13 +16,11 @@ export default function CreateCatalogScreen() {
       const result = await createAsync(data);
 
       if (result.success) {
-        showToast({
-          message: "Tinta criada com sucesso!",
-          type: "success",
-        });
+        // API client already shows success alert
         router.replace(routeToMobilePath(routes.painting.catalog.root) as any);
       }
     } catch (error) {
+      // API client already shows error alert
       console.error("Error creating paint:", error);
     }
   };

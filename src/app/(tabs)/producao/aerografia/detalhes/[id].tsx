@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconEdit, IconTrash, IconBrush, IconClock, IconFileText, IconTag } from "@tabler/icons-react-native";
-import { showToast } from "@/components/ui/toast";
+import { IconEdit, IconTrash, IconTag } from "@tabler/icons-react-native";
+// import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
@@ -90,10 +90,10 @@ export default function AirbrushingDetailScreen() {
           onPress: async () => {
             try {
               await deleteAsync(id as string);
-              showToast({ message: "Airbrushing excluído com sucesso", type: "success" });
+              // API client already shows success alert
               router.back();
-            } catch (error) {
-              showToast({ message: "Não foi possível excluir o airbrushing", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },
@@ -105,7 +105,7 @@ export default function AirbrushingDetailScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 

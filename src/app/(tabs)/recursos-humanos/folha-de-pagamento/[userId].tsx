@@ -347,7 +347,7 @@ export default function PayrollDetailScreen() {
   const isLive = parsedId.isLive || payroll.isLive || payroll.isTemporary;
 
   const hasPayrollDiscounts = payroll.discounts && payroll.discounts.length > 0;
-  const hasBonusDiscounts = payroll.bonus?.bonusDiscounts && payroll.bonus.bonusDiscounts.length > 0;
+  const _hasBonusDiscounts = payroll.bonus?.bonusDiscounts && payroll.bonus.bonusDiscounts.length > 0;
 
   return (
     <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL]}>

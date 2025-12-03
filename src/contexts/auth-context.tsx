@@ -6,7 +6,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Alert, View, Text, AppState, AppStateStatus } from "react-native";
 import { detectContactMethod } from '../utils';
 import { jwtDecode } from "jwt-decode";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 import type { SignUpFormData, PasswordResetRequestFormData, VerifyCodeFormData, SendVerificationFormData } from '../schemas';
 import type { User } from '../types';
@@ -754,14 +754,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Handle SKIP marker (shouldn't happen with forceRefresh=true, but be safe)
       if (updatedUser === 'SKIP') {
         console.log("[AUTH DEBUG] Manual refresh skipped (concurrent fetch in progress)");
-        showToast({ message: "Atualização em andamento", type: "info" });
+        Alert.alert("Informação", "Atualização em andamento");
         return null;
       }
       if (updatedUser) {
-        showToast({ message: "Dados atualizados com sucesso", type: "success" });
+        Alert.alert("Sucesso", "Dados atualizados com sucesso");
         return updatedUser;
       } else {
-        showToast({ message: "Erro ao atualizar dados", type: "error" });
+        Alert.alert("Erro", "Erro ao atualizar dados");
         return null;
       }
     }

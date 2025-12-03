@@ -402,53 +402,53 @@ export interface OrderRuleOrderBy {
 // =====================
 
 // Order responses
-export interface OrderGetUniqueResponse extends BaseGetUniqueResponse<Order> {}
-export interface OrderGetManyResponse extends BaseGetManyResponse<Order> {}
-export interface OrderCreateResponse extends BaseCreateResponse<Order> {}
-export interface OrderUpdateResponse extends BaseUpdateResponse<Order> {}
-export interface OrderDeleteResponse extends BaseDeleteResponse {}
+export type OrderGetUniqueResponse = BaseGetUniqueResponse<Order>;
+export type OrderGetManyResponse = BaseGetManyResponse<Order>;
+export type OrderCreateResponse = BaseCreateResponse<Order>;
+export type OrderUpdateResponse = BaseUpdateResponse<Order>;
+export type OrderDeleteResponse = BaseDeleteResponse;
 
 // OrderItem responses
-export interface OrderItemGetUniqueResponse extends BaseGetUniqueResponse<OrderItem> {}
-export interface OrderItemGetManyResponse extends BaseGetManyResponse<OrderItem> {}
-export interface OrderItemCreateResponse extends BaseCreateResponse<OrderItem> {}
-export interface OrderItemUpdateResponse extends BaseUpdateResponse<OrderItem> {}
-export interface OrderItemDeleteResponse extends BaseDeleteResponse {}
+export type OrderItemGetUniqueResponse = BaseGetUniqueResponse<OrderItem>;
+export type OrderItemGetManyResponse = BaseGetManyResponse<OrderItem>;
+export type OrderItemCreateResponse = BaseCreateResponse<OrderItem>;
+export type OrderItemUpdateResponse = BaseUpdateResponse<OrderItem>;
+export type OrderItemDeleteResponse = BaseDeleteResponse;
 
 // OrderSchedule responses
-export interface OrderScheduleGetUniqueResponse extends BaseGetUniqueResponse<OrderSchedule> {}
-export interface OrderScheduleGetManyResponse extends BaseGetManyResponse<OrderSchedule> {}
-export interface OrderScheduleCreateResponse extends BaseCreateResponse<OrderSchedule> {}
-export interface OrderScheduleUpdateResponse extends BaseUpdateResponse<OrderSchedule> {}
-export interface OrderScheduleDeleteResponse extends BaseDeleteResponse {}
+export type OrderScheduleGetUniqueResponse = BaseGetUniqueResponse<OrderSchedule>;
+export type OrderScheduleGetManyResponse = BaseGetManyResponse<OrderSchedule>;
+export type OrderScheduleCreateResponse = BaseCreateResponse<OrderSchedule>;
+export type OrderScheduleUpdateResponse = BaseUpdateResponse<OrderSchedule>;
+export type OrderScheduleDeleteResponse = BaseDeleteResponse;
 
 // OrderRule responses
-export interface OrderRuleGetUniqueResponse extends BaseGetUniqueResponse<OrderRule> {}
-export interface OrderRuleGetManyResponse extends BaseGetManyResponse<OrderRule> {}
-export interface OrderRuleCreateResponse extends BaseCreateResponse<OrderRule> {}
-export interface OrderRuleUpdateResponse extends BaseUpdateResponse<OrderRule> {}
-export interface OrderRuleDeleteResponse extends BaseDeleteResponse {}
+export type OrderRuleGetUniqueResponse = BaseGetUniqueResponse<OrderRule>;
+export type OrderRuleGetManyResponse = BaseGetManyResponse<OrderRule>;
+export type OrderRuleCreateResponse = BaseCreateResponse<OrderRule>;
+export type OrderRuleUpdateResponse = BaseUpdateResponse<OrderRule>;
+export type OrderRuleDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
 // Order batch operations
-export interface OrderBatchCreateResponse<T> extends BaseBatchResponse<Order, T> {}
-export interface OrderBatchUpdateResponse<T> extends BaseBatchResponse<Order, T & { id: string }> {}
-export interface OrderBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type OrderBatchCreateResponse<T> = BaseBatchResponse<Order, T>;
+export type OrderBatchUpdateResponse<T> = BaseBatchResponse<Order, T & { id: string }>;
+export type OrderBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // OrderItem batch operations
-export interface OrderItemBatchCreateResponse<T> extends BaseBatchResponse<OrderItem, T> {}
-export interface OrderItemBatchUpdateResponse<T> extends BaseBatchResponse<OrderItem, T & { id: string }> {}
-export interface OrderItemBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type OrderItemBatchCreateResponse<T> = BaseBatchResponse<OrderItem, T>;
+export type OrderItemBatchUpdateResponse<T> = BaseBatchResponse<OrderItem, T & { id: string }>;
+export type OrderItemBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // OrderSchedule batch operations
-export interface OrderScheduleBatchCreateResponse<T> extends BaseBatchResponse<OrderSchedule, T> {}
-export interface OrderScheduleBatchUpdateResponse<T> extends BaseBatchResponse<OrderSchedule, T & { id: string }> {}
-export interface OrderScheduleBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type OrderScheduleBatchCreateResponse<T> = BaseBatchResponse<OrderSchedule, T>;
+export type OrderScheduleBatchUpdateResponse<T> = BaseBatchResponse<OrderSchedule, T & { id: string }>;
+export type OrderScheduleBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // OrderRule batch operations
-export interface OrderRuleBatchCreateResponse<T> extends BaseBatchResponse<OrderRule, T> {}
-export interface OrderRuleBatchUpdateResponse<T> extends BaseBatchResponse<OrderRule, T & { id: string }> {}
-export interface OrderRuleBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type OrderRuleBatchCreateResponse<T> = BaseBatchResponse<OrderRule, T>;
+export type OrderRuleBatchUpdateResponse<T> = BaseBatchResponse<OrderRule, T & { id: string }>;
+export type OrderRuleBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

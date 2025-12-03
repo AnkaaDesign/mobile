@@ -13,7 +13,7 @@ import { ErrorScreen } from '@/components/ui/error-screen';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { TextArea } from '@/components/ui/text-area';
-import { useToast } from '@/hooks/use-toast';
+// import { useToast } from '@/hooks/use-toast';
 
 interface MaintenanceSettings {
   enabled: boolean;
@@ -35,7 +35,6 @@ export default function ServerMaintenanceScreen() {
   const [customMessage, setCustomMessage] = useState('');
   const [estimatedDuration, setEstimatedDuration] = useState('');
   const [allowedUser, setAllowedUser] = useState('');
-  const { success, error: showError} = useToast();
 
   const queryClient = useQueryClient();
 
@@ -65,16 +64,12 @@ export default function ServerMaintenanceScreen() {
       });
     },
     onSuccess: (_data, settings) => {
-      success(
-        settings.enabled
-          ? 'Modo de manutenção ativado'
-          : 'Modo de manutenção desativado'
-      );
+      // API client already shows success alert
       queryClient.invalidateQueries({ queryKey: ['systemStatus'] });
       queryClient.invalidateQueries({ queryKey: ['systemHealth'] });
     },
     onError: (_error) => {
-      showError('Erro ao alterar modo de manutenção');
+      // API client already shows error alert
     },
   });
 
@@ -138,7 +133,7 @@ export default function ServerMaintenanceScreen() {
       allowedUsers: newAllowedUsers,
     });
     setAllowedUser('');
-    success(`Usuário ${allowedUser} adicionado à lista`);
+    Alert.alert("Sucesso", `Usuário ${allowedUser} adicionado à lista`);
   };
 
   const handleRemoveAllowedUser = (userToRemove: string) => {
@@ -147,7 +142,7 @@ export default function ServerMaintenanceScreen() {
       ...maintenanceSettings,
       allowedUsers: newAllowedUsers,
     });
-    success(`Usuário ${userToRemove} removido da lista`);
+    Alert.alert("Sucesso", `Usuário ${userToRemove} removido da lista`);
   };
 
   const handleScheduleMaintenance = () => {

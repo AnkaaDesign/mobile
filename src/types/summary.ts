@@ -481,22 +481,22 @@ export interface DashboardAggregatedSummary {
 // =====================
 
 // Stock Module Responses
-export interface StockSummaryResponse extends BaseSummaryResponse<StockDashboardSummary> {}
-export interface ItemSummaryResponse extends BaseSummaryResponse<ItemDashboardSummary> {}
-export interface OrderSummaryResponse extends BaseSummaryResponse<OrderDashboardSummary> {}
+export type StockSummaryResponse = BaseSummaryResponse<StockDashboardSummary>;
+export type ItemSummaryResponse = BaseSummaryResponse<ItemDashboardSummary>;
+export type OrderSummaryResponse = BaseSummaryResponse<OrderDashboardSummary>;
 
 // HUMAN_RESOURCES Module Responses
-export interface HRSummaryResponse extends BaseSummaryResponse<HRDashboardSummary> {}
-export interface VacationSummaryResponse extends BaseSummaryResponse<VacationDashboardSummary> {}
-export interface WarningSummaryResponse extends BaseSummaryResponse<WarningDashboardSummary> {}
+export type HRSummaryResponse = BaseSummaryResponse<HRDashboardSummary>;
+export type VacationSummaryResponse = BaseSummaryResponse<VacationDashboardSummary>;
+export type WarningSummaryResponse = BaseSummaryResponse<WarningDashboardSummary>;
 
 // Work Module Responses
-export interface TaskSummaryResponse extends BaseSummaryResponse<TaskDashboardSummary> {}
-export interface CustomerSummaryResponse extends BaseSummaryResponse<CustomerDashboardSummary> {}
-export interface GarageSummaryResponse extends BaseSummaryResponse<GarageDashboardSummary> {}
+export type TaskSummaryResponse = BaseSummaryResponse<TaskDashboardSummary>;
+export type CustomerSummaryResponse = BaseSummaryResponse<CustomerDashboardSummary>;
+export type GarageSummaryResponse = BaseSummaryResponse<GarageDashboardSummary>;
 
 // Notification Module Response
-export interface NotificationSummaryResponse extends BaseSummaryResponse<NotificationDashboardSummary> {}
+export type NotificationSummaryResponse = BaseSummaryResponse<NotificationDashboardSummary>;
 
 // Aggregated Response
-export interface DashboardAggregatedResponse extends BaseSummaryResponse<DashboardAggregatedSummary> {}
+export type DashboardAggregatedResponse = BaseSummaryResponse<DashboardAggregatedSummary>;

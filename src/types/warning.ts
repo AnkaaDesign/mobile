@@ -82,16 +82,16 @@ export interface WarningOrderBy {
 // Response Interfaces
 // =====================
 
-export interface WarningGetUniqueResponse extends BaseGetUniqueResponse<Warning> {}
-export interface WarningGetManyResponse extends BaseGetManyResponse<Warning> {}
-export interface WarningCreateResponse extends BaseCreateResponse<Warning> {}
-export interface WarningUpdateResponse extends BaseUpdateResponse<Warning> {}
-export interface WarningDeleteResponse extends BaseDeleteResponse {}
+export type WarningGetUniqueResponse = BaseGetUniqueResponse<Warning>;
+export type WarningGetManyResponse = BaseGetManyResponse<Warning>;
+export type WarningCreateResponse = BaseCreateResponse<Warning>;
+export type WarningUpdateResponse = BaseUpdateResponse<Warning>;
+export type WarningDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface WarningBatchCreateResponse<T = any> extends BaseBatchResponse<Warning, T> {}
-export interface WarningBatchUpdateResponse<T = any> extends BaseBatchResponse<Warning, T & { id: string }> {}
-export interface WarningBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type WarningBatchCreateResponse<T = any> = BaseBatchResponse<Warning, T>;
+export type WarningBatchUpdateResponse<T = any> = BaseBatchResponse<Warning, T & { id: string }>;
+export type WarningBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

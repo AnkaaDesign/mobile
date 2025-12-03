@@ -87,7 +87,7 @@ export default function PPEDetailsScreen() {
                 data: { status: newStatus },
               });
               await refetch();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível alterar o status");
             }
           },
@@ -110,7 +110,7 @@ export default function PPEDetailsScreen() {
             try {
               await deleteMutation.mutateAsync(params.id!);
               router.back();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert("Erro", "Não foi possível excluir a entrega de EPI");
             }
           },

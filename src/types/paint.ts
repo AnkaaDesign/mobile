@@ -1,7 +1,7 @@
 // packages/interfaces/src/paint.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse, BaseMergeResponse } from "./common";
-import type { PAINT_FINISH, ORDER_BY_DIRECTION, COLOR_PALETTE, TRUCK_MANUFACTURER, PAINT_TYPE_ENUM } from '@/constants';
+import type { PAINT_FINISH, ORDER_BY_DIRECTION, TRUCK_MANUFACTURER, PAINT_TYPE_ENUM } from '@/constants';
 import type { Item, ItemIncludes, ItemOrderBy } from "./item";
 import type { Task, TaskIncludes } from "./task";
 import type { PaintBrand, PaintBrandIncludes, PaintBrandOrderBy, PaintBrandWhere } from "./paint-brand";
@@ -33,8 +33,6 @@ export interface Paint extends BaseEntity {
   finish: PAINT_FINISH;
   manufacturer: TRUCK_MANUFACTURER | null;
   tags: string[];
-  palette: COLOR_PALETTE;
-  paletteOrder: number;
   colorOrder: number;
   paintTypeId: string;
   paintBrandId: string | null;
@@ -250,8 +248,6 @@ export interface PaintOrderBy {
   hex?: ORDER_BY_DIRECTION;
   finish?: ORDER_BY_DIRECTION;
   manufacturer?: ORDER_BY_DIRECTION;
-  palette?: ORDER_BY_DIRECTION;
-  paletteOrder?: ORDER_BY_DIRECTION;
   colorOrder?: ORDER_BY_DIRECTION;
   paintTypeId?: ORDER_BY_DIRECTION;
   paintBrandId?: ORDER_BY_DIRECTION;
@@ -347,10 +343,8 @@ export interface PaintWhere {
   // Enum fields
   finish?: PAINT_FINISH | { equals?: PAINT_FINISH; not?: PAINT_FINISH; in?: PAINT_FINISH[]; notIn?: PAINT_FINISH[] };
   manufacturer?: TRUCK_MANUFACTURER | { equals?: TRUCK_MANUFACTURER; not?: TRUCK_MANUFACTURER; in?: TRUCK_MANUFACTURER[]; notIn?: TRUCK_MANUFACTURER[] } | null;
-  palette?: COLOR_PALETTE | { equals?: COLOR_PALETTE; not?: COLOR_PALETTE; in?: COLOR_PALETTE[]; notIn?: COLOR_PALETTE[] };
 
   // Number fields
-  paletteOrder?: number | { equals?: number; not?: number; lt?: number; lte?: number; gt?: number; gte?: number; in?: number[]; notIn?: number[] };
   colorOrder?: number | { equals?: number; not?: number; lt?: number; lte?: number; gt?: number; gte?: number; in?: number[]; notIn?: number[] };
 
   // Array fields
@@ -502,7 +496,6 @@ export interface PaintComponentFilters {
     hex?: string;
     finish?: PAINT_FINISH | PAINT_FINISH[];
     manufacturer?: TRUCK_MANUFACTURER | TRUCK_MANUFACTURER[];
-    palette?: COLOR_PALETTE | COLOR_PALETTE[];
     tags?: string[];
   };
 }
@@ -512,80 +505,80 @@ export interface PaintComponentFilters {
 // =====================
 
 // PaintType responses
-export interface PaintTypeGetUniqueResponse extends BaseGetUniqueResponse<PaintType> {}
-export interface PaintTypeGetManyResponse extends BaseGetManyResponse<PaintType> {}
-export interface PaintTypeCreateResponse extends BaseCreateResponse<PaintType> {}
-export interface PaintTypeUpdateResponse extends BaseUpdateResponse<PaintType> {}
-export interface PaintTypeDeleteResponse extends BaseDeleteResponse {}
+export type PaintTypeGetUniqueResponse = BaseGetUniqueResponse<PaintType>;
+export type PaintTypeGetManyResponse = BaseGetManyResponse<PaintType>;
+export type PaintTypeCreateResponse = BaseCreateResponse<PaintType>;
+export type PaintTypeUpdateResponse = BaseUpdateResponse<PaintType>;
+export type PaintTypeDeleteResponse = BaseDeleteResponse;
 
 // Paint responses
-export interface PaintGetUniqueResponse extends BaseGetUniqueResponse<Paint> {}
-export interface PaintGetManyResponse extends BaseGetManyResponse<Paint> {}
-export interface PaintCreateResponse extends BaseCreateResponse<Paint> {}
-export interface PaintUpdateResponse extends BaseUpdateResponse<Paint> {}
-export interface PaintDeleteResponse extends BaseDeleteResponse {}
-export interface PaintMergeResponse extends BaseMergeResponse<Paint> {}
+export type PaintGetUniqueResponse = BaseGetUniqueResponse<Paint>;
+export type PaintGetManyResponse = BaseGetManyResponse<Paint>;
+export type PaintCreateResponse = BaseCreateResponse<Paint>;
+export type PaintUpdateResponse = BaseUpdateResponse<Paint>;
+export type PaintDeleteResponse = BaseDeleteResponse;
+export type PaintMergeResponse = BaseMergeResponse<Paint>;
 
 // PaintGround responses
-export interface PaintGroundGetUniqueResponse extends BaseGetUniqueResponse<PaintGround> {}
-export interface PaintGroundGetManyResponse extends BaseGetManyResponse<PaintGround> {}
-export interface PaintGroundCreateResponse extends BaseCreateResponse<PaintGround> {}
-export interface PaintGroundUpdateResponse extends BaseUpdateResponse<PaintGround> {}
-export interface PaintGroundDeleteResponse extends BaseDeleteResponse {}
+export type PaintGroundGetUniqueResponse = BaseGetUniqueResponse<PaintGround>;
+export type PaintGroundGetManyResponse = BaseGetManyResponse<PaintGround>;
+export type PaintGroundCreateResponse = BaseCreateResponse<PaintGround>;
+export type PaintGroundUpdateResponse = BaseUpdateResponse<PaintGround>;
+export type PaintGroundDeleteResponse = BaseDeleteResponse;
 
 // PaintFormula responses
-export interface PaintFormulaGetUniqueResponse extends BaseGetUniqueResponse<PaintFormula> {}
-export interface PaintFormulaGetManyResponse extends BaseGetManyResponse<PaintFormula> {}
-export interface PaintFormulaCreateResponse extends BaseCreateResponse<PaintFormula> {}
-export interface PaintFormulaUpdateResponse extends BaseUpdateResponse<PaintFormula> {}
-export interface PaintFormulaDeleteResponse extends BaseDeleteResponse {}
+export type PaintFormulaGetUniqueResponse = BaseGetUniqueResponse<PaintFormula>;
+export type PaintFormulaGetManyResponse = BaseGetManyResponse<PaintFormula>;
+export type PaintFormulaCreateResponse = BaseCreateResponse<PaintFormula>;
+export type PaintFormulaUpdateResponse = BaseUpdateResponse<PaintFormula>;
+export type PaintFormulaDeleteResponse = BaseDeleteResponse;
 
 // PaintFormulaComponent responses
-export interface PaintFormulaComponentGetUniqueResponse extends BaseGetUniqueResponse<PaintFormulaComponent> {}
-export interface PaintFormulaComponentGetManyResponse extends BaseGetManyResponse<PaintFormulaComponent> {}
-export interface PaintFormulaComponentCreateResponse extends BaseCreateResponse<PaintFormulaComponent> {}
-export interface PaintFormulaComponentUpdateResponse extends BaseUpdateResponse<PaintFormulaComponent> {}
-export interface PaintFormulaComponentDeleteResponse extends BaseDeleteResponse {}
+export type PaintFormulaComponentGetUniqueResponse = BaseGetUniqueResponse<PaintFormulaComponent>;
+export type PaintFormulaComponentGetManyResponse = BaseGetManyResponse<PaintFormulaComponent>;
+export type PaintFormulaComponentCreateResponse = BaseCreateResponse<PaintFormulaComponent>;
+export type PaintFormulaComponentUpdateResponse = BaseUpdateResponse<PaintFormulaComponent>;
+export type PaintFormulaComponentDeleteResponse = BaseDeleteResponse;
 
 // PaintProduction responses
-export interface PaintProductionGetUniqueResponse extends BaseGetUniqueResponse<PaintProduction> {}
-export interface PaintProductionGetManyResponse extends BaseGetManyResponse<PaintProduction> {}
-export interface PaintProductionCreateResponse extends BaseCreateResponse<PaintProduction> {}
-export interface PaintProductionUpdateResponse extends BaseUpdateResponse<PaintProduction> {}
-export interface PaintProductionDeleteResponse extends BaseDeleteResponse {}
+export type PaintProductionGetUniqueResponse = BaseGetUniqueResponse<PaintProduction>;
+export type PaintProductionGetManyResponse = BaseGetManyResponse<PaintProduction>;
+export type PaintProductionCreateResponse = BaseCreateResponse<PaintProduction>;
+export type PaintProductionUpdateResponse = BaseUpdateResponse<PaintProduction>;
+export type PaintProductionDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
 // PaintType batch operations
-export interface PaintTypeBatchCreateResponse<T = any> extends BaseBatchResponse<PaintType, T> {}
-export interface PaintTypeBatchUpdateResponse<T = any> extends BaseBatchResponse<PaintType, T & { id: string }> {}
-export interface PaintTypeBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type PaintTypeBatchCreateResponse<T = any> = BaseBatchResponse<PaintType, T>;
+export type PaintTypeBatchUpdateResponse<T = any> = BaseBatchResponse<PaintType, T & { id: string }>;
+export type PaintTypeBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // Paint batch operations
-export interface PaintBatchCreateResponse<T = any> extends BaseBatchResponse<Paint, T> {}
-export interface PaintBatchUpdateResponse<T = any> extends BaseBatchResponse<Paint, T & { id: string }> {}
-export interface PaintBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type PaintBatchCreateResponse<T = any> = BaseBatchResponse<Paint, T>;
+export type PaintBatchUpdateResponse<T = any> = BaseBatchResponse<Paint, T & { id: string }>;
+export type PaintBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // PaintGround batch operations
-export interface PaintGroundBatchCreateResponse<T = any> extends BaseBatchResponse<PaintGround, T> {}
-export interface PaintGroundBatchUpdateResponse<T = any> extends BaseBatchResponse<PaintGround, T & { id: string }> {}
-export interface PaintGroundBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type PaintGroundBatchCreateResponse<T = any> = BaseBatchResponse<PaintGround, T>;
+export type PaintGroundBatchUpdateResponse<T = any> = BaseBatchResponse<PaintGround, T & { id: string }>;
+export type PaintGroundBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // PaintFormula batch operations
-export interface PaintFormulaBatchCreateResponse<T = any> extends BaseBatchResponse<PaintFormula, T> {}
-export interface PaintFormulaBatchUpdateResponse<T = any> extends BaseBatchResponse<PaintFormula, T & { id: string }> {}
-export interface PaintFormulaBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type PaintFormulaBatchCreateResponse<T = any> = BaseBatchResponse<PaintFormula, T>;
+export type PaintFormulaBatchUpdateResponse<T = any> = BaseBatchResponse<PaintFormula, T & { id: string }>;
+export type PaintFormulaBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // PaintFormulaComponent batch operations
-export interface PaintFormulaComponentBatchCreateResponse<T = any> extends BaseBatchResponse<PaintFormulaComponent, T> {}
-export interface PaintFormulaComponentBatchUpdateResponse<T = any> extends BaseBatchResponse<PaintFormulaComponent, T & { id: string }> {}
-export interface PaintFormulaComponentBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type PaintFormulaComponentBatchCreateResponse<T = any> = BaseBatchResponse<PaintFormulaComponent, T>;
+export type PaintFormulaComponentBatchUpdateResponse<T = any> = BaseBatchResponse<PaintFormulaComponent, T & { id: string }>;
+export type PaintFormulaComponentBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // PaintProduction batch operations
-export interface PaintProductionBatchCreateResponse<T = any> extends BaseBatchResponse<PaintProduction, T> {}
-export interface PaintProductionBatchUpdateResponse<T = any> extends BaseBatchResponse<PaintProduction, T & { id: string }> {}
-export interface PaintProductionBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type PaintProductionBatchCreateResponse<T = any> = BaseBatchResponse<PaintProduction, T>;
+export type PaintProductionBatchUpdateResponse<T = any> = BaseBatchResponse<PaintProduction, T & { id: string }>;
+export type PaintProductionBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // Dashboard types have been moved to packages/types/src/dashboard.ts

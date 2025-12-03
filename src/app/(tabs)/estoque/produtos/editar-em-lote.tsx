@@ -11,8 +11,7 @@ import { BatchOperationResultDialog } from "@/components/common/batch-operation-
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { toast } from "@/lib/toast";
-import type { Item } from "@/types";
+// import { toast } from "@/lib/toast";
 import type { BatchOperationResult } from "@/components/common/batch-operation-result-dialog";
 
 interface BatchEditData {
@@ -25,11 +24,6 @@ interface BatchEditData {
   quantity?: number | null;
   maxQuantity?: number | null;
   reorderPoint?: number | null;
-}
-
-interface FieldChange {
-  field: keyof BatchEditData;
-  enabled: boolean;
 }
 
 export default function ProductBatchEditScreen() {
@@ -163,7 +157,7 @@ export default function ProductBatchEditScreen() {
     // Validate before showing confirmation
     const validationError = validateBatchData();
     if (validationError) {
-      toast.error(validationError);
+      Alert.alert("Erro", validationError);
       return;
     }
 
@@ -240,22 +234,24 @@ export default function ProductBatchEditScreen() {
         setBatchResult(batchOperationResult);
         setShowResultDialog(true);
 
-        // Show toast notification
+        // Show alert notification
         if (result.data.totalSuccess > 0) {
-          toast.success(
+          Alert.alert(
+            "Sucesso",
             `${result.data.totalSuccess} produto${result.data.totalSuccess !== 1 ? 's' : ''} atualizado${result.data.totalSuccess !== 1 ? 's' : ''} com sucesso`
           );
         }
 
         if (result.data.totalFailed > 0) {
-          toast.error(
+          Alert.alert(
+            "Erro",
             `${result.data.totalFailed} produto${result.data.totalFailed !== 1 ? 's' : ''} falhou ao atualizar`
           );
         }
       }
     } catch (error) {
       console.error("Batch update error:", error);
-      toast.error("Erro ao atualizar produtos");
+      // API client already shows error alert
 
       // Show error in dialog
       setBatchResult({

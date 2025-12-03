@@ -50,6 +50,38 @@ const STREET_TYPES = [
   "RESIDENCIAL",
 ];
 
+// Map Portuguese street types to English enum values
+const STREET_TYPE_PT_TO_EN: Record<string, string> = {
+  RUA: "STREET",
+  AVENIDA: "AVENUE",
+  ALAMEDA: "ALLEY",
+  TRAVESSA: "CROSSING",
+  PRACA: "SQUARE",
+  PRAÇA: "SQUARE",
+  RODOVIA: "HIGHWAY",
+  ESTRADA: "ROAD",
+  VIA: "WAY",
+  LARGO: "PLAZA",
+  VIELA: "LANE",
+  BECO: "DEADEND",
+  RUELA: "SMALL_STREET",
+  CAMINHO: "PATH",
+  PASSAGEM: "PASSAGE",
+  JARDIM: "GARDEN",
+  QUADRA: "BLOCK",
+  LOTE: "LOT",
+  SITIO: "SITE",
+  SÍTIO: "SITE",
+  PARQUE: "PARK",
+  FAZENDA: "FARM",
+  CHACARA: "RANCH",
+  CHÁCARA: "RANCH",
+  CONDOMINIO: "CONDOMINIUM",
+  CONDOMÍNIO: "CONDOMINIUM",
+  CONJUNTO: "COMPLEX",
+  RESIDENCIAL: "RESIDENTIAL",
+};
+
 function toTitleCase(str: string): string {
   if (!str) return str;
 
@@ -81,31 +113,36 @@ function toTitleCase(str: string): string {
     .join(' ');
 }
 
-function extractStreetType(street: string | null | undefined): { type: string | null; address: string } {
-  // Handle null or undefined street
+function extractStreetType(street: string | null | undefined): { type: string; address: string } {
+  // Handle null or undefined street - default to STREET type
   if (!street) {
-    return { type: null, address: "" };
+    return { type: "STREET", address: "" };
   }
 
   const normalized = street.toUpperCase().trim();
 
-  for (const type of STREET_TYPES) {
-    if (normalized.startsWith(type + " ")) {
+  for (const ptType of STREET_TYPES) {
+    if (normalized.startsWith(ptType + " ")) {
       // Extract the remaining address after the street type
-      const remainingAddress = street.substring(type.length + 1).trim();
+      const remainingAddress = street.substring(ptType.length + 1).trim();
 
       // Check if the address starts with a preposition (do, da, dos, das, de)
       // If so, keep the full address including the street type
       const hasPreposition = /^(d[oae]s?)\s/i.test(remainingAddress);
 
+      // Normalize the Portuguese type (remove accents) and convert to English
+      const normalizedPtType = ptType.replace("Ç", "C").replace("Í", "I").replace("Ã", "A").replace("Ó", "O");
+      const englishType = STREET_TYPE_PT_TO_EN[normalizedPtType] || STREET_TYPE_PT_TO_EN[ptType] || "STREET";
+
       return {
-        type: type.replace("Ç", "C").replace("Í", "I").replace("Ã", "A").replace("Ó", "O"),
+        type: englishType,
         address: hasPreposition ? street : remainingAddress, // Keep full address if has preposition
       };
     }
   }
 
-  return { type: null, address: street };
+  // No street type detected - default to STREET
+  return { type: "STREET", address: street };
 }
 
 export function useCepLookup(options?: UseCepLookupOptions) {
@@ -139,7 +176,7 @@ export function useCepLookup(options?: UseCepLookupOptions) {
         // Convert to ViaCEP format for compatibility
         const data: CepData = {
           logradouro: address || brasilApiData.street,
-          streetType: type || undefined,
+          streetType: type, // Always set - defaults to "STREET" if not detected
           bairro: toTitleCase(brasilApiData.neighborhood),
           localidade: toTitleCase(brasilApiData.city),
           uf: brasilApiData.state,

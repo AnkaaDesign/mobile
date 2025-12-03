@@ -8,7 +8,6 @@ import { borderRadius, spacing, fontSize } from '@/constants/design-system'
 import {
   PAINT_FINISH_LABELS,
   TRUCK_MANUFACTURER_LABELS,
-  COLOR_PALETTE_LABELS,
 } from '@/constants'
 import type { Paint } from '@/types'
 import * as Clipboard from 'expo-clipboard'
@@ -215,13 +214,6 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
           <View className="flex-row items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
             <Text className="text-sm text-muted-foreground">Fabricante</Text>
             <Text className="text-sm font-medium">{TRUCK_MANUFACTURER_LABELS[paint.manufacturer]}</Text>
-          </View>
-        )}
-
-        {paint.palette && (
-          <View className="flex-row items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
-            <Text className="text-sm text-muted-foreground">Paleta de Cor</Text>
-            <Text className="text-sm font-medium">{COLOR_PALETTE_LABELS[paint.palette]}</Text>
           </View>
         )}
 

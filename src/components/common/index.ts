@@ -14,6 +14,9 @@ export type {
   BatchOperationResult
 } from './batch-operation-result-dialog';
 
+export { BatchOperationResultModal } from './batch-operation-result-modal';
+export type { BatchOperationResultModalProps } from './batch-operation-result-modal';
+
 export { DateRangeFilter } from './filters/DateRangeFilter';
 export type { DateRange, DateRangeFilterProps } from './filters/DateRangeFilter';
 

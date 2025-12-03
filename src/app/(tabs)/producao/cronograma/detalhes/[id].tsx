@@ -11,7 +11,7 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import { SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { hasPrivilege, formatCurrency, formatDate } from "@/utils";
 import { useMemo } from "react";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { TaskInfoCard } from "@/components/production/task/detail/task-info-card";
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
 import { TruckLayoutPreview } from "@/components/production/layout/truck-layout-preview";
@@ -156,13 +156,13 @@ export default function ScheduleDetailsScreen() {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-    showToast({ message: "Detalhes atualizados", type: "success" });
+    Alert.alert("Sucesso", "Detalhes atualizados");
   };
 
   // Handle edit
   const handleEdit = () => {
     if (!canEdit) {
-      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para editar");
       return;
     }
     router.push(`/producao/cronograma/editar/${id}`);
@@ -171,7 +171,7 @@ export default function ScheduleDetailsScreen() {
   // Handle delete
   const handleDelete = () => {
     if (!canDelete) {
-      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para excluir");
       return;
     }
 
@@ -186,10 +186,10 @@ export default function ScheduleDetailsScreen() {
           onPress: async () => {
             try {
               await deleteAsync(id as string);
-              showToast({ message: "Tarefa excluída com sucesso", type: "success" });
+              // API client already shows success alert
               router.back();
-            } catch (error) {
-              showToast({ message: "Erro ao excluir tarefa", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },
@@ -343,11 +343,11 @@ export default function ScheduleDetailsScreen() {
                         for (const file of (task as any).artworks) {
                           try {
                             await fileViewer.actions.downloadFile(file);
-                          } catch (error) {
+                          } catch (_error) {
                             console.error("Error downloading file:", error);
                           }
                         }
-                        showToast({ message: `${(task as any).artworks.length} arquivos baixados`, type: "success" });
+                        Alert.alert("Sucesso", `${(task as any).artworks.length} arquivos baixados`);
                       }}
                       activeOpacity={0.7}
                     >

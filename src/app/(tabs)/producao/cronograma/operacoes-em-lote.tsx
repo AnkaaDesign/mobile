@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { View, ScrollView, FlatList, Pressable, ActivityIndicator } from "react-native";
+import { View, ScrollView, FlatList, Pressable, ActivityIndicator, Alert } from "react-native";
 import { Text } from "@/components/ui/text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES, TASK_STATUS } from "@/constants/enums";
 import { useTasksInfiniteMobile, useTaskBatchMutations, useSectors } from "@/hooks";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { useTheme } from "@/lib/theme";
 import { formatDate } from "@/utils/formatters";
 import {
@@ -100,11 +100,7 @@ export default function BatchOperationsScreen() {
   // Prepare batch update data
   const prepareBatchUpdate = () => {
     if (selectedTaskIds.size === 0) {
-      showToast({
-        title: "Nenhuma tarefa selecionada",
-        message: "Selecione pelo menos uma tarefa para atualizar",
-        type: "error",
-      });
+      Alert.alert("Nenhuma tarefa selecionada", "Selecione pelo menos uma tarefa para atualizar");
       return null;
     }
 
@@ -140,30 +136,18 @@ export default function BatchOperationsScreen() {
       const failureCount = result.data?.failed?.length || 0;
 
       if (successCount > 0) {
-        showToast({
-          title: "Atualização concluída",
-          message: `${successCount} tarefa(s) atualizada(s) com sucesso${failureCount > 0 ? `, ${failureCount} falhou(ram)` : ""}`,
-          type: "success",
-        });
+        Alert.alert("Atualização concluída", `${successCount} tarefa(s) atualizada(s) com sucesso${failureCount > 0 ? `, ${failureCount} falhou(ram)` : ""}`);
         clearSelection();
         setOperationType(null);
         setNewStatus("");
         setNewSectorId("");
         setNewDate(null);
       } else {
-        showToast({
-          title: "Erro na atualização",
-          message: "Não foi possível atualizar as tarefas selecionadas",
-          type: "error",
-        });
+        Alert.alert("Erro na atualização", "Não foi possível atualizar as tarefas selecionadas");
       }
     } catch (error: any) {
       console.error("[BatchOperations] Error updating tasks:", error);
-      showToast({
-        title: "Erro na atualização",
-        message: error?.message || "Ocorreu um erro inesperado",
-        type: "error",
-      });
+      // API client already shows error alert
     } finally {
       setShowConfirmDialog(false);
     }
@@ -172,27 +156,15 @@ export default function BatchOperationsScreen() {
   // Validate and show confirmation
   const handleApplyChanges = () => {
     if (operationType === "status" && !newStatus) {
-      showToast({
-        title: "Status não selecionado",
-        message: "Selecione um status para atualizar",
-        type: "error",
-      });
+      Alert.alert("Status não selecionado", "Selecione um status para atualizar");
       return;
     }
     if (operationType === "sector" && !newSectorId) {
-      showToast({
-        title: "Setor não selecionado",
-        message: "Selecione um setor para reatribuir",
-        type: "error",
-      });
+      Alert.alert("Setor não selecionado", "Selecione um setor para reatribuir");
       return;
     }
     if (operationType === "date" && !newDate) {
-      showToast({
-        title: "Data não selecionada",
-        message: "Selecione uma data para atualizar",
-        type: "error",
-      });
+      Alert.alert("Data não selecionada", "Selecione uma data para atualizar");
       return;
     }
 

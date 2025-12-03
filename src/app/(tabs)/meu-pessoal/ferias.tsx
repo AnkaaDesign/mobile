@@ -7,7 +7,6 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconFilter, IconLayoutGrid, IconList } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
 import { useTeamVacationsInfiniteMobile, useCurrentUser } from "@/hooks";
 import { TeamVacationTable } from "@/components/my-team/vacation/team-vacation-table";
 import { TeamVacationCalendar } from "@/components/my-team/vacation/team-vacation-calendar";

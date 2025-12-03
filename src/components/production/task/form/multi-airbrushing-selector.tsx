@@ -7,8 +7,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { FileUploadField } from "@/components/ui/file-upload-field";
-import type { FileWithPreview } from "@/components/ui/file-upload-field";
+import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
@@ -31,9 +30,9 @@ interface AirbrushingItem {
   price: number | null;
   startDate: Date | null;
   finishDate: Date | null;
-  receiptFiles: FileWithPreview[];
-  nfeFiles: FileWithPreview[];
-  artworkFiles: FileWithPreview[];
+  receiptFiles: FilePickerItem[];
+  nfeFiles: FilePickerItem[];
+  artworkFiles: FilePickerItem[];
   receiptIds?: string[];
   invoiceIds?: string[];
   artworkIds?: string[];
@@ -55,8 +54,8 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
       control,
     });
 
-    // Helper to convert File objects to FileWithPreview
-    const convertFilesToFileWithPreview = (files: any[]): FileWithPreview[] => {
+    // Helper to convert File objects to FilePickerItem
+    const convertFilesToFilePickerItem = (files: any[]): FilePickerItem[] => {
       return (files || []).map((file) => ({
         uri: file.url || file.path || "",
         name: file.filename || file.name || "file",
@@ -75,12 +74,12 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
           startDate: airbrushing.startDate || null,
           finishDate: airbrushing.finishDate || null,
           receiptFiles: [
-            ...convertFilesToFileWithPreview(airbrushing.receipts || []),
+            ...convertFilesToFilePickerItem(airbrushing.receipts || []),
             ...(airbrushing.receiptFiles || []),
           ],
-          nfeFiles: [...convertFilesToFileWithPreview(airbrushing.invoices || []), ...(airbrushing.nfeFiles || [])],
+          nfeFiles: [...convertFilesToFilePickerItem(airbrushing.invoices || []), ...(airbrushing.nfeFiles || [])],
           artworkFiles: [
-            ...convertFilesToFileWithPreview(airbrushing.artworks || []),
+            ...convertFilesToFilePickerItem(airbrushing.artworks || []),
             ...(airbrushing.artworkFiles || []),
           ],
           receiptIds: airbrushing.receiptIds || [],
@@ -158,106 +157,6 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
         })
       );
     }, []);
-
-    // File picking functions
-    const pickReceiptFiles = async (airbrushingId: string) => {
-      try {
-        const result = await DocumentPicker.getDocumentAsync({
-          type: "*/*",
-          multiple: true,
-          copyToCacheDirectory: true,
-        });
-
-        if (!result.canceled && result.assets) {
-          const newFiles: FileWithPreview[] = result.assets.map((asset) => ({
-            uri: asset.uri,
-            name: asset.name,
-            type: asset.mimeType || "application/octet-stream",
-            size: asset.size || 0,
-          }));
-
-          const airbrushing = airbrushings.find((a) => a.id === airbrushingId);
-          if (airbrushing) {
-            updateAirbrushing(airbrushingId, {
-              receiptFiles: [...airbrushing.receiptFiles, ...newFiles],
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error picking receipt files:", error);
-        Alert.alert("Erro", "Não foi possível selecionar os arquivos");
-      }
-    };
-
-    const pickNfeFiles = async (airbrushingId: string) => {
-      try {
-        const result = await DocumentPicker.getDocumentAsync({
-          type: "*/*",
-          multiple: true,
-          copyToCacheDirectory: true,
-        });
-
-        if (!result.canceled && result.assets) {
-          const newFiles: FileWithPreview[] = result.assets.map((asset) => ({
-            uri: asset.uri,
-            name: asset.name,
-            type: asset.mimeType || "application/octet-stream",
-            size: asset.size || 0,
-          }));
-
-          const airbrushing = airbrushings.find((a) => a.id === airbrushingId);
-          if (airbrushing) {
-            updateAirbrushing(airbrushingId, {
-              nfeFiles: [...airbrushing.nfeFiles, ...newFiles],
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error picking NFe files:", error);
-        Alert.alert("Erro", "Não foi possível selecionar os arquivos");
-      }
-    };
-
-    const pickArtworkFiles = async (airbrushingId: string) => {
-      try {
-        const result = await DocumentPicker.getDocumentAsync({
-          type: "image/*",
-          multiple: true,
-          copyToCacheDirectory: true,
-        });
-
-        if (!result.canceled && result.assets) {
-          const newFiles: FileWithPreview[] = result.assets.map((asset) => ({
-            uri: asset.uri,
-            name: asset.name,
-            type: asset.mimeType || "image/*",
-            size: asset.size || 0,
-          }));
-
-          const airbrushing = airbrushings.find((a) => a.id === airbrushingId);
-          if (airbrushing) {
-            updateAirbrushing(airbrushingId, {
-              artworkFiles: [...airbrushing.artworkFiles, ...newFiles],
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error picking artwork files:", error);
-        Alert.alert("Erro", "Não foi possível selecionar os arquivos");
-      }
-    };
-
-    const removeFile = useCallback(
-      (airbrushingId: string, fileType: "receiptFiles" | "nfeFiles" | "artworkFiles", fileIndex: number) => {
-        const airbrushing = airbrushings.find((a) => a.id === airbrushingId);
-        if (airbrushing) {
-          const files = [...airbrushing[fileType]];
-          files.splice(fileIndex, 1);
-          updateAirbrushing(airbrushingId, { [fileType]: files });
-        }
-      },
-      [airbrushings, updateAirbrushing]
-    );
 
     // Expose methods via ref
     useImperativeHandle(
@@ -416,40 +315,50 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
                       <View style={styles.filesSection}>
                         {/* Receipts */}
                         <View style={styles.fileGroup}>
-                          <Label>Recibos ({airbrushing.receiptFiles.length}/10)</Label>
-                          <FileUploadField
-                            files={airbrushing.receiptFiles}
-                            onRemove={(index) => removeFile(airbrushing.id, "receiptFiles", index)}
-                            onAdd={() => pickReceiptFiles(airbrushing.id)}
+                          <FilePicker
+                            value={airbrushing.receiptFiles}
+                            onChange={(files) => updateAirbrushing(airbrushing.id, { receiptFiles: files })}
                             maxFiles={10}
-                            label="Adicionar Recibos"
+                            label="Recibos"
+                            placeholder="Adicionar recibos"
+                            helperText="Selecione até 10 recibos"
                             disabled={disabled || airbrushing.uploading}
+                            showCamera={true}
+                            showGallery={true}
+                            showFilePicker={true}
                           />
                         </View>
 
                         {/* NFes */}
                         <View style={styles.fileGroup}>
-                          <Label>Notas Fiscais ({airbrushing.nfeFiles.length}/10)</Label>
-                          <FileUploadField
-                            files={airbrushing.nfeFiles}
-                            onRemove={(index) => removeFile(airbrushing.id, "nfeFiles", index)}
-                            onAdd={() => pickNfeFiles(airbrushing.id)}
+                          <FilePicker
+                            value={airbrushing.nfeFiles}
+                            onChange={(files) => updateAirbrushing(airbrushing.id, { nfeFiles: files })}
                             maxFiles={10}
-                            label="Adicionar NFes"
+                            label="Notas Fiscais"
+                            placeholder="Adicionar notas fiscais"
+                            helperText="Selecione até 10 notas fiscais"
                             disabled={disabled || airbrushing.uploading}
+                            showCamera={true}
+                            showGallery={true}
+                            showFilePicker={true}
                           />
                         </View>
 
                         {/* Artworks */}
                         <View style={styles.fileGroup}>
-                          <Label>Artes ({airbrushing.artworkFiles.length}/20)</Label>
-                          <FileUploadField
-                            files={airbrushing.artworkFiles}
-                            onRemove={(index) => removeFile(airbrushing.id, "artworkFiles", index)}
-                            onAdd={() => pickArtworkFiles(airbrushing.id)}
+                          <FilePicker
+                            value={airbrushing.artworkFiles}
+                            onChange={(files) => updateAirbrushing(airbrushing.id, { artworkFiles: files })}
                             maxFiles={20}
-                            label="Adicionar Artes"
+                            label="Artes"
+                            placeholder="Adicionar artes"
+                            helperText="Selecione até 20 imagens de arte"
                             disabled={disabled || airbrushing.uploading}
+                            showCamera={true}
+                            showGallery={true}
+                            showFilePicker={true}
+                            acceptedFileTypes={["image/*"]}
                           />
                         </View>
                       </View>

@@ -5,7 +5,7 @@ import { useMaintenance } from '@/hooks';
 import { ThemedView, ThemedText, Card, ErrorScreen, Button, Badge } from '@/components/ui';
 import { useTheme } from '@/lib/theme';
 import { formatDate, formatDateTime } from '@/utils';
-import { MAINTENANCE_STATUS, MAINTENANCE_STATUS_LABELS, SCHEDULE_FREQUENCY_LABELS } from '@/constants';
+import { MAINTENANCE_STATUS_LABELS, SCHEDULE_FREQUENCY_LABELS } from '@/constants';
 import { useState, useCallback } from 'react';
 import { IconCalendar, IconAlertCircle, IconClock } from '@tabler/icons-react-native';
 import { spacing, fontSize } from '@/constants/design-system';

@@ -120,29 +120,29 @@ export interface PositionRemunerationOrderBy {
 // =====================
 
 // Position responses
-export interface PositionGetUniqueResponse extends BaseGetUniqueResponse<Position> {}
-export interface PositionGetManyResponse extends BaseGetManyResponse<Position> {}
-export interface PositionCreateResponse extends BaseCreateResponse<Position> {}
-export interface PositionUpdateResponse extends BaseUpdateResponse<Position> {}
-export interface PositionDeleteResponse extends BaseDeleteResponse {}
+export type PositionGetUniqueResponse = BaseGetUniqueResponse<Position>;
+export type PositionGetManyResponse = BaseGetManyResponse<Position>;
+export type PositionCreateResponse = BaseCreateResponse<Position>;
+export type PositionUpdateResponse = BaseUpdateResponse<Position>;
+export type PositionDeleteResponse = BaseDeleteResponse;
 
 // PositionRemuneration responses
-export interface PositionRemunerationGetUniqueResponse extends BaseGetUniqueResponse<PositionRemuneration> {}
-export interface PositionRemunerationGetManyResponse extends BaseGetManyResponse<PositionRemuneration> {}
-export interface PositionRemunerationCreateResponse extends BaseCreateResponse<PositionRemuneration> {}
-export interface PositionRemunerationUpdateResponse extends BaseUpdateResponse<PositionRemuneration> {}
-export interface PositionRemunerationDeleteResponse extends BaseDeleteResponse {}
+export type PositionRemunerationGetUniqueResponse = BaseGetUniqueResponse<PositionRemuneration>;
+export type PositionRemunerationGetManyResponse = BaseGetManyResponse<PositionRemuneration>;
+export type PositionRemunerationCreateResponse = BaseCreateResponse<PositionRemuneration>;
+export type PositionRemunerationUpdateResponse = BaseUpdateResponse<PositionRemuneration>;
+export type PositionRemunerationDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
 // Position batch operations
-export interface PositionBatchCreateResponse<T> extends BaseBatchResponse<Position, T> {}
-export interface PositionBatchUpdateResponse<T> extends BaseBatchResponse<Position, T> {}
-export interface PositionBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type PositionBatchCreateResponse<T> = BaseBatchResponse<Position, T>;
+export type PositionBatchUpdateResponse<T> = BaseBatchResponse<Position, T>;
+export type PositionBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // PositionRemuneration batch operations
-export interface PositionRemunerationBatchCreateResponse<T> extends BaseBatchResponse<PositionRemuneration, T> {}
-export interface PositionRemunerationBatchUpdateResponse<T> extends BaseBatchResponse<PositionRemuneration, T> {}
-export interface PositionRemunerationBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type PositionRemunerationBatchCreateResponse<T> = BaseBatchResponse<PositionRemuneration, T>;
+export type PositionRemunerationBatchUpdateResponse<T> = BaseBatchResponse<PositionRemuneration, T>;
+export type PositionRemunerationBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

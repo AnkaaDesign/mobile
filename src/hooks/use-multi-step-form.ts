@@ -59,6 +59,9 @@ export interface MultiStepFormStateData<TFormData = Record<string, unknown>> {
   page: number;
   pageSize: number;
   totalRecords: number;
+
+  // Timestamp for expiration
+  lastModified?: number;
 }
 
 export interface UseMultiStepFormOptions<TFormData = Record<string, unknown>> {
@@ -72,6 +75,8 @@ export interface UseMultiStepFormOptions<TFormData = Record<string, unknown>> {
   validateOnStepChange?: boolean;
   autoSave?: boolean;
   debounceMs?: number;
+  /** Time in milliseconds after which persisted data is considered stale and cleared (default: 24 hours) */
+  expireAfterMs?: number;
   validateStep?: (
     step: number,
     state: MultiStepFormStateData<TFormData>,
@@ -104,7 +109,11 @@ const createDefaultState = <TFormData>(
   page: 1,
   pageSize: defaultPageSize,
   totalRecords: 0,
+  lastModified: Date.now(),
 });
+
+// Default expiration time: 24 hours
+const DEFAULT_EXPIRE_AFTER_MS = 24 * 60 * 60 * 1000;
 
 export function useMultiStepForm<TFormData = Record<string, unknown>>(
   options: UseMultiStepFormOptions<TFormData>,
@@ -120,6 +129,7 @@ export function useMultiStepForm<TFormData = Record<string, unknown>>(
     validateOnStepChange = true,
     autoSave = true,
     debounceMs = 500,
+    expireAfterMs = DEFAULT_EXPIRE_AFTER_MS,
     validateStep,
     getStepErrors,
     onStateChange,
@@ -145,11 +155,24 @@ export function useMultiStepForm<TFormData = Record<string, unknown>>(
         const stored = await AsyncStorage.getItem(storageKey);
         if (stored) {
           const parsed = JSON.parse(stored) as MultiStepFormStateData<TFormData>;
-          setState((prev) => ({
-            ...prev,
-            ...parsed,
-            totalSteps, // Always use current totalSteps
-          }));
+
+          // Check if data has expired
+          const lastModified = parsed.lastModified || 0;
+          const isExpired = Date.now() - lastModified > expireAfterMs;
+
+          if (isExpired) {
+            // Data is stale, clear it and use default state
+            console.log(`[MultiStepForm:${storageKey}] Clearing expired data (last modified: ${new Date(lastModified).toISOString()})`);
+            await AsyncStorage.removeItem(storageKey);
+            // Keep default state (already set in useState)
+          } else {
+            // Data is fresh, use it
+            setState((prev) => ({
+              ...prev,
+              ...parsed,
+              totalSteps, // Always use current totalSteps
+            }));
+          }
         }
       } catch (error) {
         console.error(`[MultiStepForm:${storageKey}] Failed to load state:`, error);
@@ -158,7 +181,7 @@ export function useMultiStepForm<TFormData = Record<string, unknown>>(
       }
     };
     loadState();
-  }, [storageKey, totalSteps]);
+  }, [storageKey, totalSteps, expireAfterMs]);
 
   // Save state to AsyncStorage when it changes (debounced)
   useEffect(() => {
@@ -171,7 +194,9 @@ export function useMultiStepForm<TFormData = Record<string, unknown>>(
     saveTimeoutRef.current = setTimeout(async () => {
       setIsSaving(true);
       try {
-        await AsyncStorage.setItem(storageKey, JSON.stringify(state));
+        // Always update lastModified timestamp when saving
+        const stateToSave = { ...state, lastModified: Date.now() };
+        await AsyncStorage.setItem(storageKey, JSON.stringify(stateToSave));
         onStateChange?.(state);
       } catch (error) {
         console.error(`[MultiStepForm:${storageKey}] Failed to save state:`, error);
@@ -564,7 +589,9 @@ export function useMultiStepForm<TFormData = Record<string, unknown>>(
   const saveState = useCallback(async (): Promise<boolean> => {
     setIsSaving(true);
     try {
-      await AsyncStorage.setItem(storageKey, JSON.stringify(state));
+      // Always update lastModified timestamp when saving
+      const stateToSave = { ...state, lastModified: Date.now() };
+      await AsyncStorage.setItem(storageKey, JSON.stringify(stateToSave));
       onStateChange?.(state);
       return true;
     } catch (error) {

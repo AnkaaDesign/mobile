@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { Stack, router } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +15,7 @@ import type { PaintBrandCreateFormData } from '../../../../schemas';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import {
   IconTag,
 } from "@tabler/icons-react-native";
@@ -47,12 +47,12 @@ export default function CreatePaintBrandScreen() {
   // Handle form submission
   const onSubmit = async (data: PaintBrandCreateFormData) => {
     if (!canCreate) {
-      showToast("Você não tem permissão para criar", "error");
+      Alert.alert("Erro", "Você não tem permissão para criar");
       return;
     }
 
     if (!isValid) {
-      showToast("Por favor, corrija os erros no formulário", "error");
+      Alert.alert("Erro", "Por favor, corrija os erros no formulário");
       return;
     }
 
@@ -60,10 +60,10 @@ export default function CreatePaintBrandScreen() {
 
     try {
       await create(data);
-      showToast("Marca de tinta criada com sucesso", "success");
+      // API client already shows success alert
       router.back();
-    } catch (error) {
-      showToast("Erro ao criar marca de tinta", "error");
+    } catch (_error) {
+      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }

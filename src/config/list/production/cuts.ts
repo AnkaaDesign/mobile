@@ -2,6 +2,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { Cut, User } from '@/types'
 import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN, SECTOR_PRIVILEGES } from '@/constants/enums'
 import { canEditCuts, canDeleteCuts } from '@/utils/permissions/entity-permissions'
+import { isTabletWidth } from '@/lib/table-utils'
 
 // Special value for tasks without a sector
 const UNDEFINED_SECTOR_VALUE = "__UNDEFINED__";
@@ -171,7 +172,9 @@ export const cutsListConfig: ListConfig<Cut> = {
         render: (cut) => cut.task?.sector?.name || 'Indefinido',
       },
     ],
-    defaultVisible: ['filePreview', 'fileName', 'status'],
+    defaultVisible: isTabletWidth()
+      ? ['filePreview', 'fileName', 'status', 'createdAt']
+      : ['filePreview', 'fileName', 'status'],
     rowHeight: 72,
     actions: [
       {

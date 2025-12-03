@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSupplierDetail, useSupplierMutations } from "@/hooks";
 import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
@@ -19,7 +19,7 @@ import {
 } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { TouchableOpacity } from "react-native";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 
 import {
   BasicInfoCard,
@@ -81,17 +81,17 @@ export default function SupplierDetailScreen() {
     setRefreshing(true);
     refetch().finally(() => {
       setRefreshing(false);
-      showToast({ message: "Dados atualizados com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Dados atualizados com sucesso");
     });
   }, [refetch]);
 
   const handleDelete = async () => {
     try {
       await deleteSupplier.mutateAsync(id);
-      showToast({ message: "Fornecedor excluído com sucesso", type: "success" });
+      Alert.alert("Sucesso", "Fornecedor excluído com sucesso");
       router.replace(routes.inventory.suppliers.root as any);
-    } catch (error) {
-      showToast({ message: "Erro ao excluir fornecedor", type: "error" });
+    } catch (_error) {
+      // API client already shows error alert
     }
     setIsDeleteDialogOpen(false);
   };

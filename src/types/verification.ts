@@ -99,19 +99,19 @@ export interface VerificationGetByIdParams {
 // API Response Types
 // =====================
 
-export interface VerificationGetManyResponse extends BaseGetManyResponse<Verification> {}
-export interface VerificationGetUniqueResponse extends BaseGetUniqueResponse<Verification> {}
-export interface VerificationCreateResponse extends BaseCreateResponse<Verification> {}
-export interface VerificationUpdateResponse extends BaseUpdateResponse<Verification> {}
-export interface VerificationDeleteResponse extends BaseDeleteResponse {}
+export type VerificationGetManyResponse = BaseGetManyResponse<Verification>;
+export type VerificationGetUniqueResponse = BaseGetUniqueResponse<Verification>;
+export type VerificationCreateResponse = BaseCreateResponse<Verification>;
+export type VerificationUpdateResponse = BaseUpdateResponse<Verification>;
+export type VerificationDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Types
 // =====================
 
-export interface VerificationBatchCreateResponse extends BaseBatchResponse<Verification> {}
-export interface VerificationBatchUpdateResponse extends BaseBatchResponse<Verification> {}
-export interface VerificationBatchDeleteResponse extends BaseBatchResponse<Verification> {}
+export type VerificationBatchCreateResponse = BaseBatchResponse<Verification>;
+export type VerificationBatchUpdateResponse = BaseBatchResponse<Verification>;
+export type VerificationBatchDeleteResponse = BaseBatchResponse<Verification>;
 
 // =====================
 // Unified Verification Specific Response Types

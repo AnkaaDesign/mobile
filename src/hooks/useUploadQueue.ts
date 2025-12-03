@@ -9,9 +9,8 @@ import {
   type QueueConfig,
 } from '@/utils/upload-queue';
 
-export interface UseUploadQueueOptions extends QueueConfig {
-  // Additional options specific to the hook
-}
+// Additional options specific to the hook
+export type UseUploadQueueOptions = QueueConfig;
 
 export function useUploadQueue(options: UseUploadQueueOptions = {}) {
   const queueManager = useMemo(() => getUploadQueue(options), []);

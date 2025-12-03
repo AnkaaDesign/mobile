@@ -90,7 +90,7 @@ export default function EditCuttingRequestScreen() {
     mode: "onChange",
   });
 
-  const watchedOrigin = watch("origin");
+  const _watchedOrigin = watch("origin");
 
   // Update form when cut data loads
   useEffect(() => {

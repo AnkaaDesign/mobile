@@ -15,9 +15,8 @@ export interface Service extends BaseEntity {
 // Include Types
 // =====================
 
-export interface ServiceIncludes {
-  // No relations to include
-}
+// No relations to include
+export type ServiceIncludes = Record<string, never>;
 
 // =====================
 // Order By Types
@@ -34,16 +33,16 @@ export interface ServiceOrderBy {
 // Response Interfaces
 // =====================
 
-export interface ServiceGetUniqueResponse extends BaseGetUniqueResponse<Service> {}
-export interface ServiceGetManyResponse extends BaseGetManyResponse<Service> {}
-export interface ServiceCreateResponse extends BaseCreateResponse<Service> {}
-export interface ServiceUpdateResponse extends BaseUpdateResponse<Service> {}
-export interface ServiceDeleteResponse extends BaseDeleteResponse {}
+export type ServiceGetUniqueResponse = BaseGetUniqueResponse<Service>;
+export type ServiceGetManyResponse = BaseGetManyResponse<Service>;
+export type ServiceCreateResponse = BaseCreateResponse<Service>;
+export type ServiceUpdateResponse = BaseUpdateResponse<Service>;
+export type ServiceDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface ServiceBatchCreateResponse<T = any> extends BaseBatchResponse<Service, T> {}
-export interface ServiceBatchUpdateResponse<T = any> extends BaseBatchResponse<Service, T & { id: string }> {}
-export interface ServiceBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type ServiceBatchCreateResponse<T = any> = BaseBatchResponse<Service, T>;
+export type ServiceBatchUpdateResponse<T = any> = BaseBatchResponse<Service, T & { id: string }>;
+export type ServiceBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

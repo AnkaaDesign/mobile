@@ -21,7 +21,7 @@ import {
   CHANGE_LOG_ENTITY_TYPE
 } from "@/constants";
 import { hasPrivilege, formatDate, formatDateTime, formatRelativeTime, formatCurrency } from "@/utils";
-import { showToast } from "@/components/ui/toast";
+// import { showToast } from "@/components/ui/toast";
 import { TouchableOpacity } from "react-native";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import {
@@ -96,13 +96,13 @@ export default function PPEDeliveryDetailsScreen() {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-    showToast({ message: "Detalhes atualizados", type: "success" });
+    Alert.alert("Sucesso", "Detalhes atualizados");
   };
 
   // Handle edit
   const handleEdit = () => {
     if (!canManageWarehouse || !delivery || delivery.status !== PPE_DELIVERY_STATUS.PENDING) {
-      showToast({ message: "Você não tem permissão para editar", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para editar");
       return;
     }
     router.push(`/estoque/epi/entregas/editar/${id}`);
@@ -111,7 +111,7 @@ export default function PPEDeliveryDetailsScreen() {
   // Handle mark as delivered
   const handleMarkDelivered = () => {
     if (!canManageWarehouse || !delivery || delivery.status !== PPE_DELIVERY_STATUS.PENDING) {
-      showToast({ message: "Ação não permitida", type: "error" });
+      Alert.alert("Erro", "Ação não permitida");
       return;
     }
 
@@ -129,10 +129,10 @@ export default function PPEDeliveryDetailsScreen() {
                 id: delivery.id,
                 deliveryDate: new Date(),
               });
-              showToast({ message: "Entrega marcada como realizada", type: "success" });
+              Alert.alert("Sucesso", "Entrega marcada como realizada");
               refetch();
-            } catch (error) {
-              showToast({ message: "Erro ao marcar entrega", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },
@@ -143,7 +143,7 @@ export default function PPEDeliveryDetailsScreen() {
   // Handle cancel
   const handleCancel = () => {
     if (!canManageWarehouse || !delivery || delivery.status !== PPE_DELIVERY_STATUS.PENDING) {
-      showToast({ message: "Ação não permitida", type: "error" });
+      Alert.alert("Erro", "Ação não permitida");
       return;
     }
 
@@ -163,10 +163,10 @@ export default function PPEDeliveryDetailsScreen() {
                   status: PPE_DELIVERY_STATUS.CANCELLED,
                 },
               });
-              showToast({ message: "Entrega cancelada com sucesso", type: "success" });
+              Alert.alert("Sucesso", "Entrega cancelada com sucesso");
               refetch();
-            } catch (error) {
-              showToast({ message: "Erro ao cancelar entrega", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },
@@ -177,7 +177,7 @@ export default function PPEDeliveryDetailsScreen() {
   // Handle delete
   const handleDelete = () => {
     if (!isAdmin || !delivery || delivery.status !== PPE_DELIVERY_STATUS.PENDING) {
-      showToast({ message: "Você não tem permissão para excluir", type: "error" });
+      Alert.alert("Erro", "Você não tem permissão para excluir");
       return;
     }
 
@@ -192,10 +192,10 @@ export default function PPEDeliveryDetailsScreen() {
           onPress: async () => {
             try {
               await deleteAsync(delivery.id);
-              showToast({ message: "Entrega excluída com sucesso", type: "success" });
+              Alert.alert("Sucesso", "Entrega excluída com sucesso");
               router.back();
-            } catch (error) {
-              showToast({ message: "Erro ao excluir entrega", type: "error" });
+            } catch (_error) {
+              // API client already shows error alert
             }
           },
         },

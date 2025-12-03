@@ -660,8 +660,7 @@ const styles = StyleSheet.create({
   flatList: {
     flex: 1,
   },
-  row: {
-  },
+  row: {},
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch",

@@ -58,16 +58,16 @@ export interface ChangeLogOrderBy {
 // Response Interfaces
 // =====================
 
-export interface ChangeLogGetUniqueResponse extends BaseGetUniqueResponse<ChangeLog> {}
-export interface ChangeLogGetManyResponse extends BaseGetManyResponse<ChangeLog> {}
-export interface ChangeLogCreateResponse extends BaseCreateResponse<ChangeLog> {}
-export interface ChangeLogUpdateResponse extends BaseUpdateResponse<ChangeLog> {}
-export interface ChangeLogDeleteResponse extends BaseDeleteResponse {}
+export type ChangeLogGetUniqueResponse = BaseGetUniqueResponse<ChangeLog>;
+export type ChangeLogGetManyResponse = BaseGetManyResponse<ChangeLog>;
+export type ChangeLogCreateResponse = BaseCreateResponse<ChangeLog>;
+export type ChangeLogUpdateResponse = BaseUpdateResponse<ChangeLog>;
+export type ChangeLogDeleteResponse = BaseDeleteResponse;
 
 // =====================
 // Batch Operation Responses
 // =====================
 
-export interface ChangeLogBatchCreateResponse<T = any> extends BaseBatchResponse<ChangeLog, T> {}
-export interface ChangeLogBatchUpdateResponse<T = any> extends BaseBatchResponse<ChangeLog, T & { id: string }> {}
-export interface ChangeLogBatchDeleteResponse extends BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }> {}
+export type ChangeLogBatchCreateResponse<T = any> = BaseBatchResponse<ChangeLog, T>;
+export type ChangeLogBatchUpdateResponse<T = any> = BaseBatchResponse<ChangeLog, T & { id: string }>;
+export type ChangeLogBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

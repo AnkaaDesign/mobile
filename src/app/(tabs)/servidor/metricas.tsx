@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { ScrollView, RefreshControl, View, Alert, Platform } from 'react-native';
+import { ScrollView, RefreshControl, Alert, Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { getMetrics, getCpuTemperature, getSsdHealth, getRaidStatus, getHealthHistory } from '../../../api-client';
 import { ThemedView } from '@/components/ui/themed-view';
@@ -12,7 +12,7 @@ import { ErrorScreen } from '@/components/ui/error-screen';
 import { DashboardCard } from '@/components/ui/dashboard-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+// import { useToast } from '@/hooks/use-toast';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
@@ -118,7 +118,6 @@ export default function ServerMetricsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('24h');
   const [showAlerts, setShowAlerts] = useState(true);
-  const { showToast } = useToast();
 
   // Alert thresholds
   const alertThresholds: AlertThreshold = {
@@ -190,10 +189,10 @@ export default function ServerMetricsScreen() {
         refetchRaid(),
         refetchHistory(),
       ]);
-      showToast({ title: 'Métricas atualizadas', variant: 'success' });
+      Alert.alert('Sucesso', 'Métricas atualizadas');
     } catch (error) {
       console.error('Error refreshing metrics:', error);
-      showToast({ title: 'Erro ao atualizar métricas', variant: 'error' });
+      Alert.alert('Erro', 'Erro ao atualizar métricas');
     } finally {
       setRefreshing(false);
     }
@@ -240,18 +239,14 @@ export default function ServerMetricsScreen() {
             dialogTitle: 'Exportar Métricas do Servidor',
           });
         } else {
-          showToast({
-            title: 'Arquivo salvo',
-            description: `Salvo em: ${fileName}`,
-            variant: 'success'
-          });
+          Alert.alert('Arquivo salvo', `Salvo em: ${fileName}`);
         }
       }
 
-      showToast({ title: 'Métricas exportadas com sucesso', variant: 'success' });
+      Alert.alert('Sucesso', 'Métricas exportadas com sucesso');
     } catch (error) {
       console.error('Export error:', error);
-      showToast({ title: 'Erro ao exportar métricas', variant: 'error' });
+      Alert.alert('Erro', 'Erro ao exportar métricas');
     }
   }, [metricsData, temperatureData, ssdData, raidData, historyData, selectedTimeRange]);
 
@@ -285,7 +280,7 @@ export default function ServerMetricsScreen() {
     }
   };
 
-  const getUsageColor = (usage: number) => {
+  const _getUsageColor = (usage: number) => {
     if (usage >= 90) return '#ef4444'; // red
     if (usage >= 75) return '#f59e0b'; // amber
     return '#16a34a'; // green
@@ -416,7 +411,7 @@ export default function ServerMetricsScreen() {
   }, [cpuUsage, memoryUsage, diskUsage, temperature, raidData, ssdData]);
 
   // Calculate historical trends
-  const trends = useMemo(() => {
+  const _trends = useMemo(() => {
     if (!history || history.length < 2) return { cpu: 'stable', memory: 'stable', disk: 'stable' };
 
     const recentCount = Math.min(10, history.length);

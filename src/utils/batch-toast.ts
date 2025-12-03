@@ -1,7 +1,8 @@
-// Batch toast utilities - Currently disabled for React Native
-// This file uses web-only toast library APIs that are not compatible with React Native
-// For React Native, components should handle toast display using the useToast hook
+// Batch toast utilities - Updated to use Alert.alert() for React Native
+// This file previously used web-only toast library APIs
+// Now uses React Native's Alert.alert() API for native alerts
 
+import { Alert } from 'react-native';
 import type { BatchOperationResult, BatchOperationSuccess, BatchOperationError } from '../types';
 
 export interface BatchToastOptions {
@@ -16,20 +17,62 @@ export interface DetailedBatchResult<T, U = unknown> extends BatchOperationResul
   failedDetails?: BatchOperationError<U>[];
 }
 
-// Disabled for React Native - Components should handle toast display
-export function showBatchOperationToast<T, U = unknown>(_result: DetailedBatchResult<T, U>, _options: BatchToastOptions) {
-  console.warn('showBatchOperationToast is disabled for React Native. Use useToast hook in components instead.');
-  // Components using this should call useToast() and display toasts manually
+// Updated to use Alert.alert() for React Native
+export function showBatchOperationToast<T, U = unknown>(result: DetailedBatchResult<T, U>, options: BatchToastOptions) {
+  const { entityNamePlural, showDetails = false, maxDetailsToShow = 3 } = options;
+  const { totalSuccess, totalFailed } = result;
+
+  if (totalFailed === 0) {
+    Alert.alert(
+      'Sucesso',
+      `${totalSuccess} ${entityNamePlural} processado(s) com sucesso!`,
+      [{ text: 'OK' }]
+    );
+  } else if (totalSuccess === 0) {
+    let message = `Falha ao processar ${totalFailed} ${entityNamePlural}`;
+
+    if (showDetails && result.failedDetails && result.failedDetails.length > 0) {
+      const details = result.failedDetails
+        .slice(0, maxDetailsToShow)
+        .map(f => `- ${f.error}`)
+        .join('\n');
+      message += `:\n\n${details}`;
+
+      if (result.failedDetails.length > maxDetailsToShow) {
+        message += `\n\n... e mais ${result.failedDetails.length - maxDetailsToShow} erro(s)`;
+      }
+    }
+
+    Alert.alert('Erro', message, [{ text: 'OK' }]);
+  } else {
+    Alert.alert(
+      'Atenção',
+      `${totalSuccess} sucesso(s), ${totalFailed} falha(s)`,
+      [{ text: 'OK' }]
+    );
+  }
 }
 
-export function showBorrowBatchToast<T, U = unknown>(_result: DetailedBatchResult<T, U>, _showDetails = true) {
-  console.warn('showBorrowBatchToast is disabled for React Native. Use useToast hook in components instead.');
+export function showBorrowBatchToast<T, U = unknown>(result: DetailedBatchResult<T, U>, showDetails = true) {
+  showBatchOperationToast(result, {
+    entityName: 'empréstimo',
+    entityNamePlural: 'empréstimos',
+    showDetails,
+  });
 }
 
-export function showActivityBatchToast<T, U = unknown>(_result: DetailedBatchResult<T, U>, _showDetails = true) {
-  console.warn('showActivityBatchToast is disabled for React Native. Use useToast hook in components instead.');
+export function showActivityBatchToast<T, U = unknown>(result: DetailedBatchResult<T, U>, showDetails = true) {
+  showBatchOperationToast(result, {
+    entityName: 'atividade',
+    entityNamePlural: 'atividades',
+    showDetails,
+  });
 }
 
-export function showGenericBatchToast<T, U = unknown>(_result: DetailedBatchResult<T, U>, _entityName: string, _entityNamePlural: string, _showDetails = true) {
-  console.warn('showGenericBatchToast is disabled for React Native. Use useToast hook in components instead.');
+export function showGenericBatchToast<T, U = unknown>(result: DetailedBatchResult<T, U>, entityName: string, entityNamePlural: string, showDetails = true) {
+  showBatchOperationToast(result, {
+    entityName,
+    entityNamePlural,
+    showDetails,
+  });
 }

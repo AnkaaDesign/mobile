@@ -13,6 +13,7 @@ import { formatDate } from '@/utils';
 import { CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from '@/constants';
 import { extendedColors} from "@/lib/theme/extended-colors";
 import { getBadgeVariantFromStatus } from "@/components/ui/badge";
+import { getDefaultVisibleColumnKeys } from "./column-visibility-manager";
 
 export interface TableColumn {
   key: string;
@@ -171,7 +172,7 @@ export const CutsTable = React.memo<CutsTableProps>(
     onSelectionChange,
     sortConfigs = [],
     onSort,
-    visibleColumnKeys = ["task", "filename", "status"],
+    visibleColumnKeys = getDefaultVisibleColumnKeys(),
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
@@ -629,8 +630,7 @@ const styles = StyleSheet.create({
   flatList: {
     flex: 1,
   },
-  row: {
-  },
+  row: {},
   rowContent: {
     flexDirection: "row",
     alignItems: "stretch",
