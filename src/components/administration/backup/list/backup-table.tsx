@@ -2,14 +2,14 @@ import { useCallback } from "react";
 import { View, FlatList, StyleSheet, Pressable, Alert } from "react-native";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { IconClock, IconDatabase } from "@tabler/icons-react-native";
+import { IconClock, IconDatabase, IconTrash } from "@tabler/icons-react-native";
 import type { BackupMetadata } from '../../../../api-client';
 import { ThemedText } from "@/components/ui/themed-text";
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { SwipeActions } from "@/components/ui/swipe-actions";
+import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
@@ -249,14 +249,21 @@ export function BackupTable({
       // Wrap in swipe actions if enabled
       if (canSwipe) {
         return (
-          <SwipeActions
+          <ReanimatedSwipeableRow
             key={backup.id}
-            onDelete={() => handleDelete(backup)}
-            deleteLabel="Excluir"
             enabled={true}
+            rightActions={[
+              {
+                key: "delete",
+                label: "Excluir",
+                icon: <IconTrash size={24} color="#fff" />,
+                backgroundColor: colors.destructive,
+                onPress: () => handleDelete(backup),
+              },
+            ]}
           >
             {content}
-          </SwipeActions>
+          </ReanimatedSwipeableRow>
         );
       }
 

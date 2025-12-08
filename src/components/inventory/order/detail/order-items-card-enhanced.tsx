@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, TextInput, StyleSheet, Alert, TouchableOpacity } from "react-native";
+import { View, TextInput, StyleSheet, Alert } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +39,6 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
   items,
   orderStatus,
   orderDescription,
-  orderCreatedAt,
   onOrderUpdate
 }) => {
   const { colors } = useTheme();

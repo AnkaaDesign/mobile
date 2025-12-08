@@ -33,7 +33,7 @@ export default function EditPaintTypeScreen() {
   const { update } = usePaintTypeMutations();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [itemSearch, setItemSearch] = useState("");
+  const [itemSearch] = useState("");
 
   // Check user permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.BASIC);

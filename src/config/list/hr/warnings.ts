@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Warning } from '@/types'
-import { WARNING_SEVERITY, WARNING_CATEGORY, WARNING_SEVERITY_LABELS, WARNING_CATEGORY_LABELS } from '@/constants/enum-labels'
+import { WARNING_SEVERITY, WARNING_CATEGORY } from '@/constants/enums'
+import { WARNING_SEVERITY_LABELS, WARNING_CATEGORY_LABELS } from '@/constants/enum-labels'
 
 export const warningsListConfig: ListConfig<Warning> = {
   key: 'hr-warnings',

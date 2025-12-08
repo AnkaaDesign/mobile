@@ -55,34 +55,24 @@ export function useMyBonusesInfiniteMobile(
 
   // Transform live bonus data to match Bonus entity structure
   const liveBonusForUser = useMemo(() => {
-    console.log('🔍 Live Bonus Debug:', {
-      hasLiveData: !!liveData,
-      liveDataContent: liveData,
-      hasCurrentUser: !!currentUser?.id,
-      currentYear,
-      currentMonth,
-    });
-
     if (!liveData?.data || !currentUser?.id) {
-      console.log('❌ No live bonus: liveData.data or currentUser.id is missing');
       return null;
     }
 
     const userBonus = liveData.data;
-    console.log('✅ Found live bonus data:', userBonus);
 
     // Transform to match Bonus entity structure
+    // Live ID format: live-{userId}-{year}-{month} (matches backend's findByIdOrLive)
     return {
-      id: `live-${currentYear}-${currentMonth}`,
+      id: `live-${currentUser.id}-${currentYear}-${currentMonth}`,
       userId: currentUser.id,
       year: currentYear,
       month: currentMonth,
       performanceLevel: userBonus.level || currentUser.performanceLevel || 3,
       baseBonus: userBonus.baseBonus || 0,
-      ponderedTaskCount: userBonus.ponderedTaskCount || 0,
-      averageTasksPerUser: userBonus.ponderedTaskCount || 0,
-      calculationPeriodStart: new Date(currentYear, currentMonth - 2, 26), // month-2 because 0-indexed
-      calculationPeriodEnd: new Date(currentYear, currentMonth - 1, 25),
+      netBonus: userBonus.netBonus || userBonus.baseBonus || 0,
+      weightedTasks: userBonus.weightedTasks || 0,
+      averageTaskPerUser: userBonus.averageTaskPerUser || 0,
       createdAt: new Date(),
       updatedAt: new Date(),
       user: currentUser,
@@ -143,18 +133,8 @@ export function useMyBonusesInfiniteMobile(
       bonus => bonus.year === currentYear && bonus.month === currentMonth
     );
 
-    console.log('🔍 Combine Debug:', {
-      hasLiveBonus: !!liveBonusForUser,
-      hasCurrentPeriodSaved,
-      currentPeriod: `${currentYear}-${currentMonth}`,
-      pagesCount: pages.length,
-      totalBonuses: allBonuses.length,
-      infiniteQueryStatus: infiniteQuery.status,
-    });
-
     // Only add live bonus if there's NO saved bonus for current period
     if (liveBonusForUser && !hasCurrentPeriodSaved) {
-      console.log('✅ Adding live bonus for current period');
 
       // Case 1: We have historical bonuses - inject live bonus at the start
       if (pages.length > 0) {
@@ -194,10 +174,6 @@ export function useMyBonusesInfiniteMobile(
       };
     }
 
-    if (hasCurrentPeriodSaved) {
-      console.log('ℹ️ Current period already saved, showing from database');
-    }
-
     // Return saved bonuses as-is
     return infiniteQuery.data;
   }, [infiniteQuery.data, liveBonusForUser, currentYear, currentMonth]);
@@ -207,12 +183,6 @@ export function useMyBonusesInfiniteMobile(
     ...infiniteQuery,
     data: combinedData,
     isLoading: isLoadingUser || isLoadingLive || infiniteQuery.isLoading,
-  });
-
-  console.log('🔍 Final Result:', {
-    itemsCount: result.items?.length || 0,
-    isLoading: result.isLoading,
-    hasError: !!result.error,
   });
 
   return result;

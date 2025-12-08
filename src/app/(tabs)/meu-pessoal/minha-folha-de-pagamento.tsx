@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { ThemedView, ThemedText, Card, CardHeader, CardTitle, CardContent, ErrorScreen, EmptyState, Badge } from '@/components/ui';
 import { useTheme } from '@/lib/theme';
 import { formatCurrency, getCurrentPayrollPeriod } from '@/utils';
-import { api } from '@/api-client';
+import { apiClient } from '@/api-client';
 import { IconChevronLeft, IconChevronRight, IconCalendar, IconCoins, IconTrendingUp, IconTrendingDown, IconWallet } from '@tabler/icons-react-native';
 
 interface PayrollData {
@@ -58,7 +58,7 @@ export default function MinhaFolhaDePagamentoScreen() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['my-payroll', selectedYear, selectedMonth],
     queryFn: async () => {
-      const response = await api.get(`/payroll/me/${selectedYear}/${selectedMonth}`);
+      const response = await apiClient.get(`/payroll/me/${selectedYear}/${selectedMonth}`);
       return response.data as { success: boolean; data: PayrollData; message: string };
     },
   });

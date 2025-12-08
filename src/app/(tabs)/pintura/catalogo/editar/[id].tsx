@@ -1,4 +1,4 @@
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -121,7 +121,7 @@ export default function EditCatalogScreen() {
             tags: paint.tags || [],
             groundIds: paint.paintGrounds?.map((g) => g.groundPaintId) || [],
           }}
-          initialGrounds={paint.paintGrounds?.map((g) => g.groundPaint) || []}
+          initialGrounds={paint.paintGrounds?.map((g) => g.groundPaint).filter((g): g is NonNullable<typeof g> => g !== undefined) || []}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isSubmitting={isLoading}

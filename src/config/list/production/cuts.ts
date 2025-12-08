@@ -61,7 +61,7 @@ export const cutsListConfig: ListConfig<Cut> = {
 
   query: {
     hook: 'useCutsInfiniteMobile',
-    defaultSort: { field: 'createdAt', direction: 'desc' },
+    defaultSort: { field: 'status', direction: 'asc' },
     pageSize: 25,
     include: {
       file: true,
@@ -109,8 +109,9 @@ export const cutsListConfig: ListConfig<Cut> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (cut) => STATUS_LABELS[cut.status] || cut.status,
+        render: (cut) => cut.status,
         format: 'badge',
+        badgeEntity: 'CUT',
       },
       {
         key: 'type',
@@ -183,17 +184,7 @@ export const cutsListConfig: ListConfig<Cut> = {
         icon: 'eye',
         variant: 'default',
         onPress: (cut, router) => {
-          router.push(`/producao/recorte/detalhes/${cut.id}`)
-        },
-      },
-      {
-        key: 'edit',
-        label: 'Editar',
-        icon: 'pencil',
-        variant: 'default',
-        canPerform: canEditCuts,
-        onPress: (cut, router) => {
-          router.push(`/producao/recorte/editar/${cut.id}`)
+          router.push(`/(tabs)/producao/recorte/detalhes/${cut.id}`)
         },
       },
       {
@@ -313,7 +304,7 @@ export const cutsListConfig: ListConfig<Cut> = {
   actions: {
     create: {
       label: 'Novo Corte',
-      route: '/producao/recorte/cadastrar',
+      route: '/(tabs)/producao/recorte/cadastrar',
       canCreate: canEditCuts,
     },
     bulk: [

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconAlertTriangle, IconCalendarPlus, IconInfoCircle } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -178,11 +178,12 @@ export function AlertFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={severityOptions}
-              selectedValues={localFilters.severities || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, severities: values as NOTIFICATION_IMPORTANCE[] }))}
+              value={localFilters.severities || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, severities: (Array.isArray(values) ? values : values ? [values] : []) as NOTIFICATION_IMPORTANCE[] }))}
               placeholder="Todas as severidades"
               searchPlaceholder="Buscar severidades..."
-              emptyText="Nenhuma severidade encontrada"
+              emptyMessage="Nenhuma severidade encontrada"
             />
           </View>
         </View>
@@ -202,11 +203,12 @@ export function AlertFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={typeOptions}
-              selectedValues={localFilters.types || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, types: values as ALERT_TYPE[] }))}
+              value={localFilters.types || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, types: (Array.isArray(values) ? values : values ? [values] : []) as ALERT_TYPE[] }))}
               placeholder="Todos os tipos"
               searchPlaceholder="Buscar tipos..."
-              emptyText="Nenhum tipo encontrado"
+              emptyMessage="Nenhum tipo encontrado"
             />
           </View>
         </View>
@@ -302,11 +304,12 @@ export function AlertFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={sourceOptions}
-              selectedValues={localFilters.sources || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sources: values }))}
+              value={localFilters.sources || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sources: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todas as origens"
               searchPlaceholder="Buscar origens..."
-              emptyText="Nenhuma origem encontrada"
+              emptyMessage="Nenhuma origem encontrada"
             />
           </View>
         </View>

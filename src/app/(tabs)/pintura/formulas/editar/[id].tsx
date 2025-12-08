@@ -92,7 +92,7 @@ export default function EditFormulaScreen() {
   if (formula.paintId) {
     // For mobile, we redirect to the catalog page since the edit with tabs might not be implemented yet
     // In the future, this could redirect to: /(tabs)/pintura/catalogo/editar/${formula.paintId}?tab=formulation
-    return <Redirect href={`/(tabs)/pintura/catalogo/${formula.paintId}`} />;
+    return <Redirect href={`/(tabs)/pintura/catalogo/${formula.paintId}` as any} />;
   }
 
   // Fallback if no paintId

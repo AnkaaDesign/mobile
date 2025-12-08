@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { IconPackage, IconHash, IconCurrencyReal, IconArrowBack, IconAlertCircle, IconCircleCheck } from "@tabler/icons-react-native";
 import type { ExternalWithdrawalItem } from "@/types";
 import { formatCurrency } from "@/utils";

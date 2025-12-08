@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { spacing, fontSize } from "@/constants/design-system";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
-import { IconEdit, IconTrash, IconLightbulb } from "@tabler/icons-react-native";
+import { IconEdit, IconTrash, IconBulb } from "@tabler/icons-react-native";
 
 export default function ServiceDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -159,7 +159,7 @@ export default function ServiceDetailsScreen() {
           <Card style={styles.card}>
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
               <View style={styles.headerLeft}>
-                <IconLightbulb size={20} color={colors.mutedForeground} />
+                <IconBulb size={20} color={colors.mutedForeground} />
                 <ThemedText style={styles.title}>Funcionalidades Futuras</ThemedText>
               </View>
             </View>

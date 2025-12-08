@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: borderRadius.md,
   },
-  // Action bar - same style as SimpleFormActionBar
+  // Action bar - same style as FormActionBar
   actionBar: {
     flexDirection: 'row',
     gap: formSpacing.rowGap,

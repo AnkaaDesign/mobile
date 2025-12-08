@@ -195,8 +195,9 @@ export default function AddOrderItemScreen() {
                     options={itemOptions}
                     value={value || ""}
                     onValueChange={(itemId) => {
-                      onChange(itemId || "");
-                      handleItemSelect(itemId || "");
+                      const id = Array.isArray(itemId) ? itemId[0] : (itemId || "");
+                      onChange(id);
+                      handleItemSelect(id);
                     }}
                     loading={itemsLoading}
                     error={errors.itemId?.message}

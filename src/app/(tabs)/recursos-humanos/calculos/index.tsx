@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { IconChevronLeft, IconChevronRight, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -161,11 +161,11 @@ export default function CalculationsListScreen() {
   const calculations: CalculationRow[] = useMemo(() => {
     const apiResponse = calculationsData?.data || calculationsData;
 
-    if (apiResponse?.success === false) {
+    if (apiResponse && 'success' in apiResponse && apiResponse.success === false) {
       return [];
     }
 
-    const secullumData = apiResponse?.data;
+    const secullumData = apiResponse && 'data' in apiResponse ? apiResponse.data : null;
     if (!secullumData) return [];
 
     const { Colunas = [], Linhas = [] } = secullumData;
@@ -292,7 +292,7 @@ export default function CalculationsListScreen() {
           {/* User Selector - Full Width */}
           <Combobox
             value={selectedUserId}
-            onValueChange={setSelectedUserId}
+            onValueChange={(value) => setSelectedUserId(typeof value === 'string' ? value : value?.[0] ?? '')}
             options={userOptions}
             placeholder="Selecionar funcionário"
             disabled={usersLoading}
@@ -369,13 +369,12 @@ const styles = StyleSheet.create({
   headerContainer: {
     paddingHorizontal: 8,
     paddingVertical: 8,
-    gap: 0,
+    gap: 8,
   },
   controlsRow: {
     flexDirection: "row",
     gap: 8,
     alignItems: "stretch",
-    marginTop: -8,
   },
   monthSelector: {
     flex: 1,

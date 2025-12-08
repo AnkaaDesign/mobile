@@ -20,13 +20,6 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
   const pathname = usePathname();
   const router = useRouter();
 
-  // Debug logging for navigation history (only in development)
-  useEffect(() => {
-    if (__DEV__) {
-      console.log("🧭 Navigation History:", history);
-      console.log("📍 Current Path:", pathname);
-    }
-  }, [history, pathname]);
 
   // Track route changes and build history
   useEffect(() => {
@@ -67,29 +60,16 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
   const canGoBack = history.length > 1;
 
   const goBack = () => {
-    console.log('[NAV HISTORY] goBack called, history length:', history.length);
-
     if (history.length > 1) {
-      // Get the previous route from our manual history tracking
       const previousRoute = history[history.length - 2];
-
-      // Validate the previous route exists and is accessible
       if (previousRoute && !previousRoute.startsWith("/(autenticacao)")) {
-        console.log('[NAV HISTORY] Going back to:', previousRoute);
-        // Update history state to remove current route
         setHistory((prev) => prev.slice(0, -1));
-        // Navigate to the previous route using push instead of back
-        // This is more reliable with drawer navigation
         router.push(previousRoute as any);
       } else {
-        // If previous route is invalid, clear history and go to home
-        console.log('[NAV HISTORY] Invalid previous route, going to home');
         setHistory([]);
         router.push("/(tabs)/inicio" as any);
       }
     } else {
-      // Fallback to home if no history
-      console.log('[NAV HISTORY] No history, going to home');
       router.push("/(tabs)/inicio" as any);
     }
   };

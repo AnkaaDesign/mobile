@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconBell, IconCalendarPlus, IconAlertCircle } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -168,11 +168,12 @@ export function NotificationFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={importanceOptions}
-              selectedValues={localFilters.importance || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, importance: values }))}
+              value={localFilters.importance || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, importance: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todas as importâncias"
               searchPlaceholder="Buscar importâncias..."
-              emptyText="Nenhuma importância encontrada"
+              emptyMessage="Nenhuma importância encontrada"
             />
           </View>
         </View>
@@ -192,11 +193,12 @@ export function NotificationFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={typeOptions}
-              selectedValues={localFilters.types || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, types: values }))}
+              value={localFilters.types || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, types: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os tipos"
               searchPlaceholder="Buscar tipos..."
-              emptyText="Nenhum tipo encontrado"
+              emptyMessage="Nenhum tipo encontrado"
             />
           </View>
         </View>

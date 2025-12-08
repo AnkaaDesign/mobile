@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Text } from "@/components/ui/text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import type { ThemeMode } from "@/types/contexts";
+import type { ThemeMode } from "@/types/theme";
 
 interface ThemePreviewCardProps {
   title: string;

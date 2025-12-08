@@ -13,31 +13,18 @@ const getMonthLabel = (month: number): string => {
   return months[month - 1] || '-'
 }
 
+// Helper to get numeric value from Decimal or number
+const getNumericValue = (value: any): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseFloat(value) || 0;
+  if (value?.toNumber) return value.toNumber();
+  return 0;
+}
+
 // Helper to format bonus amount (handles Decimal type from Prisma)
 const formatBonusAmount = (amount: any): string => {
-  console.log('💰 formatBonusAmount input:', { amount, type: typeof amount, constructor: amount?.constructor?.name });
-
-  let value = 0;
-
-  if (amount === null || amount === undefined) {
-    value = 0;
-  } else if (typeof amount === 'number') {
-    value = amount;
-  } else if (typeof amount === 'string') {
-    value = parseFloat(amount) || 0;
-  } else if (amount?.toNumber) {
-    value = amount.toNumber();
-  } else if (amount?.$numberDecimal) {
-    // MongoDB Decimal128 format
-    value = parseFloat(amount.$numberDecimal) || 0;
-  } else if (typeof amount === 'object') {
-    // Try to extract any numeric value
-    console.log('⚠️ Unknown object format:', JSON.stringify(amount));
-    value = 0;
-  }
-
-  console.log('💰 formatBonusAmount output:', value);
-
+  const value = getNumericValue(amount);
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
@@ -46,21 +33,7 @@ const formatBonusAmount = (amount: any): string => {
 
 // Helper to format decimal values
 const formatDecimal = (value: any): string => {
-  let num = 0;
-
-  if (value === null || value === undefined) {
-    num = 0;
-  } else if (typeof value === 'number') {
-    num = value;
-  } else if (typeof value === 'string') {
-    num = parseFloat(value) || 0;
-  } else if (value?.toNumber) {
-    num = value.toNumber();
-  } else if (value?.$numberDecimal) {
-    num = parseFloat(value.$numberDecimal) || 0;
-  }
-
-  return num.toFixed(2);
+  return getNumericValue(value).toFixed(2);
 }
 
 export const personalBonusesListConfig: ListConfig<Bonus> = {
@@ -122,20 +95,20 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
         format: 'badge',
       },
       {
-        key: 'ponderedTaskCount',
+        key: 'weightedTasks',
         label: 'TAREFAS',
         sortable: true,
         width: 1.0,
         align: 'center',
-        render: (bonus) => formatDecimal(bonus.ponderedTaskCount),
+        render: (bonus) => formatDecimal(bonus.weightedTasks),
       },
       {
-        key: 'averageTasksPerUser',
+        key: 'averageTaskPerUser',
         label: 'MÉDIA/COLAB.',
         sortable: true,
         width: 1.0,
         align: 'center',
-        render: (bonus) => formatDecimal(bonus.averageTasksPerUser),
+        render: (bonus) => formatDecimal(bonus.averageTaskPerUser),
       },
       {
         key: 'discounts',
@@ -187,7 +160,7 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['period', 'baseBonus', 'ponderedTaskCount'],
+    defaultVisible: ['period', 'baseBonus', 'weightedTasks'],
     rowHeight: 72,
     actions: [
       {
@@ -287,15 +260,15 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
         path: 'performanceLevel'
       },
       {
-        key: 'ponderedTaskCount',
+        key: 'weightedTasks',
         label: 'Tarefas Ponderadas',
-        path: 'ponderedTaskCount',
+        path: 'weightedTasks',
         format: (value) => formatDecimal(value)
       },
       {
-        key: 'averageTasksPerUser',
+        key: 'averageTaskPerUser',
         label: 'Média por Colaborador',
-        path: 'averageTasksPerUser',
+        path: 'averageTaskPerUser',
         format: (value) => formatDecimal(value)
       },
       {

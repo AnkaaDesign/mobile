@@ -72,6 +72,7 @@ export type BadgeVariant =
   | "created"
   | "active"
   | "inProgress"
+  | "inProduction"
   | "processing"
   | "approved"
   | "rejected"
@@ -87,6 +88,13 @@ export type BadgeVariant =
   | "returned"
   | "lost"
   | "bounced"
+  | "partial"
+  | "cutting"
+  | "finished"
+  | "charged"
+  | "dismissed"
+  | "effected"
+  | "reproved"
   // Color utilities (for entity-specific or non-status use)
   | "red"
   | "purple"
@@ -122,7 +130,7 @@ export const BADGE_COLORS: Record<
 > = {
   // ===== NEUTRAL VARIANTS =====
   default: {
-    bg: "#6b7280", // neutral-500
+    bg: "#737373", // neutral-500 (matching web)
     text: "#ffffff",
   },
   secondary: {
@@ -283,6 +291,44 @@ export const BADGE_COLORS: Record<
     bg: "#06b6d4", // cyan-500
     text: "#ffffff",
   },
+  red: {
+    bg: "#b91c1c", // red-700
+    text: "#ffffff",
+  },
+
+  // ===== ADDITIONAL SEMANTIC VARIANTS =====
+  inProduction: {
+    bg: "#2563eb", // blue-600
+    text: "#ffffff",
+  },
+  partial: {
+    bg: "#f59e0b", // amber-500
+    text: "#ffffff",
+  },
+  cutting: {
+    bg: "#8b5cf6", // violet-500
+    text: "#ffffff",
+  },
+  finished: {
+    bg: "#15803d", // green-700
+    text: "#ffffff",
+  },
+  charged: {
+    bg: "#0891b2", // cyan-600
+    text: "#ffffff",
+  },
+  dismissed: {
+    bg: "#b91c1c", // red-700
+    text: "#ffffff",
+  },
+  effected: {
+    bg: "#15803d", // green-700
+    text: "#ffffff",
+  },
+  reproved: {
+    bg: "#b91c1c", // red-700
+    text: "#ffffff",
+  },
 
   // ===== DEPRECATED - Keep for backward compatibility =====
   success: {
@@ -361,8 +407,6 @@ export const ENTITY_BADGE_CONFIG = {
     [EXTERNAL_WITHDRAWAL_STATUS.PARTIALLY_RETURNED]: "orange" as BadgeVariant,  // Entity-specific: use orange
     [EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED]: "green" as BadgeVariant,       // Entity-specific: use green
     [EXTERNAL_WITHDRAWAL_STATUS.CHARGED]: "blue" as BadgeVariant,               // Entity-specific: use blue
-    [EXTERNAL_WITHDRAWAL_STATUS.LIQUIDATED]: "green" as BadgeVariant,           // Entity-specific: use green
-    [EXTERNAL_WITHDRAWAL_STATUS.DELIVERED]: "delivered" as BadgeVariant,
     [EXTERNAL_WITHDRAWAL_STATUS.CANCELLED]: "cancelled" as BadgeVariant,
   },
 
@@ -370,7 +414,6 @@ export const ENTITY_BADGE_CONFIG = {
   EXTERNAL_WITHDRAWAL_TYPE: {
     [EXTERNAL_WITHDRAWAL_TYPE.RETURNABLE]: "default" as BadgeVariant, // Neutral - returnable
     [EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE]: "red" as BadgeVariant,     // Entity-specific: use red
-    [EXTERNAL_WITHDRAWAL_TYPE.COURTESY]: "secondary" as BadgeVariant, // Light gray - courtesy
   },
 
   // Vacation Status
@@ -633,10 +676,10 @@ export const ENTITY_BADGE_CONFIG = {
 
   // Commission Status
   COMMISSION_STATUS: {
-    [COMMISSION_STATUS.FULL_COMMISSION]: "green" as BadgeVariant,    // Entity-specific: use green
-    [COMMISSION_STATUS.PARTIAL_COMMISSION]: "orange" as BadgeVariant, // Entity-specific: use orange
-    [COMMISSION_STATUS.NO_COMMISSION]: "cancelled" as BadgeVariant,   // Core semantic
-    [COMMISSION_STATUS.SUSPENDED_COMMISSION]: "suspended" as BadgeVariant, // Core semantic
+    [COMMISSION_STATUS.FULL_COMMISSION]: "green" as BadgeVariant,     // Green - full commission earned
+    [COMMISSION_STATUS.PARTIAL_COMMISSION]: "blue" as BadgeVariant,   // Blue - partial commission
+    [COMMISSION_STATUS.NO_COMMISSION]: "orange" as BadgeVariant,      // Orange - no commission (warning)
+    [COMMISSION_STATUS.SUSPENDED_COMMISSION]: "red" as BadgeVariant,  // Red - commission suspended (critical)
   },
 };
 
@@ -734,9 +777,9 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
 
   // Commission Status fallback
   FULL_COMMISSION: "green",
-  PARTIAL_COMMISSION: "orange",
-  NO_COMMISSION: "cancelled",
-  SUSPENDED_COMMISSION: "suspended",
+  PARTIAL_COMMISSION: "blue",
+  NO_COMMISSION: "orange",
+  SUSPENDED_COMMISSION: "red",
 };
 
 /**
@@ -823,7 +866,7 @@ export const BOOLEAN_BADGE_CONFIG = {
     false: "pending" as BadgeVariant,
   },
   isOverdue: {
-    true: "overdue" as BadgeVariant,
+    true: "expired" as BadgeVariant,
     false: "default" as BadgeVariant,
   },
 };

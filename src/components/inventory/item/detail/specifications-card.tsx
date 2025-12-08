@@ -5,11 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   IconInfoCircle,
   IconRuler,
-  IconUserCheck,
-  IconBadge,
   IconTruck,
   IconBox,
-  IconQrcode,
   IconScale,
   IconDroplet,
   IconHash,

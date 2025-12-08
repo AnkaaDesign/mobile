@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { IconFilter, IconX, IconUserCheck, IconBriefcase, IconBuildingStore } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -151,11 +151,12 @@ export function EmployeeFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={statusOptions}
-              selectedValues={localFilters.statuses || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: values }))}
+              value={localFilters.statuses || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os status"
               searchPlaceholder="Buscar status..."
-              emptyText="Nenhum status encontrado"
+              emptyMessage="Nenhum status encontrado"
             />
           </View>
         </View>
@@ -175,11 +176,12 @@ export function EmployeeFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={positionOptions}
-              selectedValues={localFilters.positionIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, positionIds: values }))}
+              value={localFilters.positionIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, positionIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os cargos"
               searchPlaceholder="Buscar cargos..."
-              emptyText="Nenhum cargo encontrado"
+              emptyMessage="Nenhum cargo encontrado"
             />
           </View>
         </View>
@@ -199,11 +201,12 @@ export function EmployeeFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={sectorOptions}
-              selectedValues={localFilters.sectorIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sectorIds: values }))}
+              value={localFilters.sectorIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sectorIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os setores"
               searchPlaceholder="Buscar setores..."
-              emptyText="Nenhum setor encontrado"
+              emptyMessage="Nenhum setor encontrado"
             />
           </View>
         </View>

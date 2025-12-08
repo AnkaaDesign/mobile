@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
 import { ThemedView } from '@/components/ui/themed-view';
 import { useTheme } from '@/lib/theme';
+import { borderRadius, fontSize, fontWeight } from '@/constants/design-system';
 import type { BatchOperationResult } from '../form/order-form-utils-enhanced';
 
 interface OrderBatchResultDialogProps {
@@ -35,7 +36,7 @@ export const OrderBatchResultDialog: React.FC<OrderBatchResultDialogProps> = ({ 
     },
     summaryCard: {
       padding: theme.spacing.md,
-      borderRadius: theme.borderRadius.md,
+      borderRadius: borderRadius.md,
       backgroundColor: success ? theme.colors.success + '20' : failedCount > 0 && successCount > 0 ? theme.colors.warning + '20' : theme.colors.error + '20',
       borderWidth: 1,
       borderColor: success ? theme.colors.success : failedCount > 0 && successCount > 0 ? theme.colors.warning : theme.colors.error,
@@ -63,8 +64,8 @@ export const OrderBatchResultDialog: React.FC<OrderBatchResultDialogProps> = ({ 
       backgroundColor: theme.colors.warning,
     },
     summaryText: {
-      fontSize: theme.fontSize.base,
-      fontWeight: theme.fontWeight.semibold as any,
+      fontSize: fontSize.base,
+      fontWeight: fontWeight.semibold as any,
       color: theme.colors.text,
     },
     statRow: {
@@ -74,27 +75,27 @@ export const OrderBatchResultDialog: React.FC<OrderBatchResultDialogProps> = ({ 
       paddingVertical: theme.spacing.xs,
     },
     statLabel: {
-      fontSize: theme.fontSize.sm,
+      fontSize: fontSize.sm,
       color: theme.colors.textSecondary,
     },
     statValue: {
-      fontSize: theme.fontSize.sm,
-      fontWeight: theme.fontWeight.medium as any,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.medium as any,
       color: theme.colors.text,
     },
     errorSection: {
       marginTop: theme.spacing.md,
     },
     errorTitle: {
-      fontSize: theme.fontSize.sm,
-      fontWeight: theme.fontWeight.semibold as any,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold as any,
       color: theme.colors.text,
       marginBottom: theme.spacing.sm,
     },
     errorList: {
       maxHeight: 200,
       backgroundColor: theme.colors.background,
-      borderRadius: theme.borderRadius.md,
+      borderRadius: borderRadius.md,
       padding: theme.spacing.sm,
       borderWidth: 1,
       borderColor: theme.colors.border,
@@ -110,7 +111,7 @@ export const OrderBatchResultDialog: React.FC<OrderBatchResultDialogProps> = ({ 
     },
     errorText: {
       flex: 1,
-      fontSize: theme.fontSize.sm,
+      fontSize: fontSize.sm,
       color: theme.colors.error,
       lineHeight: 18,
     },

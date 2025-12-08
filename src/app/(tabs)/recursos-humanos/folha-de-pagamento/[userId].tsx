@@ -1,10 +1,9 @@
-import React, { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconClock, IconCheck } from "@tabler/icons-react-native";
 import { payrollService } from "@/api-client";
-import type { Payroll } from '@/types';
 import {
   ThemedView,
   ThemedText,
@@ -117,13 +116,13 @@ export default function PayrollDetailScreen() {
           },
         });
 
-        const responseData = response.data;
+        const responseData = response.data as any;
 
         // Backend returns consistent format: { success, message, data: payroll }
         if (responseData?.success && responseData?.data) {
           setPayroll(responseData.data);
         } else if (responseData?.success === false) {
-          setError(responseData.message || 'Folha de pagamento não encontrada.');
+          setError(responseData?.message || 'Folha de pagamento não encontrada.');
         } else {
           setError('Folha de pagamento não encontrada.');
         }
@@ -149,8 +148,9 @@ export default function PayrollDetailScreen() {
           discounts: true,
         },
       });
-      if (response.data?.success && response.data?.data) {
-        setPayroll(response.data.data);
+      const refreshData = response.data as any;
+      if (refreshData?.success && refreshData?.data) {
+        setPayroll(refreshData.data);
       }
     } finally {
       setRefreshing(false);
@@ -284,7 +284,7 @@ export default function PayrollDetailScreen() {
     const bonus = payroll.bonus;
     const totalTasks = getNumericValue(bonus.totalTasks) || 0;
     const totalParticipants = getNumericValue(bonus.totalUsers) || bonus.users?.length || 0;
-    const weightedTasks = getNumericValue(bonus.weightedTasks) || getNumericValue(bonus.ponderedTaskCount) || 0;
+    const weightedTasks = getNumericValue(bonus.weightedTasks) || 0;
     const averagePerUser = totalParticipants > 0 ? weightedTasks / totalParticipants : 0;
 
     return {
@@ -347,7 +347,6 @@ export default function PayrollDetailScreen() {
   const isLive = parsedId.isLive || payroll.isLive || payroll.isTemporary;
 
   const hasPayrollDiscounts = payroll.discounts && payroll.discounts.length > 0;
-  const _hasBonusDiscounts = payroll.bonus?.bonusDiscounts && payroll.bonus.bonusDiscounts.length > 0;
 
   return (
     <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL]}>

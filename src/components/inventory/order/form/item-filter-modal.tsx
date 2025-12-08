@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet, Modal, TouchableOpacity } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Icon } from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import { getItemCategories, getItemBrands, getSuppliers } from "@/api-client";
 import { useQuery } from "@tanstack/react-query";
 

@@ -8,7 +8,7 @@ import { useSupplierDetail, useUpdateSupplier, useKeyboardAwareScroll } from "@/
 import { supplierUpdateSchema, type SupplierUpdateFormData } from "@/schemas";
 import { Input, Combobox } from "@/components/ui";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
 import { BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
@@ -23,7 +23,6 @@ export default function SupplierEditScreen() {
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoFiles, setLogoFiles] = useState<FilePickerItem[]>([]);
-  const [documentFiles, setDocumentFiles] = useState<FilePickerItem[]>([]);
 
   // Keyboard-aware scrolling
   const { handlers, refs } = useKeyboardAwareScroll();
@@ -93,11 +92,11 @@ export default function SupplierEditScreen() {
     setIsSubmitting(true);
     try {
       // Create FormData if we have files
-      if (logoFiles.length > 0 || documentFiles.length > 0) {
+      if (logoFiles.length > 0) {
         const formData = new FormData();
 
         // Add all form fields
-        formData.append("fantasyName", data.fantasyName);
+        if (data.fantasyName) formData.append("fantasyName", data.fantasyName);
         if (data.cnpj) formData.append("cnpj", data.cnpj);
         if (data.corporateName) formData.append("corporateName", data.corporateName);
         if (data.email) formData.append("email", data.email);
@@ -121,23 +120,12 @@ export default function SupplierEditScreen() {
         });
 
         // Add logo file
-        if (logoFiles.length > 0) {
-          const logoFile = logoFiles[0];
-          formData.append("logo", {
-            uri: logoFile.uri,
-            name: logoFile.name,
-            type: logoFile.type,
-          } as any);
-        }
-
-        // Add document files
-        documentFiles.forEach((file) => {
-          formData.append("documents", {
-            uri: file.uri,
-            name: file.name,
-            type: file.type,
-          } as any);
-        });
+        const logoFile = logoFiles[0];
+        formData.append("logo", {
+          uri: logoFile.uri,
+          name: logoFile.name,
+          type: logoFile.type,
+        } as any);
 
         const result = await updateAsync(formData as any);
 
@@ -178,7 +166,7 @@ export default function SupplierEditScreen() {
   };
 
   const handleCancel = () => {
-    if (form.formState.isDirty || logoFiles.length > 0 || documentFiles.length > 0) {
+    if (form.formState.isDirty || logoFiles.length > 0) {
       Alert.alert("Descartar Alterações", "Você tem alterações não salvas. Deseja descartá-las?", [
         { text: "Continuar Editando", style: "cancel" },
         { text: "Descartar", style: "destructive", onPress: () => router.back() },
@@ -500,20 +488,6 @@ export default function SupplierEditScreen() {
               showFilePicker={true}
             />
           </FormFieldGroup>
-
-          <FormFieldGroup label="Documentos">
-            <FilePicker
-              value={documentFiles}
-              onChange={setDocumentFiles}
-              maxFiles={5}
-              placeholder="Adicionar documentos"
-              helperText="Selecione até 5 documentos do fornecedor"
-              disabled={isSubmitting}
-              showCamera={true}
-              showGallery={true}
-              showFilePicker={true}
-            />
-          </FormFieldGroup>
         </FormCard>
 
         {/* Tags */}
@@ -531,7 +505,7 @@ export default function SupplierEditScreen() {
         </KeyboardAwareFormProvider>
         </ScrollView>
 
-        <SimpleFormActionBar
+        <FormActionBar
           onCancel={handleCancel}
           onSubmit={form.handleSubmit(onSubmit)}
           isSubmitting={isSubmitting}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconUsers, IconShirt } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -132,8 +132,9 @@ export function PpeSizeFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={userOptions}
-              selectedValues={localFilters.userIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: values }))}
+              value={localFilters.userIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder={users.length === 0 ? "Carregando funcionários..." : "Todos os funcionários"}
               searchPlaceholder="Buscar funcionários..."
               emptyText="Nenhum funcionário encontrado"

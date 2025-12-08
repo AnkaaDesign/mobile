@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconTool, IconCalendar } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -45,7 +45,7 @@ export function MaintenanceFilterDrawerContent({
 
   const handleApply = useCallback(() => {
     const newFilters: Partial<MaintenanceGetManyParams> = {
-      where: Record<string, unknown>,
+      where: {},
     };
 
     if (localFilters.statusIds && localFilters.statusIds.length > 0) {

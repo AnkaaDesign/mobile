@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconPackage, IconUser, IconCalendar } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { useItems, useUsers } from "@/hooks";
-import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
+import { BORROW_STATUS_LABELS } from "@/constants";
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
 import type { BorrowGetManyFormData } from '../../../../schemas';
@@ -112,14 +112,6 @@ export function BorrowFilterDrawerContent({
     onClear();
   }, [onClear]);
 
-  const statusOptions = useMemo(
-    () => Object.entries(BORROW_STATUS_LABELS).map(([value, label]) => ({
-      label,
-      value,
-    })),
-    []
-  );
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
@@ -223,12 +215,12 @@ export function BorrowFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={items}
-              selectedValues={localFilters.itemIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, itemIds: values }))}
+              value={localFilters.itemIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, itemIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os itens"
               searchPlaceholder="Buscar itens..."
               emptyText="Nenhum item encontrado"
-              showBadges={false}
             />
           </View>
         </View>
@@ -248,12 +240,12 @@ export function BorrowFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={users}
-              selectedValues={localFilters.userIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: values }))}
+              value={localFilters.userIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os usuários"
               searchPlaceholder="Buscar usuários..."
               emptyText="Nenhum usuário encontrado"
-              showBadges={false}
             />
           </View>
         </View>

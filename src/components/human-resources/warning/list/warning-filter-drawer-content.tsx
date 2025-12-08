@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconAlertTriangle, IconUsers, IconCalendarPlus } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -217,8 +217,9 @@ export function WarningFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={categoryOptions}
-              selectedValues={localFilters.categories || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, categories: values }))}
+              value={localFilters.categories || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, categories: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todas as categorias"
               searchPlaceholder="Buscar categorias..."
               emptyText="Nenhuma categoria encontrada"
@@ -241,8 +242,9 @@ export function WarningFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={severityOptions}
-              selectedValues={localFilters.severities || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, severities: values }))}
+              value={localFilters.severities || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, severities: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todas as gravidades"
               searchPlaceholder="Buscar gravidades..."
               emptyText="Nenhuma gravidade encontrada"
@@ -265,8 +267,9 @@ export function WarningFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={userOptions}
-              selectedValues={localFilters.collaboratorIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, collaboratorIds: values }))}
+              value={localFilters.collaboratorIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, collaboratorIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os colaboradores"
               searchPlaceholder="Buscar colaboradores..."
               emptyText="Nenhum colaborador encontrado"
@@ -279,8 +282,9 @@ export function WarningFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={userOptions}
-              selectedValues={localFilters.supervisorIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, supervisorIds: values }))}
+              value={localFilters.supervisorIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, supervisorIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os supervisores"
               searchPlaceholder="Buscar supervisores..."
               emptyText="Nenhum supervisor encontrado"
@@ -293,8 +297,9 @@ export function WarningFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={userOptions}
-              selectedValues={localFilters.witnessIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, witnessIds: values }))}
+              value={localFilters.witnessIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, witnessIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todas as testemunhas"
               searchPlaceholder="Buscar testemunhas..."
               emptyText="Nenhuma testemunha encontrada"

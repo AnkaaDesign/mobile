@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +11,7 @@ import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Switch } from "@/components/ui/switch";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
@@ -22,8 +22,7 @@ import { warningCreateSchema, warningUpdateSchema } from "@/schemas/warning";
 import type { WarningCreateFormData, WarningUpdateFormData } from "@/schemas/warning";
 import type { Warning } from "@/types";
 import { useWarningMutations } from "@/hooks/useWarning";
-import { useUsers } from "@/hooks/useUser";
-import { WARNING_SEVERITY, WARNING_CATEGORY, USER_STATUS } from "@/constants";
+import { WARNING_SEVERITY, WARNING_CATEGORY } from "@/constants";
 
 interface WarningFormProps {
   mode: "create" | "update";
@@ -54,7 +53,7 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
   const { createAsync, updateAsync, createMutation, updateMutation } = useWarningMutations();
 
   // Async data loading functions
-  const loadCollaboratorOptions = useCallback(async (search: string, page: number = 1) => {
+  const loadCollaboratorOptions = useCallback(async () => {
     // TODO: Implement proper user loading with pagination
     // For now, returning empty results to allow compilation
     return {
@@ -63,7 +62,7 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
     };
   }, []);
 
-  const loadSupervisorOptions = useCallback(async (search: string, page: number = 1) => {
+  const loadSupervisorOptions = useCallback(async () => {
     // TODO: Implement proper user loading with pagination
     // For now, returning empty results to allow compilation
     return {
@@ -72,7 +71,7 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
     };
   }, []);
 
-  const loadWitnessOptions = useCallback(async (search: string, page: number = 1) => {
+  const loadWitnessOptions = useCallback(async () => {
     // TODO: Implement proper user loading with pagination and filtering
     // For now, returning empty results to allow compilation
     return {
@@ -496,7 +495,7 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
           </KeyboardAwareFormProvider>
         </ScrollView>
 
-        <SimpleFormActionBar
+        <FormActionBar
           onCancel={handleCancel}
           onSubmit={form.handleSubmit(handleSubmit)}
           isSubmitting={isLoading}

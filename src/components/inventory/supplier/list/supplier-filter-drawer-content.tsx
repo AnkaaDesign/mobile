@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconBuilding, IconMapPin, IconHash } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -235,10 +235,11 @@ export function SupplierFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={BRAZILIAN_STATES.map((state) => ({ label: state, value: state }))}
-              selectedValues={localFilters.states || []}
-              onValueChange={(value) => handleArrayChange("states", value)}
+              value={localFilters.states || []}
+              mode="multiple"
+              onValueChange={(values) => handleArrayChange("states", Array.isArray(values) ? values : values ? [values] : [])}
               placeholder="Selecione estados"
-              showBadges={false}
+              emptyText="Nenhum estado encontrado"
             />
           </View>
         </View>

@@ -15,7 +15,6 @@ import {
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconLoader, IconX, IconPackageImport, IconCheck } from "@tabler/icons-react-native";
-import { BORROW_STATUS } from "@/constants";
 import { formatDate } from "@/utils";
 import type { Borrow } from "@/types";
 

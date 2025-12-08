@@ -9,7 +9,6 @@ import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/icon';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorScreen } from '@/components/ui/error-screen';
-import { DashboardCard } from '@/components/ui/dashboard-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 // import { useToast } from '@/hooks/use-toast';
@@ -280,12 +279,6 @@ export default function ServerMetricsScreen() {
     }
   };
 
-  const _getUsageColor = (usage: number) => {
-    if (usage >= 90) return '#ef4444'; // red
-    if (usage >= 75) return '#f59e0b'; // amber
-    return '#16a34a'; // green
-  };
-
   const getTemperatureColor = (temp: number) => {
     if (temp >= 80) return '#ef4444'; // red
     if (temp >= 70) return '#f59e0b'; // amber
@@ -409,39 +402,6 @@ export default function ServerMetricsScreen() {
 
     return alertList;
   }, [cpuUsage, memoryUsage, diskUsage, temperature, raidData, ssdData]);
-
-  // Calculate historical trends
-  const _trends = useMemo(() => {
-    if (!history || history.length < 2) return { cpu: 'stable', memory: 'stable', disk: 'stable' };
-
-    const recentCount = Math.min(10, history.length);
-    const recentData = history.slice(0, recentCount);
-    const olderData = history.slice(recentCount, recentCount * 2);
-
-    if (olderData.length === 0) return { cpu: 'stable', memory: 'stable', disk: 'stable' };
-
-    const getAverage = (data: HistoricalDataPoint[], key: 'cpu' | 'memory' | 'disk') => {
-      if (data.length === 0) return 0;
-      const sum = data.reduce((sum, h) => {
-        const value = h?.resources?.[key];
-        return sum + (typeof value === 'number' && !isNaN(value) ? value : 0);
-      }, 0);
-      return sum / data.length;
-    };
-
-    const getTrend = (recent: number, older: number) => {
-      if (isNaN(recent) || isNaN(older)) return 'stable';
-      const diff = recent - older;
-      if (Math.abs(diff) < 3) return 'stable';
-      return diff > 0 ? 'up' : 'down';
-    };
-
-    return {
-      cpu: getTrend(getAverage(recentData, 'cpu'), getAverage(olderData, 'cpu')),
-      memory: getTrend(getAverage(recentData, 'memory'), getAverage(olderData, 'memory')),
-      disk: getTrend(getAverage(recentData, 'disk'), getAverage(olderData, 'disk')),
-    };
-  }, [history]);
 
   // Calculate historical averages
   const historicalAverages = useMemo(() => {
@@ -1037,7 +997,7 @@ export default function ServerMetricsScreen() {
                   <ThemedView className="flex-row gap-2">
                     <ThemedView className="flex-1 bg-success/10 rounded-md" style={{ padding: 14 }}>
                       <ThemedView className="flex-row items-center justify-center" style={{ marginBottom: 8 }}>
-                        <Icon name="download" size={14} className="text-success" style={{ marginRight: 4 }} />
+                        <Icon name="download" size={14} className="text-success mr-1" />
                         <ThemedText
                           className="text-muted-foreground"
                           style={{
@@ -1066,7 +1026,7 @@ export default function ServerMetricsScreen() {
 
                     <ThemedView className="flex-1 bg-primary/10 rounded-md" style={{ padding: 14 }}>
                       <ThemedView className="flex-row items-center justify-center" style={{ marginBottom: 8 }}>
-                        <Icon name="upload" size={14} className="text-primary" style={{ marginRight: 4 }} />
+                        <Icon name="upload" size={14} className="text-primary mr-1" />
                         <ThemedText
                           className="text-muted-foreground"
                           style={{

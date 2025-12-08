@@ -8,8 +8,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormFieldGroup, FormRow } from "@/components/ui/form-section";
+import { FormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing, fontSize } from "@/constants/design-system";
@@ -317,7 +317,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
           </KeyboardAwareFormProvider>
         </ScrollView>
 
-        <SimpleFormActionBar
+        <FormActionBar
           onCancel={handleCancel}
           onSubmit={form.handleSubmit(handleSubmit)}
           isSubmitting={isLoading}

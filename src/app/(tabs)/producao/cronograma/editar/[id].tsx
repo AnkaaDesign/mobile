@@ -61,7 +61,7 @@ export default function EditScheduleScreen() {
   const task = response?.data;
 
   // Fetch truck layouts if task has a truck
-  const truckId = task?.truck?.id || task?.truckId;
+  const truckId = task?.truck?.id;
   const { data: layoutsData } = useLayoutsByTruck(truckId || "", {
     include: { layoutSections: true },
     enabled: !!truckId,

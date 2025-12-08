@@ -127,7 +127,7 @@ const createColumnDefinitions = (): TableColumn[] => [
   },
   {
     key: "performanceLevel",
-    header: "Nível",
+    header: "Desempenho (0-5)",
     align: "center",
     sortable: true,
     width: 0,

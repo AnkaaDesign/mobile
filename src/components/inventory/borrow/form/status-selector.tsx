@@ -4,7 +4,6 @@ import { Combobox } from "@/components/ui/combobox";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { BORROW_STATUS, BORROW_STATUS_ORDER } from "@/constants";
@@ -109,10 +108,6 @@ export function BorrowStatusSelector({
   };
 
   const selectedStatus = value || currentStatus;
-  const selectedStatusInfo = useMemo(
-    () => getStatusInfo(selectedStatus),
-    [selectedStatus]
-  );
 
   // Show warning for status changes
   const showLostWarning = selectedStatus === BORROW_STATUS.LOST;

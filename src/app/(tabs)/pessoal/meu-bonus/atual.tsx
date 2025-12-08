@@ -9,12 +9,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useCurrentUser } from "@/hooks/useAuth";
-import { bonusKeys, useTasks } from "@/hooks";
+import { bonusKeys } from "@/hooks";
 import { bonusService } from "@/api-client";
 import { formatCurrency, getBonusPeriod } from "@/utils";
-import { TASK_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, getBadgeVariant } from "@/constants";
+import { COMMISSION_STATUS, COMMISSION_STATUS_LABELS, getBadgeVariant } from "@/constants";
 import { TasksModal } from "@/components/bonus/TasksModal";
-import type { Bonus, Task } from "@/types";
+import type { Task, Bonus } from "@/types";
 
 // Month names in Portuguese
 const MONTH_NAMES = [
@@ -23,37 +23,33 @@ const MONTH_NAMES = [
 ];
 
 /**
- * Get the current bonus period for display, considering the payment window.
- * - From day 6 to day 25: Show current month period (LIVE - in progress)
- * - From day 26 to day 5 of next month: Show previous month period (CLOSED - saved)
+ * Get the current bonus period for display.
+ * The bonus period runs from 26th of previous month to 25th of current month.
+ *
+ * Period logic:
+ * - Days 1-25: Current month period (may be in progress or closed)
+ * - Days 26-31: Next month period starts
  */
-function getCurrentBonusPeriodForDisplay(referenceDate?: Date): {
+function getCurrentBonusPeriod(referenceDate?: Date): {
   year: number;
   month: number;
   monthName: string;
   startDate: Date;
   endDate: Date;
-  isPeriodClosed: boolean;
 } {
   const date = referenceDate || new Date();
   const day = date.getDate();
   let year = date.getFullYear();
   let month = date.getMonth() + 1; // 1-based month
-  let isPeriodClosed = false;
 
+  // If we're on day 26+, we're in the next month's period
   if (day >= 26) {
-    // Day 26+: Period just closed, show current month (closed)
-    isPeriodClosed = true;
-  } else if (day <= 5) {
-    // Days 1-5: Still showing previous month (closed, awaiting payment)
-    month -= 1;
-    if (month < 1) {
-      month = 12;
-      year -= 1;
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
     }
-    isPeriodClosed = true;
   }
-  // Days 6-25: Period is open/in progress
 
   const periodData = getBonusPeriod(year, month);
 
@@ -63,8 +59,16 @@ function getCurrentBonusPeriodForDisplay(referenceDate?: Date): {
     monthName: MONTH_NAMES[month - 1],
     startDate: periodData.startDate,
     endDate: periodData.endDate,
-    isPeriodClosed,
   };
+}
+
+/**
+ * Create a live bonus ID for fetching current period bonus.
+ * Format: live-{userId}-{year}-{month}
+ * The backend's findByIdOrLive will parse this and calculate the live bonus.
+ */
+function createLiveBonusId(userId: string, year: number, month: number): string {
+  return `live-${userId}-${year}-${month}`;
 }
 
 // Format date as dd/mm/yy
@@ -90,6 +94,15 @@ const formatBonusAmount = (amount: any): string => {
   return formatCurrency(0);
 };
 
+// Helper to get numeric value from Decimal or number
+const getNumericValue = (value: any): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseFloat(value) || 0;
+  if (value?.toNumber) return value.toNumber();
+  return 0;
+};
+
 export default function CurrentBonusScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -101,22 +114,31 @@ export default function CurrentBonusScreen() {
   // Get current user
   const { data: currentUser, isLoading: userLoading, refetch: refetchUser } = useCurrentUser();
 
-  // Get current bonus period with payment window logic
-  const currentPeriod = useMemo(() => getCurrentBonusPeriodForDisplay(), []);
+  // Check if user's position is bonifiable
+  const isBonifiable = currentUser?.position?.bonifiable ?? false;
 
-  // Fetch saved bonus for the current display period
+  // Get current bonus period
+  const currentPeriod = useMemo(() => getCurrentBonusPeriod(), []);
+
+  // Create live bonus ID for fetching
+  const liveBonusId = useMemo(() => {
+    if (!currentUser?.id) return null;
+    return createLiveBonusId(currentUser.id, currentPeriod.year, currentPeriod.month);
+  }, [currentUser?.id, currentPeriod.year, currentPeriod.month]);
+
+  // Fetch bonus using getById - backend handles both saved and live bonuses transparently
   const {
-    data: savedBonusResponse,
-    isLoading: savedBonusLoading,
-    refetch: refetchSavedBonus,
+    data: bonusResponse,
+    isLoading: bonusLoading,
+    error: bonusError,
+    refetch: refetchBonus,
   } = useQuery({
-    queryKey: [...bonusKeys.all, 'my-current-period-bonus', currentPeriod.year, currentPeriod.month],
+    queryKey: [...bonusKeys.all, 'current-bonus', liveBonusId],
     queryFn: async () => {
-      const response = await bonusService.getMyBonuses({
-        where: {
-          year: currentPeriod.year,
-          month: currentPeriod.month,
-        },
+      if (!liveBonusId) throw new Error('No bonus ID');
+
+      // Use personal endpoint - no admin privileges required
+      const response = await bonusService.getMyBonusDetail(liveBonusId, {
         include: {
           user: {
             include: {
@@ -124,63 +146,43 @@ export default function CurrentBonusScreen() {
               sector: true,
             },
           },
-          users: true,
+          position: true,
+          tasks: {
+            include: {
+              customer: true,
+              sector: true,
+            },
+          },
           bonusDiscounts: true,
-          tasks: true,
+          users: true,
         },
-        take: 1,
       });
+
       return response.data;
     },
-    enabled: !!currentUser?.id,
+    staleTime: 1000 * 30, // 30 seconds - fresh calculation data
+    refetchInterval: 60000, // Refresh every minute for live data
+    enabled: !!liveBonusId,
+    retry: false, // Don't retry on error (user may not be eligible)
   });
 
-  // Extract saved bonus from response
-  const savedBonus: Bonus | null = useMemo(() => {
-    if (!savedBonusResponse?.data || savedBonusResponse.data.length === 0) return null;
-    return savedBonusResponse.data[0];
-  }, [savedBonusResponse]);
+  // Extract bonus data from response
+  const bonus = useMemo((): (Bonus & { tasks?: any[]; baseBonus?: number; bonusDiscounts?: any[]; position?: any; user?: any }) | null => {
+    if (!bonusResponse) return null;
 
-  // Determine if we have a saved bonus to display
-  const hasSavedBonus = !!savedBonus;
-
-  // Prepare date range for fetching tasks (based on bonus calculation period or current period)
-  const taskDateRange = useMemo(() => {
-    // Use bonus calculation period if available
-    if (savedBonus?.calculationPeriodStart && savedBonus?.calculationPeriodEnd) {
-      const startDate = new Date(savedBonus.calculationPeriodStart);
-      startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(savedBonus.calculationPeriodEnd);
-      endDate.setHours(23, 59, 59, 999);
-      return { startDate, endDate };
+    // Handle wrapped response { success, data, message } or direct bonus object
+    const response = bonusResponse as any;
+    if ('data' in response && response.data) {
+      return response.data;
     }
-    // Fallback to current period dates
-    const startDate = new Date(currentPeriod.startDate);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(currentPeriod.endDate);
-    endDate.setHours(23, 59, 59, 999);
-    return { startDate, endDate };
-  }, [savedBonus?.calculationPeriodStart, savedBonus?.calculationPeriodEnd, currentPeriod]);
+    // Direct bonus object
+    if ('id' in response) {
+      return response;
+    }
+    return null;
+  }, [bonusResponse]);
 
-  // Fetch tasks separately with proper relations (customer, sector, truck)
-  const { data: tasksData, isLoading: tasksLoading, refetch: refetchTasks } = useTasks({
-    where: {
-      status: { in: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED] },
-      finishedAt: {
-        gte: taskDateRange.startDate,
-        lte: taskDateRange.endDate,
-      },
-    },
-    include: {
-      customer: true,
-      sector: true,
-      truck: true,
-    },
-    limit: 1000,
-    enabled: hasSavedBonus,
-  });
-
-  // Calculate commission statistics from separately fetched tasks
+  // Calculate commission statistics from tasks
   const commissionStats = useMemo(() => {
     const statusCounts = {
       [COMMISSION_STATUS.FULL_COMMISSION]: 0,
@@ -189,7 +191,7 @@ export default function CurrentBonusScreen() {
       [COMMISSION_STATUS.SUSPENDED_COMMISSION]: 0,
     };
 
-    const tasks = tasksData?.data || [];
+    const tasks = bonus?.tasks || [];
 
     if (tasks.length > 0) {
       tasks.forEach((task: Task) => {
@@ -208,12 +210,12 @@ export default function CurrentBonusScreen() {
     }
 
     return {
-      total: savedBonus?.ponderedTaskCount ? Math.round(Number(savedBonus.ponderedTaskCount)) : 0,
+      total: bonus?.weightedTasks ? Math.round(getNumericValue(bonus.weightedTasks)) : 0,
       byStatus: statusCounts,
       hasDetails: false,
       tasks: [] as Task[],
     };
-  }, [tasksData?.data, savedBonus?.ponderedTaskCount]);
+  }, [bonus?.tasks, bonus?.weightedTasks]);
 
   // Get tasks filtered by commission status for modal
   const filteredTasksForModal = useMemo(() => {
@@ -223,40 +225,37 @@ export default function CurrentBonusScreen() {
 
   // Calculate final bonus amount (after discounts)
   const calculateFinalAmount = useCallback(() => {
-    if (!savedBonus) return 0;
+    if (!bonus) return 0;
 
-    if (!savedBonus.bonusDiscounts || savedBonus.bonusDiscounts.length === 0) {
-      const baseBonus = typeof savedBonus.baseBonus === 'number'
-        ? savedBonus.baseBonus
-        : (savedBonus.baseBonus as any)?.toNumber?.() || 0;
+    const baseBonus = getNumericValue(bonus.baseBonus);
+
+    if (!bonus.bonusDiscounts || bonus.bonusDiscounts.length === 0) {
       return baseBonus;
     }
 
-    let finalAmount = typeof savedBonus.baseBonus === 'number'
-      ? savedBonus.baseBonus
-      : (savedBonus.baseBonus as any)?.toNumber?.() || 0;
+    let finalAmount = baseBonus;
 
-    savedBonus.bonusDiscounts
-      .sort((a: any, b: any) => a.calculationOrder - b.calculationOrder)
+    bonus.bonusDiscounts
+      .sort((a: any, b: any) => (a.calculationOrder || 0) - (b.calculationOrder || 0))
       .forEach((discount: any) => {
         if (discount.percentage) {
           finalAmount -= finalAmount * (discount.percentage / 100);
         } else if (discount.value) {
-          finalAmount -= discount.value;
+          finalAmount -= getNumericValue(discount.value);
         }
       });
 
     return finalAmount;
-  }, [savedBonus]);
+  }, [bonus]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([refetchSavedBonus(), refetchUser(), refetchTasks()]);
+      await Promise.all([refetchBonus(), refetchUser()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetchSavedBonus, refetchUser, refetchTasks]);
+  }, [refetchBonus, refetchUser]);
 
   const handleCommissionStatusPress = useCallback((status: string) => {
     if (!commissionStats.hasDetails) {
@@ -280,7 +279,7 @@ export default function CurrentBonusScreen() {
     setTasksModalVisible(true);
   }, [commissionStats]);
 
-  const isLoading = userLoading || savedBonusLoading || (hasSavedBonus && tasksLoading);
+  const isLoading = userLoading || bonusLoading;
 
   if (isLoading && !refreshing) {
     return (
@@ -301,8 +300,21 @@ export default function CurrentBonusScreen() {
     );
   }
 
-  // If no saved bonus found for this period
-  if (!hasSavedBonus) {
+  // If user's position is not bonifiable, show a message and redirect option
+  if (!isBonifiable) {
+    return (
+      <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
+        <EmptyState
+          icon="currency-dollar"
+          title="Acesso não permitido"
+          description="Seu cargo não é elegível para bônus. Entre em contato com o RH se acredita que isso é um erro."
+        />
+      </ThemedView>
+    );
+  }
+
+  // If no bonus data (user not eligible or error)
+  if (!bonus || bonusError) {
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
         <ScrollView style={styles.scrollView} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}>
@@ -320,10 +332,7 @@ export default function CurrentBonusScreen() {
           <EmptyState
             icon="currency-dollar"
             title="Bônus não disponível"
-            description={currentPeriod.isPeriodClosed
-              ? "O bônus para este período ainda não foi calculado."
-              : "O período atual ainda está em andamento. O bônus será calculado após o fechamento."
-            }
+            description="Você não é elegível para bônus neste período ou o cálculo ainda não está disponível."
           />
 
           {/* Navigation Buttons */}
@@ -353,9 +362,10 @@ export default function CurrentBonusScreen() {
     );
   }
 
-  // Display saved bonus
+  // Display bonus data (works the same for live or saved)
   const bonusValue = calculateFinalAmount();
-  const hasDiscounts = savedBonus.bonusDiscounts && savedBonus.bonusDiscounts.length > 0;
+  const hasDiscounts = bonus.bonusDiscounts && bonus.bonusDiscounts.length > 0;
+  const position = bonus.position || bonus.user?.position;
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
@@ -374,34 +384,36 @@ export default function CurrentBonusScreen() {
         {/* Bonus Amount Card */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ThemedText style={styles.sectionTitle}>Valor do Bônus</ThemedText>
-          <ThemedText style={[styles.bonusAmount, { color: colors.success }]}>
-            {formatCurrency(bonusValue)}
-          </ThemedText>
-
-          {hasDiscounts && (
-            <View style={[styles.discountInfo, { borderTopColor: colors.border }]}>
-              <View style={styles.detailRow}>
-                <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-                  Valor Base:
+          <View style={styles.detailsContainer}>
+            <View style={styles.detailRow}>
+              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                Valor Base:
+              </ThemedText>
+              <ThemedText style={styles.detailValue}>
+                {formatBonusAmount(bonus.baseBonus)}
+              </ThemedText>
+            </View>
+            {hasDiscounts && bonus.bonusDiscounts!.map((discount: any, index: number) => (
+              <View key={discount.id || index} style={styles.detailRow}>
+                <ThemedText style={[styles.detailLabel, { color: colors.destructive }]}>
+                  {discount.reference || `Desconto ${index + 1}`}:
                 </ThemedText>
-                <ThemedText style={styles.detailValue}>
-                  {formatBonusAmount(savedBonus.baseBonus)}
+                <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
+                  -{discount.percentage
+                    ? `${discount.percentage}%`
+                    : formatCurrency(getNumericValue(discount.value))}
                 </ThemedText>
               </View>
-              {savedBonus.bonusDiscounts!.map((discount: any, index: number) => (
-                <View key={discount.id} style={styles.detailRow}>
-                  <ThemedText style={[styles.detailLabel, { color: colors.destructive }]}>
-                    Desconto {index + 1} ({discount.reference}):
-                  </ThemedText>
-                  <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
-                    {discount.percentage
-                      ? `${discount.percentage}%`
-                      : formatCurrency(discount.value || 0)}
-                  </ThemedText>
-                </View>
-              ))}
+            ))}
+            <View style={[styles.detailRow, { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border }]}>
+              <ThemedText style={[styles.detailLabel, { color: colors.foreground, fontWeight: '600' }]}>
+                Valor Líquido:
+              </ThemedText>
+              <ThemedText style={[styles.detailValue, { color: colors.success, fontWeight: '600' }]}>
+                {formatCurrency(bonusValue)}
+              </ThemedText>
             </View>
-          )}
+          </View>
         </Card>
 
         {/* Performance Details Card */}
@@ -410,29 +422,29 @@ export default function CurrentBonusScreen() {
           <View style={styles.detailsContainer}>
             <View style={styles.detailRow}>
               <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Cargo:</ThemedText>
-              <ThemedText style={styles.detailValue}>{savedBonus.user?.position?.name || currentUser.position?.name || "-"}</ThemedText>
+              <ThemedText style={styles.detailValue}>{position?.name || currentUser.position?.name || "-"}</ThemedText>
             </View>
             <View style={styles.detailRow}>
               <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Setor:</ThemedText>
-              <ThemedText style={styles.detailValue}>{savedBonus.user?.sector?.name || "-"}</ThemedText>
+              <ThemedText style={styles.detailValue}>{bonus.user?.sector?.name || "-"}</ThemedText>
             </View>
             <View style={styles.detailRow}>
               <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Nível de Performance:</ThemedText>
-              <ThemedText style={styles.detailValue}>Nível {savedBonus.performanceLevel || "-"}</ThemedText>
+              <ThemedText style={styles.detailValue}>Nível {bonus.performanceLevel || "-"}</ThemedText>
             </View>
             <View style={styles.detailRow}>
               <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Tarefas Ponderadas:</ThemedText>
-              <ThemedText style={styles.detailValue}>{formatDecimal(savedBonus.ponderedTaskCount)}</ThemedText>
+              <ThemedText style={styles.detailValue}>{formatDecimal(bonus.weightedTasks)}</ThemedText>
             </View>
             <View style={styles.detailRow}>
               <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Colaboradores Elegíveis:</ThemedText>
               <ThemedText style={styles.detailValue}>
-                {savedBonus.users?.length ?? savedBonus.eligibleUsersCount ?? '-'}
+                {bonus.users?.length ?? '-'}
               </ThemedText>
             </View>
             <View style={styles.detailRow}>
               <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Média por Colaborador:</ThemedText>
-              <ThemedText style={styles.detailValue}>{formatDecimal(savedBonus.averageTasksPerUser)}</ThemedText>
+              <ThemedText style={styles.detailValue}>{formatDecimal(bonus.averageTaskPerUser)}</ThemedText>
             </View>
           </View>
         </Card>
@@ -501,29 +513,6 @@ export default function CurrentBonusScreen() {
                 {commissionStats.byStatus[COMMISSION_STATUS.SUSPENDED_COMMISSION]}
               </Badge>
             </TouchableOpacity>
-          </View>
-        </Card>
-
-        {/* Calculation Period Card */}
-        <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <ThemedText style={styles.sectionTitle}>Período de Cálculo</ThemedText>
-          <View style={styles.detailsContainer}>
-            <View style={styles.detailRow}>
-              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Início:</ThemedText>
-              <ThemedText style={styles.detailValue}>
-                {savedBonus.calculationPeriodStart
-                  ? new Date(savedBonus.calculationPeriodStart).toLocaleDateString('pt-BR')
-                  : currentPeriod.startDate.toLocaleDateString('pt-BR')}
-              </ThemedText>
-            </View>
-            <View style={styles.detailRow}>
-              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Fim:</ThemedText>
-              <ThemedText style={styles.detailValue}>
-                {savedBonus.calculationPeriodEnd
-                  ? new Date(savedBonus.calculationPeriodEnd).toLocaleDateString('pt-BR')
-                  : currentPeriod.endDate.toLocaleDateString('pt-BR')}
-              </ThemedText>
-            </View>
           </View>
         </Card>
 

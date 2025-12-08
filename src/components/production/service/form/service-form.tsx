@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Textarea } from "@/components/ui/textarea";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
@@ -109,7 +109,7 @@ export function ServiceForm({ service, onSubmit, onCancel, isSubmitting }: Servi
           </KeyboardAwareFormProvider>
         </ScrollView>
 
-        <SimpleFormActionBar
+        <FormActionBar
           onCancel={onCancel}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}

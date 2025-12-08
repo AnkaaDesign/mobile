@@ -7,9 +7,10 @@ import { useWarning } from "@/hooks/useWarning";
 
 export default function WarningEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: warning, isLoading, error, refetch } = useWarning(id!, {
+  const { data: warningResponse, isLoading, error, refetch } = useWarning(id!, {
     include: { witness: true, attachments: true }
   });
+  const warning = warningResponse?.data;
 
   if (isLoading) {
     return <LoadingScreen message="Carregando advertência..." />;

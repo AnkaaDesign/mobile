@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { IconChevronLeft, IconChevronRight, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -167,11 +167,11 @@ export default function TeamCalculationsScreen() {
   const calculations: CalculationRow[] = useMemo(() => {
     const apiResponse = calculationsData?.data || calculationsData;
 
-    if (apiResponse?.success === false) {
+    if (apiResponse && 'success' in apiResponse && apiResponse.success === false) {
       return [];
     }
 
-    const secullumData = apiResponse?.data;
+    const secullumData = apiResponse && 'data' in apiResponse ? apiResponse.data : null;
     if (!secullumData) return [];
 
     const { Colunas = [], Linhas = [] } = secullumData;
@@ -301,7 +301,7 @@ export default function TeamCalculationsScreen() {
             {/* User Selector - Full Width */}
             <Combobox
               value={selectedUserId}
-              onValueChange={setSelectedUserId}
+              onValueChange={(value) => setSelectedUserId(typeof value === 'string' ? value : value?.[0] ?? '')}
               options={userOptions}
               placeholder="Selecionar colaborador"
               disabled={usersLoading || isLoadingCurrentUser}

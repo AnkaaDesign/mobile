@@ -1,4 +1,4 @@
-import { View, Alert } from "react-native";
+import { View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";

@@ -150,10 +150,10 @@ export default function RootLayout() {
     NetInfo.fetch().then((state) => {
       setIsConnected(!!state.isConnected);
     });
-    // Simulate hydration completion
+    // Mark hydration complete quickly - no artificial delay needed
     const timer = setTimeout(() => {
       setIsHydrated(true);
-    }, 500);
+    }, 50);
     return () => {
       unsubscribe();
       clearTimeout(timer);

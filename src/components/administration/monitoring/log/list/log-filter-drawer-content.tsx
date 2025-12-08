@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconFileText, IconCalendarPlus, IconServer } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -208,11 +208,12 @@ export function LogFilterDrawerContent({
               </ThemedText>
               <Combobox
                 options={serviceOptions}
-                selectedValues={localFilters.sources || []}
-                onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sources: values }))}
+                value={localFilters.sources || []}
+                mode="multiple"
+                onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sources: Array.isArray(values) ? values : values ? [values] : [] }))}
                 placeholder="Todos os serviços"
                 searchPlaceholder="Buscar serviços..."
-                emptyText="Nenhum serviço encontrado"
+                emptyMessage="Nenhum serviço encontrado"
               />
             </View>
           </View>

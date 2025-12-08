@@ -132,6 +132,7 @@ export * from "./use-infinite-mobile";
 
 // Entity-specific infinite mobile hooks
 export * from "./use-activities-infinite-mobile";
+export * from "./use-bonuses-infinite-mobile";
 export * from "./use-borrows-infinite-mobile";
 export * from "./use-my-activities-infinite-mobile";
 export * from "./use-my-bonuses-with-live";

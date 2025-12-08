@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { IconArrowLeft, IconArrowRight, IconCheck, IconUser, IconPackage, IconFileText, IconReceipt } from "@tabler/icons-react-native";
+import { IconArrowLeft, IconArrowRight, IconCheck, IconUser, IconPackage } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
@@ -96,8 +96,6 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
     withdrawerName,
     type,
     notes,
-    nfeId,
-    receiptId,
     selectedItems,
     quantities,
     prices,
@@ -129,7 +127,6 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
     toggleItemSelection,
     setItemQuantity,
     setItemPrice,
-    getFormData,
     resetForm,
   } = useExternalWithdrawalFormState({
     storageKey: `@external_withdrawal_edit_form_${withdrawal.id}`,

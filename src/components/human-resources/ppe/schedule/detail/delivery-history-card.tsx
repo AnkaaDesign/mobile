@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconHistory, IconUser, IconPackage, IconCalendar, IconCircleCheck, IconClock, IconAlertTriangle } from "@tabler/icons-react-native";
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from "@/constants";

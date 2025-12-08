@@ -64,14 +64,19 @@ export const Header = memo(function Header<T>({
           )}
 
           {/* Column Headers */}
-          {columns.map((column) => {
+          {columns.map((column, colIndex) => {
             const isSorted = sort?.config?.field === column.key
             const sortDirection = isSorted ? sort?.config?.direction : null
+            const isLastColumn = colIndex === columns.length - 1
 
             return (
               <TouchableOpacity
                 key={column.key}
-                style={[styles.headerCell, { width: column.width }]}
+                style={[
+                  styles.headerCell,
+                  { width: column.width },
+                  isLastColumn && { paddingLeft: 4 },
+                ]}
                 onPress={() => column.sortable && sort?.onSort(column.key)}
                 disabled={!column.sortable}
                 activeOpacity={column.sortable ? 0.7 : 1}
@@ -139,6 +144,7 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
     gap: 4,
   },
   centerAlign: {

@@ -13,7 +13,7 @@ import { getEconomicActivities, createEconomicActivity } from "@/api-client/econ
 // import { showToast } from "@/components/ui/toast";
 import { Input, Combobox, Button } from "@/components/ui";
 import { FormFieldGroup, FormRow } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS } from "@/constants";
@@ -764,7 +764,7 @@ export default function CreateCustomerScreen() {
         </KeyboardAwareFormProvider>
         </ScrollView>
 
-        <SimpleFormActionBar
+        <FormActionBar
           onCancel={handleCancel}
           onSubmit={handleSubmit(onSubmit)}
           isSubmitting={isSubmitting}

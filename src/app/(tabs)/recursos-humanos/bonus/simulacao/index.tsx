@@ -1,43 +1,54 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
-import { IconFileExport, IconCalculator, IconChevronUp, IconChevronDown } from "@tabler/icons-react-native";
+import { IconCalculator, IconChevronLeft, IconChevronRight } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ThemedView, ThemedText, EmptyState, Badge } from "@/components/ui";
-import { exportToPDF } from "@/lib/pdf-export";
+import { ThemedView, ThemedText, EmptyState, Combobox } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
-import { useUsers, useTasks } from "@/hooks";
+import { useUsers, useTasks, usePositions } from "@/hooks";
 import { formatCurrency, getBonusPeriod, getCurrentPayrollPeriod } from "@/utils";
 import { calculateBonusForPosition } from "@/utils/bonus";
 import { TASK_STATUS, COMMISSION_STATUS, USER_STATUS } from "@/constants";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 
+// Standard position names for simulation
+const POSITION_OPTIONS = [
+  { value: "Junior I", label: "Junior I" },
+  { value: "Junior II", label: "Junior II" },
+  { value: "Junior III", label: "Junior III" },
+  { value: "Junior IV", label: "Junior IV" },
+  { value: "Pleno I", label: "Pleno I" },
+  { value: "Pleno II", label: "Pleno II" },
+  { value: "Pleno III", label: "Pleno III" },
+  { value: "Pleno IV", label: "Pleno IV" },
+  { value: "Senior I", label: "Senior I" },
+  { value: "Senior II", label: "Senior II" },
+  { value: "Senior III", label: "Senior III" },
+  { value: "Senior IV", label: "Senior IV" },
+];
+
 interface SimulatedUser {
   id: string;
   name: string;
   payrollNumber: number | null;
-  sectorName: string | null;
+  originalPosition: string;
   position: string;
   originalPerformanceLevel: number;
   performanceLevel: number;
   bonusAmount: number;
 }
 
-type SortField = 'name' | 'bonusAmount' | 'performanceLevel';
-type SortDirection = 'asc' | 'desc';
-
 export default function BonusSimulationScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [taskQuantity, setTaskQuantity] = useState<number>(0);
-  const [taskInput, setTaskInput] = useState<string>("0");
+  const [taskInput, setTaskInput] = useState<string>("");
   const [originalTaskQuantity, setOriginalTaskQuantity] = useState<number>(0);
   const [simulatedUsers, setSimulatedUsers] = useState<SimulatedUser[]>([]);
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [hasUserModified, setHasUserModified] = useState(false);
 
   // Get current bonus period
   const { year: periodYear, month: periodMonth } = getCurrentPayrollPeriod();
@@ -78,7 +89,7 @@ export default function BonusSimulationScreen() {
     limit: 100,
   });
 
-  // Calculate weighted task count from API (full = 1.0, partial = 0.5) - matching desktop
+  // Calculate weighted task count from API (full = 1.0, partial = 0.5)
   const taskCountStats = useMemo(() => {
     if (!currentPeriodTasks?.data) return { weighted: 0, full: 0, partial: 0 };
 
@@ -100,14 +111,14 @@ export default function BonusSimulationScreen() {
     };
   }, [currentPeriodTasks]);
 
-  // Set initial task quantity from current period
+  // Set initial task quantity from current period (only once on load)
   useEffect(() => {
-    if (taskCountStats.weighted > 0 && taskQuantity === 0) {
+    if (taskCountStats.weighted > 0 && !hasUserModified && taskInput === "") {
       setTaskQuantity(taskCountStats.weighted);
       setOriginalTaskQuantity(taskCountStats.weighted);
       setTaskInput(taskCountStats.weighted.toFixed(1).replace('.', ','));
     }
-  }, [taskCountStats.weighted]);
+  }, [taskCountStats.weighted, hasUserModified, taskInput]);
 
   // Filter to only eligible users (bonifiable position and performance level > 0)
   const eligibleUsers = useMemo(() => {
@@ -124,7 +135,7 @@ export default function BonusSimulationScreen() {
         id: user.id,
         name: user.name,
         payrollNumber: user.payrollNumber || null,
-        sectorName: user.sector?.name || null,
+        originalPosition: user.position?.name || "Pleno I",
         position: user.position?.name || "Pleno I",
         originalPerformanceLevel: user.performanceLevel || 3,
         performanceLevel: user.performanceLevel || 3,
@@ -148,24 +159,52 @@ export default function BonusSimulationScreen() {
   }, [taskQuantity, simulatedUsers.length]);
 
   // Handle task input change (Brazilian format with comma)
-  const handleTaskInputChange = useCallback((value: string) => {
+  const handleTaskInputChange = useCallback((value: string | number | null) => {
+    // Mark as user modified
+    setHasUserModified(true);
+
+    // Handle null or undefined value
+    if (value == null) {
+      setTaskInput("");
+      return;
+    }
+
+    // Convert to string for processing
+    let strValue = String(value);
+
     // Replace period with comma for Brazilian format
-    value = value.replace('.', ',');
+    strValue = strValue.replace('.', ',');
 
-    // Allow empty, comma, or valid decimal number
-    if (value === '' || value === ',' || /^\d*,?\d*$/.test(value)) {
-      setTaskInput(value);
+    // Allow empty, comma, or valid decimal number pattern
+    if (strValue === "" || strValue === "," || /^\d*,?\d*$/.test(strValue)) {
+      setTaskInput(strValue);
 
-      if (value !== '' && value !== ',') {
-        const num = parseFloat(value.replace(',', '.'));
+      // Update numeric value
+      if (strValue !== "" && strValue !== ",") {
+        const num = parseFloat(strValue.replace(',', '.'));
         if (!isNaN(num) && num >= 0) {
           setTaskQuantity(num);
         }
-      } else if (value === '') {
+      } else if (strValue === "") {
         setTaskQuantity(0);
       }
     }
   }, []);
+
+  // Handle position change for a user
+  const handlePositionChange = useCallback((userId: string, newPosition: string) => {
+    const eligibleCount = simulatedUsers.length;
+    const averagePerUser = eligibleCount > 0 ? taskQuantity / eligibleCount : 0;
+
+    setSimulatedUsers(prev => prev.map(user => {
+      if (user.id !== userId) return user;
+      return {
+        ...user,
+        position: newPosition,
+        bonusAmount: calculateBonusForPosition(newPosition, user.performanceLevel, averagePerUser),
+      };
+    }));
+  }, [taskQuantity, simulatedUsers.length]);
 
   // Handle performance level change for a user
   const handlePerformanceLevelChange = useCallback((userId: string, delta: number) => {
@@ -174,7 +213,6 @@ export default function BonusSimulationScreen() {
 
     setSimulatedUsers(prev => prev.map(user => {
       if (user.id !== userId) return user;
-
       const newLevel = Math.max(0, Math.min(5, user.performanceLevel + delta));
       return {
         ...user,
@@ -188,49 +226,11 @@ export default function BonusSimulationScreen() {
   const handleRestoreTaskQuantity = useCallback(() => {
     setTaskQuantity(originalTaskQuantity);
     setTaskInput(originalTaskQuantity.toFixed(1).replace('.', ','));
+    setHasUserModified(false);
   }, [originalTaskQuantity]);
-
-  // Sort users
-  const sortedUsers = useMemo(() => {
-    return [...simulatedUsers].sort((a, b) => {
-      let aVal: any, bVal: any;
-
-      switch (sortField) {
-        case 'name':
-          aVal = a.name.toLowerCase();
-          bVal = b.name.toLowerCase();
-          break;
-        case 'bonusAmount':
-          aVal = a.bonusAmount;
-          bVal = b.bonusAmount;
-          break;
-        case 'performanceLevel':
-          aVal = a.performanceLevel;
-          bVal = b.performanceLevel;
-          break;
-        default:
-          return 0;
-      }
-
-      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [simulatedUsers, sortField, sortDirection]);
-
-  // Toggle sort
-  const handleSort = useCallback((field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  }, [sortField]);
 
   // Calculate totals
   const totalBonusAmount = useMemo(() => simulatedUsers.reduce((sum, user) => sum + user.bonusAmount, 0), [simulatedUsers]);
-
   const eligibleUserCount = simulatedUsers.length;
   const averageTasksPerUser = eligibleUserCount > 0 ? taskQuantity / eligibleUserCount : 0;
   const isTaskQuantityModified = taskQuantity !== originalTaskQuantity && originalTaskQuantity > 0;
@@ -239,39 +239,11 @@ export default function BonusSimulationScreen() {
     setRefreshing(true);
     try {
       await Promise.all([refetchTasks(), refetchUsers()]);
-      // Reset to reload users
       setSimulatedUsers([]);
     } finally {
       setRefreshing(false);
     }
   }, [refetchTasks, refetchUsers]);
-
-  const handleExportPDF = useCallback(async () => {
-    if (sortedUsers.length === 0) return;
-
-    const headers = [
-      { key: 'name', label: 'Colaborador' },
-      { key: 'position', label: 'Cargo' },
-      { key: 'sectorName', label: 'Setor' },
-      { key: 'performanceLevel', label: 'Performance' },
-      { key: 'bonusAmount', label: 'Bônus (R$)' },
-    ];
-
-    const exportData = sortedUsers.map((user) => ({
-      name: user.name,
-      position: user.position,
-      sectorName: user.sectorName ?? '-',
-      performanceLevel: user.performanceLevel,
-      bonusAmount: user.bonusAmount.toFixed(2),
-    }));
-
-    await exportToPDF(
-      exportData,
-      headers,
-      `simulacao_bonus_${new Date().toISOString().split('T')[0]}`,
-      'Simulação de Bônus'
-    );
-  }, [sortedUsers]);
 
   const isLoading = tasksLoading || usersLoading;
 
@@ -309,7 +281,7 @@ export default function BonusSimulationScreen() {
               </ThemedText>
             </View>
 
-            {/* Current period task count info (matching desktop) */}
+            {/* Current period task count info */}
             {taskCountStats.weighted > 0 && !isTaskQuantityModified && (
               <View style={[styles.periodTaskInfo, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
                 <View style={styles.periodTaskInfoContent}>
@@ -381,48 +353,47 @@ export default function BonusSimulationScreen() {
 
           {/* Users List */}
           <View style={styles.usersContainer}>
-            <View style={styles.sectionHeader}>
-              <ThemedText style={styles.sectionTitle}>Colaboradores ({sortedUsers.length})</ThemedText>
-              <TouchableOpacity onPress={handleExportPDF} style={[styles.exportButton, { backgroundColor: colors.primary }]} disabled={sortedUsers.length === 0}>
-                <IconFileExport size={20} color="#fff" />
-                <ThemedText style={styles.exportButtonText}>Exportar</ThemedText>
-              </TouchableOpacity>
-            </View>
+            <ThemedText style={styles.sectionTitle}>Colaboradores ({simulatedUsers.length})</ThemedText>
 
-            {sortedUsers.map((user) => (
+            {simulatedUsers.map((user) => (
               <Card
                 key={user.id}
-                style={[
-                  styles.userCard,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
-                  },
-                ]}
+                style={[styles.userCard, { backgroundColor: colors.card, borderColor: colors.border }]}
               >
                 <View style={styles.userHeader}>
-                  <View style={styles.userInfo}>
-                    <ThemedText style={styles.userName}>{user.name}</ThemedText>
-                    {user.sectorName && <ThemedText style={[styles.userSector, { color: colors.mutedForeground }]}>{user.sectorName}</ThemedText>}
-                  </View>
+                  <ThemedText style={styles.userName}>{user.name}</ThemedText>
                   <ThemedText style={[styles.bonusAmount, { color: colors.success }]}>{formatCurrency(user.bonusAmount)}</ThemedText>
                 </View>
 
-                <View style={styles.userDetails}>
-                  <View style={styles.detailItem}>
+                {/* Position and Performance in same row */}
+                <View style={styles.userDetailsRow}>
+                  {/* Position Combobox */}
+                  <View style={styles.positionContainer}>
                     <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Cargo</ThemedText>
-                    <ThemedText style={styles.detailValue}>{user.position}</ThemedText>
+                    <Combobox
+                      options={POSITION_OPTIONS}
+                      value={user.position}
+                      onValueChange={(value) => {
+                        if (value && typeof value === 'string') {
+                          handlePositionChange(user.id, value);
+                        }
+                      }}
+                      placeholder={user.position}
+                      searchable={false}
+                      clearable={false}
+                    />
                   </View>
 
-                  <View style={styles.detailItem}>
+                  {/* Performance Level Selector (Numeric 0-5) */}
+                  <View style={styles.performanceContainer}>
                     <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Performance</ThemedText>
-                    <View style={styles.performanceLevelControl}>
+                    <View style={[styles.performanceLevelControl, { borderColor: colors.border, backgroundColor: colors.input }]}>
                       <TouchableOpacity
                         onPress={() => handlePerformanceLevelChange(user.id, -1)}
                         disabled={user.performanceLevel <= 0}
-                        style={[styles.levelButton, { opacity: user.performanceLevel <= 0 ? 0.3 : 1 }]}
+                        style={[styles.levelButton, { opacity: user.performanceLevel <= 0 ? 0.3 : 1, backgroundColor: colors.muted }]}
                       >
-                        <IconChevronDown size={18} color={colors.foreground} />
+                        <IconChevronLeft size={18} color={colors.foreground} />
                       </TouchableOpacity>
                       <ThemedText style={[
                         styles.levelValue,
@@ -433,9 +404,9 @@ export default function BonusSimulationScreen() {
                       <TouchableOpacity
                         onPress={() => handlePerformanceLevelChange(user.id, 1)}
                         disabled={user.performanceLevel >= 5}
-                        style={[styles.levelButton, { opacity: user.performanceLevel >= 5 ? 0.3 : 1 }]}
+                        style={[styles.levelButton, { opacity: user.performanceLevel >= 5 ? 0.3 : 1, backgroundColor: colors.muted }]}
                       >
-                        <IconChevronUp size={18} color={colors.foreground} />
+                        <IconChevronRight size={18} color={colors.foreground} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -539,28 +510,10 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     gap: 12,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-  },
-  exportButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  exportButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
+    marginBottom: 8,
   },
   userCard: {
     padding: 16,
@@ -571,51 +524,53 @@ const styles = StyleSheet.create({
   userHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  userInfo: {
-    flex: 1,
-    gap: 4,
+    alignItems: "center",
   },
   userName: {
     fontSize: 16,
     fontWeight: "600",
   },
-  userSector: {
-    fontSize: 13,
-  },
   bonusAmount: {
     fontSize: 18,
     fontWeight: "700",
   },
-  userDetails: {
+  userDetailsRow: {
     flexDirection: "row",
-    gap: 16,
+    gap: 12,
   },
-  detailItem: {
+  positionContainer: {
+    flex: 1,
+    gap: 4,
+  },
+  performanceContainer: {
     flex: 1,
     gap: 4,
   },
   detailLabel: {
     fontSize: 11,
-    textTransform: "uppercase",
-  },
-  detailValue: {
-    fontSize: 14,
     fontWeight: "500",
+    textTransform: "uppercase",
   },
   performanceLevelControl: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    justifyContent: "space-between",
+    height: 42,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 4,
   },
   levelButton: {
-    padding: 4,
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    justifyContent: "center",
+    alignItems: "center",
   },
   levelValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
-    minWidth: 24,
+    flex: 1,
     textAlign: "center",
   },
 });

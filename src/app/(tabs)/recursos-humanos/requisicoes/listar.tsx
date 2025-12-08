@@ -108,7 +108,7 @@ export default function RequisitionsListScreen() {
             try {
               await approveMutation.mutateAsync({
                 requestId: request.id,
-                data: Record<string, unknown>,
+                data: {},
               });
               Alert.alert("Sucesso", "Requisição aprovada com sucesso!");
               setSelectedRequest(null);
@@ -139,7 +139,7 @@ export default function RequisitionsListScreen() {
             try {
               await rejectMutation.mutateAsync({
                 requestId: request.id,
-                data: Record<string, unknown>,
+                data: {},
               });
               Alert.alert("Sucesso", "Requisição rejeitada com sucesso!");
               setSelectedRequest(null);

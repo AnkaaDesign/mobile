@@ -33,7 +33,7 @@ interface PayrollData {
     period: string;
     totalUsers: number;
     eligibleUsers: number;
-    averageTasksPerUser: number;
+    averageTaskPerUser: number;
     totalTasks: number;
     calculatedAt: string;
   };
@@ -44,7 +44,9 @@ interface PayrollData {
     positionName: string;
     level: number;
     baseBonus: number;
-    ponderedTaskCount: number;
+    netBonus: number;
+    weightedTasks: number;
+    averageTaskPerUser: number;
     performance: number;
     sector: {
       id: string;

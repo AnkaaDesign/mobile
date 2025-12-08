@@ -192,21 +192,17 @@ export const usePayrollDetailsWithBonus = (userId: string, year: number, month: 
         });
 
         if (response.data) {
-          console.log('Found saved payroll data:', response.data);
           return response.data;
         }
       } catch (error: any) {
-        console.log('No saved payroll found, trying live calculation:', error?.response?.status);
         // If no saved payroll exists (404), fall back to live calculation
         if (error?.response?.status === 404) {
           try {
             const liveResponse = await payrollService.getLiveCalculation(userId, year, month);
             if (liveResponse.data) {
-              console.log('Found live payroll calculation:', liveResponse.data);
               return liveResponse.data.payroll || liveResponse.data;
             }
           } catch (liveError) {
-            console.error('Live calculation also failed:', liveError);
             throw liveError;
           }
         } else {
@@ -247,7 +243,6 @@ export const usePayrollBonuses = (year: number, month: number) => {
           discounts: true,
         },
       });
-      console.log(`Payroll API response for ${month}/${year}:`, response);
       // The response is the axios response object, check if it has data
       // The actual payroll array might be in response.data.data due to API response structure
       if (response.data && typeof response.data === 'object') {
@@ -281,7 +276,6 @@ export const useBonusSimulation = (params: {
     queryKey: ['payroll', 'bonuses', 'simulate', params],
     queryFn: async () => {
       const response = await payrollService.simulateBonuses(params);
-      console.log(`Bonus simulation API response for ${params.month}/${params.year}:`, response);
       return response.data;
     },
     staleTime: 30 * 1000, // Short cache for simulations

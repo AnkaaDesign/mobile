@@ -158,7 +158,7 @@ export const bonusWhereSchema: z.ZodType<any> = z.lazy(() =>
           }),
         ])
         .optional(),
-      ponderedTaskCount: z
+      weightedTasks: z
         .union([
           z.number(),
           z.object({
@@ -171,7 +171,7 @@ export const bonusWhereSchema: z.ZodType<any> = z.lazy(() =>
           }),
         ])
         .optional(),
-      averageTasksPerUser: z
+      averageTaskPerUser: z
         .union([
           z.number(),
           z.object({
@@ -243,10 +243,9 @@ export const bonusOrderBySchema = z.union([
       userId: orderByDirectionSchema.optional(),
       performanceLevel: orderByDirectionSchema.optional(),
       baseBonus: orderByDirectionSchema.optional(),
-      ponderedTaskCount: orderByDirectionSchema.optional(),
-      averageTasksPerUser: orderByDirectionSchema.optional(),
-      calculationPeriodStart: orderByDirectionSchema.optional(),
-      calculationPeriodEnd: orderByDirectionSchema.optional(),
+      netBonus: orderByDirectionSchema.optional(),
+      weightedTasks: orderByDirectionSchema.optional(),
+      averageTaskPerUser: orderByDirectionSchema.optional(),
       status: orderByDirectionSchema.optional(),
       statusOrder: orderByDirectionSchema.optional(),
       createdAt: orderByDirectionSchema.optional(),
@@ -274,12 +273,9 @@ export const bonusOrderBySchema = z.union([
         userId: orderByDirectionSchema.optional(),
         performanceLevel: orderByDirectionSchema.optional(),
         baseBonus: orderByDirectionSchema.optional(),
-        ponderedTaskCount: orderByDirectionSchema.optional(),
-        averageTasksPerUser: orderByDirectionSchema.optional(),
-        calculationPeriodStart: orderByDirectionSchema.optional(),
-        calculationPeriodEnd: orderByDirectionSchema.optional(),
-        status: orderByDirectionSchema.optional(),
-        statusOrder: orderByDirectionSchema.optional(),
+        netBonus: orderByDirectionSchema.optional(),
+        weightedTasks: orderByDirectionSchema.optional(),
+        averageTaskPerUser: orderByDirectionSchema.optional(),
         createdAt: orderByDirectionSchema.optional(),
         updatedAt: orderByDirectionSchema.optional(),
 
@@ -556,18 +552,16 @@ export type PayrollBonusesLiveParams = z.infer<typeof payrollBonusesLiveSchema>;
 // Utility Functions
 // =====================
 
-export const mapToBonusFormData = createMapToFormDataHelper<Bonus, BonusUpdateFormData>((bonus) => ({
-  baseBonus: typeof bonus.baseBonus === 'number' ? bonus.baseBonus : bonus.baseBonus.toNumber(),
-  userId: bonus.userId,
-  payrollId: bonus.payrollId ?? undefined,
-  year: bonus.year,
-  month: bonus.month,
-  performanceLevel: bonus.performanceLevel,
-  ponderedTaskCount: typeof bonus.ponderedTaskCount === 'number' ? bonus.ponderedTaskCount : bonus.ponderedTaskCount.toNumber(),
-  averageTasksPerUser: typeof bonus.averageTasksPerUser === 'number' ? bonus.averageTasksPerUser : bonus.averageTasksPerUser.toNumber(),
-  calculationPeriodStart: bonus.calculationPeriodStart,
-  calculationPeriodEnd: bonus.calculationPeriodEnd,
-}));
+export const mapToBonusFormData = createMapToFormDataHelper<Bonus, BonusUpdateFormData>((bonus) => {
+  return {
+    baseBonus: typeof bonus.baseBonus === 'number' ? bonus.baseBonus : bonus.baseBonus.toNumber(),
+    userId: bonus.userId,
+    payrollId: bonus.payrollId ?? undefined,
+    year: bonus.year,
+    month: bonus.month,
+    performanceLevel: bonus.performanceLevel,
+  };
+});
 
 // =====================
 // Validation Helper Functions

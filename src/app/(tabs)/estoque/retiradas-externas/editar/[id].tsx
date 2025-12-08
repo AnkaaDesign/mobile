@@ -11,8 +11,7 @@ export default function EditExternalWithdrawalScreen() {
   // Fetch withdrawal data with items
   const { data: response, isLoading, error, refetch } = useExternalWithdrawal(id!, {
     include: {
-      nfe: true,
-      receipt: true,
+      receipts: true,
       items: {
         include: {
           item: {

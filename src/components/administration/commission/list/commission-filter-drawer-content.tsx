@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { IconFilter, IconX, IconCircleCheck, IconUsers, IconChecklist, IconCalendarPlus } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -158,8 +158,9 @@ export function CommissionFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={statusOptions}
-              selectedValues={localFilters.statuses || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: values }))}
+              value={localFilters.statuses || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os status"
               searchPlaceholder="Buscar status..."
               emptyText="Nenhum status encontrado"
@@ -182,8 +183,9 @@ export function CommissionFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={userOptions}
-              selectedValues={localFilters.userIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: values }))}
+              value={localFilters.userIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os colaboradores"
               searchPlaceholder="Buscar colaboradores..."
               emptyText="Nenhum colaborador encontrado"
@@ -206,8 +208,9 @@ export function CommissionFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={taskOptions}
-              selectedValues={localFilters.taskIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, taskIds: values }))}
+              value={localFilters.taskIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, taskIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os serviços"
               searchPlaceholder="Buscar serviços..."
               emptyText="Nenhum serviço encontrado"

@@ -1,318 +1,139 @@
-import React from "react";
-import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { useState, useEffect } from "react";
+import { View, StyleSheet, ActivityIndicator, Platform, Keyboard } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconX } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius } from "@/constants/design-system";
+import { formSpacing, formLayout } from "@/constants/form-styles";
+import { spacing } from "@/constants/design-system";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 
-/**
- * FormActionBar
- *
- * A fixed bottom action bar for multi-step forms with responsive layouts.
- *
- * ## Purpose
- * Provides standardized navigation controls for forms with multiple steps/stages.
- * Automatically adapts layout based on device type and current step position.
- *
- * ## Responsive Layouts
- *
- * ### Mobile Layout (< 768px)
- * - Stacked vertical layout for better thumb reach
- * - Cancel/Previous button on left (if applicable)
- * - Next/Submit button on right
- * - Full-width buttons for easy tapping
- *
- * ### Tablet Layout (>= 768px)
- * - Horizontal layout with better space utilization
- * - Cancel button on far left
- * - Navigation buttons (Previous/Next/Submit) on far right
- * - Grouped for visual clarity
- *
- * ## Features
- * - **Step Navigation:** Previous/Next buttons with automatic visibility
- * - **Submit on Last Step:** Automatically shows submit instead of next
- * - **Cancel Support:** Optional cancel button (shown on first step in mobile)
- * - **Loading States:** Built-in spinner and disabled state during submission
- * - **Validation Support:** Disable next/submit based on validation state
- * - **Customizable Labels:** All button labels can be customized
- * - **Accessibility:** Full keyboard and screen reader support
- *
- * ## Usage Examples
- *
- * ### Basic Multi-Step Form
- * ```tsx
- * const [stage, setStage] = useState(1);
- * const [isSubmitting, setIsSubmitting] = useState(false);
- *
- * <FormActionBar
- *   onPrev={() => setStage(stage - 1)}
- *   onNext={() => setStage(stage + 1)}
- *   onSubmit={handleSubmit}
- *   onCancel={() => router.back()}
- *   isFirstStep={stage === 1}
- *   isLastStep={stage === 3}
- *   isSubmitting={isSubmitting}
- *   canProceed={isCurrentStageValid}
- *   canSubmit={isFormValid}
- *   isTablet={width >= 768}
- * />
- * ```
- *
- * ### With Custom Labels
- * ```tsx
- * <FormActionBar
- *   // ... other props
- *   prevLabel="Voltar"
- *   nextLabel="Continuar"
- *   submitLabel="Finalizar"
- *   cancelLabel="Sair"
- * />
- * ```
- *
- * ### Without Cancel Button
- * ```tsx
- * <FormActionBar
- *   // ... other props
- *   onCancel={undefined} // Cancel button won't show
- * />
- * ```
- *
- * ## State Management Pattern
- *
- * Recommended pattern for managing multi-step form state:
- *
- * ```tsx
- * const [stage, setStage] = useState(1);
- * const [formData, setFormData] = useState({});
- * const [validation, setValidation] = useState({ errors: Record<string, unknown>, canProceed: {} });
- *
- * const handleNext = () => {
- *   if (validation.canProceed[stage]) {
- *     setStage(stage + 1);
- *   }
- * };
- *
- * const handlePrev = () => {
- *   setStage(stage - 1);
- * };
- *
- * const handleSubmit = async () => {
- *   if (validation.isFormValid) {
- *     await submitForm(formData);
- *   }
- * };
- * ```
- *
- * ## Styling Notes
- * - Uses theme colors for consistency
- * - Matches button styling from Button component
- * - Safe area aware (bottom inset handled)
- * - Fixed positioning at bottom of screen
- *
- * @see {@link SimpleFormActionBar} For single-step forms
- * @see {@link Button} For button component styling
- */
-
 export interface FormActionBarProps {
-  /** Called when previous button is pressed */
-  onPrev?: () => void;
-  /** Called when next button is pressed */
-  onNext?: () => void;
-  /** Called when submit button is pressed */
-  onSubmit?: () => void;
-  /** Called when cancel button is pressed */
   onCancel?: () => void;
-  /** Whether the form is currently submitting */
+  onPrev?: () => void;
+  onNext?: () => void;
+  onSubmit?: () => void;
+  onSave?: () => void;
   isSubmitting?: boolean;
-  /** Whether the user can proceed to the next step */
+  isLoading?: boolean;
   canProceed?: boolean;
-  /** Whether the form can be submitted */
   canSubmit?: boolean;
-  /** Label for the previous button */
-  prevLabel?: string;
-  /** Label for the next button */
-  nextLabel?: string;
-  /** Label for the submit button */
-  submitLabel?: string;
-  /** Label for the cancel button */
-  cancelLabel?: string;
-  /** Whether this is the first step (hides prev button) */
+  isSaveDisabled?: boolean;
   isFirstStep?: boolean;
-  /** Whether this is the last step (shows submit instead of next) */
   isLastStep?: boolean;
-  /** Whether to use tablet layout */
-  isTablet?: boolean;
-  /** Additional style for the container */
+  cancelLabel?: string;
+  prevLabel?: string;
+  nextLabel?: string;
+  submitLabel?: string;
+  submittingLabel?: string;
+  showCancel?: boolean;
   style?: object;
 }
 
 export function FormActionBar({
+  onCancel,
   onPrev,
   onNext,
   onSubmit,
-  onCancel,
+  onSave,
   isSubmitting = false,
+  isLoading = false,
   canProceed = true,
   canSubmit = true,
-  prevLabel = "Anterior",
-  nextLabel = "Pr\u00f3ximo",
-  submitLabel = "Confirmar",
+  isSaveDisabled = false,
+  isFirstStep = true,
+  isLastStep = true,
   cancelLabel = "Cancelar",
-  isFirstStep = false,
-  isLastStep = false,
-  isTablet = false,
+  prevLabel = "Anterior",
+  nextLabel = "Próximo",
+  submitLabel = "Cadastrar",
+  submittingLabel = "Salvando...",
+  showCancel = true,
   style,
 }: FormActionBarProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
-  const showPrev = !isFirstStep && onPrev;
-  const showNext = !isLastStep && onNext;
-  const showSubmit = isLastStep && onSubmit;
-  const showCancel = onCancel;
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
-  // Tablet layout: Cancel on left, Prev/Next/Submit on right
-  if (isTablet) {
-    return (
-      <View
-        style={[
-          styles.container,
-          styles.containerTablet,
-          { borderTopColor: colors.border },
-          style,
-        ]}
-      >
-        {/* Left side - Cancel */}
-        <View style={styles.leftSection}>
-          {showCancel && (
-            <Button
-              variant="ghost"
-              onPress={onCancel}
-              disabled={isSubmitting}
-            >
-              <IconX size={18} color={colors.mutedForeground} />
-              <Text style={styles.buttonText}>{cancelLabel}</Text>
-            </Button>
-          )}
-        </View>
+    const keyboardShowListener = Keyboard.addListener(showEvent, () => {
+      setIsKeyboardVisible(true);
+    });
+    const keyboardHideListener = Keyboard.addListener(hideEvent, () => {
+      setIsKeyboardVisible(false);
+    });
 
-        {/* Right side - Navigation */}
-        <View style={styles.rightSection}>
-          {showPrev && (
-            <Button
-              variant="outline"
-              onPress={onPrev}
-              disabled={isSubmitting}
-              style={styles.navButton}
-            >
-              <IconArrowLeft size={18} color={colors.foreground} />
-              <Text style={styles.buttonText}>{prevLabel}</Text>
-            </Button>
-          )}
+    return () => {
+      keyboardShowListener.remove();
+      keyboardHideListener.remove();
+    };
+  }, []);
 
-          {showNext && (
-            <Button
-              variant="default"
-              onPress={onNext}
-              disabled={!canProceed || isSubmitting}
-              style={styles.navButton}
-            >
-              <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
-                {nextLabel}
-              </Text>
-              <IconArrowRight size={18} color={colors.primaryForeground} />
-            </Button>
-          )}
-
-          {showSubmit && (
-            <Button
-              variant="default"
-              onPress={onSubmit}
-              disabled={!canSubmit || isSubmitting}
-              style={styles.navButton}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator size="small" color={colors.primaryForeground} />
-              ) : (
-                <IconCheck size={18} color={colors.primaryForeground} />
-              )}
-              <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
-                {isSubmitting ? "Enviando..." : submitLabel}
-              </Text>
-            </Button>
-          )}
-        </View>
-      </View>
-    );
+  if (isKeyboardVisible) {
+    return null;
   }
 
-  // Mobile layout: Stacked
+  const isDisabled = isSubmitting || isLoading;
+  const isMultiStep = onPrev !== undefined || onNext !== undefined;
+  const showPrev = !isFirstStep && onPrev;
+  const showNext = !isLastStep && onNext;
+  const showSubmit = isLastStep && (onSubmit || onSave);
+  const showCancelButton = showCancel && onCancel && (isFirstStep || !isMultiStep);
+  const submitHandler = onSave || onSubmit;
+
   return (
     <View
       style={[
         styles.container,
-        styles.containerMobile,
-        { borderTopColor: colors.border },
+        {
+          borderColor: colors.border,
+          backgroundColor: colors.card,
+          marginBottom: (insets.bottom || 0) + formSpacing.cardMarginBottom,
+        },
         style,
       ]}
     >
-      {/* Navigation buttons */}
-      <View style={styles.navRow}>
+      <View style={styles.buttonWrapper}>
         {showPrev ? (
-          <Button
-            variant="outline"
-            onPress={onPrev}
-            disabled={isSubmitting}
-            style={styles.navButtonMobile}
-          >
+          <Button variant="outline" onPress={onPrev} disabled={isDisabled}>
             <IconArrowLeft size={18} color={colors.foreground} />
             <Text style={styles.buttonText}>{prevLabel}</Text>
           </Button>
-        ) : showCancel ? (
-          <Button
-            variant="outline"
-            onPress={onCancel}
-            disabled={isSubmitting}
-            style={styles.navButtonMobile}
-          >
+        ) : showCancelButton ? (
+          <Button variant="outline" onPress={onCancel} disabled={isDisabled}>
             <IconX size={18} color={colors.mutedForeground} />
             <Text style={styles.buttonText}>{cancelLabel}</Text>
           </Button>
         ) : (
-          <View style={styles.navButtonMobile} />
+          <View />
         )}
+      </View>
 
-        {showNext && (
-          <Button
-            variant="default"
-            onPress={onNext}
-            disabled={!canProceed || isSubmitting}
-            style={styles.navButtonMobile}
-          >
+      <View style={styles.buttonWrapper}>
+        {showNext ? (
+          <Button variant="default" onPress={onNext} disabled={!canProceed || isDisabled}>
             <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
               {nextLabel}
             </Text>
             <IconArrowRight size={18} color={colors.primaryForeground} />
           </Button>
-        )}
-
-        {showSubmit && (
-          <Button
-            variant="default"
-            onPress={onSubmit}
-            disabled={!canSubmit || isSubmitting}
-            style={styles.navButtonMobile}
-          >
-            {isSubmitting ? (
+        ) : showSubmit ? (
+          <Button variant="default" onPress={submitHandler} disabled={!canSubmit || isDisabled || isSaveDisabled}>
+            {isDisabled ? (
               <ActivityIndicator size="small" color={colors.primaryForeground} />
             ) : (
               <IconCheck size={18} color={colors.primaryForeground} />
             )}
             <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
-              {isSubmitting ? "Enviando..." : submitLabel}
+              {isDisabled ? submittingLabel : submitLabel}
             </Text>
           </Button>
+        ) : (
+          <View />
         )}
       </View>
     </View>
@@ -321,53 +142,19 @@ export function FormActionBar({
 
 const styles = StyleSheet.create({
   container: {
-    borderTopWidth: 1,
-    backgroundColor: "transparent",
-  },
-  containerMobile: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  containerTablet: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
+    gap: formSpacing.rowGap,
+    padding: formSpacing.actionBarPadding,
+    borderRadius: formLayout.cardBorderRadius,
+    borderWidth: formLayout.borderWidth,
+    marginHorizontal: formSpacing.containerPaddingHorizontal,
+    marginTop: spacing.md,
   },
-  leftSection: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  rightSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  navRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  navButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.lg,
-    minHeight: 44,
-  },
-  navButtonMobile: {
+  buttonWrapper: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    minHeight: 48,
-    paddingVertical: spacing.sm,
   },
   buttonText: {
     fontSize: 15,
     fontWeight: "600",
   },
 });
-
-export default FormActionBar;

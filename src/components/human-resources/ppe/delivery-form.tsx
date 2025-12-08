@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 
 import { usePpeDeliveryMutations, useUsers, useItems, useKeyboardAwareScroll } from "@/hooks";
 import { ppeDeliveryCreateSchema } from '../../../schemas';
@@ -168,18 +168,19 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
 
                     // Get user's size for this PPE type
                     let userSize: string | null = null;
+                    const userPpeSize = (selectedUser as any).ppeSize;
                     if (item.ppeType === PPE_TYPE.SHIRT || item.ppeType === PPE_TYPE.SLEEVES) {
-                      userSize = selectedUser.ppeSize.shirts || selectedUser.ppeSize.sleeves;
+                      userSize = userPpeSize?.shirts || userPpeSize?.sleeves || null;
                     } else if (item.ppeType === PPE_TYPE.PANTS) {
-                      userSize = selectedUser.ppeSize.pants;
+                      userSize = userPpeSize?.pants || null;
                     } else if (item.ppeType === PPE_TYPE.BOOTS) {
-                      userSize = selectedUser.ppeSize.boots;
+                      userSize = userPpeSize?.boots || null;
                     } else if (item.ppeType === PPE_TYPE.GLOVES) {
-                      userSize = selectedUser.ppeSize.gloves;
+                      userSize = userPpeSize?.gloves || null;
                     } else if (item.ppeType === PPE_TYPE.MASK) {
-                      userSize = selectedUser.ppeSize.mask;
+                      userSize = userPpeSize?.mask || null;
                     } else if (item.ppeType === PPE_TYPE.RAIN_BOOTS) {
-                      userSize = selectedUser.ppeSize.rainBoots;
+                      userSize = userPpeSize?.rainBoots || null;
                     }
 
                     // If user has no size configured for this type, include all items
@@ -193,7 +194,7 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
                 const itemOptions: ComboboxOption[] =
                   filteredItems.map((item) => ({
                     value: item.id,
-                    label: `${item.name}${item.ppeSize ? ` • ${item.ppeSize}` : ""}${item.ppeCA ? ` - CA: ${item.ppeCA}` : ""}`,
+                    label: `${item.name}${(item as any).ppeSize ? ` • ${(item as any).ppeSize}` : ""}${item.ppeCA ? ` - CA: ${item.ppeCA}` : ""}`,
                   }));
 
                 return (
@@ -306,7 +307,7 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
           </KeyboardAwareFormProvider>
         </ScrollView>
 
-        <SimpleFormActionBar
+        <FormActionBar
           onCancel={onCancel}
           onSubmit={form.handleSubmit(handleSubmit)}
           isSubmitting={isLoading}

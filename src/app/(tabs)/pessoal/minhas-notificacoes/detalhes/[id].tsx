@@ -16,7 +16,7 @@ export default function MyNotificationDetailsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   // Fetch notification data
@@ -45,6 +45,7 @@ export default function MyNotificationDetailsScreen() {
         seenNotificationService.createSeenNotification({
           notificationId: notification.id,
           userId: currentUser.id,
+          seenAt: new Date(),
         }).catch(console.error);
       }
     }
@@ -104,6 +105,7 @@ export default function MyNotificationDetailsScreen() {
         await seenNotificationService.createSeenNotification({
           notificationId: notification.id,
           userId: currentUser.id,
+          seenAt: new Date(),
         });
       }
       await refetch();

@@ -1,17 +1,17 @@
 import React, { useState } from "react";
-import { router } from "expo-router";
-import { ScrollView, View, Alert, KeyboardAvoidingView, Platform} from "react-native";
+import { router, Stack } from "expo-router";
+import { ScrollView, View, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCutMutations } from "@/hooks";
-import { cutCreateSchema} from "@/schemas";
+import { cutCreateSchema, type CutCreateFormData } from "@/schemas";
 import {
   CUT_STATUS,
   CUT_TYPE,
   CUT_ORIGIN,
   CUT_STATUS_LABELS,
   CUT_TYPE_LABELS,
-  CUT_ORIGIN_LABELS,
+  CUT_REQUEST_REASON_LABELS,
   SECTOR_PRIVILEGES,
 } from "@/constants";
 import { ErrorScreen } from "@/components/ui/error-screen";
@@ -27,7 +27,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 
-export default function CreateCuttingPlanScreen() {
+export default function CreateCuttingScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,14 +47,13 @@ export default function CreateCuttingPlanScreen() {
     control,
     handleSubmit,
     formState: { errors, isValid },
-    watch,
   } = useForm<CutCreateFormData>({
     resolver: zodResolver(cutCreateSchema),
     defaultValues: {
       fileId: "",
       type: CUT_TYPE.VINYL,
       status: CUT_STATUS.PENDING,
-      origin: CUT_ORIGIN.PLAN,
+      origin: CUT_ORIGIN.REQUEST,
       reason: null,
       taskId: null,
       parentCutId: null,
@@ -64,41 +63,24 @@ export default function CreateCuttingPlanScreen() {
     mode: "onChange",
   });
 
-  const watchedOrigin = watch("origin");
-
   const onSubmit = async (data: CutCreateFormData) => {
     if (!canCreate) {
-      Alert.alert("Erro", "Você não tem permissão para criar planos de recorte");
+      Alert.alert("Erro", "Você não tem permissão para criar recortes");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await createAsync({
-        ...data,
-        include: {
-          file: true,
-          task: {
-            include: {
-              customer: true,
-            },
-          },
-          parentCut: {
-            include: {
-              file: true,
-            },
-          },
-        },
-      });
+      await createAsync(data);
 
-      Alert.alert("Sucesso", "Plano de recorte criado com sucesso!", [
+      Alert.alert("Sucesso", "Recorte criado com sucesso!", [
         {
           text: "OK",
           onPress: () => router.back(),
         },
       ]);
     } catch (error: any) {
-      Alert.alert("Erro", error?.message || "Não foi possível criar o plano de recorte. Tente novamente.");
+      Alert.alert("Erro", error?.message || "Não foi possível criar o recorte. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -121,14 +103,14 @@ export default function CreateCuttingPlanScreen() {
       <>
         <Stack.Screen
           options={{
-            title: "Criar Plano de Recorte",
+            title: "Novo Recorte",
             headerStyle: { backgroundColor: colors.card },
             headerTintColor: colors.foreground,
           }}
         />
         <ErrorScreen
           message="Acesso negado"
-          detail="Você não tem permissão para criar planos de recorte. É necessário privilégio de Produção, Almoxarifado ou Administrador."
+          detail="Você não tem permissão para criar recortes. É necessário privilégio de Produção, Almoxarifado ou Administrador."
         />
       </>
     );
@@ -138,7 +120,7 @@ export default function CreateCuttingPlanScreen() {
     <>
       <Stack.Screen
         options={{
-          title: "Criar Plano de Recorte",
+          title: "Novo Recorte",
           headerStyle: { backgroundColor: colors.card },
           headerTintColor: colors.foreground,
           headerLeft: () => (
@@ -169,10 +151,10 @@ export default function CreateCuttingPlanScreen() {
           <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
               <IconScissors size={20} color={colors.mutedForeground} />
-              <ThemedText style={{ fontSize: fontSize.lg, fontWeight: "500" }}>Novo Plano de Recorte</ThemedText>
+              <ThemedText style={{ fontSize: fontSize.lg, fontWeight: "500" }}>Novo Recorte</ThemedText>
             </View>
             <ThemedText style={{ fontSize: 14, color: colors.muted }}>
-              Preencha as informações para criar um novo plano de recorte
+              Preencha as informações para criar um novo recorte
             </ThemedText>
           </Card>
 
@@ -226,57 +208,30 @@ export default function CreateCuttingPlanScreen() {
             )}
           </Card>
 
-          {/* Cut Origin */}
+          {/* Request Reason - Optional */}
           <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-            <Label style={{ marginBottom: spacing.xs }}>Origem *</Label>
+            <Label style={{ marginBottom: spacing.xs }}>Motivo da Requisição</Label>
             <Controller
               control={control}
-              name="origin"
+              name="reason"
               render={({ field }) => (
                 <Combobox
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  options={Object.entries(CUT_ORIGIN_LABELS).map(([value, label]) => ({
+                  value={field.value || ""}
+                  onValueChange={(value) => field.onChange(value || null)}
+                  options={Object.entries(CUT_REQUEST_REASON_LABELS).map(([value, label]) => ({
                     value,
                     label,
                   }))}
-                  placeholder="Selecione a origem"
+                  placeholder="Selecione o motivo (opcional)"
                 />
               )}
             />
-            {errors.origin && (
+            {errors.reason && (
               <ThemedText style={{ color: colors.destructive, fontSize: 12, marginTop: spacing.xs }}>
-                {errors.origin.message}
+                {errors.reason.message}
               </ThemedText>
             )}
           </Card>
-
-          {/* Request Reason - only show if origin is REQUEST */}
-          {watchedOrigin === CUT_ORIGIN.REQUEST && (
-            <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-              <Label style={{ marginBottom: spacing.xs }}>Motivo da Solicitação *</Label>
-              <Controller
-                control={control}
-                name="reason"
-                render={({ field }) => (
-                  <Combobox
-                    value={field.value || ""}
-                    onValueChange={(value) => field.onChange(value || null)}
-                    options={Object.entries(CUT_REQUEST_REASON_LABELS).map(([value, label]) => ({
-                      value,
-                      label,
-                    }))}
-                    placeholder="Selecione o motivo"
-                  />
-                )}
-              />
-              {errors.reason && (
-                <ThemedText style={{ color: colors.destructive, fontSize: 12, marginTop: spacing.xs }}>
-                  {errors.reason.message}
-                </ThemedText>
-              )}
-            </Card>
-          )}
 
           {/* Status */}
           <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>

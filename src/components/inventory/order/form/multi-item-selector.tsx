@@ -140,7 +140,7 @@ export function OrderMultiItemSelector({
   }, [categoryIds, brandIds, supplierIds, showInactive]);
 
   // Custom render for option to show stock, price, and supplier info
-  const renderOption = useCallback((option: ComboboxOption, isSelected: boolean) => {
+  const renderOption = useCallback((option: ComboboxOption) => {
     if (!option.metadata) {
       return (
         <View style={styles.optionContainer}>

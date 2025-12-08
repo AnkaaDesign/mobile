@@ -11,7 +11,7 @@ import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
@@ -27,7 +27,6 @@ import {
   NOTIFICATION_TYPE,
   NOTIFICATION_CHANNEL,
   NOTIFICATION_IMPORTANCE,
-  NOTIFICATION_ACTION_TYPE,
   USER_STATUS,
 } from "@/constants";
 import {
@@ -128,13 +127,6 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
   );
 
   const importanceOptions: ComboboxOption[] = Object.entries(NOTIFICATION_IMPORTANCE_LABELS).map(
-    ([value, label]) => ({
-      value,
-      label,
-    })
-  );
-
-  const channelOptions: ComboboxOption[] = Object.entries(NOTIFICATION_CHANNEL_LABELS).map(
     ([value, label]) => ({
       value,
       label,
@@ -418,7 +410,7 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
           </KeyboardAwareFormProvider>
         </ScrollView>
 
-        <SimpleFormActionBar
+        <FormActionBar
           onCancel={handleCancel}
           onSubmit={form.handleSubmit(handleSubmit)}
           isSubmitting={isLoading}

@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { getUsers } from "@/api-client";
-import { USER_STATUS } from "@/constants";
 import type { User } from "@/types";
 
 interface UserSelectorProps {
@@ -96,7 +95,7 @@ export function BorrowUserSelector({
   }, []);
 
   // Custom render function for user options
-  const renderUserOption = useCallback((option: ComboboxOption, isSelected: boolean) => {
+  const renderUserOption = useCallback((option: ComboboxOption) => {
     const metadata = option.metadata;
     if (!metadata) {
       return (

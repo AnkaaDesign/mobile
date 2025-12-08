@@ -7,13 +7,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { itemCategoryCreateSchema, itemCategoryUpdateSchema, type ItemCategoryCreateFormData, type ItemCategoryUpdateFormData } from '../../../../../schemas';
 import { ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
 import { useItems, useKeyboardAwareScroll } from "@/hooks";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 interface ItemCategoryFormProps<TMode extends "create" | "update"> {
@@ -156,14 +155,11 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
                 <Combobox
                   mode="multiple"
                   options={itemOptions}
-                  selectedValues={Array.isArray(field.value) ? field.value : []}
+                  value={Array.isArray(field.value) ? field.value : []}
                   onValueChange={field.onChange}
-                  onCreate={() => {}}
-                  onSearchChange={() => {}}
-                  onEndReached={() => {}}
                   placeholder="Selecione produtos para associar"
-                  selectedText="produtos selecionados"
                   searchPlaceholder="Pesquisar produtos..."
+                  emptyText="Nenhum produto encontrado"
                   disabled={isSubmitting || isLoadingItems}
                 />
               )}
@@ -173,7 +169,7 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
           </KeyboardAwareFormProvider>
         </ScrollView>
 
-        <SimpleFormActionBar
+        <FormActionBar
         onCancel={onCancel}
         onSubmit={form.handleSubmit(handleSubmit as any)}
         isSubmitting={isSubmitting}

@@ -48,8 +48,27 @@ export {
   MIME_TYPE_ICONS,
 } from "./file-utils";
 export * from "./form";
-export * from "./formatters";
-export * from "./format-standard";
+// Export specific items from formatters to avoid conflicts with date.ts
+export {
+  formatCPF,
+  formatCNPJ,
+  formatPhone,
+  formatBrazilianPhone,
+  formatBrazilianPhoneWithCountryCode,
+  formatPIS,
+  formatCEP,
+  formatZipCode,
+  formatChassis,
+  formatPhoneNumber,
+  formatCurrency,
+  // Note: formatDate, formatDateTime are exported from date.ts
+} from "./formatters";
+// Export specific items from format-standard to avoid conflicts
+export {
+  formatPercentage,
+  formatCurrencyPrecise,
+  formatNumberWithDecimals,
+} from "./format-standard";
 export * from "./garage";
 export * from "./item";
 export * from "./maintenance";

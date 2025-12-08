@@ -1,8 +1,18 @@
 import React, { useRef, useCallback } from "react";
-import { Platform, Text, View, ViewStyle, StyleSheet } from "react-native";
-import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
-import { RectButton} from "react-native-gesture-handler";
-import Animated, { SharedValue, useAnimatedStyle, interpolate } from "react-native-reanimated";
+import { Platform, Text, View, ViewStyle, StyleSheet, Pressable } from "react-native";
+import ReanimatedSwipeable, { type SwipeableMethods } from "react-native-gesture-handler/ReanimatedSwipeable";
+import Animated, {
+  SharedValue,
+  useAnimatedStyle,
+  interpolate,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  runOnJS,
+} from "react-native-reanimated";
+
+// Type alias for backwards compatibility
+type Swipeable = SwipeableMethods;
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/lib/theme";
 
@@ -188,8 +198,12 @@ interface ActionItemProps {
   swipeableRef: React.RefObject<Swipeable> | React.Ref<Swipeable>;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 const ActionItem: React.FC<ActionItemProps> = ({ action, progress, backgroundColor, textColor, width, swipeableRef }) => {
-  const handlePress = useCallback(() => {
+  const isPressed = useSharedValue(0);
+
+  const executePress = useCallback(() => {
     if (Platform.OS === "ios") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -203,27 +217,59 @@ const ActionItem: React.FC<ActionItemProps> = ({ action, progress, backgroundCol
     action.onPress();
   }, [action, swipeableRef]);
 
+  const handlePressIn = useCallback(() => {
+    "worklet";
+    isPressed.value = withSpring(1, { damping: 15, stiffness: 400 });
+  }, [isPressed]);
+
+  const handlePressOut = useCallback(() => {
+    "worklet";
+    isPressed.value = withSpring(0, { damping: 15, stiffness: 400 });
+  }, [isPressed]);
+
+  const handlePress = useCallback(() => {
+    runOnJS(executePress)();
+  }, [executePress]);
+
   const animatedStyle = useAnimatedStyle(() => {
     "worklet";
-    const scale = interpolate(progress.value, [0, 1], [0.8, 1]);
+    const progressScale = interpolate(progress.value, [0, 1], [0.8, 1]);
+    const pressScale = interpolate(isPressed.value, [0, 1], [1, 0.92]);
+    const pressOpacity = interpolate(isPressed.value, [0, 1], [1, 0.7]);
 
     return {
-      transform: [{ scale }],
+      transform: [{ scale: progressScale * pressScale }],
+      opacity: pressOpacity,
+    };
+  });
+
+  const overlayStyle = useAnimatedStyle(() => {
+    "worklet";
+    const overlayOpacity = interpolate(isPressed.value, [0, 1], [0, 0.15]);
+
+    return {
+      opacity: overlayOpacity,
     };
   });
 
   return (
     <View style={StyleSheet.flatten([styles.actionContainer, { width, backgroundColor }])}>
-      <Animated.View style={StyleSheet.flatten([styles.actionButtonAnimated, animatedStyle])}>
-        <RectButton style={styles.actionButton} onPress={handlePress}>
+      <AnimatedPressable
+        style={StyleSheet.flatten([styles.actionButtonAnimated, animatedStyle])}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handlePress}
+      >
+        <View style={styles.actionButton}>
           <View style={styles.actionContent}>
             {action.icon}
             <Text style={StyleSheet.flatten([styles.actionText, { color: textColor }])} numberOfLines={1}>
               {action.label}
             </Text>
           </View>
-        </RectButton>
-      </Animated.View>
+        </View>
+        <Animated.View style={[styles.pressOverlay, overlayStyle]} pointerEvents="none" />
+      </AnimatedPressable>
     </View>
   );
 };
@@ -315,6 +361,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     height: "100%",
+    overflow: "hidden",
   },
   actionButtonAnimated: {
     flex: 1,
@@ -335,6 +382,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     marginTop: 4,
+  },
+  pressOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#000",
   },
 });
 

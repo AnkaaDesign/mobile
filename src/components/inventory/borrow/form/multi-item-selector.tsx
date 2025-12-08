@@ -116,7 +116,7 @@ export function MultiItemSelector({
   }, []);
 
   // Custom render for option to show available quantity
-  const renderOption = useCallback((option: ComboboxOption, isSelected: boolean) => {
+  const renderOption = useCallback((option: ComboboxOption) => {
     if (!option.metadata) {
       return (
         <View style={styles.optionContainer}>

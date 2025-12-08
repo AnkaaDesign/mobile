@@ -32,7 +32,7 @@ export default function CreatePaintTypeScreen() {
   const { create } = usePaintTypeMutations();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [itemSearch, setItemSearch] = useState("");
+  const [itemSearch] = useState("");
 
   // Check user permissions
   const canCreate = hasPrivilege(user, SECTOR_PRIVILEGES.BASIC);

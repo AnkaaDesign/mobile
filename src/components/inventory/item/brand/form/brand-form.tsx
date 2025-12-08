@@ -6,13 +6,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { itemBrandCreateSchema, itemBrandUpdateSchema, type ItemBrandCreateFormData, type ItemBrandUpdateFormData } from '../../../../../schemas';
 import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
 import { useItems, useKeyboardAwareScroll } from "@/hooks";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 interface ItemBrandFormProps<TMode extends "create" | "update"> {
@@ -121,14 +120,11 @@ export function ItemBrandForm<TMode extends "create" | "update">({ onSubmit, onC
                 <Combobox
                   mode="multiple"
                   options={itemOptions}
-                  selectedValues={Array.isArray(field.value) ? field.value : []}
+                  value={Array.isArray(field.value) ? field.value : []}
                   onValueChange={field.onChange}
-                  onCreate={() => {}}
-                  onSearchChange={() => {}}
-                  onEndReached={() => {}}
                   placeholder="Selecione produtos para associar"
-                  selectedText="produtos selecionados"
                   searchPlaceholder="Pesquisar produtos..."
+                  emptyText="Nenhum produto encontrado"
                   disabled={isSubmitting || isLoadingItems}
                 />
               )}
@@ -138,7 +134,7 @@ export function ItemBrandForm<TMode extends "create" | "update">({ onSubmit, onC
           </KeyboardAwareFormProvider>
         </ScrollView>
 
-        <SimpleFormActionBar
+        <FormActionBar
           onCancel={onCancel}
           onSubmit={form.handleSubmit(handleSubmit as any)}
           isSubmitting={isSubmitting}

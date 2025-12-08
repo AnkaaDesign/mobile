@@ -53,7 +53,7 @@ interface CepData {
   erro?: boolean;
 }
 
-export interface InputProps extends Omit<TextInputProps, "value" | "onChangeText" | "style"> {
+export interface InputProps extends Omit<TextInputProps, "value" | "onChangeText" | "onChange" | "style"> {
   type?: InputType;
   value?: string | number | null;
   onChange?: (value: string | number | null) => void;

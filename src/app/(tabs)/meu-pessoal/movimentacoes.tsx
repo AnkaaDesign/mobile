@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { useAuth } from "@/contexts/auth-context";
 import { useActivitiesInfiniteMobile } from "@/hooks";
+import type { Activity } from "@/types";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
@@ -159,7 +160,7 @@ export default function TeamActivitiesScreen() {
   } = useActivitiesInfiniteMobile(queryParams || {});
 
   // Type alias for activities
-  const activities = items;
+  const activities = items as Activity[];
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);

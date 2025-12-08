@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react'
+import { memo, useCallback } from 'react'
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { IconFilter } from '@tabler/icons-react-native'
 import { useRouter } from 'expo-router'

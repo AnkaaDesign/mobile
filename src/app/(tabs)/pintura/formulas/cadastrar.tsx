@@ -130,7 +130,7 @@ export default function CreateFormulaScreen() {
           <Button
             onPress={handleGoToCatalog}
             style={styles.actionButton}
-            iconLeft={<IconPalette size={20} color={colors.primaryForeground} />}
+            icon={<IconPalette size={20} color={colors.primaryForeground} />}
           >
             Ir para Catálogo
           </Button>

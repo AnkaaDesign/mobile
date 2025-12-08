@@ -1,16 +1,20 @@
 import { useState, useMemo, useCallback } from 'react';
+import { Alert } from 'react-native';
 import { Layout } from '@/components/list/Layout';
 import { cutsListConfig } from '@/config/list/production/cuts';
 import { useAuth } from '@/contexts/auth-context';
-import { SECTOR_PRIVILEGES } from '@/constants/enums';
+import { SECTOR_PRIVILEGES, CUT_STATUS } from '@/constants/enums';
 import { CutRequestModal } from '@/components/production/cuts/form/cut-request-modal';
 import { canRequestCutForTask } from '@/utils/permissions/entity-permissions';
 import { useFileViewer } from '@/components/file';
+import { useCutMutations } from '@/hooks';
 import type { Cut } from '@/types';
 
 export default function CuttingListScreen() {
   const { user } = useAuth();
   const { actions: fileViewerActions } = useFileViewer();
+  const { update } = useCutMutations();
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Cut request modal state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -21,6 +25,56 @@ export default function CuttingListScreen() {
     setSelectedCutForRequest(cut);
     setIsRequestModalOpen(true);
   }, []);
+
+  // Handle start cut
+  const handleStartCut = useCallback(async (cut: Cut) => {
+    Alert.alert(
+      "Iniciar Corte",
+      `Deseja iniciar o corte "${cut.file?.filename || 'Recorte'}"?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Iniciar",
+          onPress: async () => {
+            try {
+              await update({
+                id: cut.id,
+                data: { status: CUT_STATUS.CUTTING, startedAt: new Date() },
+              });
+              setRefreshKey(prev => prev + 1);
+            } catch (_error) {
+              // API client already shows error
+            }
+          },
+        },
+      ]
+    );
+  }, [update]);
+
+  // Handle complete cut
+  const handleCompleteCut = useCallback(async (cut: Cut) => {
+    Alert.alert(
+      "Concluir Corte",
+      `Deseja concluir o corte "${cut.file?.filename || 'Recorte'}"?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Concluir",
+          onPress: async () => {
+            try {
+              await update({
+                id: cut.id,
+                data: { status: CUT_STATUS.COMPLETED, completedAt: new Date() },
+              });
+              setRefreshKey(prev => prev + 1);
+            } catch (_error) {
+              // API client already shows error
+            }
+          },
+        },
+      ]
+    );
+  }, [update]);
 
   // Handle request modal close
   const handleRequestModalClose = useCallback(() => {
@@ -68,14 +122,16 @@ export default function CuttingListScreen() {
       ? cutsListConfig.filters.fields.filter(field => field.key !== 'sectorIds')
       : cutsListConfig.filters?.fields;
 
-    // Build request action for LEADER users
-    const requestAction = privileges === SECTOR_PRIVILEGES.LEADER ? {
+    // Build request action for LEADER and ADMIN users
+    const canRequestCut = privileges === SECTOR_PRIVILEGES.LEADER || privileges === SECTOR_PRIVILEGES.ADMIN;
+    const requestAction = canRequestCut ? {
       key: 'request',
-      label: 'Solicitar',
+      label: 'Solicitar Recorte',
       icon: 'cut',
       variant: 'default' as const,
       visible: (cut: Cut) => {
-        // Only show for cuts of tasks in managed sector
+        // ADMIN can request for any cut, LEADER only for their managed sector
+        if (privileges === SECTOR_PRIVILEGES.ADMIN) return true;
         const taskSectorId = cut.task?.sectorId;
         return canRequestCutForTask(user, taskSectorId);
       },
@@ -84,10 +140,36 @@ export default function CuttingListScreen() {
       },
     } : null;
 
-    // Add request action to existing actions if user is LEADER
-    const actionsWithRequest = requestAction
-      ? [requestAction, ...(cutsListConfig.table.actions || [])]
-      : cutsListConfig.table.actions;
+    // Build start/complete actions for WAREHOUSE and ADMIN users
+    const canChangeStatus = privileges === SECTOR_PRIVILEGES.WAREHOUSE || privileges === SECTOR_PRIVILEGES.ADMIN;
+    const startAction = canChangeStatus ? {
+      key: 'start',
+      label: 'Iniciar',
+      icon: 'play',
+      variant: 'default' as const,
+      visible: (cut: Cut) => cut.status === CUT_STATUS.PENDING,
+      onPress: (cut: Cut) => {
+        handleStartCut(cut);
+      },
+    } : null;
+
+    const completeAction = canChangeStatus ? {
+      key: 'complete',
+      label: 'Concluir',
+      icon: 'check',
+      variant: 'default' as const,
+      visible: (cut: Cut) => cut.status === CUT_STATUS.CUTTING,
+      onPress: (cut: Cut) => {
+        handleCompleteCut(cut);
+      },
+    } : null;
+
+    // Combine all custom actions
+    const customActions = [requestAction, startAction, completeAction].filter(Boolean);
+    const actionsWithCustom = [
+      ...customActions,
+      ...(cutsListConfig.table.actions || []),
+    ];
 
     // Production users can only see cuts from tasks in their own sector
     if (privileges === SECTOR_PRIVILEGES.PRODUCTION) {
@@ -105,7 +187,7 @@ export default function CuttingListScreen() {
         table: {
           ...cutsListConfig.table,
           columns: columnsWithFileCellPress,
-          actions: actionsWithRequest,
+          actions: actionsWithCustom,
         },
         filters: cutsListConfig.filters ? {
           ...cutsListConfig.filters,
@@ -133,7 +215,7 @@ export default function CuttingListScreen() {
         table: {
           ...cutsListConfig.table,
           columns: columnsWithFileCellPress,
-          actions: actionsWithRequest,
+          actions: actionsWithCustom,
         },
         filters: cutsListConfig.filters ? {
           ...cutsListConfig.filters,
@@ -143,14 +225,16 @@ export default function CuttingListScreen() {
     }
 
     // Other privileges (ADMIN, WAREHOUSE, etc.) can see all cuts
+    // Use the same actionsWithCustom which already includes request/start/complete for appropriate users
     return {
       ...cutsListConfig,
       table: {
         ...cutsListConfig.table,
         columns: columnsWithFileCellPress,
+        actions: actionsWithCustom,
       },
     };
-  }, [user, handleCutRequest, handleFileCellPress]);
+  }, [user, handleCutRequest, handleStartCut, handleCompleteCut, handleFileCellPress]);
 
   return (
     <>

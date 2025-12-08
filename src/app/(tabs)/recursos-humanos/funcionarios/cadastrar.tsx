@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
-import { IconUser, IconIdBadge, IconPhone, IconMail, IconBriefcase, IconBuilding } from "@tabler/icons-react-native";
+import { IconUser, IconPhone } from "@tabler/icons-react-native";
 // import { showToast } from "@/components/ui/toast";
 
 export default function EmployeesCreateScreen() {
@@ -61,11 +61,12 @@ export default function EmployeesCreateScreen() {
                 Nome
               </ThemedText>
               <Input
-                style={[styles.input, { borderColor: colors.border, color: colors.foreground }]}
+                style={[styles.input, { borderColor: colors.border }]}
+                inputStyle={{ color: colors.foreground }}
                 placeholder="Nome completo"
                 placeholderTextColor={colors.mutedForeground}
                 value={formData.name}
-                onChangeText={(value) => handleInputChange("name", value)}
+                onChangeText={(value) => handleInputChange("name", String(value ?? ''))}
               />
             </View>
             <View>
@@ -73,11 +74,12 @@ export default function EmployeesCreateScreen() {
                 CPF
               </ThemedText>
               <Input
-                style={[styles.input, { borderColor: colors.border, color: colors.foreground }]}
+                style={[styles.input, { borderColor: colors.border }]}
+                inputStyle={{ color: colors.foreground }}
                 placeholder="000.000.000-00"
                 placeholderTextColor={colors.mutedForeground}
                 value={formData.cpf}
-                onChangeText={(value) => handleInputChange("cpf", value)}
+                onChangeText={(value) => handleInputChange("cpf", String(value ?? ''))}
               />
             </View>
           </View>
@@ -99,12 +101,13 @@ export default function EmployeesCreateScreen() {
                 E-mail
               </ThemedText>
               <Input
-                style={[styles.input, { borderColor: colors.border, color: colors.foreground }]}
+                style={[styles.input, { borderColor: colors.border }]}
+                inputStyle={{ color: colors.foreground }}
                 placeholder="email@example.com"
                 placeholderTextColor={colors.mutedForeground}
                 keyboardType="email-address"
                 value={formData.email}
-                onChangeText={(value) => handleInputChange("email", value)}
+                onChangeText={(value) => handleInputChange("email", String(value ?? ''))}
               />
             </View>
             <View>
@@ -112,12 +115,13 @@ export default function EmployeesCreateScreen() {
                 Telefone
               </ThemedText>
               <Input
-                style={[styles.input, { borderColor: colors.border, color: colors.foreground }]}
+                style={[styles.input, { borderColor: colors.border }]}
+                inputStyle={{ color: colors.foreground }}
                 placeholder="(00) 00000-0000"
                 placeholderTextColor={colors.mutedForeground}
                 keyboardType="phone-pad"
                 value={formData.phone}
-                onChangeText={(value) => handleInputChange("phone", value)}
+                onChangeText={(value) => handleInputChange("phone", String(value ?? ''))}
               />
             </View>
           </View>

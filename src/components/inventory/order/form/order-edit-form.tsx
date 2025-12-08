@@ -3,25 +3,21 @@ import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert } f
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as DocumentPicker from 'expo-document-picker';
 import { orderUpdateSchema } from '@/schemas';
 import type { OrderUpdateFormData } from '@/schemas';
-import { useOrderMutations, useOrder, useFile } from '@/hooks';
+import { useOrderMutations, useOrder } from '@/hooks';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import { Combobox } from '@/components/ui/combobox';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker';
+import { FormActionBar } from '@/components/forms';
 import { useTheme } from '@/lib/theme';
-// import { showToast } from '@/lib/toast';
 import { getSuppliers } from '@/api-client';
 import type { Supplier } from '@/types';
-import { spacing } from '@/constants/design-system';
 import { createOrderFormData } from '@/utils/order-form-utils';
+import { formSpacing } from '@/constants/form-styles';
 
 interface OrderEditFormProps {
   orderId: string;
@@ -31,9 +27,8 @@ interface OrderEditFormProps {
 export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess }) => {
   const theme = useTheme();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
-  const { data: order, isLoading: isLoadingOrder } = useOrder(orderId, {
+  const { data: orderResponse, isLoading: isLoadingOrder } = useOrder(orderId, {
     include: {
       supplier: true,
       items: {
@@ -46,6 +41,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       invoiceReimbursements: true,
     },
   });
+  const order = orderResponse?.data;
 
   const form = useForm<OrderUpdateFormData>({
     resolver: zodResolver(orderUpdateSchema),
@@ -54,36 +50,6 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
 
   const { updateAsync, isLoading } = useOrderMutations();
 
-  // Setup file upload hooks for each file type
-  const budgetUpload = useFile({
-    entityType: 'order',
-    fileContext: 'budget',
-    entityId: orderId,
-  });
-
-  const invoiceUpload = useFile({
-    entityType: 'order',
-    fileContext: 'invoice',
-    entityId: orderId,
-  });
-
-  const receiptUpload = useFile({
-    entityType: 'order',
-    fileContext: 'receipt',
-    entityId: orderId,
-  });
-
-  const reimbursementUpload = useFile({
-    entityType: 'order',
-    fileContext: 'reimbursement',
-    entityId: orderId,
-  });
-
-  const reimbursementInvoiceUpload = useFile({
-    entityType: 'order',
-    fileContext: 'reimbursementInvoice',
-    entityId: orderId,
-  });
 
   // File upload state for all 5 types
   const [budgetFiles, setBudgetFiles] = useState<FilePickerItem[]>([]);
@@ -278,7 +244,6 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       existingReceiptIds,
       existingReimbursementIds,
       existingReimbursementInvoiceIds,
-      uploadFile,
       updateAsync,
       onSuccess,
       router,
@@ -293,11 +258,18 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       flex: 1,
     },
     content: {
-      padding: theme.spacing.md,
-      paddingBottom: 0, // No spacing - action bar has its own margin
+      paddingHorizontal: formSpacing.containerPaddingHorizontal,
+      paddingTop: formSpacing.containerPaddingVertical,
+      paddingBottom: 0,
     },
     section: {
       marginBottom: theme.spacing.lg,
+    },
+    sectionTitle: {
+      fontSize: theme.fontSize.lg,
+      fontWeight: theme.fontWeight.semibold as any,
+      marginBottom: theme.spacing.md,
+      color: theme.colors.foreground,
     },
     field: {
       marginBottom: theme.spacing.md,
@@ -310,16 +282,6 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
     },
     required: {
       color: theme.colors.error,
-    },
-    actions: {
-      flexDirection: 'row',
-      gap: theme.spacing.sm,
-      padding: theme.spacing.md,
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.border,
-    },
-    actionButton: {
-      flex: 1,
     },
     itemsNote: {
       padding: theme.spacing.md,
@@ -523,26 +485,14 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         </Card>
       </ScrollView>
 
-      <View style={styles.actions}>
-        <Button
-          variant="outline"
-          onPress={() => router.back()}
-          style={styles.actionButton}
-          disabled={isLoading || isUploadingFiles}
-        >
-          <ThemedText>Cancelar</ThemedText>
-        </Button>
-        <Button
-          onPress={form.handleSubmit(handleSubmit)}
-          style={styles.actionButton}
-          disabled={isLoading || isUploadingFiles}
-          loading={isLoading || isUploadingFiles}
-        >
-          <ThemedText>
-            {isUploadingFiles ? 'Enviando arquivos...' : 'Salvar'}
-          </ThemedText>
-        </Button>
-      </View>
+      <FormActionBar
+        onCancel={() => router.back()}
+        onSubmit={form.handleSubmit(handleSubmit)}
+        isSubmitting={isLoading || isUploadingFiles}
+        canSubmit={form.formState.isValid}
+        submitLabel="Salvar"
+        submittingLabel={isUploadingFiles ? 'Enviando arquivos...' : 'Salvando...'}
+      />
     </KeyboardAvoidingView>
   );
 };

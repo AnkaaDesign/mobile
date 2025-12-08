@@ -163,7 +163,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.md,
     gap: spacing.lg,
   },
   section: {

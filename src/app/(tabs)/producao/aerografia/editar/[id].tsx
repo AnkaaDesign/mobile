@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAirbrushingDetail, useAirbrushingMutations } from "@/hooks";
 import { useTasks } from "@/hooks";
-import { airbrushingUpdateSchema, mapAirbrushingToFormData } from '../../../../../schemas';
+import { airbrushingUpdateSchema, mapAirbrushingToFormData, type AirbrushingUpdateFormData } from '../../../../../schemas';
 import { AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from "@/constants";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
@@ -381,7 +381,7 @@ export default function AirbrushingEditScreen() {
                     value={field.value?.toString() || ""}
                     onChangeText={(text) => {
                       // Allow only numbers and decimal point
-                      const cleanText = text.replace(/[^0-9.,]/g, '').replace(',', '.');
+                      const cleanText = String(text || '').replace(/[^0-9.,]/g, '').replace(',', '.');
                       const numValue = cleanText ? parseFloat(cleanText) : null;
                       field.onChange(numValue);
                     }}

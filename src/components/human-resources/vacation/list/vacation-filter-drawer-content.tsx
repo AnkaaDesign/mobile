@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { IconFilter, IconX, IconBeach, IconUsers, IconCalendarPlus, IconCalendar } from '@tabler/icons-react-native';
 import { Switch as RNSwitch } from 'react-native';
@@ -193,8 +193,9 @@ export function VacationFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={statusOptions}
-              selectedValues={localFilters.statuses || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: values }))}
+              value={localFilters.statuses || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os status"
               searchPlaceholder="Buscar status..."
               emptyText="Nenhum status encontrado"
@@ -217,8 +218,9 @@ export function VacationFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={typeOptions}
-              selectedValues={localFilters.types || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, types: values }))}
+              value={localFilters.types || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, types: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os tipos"
               searchPlaceholder="Buscar tipos..."
               emptyText="Nenhum tipo encontrado"
@@ -241,8 +243,9 @@ export function VacationFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={userOptions}
-              selectedValues={localFilters.userIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: values }))}
+              value={localFilters.userIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os colaboradores"
               searchPlaceholder="Buscar colaboradores..."
               emptyText="Nenhum colaborador encontrado"
@@ -265,14 +268,13 @@ export function VacationFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={yearOptions}
-              selectedValues={localFilters.year ? [localFilters.year.toString()] : []}
-              onValueChange={(values) => {
-                const year = values[0] ? parseInt(values[0]) : undefined;
+              value={localFilters.year ? localFilters.year.toString() : ''}
+              onValueChange={(value) => {
+                const year = typeof value === 'string' && value ? parseInt(value) : undefined;
                 setLocalFilters((prev) => ({ ...prev, year }));
               }}
               placeholder="Selecione o ano..."
               emptyText="Nenhum ano encontrado"
-              singleSelect
             />
           </View>
 

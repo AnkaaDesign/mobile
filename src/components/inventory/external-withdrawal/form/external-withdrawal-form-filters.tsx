@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
-import { IconFilter, IconX, IconRefresh, IconTag, IconSearch } from "@tabler/icons-react-native";
+import { IconFilter, IconRefresh, IconTag, IconSearch } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius } from "@/constants/design-system";
+import { spacing } from "@/constants/design-system";
 import { useItemCategories, useItemBrands, useSuppliers } from "@/hooks";
 
 import { Text } from "@/components/ui/text";

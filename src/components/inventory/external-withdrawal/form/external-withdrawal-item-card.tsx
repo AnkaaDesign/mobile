@@ -1,5 +1,4 @@
-import React, { useCallback } from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { IconX, IconAlertTriangle } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
@@ -29,7 +28,6 @@ interface ExternalWithdrawalItemCardProps {
 }
 
 export function ExternalWithdrawalItemCard({
-  itemId,
   itemName,
   itemCode,
   itemBrand,

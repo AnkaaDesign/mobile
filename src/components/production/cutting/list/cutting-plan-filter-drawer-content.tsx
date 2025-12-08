@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { spacing } from "@/constants/design-system";
 import { FilterSection } from "@/components/common/filters/FilterSection";
-import { SelectFilter, DateRangeFilter} from "@/components/common/filters";
+import { SelectFilter, DateRangeFilter, type DateRange } from "@/components/common/filters";
 import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from "@/constants";
 import { CUT_STATUS_LABELS, CUT_TYPE_LABELS, CUT_ORIGIN_LABELS } from "@/constants";
 import type { CutGetManyFormData } from "../../../../schemas";

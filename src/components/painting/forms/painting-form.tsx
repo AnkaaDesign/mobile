@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 import { FormSteps, type FormStep } from "@/components/ui/form-steps";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { useTheme } from "@/lib/theme";
@@ -472,17 +472,13 @@ export function PaintForm(props: PaintFormProps) {
                         <Combobox
                           mode="multiple"
                           options={groundPaintOptions}
-                          selectedValues={Array.isArray(value) ? value : []}
+                          value={Array.isArray(value) ? value : []}
                           onValueChange={onChange}
-                          onCreate={() => {}}
-                          onSearchChange={setGroundPaintSearch}
-                          onEndReached={() => {}}
                           placeholder="Selecione as tintas de fundo"
-                          selectedText="tintas selecionadas"
                           searchPlaceholder="Buscar tintas..."
+                          emptyText="Nenhuma tinta encontrada"
                           disabled={isSubmitting || isLoadingPaints}
                           error={error?.message}
-                          initialOptions={mode === "update" ? (props.initialGrounds?.map(p => ({ value: p.id, label: p.name })) || []) : undefined}
                         />
                       )}
                     />
@@ -520,7 +516,7 @@ export function PaintForm(props: PaintFormProps) {
           </ScrollView>
 
           {/* Action Bar */}
-          <SimpleFormActionBar
+          <FormActionBar
             onCancel={isFirstStep ? onCancel : prevStep}
             onSubmit={isLastStep ? form.handleSubmit(handleSubmit) : nextStep}
             isSubmitting={isSubmitting}

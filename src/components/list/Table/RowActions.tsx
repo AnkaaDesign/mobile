@@ -137,7 +137,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
             } else if (action.key === 'start' || action.icon === 'player-play') {
               backgroundColor = '#059669' // emerald-600
               Icon = IconPlayerPlay
-            } else if (action.key === 'finish' || action.icon === 'circle-check') {
+            } else if (action.key === 'finish' || action.key === 'complete' || action.icon === 'circle-check' || action.icon === 'check') {
               backgroundColor = '#16a34a' // green-600
               Icon = IconCircleCheck
             } else if (action.key === 'request' || action.icon === 'cut') {

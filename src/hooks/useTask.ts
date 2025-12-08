@@ -245,7 +245,6 @@ export function useTaskMutations() {
         queryClient.invalidateQueries({
           queryKey: layoutQueryKeys.byTruck(truckId),
         });
-        console.log('[useTaskMutations] Invalidated layout queries for truck:', truckId);
       }
 
       // Invalidate customer-specific queries

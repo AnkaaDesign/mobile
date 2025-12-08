@@ -174,8 +174,9 @@ export function TeamBorrowFilterDrawerContent({
               </ThemedText>
               <Combobox
                 options={teamMemberOptions}
-                selectedValues={localFilters.userIds || []}
-                onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: values }))}
+                value={localFilters.userIds || []}
+                mode="multiple"
+                onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: Array.isArray(values) ? values : values ? [values] : [] }))}
                 placeholder="Todos os membros"
                 searchPlaceholder="Buscar membros..."
                 emptyText="Nenhum membro encontrado"
@@ -200,8 +201,9 @@ export function TeamBorrowFilterDrawerContent({
               </ThemedText>
               <Combobox
                 options={categoryOptions}
-                selectedValues={localFilters.categoryIds || []}
-                onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, categoryIds: values }))}
+                value={localFilters.categoryIds || []}
+                mode="multiple"
+                onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, categoryIds: Array.isArray(values) ? values : values ? [values] : [] }))}
                 placeholder="Todas as categorias"
                 searchPlaceholder="Buscar categorias..."
                 emptyText="Nenhuma categoria encontrada"

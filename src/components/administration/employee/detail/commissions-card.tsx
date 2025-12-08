@@ -109,9 +109,9 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
                 const bonusAmount = typeof bonus.baseBonus === 'number'
                   ? bonus.baseBonus
                   : bonus.baseBonus.toNumber();
-                const ponderedCount = typeof bonus.ponderedTaskCount === 'number'
-                  ? bonus.ponderedTaskCount
-                  : bonus.ponderedTaskCount?.toNumber() || 0;
+                const taskCount = typeof bonus.weightedTasks === 'number'
+                  ? bonus.weightedTasks
+                  : (bonus.weightedTasks as any)?.toNumber?.() || 0;
 
                 return (
                   <View
@@ -154,13 +154,13 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
                         </Badge>
                       </View>
 
-                      {ponderedCount > 0 && (
+                      {taskCount > 0 && (
                         <View style={styles.bonusDetail}>
                           <ThemedText style={[styles.bonusDetailLabel, { color: colors.mutedForeground }]}>
-                            Ordens Ponderadas:
+                            Tarefas Ponderadas:
                           </ThemedText>
                           <ThemedText style={[styles.bonusDetailValue, { color: colors.foreground }]}>
-                            {ponderedCount.toFixed(2)}
+                            {taskCount.toFixed(2)}
                           </ThemedText>
                         </View>
                       )}

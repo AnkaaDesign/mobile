@@ -23,9 +23,6 @@ import {
   IconMail,
   IconPhone,
   IconIdBadge,
-
-
-  IconPackage,
 } from "@tabler/icons-react-native";
 import { routeToMobilePath } from '@/utils/route-mapper';
 // import { showToast } from "@/components/ui/toast";

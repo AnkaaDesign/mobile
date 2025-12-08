@@ -1,4 +1,4 @@
-import React, { memo, useState, useMemo, useCallback } from 'react'
+import { memo, useState, useMemo, useCallback } from 'react'
 import { View, TouchableOpacity, StyleSheet } from 'react-native'
 import { IconColumns } from '@tabler/icons-react-native'
 import { useTheme } from '@/lib/theme'
@@ -66,7 +66,6 @@ export const ColumnVisibilityPanel = memo(function ColumnVisibilityPanel({
   columns,
   visibleColumns,
   onToggleColumn,
-  onResetColumns,
   isOpen,
   onClose,
   defaultVisible,

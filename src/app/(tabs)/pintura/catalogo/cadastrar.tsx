@@ -1,5 +1,4 @@
 import { Stack, useRouter } from "expo-router";
-import { Alert } from "react-native";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";

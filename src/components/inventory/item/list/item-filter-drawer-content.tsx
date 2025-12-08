@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconPackage, IconTags, IconRuler, IconCoins, IconCalendar } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -388,13 +388,13 @@ export function ItemFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={brandOptions}
-              selectedValues={localFilters.brandIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, brandIds: values }))}
+              mode="multiple"
+              value={localFilters.brandIds || []}
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, brandIds: values as string[] }))}
               placeholder={brands.length === 0 ? "Carregando marcas..." : "Selecione as marcas"}
               searchPlaceholder="Buscar marcas..."
               emptyText="Nenhuma marca encontrada"
               disabled={brands.length === 0}
-              showBadges={false}
             />
           </View>
 
@@ -404,13 +404,13 @@ export function ItemFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={categoryOptions}
-              selectedValues={localFilters.categoryIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, categoryIds: values }))}
+              mode="multiple"
+              value={localFilters.categoryIds || []}
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, categoryIds: values as string[] }))}
               placeholder={categories.length === 0 ? "Carregando categorias..." : "Selecione as categorias"}
               searchPlaceholder="Buscar categorias..."
               emptyText="Nenhuma categoria encontrada"
               disabled={categories.length === 0}
-              showBadges={false}
             />
           </View>
 
@@ -420,13 +420,13 @@ export function ItemFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={supplierOptions}
-              selectedValues={localFilters.supplierIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, supplierIds: values }))}
+              mode="multiple"
+              value={localFilters.supplierIds || []}
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, supplierIds: values as string[] }))}
               placeholder={suppliers.length === 0 ? "Carregando fornecedores..." : "Selecione os fornecedores"}
               searchPlaceholder="Buscar fornecedores..."
               emptyText="Nenhum fornecedor encontrado"
               disabled={suppliers.length === 0}
-              showBadges={false}
             />
           </View>
         </View>
@@ -446,12 +446,12 @@ export function ItemFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={measureUnitOptions}
-              selectedValues={localFilters.measureUnits || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, measureUnits: values }))}
+              mode="multiple"
+              value={localFilters.measureUnits || []}
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, measureUnits: values as string[] }))}
               placeholder="Selecione as unidades de medida"
               searchPlaceholder="Buscar unidades..."
               emptyText="Nenhuma unidade encontrada"
-              showBadges={false}
             />
           </View>
 
@@ -461,12 +461,12 @@ export function ItemFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={measureTypeOptions}
-              selectedValues={localFilters.measureTypes || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, measureTypes: values }))}
+              mode="multiple"
+              value={localFilters.measureTypes || []}
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, measureTypes: values as string[] }))}
               placeholder="Selecione os tipos de medida"
               searchPlaceholder="Buscar tipos..."
               emptyText="Nenhum tipo encontrado"
-              showBadges={false}
             />
           </View>
         </View>
@@ -489,7 +489,7 @@ export function ItemFilterDrawerContent({
                 placeholder="Mín"
                 value={localFilters.quantityRange?.min?.toString() || ""}
                 onChangeText={(value) => {
-                  const numValue = value ? parseFloat(value) : undefined;
+                  const numValue = value ? parseFloat(String(value)) : undefined;
                   setLocalFilters((prev) => ({
                     ...prev,
                     quantityRange: {
@@ -506,7 +506,7 @@ export function ItemFilterDrawerContent({
                 placeholder="Máx"
                 value={localFilters.quantityRange?.max?.toString() || ""}
                 onChangeText={(value) => {
-                  const numValue = value ? parseFloat(value) : undefined;
+                  const numValue = value ? parseFloat(String(value)) : undefined;
                   setLocalFilters((prev) => ({
                     ...prev,
                     quantityRange: {
@@ -530,7 +530,7 @@ export function ItemFilterDrawerContent({
                 placeholder="Mín"
                 value={localFilters.totalPriceRange?.min?.toString() || ""}
                 onChangeText={(value) => {
-                  const numValue = value ? parseFloat(value) : undefined;
+                  const numValue = value ? parseFloat(String(value)) : undefined;
                   setLocalFilters((prev) => ({
                     ...prev,
                     totalPriceRange: {
@@ -547,7 +547,7 @@ export function ItemFilterDrawerContent({
                 placeholder="Máx"
                 value={localFilters.totalPriceRange?.max?.toString() || ""}
                 onChangeText={(value) => {
-                  const numValue = value ? parseFloat(value) : undefined;
+                  const numValue = value ? parseFloat(String(value)) : undefined;
                   setLocalFilters((prev) => ({
                     ...prev,
                     totalPriceRange: {
@@ -571,7 +571,7 @@ export function ItemFilterDrawerContent({
                 placeholder="Mín"
                 value={localFilters.icmsRange?.min?.toString() || ""}
                 onChangeText={(value) => {
-                  const numValue = value ? parseFloat(value) : undefined;
+                  const numValue = value ? parseFloat(String(value)) : undefined;
                   setLocalFilters((prev) => ({
                     ...prev,
                     icmsRange: {
@@ -588,7 +588,7 @@ export function ItemFilterDrawerContent({
                 placeholder="Máx"
                 value={localFilters.icmsRange?.max?.toString() || ""}
                 onChangeText={(value) => {
-                  const numValue = value ? parseFloat(value) : undefined;
+                  const numValue = value ? parseFloat(String(value)) : undefined;
                   setLocalFilters((prev) => ({
                     ...prev,
                     icmsRange: {

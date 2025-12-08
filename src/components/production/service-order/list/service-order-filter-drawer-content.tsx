@@ -146,8 +146,9 @@ export function ServiceOrderFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={statusOptions}
-              selectedValues={localFilters.statusIn || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statusIn: values }))}
+              value={localFilters.statusIn || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statusIn: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os status"
               searchPlaceholder="Buscar status..."
               emptyText="Nenhum status encontrado"

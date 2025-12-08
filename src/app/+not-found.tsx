@@ -43,7 +43,7 @@ export default function NotFoundScreen() {
         {/* Icon with glow effect */}
         <View style={styles.iconContainer}>
           <View style={[styles.iconGlow, { backgroundColor: colors.destructive + "20" }]} />
-          <Icon name="alert-triangle" size={64} color={colors.destructive} style={styles.icon} />
+          <Icon name="alert-triangle" size={64} color={colors.destructive} />
         </View>
 
         {/* Error code */}

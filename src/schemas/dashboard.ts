@@ -16,19 +16,19 @@ export const inventoryDashboardQuerySchema = baseDashboardQuerySchema.extend({
   categoryId: z.string().uuid().optional(),
   brandId: z.string().uuid().optional(),
   supplierId: z.string().uuid().optional(),
-  includeInactive: z.coerce.boolean().optional().default(false),
+  includeInactive: z.coerce.boolean().optional(),
 });
 
-export type InventoryDashboardQueryFormData = z.infer<typeof inventoryDashboardQuerySchema>;
+export type InventoryDashboardQueryFormData = z.input<typeof inventoryDashboardQuerySchema>;
 
 // HR dashboard query
 export const hrDashboardQuerySchema = baseDashboardQuerySchema.extend({
   sectorId: z.string().uuid().optional(),
   positionId: z.string().uuid().optional(),
-  includeInactive: z.coerce.boolean().optional().default(false),
+  includeInactive: z.coerce.boolean().optional(),
 });
 
-export type HRDashboardQueryFormData = z.infer<typeof hrDashboardQuerySchema>;
+export type HRDashboardQueryFormData = z.input<typeof hrDashboardQuerySchema>;
 
 // Administration dashboard query
 export const administrationDashboardQuerySchema = baseDashboardQuerySchema.extend({
@@ -37,7 +37,7 @@ export const administrationDashboardQuerySchema = baseDashboardQuerySchema.exten
   sectorId: z.string().uuid().optional(),
 });
 
-export type AdministrationDashboardQueryFormData = z.infer<typeof administrationDashboardQuerySchema>;
+export type AdministrationDashboardQueryFormData = z.input<typeof administrationDashboardQuerySchema>;
 
 // Paint dashboard query
 export const paintDashboardQuerySchema = baseDashboardQuerySchema.extend({
@@ -47,25 +47,25 @@ export const paintDashboardQuerySchema = baseDashboardQuerySchema.extend({
   paintIds: z.array(z.string().uuid()).optional(),
   formulaId: z.string().uuid().optional(),
   manufacturers: z.array(z.string()).optional(),
-  includeInactive: z.coerce.boolean().optional().default(false),
+  includeInactive: z.coerce.boolean().optional(),
 });
 
-export type PaintDashboardQueryFormData = z.infer<typeof paintDashboardQuerySchema>;
+export type PaintDashboardQueryFormData = z.input<typeof paintDashboardQuerySchema>;
 
 // Production dashboard query
 export const productionDashboardQuerySchema = baseDashboardQuerySchema.extend({
   customerId: z.string().uuid().optional(),
   sectorId: z.string().uuid().optional(),
   garageId: z.string().uuid().optional(),
-  includeServiceOrders: z.coerce.boolean().optional().default(true),
-  includeCuts: z.coerce.boolean().optional().default(true),
-  includeAirbrush: z.coerce.boolean().optional().default(true),
-  includeTrucks: z.coerce.boolean().optional().default(true),
+  includeServiceOrders: z.coerce.boolean().optional(),
+  includeCuts: z.coerce.boolean().optional(),
+  includeAirbrush: z.coerce.boolean().optional(),
+  includeTrucks: z.coerce.boolean().optional(),
 });
 
-export type ProductionDashboardQueryFormData = z.infer<typeof productionDashboardQuerySchema>;
+export type ProductionDashboardQueryFormData = z.input<typeof productionDashboardQuerySchema>;
 
 // Unified dashboard query
 export const unifiedDashboardQuerySchema = baseDashboardQuerySchema;
 
-export type UnifiedDashboardQueryFormData = z.infer<typeof unifiedDashboardQuerySchema>;
+export type UnifiedDashboardQueryFormData = z.input<typeof unifiedDashboardQuerySchema>;

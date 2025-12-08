@@ -164,9 +164,9 @@ export default function EmployeeDetailScreen() {
         <Card style={styles.headerCard}>
           <View style={styles.headerContent}>
             <Avatar
-              source={employee.avatar?.url ? { uri: employee.avatar.url } : undefined}
-              fallback={employee.name?.[0]?.toUpperCase() || "F"}
-              size={80}
+              imageUrl={employee.avatar?.url}
+              name={employee.name || "F"}
+              size="lg"
             />
             <View style={styles.headerInfo}>
               <ThemedText style={[styles.employeeName, { color: colors.foreground }]}>

@@ -400,7 +400,7 @@ export function ActivityBatchCreateForm({
                 style={styles.itemSelector}
                 selectedItems={multiStepForm.selectedItems}
                 quantities={multiStepForm.quantities}
-                onSelectItem={multiStepForm.toggleItemSelection}
+                onSelectItem={(itemId) => multiStepForm.toggleItemSelection(itemId)}
                 onQuantityChange={multiStepForm.setItemQuantity}
                 showQuantityInput
                 minQuantity={1}
@@ -417,7 +417,7 @@ export function ActivityBatchCreateForm({
                 onBrandIdsChange={multiStepForm.setBrandIds}
                 onSupplierIdsChange={multiStepForm.setSupplierIds}
                 allowZeroStock={true}
-                emptyMessage="Nenhum item encontrado"
+                emptyText="Nenhum item encontrado"
               />
               {/* Validation Errors */}
               {multiStepForm.formTouched && Object.keys(multiStepForm.validation.errors).length > 0 && (

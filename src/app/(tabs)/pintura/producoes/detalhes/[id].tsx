@@ -7,7 +7,7 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import { IconHistory } from "@tabler/icons-react-native";
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";

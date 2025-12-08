@@ -7,7 +7,8 @@ import { useVacation } from "@/hooks/useVacation";
 
 export default function VacationEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: vacation, isLoading, error, refetch } = useVacation(id!);
+  const { data: vacationResponse, isLoading, error, refetch } = useVacation(id!);
+  const vacation = vacationResponse?.data;
 
   if (isLoading) {
     return <LoadingScreen message="Carregando férias..." />;

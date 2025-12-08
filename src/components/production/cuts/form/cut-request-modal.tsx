@@ -1,18 +1,15 @@
 import { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, ActivityIndicator, Alert } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Pressable, Keyboard, Alert } from "react-native";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ThemedView, ThemedText } from "@/components/ui";
+import { ThemedText } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Combobox } from "@/components/ui/combobox";
 import { Text } from "@/components/ui/text";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { fontSize, fontWeight } from "@/constants/design-system";
 import { formSpacing, formLayout } from "@/constants/form-styles";
 import {
   CUT_REQUEST_REASON,
@@ -21,8 +18,6 @@ import {
   CUT_TYPE_LABELS,
 } from "@/constants";
 import { useCutBatchMutations } from "@/hooks";
-// import { showToast } from "@/components/ui/toast";
-import { FileItem, useFileViewer } from "@/components/file";
 import type { Cut } from "@/types";
 import {
   IconCut,
@@ -39,7 +34,6 @@ const requestSchema = z.object({
   reason: z.nativeEnum(CUT_REQUEST_REASON, {
     errorMap: () => ({ message: "Motivo inválido" }),
   }),
-  notes: z.string().optional(),
 });
 
 type RequestFormData = z.infer<typeof requestSchema>;
@@ -58,10 +52,8 @@ export function CutRequestModal({
   onSuccess,
 }: CutRequestModalProps) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { batchCreateAsync } = useCutBatchMutations();
-  const { actions: fileViewerActions } = useFileViewer();
 
   const {
     control,
@@ -75,7 +67,6 @@ export function CutRequestModal({
     defaultValues: {
       quantity: 1,
       reason: CUT_REQUEST_REASON.WRONG_APPLY,
-      notes: "",
     },
     mode: "onChange",
   });
@@ -91,18 +82,14 @@ export function CutRequestModal({
   const reason = watch("reason");
 
   const onSubmit = async (data: RequestFormData) => {
-    console.log('[CutRequestModal] onSubmit called with data:', data);
-
     if (!cutItem) {
-      console.log('[CutRequestModal] No cutItem, showing error');
       Alert.alert("Erro", "Nenhum corte selecionado");
       return;
     }
 
-    console.log('[CutRequestModal] cutItem:', cutItem);
     setIsSubmitting(true);
     try {
-      const { quantity, notes, ...requestData } = data;
+      const { quantity, ...requestData } = data;
 
       // Create multiple new cuts based on the original cut
       const cuts = Array.from({ length: quantity }, () => ({
@@ -113,8 +100,6 @@ export function CutRequestModal({
         parentCutId: cutItem.id,
         ...(cutItem.taskId && { taskId: cutItem.taskId }),
       }));
-
-      console.log('[CutRequestModal] Creating cuts:', cuts);
 
       const response = await batchCreateAsync(
         { cuts },
@@ -133,10 +118,6 @@ export function CutRequestModal({
         },
       );
 
-      console.log('[CutRequestModal] Response:', response);
-
-      // API client already shows success alert
-
       onSuccess?.(response.data.success);
       reset();
       onClose();
@@ -154,18 +135,9 @@ export function CutRequestModal({
     onClose();
   };
 
-  // Get proper filename - try multiple possible fields
+  // Get proper filename
   const file = cutItem?.file;
   const fileName = file?.filename || file?.key || "arquivo";
-  const taskName = cutItem?.task?.name;
-  const customerName = cutItem?.task?.customer?.name;
-
-  // Handle file press to open viewer modal
-  const handleFilePress = () => {
-    if (file) {
-      fileViewerActions.viewFile(file);
-    }
-  };
 
   // Reason options for combobox
   const reasonOptions = Object.entries(CUT_REQUEST_REASON_LABELS).map(
@@ -178,160 +150,109 @@ export function CutRequestModal({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
+      animationType="fade"
+      transparent={true}
       onRequestClose={handleClose}
     >
-      <ThemedView
-        style={[
-          styles.container,
-          {
-            backgroundColor: colors.background,
-          },
-        ]}
-      >
-        {/* Drag Indicator */}
-        <View style={styles.dragIndicatorContainer}>
-          <View style={[styles.dragIndicator, { backgroundColor: colors.border }]} />
-        </View>
-
-        {/* Header */}
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerCenter}>
-            <View style={styles.headerTitleRow}>
+      <Pressable style={styles.overlay} onPress={handleClose}>
+        <Pressable style={[styles.modal, { backgroundColor: colors.background }]} onPress={() => Keyboard.dismiss()}>
+          {/* Header */}
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerContent}>
               <IconCut size={20} color={colors.primary} />
-              <ThemedText style={styles.headerTitle}>Solicitar Novo Corte</ThemedText>
+              <ThemedText style={styles.headerTitle}>Solicitar Recorte</ThemedText>
             </View>
-            {cutItem && (
-              <ThemedText style={[styles.headerSubtitle, { color: colors.mutedForeground }]} numberOfLines={1}>
-                {fileName}
-              </ThemedText>
-            )}
+            <TouchableOpacity
+              style={[styles.closeButton, { backgroundColor: colors.muted }]}
+              onPress={handleClose}
+              disabled={isSubmitting}
+            >
+              <IconX size={18} color={colors.foreground} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={[styles.closeButton, { backgroundColor: colors.muted }]}
-            onPress={handleClose}
-            disabled={isSubmitting}
-          >
-            <IconX size={20} color={colors.foreground} />
-          </TouchableOpacity>
-        </View>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardView}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-        >
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* File Preview - Click to open full viewer */}
-            {file && (
-              <View style={styles.filePreviewContainer}>
-                <View style={styles.filePreviewRow}>
-                  <FileItem
-                    file={file}
-                    viewMode="grid"
-                    onPress={handleFilePress}
-                    showFilename={false}
-                    showFileSize={false}
-                  />
-                  <View style={styles.fileInfoContainer}>
-                    <Badge variant="outline" style={styles.typeBadge}>
-                      {CUT_TYPE_LABELS[cutItem!.type]}
-                    </Badge>
-                    {taskName && (
-                      <ThemedText style={[styles.taskInfo, { color: colors.mutedForeground }]} numberOfLines={2}>
-                        {taskName}
-                        {customerName && ` - ${customerName}`}
-                      </ThemedText>
-                    )}
-                  </View>
-                </View>
+          {/* Content */}
+          <View style={styles.content}>
+            {/* File name */}
+            <ThemedText style={[styles.fileName, { color: colors.mutedForeground }]} numberOfLines={1}>
+              {fileName}
+            </ThemedText>
+
+            {/* Current cut info */}
+            {cutItem && (
+              <View style={[styles.currentInfo, { backgroundColor: colors.muted }]}>
+                <ThemedText style={[styles.currentInfoLabel, { color: colors.mutedForeground }]}>
+                  Tipo:
+                </ThemedText>
+                <ThemedText style={styles.currentInfoValue}>
+                  {CUT_TYPE_LABELS[cutItem.type]}
+                </ThemedText>
               </View>
             )}
 
-            {/* Quantity Field */}
-            <View style={styles.formGroup}>
-              <ThemedText style={styles.label}>
-                Quantidade de Novos Cortes
-              </ThemedText>
-              <Controller
-                control={control}
-                name="quantity"
-                render={({ field: { onChange, value } }) => (
-                  <Input
-                    value={value?.toString() || ""}
-                    onChangeText={(text) => {
-                      const num = parseInt(text) || 1;
-                      onChange(num);
-                    }}
-                    keyboardType="numeric"
-                    placeholder="1"
-                    error={errors.quantity?.message}
-                  />
+            {/* Reason and Quantity Row */}
+            <View style={styles.formRow}>
+              {/* Reason Field - 2/3 width */}
+              <View style={styles.reasonField}>
+                <ThemedText style={styles.label}>Motivo</ThemedText>
+                <Controller
+                  control={control}
+                  name="reason"
+                  render={({ field: { onChange, value } }) => (
+                    <Combobox
+                      options={reasonOptions}
+                      value={value}
+                      onValueChange={onChange}
+                      placeholder="Selecione o motivo"
+                      searchable={false}
+                      clearable={false}
+                    />
+                  )}
+                />
+                {errors.reason && (
+                  <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
+                    {errors.reason.message}
+                  </ThemedText>
                 )}
-              />
-              {errors.quantity && (
-                <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
-                  {errors.quantity.message}
-                </ThemedText>
-              )}
-            </View>
+              </View>
 
-            {/* Reason Field - Using Combobox like web version */}
-            <View style={styles.formGroup}>
-              <ThemedText style={styles.label}>Motivo da Solicitação</ThemedText>
-              <Controller
-                control={control}
-                name="reason"
-                render={({ field: { onChange, value } }) => (
-                  <Combobox
-                    options={reasonOptions}
-                    value={value}
-                    onValueChange={onChange}
-                    placeholder="Selecione o motivo"
-                    searchable={false}
-                    clearable={false}
-                  />
-                )}
-              />
-              {errors.reason && (
-                <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
-                  {errors.reason.message}
-                </ThemedText>
-              )}
+              {/* Quantity Field - 1/3 width */}
+              <View style={styles.quantityField}>
+                <ThemedText style={styles.label}>Qnt</ThemedText>
+                <Controller
+                  control={control}
+                  name="quantity"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      value={value?.toString() || ""}
+                      onChangeText={(text) => {
+                        const num = parseInt(text) || 1;
+                        onChange(num);
+                      }}
+                      keyboardType="numeric"
+                      placeholder="1"
+                      error={errors.quantity?.message}
+                    />
+                  )}
+                />
+              </View>
             </View>
 
             {/* Summary - only show when quantity > 1 */}
             {quantity > 1 && (
-              <Card style={[styles.summaryCard, { backgroundColor: colors.muted }]}>
-                <CardContent style={styles.summaryContent}>
-                  <ThemedText style={styles.summaryTitle}>
-                    Serão criados {quantity} novos cortes
-                  </ThemedText>
-                  <ThemedText style={[styles.summarySubtitle, { color: colors.mutedForeground }]}>
-                    Motivo: {CUT_REQUEST_REASON_LABELS[reason]}
-                  </ThemedText>
-                </CardContent>
-              </Card>
+              <View style={[styles.summary, { backgroundColor: colors.muted }]}>
+                <ThemedText style={styles.summaryText}>
+                  Serão criados {quantity} novos cortes
+                </ThemedText>
+                <ThemedText style={[styles.summarySubtext, { color: colors.mutedForeground }]}>
+                  Motivo: {CUT_REQUEST_REASON_LABELS[reason]}
+                </ThemedText>
+              </View>
             )}
-          </ScrollView>
+          </View>
 
-          {/* Footer - SimpleFormActionBar style */}
-          <View
-            style={[
-              styles.actionBar,
-              {
-                borderColor: colors.border,
-                backgroundColor: colors.card,
-                marginBottom: insets.bottom + formSpacing.cardMarginBottom,
-              },
-            ]}
-          >
+          {/* Footer */}
+          <View style={[styles.footer, { borderTopColor: colors.border }]}>
             <View style={styles.buttonWrapper}>
               <Button
                 variant="outline"
@@ -346,9 +267,7 @@ export function CutRequestModal({
             <View style={styles.buttonWrapper}>
               <Button
                 variant="default"
-                onPress={handleSubmit(onSubmit, (errors) => {
-                  console.log('[CutRequestModal] Validation errors:', errors);
-                })}
+                onPress={handleSubmit(onSubmit)}
                 disabled={!isValid || isSubmitting || !cutItem}
               >
                 {isSubmitting ? (
@@ -362,91 +281,83 @@ export function CutRequestModal({
               </Button>
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </ThemedView>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  overlay: {
     flex: 1,
-  },
-  dragIndicatorContainer: {
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
     alignItems: "center",
-    paddingTop: 8,
-    paddingBottom: 4,
+    padding: 24,
   },
-  dragIndicator: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
+  modal: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: 16,
+    overflow: "hidden",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitleRow: {
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "600",
   },
-  headerSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-    maxWidth: "80%",
-  },
   closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
   },
-  keyboardView: {
-    flex: 1,
+  content: {
+    padding: 16,
+    gap: 12,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  filePreviewContainer: {
-    marginBottom: spacing.sm,
-  },
-  filePreviewRow: {
-    flexDirection: "row",
-    gap: spacing.md,
-    alignItems: "flex-start",
-  },
-  fileInfoContainer: {
-    flex: 1,
-    gap: spacing.xs,
-    justifyContent: "center",
-  },
-  typeBadge: {
-    alignSelf: "flex-start",
-  },
-  taskInfo: {
+  fileName: {
     fontSize: fontSize.sm,
+    textAlign: "center",
   },
-  formGroup: {
-    gap: spacing.xs,
+  currentInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 10,
+    borderRadius: 8,
+  },
+  currentInfoLabel: {
+    fontSize: fontSize.xs,
+  },
+  currentInfoValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  formRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  reasonField: {
+    flex: 2,
+    gap: 6,
+  },
+  quantityField: {
+    flex: 1,
+    gap: 6,
   },
   label: {
     fontSize: fontSize.sm,
@@ -456,29 +367,23 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     marginTop: 4,
   },
-  summaryCard: {
-    padding: 0,
-    borderRadius: 12,
+  summary: {
+    padding: 10,
+    borderRadius: 8,
+    gap: 2,
   },
-  summaryContent: {
-    gap: 4,
-  },
-  summaryTitle: {
+  summaryText: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
   },
-  summarySubtitle: {
+  summarySubtext: {
     fontSize: fontSize.xs,
   },
-  // ActionBar styles - matching SimpleFormActionBar
-  actionBar: {
+  footer: {
     flexDirection: "row",
     gap: formSpacing.rowGap,
     padding: formSpacing.actionBarPadding,
-    borderRadius: formLayout.cardBorderRadius,
-    borderWidth: formLayout.borderWidth,
-    marginHorizontal: formSpacing.containerPaddingHorizontal,
-    marginTop: spacing.md,
+    borderTopWidth: formLayout.borderWidth,
   },
   buttonWrapper: {
     flex: 1,

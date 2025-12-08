@@ -11,7 +11,7 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorScreen } from '@/components/ui/error-screen';
 import { Combobox } from '@/components/ui/combobox';
 import { SearchBar } from '@/components/ui/search-bar';
-import { Badge} from '@/components/ui/badge';
+import { Badge, BadgeProps } from '@/components/ui/badge';
 
 interface LogEntry {
   timestamp: string;
@@ -156,7 +156,7 @@ export default function ServerLogsScreen() {
           <ThemedText className="text-sm font-medium mb-2">Serviço</ThemedText>
           <Combobox
             value={selectedService}
-            onValueChange={setSelectedService}
+            onValueChange={(value) => setSelectedService(typeof value === 'string' ? value : '')}
             options={serviceOptions}
             placeholder="Selecione um serviço"
             searchable={false}
@@ -175,7 +175,7 @@ export default function ServerLogsScreen() {
 
           <Combobox
             value={levelFilter}
-            onValueChange={setLevelFilter}
+            onValueChange={(value) => setLevelFilter(typeof value === 'string' ? value : '')}
             options={[
               { value: "", label: "Todos" },
               ...Object.keys(LOG_LEVELS).map(level => ({
@@ -185,7 +185,6 @@ export default function ServerLogsScreen() {
             ]}
             placeholder="Nível"
             searchable={false}
-            style={{ width: 96 }}
           />
         </ThemedView>
 
@@ -194,14 +193,13 @@ export default function ServerLogsScreen() {
           <ThemedView className="flex-row gap-2 items-center">
             <Combobox
               value={lineLimit.toString()}
-              onValueChange={(value) => setLineLimit(parseInt(value))}
+              onValueChange={(value) => setLineLimit(parseInt(typeof value === 'string' ? value : '100'))}
               options={LINE_LIMITS.map(limit => ({
                 value: limit.value.toString(),
                 label: limit.label
               }))}
               placeholder="Selecionar"
               searchable={false}
-              style={{ minWidth: 140 }}
             />
 
             <Button

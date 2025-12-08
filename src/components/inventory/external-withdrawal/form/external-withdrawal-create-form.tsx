@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { View, ScrollView, StyleSheet, Pressable } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconUser, IconPackage, IconFileText, IconReceipt } from "@tabler/icons-react-native";
 
@@ -56,8 +56,6 @@ export function ExternalWithdrawalCreateForm() {
     withdrawerName,
     type,
     notes,
-    nfeId,
-    receiptId,
     selectedItems,
     quantities,
     prices,

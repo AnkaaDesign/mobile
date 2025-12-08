@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { View, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from "react-native";
+import { useState, useEffect, useMemo } from "react";
+import { View, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -7,16 +7,15 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { SimpleFormField } from "@/components/ui/simple-form-field";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 import { SkeletonCard } from "@/components/ui/loading";
 import { LayoutForm } from "@/components/production/layout/layout-form";
 import { useTaskDetail, useLayoutsByTruck, useLayoutMutations } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import { routes } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { canEditLayouts, canEditLayoutsOnly, canEditLayoutForTask } from "@/utils/permissions/entity-permissions";
 import type { LayoutCreateFormData } from "@/schemas";
@@ -33,9 +32,7 @@ export default function LayoutOnlyEditScreen() {
 
   // Check permissions - Only LEADER and LOGISTIC can use this page
   // ADMIN should use the full edit page instead
-  const userPrivilege = user?.sector?.privileges;
   const canEditLayout = canEditLayouts(user);
-  const isLayoutOnlyUser = canEditLayoutsOnly(user);
 
   // Fetch task details
   const {
@@ -52,7 +49,7 @@ export default function LayoutOnlyEditScreen() {
   const task = response?.data;
 
   // Fetch truck layouts if task has a truck
-  const truckId = task?.truck?.id || task?.truckId;
+  const truckId = task?.truck?.id;
   const { data: layoutsData, isLoading: isLoadingLayouts } = useLayoutsByTruck(truckId || "", {
     include: { layoutSections: true },
     enabled: !!truckId,
@@ -470,7 +467,7 @@ export default function LayoutOnlyEditScreen() {
       </KeyboardAvoidingView>
 
       {/* Action Buttons */}
-      <SimpleFormActionBar
+      <FormActionBar
         onCancel={handleCancel}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting || isSavingTruckLayout}

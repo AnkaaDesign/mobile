@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useObservationMutations, useTasks } from "@/hooks";
-import { observationCreateSchema} from "@/schemas";
+import { observationCreateSchema, type ObservationCreateFormData } from "@/schemas";
 import { LoadingScreen, ErrorScreen, ThemedText, ThemedView, Card, Button, Input, Combobox, SimpleFormField } from "@/components/ui";
 import { IconAlertCircle, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";

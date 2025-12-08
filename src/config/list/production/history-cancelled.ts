@@ -96,7 +96,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
         key: 'sector.name',
         label: 'SETOR',
         sortable: true,
-        width: 1.4,
+        width: 1.6,
         align: 'left',
         render: (task) => task.sector?.name || '-',
         format: 'badge',
@@ -149,7 +149,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
         width: 1.2,
         align: 'left',
         render: (task) => task.updatedAt,
-        format: 'date',
+        format: 'datetime-multiline',
       },
       {
         key: 'term',
@@ -158,7 +158,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
         width: 1.2,
         align: 'left',
         render: (task) => task.term,
-        format: 'date',
+        format: 'datetime-multiline',
       },
       {
         key: 'services',

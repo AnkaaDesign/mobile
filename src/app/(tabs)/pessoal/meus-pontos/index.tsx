@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { IconChevronLeft, IconChevronRight, IconList, IconFingerprint } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -119,11 +119,11 @@ export default function MeusPontosScreen() {
   const calculations: CalculationRow[] = useMemo(() => {
     const apiResponse = calculationsData?.data || calculationsData;
 
-    if (apiResponse?.success === false) {
+    if (apiResponse && 'success' in apiResponse && apiResponse.success === false) {
       return [];
     }
 
-    const secullumData = apiResponse?.data;
+    const secullumData = apiResponse && 'data' in apiResponse ? apiResponse.data : null;
     if (!secullumData) return [];
 
     const { Colunas = [], Linhas = [] } = secullumData;
@@ -206,12 +206,12 @@ export default function MeusPontosScreen() {
 
   // Check if user is not registered in Secullum (from hook response)
   const apiResponse = calculationsData?.data || calculationsData;
-  const isNotRegisteredFromResponse = apiResponse?.notRegistered === true;
+  const isNotRegisteredFromResponse = apiResponse && 'notRegistered' in apiResponse && apiResponse.notRegistered === true;
 
   // Handle API errors
   if (error || isNotRegisteredFromResponse) {
-    const errorMessage = isNotRegisteredFromResponse
-      ? (apiResponse?.message || '')
+    const errorMessage = isNotRegisteredFromResponse && apiResponse && 'message' in apiResponse
+      ? (apiResponse.message || '')
       : ((error as any)?.response?.data?.message || (error as any)?.message || 'Erro ao carregar seus pontos');
 
     // Check if user is not registered in Secullum

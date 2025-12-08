@@ -176,7 +176,7 @@ export default function CreateAutomaticOrderScreen() {
                   render={({ field: { onChange, value } }) => (
                     <Input
                       value={String(value || '')}
-                      onChangeText={(text) => onChange(parseInt(text) || 1)}
+                      onChangeText={(text) => onChange(parseInt(String(text ?? ''), 10) || 1)}
                       placeholder="1"
                       keyboardType="numeric"
                       error={!!errors.frequencyCount}

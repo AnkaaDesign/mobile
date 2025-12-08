@@ -127,8 +127,9 @@ export function ObservationFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={taskOptions}
-              selectedValues={localFilters.taskIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, taskIds: values }))}
+              value={localFilters.taskIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, taskIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todas as tarefas"
               searchPlaceholder="Buscar tarefas..."
               emptyText="Nenhuma tarefa encontrada"

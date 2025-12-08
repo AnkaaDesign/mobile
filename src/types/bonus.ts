@@ -1,4 +1,6 @@
 // packages/types/src/bonus.ts
+// Simplified Bonus entity - redundant fields removed
+// Period dates are computed from year/month (26th of prev month to 25th of current month)
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
 import type { ORDER_BY_DIRECTION } from '@/constants';
@@ -17,11 +19,10 @@ export interface Bonus extends BaseEntity {
   month: number;
   performanceLevel: number;
   baseBonus: number | { toNumber: () => number }; // Decimal from Prisma
-  ponderedTaskCount: number | { toNumber: () => number }; // Decimal from Prisma
-  averageTasksPerUser: number | { toNumber: () => number }; // Decimal from Prisma
+  netBonus: number | { toNumber: () => number }; // Decimal - baseBonus after deductions
+  weightedTasks: number | { toNumber: () => number }; // Decimal - weighted task count for this user
+  averageTaskPerUser: number | { toNumber: () => number }; // Decimal - average tasks per eligible user
   eligibleUsersCount?: number; // Number of eligible users at the time of calculation
-  calculationPeriodStart: Date;
-  calculationPeriodEnd: Date;
 
   // Relations (optional, populated based on query)
   user?: User;
@@ -62,6 +63,11 @@ export interface BonusIncludes {
     | {
         include?: any; // Payroll includes would need proper typing
       };
+  position?:
+    | boolean
+    | {
+        include?: any; // Position includes
+      };
 }
 
 
@@ -72,15 +78,14 @@ export interface BonusIncludes {
 export interface BonusWhere {
   id?: string | { in?: string[]; notIn?: string[] };
   year?: number | { in?: number[]; gte?: number; lte?: number; gt?: number; lt?: number };
-  month?: number | { in?: number[]; gte?: number; lte?: number; gt?: number; lt?: number };
+  month?: number | { in?: number[]; notIn?: number[]; gte?: number; lte?: number; gt?: number; lt?: number };
   userId?: string | { in?: string[]; notIn?: string[] };
   payrollId?: string | { in?: string[]; notIn?: string[] };
-  performanceLevel?: number | { gte?: number; lte?: number; gt?: number; lt?: number };
+  performanceLevel?: number | { in?: number[]; notIn?: number[]; gte?: number; lte?: number; gt?: number; lt?: number };
   baseBonus?: number | { gte?: number; lte?: number; gt?: number; lt?: number };
-  ponderedTaskCount?: number | { gte?: number; lte?: number; gt?: number; lt?: number };
-  averageTasksPerUser?: number | { gte?: number; lte?: number; gt?: number; lt?: number };
-  calculationPeriodStart?: Date | { gte?: Date; lte?: Date; gt?: Date; lt?: Date };
-  calculationPeriodEnd?: Date | { gte?: Date; lte?: Date; gt?: Date; lt?: Date };
+  netBonus?: number | { gte?: number; lte?: number; gt?: number; lt?: number };
+  weightedTasks?: number | { gte?: number; lte?: number; gt?: number; lt?: number };
+  averageTaskPerUser?: number | { gte?: number; lte?: number; gt?: number; lt?: number };
   createdAt?: Date | { gte?: Date; lte?: Date; gt?: Date; lt?: Date };
   updatedAt?: Date | { gte?: Date; lte?: Date; gt?: Date; lt?: Date };
 
@@ -110,10 +115,9 @@ export interface BonusOrderBy {
   month?: ORDER_BY_DIRECTION;
   performanceLevel?: ORDER_BY_DIRECTION;
   baseBonus?: ORDER_BY_DIRECTION;
-  ponderedTaskCount?: ORDER_BY_DIRECTION;
-  averageTasksPerUser?: ORDER_BY_DIRECTION;
-  calculationPeriodStart?: ORDER_BY_DIRECTION;
-  calculationPeriodEnd?: ORDER_BY_DIRECTION;
+  netBonus?: ORDER_BY_DIRECTION;
+  weightedTasks?: ORDER_BY_DIRECTION;
+  averageTaskPerUser?: ORDER_BY_DIRECTION;
   createdAt?: ORDER_BY_DIRECTION;
   updatedAt?: ORDER_BY_DIRECTION;
 
@@ -121,6 +125,9 @@ export interface BonusOrderBy {
   user?: {
     name?: ORDER_BY_DIRECTION;
     createdAt?: ORDER_BY_DIRECTION;
+  };
+  tasks?: {
+    _count?: ORDER_BY_DIRECTION;
   };
 }
 
@@ -147,7 +154,8 @@ export interface BonusGetManyParams {
   skip?: number;
   page?: number;
   take?: number;
-  orderBy?: BonusOrderBy;
+  limit?: number;
+  orderBy?: BonusOrderBy | BonusOrderBy[];
   where?: BonusWhere;
   include?: BonusIncludes;
   searchingFor?: string; // Multi-field search parameter
@@ -173,24 +181,13 @@ export interface BonusCreateFormData {
   userId: string;
   performanceLevel: number;
   baseBonus: number;
-  ponderedTaskCount?: number;
-  averageTasksPerUser?: number;
-  calculationPeriodStart?: Date;
-  calculationPeriodEnd?: Date;
   payrollId?: string;
 }
 
 export interface BonusUpdateFormData {
-  year?: number;
-  month?: number;
-  userId?: string;
   performanceLevel?: number;
   baseBonus?: number;
-  ponderedTaskCount?: number;
-  averageTasksPerUser?: number;
-  calculationPeriodStart?: Date;
-  calculationPeriodEnd?: Date;
-  payrollId?: string;
+  payrollId?: string | null;
 }
 
 // =====================
@@ -204,13 +201,11 @@ export interface LiveBonus {
   month: number;
   performanceLevel: number;
   baseBonus: number;
-  ponderedTaskCount: number;
-  averageTasksPerUser: number;
-  calculationPeriodStart: Date;
-  calculationPeriodEnd: Date;
+  netBonus?: number;
+  weightedTasks: number;
+  averageTaskPerUser: number;
   isLive: true;
   totalTasks?: number;
-  weightedTaskCount?: number;
   tasks?: Task[];
   users?: User[];
   payrollId?: string;
@@ -230,9 +225,7 @@ export interface LiveBonusGetManyResponse {
     totalRecords: number;
     page: number;
     hasNextPage: boolean;
-    calculationPeriod: {
-      start: Date;
-      end: Date;
-    };
+    year: number;
+    month: number;
   };
 }

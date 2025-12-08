@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { View, FlatList, StyleSheet, RefreshControl } from "react-native";
-import { IconSearch, IconFilter, IconX } from "@tabler/icons-react-native";
+import { IconSearch, IconFilter } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
@@ -19,7 +19,6 @@ import { Switch } from "@/components/ui/switch";
 import { NumberInput } from "@/components/ui/number-input";
 import { Pagination } from "@/components/ui/pagination";
 
-import { ExternalWithdrawalItemCard } from "./external-withdrawal-item-card";
 import { ExternalWithdrawalFormFilters } from "./external-withdrawal-form-filters";
 
 interface ExternalWithdrawalItemSelectorProps {
@@ -63,7 +62,6 @@ export function ExternalWithdrawalItemSelector({
   supplierIds = [],
   page = 1,
   pageSize = 20,
-  totalRecords = 0,
   onSelectItem,
   onQuantityChange,
   onPriceChange,
@@ -74,7 +72,6 @@ export function ExternalWithdrawalItemSelector({
   onBrandIdsChange,
   onSupplierIdsChange,
   onPageChange,
-  onPageSizeChange,
   onTotalRecordsChange,
 }: ExternalWithdrawalItemSelectorProps) {
   const { colors } = useTheme();

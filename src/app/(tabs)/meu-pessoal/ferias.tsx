@@ -9,6 +9,7 @@ import { IconFilter, IconLayoutGrid, IconList } from "@tabler/icons-react-native
 import { useTheme } from "@/lib/theme";
 import { useTeamVacationsInfiniteMobile, useCurrentUser } from "@/hooks";
 import { TeamVacationTable } from "@/components/my-team/vacation/team-vacation-table";
+import type { Vacation } from "@/types";
 import { TeamVacationCalendar } from "@/components/my-team/vacation/team-vacation-calendar";
 import { TeamVacationFilterDrawerContent } from "@/components/my-team/vacation/team-vacation-filter-drawer-content";
 import { TeamVacationColumnDrawerContent } from "@/components/my-team/vacation/team-vacation-column-drawer-content";
@@ -139,7 +140,7 @@ export default function MyTeamVacationsScreen() {
   });
 
   // Type alias for vacations
-  const vacations = items;
+  const vacations = items as Vacation[];
 
   const handleVacationPress = useCallback(
     (vacationId: string) => {

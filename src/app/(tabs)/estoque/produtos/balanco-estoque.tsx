@@ -1,8 +1,10 @@
 import { useState, useCallback, useMemo } from "react";
-import { View, FlatList, StyleSheet, TextInput, Alert } from "react-native";
+import { View, FlatList, StyleSheet, TextInput, Alert, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconClipboardCheck, IconAlertTriangle, IconDeviceFloppy } from "@tabler/icons-react-native";
+
+const TABLET_WIDTH_THRESHOLD = 768;
 import { useItemsInfiniteMobile, useItemBatchMutations } from "@/hooks";
 import type { Item } from "@/types";
 import {
@@ -34,6 +36,8 @@ export default function StockBalancePage() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= TABLET_WIDTH_THRESHOLD;
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
@@ -57,18 +61,20 @@ export default function StockBalancePage() {
   }), [searchText]);
 
   const {
-    items,
+    items: rawItems,
     isLoading,
     error,
-    
-    
+
+
     loadMore,
     canLoadMore,
-    
-    
-    
+
+
+
     refresh,
   } = useItemsInfiniteMobile(queryParams);
+
+  const items = rawItems as Item[];
 
   const { batchUpdate } = useItemBatchMutations();
 
@@ -209,7 +215,7 @@ export default function StockBalancePage() {
     const hasChanges = adjustedQuantity !== undefined && adjustedQuantity !== item.quantity;
 
     return (
-      <Card style={styles.itemCard}>
+      <Card style={[styles.itemCard, isTablet && styles.itemCardTablet]}>
         <View style={styles.itemHeader}>
           <View style={styles.itemInfo}>
             <ThemedText style={[styles.itemName, { color: colors.foreground }]} numberOfLines={2}>
@@ -304,78 +310,94 @@ export default function StockBalancePage() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.headerContent}>
-          <View style={styles.titleSection}>
-            <IconClipboardCheck size={24} color={colors.primary} />
-            <ThemedText style={styles.title}>Balanço de Estoque</ThemedText>
+      <View style={isTablet ? styles.tabletWrapper : undefined}>
+        {/* Header */}
+        <View style={[
+          styles.header,
+          { backgroundColor: colors.card, borderBottomColor: colors.border },
+          isTablet && styles.headerTablet
+        ]}>
+          <View style={styles.headerContent}>
+            <View style={styles.titleSection}>
+              <IconClipboardCheck size={24} color={colors.primary} />
+              <ThemedText style={styles.title}>Balanço de Estoque</ThemedText>
+            </View>
+            {adjustments.size > 0 && (
+              <Badge variant="primary">
+                {adjustments.size} {adjustments.size === 1 ? 'alteração' : 'alterações'}
+              </Badge>
+            )}
           </View>
-          {adjustments.size > 0 && (
-            <Badge variant="primary">
-              {adjustments.size} {adjustments.size === 1 ? 'alteração' : 'alterações'}
-            </Badge>
-          )}
         </View>
-      </View>
 
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <SearchBar
-          value={displaySearchText}
-          onChangeText={handleDisplaySearchChange}
-          onSearch={handleSearch}
-          placeholder="Buscar produtos..."
-          style={styles.searchBar}
-          debounceMs={300}
-        />
-      </View>
-
-      {/* Items List */}
-      {hasItems ? (
-        <FlatList<Item>
-          data={items as Item[]}
-          renderItem={renderItemCard}
-          keyExtractor={(item) => item.id}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
-          onEndReached={canLoadMore ? loadMore : undefined}
-          onEndReachedThreshold={0.5}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-        />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <EmptyState
-            icon={searchText ? "search" : "clipboard-check"}
-            title={searchText ? "Nenhum produto encontrado" : "Nenhum produto cadastrado"}
-            description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando o primeiro produto"}
+        {/* Search */}
+        <View style={[styles.searchContainer, isTablet && styles.searchContainerTablet]}>
+          <SearchBar
+            value={displaySearchText}
+            onChangeText={handleDisplaySearchChange}
+            onSearch={handleSearch}
+            placeholder="Buscar produtos..."
+            style={styles.searchBar}
+            debounceMs={300}
           />
         </View>
-      )}
 
-      {/* Action Buttons */}
-      <View style={[styles.actionBar, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: insets.bottom }]}>
-        <Button
-          variant="outline"
-          onPress={handleCancel}
-          disabled={isSaving}
-          style={styles.actionButton}
-        >
-          <ThemedText>Cancelar</ThemedText>
-        </Button>
+        {/* Items List */}
+        {hasItems ? (
+          <FlatList<Item>
+            data={items as Item[]}
+            renderItem={renderItemCard}
+            keyExtractor={(item) => item.id}
+            onRefresh={handleRefresh}
+            refreshing={refreshing}
+            onEndReached={canLoadMore ? loadMore : undefined}
+            onEndReachedThreshold={0.5}
+            contentContainerStyle={[
+              { paddingBottom: 100 },
+              isTablet && styles.listContentTablet
+            ]}
+            numColumns={isTablet ? 2 : 1}
+            key={isTablet ? 'tablet' : 'mobile'}
+            columnWrapperStyle={isTablet ? styles.columnWrapper : undefined}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View style={styles.emptyContainer}>
+            <EmptyState
+              icon={searchText ? "search" : "clipboard-check"}
+              title={searchText ? "Nenhum produto encontrado" : "Nenhum produto cadastrado"}
+              description={searchText ? `Nenhum resultado para "${searchText}"` : "Comece cadastrando o primeiro produto"}
+            />
+          </View>
+        )}
 
-        <Button
-          variant="default"
-          onPress={handleSaveBalance}
-          disabled={adjustments.size === 0 || isSaving}
-          style={styles.actionButton}
-        >
-          <IconDeviceFloppy size={20} color="white" />
-          <ThemedText style={{ color: "white" }}>
-            {isSaving ? "Salvando..." : "Salvar Balanço"}
-          </ThemedText>
-        </Button>
+        {/* Action Buttons */}
+        <View style={[
+          styles.actionBar,
+          { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: insets.bottom },
+          isTablet && styles.actionBarTablet
+        ]}>
+          <Button
+            variant="outline"
+            onPress={handleCancel}
+            disabled={isSaving}
+            style={StyleSheet.flatten([styles.actionButton, isTablet && styles.actionButtonTablet])}
+          >
+            <ThemedText>Cancelar</ThemedText>
+          </Button>
+
+          <Button
+            variant="default"
+            onPress={handleSaveBalance}
+            disabled={adjustments.size === 0 || isSaving}
+            style={StyleSheet.flatten([styles.actionButton, isTablet && styles.actionButtonTablet])}
+          >
+            <IconDeviceFloppy size={20} color="white" />
+            <ThemedText style={{ color: "white" }}>
+              {isSaving ? "Salvando..." : "Salvar Balanço"}
+            </ThemedText>
+          </Button>
+        </View>
       </View>
     </ThemedView>
   );
@@ -385,10 +407,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  tabletWrapper: {
+    flex: 1,
+    maxWidth: 1024,
+    alignSelf: "center",
+    width: "100%",
+  },
   header: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
+  },
+  headerTablet: {
+    paddingHorizontal: spacing.xl,
   },
   headerContent: {
     flexDirection: "row",
@@ -408,13 +439,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
+  searchContainerTablet: {
+    paddingHorizontal: spacing.xl,
+  },
   searchBar: {
     flex: 1,
+  },
+  listContentTablet: {
+    paddingHorizontal: spacing.lg,
+  },
+  columnWrapper: {
+    gap: spacing.md,
   },
   itemCard: {
     marginHorizontal: spacing.md,
     marginVertical: spacing.sm,
     padding: spacing.md,
+  },
+  itemCardTablet: {
+    flex: 1,
+    marginHorizontal: 0,
   },
   itemHeader: {
     flexDirection: "row",
@@ -499,11 +543,21 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     gap: spacing.sm,
   },
+  actionBarTablet: {
+    paddingHorizontal: spacing.xl,
+    justifyContent: "flex-end",
+    gap: spacing.md,
+  },
   actionButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.xs,
+  },
+  actionButtonTablet: {
+    flex: 0,
+    minWidth: 160,
+    paddingHorizontal: spacing.lg,
   },
 });

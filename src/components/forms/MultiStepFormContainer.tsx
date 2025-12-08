@@ -127,7 +127,7 @@ export function MultiStepFormContainer({
   const isLastStep = currentStep === steps.length;
 
   // Intelligent keyboard handling
-  const { state, handlers, refs, getContentPadding } = useKeyboardAwareScroll();
+  const { handlers, refs, getContentPadding } = useKeyboardAwareScroll();
 
   // Memoize context value to prevent unnecessary re-renders
   const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
@@ -178,7 +178,7 @@ export function MultiStepFormContainer({
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoiding}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -222,7 +222,6 @@ export function MultiStepFormContainer({
           cancelLabel={cancelLabel}
           isFirstStep={isFirstStep}
           isLastStep={isLastStep}
-          isTablet={isTablet}
           {...actionBarProps}
         />
       </KeyboardAvoidingView>

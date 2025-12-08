@@ -1,6 +1,5 @@
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";

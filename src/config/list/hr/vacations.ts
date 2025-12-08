@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Vacation } from '@/types'
-import { VACATION_STATUS, VACATION_TYPE, VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '@/constants/enum-labels'
+import { VACATION_STATUS, VACATION_TYPE } from '@/constants/enums'
+import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS } from '@/constants/enum-labels'
 import { formatDate } from '@/utils'
 
 export const vacationsListConfig: ListConfig<Vacation> = {

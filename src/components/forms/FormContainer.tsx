@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
 import {
-  View,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -12,7 +11,7 @@ import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { FormHeader } from "@/components/ui/form-header";
-import { SimpleFormActionBar, SimpleFormActionBarProps } from "./SimpleFormActionBar";
+import { FormActionBar } from "./FormActionBar";
 import { useKeyboardAwareScroll } from "@/hooks/useKeyboardAwareScroll";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
@@ -92,7 +91,7 @@ export function FormContainer({
 }: FormContainerProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { state, handlers, refs, getContentPadding } = useKeyboardAwareScroll();
+  const { handlers, refs, getContentPadding } = useKeyboardAwareScroll();
 
   // Memoize context value to prevent unnecessary re-renders
   const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
@@ -157,7 +156,7 @@ export function FormContainer({
 
         {/* Bottom Action Bar (if not in header) */}
         {!actionsInHeader && (
-          <SimpleFormActionBar
+          <FormActionBar
             onCancel={onCancel}
             onSubmit={onSubmit}
             isSubmitting={isSubmitting}

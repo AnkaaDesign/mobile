@@ -63,7 +63,7 @@ export default function ServerMaintenanceScreen() {
         }, 1000);
       });
     },
-    onSuccess: (_data, settings) => {
+    onSuccess: () => {
       // API client already shows success alert
       queryClient.invalidateQueries({ queryKey: ['systemStatus'] });
       queryClient.invalidateQueries({ queryKey: ['systemHealth'] });
@@ -286,7 +286,7 @@ export default function ServerMaintenanceScreen() {
               <Input
                 placeholder={maintenanceSettings.estimatedDuration}
                 value={estimatedDuration}
-                onChangeText={setEstimatedDuration}
+                onChangeText={(v) => setEstimatedDuration(String(v ?? ''))}
               />
               <ThemedText className="text-xs text-muted-foreground mt-1">
                 Ex: "30 minutos", "2 horas", "até às 14:00"
@@ -305,7 +305,7 @@ export default function ServerMaintenanceScreen() {
               <Input
                 placeholder="Email ou username"
                 value={allowedUser}
-                onChangeText={setAllowedUser}
+                onChangeText={(v) => setAllowedUser(String(v ?? ''))}
                 className="flex-1"
               />
               <Button

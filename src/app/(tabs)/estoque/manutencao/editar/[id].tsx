@@ -1,4 +1,3 @@
-import React from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
@@ -10,12 +9,13 @@ import { Text } from "@/components/ui/text";
 export default function EditMaintenanceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { data: maintenance, isLoading, error } = useMaintenance(id, {
+  const { data: maintenanceResponse, isLoading, error } = useMaintenance(id, {
     include: {
       item: true,
       maintenanceSchedule: true,
     },
   });
+  const maintenance = maintenanceResponse?.data;
 
   if (isLoading) {
     return (

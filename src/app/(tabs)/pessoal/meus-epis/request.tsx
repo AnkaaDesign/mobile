@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { View, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { View, ScrollView, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -93,112 +93,6 @@ export default function RequestPPEScreen() {
       setStockAvailable(null);
     }
   }, [watchedItemId, items?.data]);
-
-  // Validate PPE size compatibility
-  const _validateSizeCompatibility = (itemId: string): { isValid: boolean; message?: string } => {
-    const item = items?.data?.find((i) => i.id === itemId);
-    if (!item) {
-      return { isValid: false, message: "Item não encontrado" };
-    }
-
-    // Check if user has the required size registered
-    const ppeType = item.ppeType;
-
-    // If item doesn't have a specific type that requires sizing, allow request
-    if (!ppeType) {
-      return { isValid: true }; // No specific type, allow request
-    }
-
-    // Check if this PPE type actually requires size registration
-    const typesThatRequireSizes = [
-      PPE_TYPE.SHIRT,
-      "UNIFORM" as any,
-      PPE_TYPE.PANTS,
-      PPE_TYPE.BOOTS,
-      PPE_TYPE.GLOVES,
-      PPE_TYPE.MASK,
-      PPE_TYPE.SLEEVES,
-      PPE_TYPE.RAIN_BOOTS,
-    ];
-
-    // If this type doesn't require sizes, allow request
-    if (!typesThatRequireSizes.includes(ppeType as any)) {
-      return { isValid: true };
-    }
-
-    // Now check if user has PPE size record
-    if (!userPpeSize?.data) {
-      return {
-        isValid: false,
-        message: "Você precisa cadastrar seus tamanhos de EPI antes de solicitar este item",
-      };
-    }
-
-    const userSize = userPpeSize.data;
-
-    // Validate based on PPE type
-    switch (ppeType) {
-      case PPE_TYPE.SHIRT:
-      case "UNIFORM" as any:
-        if (!userSize.shirts) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de camisa",
-          };
-        }
-        break;
-      case PPE_TYPE.PANTS:
-        if (!userSize.pants) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de calça",
-          };
-        }
-        break;
-      case PPE_TYPE.BOOTS:
-        if (!userSize.boots) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de bota",
-          };
-        }
-        break;
-      case PPE_TYPE.GLOVES:
-        if (!userSize.gloves) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de luva",
-          };
-        }
-        break;
-      case PPE_TYPE.MASK:
-        if (!userSize.mask) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de máscara",
-          };
-        }
-        break;
-      case PPE_TYPE.SLEEVES:
-        if (!userSize.sleeves) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de manga",
-          };
-        }
-        break;
-      case PPE_TYPE.RAIN_BOOTS:
-        if (!userSize.rainBoots) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de galocha",
-          };
-        }
-        break;
-    }
-
-    return { isValid: true };
-  };
 
   const handleSubmit = useCallback(async (data: PpeRequestFormData) => {
     console.log('=== [PPE Request Screen] HANDLE SUBMIT CALLED ===');

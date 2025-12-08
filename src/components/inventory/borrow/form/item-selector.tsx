@@ -104,7 +104,7 @@ export function BorrowItemSelector({
   }, []);
 
   // Custom render function for item options
-  const renderItemOption = useCallback((option: ComboboxOption, isSelected: boolean) => {
+  const renderItemOption = useCallback((option: ComboboxOption) => {
     const metadata = option.metadata;
     if (!metadata) {
       return (

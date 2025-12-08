@@ -1,3 +1,4 @@
+export { bonusesListConfig } from './bonuses'
 export { employeesListConfig } from './employees'
 export { warningsListConfig } from './warnings'
 export { vacationsListConfig } from './vacations'

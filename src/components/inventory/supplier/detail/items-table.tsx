@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { View, StyleSheet, ActivityIndicator, FlatList } from "react-native";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";

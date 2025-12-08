@@ -118,19 +118,16 @@ interface ExtendedAxiosInstance extends AxiosInstance {
 const getApiUrl = (): string => {
   // For React Native/Expo apps - check env first as it's most reliable
   if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) {
-    console.log("[API URL] Using EXPO_PUBLIC_API_URL:", process.env.EXPO_PUBLIC_API_URL);
-    return process.env.EXPO_PUBLIC_API_URL; // No /api suffix - using subdomain architecture
+    return process.env.EXPO_PUBLIC_API_URL;
   }
 
   // Check for window object with API URL set (web environment or React Native with polyfill)
   if (typeof (globalThis as any).window !== "undefined" && (globalThis as any).window.__ANKAA_API_URL__) {
-    console.log("[API URL] Using window.__ANKAA_API_URL__:", (globalThis as any).window.__ANKAA_API_URL__);
-    return (globalThis as any).window.__ANKAA_API_URL__; // No /api suffix - using subdomain architecture
+    return (globalThis as any).window.__ANKAA_API_URL__;
   }
 
   // Default fallback
-  console.warn("[API URL] No API URL configured, using localhost fallback");
-  return "http://localhost:3030"; // No /api suffix - using subdomain architecture
+  return "http://localhost:3030";
 };
 
 const DEFAULT_CONFIG: ApiClientConfig = {
@@ -370,11 +367,6 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
     headers: finalConfig.defaultHeaders,
     paramsSerializer: {
       serialize: (params) => {
-        // Log params for debugging in development
-        if (finalConfig.enableLogging && process.env.NODE_ENV === "development") {
-          console.log("[AxiosClient] Serializing params:", JSON.stringify(params, null, 2));
-        }
-
         // Handle complex nested objects by JSON-stringifying them
         // This is needed for nested structures like 'include' that the backend expects as JSON
         const processedParams: Record<string, any> = {};
@@ -427,12 +419,6 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
 
   client.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
-      console.log(`\n🔍 [AXIOS INTERCEPTOR] ========== REQUEST STARTING ==========`);
-      console.log(`🔍 [AXIOS INTERCEPTOR] Method: ${config.method?.toUpperCase()}`);
-      console.log(`🔍 [AXIOS INTERCEPTOR] URL: ${config.url}`);
-      console.log(`🔍 [AXIOS INTERCEPTOR] Full URL: ${config.baseURL}${config.url}`);
-      console.log(`🔍 [AXIOS INTERCEPTOR] Instance ID: ${(client as any).__instanceId || "unknown"}`);
-
       const requestId = generateRequestId();
       const startTime = Date.now();
 
@@ -449,17 +435,9 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       config.metadata = metadata;
 
       // Auto-attach token if tokenProvider is configured
-      // Check for updated token provider first (set via setTokenProvider)
       const tokenProvider = (client as any).__tokenProvider || globalTokenProvider || finalConfig.tokenProvider;
 
-      console.log(`🔍 [AXIOS INTERCEPTOR] Has token provider: ${!!tokenProvider}`);
-      console.log(`🔍 [AXIOS INTERCEPTOR] Token provider sources:`);
-      console.log(`   - __tokenProvider: ${!!(client as any).__tokenProvider}`);
-      console.log(`   - globalTokenProvider: ${!!globalTokenProvider}`);
-      console.log(`   - finalConfig.tokenProvider: ${!!finalConfig.tokenProvider}`);
-
-      // Always check for fresh token, even if Authorization header exists
-      // But skip public auth endpoints to avoid sending corrupted tokens
+      // Skip public auth endpoints to avoid sending corrupted tokens
       const isPublicAuthEndpoint = config.url?.includes("/auth/login") ||
                                     config.url?.includes("/auth/register") ||
                                     config.url?.includes("/auth/password-reset") ||
@@ -467,67 +445,39 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
                                     config.url?.includes("/auth/send-verification") ||
                                     config.url?.includes("/auth/resend-verification");
 
-      console.log(`🔍 [AXIOS INTERCEPTOR] Is public auth endpoint: ${isPublicAuthEndpoint}`);
-
       if (tokenProvider && !isPublicAuthEndpoint) {
         try {
-          console.log(`🔍 [AXIOS INTERCEPTOR] Calling tokenProvider to get token...`);
           const token = await tokenProvider();
-          console.log(`🔍 [AXIOS INTERCEPTOR] Token provider returned: ${token ? `TOKEN EXISTS (length: ${token.length}, preview: ${token.substring(0, 20)}...)` : "❌ NULL - NO TOKEN!"}`);
-
-          // If we have a token, use it
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-            console.log(`✅ [AXIOS INTERCEPTOR] Authorization header SET for ${config.url}`);
-          } else if (!config.url?.includes("/auth/")) {
-            console.log(`❌ [AXIOS INTERCEPTOR] NO TOKEN for non-auth endpoint: ${config.url}`);
+          } else if (!config.url?.includes("/auth/") && (client as any).__justLoggedIn) {
             // If no token and not an auth endpoint, check if we just logged in
-            if ((client as any).__justLoggedIn) {
-              console.log("[AXIOS INTERCEPTOR] No token found after login, waiting 300ms and retrying...");
-              await delay(300);
-              const retryToken = await tokenProvider();
-              if (retryToken) {
-                config.headers.Authorization = `Bearer ${retryToken}`;
-                console.log(`✅ [AXIOS INTERCEPTOR] Authorization header SET on retry`);
-              } else {
-                console.log(`❌ [AXIOS INTERCEPTOR] Still NO TOKEN after retry!`);
-              }
-            } else {
-              console.log(`⚠️  [AXIOS INTERCEPTOR] No token and not just logged in - request will be sent WITHOUT auth!`);
+            await delay(300);
+            const retryToken = await tokenProvider();
+            if (retryToken) {
+              config.headers.Authorization = `Bearer ${retryToken}`;
             }
           }
-        } catch (error) {
+        } catch {
           // Silently fail if token retrieval fails
-          console.error("❌ [AXIOS INTERCEPTOR] Failed to retrieve auth token:", error);
         }
-      } else if (!tokenProvider) {
-        console.log(`❌ [AXIOS INTERCEPTOR] NO TOKEN PROVIDER CONFIGURED!`);
       }
-
-      console.log(`🔍 [AXIOS INTERCEPTOR] Final Authorization header: ${config.headers.Authorization ? "SET ✅" : "NOT SET ❌"}`);
-      console.log(`🔍 [AXIOS INTERCEPTOR] ========== REQUEST PREPARED ==========\n`);
 
       // Add request ID header if enabled
       if (finalConfig.enableRequestId) {
         config.headers["X-Request-ID"] = requestId;
       }
 
-      // Debug logging for batch operations
+      // Fix array serialization for batch operations
       if (config.url?.includes("/batch") && config.method?.toLowerCase() === "put") {
-        console.log("🔍 BATCH DEBUG: Request interceptor data:");
-        console.log("🔍 BATCH DEBUG: config.data type:", Array.isArray(config.data) ? "direct array" : typeof config.data);
-        console.log("🔍 BATCH DEBUG: config.data:", config.data);
         if (config.data && typeof config.data === "object" && !Array.isArray(config.data)) {
-          // Generic fix for any array field that was serialized as an object
           const fixedData: any = {};
           for (const key in config.data) {
             const value = config.data[key];
-            // Check if this looks like an array that was serialized as an object (has numeric keys)
             if (value && typeof value === "object" && !Array.isArray(value)) {
               const keys = Object.keys(value);
               const isNumericKeys = keys.every((k) => /^\d+$/.test(k));
               if (isNumericKeys) {
-                console.log(`🔍 BATCH DEBUG: Converting ${key} from object to array`);
                 fixedData[key] = Object.values(value);
               } else {
                 fixedData[key] = value;
@@ -536,28 +486,17 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
               fixedData[key] = value;
             }
           }
-          config.data = fixedData;
-
-          // Force proper JSON serialization
-          config.data = JSON.parse(JSON.stringify(config.data));
+          config.data = JSON.parse(JSON.stringify(fixedData));
         }
       }
 
       // Fix array serialization issue for external-withdrawals
       if (config.url?.includes("/external-withdrawals") && config.method?.toLowerCase() === "post") {
         if (config.data && typeof config.data === "object" && !Array.isArray(config.data)) {
-          // Fix array serialization issue for items
           if (config.data.items && typeof config.data.items === "object" && !Array.isArray(config.data.items)) {
-            console.log("🔍 EXTERNAL WITHDRAWAL DEBUG: Converting items object to array");
-            config.data = {
-              ...config.data,
-              items: Object.values(config.data.items),
-            };
+            config.data = { ...config.data, items: Object.values(config.data.items) };
           }
-
-          // Ensure data is properly serialized
           if (config.data.items && Array.isArray(config.data.items)) {
-            // Force proper JSON serialization by stringify and parse
             config.data = JSON.parse(JSON.stringify(config.data));
           }
         }
@@ -574,13 +513,7 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
         const cachedResponse = cache.get(cacheKey);
 
         if (cachedResponse) {
-          if (finalConfig.enableLogging) {
-            console.log(`🎯 Cache hit for ${config.method?.toUpperCase()} ${config.url}`);
-          }
-
           metadata.isCached = true;
-
-          // Return cached response immediately
           return Promise.resolve(config);
         }
       }
@@ -590,54 +523,11 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       config.cancelToken = cancelToken.token;
       cancelTokens.set(requestId, cancelToken);
 
-      // Logging
-      if (finalConfig.enableLogging) {
-        console.log(`🚀 ${metadata.method} ${metadata.url} [${requestId}]`);
-
-        // Additional debugging for auth requests (login, register, etc.)
-        if (config.url?.includes("/auth/")) {
-          console.log("[AXIOS DEBUG] Auth request:");
-          console.log("[AXIOS DEBUG] - Method:", config.method?.toUpperCase());
-          console.log("[AXIOS DEBUG] - URL:", config.url);
-          console.log("[AXIOS DEBUG] - Base URL:", config.baseURL);
-          console.log("[AXIOS DEBUG] - Full URL:", config.baseURL + config.url);
-          console.log("[AXIOS DEBUG] - Has data:", !!config.data);
-        }
-
-        // Additional debugging for customer requests
-        if (config.url?.includes("/customers/") && config.method?.toLowerCase() === "get") {
-          console.log("[AXIOS DEBUG] Customer GET request:");
-          console.log("[AXIOS DEBUG] - URL:", config.url);
-          console.log("[AXIOS DEBUG] - Params:", JSON.stringify(config.params, null, 2));
-          console.log("[AXIOS DEBUG] - Base URL:", config.baseURL);
-          console.log("[AXIOS DEBUG] - Full URL:", config.baseURL + config.url);
-        }
-
-        // Additional debugging for batch update requests
-        if (config.url?.includes("/batch") && config.method?.toLowerCase() === "put") {
-          console.log("=== AXIOS CLIENT LAYER DEBUGGING ===");
-          console.log("Step 24 - Axios interceptor request body:", JSON.stringify(config.data, null, 2));
-          console.log("Step 25 - Axios interceptor request params:", JSON.stringify(config.params, null, 2));
-          console.log("Step 26 - Full axios config:", {
-            method: config.method,
-            url: config.url,
-            baseURL: config.baseURL,
-            headers: config.headers,
-            timeout: config.timeout,
-          });
-        }
-      }
-
       return config;
     },
     (error: AxiosError) => {
-      if (finalConfig.enableLogging) {
-        console.error("❌ Request setup error:", error.message);
-      }
-
       const enhancedError = new Error("Erro ao preparar a requisição. Tente novamente.") as EnhancedError;
       enhancedError.category = ErrorCategory.UNKNOWN;
-
       return Promise.reject(enhancedError);
     },
   );
@@ -664,16 +554,6 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
         cache.set(cacheKey, response.data);
       }
 
-      // Logging
-      if (finalConfig.enableLogging) {
-        const cacheLabel = metadata.isCached ? " (cached)" : "";
-        console.log(`✅ ${metadata.method} ${metadata.url} [${requestId}] - ${duration}ms${cacheLabel}`);
-
-        // Debug log for auth endpoints
-        if (finalConfig.enableLogging && metadata.url?.includes("/auth/")) {
-          console.log("[DEBUG] Auth response data:", response.data);
-        }
-      }
 
       // Dismiss any pending retry toasts for this request
       if (finalConfig.enableNotifications && metadata) {
@@ -702,13 +582,6 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       return response;
     },
     async (error: AxiosError<ApiErrorResponse>) => {
-      console.log(`\n❌ [AXIOS RESPONSE ERROR] ========== ERROR OCCURRED ==========`);
-      console.log(`❌ [AXIOS RESPONSE ERROR] Status Code: ${error.response?.status || "NO RESPONSE"}`);
-      console.log(`❌ [AXIOS RESPONSE ERROR] Status Text: ${error.response?.statusText || "N/A"}`);
-      console.log(`❌ [AXIOS RESPONSE ERROR] URL: ${error.config?.url}`);
-      console.log(`❌ [AXIOS RESPONSE ERROR] Method: ${error.config?.method?.toUpperCase()}`);
-      console.log(`❌ [AXIOS RESPONSE ERROR] Response Data:`, JSON.stringify(error.response?.data, null, 2));
-
       const config = error.config as InternalAxiosRequestConfig;
       const metadata = config?.metadata as RequestMetadata;
       const requestId = metadata?.requestId;
@@ -721,10 +594,6 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       // Handle retry logic
       if (config && metadata && shouldRetry(error, metadata.retryCount, finalConfig.retryAttempts)) {
         metadata.retryCount++;
-
-        if (finalConfig.enableLogging) {
-          console.log(`🔄 Retrying ${metadata.method} ${metadata.url} [${requestId}] - Attempt ${metadata.retryCount}/${finalConfig.retryAttempts}`);
-        }
 
         // Show retry notification
         if (finalConfig.enableNotifications) {
@@ -745,15 +614,7 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       }
 
       // Process and handle the error
-      console.log(`🔍 [AXIOS RESPONSE ERROR] Processing error with handleApiError()...`);
       const errorInfo = handleApiError(error);
-      console.log(`🔍 [AXIOS RESPONSE ERROR] Error Info:`, {
-        title: errorInfo.title,
-        message: errorInfo.message,
-        _statusCode: errorInfo._statusCode,
-        category: errorInfo.category,
-        isRetryable: errorInfo.isRetryable,
-      });
 
       // NOTE: This API uses JWT access tokens without separate refresh tokens.
       // The /auth/refresh endpoint requires a valid access token to extract userId,
@@ -772,42 +633,18 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
         errorInfo._statusCode === 401 &&
         !config.url?.includes("/auth/login")
       ) {
-        if (finalConfig.enableLogging) {
-          console.log(`[API CLIENT DEBUG] Authentication error detected (401), calling auth error handler`);
-        }
-
         try {
           globalAuthErrorHandler({
             statusCode: errorInfo._statusCode,
             message: errorInfo.message,
             category: errorInfo.category,
           });
-        } catch (handlerError) {
-          if (finalConfig.enableLogging) {
-            console.error("[API CLIENT DEBUG] Error in auth error handler:", handlerError);
-          }
-        }
-      } else if (errorInfo._statusCode === 403) {
-        // Log 403 errors for debugging but don't trigger logout
-        if (finalConfig.enableLogging) {
-          console.log(`[API CLIENT DEBUG] Authorization error (403) - user lacks permission, NOT logging out`);
-        }
-      }
-
-      // Logging
-      if (finalConfig.enableLogging) {
-        const duration = metadata ? Date.now() - metadata.startTime : 0;
-        console.error(`❌ ${metadata?.method || "UNKNOWN"} ${metadata?.url || "UNKNOWN"} [${requestId || "unknown"}] - ${duration}ms`, errorInfo);
+        } catch {}
       }
 
       // Show error notification with detailed messages
       if (finalConfig.enableNotifications && metadata) {
-        // Skip notifications during logout
-        if (isLoggingOut) {
-          if (finalConfig.enableLogging) {
-            console.log("[API CLIENT] Suppressing error toast during logout:", errorInfo.message);
-          }
-        } else {
+        if (!isLoggingOut) {
           // Skip notifications for batch operations - they'll be handled by the dialog
           const isBatchOperation = config?.url?.includes("/batch");
           // Skip notifications for file uploads - they should be handled by upload components
@@ -939,12 +776,6 @@ const handleApiError = (error: unknown): ErrorInfo => {
   let detailedError = "";
 
   if (errorData) {
-    // Debug logging to see what we're working with
-    if (process.env.NODE_ENV === "development") {
-      console.log("🔍 ERROR EXTRACTION DEBUG:");
-      console.log("🔍 Full errorData:", JSON.stringify(errorData, null, 2));
-    }
-
     // Primary extraction - try to get the most detailed error first
     const extractionSources = [
       // Try exception stack first line (most detailed)
@@ -969,10 +800,6 @@ const handleApiError = (error: unknown): ErrorInfo => {
       errorData.message,
     ].filter(Boolean);
 
-    if (process.env.NODE_ENV === "development") {
-      console.log("🔍 Extraction sources:", extractionSources);
-    }
-
     // Find the most detailed error message
     for (const source of extractionSources) {
       if (typeof source === "string") {
@@ -993,10 +820,6 @@ const handleApiError = (error: unknown): ErrorInfo => {
     if (detailedError) {
       mainMessage = detailedError;
       errorMessages = [detailedError];
-
-      if (process.env.NODE_ENV === "development") {
-        console.log("🔍 Selected detailed error:", detailedError);
-      }
     }
 
     // Handle main message if no detailed error found
@@ -1007,10 +830,6 @@ const handleApiError = (error: unknown): ErrorInfo => {
       } else if (typeof errorData.message === "string") {
         mainMessage = errorData.message;
         errorMessages = [errorData.message];
-      }
-
-      if (process.env.NODE_ENV === "development") {
-        console.log("🔍 Using fallback message:", mainMessage);
       }
     }
 
@@ -1140,17 +959,14 @@ let singletonInstance: ExtendedAxiosInstance | null = null;
 
 // Lazy initialization function - creates instance only when first accessed
 const getSingletonInstance = (): ExtendedAxiosInstance => {
-  // Return existing instance if already created
   if (singletonInstance) {
     return singletonInstance;
   }
 
-  // Only create instance in browser environment
   if (typeof (globalThis as any).window === "undefined") {
-    throw new Error("[AXIOS SINGLETON] Cannot create API client in non-browser environment");
+    throw new Error("Cannot create API client in non-browser environment");
   }
 
-  console.log("[AXIOS SINGLETON] Creating THE ONLY instance (lazy initialization)");
   singletonInstance = createApiClient({
     tokenProvider: async () => {
       // Try token sources - for React Native, only use globalTokenProvider
@@ -1161,23 +977,17 @@ const getSingletonInstance = (): ExtendedAxiosInstance => {
       if (globalTokenProvider) {
         try {
           token = await globalTokenProvider();
-        } catch (e) {
-          console.error("[API CLIENT] Token provider error:", e);
-        }
+        } catch {}
       }
 
-      // 2. For web only: Check localStorage as fallback (will return null in React Native)
+      // 2. For web only: Check localStorage as fallback
       if (!token) {
         const localToken = safeLocalStorage.getItem("ankaa_token");
-        if (localToken) {
-          console.log("[API CLIENT] Using token from localStorage fallback");
-          token = localToken;
-        }
+        if (localToken) token = localToken;
       }
 
       // 3. For web only: Check global window token as last resort
       if (!token && typeof (globalThis as any).window !== "undefined" && (globalThis as any).window.__ANKAA_AUTH_TOKEN__) {
-        console.log("[API CLIENT] Using token from window global fallback");
         token = (globalThis as any).window.__ANKAA_AUTH_TOKEN__;
       }
 
@@ -1185,12 +995,8 @@ const getSingletonInstance = (): ExtendedAxiosInstance => {
     },
   });
 
-  // Mark instance
   (singletonInstance as any).__instanceId = "THE-SINGLETON";
-
-  // Store globally for debugging
   (globalThis as any).window.__ANKAA_API_CLIENT__ = singletonInstance;
-  console.log("[AXIOS SINGLETON] THE singleton created with ID:", (singletonInstance as any).__instanceId);
 
   return singletonInstance;
 };
@@ -1218,13 +1024,11 @@ export const apiClient = new Proxy({} as ExtendedAxiosInstance, {
 // Export axios itself for cancel token usage
 export { axios };
 
-// Add a verification function to ensure the singleton is properly initialized
+// Verification function for debugging
 export const verifyApiClient = (): void => {
-  console.log("[API CLIENT] Verifying apiClient...");
-  console.log("[API CLIENT] apiClient exists:", !!apiClient);
-  console.log("[API CLIENT] apiClient instance ID:", (apiClient as any)?.__instanceId);
-  console.log("[API CLIENT] apiClient baseURL:", apiClient?.defaults?.baseURL);
-  console.log("[API CLIENT] apiClient Authorization header:", apiClient?.defaults?.headers?.common?.Authorization);
+  if (__DEV__) {
+    console.log("[API CLIENT] exists:", !!apiClient, "baseURL:", apiClient?.defaults?.baseURL);
+  }
 };
 
 // =====================
@@ -1265,7 +1069,6 @@ export const setAuthToken = (token: string | null): void => {
   } else {
     if (instance.defaults.headers?.common) {
       delete instance.defaults.headers.common["Authorization"];
-      console.log("[API CLIENT] Token cleared from THE singleton headers");
     }
 
     // Clear from localStorage for web only (safeLocalStorage will no-op in React Native)
@@ -1280,13 +1083,9 @@ export const setAuthToken = (token: string | null): void => {
 
 // Set a token provider function that will be called for each request
 export const setTokenProvider = (provider: () => string | null | Promise<string | null>): void => {
-  console.log("[API CLIENT] Setting token provider globally");
   globalTokenProvider = provider;
-
-  // Only set on instance if it's already created (don't force creation)
   if (singletonInstance) {
     (singletonInstance as any).__tokenProvider = provider;
-    console.log("[API CLIENT] Token provider set on THE singleton");
   }
 };
 
@@ -1312,29 +1111,17 @@ export const getAuthErrorHandler = (): ((error: { statusCode: number; message: s
 
 // Update the API URL dynamically
 export const updateApiUrl = (url: string): void => {
-  const newBaseUrl = url; // No /api suffix - using subdomain architecture
-  console.log("[API CLIENT] updateApiUrl called with:", url);
-
-  // First, set the window variable for future instances
   if (typeof (globalThis as any).window !== "undefined") {
     (globalThis as any).window.__ANKAA_API_URL__ = url;
-    console.log("[API CLIENT] Set window.__ANKAA_API_URL__ to:", url);
   }
 
-  // Force update of singleton if it exists, or force its creation with correct URL
   if (singletonInstance) {
-    singletonInstance.defaults.baseURL = newBaseUrl;
-    console.log("[API CLIENT] Updated existing singleton baseURL to:", newBaseUrl);
+    singletonInstance.defaults.baseURL = url;
   } else {
-    // Force create the singleton now with the correct URL
-    // This ensures the URL is applied before any requests are made
     try {
       const instance = getSingletonInstance();
-      instance.defaults.baseURL = newBaseUrl;
-      console.log("[API CLIENT] Created singleton and set baseURL to:", newBaseUrl);
-    } catch {
-      console.log("[API CLIENT] Could not create singleton yet, URL will be used on first request");
-    }
+      instance.defaults.baseURL = url;
+    } catch {}
   }
 };
 
@@ -1354,17 +1141,10 @@ export const setJustLoggedIn = (): void => {
 
 // Force refresh token on all requests
 export const forceTokenRefresh = (token: string): void => {
-  // Get the singleton instance (lazy initialization)
   const instance = getSingletonInstance();
-
-  if (instance && instance.defaults && instance.defaults.headers) {
+  if (instance?.defaults?.headers) {
     instance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    console.log("[API CLIENT] Forced token refresh on THE singleton");
-
-    // Update localStorage for web only (will no-op in React Native)
     safeLocalStorage.setItem("ankaa_token", token);
-
-    // Update global window
     if (typeof (globalThis as any).window !== "undefined") {
       (globalThis as any).window.__ANKAA_AUTH_TOKEN__ = token;
     }
@@ -1390,11 +1170,6 @@ export const clearApiCache = (): void => {
 // Set the logging out flag
 export const setIsLoggingOut = (value: boolean): void => {
   isLoggingOut = value;
-  if (value) {
-    console.log("[API CLIENT] Logout initiated - suppressing error notifications");
-  } else {
-    console.log("[API CLIENT] Logout completed - restoring error notifications");
-  }
 };
 
 // Get the current logging out state

@@ -119,7 +119,7 @@ export function AvatarMenu({ onClose }: AvatarMenuProps) {
             {/* Menu Items - No user info header since it's already in sidebar */}
             <View className="py-2">
               <TouchableOpacity
-                onPress={() => handleNavigation(routes.personal.myProfile.root)}
+                onPress={() => handleNavigation(routes.profile.root)}
                 className="flex-row items-center px-4 py-3.5 mx-2 rounded-lg"
                 style={{
                   backgroundColor: "transparent",

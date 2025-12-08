@@ -102,7 +102,6 @@ export default function CatalogViewOnlyListScreen() {
   // Ref for the maximized FlatList to scroll to specific items
   const maximizedListRef = useRef<FlatListType<Paint>>(null);
   const [scrollToPaintIndex, setScrollToPaintIndex] = useState<number | undefined>(undefined);
-  const [listReady, setListReady] = useState(false);
 
   // Use shared value for INSTANT overlay display (UI thread, no React state delay)
   const overlayOpacity = useSharedValue(0);
@@ -151,15 +150,9 @@ export default function CatalogViewOnlyListScreen() {
     [maximizedNumColumns]
   );
 
-  // Handle when the FlatList layout is ready
-  const handleListLayout = useCallback(() => {
-    setListReady(true);
-  }, []);
-
   // Reset states when switching to minimized
   useEffect(() => {
     if (isMinimized) {
-      setListReady(false);
       isTransitioning.current = false;
     }
   }, [isMinimized]);
@@ -291,7 +284,6 @@ export default function CatalogViewOnlyListScreen() {
     if (index !== -1) {
       isTransitioning.current = true;
       setScrollToPaintIndex(index);
-      setListReady(false);
     }
     setIsMinimized(false);
     // Also persist the view change
@@ -629,7 +621,6 @@ export default function CatalogViewOnlyListScreen() {
                 columnWrapperStyle={isTablet ? styles.cardRow : undefined}
                 contentContainerStyle={styles.listContent}
                 getItemLayout={getMaximizedItemLayout}
-                onLayout={handleListLayout}
                 refreshControl={
                   <RefreshControl
                     refreshing={isLoading}

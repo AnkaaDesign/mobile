@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Modal, Pressable } from "react-native";
 import { IconX } from "@tabler/icons-react-native";
 

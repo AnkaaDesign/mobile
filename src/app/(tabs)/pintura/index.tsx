@@ -112,7 +112,7 @@ export default function PinturaScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.painting.productions.list) as any)}
+              onPress={() => router.push(routeToMobilePath(routes.painting.productions.root) as any)}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -136,7 +136,7 @@ export default function PinturaScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.painting.types.list) as any)}
+              onPress={() => router.push(routeToMobilePath(routes.painting.paintTypes.list) as any)}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -160,7 +160,7 @@ export default function PinturaScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.painting.brands.list) as any)}
+              onPress={() => router.push(routeToMobilePath(routes.painting.paintBrands.list) as any)}
               style={{
                 flex: 1,
                 minWidth: "45%",

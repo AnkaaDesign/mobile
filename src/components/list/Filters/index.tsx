@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect, useCallback, useRef } from 'react'
+import { memo, useState, useEffect, useCallback, useRef } from 'react'
 import { View, ScrollView, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Keyboard, Dimensions, LayoutChangeEvent } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ThemedText } from '@/components/ui/themed-text'
@@ -125,7 +125,7 @@ export const Filters = memo(function Filters({
   const handleComboboxOpen = useCallback((measurements: { inputY: number; inputHeight: number; requiredHeight: number }): boolean => {
     if (!scrollViewRef.current) return false
 
-    const { inputY, inputHeight } = measurements
+    const { inputY } = measurements
 
     // Target: position input near the top of the screen (with space for label)
     // scrollViewYRef.current contains the Y position of the ScrollView on screen
@@ -169,7 +169,7 @@ export const Filters = memo(function Filters({
   }, [])
 
   const renderField = useCallback(
-    (field: FilterField, index: number) => {
+    (field: FilterField) => {
       const fieldValue = localValues[field.key]
 
       const wrapWithLayout = (component: React.ReactNode) => (
@@ -282,7 +282,7 @@ export const Filters = memo(function Filters({
           showsVerticalScrollIndicator={false}
           onLayout={(e) => {
             // Measure scroll view position relative to screen
-            e.target.measureInWindow?.((x, y) => {
+            e.target.measureInWindow?.((_x, y) => {
               scrollViewYRef.current = y
             })
           }}

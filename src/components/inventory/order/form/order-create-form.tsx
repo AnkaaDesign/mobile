@@ -1,10 +1,9 @@
-import React, { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "expo-router";
-import * as DocumentPicker from "expo-document-picker";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -16,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { useTheme } from "@/lib/theme";
-// import { showToast } from "@/lib/toast";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useSuppliers, useItems, useOrderMutations, useFileUploadManager } from "@/hooks";
 import { useMultiStepForm } from "@/hooks";
@@ -29,13 +27,12 @@ import {
   ItemSelectorTable,
 } from "@/components/forms";
 import {
-  IconPackage,
   IconBox,
-  IconTruck,
   IconCalendar,
-  IconFileText,
+  IconPackage,
   IconPlus,
   IconTrash,
+  IconTruck,
 } from "@tabler/icons-react-native";
 
 // Form schema for order creation
@@ -84,8 +81,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
   const [budgetFiles, setBudgetFiles] = useState<FilePickerItem[]>([]);
   const [invoiceFiles, setInvoiceFiles] = useState<FilePickerItem[]>([]);
   const [receiptFiles, setReceiptFiles] = useState<FilePickerItem[]>([]);
-  const [reimbursementFiles, setReimbursementFiles] = useState<FilePickerItem[]>([]);
-  const [reimbursementInvoiceFiles, setReimbursementInvoiceFiles] = useState<FilePickerItem[]>([]);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
   // Mutations
@@ -95,8 +90,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
   const budgetUpload = useFileUploadManager({ entityType: "order", fileContext: "budget" });
   const invoiceUpload = useFileUploadManager({ entityType: "order", fileContext: "invoice" });
   const receiptUpload = useFileUploadManager({ entityType: "order", fileContext: "receipt" });
-  const reimbursementUpload = useFileUploadManager({ entityType: "order", fileContext: "reimbursement" });
-  const reimbursementInvoiceUpload = useFileUploadManager({ entityType: "order", fileContext: "reimbursementInvoice" });
 
   // Multi-step form state management
   const multiStepForm = useMultiStepForm<OrderCreateFormData>({
@@ -328,9 +321,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
       const hasFiles =
         budgetFiles.length > 0 ||
         invoiceFiles.length > 0 ||
-        receiptFiles.length > 0 ||
-        reimbursementFiles.length > 0 ||
-        reimbursementInvoiceFiles.length > 0;
+        receiptFiles.length > 0;
 
       let result;
       setIsUploadingFiles(hasFiles);
@@ -375,8 +366,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
           setBudgetFiles([]);
           setInvoiceFiles([]);
           setReceiptFiles([]);
-          setReimbursementFiles([]);
-          setReimbursementInvoiceFiles([]);
 
           if (onSuccess) {
             onSuccess();
@@ -401,13 +390,9 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
     budgetFiles,
     invoiceFiles,
     receiptFiles,
-    reimbursementFiles,
-    reimbursementInvoiceFiles,
     budgetUpload,
     invoiceUpload,
     receiptUpload,
-    reimbursementUpload,
-    reimbursementInvoiceUpload,
     createAsync,
     onSuccess,
     router,
@@ -435,8 +420,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
               setBudgetFiles([]);
               setInvoiceFiles([]);
               setReceiptFiles([]);
-              setReimbursementFiles([]);
-              setReimbursementInvoiceFiles([]);
               router.back();
             },
           },
@@ -489,7 +472,10 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                   name="description"
                   render={({ field: { value }, fieldState: { error } }) => (
                     <View style={styles.fieldGroup}>
-                      <Label>Descrição *</Label>
+                      <View style={styles.labelRow}>
+                        <Label style={{ marginBottom: 0 }}>Descrição</Label>
+                        <ThemedText style={styles.requiredAsterisk}> *</ThemedText>
+                      </View>
                       <Input
                         value={value || ""}
                         onChangeText={(val) => handleFormChange("description", val)}
@@ -530,8 +516,32 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                       {error && (
                         <ThemedText style={styles.errorText}>{error.message}</ThemedText>
                       )}
+                    </View>
+                  )}
+                />
+
+                {/* Item Mode Selection */}
+                <Controller
+                  control={form.control}
+                  name="itemMode"
+                  render={({ field: { value } }) => (
+                    <View style={styles.fieldGroup}>
+                      <Label>Tipo de Itens</Label>
+                      <Combobox
+                        value={value || "inventory"}
+                        onValueChange={(val) => handleFormChange("itemMode", val || "inventory")}
+                        options={[
+                          { label: "Itens do Estoque", value: "inventory" },
+                          { label: "Itens Temporários", value: "temporary" },
+                        ]}
+                        placeholder="Selecione o tipo de itens"
+                        disabled={isSubmitting}
+                        clearable={false}
+                      />
                       <ThemedText style={styles.helpText}>
-                        Selecione um fornecedor para este pedido
+                        {isInventoryMode
+                          ? "Selecione itens cadastrados no estoque"
+                          : "Adicione itens avulsos que não estão no estoque"}
                       </ThemedText>
                     </View>
                   )}
@@ -558,7 +568,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                   control={form.control}
                   name="notes"
                   render={({ field: { value }, fieldState: { error } }) => (
-                    <View style={styles.fieldGroup}>
+                    <View style={styles.lastFieldGroup}>
                       <Label>Observações</Label>
                       <Input
                         value={value || ""}
@@ -567,7 +577,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                         editable={!isSubmitting}
                         multiline
                         numberOfLines={3}
-                        style={styles.textArea}
+                        style={{ height: 80 }}
                       />
                       {error && (
                         <ThemedText style={styles.errorText}>{error.message}</ThemedText>
@@ -578,56 +588,8 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
               </CardContent>
             </Card>
 
-            {/* Item Mode Selection */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Tipo de Itens</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <View style={styles.modeButtonsContainer}>
-                  <Button
-                    onPress={() => handleFormChange("itemMode", "inventory")}
-                    variant={isInventoryMode ? "default" : "outline"}
-                    style={styles.modeButton}
-                    disabled={isSubmitting}
-                  >
-                    <View style={styles.modeButtonContent}>
-                      <IconPackage size={20} color={isInventoryMode ? colors.primaryForeground : colors.foreground} />
-                      <ThemedText style={[
-                        styles.modeButtonText,
-                        isInventoryMode && { color: colors.primaryForeground }
-                      ]}>
-                        Itens do Estoque
-                      </ThemedText>
-                    </View>
-                  </Button>
-                  <Button
-                    onPress={() => handleFormChange("itemMode", "temporary")}
-                    variant={!isInventoryMode ? "default" : "outline"}
-                    style={styles.modeButton}
-                    disabled={isSubmitting}
-                  >
-                    <View style={styles.modeButtonContent}>
-                      <IconFileText size={20} color={!isInventoryMode ? colors.primaryForeground : colors.foreground} />
-                      <ThemedText style={[
-                        styles.modeButtonText,
-                        !isInventoryMode && { color: colors.primaryForeground }
-                      ]}>
-                        Itens Temporários
-                      </ThemedText>
-                    </View>
-                  </Button>
-                </View>
-                <ThemedText style={styles.helpText}>
-                  {isInventoryMode
-                    ? "Selecione itens cadastrados no estoque"
-                    : "Adicione itens avulsos que não estão no estoque"}
-                </ThemedText>
-              </CardContent>
-            </Card>
-
             {/* Documents Section */}
-            <Card style={styles.card}>
+            <Card style={styles.lastCard}>
               <CardHeader>
                 <CardTitle>Documentos (Opcional)</CardTitle>
               </CardHeader>
@@ -670,32 +632,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                   showGallery={true}
                   showFilePicker={true}
                 />
-                <View style={styles.fieldSpacer} />
-                <FilePicker
-                  value={reimbursementFiles}
-                  onChange={setReimbursementFiles}
-                  maxFiles={10}
-                  label="Reembolsos"
-                  placeholder="Adicionar reembolsos"
-                  helperText="Selecione até 10 arquivos de reembolso"
-                  disabled={isSubmitting}
-                  showCamera={true}
-                  showGallery={true}
-                  showFilePicker={true}
-                />
-                <View style={styles.fieldSpacer} />
-                <FilePicker
-                  value={reimbursementInvoiceFiles}
-                  onChange={setReimbursementInvoiceFiles}
-                  maxFiles={10}
-                  label="Notas de Reembolso"
-                  placeholder="Adicionar notas de reembolso"
-                  helperText="Selecione até 10 notas de reembolso"
-                  disabled={isSubmitting}
-                  showCamera={true}
-                  showGallery={true}
-                  showFilePicker={true}
-                />
               </CardContent>
             </Card>
           </View>
@@ -708,9 +644,24 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
               <ItemSelectorTable
                 selectedItems={multiStepForm.selectedItems}
                 quantities={multiStepForm.quantities}
-                onSelectItem={multiStepForm.toggleItemSelection}
+                prices={multiStepForm.prices}
+                onSelectItem={(itemId, item) => {
+                  // Get the item's default price
+                  let defaultPrice = 0;
+                  if (item?.prices?.length > 0) {
+                    const sortedPrices = [...item.prices].sort((a: any, b: any) =>
+                      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                    );
+                    defaultPrice = sortedPrices[0].value || 0;
+                  } else if (item?.price != null) {
+                    defaultPrice = item.price;
+                  }
+                  multiStepForm.toggleItemSelection(itemId, undefined, defaultPrice);
+                }}
                 onQuantityChange={multiStepForm.setItemQuantity}
+                onPriceChange={multiStepForm.setItemPrice}
                 showQuantityInput
+                showPriceInput
                 minQuantity={1}
                 showSelectedOnly={multiStepForm.showSelectedOnly}
                 searchTerm={multiStepForm.searchTerm}
@@ -725,7 +676,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                 onBrandIdsChange={multiStepForm.setBrandIds}
                 onSupplierIdsChange={multiStepForm.setSupplierIds}
                 allowZeroStock
-                emptyMessage="Nenhum item encontrado"
+                emptyText="Nenhum item encontrado"
               />
             ) : (
               <View style={styles.temporaryItemsContainer}>
@@ -1020,8 +971,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
             </Card>
 
             {/* Documents Summary */}
-            {(budgetFiles.length > 0 || invoiceFiles.length > 0 || receiptFiles.length > 0 ||
-              reimbursementFiles.length > 0 || reimbursementInvoiceFiles.length > 0) && (
+            {(budgetFiles.length > 0 || invoiceFiles.length > 0 || receiptFiles.length > 0) && (
               <Card style={styles.card}>
                 <CardHeader>
                   <CardTitle>Documentos Anexados</CardTitle>
@@ -1051,22 +1001,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                       </Badge>
                     </View>
                   )}
-                  {reimbursementFiles.length > 0 && (
-                    <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Reembolsos</ThemedText>
-                      <Badge variant="secondary">
-                        <ThemedText>{reimbursementFiles.length} arquivo(s)</ThemedText>
-                      </Badge>
-                    </View>
-                  )}
-                  {reimbursementInvoiceFiles.length > 0 && (
-                    <View style={styles.docSummaryRow}>
-                      <ThemedText style={styles.docLabel}>Notas de Reembolso</ThemedText>
-                      <Badge variant="secondary">
-                        <ThemedText>{reimbursementInvoiceFiles.length} arquivo(s)</ThemedText>
-                      </Badge>
-                    </View>
-                  )}
                 </CardContent>
               </Card>
             )}
@@ -1087,10 +1021,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   card: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  lastCard: {
+    marginBottom: 0,
   },
   fieldGroup: {
     marginBottom: spacing.lg,
+  },
+  lastFieldGroup: {
+    marginBottom: spacing.xs,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.xs,
+  },
+  requiredAsterisk: {
+    color: "#ef4444",
+    fontSize: fontSize.sm,
+    fontWeight: "500",
   },
   fieldSpacer: {
     height: spacing.md,
@@ -1104,26 +1054,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: "#6b7280",
     marginTop: spacing.xs,
-  },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: "top",
-  },
-  modeButtonsContainer: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  modeButton: {
-    flex: 1,
-  },
-  modeButtonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  modeButtonText: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
   },
   itemSelectorContainer: {
     flex: 1,

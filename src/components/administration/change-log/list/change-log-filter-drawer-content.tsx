@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { IconFilter, IconX, IconUser, IconCalendarPlus, IconFileText } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -205,11 +205,12 @@ export function ChangeLogFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={userOptions}
-              selectedValues={localFilters.userIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: values }))}
+              value={localFilters.userIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os usuários"
               searchPlaceholder="Buscar usuários..."
-              emptyText="Nenhum usuário encontrado"
+              emptyMessage="Nenhum usuário encontrado"
             />
           </View>
         </View>

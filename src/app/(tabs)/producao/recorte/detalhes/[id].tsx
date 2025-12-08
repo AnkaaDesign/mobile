@@ -20,11 +20,10 @@ import {
   CUT_ORIGIN_LABELS,
   CUT_REQUEST_REASON_LABELS,
   CHANGE_LOG_ENTITY_TYPE,
-  routes
+  routes,
 } from "@/constants";
 import { hasPrivilege, formatDate } from "@/utils";
-// import { showToast } from "@/components/ui/toast";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { FileItem, useFileViewer } from "@/components/file";
@@ -46,9 +45,10 @@ import {
   IconChevronRight,
   IconPlayerPlay,
   IconCheck,
+  IconAlertTriangle,
 } from "@tabler/icons-react-native";
 
-export default function CuttingPlanDetailsScreen() {
+export default function CuttingDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -60,12 +60,12 @@ export default function CuttingPlanDetailsScreen() {
   const fileViewer = useFileViewer();
 
   // Check permissions
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
-                  hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) ||
-                  hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   const canRequestCut = hasPrivilege(user, SECTOR_PRIVILEGES.LEADER) ||
                         hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+  const canChangeStatus =
+    hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) ||
+    hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
   // Fetch cut details with all relations
   const { data: response, isLoading, error, refetch } = useCut(id as string, {
@@ -97,7 +97,6 @@ export default function CuttingPlanDetailsScreen() {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-    Alert.alert("Sucesso", "Detalhes atualizados");
   };
 
   // Handle delete
@@ -108,8 +107,8 @@ export default function CuttingPlanDetailsScreen() {
     }
 
     Alert.alert(
-      "Excluir Plano de Recorte",
-      "Tem certeza que deseja excluir este plano de recorte? Esta ação não pode ser desfeita.",
+      "Excluir Recorte",
+      "Tem certeza que deseja excluir este recorte? Esta ação não pode ser desfeita.",
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -118,7 +117,7 @@ export default function CuttingPlanDetailsScreen() {
           onPress: async () => {
             try {
               await deleteAsync(id as string);
-              Alert.alert("Sucesso", "Plano de recorte excluído com sucesso");
+              Alert.alert("Sucesso", "Recorte excluído com sucesso");
               router.back();
             } catch (_error) {
               // API client already shows error alert
@@ -211,14 +210,21 @@ export default function CuttingPlanDetailsScreen() {
     return `${minutes} minutos`;
   };
 
+  // Generate page title
+  const pageTitle = cut?.file?.filename
+    ? `Recorte - ${cut.file.filename}`
+    : cut?.task?.name
+      ? `Recorte - ${cut.task.name}`
+      : "Detalhes do Recorte";
+
   if (isLoading) {
-    return <LoadingScreen message="Carregando detalhes do plano de recorte..." />;
+    return <LoadingScreen message="Carregando detalhes do recorte..." />;
   }
 
   if (error || !cut) {
     return (
       <ErrorScreen
-        message="Erro ao carregar detalhes do plano de recorte"
+        message="Erro ao carregar detalhes do recorte"
         onRetry={refetch}
       />
     );
@@ -226,48 +232,47 @@ export default function CuttingPlanDetailsScreen() {
 
   return (
     <ScrollView
-      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
+      style={[styles.scrollView, { backgroundColor: colors.background }]}
       refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor={colors.primary}
-        />
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
       }
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.content}>
-        {/* Header Card with Title and Actions */}
-        <Card>
-          <CardContent style={styles.headerContent}>
+        {/* Page Header Card */}
+        <Card style={styles.headerCard}>
+          <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
-              <ThemedText style={StyleSheet.flatten([styles.taskTitle, { color: colors.foreground }])} numberOfLines={1} ellipsizeMode="tail">
-                {cut.file?.filename || "Plano de Recorte"}
+              <ThemedText
+                style={[styles.pageTitle, { color: colors.foreground }]}
+                numberOfLines={2}
+              >
+                {pageTitle}
               </ThemedText>
             </View>
             <View style={styles.headerActions}>
               {canRequestCut && (
                 <TouchableOpacity
                   onPress={handleRequestCut}
-                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.info || "#3b82f6" }])}
+                  style={[styles.actionButton, { backgroundColor: (colors as any).info || "#3b82f6" }]}
                   activeOpacity={0.7}
                 >
                   <IconScissors size={18} color="#ffffff" />
                 </TouchableOpacity>
               )}
-              {cut.status === CUT_STATUS.PENDING && canEdit && (
+              {cut.status === CUT_STATUS.PENDING && canChangeStatus && (
                 <TouchableOpacity
                   onPress={() => handleStatusChange(CUT_STATUS.CUTTING)}
-                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
+                  style={[styles.actionButton, { backgroundColor: colors.primary }]}
                   activeOpacity={0.7}
                 >
                   <IconPlayerPlay size={18} color={colors.primaryForeground} />
                 </TouchableOpacity>
               )}
-              {cut.status === CUT_STATUS.CUTTING && canEdit && (
+              {cut.status === CUT_STATUS.CUTTING && canChangeStatus && (
                 <TouchableOpacity
                   onPress={() => handleStatusChange(CUT_STATUS.COMPLETED)}
-                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.success }])}
+                  style={[styles.actionButton, { backgroundColor: "#16a34a" }]}
                   activeOpacity={0.7}
                 >
                   <IconCheck size={18} color="#ffffff" />
@@ -276,86 +281,52 @@ export default function CuttingPlanDetailsScreen() {
               {canDelete && (
                 <TouchableOpacity
                   onPress={handleDelete}
-                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.destructive }])}
+                  style={[styles.actionButton, { backgroundColor: colors.destructive }]}
                   activeOpacity={0.7}
                 >
                   <IconTrash size={18} color={colors.destructiveForeground} />
                 </TouchableOpacity>
               )}
             </View>
-          </CardContent>
+          </View>
         </Card>
 
-        {/* Basic Information Card */}
+        {/* Request Reason Alert - Prominent display for requests */}
+        {cut.reason && (
+          <Card
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.destructive + "15",
+                borderColor: colors.destructive,
+                borderWidth: 1,
+              },
+            ]}
+          >
+            <View style={[styles.sectionHeader, { borderBottomColor: colors.destructive }]}>
+              <IconAlertTriangle size={20} color={colors.destructive} />
+              <ThemedText style={[styles.sectionTitle, { color: colors.destructive }]}>
+                Motivo da Requisição
+              </ThemedText>
+            </View>
+            <ThemedText style={[styles.reasonText, { color: colors.destructive }]}>
+              {CUT_REQUEST_REASON_LABELS[cut.reason as CUT_REQUEST_REASON]}
+            </ThemedText>
+          </Card>
+        )}
+
+        {/* General Information Card with File Preview */}
         <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconScissors size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Informações Básicas</ThemedText>
-            </View>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <IconScissors size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.sectionTitle}>Informações Gerais</ThemedText>
+            <Badge variant={getStatusBadgeVariant(cut.status as CUT_STATUS)} style={{ marginLeft: "auto" }}>
+              {CUT_STATUS_LABELS[cut.status as CUT_STATUS]}
+            </Badge>
           </View>
-          <View style={styles.itemDetails}>
-            {/* Status */}
-            <View style={styles.detailRow}>
-              <ThemedText style={styles.detailLabel}>Status</ThemedText>
-              <Badge variant={getStatusBadgeVariant(cut.status as CUT_STATUS)}>
-                {CUT_STATUS_LABELS[cut.status as CUT_STATUS]}
-              </Badge>
-            </View>
 
-            {/* Origin */}
-            <View style={styles.detailRow}>
-              <ThemedText style={styles.detailLabel}>
-                <IconArrowBack size={14} color={colors.mutedForeground} /> Origem
-              </ThemedText>
-              <ThemedText style={styles.detailValue}>
-                {CUT_ORIGIN_LABELS[cut.origin as CUT_ORIGIN]}
-              </ThemedText>
-            </View>
-
-            {/* Type */}
-            <View style={styles.detailRow}>
-              <ThemedText style={styles.detailLabel}>
-                <IconHash size={14} color={colors.mutedForeground} /> Tipo
-              </ThemedText>
-              <ThemedText style={styles.detailValue}>
-                {CUT_TYPE_LABELS[cut.type as CUT_TYPE]}
-              </ThemedText>
-            </View>
-
-            {/* Duration */}
-            <View style={styles.detailRow}>
-              <ThemedText style={styles.detailLabel}>
-                <IconClock size={14} color={colors.mutedForeground} /> Tempo
-              </ThemedText>
-              <ThemedText style={styles.detailValue}>
-                {getDuration() || "Não iniciado"}
-              </ThemedText>
-            </View>
-
-            {/* Recut Reason */}
-            {cut.reason && (
-              <View style={styles.detailRow}>
-                <ThemedText style={styles.detailLabel}>
-                  <IconAlertCircle size={14} color={colors.destructive} /> Motivo
-                </ThemedText>
-                <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
-                  {CUT_REQUEST_REASON_LABELS[cut.reason as CUT_REQUEST_REASON]}
-                </ThemedText>
-              </View>
-            )}
-          </View>
-        </Card>
-
-        {/* File Section */}
-        {cut.file && (
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconFile size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Arquivo de Corte</ThemedText>
-              </View>
-            </View>
+          {/* File Preview */}
+          {cut.file && (
             <View style={styles.fileContainer}>
               <FileItem
                 file={cut.file}
@@ -364,28 +335,67 @@ export default function CuttingPlanDetailsScreen() {
                 onPress={() => cut.file && fileViewer.actions.viewFile(cut.file)}
               />
             </View>
-          </Card>
-        )}
+          )}
+
+          {/* Info Rows */}
+          <View style={styles.infoRows}>
+            {/* Origin */}
+            <View style={[styles.infoRow, { backgroundColor: colors.muted + "30" }]}>
+              <View style={styles.infoRowLeft}>
+                <IconArrowBack size={16} color={colors.mutedForeground} />
+                <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>Origem</ThemedText>
+              </View>
+              <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
+                {CUT_ORIGIN_LABELS[cut.origin as CUT_ORIGIN]}
+              </ThemedText>
+            </View>
+
+            {/* Type */}
+            <View style={[styles.infoRow, { backgroundColor: colors.muted + "30" }]}>
+              <View style={styles.infoRowLeft}>
+                <IconHash size={16} color={colors.mutedForeground} />
+                <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>Tipo</ThemedText>
+              </View>
+              <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
+                {CUT_TYPE_LABELS[cut.type as CUT_TYPE]}
+              </ThemedText>
+            </View>
+
+            {/* Duration */}
+            <View style={[styles.infoRow, { backgroundColor: colors.muted + "30" }]}>
+              <View style={styles.infoRowLeft}>
+                <IconClock size={16} color={colors.mutedForeground} />
+                <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>Tempo de Execução</ThemedText>
+              </View>
+              <ThemedText style={[styles.infoValue, { color: getDuration() ? colors.foreground : colors.mutedForeground }]}>
+                {getDuration() || "Não iniciado"}
+              </ThemedText>
+            </View>
+          </View>
+        </Card>
 
         {/* Parent Cut (if recut) */}
         {cut.parentCut && (
-          <Card style={[styles.card, { backgroundColor: colors.warning + "10", borderColor: colors.warning, borderWidth: 1 }]}>
-            <View style={[styles.header, { borderBottomColor: colors.warning }]}>
-              <View style={styles.headerLeft}>
-                <IconReload size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Este é um Retrabalho</ThemedText>
-              </View>
+          <Card
+            style={[
+              styles.card,
+              { backgroundColor: colors.warning + "10", borderColor: colors.warning, borderWidth: 1 },
+            ]}
+          >
+            <View style={[styles.sectionHeader, { borderBottomColor: colors.warning }]}>
+              <IconReload size={20} color={colors.warning} />
+              <ThemedText style={[styles.sectionTitle, { color: colors.warning }]}>Este é um Retrabalho</ThemedText>
             </View>
             <TouchableOpacity
-              style={styles.relatedCutItem}
+              style={[styles.relatedItem, { backgroundColor: colors.muted + "30" }]}
               onPress={() => router.push(routes.production.cutting.details(cut.parentCut!.id) as any)}
               activeOpacity={0.7}
             >
               <View style={{ flex: 1 }}>
-                <ThemedText style={styles.relatedCutName}>
+                <ThemedText style={styles.relatedItemName}>
                   {cut.parentCut.file?.filename || "Recorte Original"}
                 </ThemedText>
-                <ThemedText style={styles.relatedCutDate}>
+                <ThemedText style={[styles.relatedItemDate, { color: colors.mutedForeground }]}>
                   Criado em {formatDate(cut.parentCut.createdAt)}
                 </ThemedText>
               </View>
@@ -397,45 +407,52 @@ export default function CuttingPlanDetailsScreen() {
         {/* Task Information Card */}
         {cut.task && (
           <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconClipboardList size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Informações da Tarefa</ThemedText>
-              </View>
+            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+              <IconClipboardList size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.sectionTitle}>Informações da Tarefa</ThemedText>
               <TouchableOpacity
                 onPress={() => router.push(`/producao/cronograma/detalhes/${cut.task!.id}`)}
-                style={styles.viewDetailsButton}
+                style={styles.linkButton}
                 activeOpacity={0.7}
               >
                 <IconExternalLink size={14} color={colors.primary} />
-                <ThemedText style={[styles.viewDetailsText, { color: colors.primary }]}>Ver detalhes</ThemedText>
+                <ThemedText style={[styles.linkText, { color: colors.primary }]}>Ver</ThemedText>
               </TouchableOpacity>
             </View>
-            <View style={styles.itemDetails}>
-              <View style={styles.detailRow}>
-                <ThemedText style={styles.detailLabel}>Nome</ThemedText>
-                <ThemedText style={styles.detailValue} numberOfLines={2}>
+
+            <View style={styles.infoRows}>
+              {/* Task Name */}
+              <View style={[styles.infoRow, { backgroundColor: colors.muted + "30" }]}>
+                <View style={styles.infoRowLeft}>
+                  <IconClipboardList size={16} color={colors.mutedForeground} />
+                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>Nome</ThemedText>
+                </View>
+                <ThemedText style={[styles.infoValue, { color: colors.foreground }]} numberOfLines={1}>
                   {cut.task.name}
                 </ThemedText>
               </View>
 
+              {/* Customer */}
               {cut.task.customer && (
-                <View style={styles.detailRow}>
-                  <ThemedText style={styles.detailLabel}>
-                    <IconUser size={14} color={colors.mutedForeground} /> Cliente
-                  </ThemedText>
-                  <ThemedText style={styles.detailValue}>
+                <View style={[styles.infoRow, { backgroundColor: colors.muted + "30" }]}>
+                  <View style={styles.infoRowLeft}>
+                    <IconUser size={16} color={colors.mutedForeground} />
+                    <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>Cliente</ThemedText>
+                  </View>
+                  <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
                     {cut.task.customer.fantasyName}
                   </ThemedText>
                 </View>
               )}
 
+              {/* Sector */}
               {cut.task.sector && (
-                <View style={styles.detailRow}>
-                  <ThemedText style={styles.detailLabel}>
-                    <IconBuildingFactory size={14} color={colors.mutedForeground} /> Setor
-                  </ThemedText>
-                  <ThemedText style={styles.detailValue}>
+                <View style={[styles.infoRow, { backgroundColor: colors.muted + "30" }]}>
+                  <View style={styles.infoRowLeft}>
+                    <IconBuildingFactory size={16} color={colors.mutedForeground} />
+                    <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>Setor</ThemedText>
+                  </View>
+                  <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
                     {cut.task.sector.name}
                   </ThemedText>
                 </View>
@@ -446,35 +463,27 @@ export default function CuttingPlanDetailsScreen() {
 
         {/* Dates Section */}
         <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconClock size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Datas</ThemedText>
-            </View>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <IconClock size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.sectionTitle}>Datas</ThemedText>
           </View>
-          <View style={styles.itemDetails}>
-            <View style={styles.detailRow}>
-              <ThemedText style={styles.detailLabel}>Criado em</ThemedText>
-              <ThemedText style={styles.detailValue}>
-                {formatDate(cut.createdAt)}
-              </ThemedText>
+          <View style={styles.infoRows}>
+            <View style={[styles.infoRow, { backgroundColor: colors.muted + "30" }]}>
+              <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>Solicitado em</ThemedText>
+              <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>{formatDate(cut.createdAt)}</ThemedText>
             </View>
 
             {cut.startedAt && (
-              <View style={styles.detailRow}>
-                <ThemedText style={styles.detailLabel}>Iniciado em</ThemedText>
-                <ThemedText style={styles.detailValue}>
-                  {formatDate(cut.startedAt)}
-                </ThemedText>
+              <View style={[styles.infoRow, { backgroundColor: colors.muted + "30" }]}>
+                <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>Iniciado em</ThemedText>
+                <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>{formatDate(cut.startedAt)}</ThemedText>
               </View>
             )}
 
             {cut.completedAt && (
-              <View style={styles.detailRow}>
-                <ThemedText style={styles.detailLabel}>Concluído em</ThemedText>
-                <ThemedText style={styles.detailValue}>
-                  {formatDate(cut.completedAt)}
-                </ThemedText>
+              <View style={[styles.infoRow, { backgroundColor: colors.muted + "30" }]}>
+                <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>Concluído em</ThemedText>
+                <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>{formatDate(cut.completedAt)}</ThemedText>
               </View>
             )}
           </View>
@@ -483,26 +492,25 @@ export default function CuttingPlanDetailsScreen() {
         {/* Child Cuts (Recuts) Section */}
         {cut.childCuts && cut.childCuts.length > 0 && (
           <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconReload size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Retrabalhos Realizados</ThemedText>
-                <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-                  {cut.childCuts.length}
-                </Badge>
-              </View>
+            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+              <IconReload size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.sectionTitle}>Retrabalhos Realizados</ThemedText>
+              <Badge variant="secondary" style={{ marginLeft: "auto" }}>
+                {cut.childCuts.length}
+              </Badge>
             </View>
-            <View style={styles.itemDetails}>
+            <View style={styles.relatedList}>
               {cut.childCuts.map((childCut: any) => (
                 <TouchableOpacity
                   key={childCut.id}
-                  style={styles.relatedCutItem}
+                  style={[styles.relatedItem, { backgroundColor: colors.muted + "30" }]}
                   onPress={() => router.push(routes.production.cutting.details(childCut.id) as any)}
                   activeOpacity={0.7}
                 >
                   <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs, marginBottom: spacing.xs }}>
-                      <ThemedText style={styles.relatedCutName}>
+                    <View style={styles.relatedItemHeader}>
+                      <IconScissors size={14} color={colors.mutedForeground} />
+                      <ThemedText style={styles.relatedItemName} numberOfLines={1}>
                         {childCut.file?.filename || "Recorte"}
                       </ThemedText>
                       <Badge variant={getStatusBadgeVariant(childCut.status as CUT_STATUS)}>
@@ -510,14 +518,14 @@ export default function CuttingPlanDetailsScreen() {
                       </Badge>
                     </View>
                     {childCut.reason && (
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <View style={styles.relatedItemReason}>
                         <IconAlertCircle size={12} color={colors.destructive} />
-                        <ThemedText style={[styles.relatedCutDate, { color: colors.destructive }]}>
+                        <ThemedText style={[styles.relatedItemReasonText, { color: colors.destructive }]}>
                           {CUT_REQUEST_REASON_LABELS[childCut.reason as CUT_REQUEST_REASON]}
                         </ThemedText>
                       </View>
                     )}
-                    <ThemedText style={styles.relatedCutDate}>
+                    <ThemedText style={[styles.relatedItemDate, { color: colors.mutedForeground }]}>
                       Criado em {formatDate(childCut.createdAt)}
                     </ThemedText>
                   </View>
@@ -530,21 +538,17 @@ export default function CuttingPlanDetailsScreen() {
 
         {/* Changelog History */}
         <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconHistory size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
-            </View>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <IconHistory size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.sectionTitle}>Histórico de Alterações</ThemedText>
           </View>
-          <View style={{ paddingHorizontal: spacing.md }}>
-            <ChangelogTimeline
-              entityType={CHANGE_LOG_ENTITY_TYPE.CUT}
-              entityId={cut.id}
-              entityName={cut.file?.filename || "Plano de Recorte"}
-              entityCreatedAt={cut.createdAt}
-              maxHeight={400}
-            />
-          </View>
+          <ChangelogTimeline
+            entityType={CHANGE_LOG_ENTITY_TYPE.CUT}
+            entityId={cut.id}
+            entityName={cut.file?.filename || "Recorte"}
+            entityCreatedAt={cut.createdAt}
+            maxHeight={400}
+          />
         </Card>
 
         {/* Bottom spacing for mobile navigation */}
@@ -569,16 +573,24 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
   headerContent: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.xs,
   },
-  taskTitle: {
+  headerLeft: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  pageTitle: {
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
   },
@@ -596,84 +608,95 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
-  header: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: spacing.sm,
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
   sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-    marginLeft: spacing.sm,
-    flex: 1,
-  },
-  itemDetails: {
-    gap: spacing.sm,
-  },
-  detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 4,
-  },
-  detailLabel: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
-    width: 100,
-    fontWeight: "500",
-  },
-  detailValue: {
-    fontSize: fontSize.sm,
-    fontWeight: "400",
-    flex: 1,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
   },
   fileContainer: {
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: spacing.md,
   },
-  relatedCutItem: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    alignItems: "center",
+  infoRows: {
     gap: spacing.sm,
   },
-  relatedCutName: {
-    fontSize: fontSize.md,
-    fontWeight: "500",
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
   },
-  relatedCutDate: {
+  infoRowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  infoLabel: {
     fontSize: fontSize.sm,
-    opacity: 0.7,
-    marginTop: 2,
+    fontWeight: fontWeight.medium,
   },
-  viewDetailsButton: {
+  infoValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    maxWidth: "50%",
+    textAlign: "right",
+  },
+  reasonText: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+  },
+  linkButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     marginLeft: "auto",
   },
-  viewDetailsText: {
+  linkText: {
     fontSize: fontSize.xs,
-    fontWeight: "500",
+    fontWeight: fontWeight.medium,
+  },
+  relatedList: {
+    gap: spacing.sm,
+  },
+  relatedItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    gap: spacing.sm,
+  },
+  relatedItemHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  relatedItemName: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    flex: 1,
+  },
+  relatedItemReason: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: spacing.xs,
+  },
+  relatedItemReasonText: {
+    fontSize: fontSize.xs,
+  },
+  relatedItemDate: {
+    fontSize: fontSize.xs,
   },
 });

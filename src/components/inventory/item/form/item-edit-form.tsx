@@ -12,7 +12,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
 import { FormCard } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
 // Import all form components
@@ -225,7 +225,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
             </KeyboardAwareFormProvider>
           </ScrollView>
 
-          <SimpleFormActionBar
+          <FormActionBar
             onCancel={onCancel}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}

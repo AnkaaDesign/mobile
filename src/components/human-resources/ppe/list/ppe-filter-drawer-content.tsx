@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconShield, IconCategory } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -67,7 +67,7 @@ export function PpeFilterDrawerContent({
     // Add deliveries filter
     if (localFilters.hasDeliveries !== undefined) {
       where.ppeDeliveries = {
-        some: Record<string, unknown>,
+        some: {},
       };
     }
 
@@ -151,8 +151,9 @@ export function PpeFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={ppeTypeOptions}
-              selectedValues={localFilters.ppeTypes || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, ppeTypes: values }))}
+              value={localFilters.ppeTypes || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, ppeTypes: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os tipos"
               searchPlaceholder="Buscar tipos..."
               emptyText="Nenhum tipo encontrado"
@@ -175,8 +176,9 @@ export function PpeFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={categoryOptions}
-              selectedValues={localFilters.categoryIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, categoryIds: values }))}
+              value={localFilters.categoryIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, categoryIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todas as categorias"
               searchPlaceholder="Buscar categorias..."
               emptyText="Nenhuma categoria encontrada"

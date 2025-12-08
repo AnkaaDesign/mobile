@@ -261,6 +261,14 @@ const styles = StyleSheet.create({
   headerCard: {
     padding: spacing.md,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: spacing.sm,
+    marginBottom: spacing.sm,
+    borderBottomWidth: 1,
+  },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",

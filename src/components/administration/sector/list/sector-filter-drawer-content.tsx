@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconShieldCheck, IconCalendarPlus, IconUsers } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -148,8 +148,9 @@ export function SectorFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={privilegeOptions}
-              selectedValues={localFilters.privileges || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, privileges: values }))}
+              value={localFilters.privileges || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, privileges: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os níveis"
               searchPlaceholder="Buscar nível..."
               emptyText="Nenhum nível encontrado"

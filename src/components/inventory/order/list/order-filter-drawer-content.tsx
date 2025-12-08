@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity} from 'react-native';
 import { IconFilter, IconX, IconPackage, IconBuilding, IconCalendar } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { useSuppliers } from "@/hooks";
-import {_LABELS } from "@/constants";
+import { ORDER_STATUS_LABELS } from "@/constants";
 import { Combobox } from '@/components/ui/combobox';
 import { DateRangeFilter } from '@/components/common/filters';
 import type { OrderGetManyFormData } from '../../../../schemas';
@@ -164,12 +164,12 @@ export function OrderFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={statusOptions}
-              selectedValues={localFilters.status || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, status: values }))}
+              value={localFilters.status || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, status: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os status"
               searchPlaceholder="Buscar status..."
               emptyText="Nenhum status encontrado"
-              showBadges={false}
             />
           </View>
         </View>
@@ -189,12 +189,12 @@ export function OrderFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={supplierOptions}
-              selectedValues={localFilters.supplierIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, supplierIds: values }))}
+              value={localFilters.supplierIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, supplierIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os fornecedores"
               searchPlaceholder="Buscar fornecedores..."
               emptyText="Nenhum fornecedor encontrado"
-              showBadges={false}
             />
           </View>
         </View>

@@ -72,7 +72,7 @@ export const performanceLevelsListConfig: ListConfig<User> = {
         key: 'position.name',
         label: 'CARGO',
         sortable: true,
-        width: 1.5,
+        width: 2.0,
         align: 'left',
         render: (user) => user.position?.name || '-',
         format: 'badge',
@@ -87,13 +87,13 @@ export const performanceLevelsListConfig: ListConfig<User> = {
       },
       {
         key: 'performanceLevel',
-        label: 'NÍVEL',
+        label: 'DESEMPENHO',
         sortable: true,
-        width: 1.2,
+        width: 0.8,
         align: 'center',
         render: (user) => {
           const level = user.performanceLevel || 0
-          return getPerformanceLevelLabel(level)
+          return level.toString()
         },
         format: 'badge',
         badge: (user) => {

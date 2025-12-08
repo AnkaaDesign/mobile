@@ -2,7 +2,7 @@ import React from "react";
 import { cssInterop } from "nativewind";
 import { getTablerIcon } from "@/utils";
 import { useTheme } from "@/lib/theme";
-import { getIconSize} from "@/constants/icon-sizes";
+import { getIconSize, IconSize } from "@/constants/icon-sizes";
 import { getIconColor } from "@/constants/icon-colors";
 
 // Import the specific icons we need (expanded set to cover most used icons)
@@ -155,7 +155,6 @@ import {
   IconQuestionMark,
   IconCircle,
   IconPhotoPlus,
-  IconTrash2,
   IconFlipHorizontal,
   IconCalendarStats,
   IconCalendarWeek,
@@ -171,7 +170,7 @@ import {
   IconBuildingSkyscraper,
   IconTag,
   IconShoppingCart,
-  IconDeviceHardDrive,
+  IconServer2,
   IconCpu,
 } from "@tabler/icons-react-native";
 
@@ -196,9 +195,9 @@ const tablerIcons = [
   IconPlayerStop, IconArrowsUpDown, IconApi, IconFlask, IconCalculator, IconReceipt, IconFileText, IconUserCog,
   IconFolderShare, IconDatabaseImport, IconColorSwatch, IconListDetails, IconBeach, IconCalendarMinus,
   IconCalendarTime, IconHelmet, IconBuildingBank, IconFileReport, IconListSearch, IconDroplet, IconQuestionMark,
-  IconCircle, IconPhotoPlus, IconTrash2, IconFlipHorizontal, IconCalendarStats, IconCalendarWeek, IconCalendarDollar,
+  IconCircle, IconPhotoPlus, IconFlipHorizontal, IconCalendarStats, IconCalendarWeek, IconCalendarDollar,
   IconDeviceIpadDollar, IconFingerprint, IconColorPicker, IconPaint, IconCoins, IconRepeat, IconHourglass,
-  IconFileInvoice, IconBuildingSkyscraper, IconTag, IconShoppingCart, IconDeviceHardDrive, IconCpu
+  IconFileInvoice, IconBuildingSkyscraper, IconTag, IconShoppingCart, IconServer2, IconCpu
 ];
 
 // Log any undefined icons for debugging
@@ -243,7 +242,7 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   x: IconX,
   check: IconCheck,
   trash: IconTrash,
-  "trash-2": IconTrash2,
+  "trash-2": IconTrash,
   refresh: IconRefresh,
   search: IconSearch,
   filter: IconFilter,
@@ -355,9 +354,9 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   server: IconServer,
   cloud: IconCloud,
   wifi: IconWifi,
-  "hard-drive": IconDeviceHardDrive,
-  "device-hard-drive": IconDeviceHardDrive,
-  hardDrive: IconDeviceHardDrive, // camelCase version
+  "hard-drive": IconServer2,
+  "device-hard-drive": IconServer2,
+  hardDrive: IconServer2, // camelCase version
   cpu: IconCpu,
   processor: IconCpu, // Alias
 

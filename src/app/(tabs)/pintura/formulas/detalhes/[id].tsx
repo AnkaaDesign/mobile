@@ -14,7 +14,7 @@ import { hasPrivilege, formatDateTime } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MobilePaintFormulaCalculator } from "@/components/painting/formula/mobile-paint-formula-calculator";
-import { IconFactory } from "@tabler/icons-react-native";
+import { IconBuildingFactory } from "@tabler/icons-react-native";
 
 export default function FormulaDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -75,43 +75,6 @@ export default function FormulaDetailsScreen() {
     Alert.alert("Sucesso", "Detalhes atualizados");
   };
 
-  // Handle edit
-  const _handleEdit = () => {
-    if (!canEdit) {
-      Alert.alert("Erro", "Você não tem permissão para editar");
-      return;
-    }
-    router.push(`/(tabs)/pintura/formulas/editar/${id}`);
-  };
-
-  // Handle delete
-  const _handleDelete = () => {
-    if (!canDelete) {
-      Alert.alert("Erro", "Você não tem permissão para excluir");
-      return;
-    }
-
-    Alert.alert(
-      "Excluir Fórmula",
-      "Tem certeza que deseja excluir esta fórmula? Esta ação não pode ser desfeita.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteFormula(id as string);
-              Alert.alert("Sucesso", "Fórmula excluída com sucesso");
-              router.back();
-            } catch (_error) {
-              // API client already shows error alert
-            }
-          },
-        },
-      ]
-    );
-  };
 
   // Calculate totals for components
   const calculateTotals = () => {
@@ -161,7 +124,7 @@ export default function FormulaDetailsScreen() {
           <Card style={styles.card}>
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
               <View style={styles.headerLeft}>
-                <IconFactory size={20} color={colors.mutedForeground} />
+                <IconBuildingFactory size={20} color={colors.mutedForeground} />
                 <ThemedText style={styles.title}>Histórico de Produção</ThemedText>
               </View>
               <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>

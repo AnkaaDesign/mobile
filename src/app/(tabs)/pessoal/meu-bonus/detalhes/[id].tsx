@@ -8,9 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useQuery } from "@tanstack/react-query";
 import { bonusService } from "@/api-client";
-import { bonusKeys, useTasks } from "@/hooks";
+import { bonusKeys, useCurrentUser } from "@/hooks";
 import { formatCurrency } from "@/utils";
-import { TASK_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, getBadgeVariant } from "@/constants";
+import { COMMISSION_STATUS, COMMISSION_STATUS_LABELS, getBadgeVariant } from "@/constants";
 import { TasksModal } from "@/components/bonus/TasksModal";
 import { Icon } from "@/components/ui/icon";
 import { spacing, fontSize } from "@/constants/design-system";
@@ -34,6 +34,15 @@ const formatDecimal = (value: any): string => {
   return '0.00';
 };
 
+// Helper to get numeric value from Decimal or number
+const getNumericValue = (value: any): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseFloat(value) || 0;
+  if (value?.toNumber) return value.toNumber();
+  return 0;
+};
+
 // Helper to format bonus amount
 const formatBonusAmount = (amount: any): string => {
   if (amount === null || amount === undefined) return formatCurrency(0);
@@ -48,13 +57,38 @@ function formatShortDate(date: Date): string {
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
 }
 
+// Calculate bonus period dates from year and month
+// Period is always from 26th of previous month to 25th of the bonus month
+function getBonusPeriodDates(year: number | string, month: number | string): { start: Date; end: Date } {
+  // Convert to numbers in case they come as strings from API
+  const yearNum = typeof year === 'string' ? parseInt(year, 10) : year;
+  const monthNum = typeof month === 'string' ? parseInt(month, 10) : month;
+
+  // Start: 26th of previous month
+  let startYear = yearNum;
+  let startMonth = monthNum - 1; // Previous month
+  if (startMonth === 0) {
+    startMonth = 12;
+    startYear = yearNum - 1;
+  }
+  const start = new Date(startYear, startMonth - 1, 26); // month is 0-indexed in JS
+
+  // End: 25th of the bonus month
+  const end = new Date(yearNum, monthNum - 1, 25); // month is 0-indexed in JS
+
+  return { start, end };
+}
+
 export default function BonusDetailScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const _router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [tasksModalVisible, setTasksModalVisible] = useState(false);
   const [selectedCommissionStatus, setSelectedCommissionStatus] = useState<string | null>(null);
+
+  // Get current user to check bonifiable status
+  const { data: currentUser, isLoading: userLoading } = useCurrentUser();
+  const isBonifiable = currentUser?.position?.bonifiable ?? false;
 
   // Fetch bonus detail using personal endpoint
   const {
@@ -73,16 +107,15 @@ export default function BonusDetailScreen() {
               sector: true,
             },
           },
+          tasks: {
+            include: {
+              customer: true,
+              sector: true,
+            },
+          },
           bonusDiscounts: true,
           users: true,
         } as any,
-      });
-
-      console.log('📊 Bonus Detail Response:', {
-        hasUsers: !!(response.data as any)?.users,
-        usersLength: (response.data as any)?.users?.length,
-        eligibleUsersCount: (response.data as any)?.eligibleUsersCount,
-        data: response.data,
       });
 
       return response.data;
@@ -90,47 +123,28 @@ export default function BonusDetailScreen() {
     enabled: !!id,
   });
 
-  // Extract bonus from response
+  // Extract bonus from response - handle multiple levels of wrapping
   let bonus: Bonus | null = null;
   if (bonusResponse) {
-    if ('data' in bonusResponse && (bonusResponse as any).data) {
-      bonus = (bonusResponse as any).data;
-    } else {
-      bonus = bonusResponse as Bonus;
+    // Response structure: { success, data: { actualBonus }, message }
+    // OR direct bonus object
+    let data = bonusResponse;
+
+    // Unwrap { success, data, message } wrapper
+    if ('data' in data && (data as any).data) {
+      data = (data as any).data;
     }
+
+    // Check if still wrapped (edge case)
+    if ('data' in data && (data as any).data && (data as any).success !== undefined) {
+      data = (data as any).data;
+    }
+
+    bonus = data as Bonus;
   }
 
-  // Prepare date range for fetching tasks (based on bonus calculation period)
-  const taskDateRange = useMemo(() => {
-    if (!bonus?.calculationPeriodStart || !bonus?.calculationPeriodEnd) return null;
-
-    const startDate = new Date(bonus.calculationPeriodStart);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(bonus.calculationPeriodEnd);
-    endDate.setHours(23, 59, 59, 999);
-
-    return { startDate, endDate };
-  }, [bonus?.calculationPeriodStart, bonus?.calculationPeriodEnd]);
-
-  // Fetch tasks separately with proper relations (customer, sector, truck)
-  const { data: tasksData, isLoading: tasksLoading, refetch: refetchTasks } = useTasks({
-    where: {
-      status: { in: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED] },
-      finishedAt: taskDateRange ? {
-        gte: taskDateRange.startDate,
-        lte: taskDateRange.endDate,
-      } : undefined,
-    },
-    include: {
-      customer: true,
-      sector: true,
-      truck: true,
-    },
-    limit: 1000,
-    enabled: !!taskDateRange,
-  });
-
-  // Calculate commission statistics by task commission status
+  // Calculate commission statistics from tasks attached to the bonus
+  // The API returns tasks with the bonus response
   const commissionStats = useMemo(() => {
     const statusCounts = {
       [COMMISSION_STATUS.FULL_COMMISSION]: 0,
@@ -139,7 +153,8 @@ export default function BonusDetailScreen() {
       [COMMISSION_STATUS.SUSPENDED_COMMISSION]: 0,
     };
 
-    const tasks = tasksData?.data || [];
+    // Use tasks from the bonus response (not a separate query)
+    const tasks = bonus?.tasks || [];
 
     if (tasks.length > 0) {
       tasks.forEach((task: Task) => {
@@ -163,7 +178,7 @@ export default function BonusDetailScreen() {
       hasDetails: false,
       tasks: [] as Task[],
     };
-  }, [tasksData?.data]);
+  }, [bonus?.tasks]);
 
   // Get tasks filtered by commission status for modal
   const filteredTasksForModal = useMemo(() => {
@@ -194,36 +209,45 @@ export default function BonusDetailScreen() {
   }, [commissionStats]);
 
   const handleRefresh = async () => {
-    await Promise.all([refetchBonus(), refetchTasks()]);
+    await refetchBonus();
   };
+
+  // Helper to convert any value to number (handles strings, Decimals, etc)
+  const toNumber = useCallback((value: any): number => {
+    if (value === null || value === undefined) return 0;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') return parseFloat(value) || 0;
+    if (value?.toNumber) return value.toNumber();
+    return 0;
+  }, []);
 
   // Calculate final bonus amount (after discounts)
   const calculateFinalAmount = useCallback(() => {
     if (!bonus) return 0;
 
+    const baseBonus = toNumber(bonus.baseBonus);
+
     if (!bonus.bonusDiscounts || bonus.bonusDiscounts.length === 0) {
-      const baseBonus = typeof bonus.baseBonus === 'number'
-        ? bonus.baseBonus
-        : (bonus.baseBonus as any)?.toNumber?.() || 0;
       return baseBonus;
     }
 
-    let finalAmount = typeof bonus.baseBonus === 'number'
-      ? bonus.baseBonus
-      : (bonus.baseBonus as any)?.toNumber?.() || 0;
+    let finalAmount = baseBonus;
 
     bonus.bonusDiscounts
       .sort((a: any, b: any) => a.calculationOrder - b.calculationOrder)
       .forEach((discount: any) => {
-        if (discount.percentage) {
-          finalAmount -= finalAmount * (discount.percentage / 100);
-        } else if (discount.value) {
-          finalAmount -= discount.value;
+        const percentage = toNumber(discount.percentage);
+        const value = toNumber(discount.value);
+
+        if (percentage) {
+          finalAmount -= finalAmount * (percentage / 100);
+        } else if (value) {
+          finalAmount -= value;
         }
       });
 
     return finalAmount;
-  }, [bonus]);
+  }, [bonus, toNumber]);
 
   // Get eligible users count from various sources
   const eligibleUsersCount = useMemo(() => {
@@ -235,27 +259,21 @@ export default function BonusDetailScreen() {
     if (bonus?.eligibleUsersCount && bonus.eligibleUsersCount > 0) {
       return bonus.eligibleUsersCount;
     }
-    // Calculate from averageTasksPerUser if we have both values
-    // Formula: eligibleUsers = totalPonderedTasks / averageTasksPerUser
-    if (bonus?.ponderedTaskCount && bonus?.averageTasksPerUser) {
-      const _ponderedCount = typeof bonus.ponderedTaskCount === 'number'
-        ? bonus.ponderedTaskCount
-        : (bonus.ponderedTaskCount as any)?.toNumber?.() || 0;
-      const avgTasks = typeof bonus.averageTasksPerUser === 'number'
-        ? bonus.averageTasksPerUser
-        : (bonus.averageTasksPerUser as any)?.toNumber?.() || 0;
-
+    // Calculate from averageTaskPerUser if we have both values
+    // Formula: eligibleUsers = totalWeightedTasks / averageTaskPerUser
+    if (bonus?.weightedTasks && bonus?.averageTaskPerUser) {
+      const avgTasks = getNumericValue(bonus.averageTaskPerUser);
       if (avgTasks > 0) {
-        // The averageTasksPerUser is calculated as totalPonderedTasks / eligibleUsers
+        // The averageTaskPerUser is calculated as totalWeightedTasks / eligibleUsers
         // So we need to find it differently - check if we have access to total from API
         // For now, let's not calculate to avoid incorrect values
       }
     }
     // Fallback to '-'
     return null;
-  }, [bonus?.users, bonus?.eligibleUsersCount, bonus?.ponderedTaskCount, bonus?.averageTasksPerUser]);
+  }, [bonus?.users, bonus?.eligibleUsersCount, bonus?.weightedTasks, bonus?.averageTaskPerUser]);
 
-  const isLoading = bonusLoading || tasksLoading;
+  const isLoading = bonusLoading || userLoading;
 
   if (isLoading) {
     return (
@@ -264,6 +282,19 @@ export default function BonusDetailScreen() {
           <ActivityIndicator size="large" color={colors.primary} />
           <ThemedText style={styles.loadingText}>Carregando detalhes...</ThemedText>
         </View>
+      </ThemedView>
+    );
+  }
+
+  // If user's position is not bonifiable, show a message
+  if (!isBonifiable) {
+    return (
+      <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+        <EmptyState
+          icon="currency-dollar"
+          title="Acesso não permitido"
+          description="Seu cargo não é elegível para bônus. Entre em contato com o RH se acredita que isso é um erro."
+        />
       </ThemedView>
     );
   }
@@ -296,11 +327,9 @@ export default function BonusDetailScreen() {
           <View style={styles.periodInfo}>
             <ThemedText style={[styles.periodLabel, { color: colors.mutedForeground }]}>Período</ThemedText>
             <ThemedText style={styles.periodMonth}>{getMonthName(bonus.month)}/{bonus.year}</ThemedText>
-            {bonus.calculationPeriodStart && bonus.calculationPeriodEnd && (
-              <ThemedText style={[styles.periodDates, { color: colors.mutedForeground }]}>
-                {formatShortDate(new Date(bonus.calculationPeriodStart))} - {formatShortDate(new Date(bonus.calculationPeriodEnd))}
-              </ThemedText>
-            )}
+            <ThemedText style={[styles.periodDates, { color: colors.mutedForeground }]}>
+              {formatShortDate(getBonusPeriodDates(bonus.year, bonus.month).start)} - {formatShortDate(getBonusPeriodDates(bonus.year, bonus.month).end)}
+            </ThemedText>
           </View>
         </Card>
 
@@ -313,34 +342,36 @@ export default function BonusDetailScreen() {
             </View>
           </View>
           <View style={styles.content}>
-            <ThemedText style={[styles.bonusAmount, { color: colors.success }]}>
-              {formatCurrency(bonusValue)}
-            </ThemedText>
-
-            {hasDiscounts && (
-              <View style={[styles.discountInfo, { borderTopColor: colors.border }]}>
-                <View style={styles.detailRow}>
-                  <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-                    Valor Base:
+            <View style={styles.detailsContainer}>
+              <View style={styles.detailRow}>
+                <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                  Valor Base:
+                </ThemedText>
+                <ThemedText style={styles.detailValue}>
+                  {formatBonusAmount(bonus.baseBonus)}
+                </ThemedText>
+              </View>
+              {hasDiscounts && bonus.bonusDiscounts!.map((discount: any, index: number) => (
+                <View key={discount.id || index} style={styles.detailRow}>
+                  <ThemedText style={[styles.detailLabel, { color: colors.destructive }]}>
+                    {discount.reference || `Desconto ${index + 1}`}:
                   </ThemedText>
-                  <ThemedText style={styles.detailValue}>
-                    {formatBonusAmount(bonus.baseBonus)}
+                  <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
+                    -{discount.percentage
+                      ? `${discount.percentage}%`
+                      : formatCurrency(toNumber(discount.value))}
                   </ThemedText>
                 </View>
-                {bonus.bonusDiscounts!.map((discount: any, index: number) => (
-                  <View key={discount.id} style={styles.detailRow}>
-                    <ThemedText style={[styles.detailLabel, { color: colors.destructive }]}>
-                      Desconto {index + 1} ({discount.reference}):
-                    </ThemedText>
-                    <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
-                      {discount.percentage
-                        ? `${discount.percentage}%`
-                        : formatCurrency(discount.value || 0)}
-                    </ThemedText>
-                  </View>
-                ))}
+              ))}
+              <View style={[styles.detailRow, { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border }]}>
+                <ThemedText style={[styles.detailLabel, { color: colors.foreground, fontWeight: '600' }]}>
+                  Valor Líquido:
+                </ThemedText>
+                <ThemedText style={[styles.detailValue, { color: colors.success, fontWeight: '600' }]}>
+                  {formatCurrency(bonusValue)}
+                </ThemedText>
               </View>
-            )}
+            </View>
           </View>
         </Card>
 
@@ -380,10 +411,18 @@ export default function BonusDetailScreen() {
             </View>
             <View style={styles.detailRow}>
               <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                Total de Tarefas:
+              </ThemedText>
+              <ThemedText style={styles.detailValue}>
+                {bonus.tasks?.length || '-'}
+              </ThemedText>
+            </View>
+            <View style={styles.detailRow}>
+              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
                 Tarefas Ponderadas:
               </ThemedText>
               <ThemedText style={styles.detailValue}>
-                {formatDecimal(bonus.ponderedTaskCount)}
+                {formatDecimal(bonus.weightedTasks)}
               </ThemedText>
             </View>
             <View style={styles.detailRow}>
@@ -399,7 +438,7 @@ export default function BonusDetailScreen() {
                 Média por Colaborador:
               </ThemedText>
               <ThemedText style={styles.detailValue}>
-                {formatDecimal(bonus.averageTasksPerUser)}
+                {formatDecimal(bonus.averageTaskPerUser)}
               </ThemedText>
             </View>
             </View>
@@ -480,35 +519,6 @@ export default function BonusDetailScreen() {
           </View>
         </Card>
 
-        {/* Calculation Period Card */}
-        <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <Icon name="IconCalendar" size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Período de Cálculo</ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-            <View style={styles.detailsContainer}>
-            <View style={styles.detailRow}>
-              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Início:</ThemedText>
-              <ThemedText style={styles.detailValue}>
-                {bonus.calculationPeriodStart
-                  ? new Date(bonus.calculationPeriodStart).toLocaleDateString('pt-BR')
-                  : '-'}
-              </ThemedText>
-            </View>
-            <View style={styles.detailRow}>
-              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Fim:</ThemedText>
-              <ThemedText style={styles.detailValue}>
-                {bonus.calculationPeriodEnd
-                  ? new Date(bonus.calculationPeriodEnd).toLocaleDateString('pt-BR')
-                  : '-'}
-              </ThemedText>
-            </View>
-            </View>
-          </View>
-        </Card>
       </ScrollView>
 
       {/* Tasks Modal */}
@@ -542,7 +552,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   card: {
+    margin: spacing.md,
+    marginBottom: 0,
     padding: spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   header: {
     flexDirection: "row",

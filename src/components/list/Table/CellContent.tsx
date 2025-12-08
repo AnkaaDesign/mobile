@@ -15,6 +15,7 @@ import {
   PPE_REQUEST_STATUS_LABELS,
   PPE_DELIVERY_STATUS_LABELS,
   SERVICE_ORDER_STATUS_LABELS,
+  CUT_STATUS_LABELS,
 } from '@/constants/enum-labels'
 import type { CellFormat } from '../types'
 import type { File as AnkaaFile } from '@/types'
@@ -31,6 +32,7 @@ const ENTITY_LABEL_MAPS: Record<string, Record<string, string>> = {
   PPE_REQUEST: PPE_REQUEST_STATUS_LABELS,
   PPE_DELIVERY: PPE_DELIVERY_STATUS_LABELS,
   SERVICE_ORDER: SERVICE_ORDER_STATUS_LABELS,
+  CUT: CUT_STATUS_LABELS,
 }
 
 /**
@@ -103,7 +105,7 @@ const FileThumbnail = memo(function FileThumbnail({
         {hasThumbnail && !thumbnailError ? (
           <>
             <Image
-              source={{ uri: thumbnailUrl, cache: 'reload' }}
+              source={{ uri: thumbnailUrl, cache: 'force-cache' }}
               style={{ width: 40, height: 40 }}
               onLoad={() => setThumbnailLoading(false)}
               onError={() => {
@@ -177,7 +179,6 @@ export const CellContent = memo(function CellContent({
   onCellPress,
 }: CellContentProps) {
   const colorScheme = useColorScheme()
-  const isDark = colorScheme === 'dark'
 
   // Handle special component types first
   if (component === 'file-thumbnail' && value && typeof value === 'object' && 'id' in value) {
@@ -239,16 +240,16 @@ export const CellContent = memo(function CellContent({
         return <ThemedText style={[{ fontSize: 12 }, style]}>-</ThemedText>
       }
       const date = new Date(value)
-      const day = date.getDate()
+      const day = String(date.getDate()).padStart(2, '0')
       const month = String(date.getMonth() + 1).padStart(2, '0')
-      const year = date.getFullYear()
+      const year = String(date.getFullYear()).slice(-2)
       const hours = String(date.getHours()).padStart(2, '0')
       const minutes = String(date.getMinutes()).padStart(2, '0')
       return (
-        <View>
+        <>
           <ThemedText style={[{ fontSize: 12 }, style]}>{`${day}/${month}/${year}`}</ThemedText>
           <ThemedText style={[{ fontSize: 12, opacity: 0.7 }, style]}>{`${hours}:${minutes}`}</ThemedText>
-        </View>
+        </>
       )
     }
 
@@ -289,7 +290,7 @@ export const CellContent = memo(function CellContent({
           paddingHorizontal: 8,
           paddingVertical: 4,
           borderRadius: 4,
-          backgroundColor: isDark ? '#a3a3a3' : '#737373',
+          backgroundColor: colorScheme === 'dark' ? '#a3a3a3' : '#737373',
           minWidth: 40,
           alignItems: 'center',
           justifyContent: 'center',
@@ -323,56 +324,6 @@ export const CellContent = memo(function CellContent({
         // Get human-readable label for display
         const displayLabel = getStatusLabel(stringValue, badgeEntity)
 
-        // Split into words for multi-line display (max 2 lines)
-        const words = displayLabel.split(' ')
-        const hasMultipleWords = words.length > 1
-
-        // For multi-word labels, render each word on its own line (max 2 lines)
-        if (hasMultipleWords) {
-          // First line: all words except last, Second line: last word
-          const line1 = words.slice(0, -1).join(' ')
-          const line2 = words[words.length - 1]
-
-          return (
-            <View style={{
-              paddingHorizontal: 8,
-              paddingVertical: 3,
-              borderRadius: 4,
-              backgroundColor: badgeColors.bg,
-              alignSelf: 'flex-start',
-              maxWidth: 95,
-            }}>
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: '600',
-                  color: badgeColors.text,
-                  textAlign: 'left',
-                  lineHeight: 14,
-                }}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {line1}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: '600',
-                  color: badgeColors.text,
-                  textAlign: 'left',
-                  lineHeight: 14,
-                }}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {line2}
-              </Text>
-            </View>
-          )
-        }
-
-        // Single word - simple badge
         return (
           <View style={{
             paddingHorizontal: 8,
@@ -381,11 +332,15 @@ export const CellContent = memo(function CellContent({
             backgroundColor: badgeColors.bg,
             alignSelf: 'flex-start',
           }}>
-            <Text style={{
-              fontSize: 12,
-              fontWeight: '600',
-              color: badgeColors.text,
-            }}>
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: '600',
+                color: badgeColors.text,
+              }}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {displayLabel}
             </Text>
           </View>

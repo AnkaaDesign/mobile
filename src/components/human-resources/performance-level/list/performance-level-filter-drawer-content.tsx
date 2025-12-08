@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconUsers, IconTrophy, IconBriefcase, IconUserCheck, IconUserMinus } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,7 +6,7 @@ import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
-import { usePositions, useSectors } from "@/hooks";
+import { usePositions, useSectors, useUsers } from "@/hooks";
 import { USER_STATUS, USER_STATUS_LABELS } from "@/constants";
 import type { UserGetManyFormData } from '../../../../schemas';
 
@@ -250,8 +250,9 @@ export function PerformanceLevelFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={statusOptions}
-              selectedValues={localFilters.statuses || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: values }))}
+              value={localFilters.statuses || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os status"
               searchPlaceholder="Buscar status..."
               emptyText="Nenhum status encontrado"
@@ -340,8 +341,9 @@ export function PerformanceLevelFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={positionOptions}
-              selectedValues={localFilters.positionIds || []}
-              onValueChange={handlePositionsChange}
+              value={localFilters.positionIds || []}
+              mode="multiple"
+              onValueChange={(values) => handlePositionsChange(Array.isArray(values) ? values : values ? [values] : [])}
               placeholder={positions.length === 0 ? "Carregando cargos..." : "Todos os cargos"}
               searchPlaceholder="Buscar cargos..."
               emptyText="Nenhum cargo encontrado"
@@ -355,8 +357,9 @@ export function PerformanceLevelFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={sectorOptions}
-              selectedValues={localFilters.sectorIds || []}
-              onValueChange={handleSectorsChange}
+              value={localFilters.sectorIds || []}
+              mode="multiple"
+              onValueChange={(values) => handleSectorsChange(Array.isArray(values) ? values : values ? [values] : [])}
               placeholder={sectors.length === 0 ? "Carregando setores..." : "Todos os setores"}
               searchPlaceholder="Buscar setores..."
               emptyText="Nenhum setor encontrado"
@@ -380,8 +383,9 @@ export function PerformanceLevelFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={userOptions}
-              selectedValues={localFilters.includeUserIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, includeUserIds: values }))}
+              value={localFilters.includeUserIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, includeUserIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os usuários"
               searchPlaceholder="Buscar usuários..."
               emptyText="Nenhum usuário encontrado"
@@ -404,8 +408,9 @@ export function PerformanceLevelFilterDrawerContent({
             </View>
             <Combobox
               options={userOptions}
-              selectedValues={localFilters.excludeUserIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, excludeUserIds: values }))}
+              value={localFilters.excludeUserIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, excludeUserIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Nenhuma exclusão"
               searchPlaceholder="Buscar usuários..."
               emptyText="Nenhum usuário encontrado"

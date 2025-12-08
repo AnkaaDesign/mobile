@@ -17,8 +17,6 @@ import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import {
   ObservationInfoCard,
   ObservationFilesCard,
-  
-  ObservationMetadataCard,
 } from "@/components/production/observation/detail";
 
 export default function ObservationDetailsScreen() {
@@ -173,14 +171,6 @@ export default function ObservationDetailsScreen() {
         {observation.files && observation.files.length > 0 && (
           <ObservationFilesCard files={observation.files as any} />
         )}
-
-        {/* Commissions Card - Removed: commissions no longer exist on Observation type */}
-
-        {/* Metadata Card */}
-        <ObservationMetadataCard
-          createdAt={observation.createdAt}
-          updatedAt={observation.updatedAt}
-        />
 
         {/* Bottom spacing for mobile navigation */}
         <View style={{ height: spacing.xxl * 2 }} />

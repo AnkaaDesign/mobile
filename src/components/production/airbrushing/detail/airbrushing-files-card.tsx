@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconFiles, IconList, IconLayoutGrid, IconDownload } from "@tabler/icons-react-native";
-import { FileItem, useFileViewer} from "@/components/file";
+import { FileItem, useFileViewer, type FileViewMode } from "@/components/file";
 // import { showToast } from "@/components/ui/toast";
 
 interface AirbrushingFilesCardProps {

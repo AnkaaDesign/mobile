@@ -14,7 +14,7 @@ interface TeamVacationFilterDrawerContentProps {
   onFiltersChange: (filters: Partial<VacationGetManyFormData>) => void;
   onClear: () => void;
   activeFiltersCount: number;
-  teamMemberIds: string[];
+  teamMemberIds?: string[];
   onClose?: () => void;
 }
 
@@ -23,7 +23,7 @@ export function TeamVacationFilterDrawerContent({
   onFiltersChange,
   onClear,
   activeFiltersCount,
-  teamMemberIds,
+  teamMemberIds = [],
   onClose,
 }: TeamVacationFilterDrawerContentProps) {
   const { colors } = useTheme();

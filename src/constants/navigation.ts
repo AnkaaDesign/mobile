@@ -12,6 +12,7 @@ interface MenuItem {
   isDynamic?: boolean; // Indicates if this is a dynamic route
   onlyInStaging?: boolean; // Only show in staging environment
   isContextual?: boolean; // Indicates if this is a contextual menu item
+  requiresBonifiable?: boolean; // Only show if user's position is bonifiable
 }
 
 export const NAVIGATION_MENU: MenuItem[] = [
@@ -104,7 +105,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
         children: [
           { id: "emprestimos-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/emprestimos/cadastrar" },
           { id: "emprestimos-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/emprestimos/detalhes/:id", isDynamic: true },
-          { id: "emprestimos-editar-lote", title: "Editar em Lote", icon: "edit", path: "/estoque/emprestimos/editar-lote" },
         ],
       },
       {
@@ -182,7 +182,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "movimentacoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/movimentacoes/cadastrar" },
           { id: "movimentacoes-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/movimentacoes/detalhes/:id", isDynamic: true },
           { id: "movimentacoes-editar", title: "Editar", icon: "edit", path: "/estoque/movimentacoes/editar/:id", isDynamic: true },
-          { id: "movimentacoes-editar-lote", title: "Editar em Lote", icon: "edit", path: "/estoque/movimentacoes/editar-lote" },
         ],
       },
       {
@@ -232,12 +231,11 @@ export const NAVIGATION_MENU: MenuItem[] = [
               { id: "categorias-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/produtos/categorias/cadastrar" },
               { id: "categorias-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/produtos/categorias/detalhes/:id", isDynamic: true },
               { id: "categorias-editar", title: "Editar", icon: "edit", path: "/estoque/produtos/categorias/editar/:id", isDynamic: true },
-              { id: "categorias-editar-em-lote", title: "Editar em Lote", icon: "edit", path: "/estoque/produtos/categorias/editar-em-lote" },
             ],
           },
           { id: "produtos-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/produtos/detalhes/:id", isDynamic: true },
           { id: "produtos-editar", title: "Editar", icon: "edit", path: "/estoque/produtos/editar/:id", isDynamic: true },
-          { id: "produtos-editar-em-lote", title: "Editar em Lote", icon: "edit", path: "/estoque/produtos/editar-em-lote" },
+          { id: "produtos-balanco-estoque", title: "Balanco de Estoque", icon: "scale", path: "/estoque/produtos/balanco-estoque" },
           {
             id: "produtos-marcas",
             title: "Marcas",
@@ -247,7 +245,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
               { id: "marcas-cadastrar", title: "Cadastrar", icon: "plus", path: "/estoque/produtos/marcas/cadastrar" },
               { id: "marcas-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/produtos/marcas/detalhes/:id", isDynamic: true },
               { id: "marcas-editar", title: "Editar", icon: "edit", path: "/estoque/produtos/marcas/editar/:id", isDynamic: true },
-              { id: "marcas-editar-em-lote", title: "Editar em Lote", icon: "edit", path: "/estoque/produtos/marcas/editar-em-lote" },
             ],
           },
         ],
@@ -311,10 +308,11 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Meu Bônus",
         icon: "dollarSign",
         path: "/pessoal/meu-bonus",
+        requiresBonifiable: true, // Only show if user's position is bonifiable
         children: [
-          { id: "meu-bonus-historico", title: "Histórico", icon: "history", path: "/pessoal/meu-bonus/historico" },
-          { id: "meu-bonus-simulacao", title: "Simulação", icon: "calculator", path: "/pessoal/meu-bonus/simulacao" },
-          { id: "meu-bonus-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/meu-bonus/detalhes/:id", isDynamic: true },
+          { id: "meu-bonus-historico", title: "Histórico", icon: "history", path: "/pessoal/meu-bonus/historico", requiresBonifiable: true },
+          { id: "meu-bonus-simulacao", title: "Simulação", icon: "calculator", path: "/pessoal/meu-bonus/simulacao", requiresBonifiable: true },
+          { id: "meu-bonus-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/meu-bonus/detalhes/:id", isDynamic: true, requiresBonifiable: true },
         ],
       },
       {
@@ -499,6 +497,17 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "warnings-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/advertencias/editar/:id", isDynamic: true },
         ],
       },
+      {
+        id: "bonus",
+        title: "Bônus",
+        icon: "coins",
+        path: "/recursos-humanos/bonus",
+        children: [
+          { id: "bonus-listar", title: "Listar", icon: "list", path: "/recursos-humanos/bonus/listar" },
+          { id: "simulacao-bonus", title: "Simulação de Bônus", icon: "calculator", path: "/recursos-humanos/bonus/simulacao" },
+          { id: "nivel-de-performance", title: "Nível de Performance", icon: "trendingUp", path: "/recursos-humanos/bonus/nivel-de-performance" },
+        ],
+      },
       { id: "calculos", title: "Cálculos de Ponto", icon: "deviceIpadDollar", path: "/recursos-humanos/calculos" },
       {
         id: "cargos",
@@ -566,9 +575,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         ],
       },
       { id: "folha-de-pagamento", title: "Folha de Pagamento", icon: "payroll", path: "/recursos-humanos/folha-de-pagamento" },
-      { id: "niveis-desempenho", title: "Niveis de Desempenho", icon: "trendingUp", path: "/recursos-humanos/niveis-de-desempenho" },
       { id: "requisicoes", title: "Requisicoes", icon: "clipboardList", path: "/recursos-humanos/requisicoes" },
-      { id: "simulacao-bonus", title: "Simulacao de Bonus", icon: "calculator", path: "/recursos-humanos/simulacao-bonus" },
     ],
   },
 

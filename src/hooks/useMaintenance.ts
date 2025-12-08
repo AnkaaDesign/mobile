@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  getMaintenances,
   getMaintenanceById,
   createMaintenance,
   updateMaintenance,
@@ -12,6 +13,7 @@ import {
   batchDeleteMaintenances,
   batchFinishMaintenances,
   batchStartMaintenances,
+  getMaintenanceItems,
   getMaintenanceItemById,
   createMaintenanceItem,
   updateMaintenanceItem,
@@ -19,6 +21,7 @@ import {
   batchCreateMaintenanceItems,
   batchUpdateMaintenanceItems,
   batchDeleteMaintenanceItems,
+  getMaintenanceSchedules,
   getMaintenanceScheduleById,
   createMaintenanceSchedule,
   updateMaintenanceSchedule,
@@ -28,18 +31,21 @@ import {
   batchDeleteMaintenanceSchedules,
 } from '@/api-client';
 import type {
+  MaintenanceGetManyFormData,
   MaintenanceCreateFormData,
   MaintenanceUpdateFormData,
   MaintenanceBatchCreateFormData,
   MaintenanceBatchUpdateFormData,
   MaintenanceBatchDeleteFormData,
   MaintenanceInclude,
+  MaintenanceItemGetManyFormData,
   MaintenanceItemCreateFormData,
   MaintenanceItemUpdateFormData,
   MaintenanceItemBatchCreateFormData,
   MaintenanceItemBatchUpdateFormData,
   MaintenanceItemBatchDeleteFormData,
   MaintenanceItemInclude,
+  MaintenanceScheduleGetManyFormData,
   MaintenanceScheduleCreateFormData,
   MaintenanceScheduleUpdateFormData,
   MaintenanceScheduleBatchCreateFormData,
@@ -48,7 +54,10 @@ import type {
   MaintenanceScheduleInclude,
 } from '@/schemas';
 import type {
+  Maintenance,
   MaintenanceItem,
+  MaintenanceSchedule,
+  MaintenanceGetUniqueResponse,
   MaintenanceGetManyResponse,
   MaintenanceCreateResponse,
   MaintenanceUpdateResponse,
@@ -56,6 +65,7 @@ import type {
   MaintenanceBatchCreateResponse,
   MaintenanceBatchUpdateResponse,
   MaintenanceBatchDeleteResponse,
+  MaintenanceItemGetUniqueResponse,
   MaintenanceItemGetManyResponse,
   MaintenanceItemCreateResponse,
   MaintenanceItemUpdateResponse,

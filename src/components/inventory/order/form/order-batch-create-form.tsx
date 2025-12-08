@@ -356,7 +356,7 @@ export function OrderBatchCreateForm({
               onBrandIdsChange={multiStepForm.setBrandIds}
               onSupplierIdsChange={multiStepForm.setSupplierIds}
               allowZeroStock
-              emptyMessage="Nenhum item encontrado"
+              emptyText="Nenhum item encontrado"
             />
             {multiStepForm.formTouched && multiStepForm.validation.errors.items && (
               <View style={styles.errorContainer}>

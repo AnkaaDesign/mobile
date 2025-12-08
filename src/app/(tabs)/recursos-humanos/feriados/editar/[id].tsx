@@ -27,7 +27,7 @@ export default function HolidayEditScreen() {
     if (holiday) {
       setFormData({
         name: holiday.name || "",
-        date: holiday.date || "",
+        date: holiday.date instanceof Date ? holiday.date.toISOString().split('T')[0] : (holiday.date || ""),
       });
     }
   }, [holiday]);
@@ -74,12 +74,12 @@ export default function HolidayEditScreen() {
             <Input
               placeholder="Nome do Feriado"
               value={formData.name}
-              onChangeText={(text) => setFormData({ ...formData, name: text })}
+              onChangeText={(text) => setFormData({ ...formData, name: String(text ?? '') })}
             />
             <Input
               placeholder="Data do Feriado"
               value={formData.date}
-              onChangeText={(text) => setFormData({ ...formData, date: text })}
+              onChangeText={(text) => setFormData({ ...formData, date: String(text ?? '') })}
             />
           </View>
         </Card>

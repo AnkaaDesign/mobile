@@ -50,8 +50,8 @@ export default function PPESizeDetailsScreen() {
 
   const handleEdit = () => {
     if (ppeSize) {
-      // Navigate to edit page - adjust route as needed
-      router.push(routeToMobilePath(routes.humanResources.ppe.sizes.edit(ppeSize.id)) as any);
+      // Navigate to edit page - route for sizes not available, using direct path
+      router.push(`/(tabs)/recursos-humanos/epi/tamanhos/editar/${ppeSize.id}` as any);
     }
   };
 

@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconActivity, IconPackage, IconUser, IconHash, IconCalendar } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { useItems, useUsers } from "@/hooks";
-import {_LABELS,_LABELS } from "@/constants";
+import { ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from "@/constants";
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { DateRangeFilter } from '@/components/common/filters';
@@ -183,12 +183,12 @@ export function ActivityFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={operationOptions}
-              selectedValues={localFilters.operations || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, operations: values }))}
+              value={localFilters.operations || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, operations: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todas as operações"
               searchPlaceholder="Buscar operações..."
               emptyText="Nenhuma operação encontrada"
-              showBadges={false}
             />
           </View>
         </View>
@@ -208,12 +208,12 @@ export function ActivityFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={reasonOptions}
-              selectedValues={localFilters.reasons || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, reasons: values }))}
+              value={localFilters.reasons || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, reasons: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os motivos"
               searchPlaceholder="Buscar motivos..."
               emptyText="Nenhum motivo encontrado"
-              showBadges={false}
             />
           </View>
         </View>
@@ -233,12 +233,12 @@ export function ActivityFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={items}
-              selectedValues={localFilters.itemIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, itemIds: values }))}
+              value={localFilters.itemIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, itemIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os itens"
               searchPlaceholder="Buscar itens..."
               emptyText="Nenhum item encontrado"
-              showBadges={false}
             />
           </View>
         </View>
@@ -258,12 +258,12 @@ export function ActivityFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={users}
-              selectedValues={localFilters.userIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: values }))}
+              value={localFilters.userIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os usuários"
               searchPlaceholder="Buscar usuários..."
               emptyText="Nenhum usuário encontrado"
-              showBadges={false}
             />
           </View>
         </View>

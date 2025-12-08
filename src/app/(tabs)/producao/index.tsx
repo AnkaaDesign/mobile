@@ -86,15 +86,6 @@ export default function ProducaoScreen() {
 
   const data = dashboard?.data;
 
-  // Helper function to get trend
-  const _getTrend = (metric?: { trend?: "up" | "down" | "stable"; changePercent?: number }) => {
-    if (!metric) return { trend: "stable" as const, percentage: 0 };
-    return {
-      trend: metric.trend || ("stable" as const),
-      percentage: Math.abs(metric.changePercent || 0),
-    };
-  };
-
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
@@ -157,7 +148,7 @@ export default function ProducaoScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.production.airbrush.list) as any)}
+              onPress={() => router.push(routeToMobilePath(routes.production.airbrushings.list) as any)}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -181,7 +172,7 @@ export default function ProducaoScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.production.history.list) as any)}
+              onPress={() => router.push(routeToMobilePath(routes.production.history.root) as any)}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -351,23 +342,26 @@ export default function ProducaoScreen() {
           </View>
         )}
 
-        {/* Distribuição por Serviço */}
-        {data?.serviceOrders?.byService && data.serviceOrders.byService.length > 0 && (
+        {/* Distribuição por Tipo de OS */}
+        {data?.serviceOrders?.serviceOrdersByType?.labels && data.serviceOrders.serviceOrdersByType.labels.length > 0 && (
           <View style={{ gap: 12 }}>
             <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
-              Distribuição por Serviço
+              Distribuição por Tipo de OS
             </Text>
             <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
-              {data.serviceOrders.byService.slice(0, 5).map((service, index) => {
+              {data.serviceOrders.serviceOrdersByType.labels.slice(0, 5).map((label: string, index: number) => {
                 const serviceColors = ["#3b82f6", "#22c55e", "#a855f7", "#f97316", "#ef4444"];
+                const value = data.serviceOrders?.serviceOrdersByType?.datasets?.[0]?.data?.[index] || 0;
+                const total = data.serviceOrders?.totalServiceOrders?.value || 1;
+                const percentage = Math.round((value / total) * 100);
                 return (
-                  <View key={service.serviceName || `service-${index}`} style={{ gap: 4 }}>
+                  <View key={label || `service-${index}`} style={{ gap: 4 }}>
                     <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                       <Text style={{ color: colors.foreground, flex: 1 }} numberOfLines={1}>
-                        {service.serviceName || "Serviço sem nome"}
+                        {label || "Tipo sem nome"}
                       </Text>
                       <Text style={{ color: colors.mutedForeground }}>
-                        {service.count} ({service.percentage.toFixed(0)}%)
+                        {value} ({percentage}%)
                       </Text>
                     </View>
                     <View style={{ height: 6, backgroundColor: colors.muted, borderRadius: 3, overflow: "hidden" }}>
@@ -376,7 +370,7 @@ export default function ProducaoScreen() {
                           height: 6,
                           backgroundColor: serviceColors[index % serviceColors.length],
                           borderRadius: 3,
-                          width: `${Math.min(service.percentage, 100)}%`,
+                          width: `${Math.min(percentage, 100)}%`,
                         }}
                       />
                     </View>
@@ -394,10 +388,12 @@ export default function ProducaoScreen() {
               Receita por Setor
             </Text>
             <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
-              {data.revenueAnalysis.revenueBySector.labels.slice(0, 5).map((label, index) => {
-                const value = data.revenueAnalysis.revenueBySector?.datasets?.[0]?.data?.[index] || 0;
+              {data.revenueAnalysis.revenueBySector.labels.slice(0, 5).map((label: string, index: number) => {
+                const value = data.revenueAnalysis?.revenueBySector?.datasets?.[0]?.data?.[index] || 0;
                 const sectorColors = ["#3b82f6", "#22c55e", "#a855f7", "#f97316", "#ef4444"];
-                const totalRevenue = data.revenueAnalysis.totalRevenue?.value || 1;
+                // Calculate total from all dataset values since totalRevenue may not exist
+                const allValues = data.revenueAnalysis?.revenueBySector?.datasets?.[0]?.data || [];
+                const totalRevenue = allValues.reduce((sum: number, v: number) => sum + (v || 0), 0) || 1;
                 const percentage = Math.round((value / totalRevenue) * 100);
                 return (
                   <View key={label} style={{ gap: 4 }}>

@@ -66,8 +66,8 @@ export default function RateLimitingScreen() {
       } else {
         setBlockedKeys([]);
       }
-    } catch (_error) {
-      console.error("Failed to fetch throttler data:", error);
+    } catch (err) {
+      console.error("Failed to fetch throttler data:", err);
       setStats(null);
       setBlockedKeys([]);
     } finally {
@@ -199,7 +199,7 @@ export default function RateLimitingScreen() {
                       {stats?.activeKeys ?? 0}
                     </Text>
                   </View>
-                  <Icon name="check-circle" className="w-8 h-8" style={{ color: colors.success }} />
+                  <Icon name="check-circle" size={32} color={colors.success} />
                 </View>
               </CardContent>
             </Card>
@@ -215,7 +215,7 @@ export default function RateLimitingScreen() {
                       {stats?.blockedKeys ?? 0}
                     </Text>
                   </View>
-                  <Icon name="alert-triangle" className="w-8 h-8" style={{ color: colors.destructive }} />
+                  <Icon name="alert-triangle" size={32} color={colors.destructive} />
                 </View>
               </CardContent>
             </Card>
@@ -226,7 +226,7 @@ export default function RateLimitingScreen() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex-row items-center gap-2">
-                  <Icon name="alert-triangle" className="w-5 h-5" style={{ color: colors.destructive }} />
+                  <Icon name="alert-triangle" size={20} color={colors.destructive} />
                   Chaves Bloqueadas ({blockedKeys.length})
                 </CardTitle>
               </CardHeader>

@@ -17,7 +17,7 @@ export interface PayrollDetails {
   totalBonuses: number;
   totalValue: number;
   userCount: number;
-  averageTasksPerUser: number; // weighted average
+  averageTaskPerUser: number; // weighted average
   bonuses: Bonus[];
 
   // Relations
@@ -30,7 +30,7 @@ export interface PayrollUserStats {
   userName: string;
   positionName: string;
   taskCount: number;
-  weightedTaskCount: number;
+  weightedTasks: number;
   bonusValue: number;
   performanceLevel: number;
   status: BONUS_STATUS;

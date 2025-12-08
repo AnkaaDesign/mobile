@@ -26,7 +26,8 @@ const DrawerContent = lazy(() => import('./OriginalMenuDrawer'));
 const ALL_ROUTES = [
   // Core routes - Always loaded
   { name: "inicio", title: "Início" },
-  { name: "pessoal/meu-perfil", title: "Meu Perfil" }, // Fixed: was meu-perfil
+  { name: "perfil", title: "Meu Perfil" },
+  { name: "perfil/index", title: "Meu Perfil" },
   { name: "configuracoes", title: "Configurações" },
 
   // Catalogo - View-only for Leaders (separate from Pintura module)
@@ -186,14 +187,8 @@ const ALL_ROUTES = [
   { name: "producao/caminhoes/detalhes/[id]", title: "Detalhes do Caminhão" },
   { name: "producao/caminhoes/editar/[id]", title: "Editar Caminhão" },
   { name: "producao/recorte/listar", title: "Recortes" },
-  { name: "producao/recorte/plano-de-recorte/cadastrar", title: "Cadastrar Plano de Recorte" },
-  { name: "producao/recorte/plano-de-recorte/listar", title: "Planos de Recorte" },
-  { name: "producao/recorte/plano-de-recorte/detalhes/[id]", title: "Detalhes do Plano de Recorte" },
-  { name: "producao/recorte/plano-de-recorte/editar/[id]", title: "Editar Plano de Recorte" },
-  { name: "producao/recorte/requisicao-de-recorte/cadastrar", title: "Cadastrar Requisição de Recorte" },
-  { name: "producao/recorte/requisicao-de-recorte/listar", title: "Requisições de Recorte" },
-  { name: "producao/recorte/requisicao-de-recorte/detalhes/[id]", title: "Detalhes da Requisição de Recorte" },
-  { name: "producao/recorte/requisicao-de-recorte/editar/[id]", title: "Editar Requisição de Recorte" },
+  { name: "producao/recorte/cadastrar", title: "Novo Recorte" },
+  { name: "producao/recorte/detalhes/[id]", title: "Detalhes do Recorte" },
   { name: "producao/tintas/cadastrar", title: "Cadastrar Tinta" },
   { name: "producao/tintas/listar", title: "Tintas" },
   { name: "producao/tintas/detalhes/[id]", title: "Detalhes da Tinta" },
@@ -202,6 +197,16 @@ const ALL_ROUTES = [
   // Human Resources
   { name: "recursos-humanos/index", title: "Recursos Humanos" },
   { name: "recursos-humanos/simulacao-bonus", title: "Simulação de Bônus" },
+  { name: "recursos-humanos/bonus", title: "Bônus" },
+  { name: "recursos-humanos/bonus/index", title: "Bônus" },
+  { name: "recursos-humanos/bonus/listar", title: "Bônus" },
+  { name: "recursos-humanos/bonus/cadastrar", title: "Cadastrar Bônus" },
+  { name: "recursos-humanos/bonus/detalhes/[id]", title: "Detalhes do Bônus" },
+  { name: "recursos-humanos/bonus/editar/[id]", title: "Editar Bônus" },
+  { name: "recursos-humanos/bonus/nivel-de-performance", title: "Níveis de Performance" },
+  { name: "recursos-humanos/bonus/nivel-de-performance/index", title: "Níveis de Performance" },
+  { name: "recursos-humanos/bonus/simulacao", title: "Simulação de Bônus" },
+  { name: "recursos-humanos/bonus/simulacao/index", title: "Simulação de Bônus" },
   { name: "recursos-humanos/calculos", title: "Cálculos de Ponto" },
   { name: "recursos-humanos/calculos/index", title: "Cálculos de Ponto" },
   { name: "recursos-humanos/calculos/listar", title: "Cálculos de Ponto" },
@@ -418,7 +423,7 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     const path = route.name;
 
     // Core routes always accessible
-    if (['inicio', 'pessoal/meu-perfil', 'configuracoes'].includes(path)) {
+    if (['inicio', 'perfil', 'perfil/index', 'configuracoes'].includes(path)) {
       return true;
     }
 

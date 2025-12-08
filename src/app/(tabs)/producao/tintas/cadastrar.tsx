@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Stack, useRouter } from "expo-router";
-import { Alert } from "react-native";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
@@ -30,15 +29,15 @@ export default function CreatePaintScreen() {
       if (formulas && formulas.length > 0) {
         for (const formula of formulas) {
           // Calculate total weight for ratio conversion
-          const totalWeight = formula.components?.reduce((sum, c) => sum + (c.weightInGrams || 0), 0) || 0;
+          const totalWeight = formula.components?.reduce((sum, c) => sum + (c.weight || 0), 0) || 0;
 
           if (totalWeight > 0 && formula.components && formula.components.length > 0) {
-            // Convert weightInGrams to ratio (percentage)
+            // Convert weight to ratio (percentage)
             const componentsWithRatio = formula.components
-              .filter((c) => c.itemId && c.weightInGrams && c.weightInGrams > 0)
+              .filter((c) => c.itemId && c.weight && c.weight > 0)
               .map((c) => ({
                 itemId: c.itemId,
-                ratio: ((c.weightInGrams || 0) / totalWeight) * 100,
+                ratio: ((c.weight || 0) / totalWeight) * 100,
               }));
 
             // Only create formula if we have valid components

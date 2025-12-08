@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconShield, IconUsers, IconCategory, IconClock } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -246,8 +246,9 @@ export function PpeScheduleFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={userOptions}
-              selectedValues={localFilters.userIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: values }))}
+              value={localFilters.userIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os funcionários"
               searchPlaceholder="Buscar funcionários..."
               emptyText="Nenhum funcionário encontrado"
@@ -270,8 +271,9 @@ export function PpeScheduleFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={itemOptions}
-              selectedValues={localFilters.itemIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, itemIds: values }))}
+              value={localFilters.itemIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, itemIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os itens"
               searchPlaceholder="Buscar itens..."
               emptyText="Nenhum item encontrado"
@@ -294,8 +296,9 @@ export function PpeScheduleFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={categoryOptions}
-              selectedValues={localFilters.categoryIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, categoryIds: values }))}
+              value={localFilters.categoryIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, categoryIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todas as categorias"
               searchPlaceholder="Buscar categorias..."
               emptyText="Nenhuma categoria encontrada"
@@ -318,8 +321,9 @@ export function PpeScheduleFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={frequencyOptions}
-              selectedValues={localFilters.frequencies || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, frequencies: values }))}
+              value={localFilters.frequencies || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, frequencies: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todas as frequências"
               searchPlaceholder="Buscar frequências..."
               emptyText="Nenhuma frequência encontrada"

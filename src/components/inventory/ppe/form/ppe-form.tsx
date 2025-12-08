@@ -9,10 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Switch } from "@/components/ui/switch";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
-import { spacing } from "@/constants/design-system";
 
 import { itemCreateSchema, itemUpdateSchema } from "@/schemas/item";
 import type { ItemCreateFormData, ItemUpdateFormData } from "@/schemas/item";
@@ -20,7 +19,7 @@ import type { Item } from "@/types";
 import { useItemMutations, useKeyboardAwareScroll } from "@/hooks/useItem";
 import { useItemBrands } from "@/hooks/useItemBrand";
 import { useItemCategories } from "@/hooks/useItemCategory";
-import { PPE_TYPE, PPE_DELIVERY_MODE, ITEM_CATEGORY_TYPE } from "@/constants";
+import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { PPE_TYPE_LABELS, PPE_DELIVERY_MODE_LABELS } from "@/constants/enum-labels";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
@@ -461,7 +460,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
           </KeyboardAwareFormProvider>
         </ScrollView>
 
-        <SimpleFormActionBar
+        <FormActionBar
           onCancel={handleCancel}
           onSubmit={form.handleSubmit(handleSubmit)}
           isSubmitting={isLoading}

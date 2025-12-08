@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
+import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Alert } from "react-native";
 import { IconChevronDown, IconChevronUp, IconRefresh } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, EmptyState } from "@/components/ui";
@@ -111,12 +111,15 @@ export default function BonusSimulationScreen() {
     return eligibleUsersCount * 6;
   }, [eligibleUsersCount]);
 
-  // Set initial task quantity to the current total weighted tasks
+  // Track if user has modified the input
+  const [hasUserModified, setHasUserModified] = useState(false);
+
+  // Set initial task quantity to the current total weighted tasks (only once on load)
   useEffect(() => {
-    if (totalWeightedTasks > 0 && taskQuantity === "0") {
+    if (totalWeightedTasks > 0 && !hasUserModified && taskQuantity === "0") {
       setTaskQuantity(totalWeightedTasks.toFixed(1));
     }
-  }, [totalWeightedTasks, taskQuantity]);
+  }, [totalWeightedTasks, hasUserModified]);
 
   // Set initial performance level from user
   useEffect(() => {
@@ -125,18 +128,20 @@ export default function BonusSimulationScreen() {
     }
   }, [currentUser?.performanceLevel, selectedPerformanceLevel]);
 
-  // Get available positions (current + 2 above based on hierarchy)
+  // Get available positions (current + next 2 based on hierarchy = 3 total)
   const availablePositions = useMemo(() => {
     if (!positionsData?.data || !currentUser?.position) return [];
 
     const currentPosition = currentUser.position;
     const currentHierarchy = currentPosition.hierarchy ?? 0;
 
-    // Get positions within 2 levels above current
-    return positionsData.data.filter((pos) => {
-      const posHierarchy = pos.hierarchy ?? 0;
-      return posHierarchy >= currentHierarchy && posHierarchy <= currentHierarchy + 2;
-    });
+    // Sort positions by hierarchy and get current + next 2 (3 total)
+    const sortedPositions = positionsData.data
+      .filter((pos) => (pos.hierarchy ?? 0) >= currentHierarchy)
+      .sort((a, b) => (a.hierarchy ?? 0) - (b.hierarchy ?? 0));
+
+    // Return only current + next 2 positions (3 total)
+    return sortedPositions.slice(0, 3);
   }, [positionsData, currentUser]);
 
   // Set initial position
@@ -154,7 +159,7 @@ export default function BonusSimulationScreen() {
   // Calculate simulated average from task quantity
   const simulatedAverage = useMemo(() => {
     if (eligibleUsersCount === 0) return 0;
-    const quantity = parseFloat(taskQuantity) || 0;
+    const quantity = parseFloat(taskQuantity.replace(',', '.')) || 0;
     return quantity / eligibleUsersCount;
   }, [taskQuantity, eligibleUsersCount]);
 
@@ -181,24 +186,38 @@ export default function BonusSimulationScreen() {
   }, []);
 
   // Handle task quantity change with maximum limit
-  const handleTaskQuantityChange = useCallback((value: string) => {
-    // Allow empty or partial input while typing
-    if (value === "" || value === "." || value.endsWith(".")) {
-      setTaskQuantity(value);
+  const handleTaskQuantityChange = useCallback((value: string | number | null) => {
+    // Mark as user modified
+    setHasUserModified(true);
+
+    // Handle null or undefined value
+    if (value == null) {
+      setTaskQuantity("");
       return;
     }
 
-    const numValue = parseFloat(value);
-    if (isNaN(numValue)) {
-      setTaskQuantity(value);
-      return;
-    }
+    // Convert to string for processing
+    let strValue = String(value);
 
-    // Clamp to maximum if exceeded
-    if (numValue > maxTaskQuantity) {
-      setTaskQuantity(maxTaskQuantity.toFixed(1));
-    } else {
-      setTaskQuantity(value);
+    // Replace period with comma for Brazilian format
+    strValue = strValue.replace('.', ',');
+
+    // Allow empty, comma, or valid decimal number pattern
+    if (strValue === "" || strValue === "," || /^\d*,?\d*$/.test(strValue)) {
+      setTaskQuantity(strValue);
+
+      // Only validate against max if it's a complete number
+      if (strValue !== "" && strValue !== ",") {
+        const numValue = parseFloat(strValue.replace(',', '.'));
+        if (!isNaN(numValue) && numValue > maxTaskQuantity) {
+          setTaskQuantity(maxTaskQuantity.toFixed(1).replace('.', ','));
+          Alert.alert(
+            "Valor Máximo Excedido",
+            `O valor máximo permitido é ${maxTaskQuantity.toFixed(1)} tarefas (média de 6 por colaborador).`,
+            [{ text: "OK" }]
+          );
+        }
+      }
     }
   }, [maxTaskQuantity]);
 
@@ -223,6 +242,20 @@ export default function BonusSimulationScreen() {
     );
   }
 
+  // Check if user's position is bonifiable
+  const isBonifiable = currentUser?.position?.bonifiable ?? false;
+  if (!isBonifiable) {
+    return (
+      <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+        <EmptyState
+          icon="currency-dollar"
+          title="Acesso não permitido"
+          description="Seu cargo não é elegível para bônus. Entre em contato com o RH se acredita que isso é um erro."
+        />
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       <ScrollView style={styles.scrollView} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}>
@@ -232,7 +265,7 @@ export default function BonusSimulationScreen() {
 
           {/* Task Quantity Input */}
           <View style={styles.inputGroup}>
-            <ThemedText style={styles.inputLabel}>Tarefas Ponderadas</ThemedText>
+            <ThemedText style={styles.inputLabel}>Tarefas</ThemedText>
             <View style={styles.inputWithButton}>
               <View style={{ flex: 1 }}>
                 <Input
@@ -246,14 +279,14 @@ export default function BonusSimulationScreen() {
               </View>
               <TouchableOpacity
                 style={[styles.resetButtonInline, { backgroundColor: colors.muted, borderColor: colors.border }]}
-                onPress={() => setTaskQuantity(totalWeightedTasks.toFixed(1))}
+                onPress={() => {
+                  setTaskQuantity(totalWeightedTasks.toFixed(1));
+                  setHasUserModified(false);
+                }}
               >
                 <IconRefresh size={20} color={colors.foreground} />
               </TouchableOpacity>
             </View>
-            <ThemedText style={[styles.inputHint, { color: colors.mutedForeground }]}>
-              Atual: {totalWeightedTasks.toFixed(1)} · Máximo: {maxTaskQuantity.toFixed(1)}
-            </ThemedText>
           </View>
 
           {/* Position Selector */}
@@ -328,7 +361,7 @@ export default function BonusSimulationScreen() {
               <ThemedText style={styles.detailValue}>Nível {selectedPerformanceLevel}</ThemedText>
             </View>
             <View style={styles.detailRow}>
-              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Tarefas Ponderadas:</ThemedText>
+              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Tarefas:</ThemedText>
               <ThemedText style={styles.detailValue}>{taskQuantity || "0"}</ThemedText>
             </View>
             <View style={styles.detailRow}>
@@ -382,9 +415,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
   },
-  inputHint: {
-    fontSize: 12,
-  },
   inputWithButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -406,18 +436,18 @@ const styles = StyleSheet.create({
   },
   positionGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    justifyContent: "space-between",
     gap: 8,
   },
   positionButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
     borderRadius: 8,
     borderWidth: 1,
-    minWidth: 100,
   },
   positionButtonText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
     textAlign: "center",
   },

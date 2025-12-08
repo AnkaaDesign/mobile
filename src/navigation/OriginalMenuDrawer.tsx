@@ -709,7 +709,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                   // INSTANT haptic feedback
                   impactHaptic();
                   closeUserMenu();
-                  navigateToPath(routes.personal.myProfile.root);
+                  navigateToPath(routes.profile.root);
                 }}
                 style={({ pressed }) => [
                   {

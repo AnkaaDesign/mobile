@@ -2,60 +2,12 @@ import * as React from "react";
 import { View, Text, ViewStyle, TextStyle, StyleSheet} from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { getBadgeVariant as getCentralizedBadgeVariant } from "@/constants/badge-colors";
+import { getBadgeVariant as getCentralizedBadgeVariant, type BadgeVariant } from "@/constants/badge-colors";
 import { extendedColors } from "@/lib/theme/extended-colors";
 
 export interface BadgeProps {
   children?: React.ReactNode;
-  variant?:
-    // Neutral variants
-    | "default"
-    | "secondary"
-    | "muted"
-    | "outline"
-    | "inactive"
-    // Core semantic variants (common across entities)
-    | "completed"
-    | "cancelled"
-    | "pending"
-    | "created"
-    | "active"
-    | "inProgress"
-    | "processing"
-    | "approved"
-    | "rejected"
-    | "received"
-    | "delivered"
-    | "sent"
-    | "verified"
-    | "expired"
-    | "failed"
-    | "onHold"
-    | "blocked"
-    | "suspended"
-    | "returned"
-    | "lost"
-    | "bounced"
-    // Color utilities (for entity-specific or non-status use)
-    | "red"
-    | "purple"
-    | "teal"
-    | "indigo"
-    | "pink"
-    | "yellow"
-    | "amber"
-    | "blue"
-    | "orange"
-    | "green"
-    | "gray"
-    | "cyan"
-    // Deprecated (keep for backward compatibility)
-    | "success"
-    | "destructive"
-    | "primary"
-    | "error"
-    | "info"
-    | "warning";
+  variant?: BadgeVariant;
   size?: "default" | "sm" | "md" | "lg";
   style?: ViewStyle;
   textStyle?: TextStyle;
@@ -237,7 +189,7 @@ const getBadgeStyles = (variant: BadgeProps["variant"] = "default", size: BadgeP
       borderColor: "transparent",
     },
     blue: {
-      backgroundColor: extendedColors.blue[600],
+      backgroundColor: extendedColors.blue[700],
       borderColor: "transparent",
     },
     orange: {

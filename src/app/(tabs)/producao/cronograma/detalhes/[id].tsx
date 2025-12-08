@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { FileViewMode } from "@/components/file";
 import { View, ScrollView, RefreshControl, Alert , StyleSheet} from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -74,9 +75,6 @@ export default function ScheduleDetailsScreen() {
 
   // Check if user is from Financial sector
   const isFinancialSector = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
-
-  // Check if user is from Warehouse sector (should hide changelog)
-  const isWarehouseSector = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
 
   // Fetch task details - optimized query to match web pattern
   const { data: response, isLoading, error, refetch } = useTaskDetail(id as string, {

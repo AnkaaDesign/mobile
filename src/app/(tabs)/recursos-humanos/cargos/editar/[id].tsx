@@ -7,7 +7,8 @@ import { usePosition } from "@/hooks/usePosition";
 
 export default function PositionEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: position, isLoading, error, refetch } = usePosition(id!);
+  const { data: positionResponse, isLoading, error, refetch } = usePosition(id!);
+  const position = positionResponse?.data;
 
   if (isLoading) {
     return <LoadingScreen message="Carregando cargo..." />;

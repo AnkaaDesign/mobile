@@ -2,7 +2,7 @@ import { View, ScrollView, Alert, StyleSheet } from "react-native";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { Text } from "@/components/ui/text";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -95,7 +95,7 @@ export default function CreateBackupScreen() {
                 <Input
                   value={formData.name}
                   onChangeText={(text) =>
-                    setFormData({ ...formData, name: text })
+                    setFormData({ ...formData, name: String(text ?? '') })
                   }
                   placeholder="Nome do backup"
                 />

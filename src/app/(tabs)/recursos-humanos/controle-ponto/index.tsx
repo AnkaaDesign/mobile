@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { IconChevronLeft, IconChevronRight, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -263,7 +263,7 @@ export default function TimeEntriesListScreen() {
           {/* User Selector - Full Width */}
           <Combobox
             value={selectedUserId}
-            onValueChange={setSelectedUserId}
+            onValueChange={(value) => setSelectedUserId(typeof value === 'string' ? value : value?.[0] ?? '')}
             options={userOptions}
             placeholder="Selecionar usuário"
             disabled={usersLoading}

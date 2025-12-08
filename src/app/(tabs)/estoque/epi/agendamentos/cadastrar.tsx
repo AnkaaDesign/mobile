@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Switch } from "@/components/ui/switch";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
@@ -227,7 +227,7 @@ export default function CreatePPEScheduleScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <SimpleFormActionBar
+      <FormActionBar
         onSave={form.handleSubmit(handleSubmit)}
         onCancel={handleCancel}
         isLoading={isLoading}

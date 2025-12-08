@@ -2,7 +2,7 @@
 // Brings mobile version to full feature parity with web version
 // Based on comprehensive analysis of web/src/components/inventory/order/form/order-form-utils.ts
 
-import { formatCurrency, formatCurrencyWithoutSymbol, parseCurrency, roundToDecimals, isValidNumber, isPositiveNumber, calculateSum } from "@/utils";
+import { formatCurrency, formatCurrencyWithoutSymbol, parseCurrency, roundToDecimals, isValidNumber, isPositiveNumber, calculateSum, formatDate } from "@/utils";
 import type { Item, Order, OrderItem } from "@/types";
 import { ORDER_STATUS } from "@/constants";
 

@@ -1,4 +1,3 @@
-import React from "react";
 import { Badge, BadgeProps } from "@/components/ui/badge";
 import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 

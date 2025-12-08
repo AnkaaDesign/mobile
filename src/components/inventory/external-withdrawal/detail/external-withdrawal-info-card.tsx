@@ -11,47 +11,27 @@ import {
   IconCurrencyReal,
   IconNotes,
   IconArrowBack,
-  IconFileInvoice,
-  IconReceipt,
 } from "@tabler/icons-react-native";
 import type { ExternalWithdrawal } from "@/types";
-import { EXTERNAL_WITHDRAWAL_STATUS, EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_TYPE_LABELS } from "@/constants";
+import {
+  EXTERNAL_WITHDRAWAL_STATUS,
+  EXTERNAL_WITHDRAWAL_TYPE,
+  EXTERNAL_WITHDRAWAL_TYPE_LABELS,
+  EXTERNAL_WITHDRAWAL_STATUS_LABELS,
+  getBadgeVariant,
+} from "@/constants";
 import { formatDateTime, formatCurrency } from "@/utils";
-import { FileItem, FileViewMode } from "@/components/file/file-item";
-import { TouchableOpacity, Linking, Alert } from "react-native";
-import { useState } from "react";
 
 interface ExternalWithdrawalInfoCardProps {
   withdrawal: ExternalWithdrawal;
 }
 
-const getStatusLabel = (status: EXTERNAL_WITHDRAWAL_STATUS) => {
-  const labels = {
-    [EXTERNAL_WITHDRAWAL_STATUS.PENDING]: "Pendente",
-    [EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED]: "Totalmente Devolvido",
-    [EXTERNAL_WITHDRAWAL_STATUS.CHARGED]: "Cobrado",
-    [EXTERNAL_WITHDRAWAL_STATUS.CANCELLED]: "Cancelado",
-  };
-  return labels[status] || status;
-};
-
-const getStatusColor = (status: EXTERNAL_WITHDRAWAL_STATUS, colors: any) => {
-  const colorMap = {
-    [EXTERNAL_WITHDRAWAL_STATUS.PENDING]: colors.warning,
-    [EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED]: colors.success,
-    [EXTERNAL_WITHDRAWAL_STATUS.CHARGED]: colors.primary,
-    [EXTERNAL_WITHDRAWAL_STATUS.CANCELLED]: colors.destructive,
-  };
-  return colorMap[status] || colors.mutedForeground;
-};
-
 export function ExternalWithdrawalInfoCard({ withdrawal }: ExternalWithdrawalInfoCardProps) {
   const { colors } = useTheme();
-  const [fileViewMode] = useState<FileViewMode>("list");
 
-  const isFullyReturned = withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED;
-  const isCharged = withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.CHARGED;
-  const isCancelled = withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.CANCELLED;
+  // Get badge variant from centralized configuration
+  const statusBadgeVariant = getBadgeVariant(withdrawal.status, "EXTERNAL_WITHDRAWAL");
+  const statusLabel = EXTERNAL_WITHDRAWAL_STATUS_LABELS[withdrawal.status] || withdrawal.status;
 
   // Calculate total price if chargeable
   const totalPrice =
@@ -62,49 +42,16 @@ export function ExternalWithdrawalInfoCard({ withdrawal }: ExternalWithdrawalInf
         ) || 0
       : 0;
 
-  const handleFilePress = (file: any) => {
-    const apiUrl = (global as { __ANKAA_API_URL__?: string }).__ANKAA_API_URL__ || "http://localhost:3030";
-    const downloadUrl = `${apiUrl}/files/serve/${file.id}`;
-
-    Alert.alert(
-      "Download File",
-      `Deseja fazer download de ${file.filename}?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Download",
-          onPress: () => {
-            Linking.openURL(downloadUrl).catch(err => {
-              console.error("Failed to open URL:", err);
-              Alert.alert("Erro", "Não foi possível abrir o arquivo");
-            });
-          },
-        },
-      ]
-    );
-  };
-
   return (
     <Card style={styles.card}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
+        <View style={styles.headerTitleRow}>
           <IconPackage size={20} color={colors.mutedForeground} />
           <ThemedText style={styles.title}>Informações da Retirada Externa</ThemedText>
         </View>
-        <Badge
-          variant={
-            isFullyReturned
-              ? "success"
-              : isCharged
-              ? "default"
-              : isCancelled
-              ? "destructive"
-              : "secondary"
-          }
-          style={{ backgroundColor: getStatusColor(withdrawal.status, colors) }}
-        >
-          {getStatusLabel(withdrawal.status)}
+        <Badge variant={statusBadgeVariant}>
+          {statusLabel}
         </Badge>
       </View>
 
@@ -201,54 +148,6 @@ export function ExternalWithdrawalInfoCard({ withdrawal }: ExternalWithdrawalInf
           )}
         </View>
 
-        {/* Files Section */}
-        {(withdrawal.nfe || withdrawal.receipt) && (
-          <View style={[styles.section, { borderTopWidth: 1, borderTopColor: colors.border + "50", paddingTop: spacing.md }]}>
-            <ThemedText style={styles.sectionTitle}>Documentos</ThemedText>
-
-            {withdrawal.nfe && (
-              <View style={styles.infoRow}>
-                <View style={styles.fileSection}>
-                  <View style={styles.fileSectionHeader}>
-                    <IconFileInvoice size={16} color={colors.mutedForeground} />
-                    <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                      Nota Fiscal
-                    </ThemedText>
-                  </View>
-                  <FileItem
-                    file={withdrawal.nfe}
-                    viewMode={fileViewMode}
-                    onPress={handleFilePress}
-                    showFilename={true}
-                    showFileSize={true}
-                    showRelativeTime={false}
-                  />
-                </View>
-              </View>
-            )}
-
-            {withdrawal.receipt && (
-              <View style={styles.infoRow}>
-                <View style={styles.fileSection}>
-                  <View style={styles.fileSectionHeader}>
-                    <IconReceipt size={16} color={colors.mutedForeground} />
-                    <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                      Recibo
-                    </ThemedText>
-                  </View>
-                  <FileItem
-                    file={withdrawal.receipt}
-                    viewMode={fileViewMode}
-                    onPress={handleFilePress}
-                    showFilename={true}
-                    showFileSize={true}
-                    showRelativeTime={false}
-                  />
-                </View>
-              </View>
-            )}
-          </View>
-        )}
 
         {/* Notes Section */}
         {withdrawal.notes && (
@@ -273,20 +172,25 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
+    gap: spacing.sm,
   },
-  headerLeft: {
+  headerTitleRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    flex: 1,
+    minWidth: 200,
   },
   title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    flexShrink: 1,
   },
   content: {
     gap: spacing.sm,
@@ -333,15 +237,5 @@ const styles = StyleSheet.create({
   notesText: {
     fontSize: fontSize.sm,
     flex: 1,
-  },
-  fileSection: {
-    flex: 1,
-    gap: spacing.sm,
-  },
-  fileSectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
   },
 });

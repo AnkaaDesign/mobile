@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
 import { SimpleFormField, FormFieldGroup } from "@/components/ui";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
-import { SimpleFormActionBar } from "@/components/forms";
+import { FormActionBar } from "@/components/forms";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { Icon } from "@/components/ui/icon";
@@ -1108,7 +1108,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
       </KeyboardAvoidingView>
 
       {/* Action Buttons */}
-      <SimpleFormActionBar
+      <FormActionBar
         onCancel={onCancel}
         onSubmit={() => {
           // Check for layout width error before submitting

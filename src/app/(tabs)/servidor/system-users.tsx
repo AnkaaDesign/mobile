@@ -119,14 +119,13 @@ export default function SystemUsersScreen() {
                     <View className="flex-row items-center gap-3 flex-1">
                       <Icon
                         name={getStatusIcon(item.status)}
-                        className="w-5 h-5"
-                        style={{
-                          color: item.status === "active"
+                        size={20}
+                        color={item.status === "active"
                             ? colors.success
                             : item.status === "locked"
                             ? colors.destructive
                             : colors.mutedForeground
-                        }}
+                        }
                       />
                       <View className="flex-1">
                         <CardTitle className="text-lg">{item.username}</CardTitle>

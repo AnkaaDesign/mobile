@@ -17,6 +17,7 @@ const Label = React.forwardRef<Text, LabelProps>(({ children, style, onPress, on
     fontSize: 14,
     fontWeight: "500",
     lineHeight: 14,
+    marginBottom: 6,
     color: colors.foreground,
     ...(disabled && {
       opacity: 0.7,

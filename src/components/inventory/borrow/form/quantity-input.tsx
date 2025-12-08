@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { Input } from "@/components/ui/input";
 import { ThemedText } from "@/components/ui/themed-text";

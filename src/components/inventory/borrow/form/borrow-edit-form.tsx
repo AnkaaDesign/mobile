@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { View, StyleSheet, Alert, ScrollView } from "react-native";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { IconPackage, IconX, IconLoader, IconAlertTriangle, IconCheck, IconCalendar } from "@tabler/icons-react-native";
+import { IconX, IconLoader, IconAlertTriangle, IconCheck } from "@tabler/icons-react-native";
 import {
   ThemedText,
   Card,
@@ -106,11 +106,6 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
   const selectedQuantity = useWatch({
     control: form.control,
     name: "quantity",
-  });
-
-  const selectedStatus = useWatch({
-    control: form.control,
-    name: "status",
   });
 
   // Fetch selected item details for validation

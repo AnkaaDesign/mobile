@@ -1,6 +1,6 @@
 import React from "react";
-import { Stack, useLocalSearchParams, router } from "expo-router";
-import { ScrollView, View, RefreshControl, StyleSheet, Alert as RNAlert } from "react-native";
+import { Stack, useLocalSearchParams } from "expo-router";
+import { ScrollView, View, RefreshControl, StyleSheet } from "react-native";
 import { usePaintDetail } from "@/hooks";
 import {
   PaintFormulasCard,
@@ -84,24 +84,6 @@ export default function CatalogoBasicoDetailsScreen() {
     await refetch();
     setRefreshing(false);
   }, [refetch]);
-
-  // Redirect to full catalog edit if user has warehouse access
-  const handleEditRedirect = () => {
-    RNAlert.alert(
-      "Editar Tinta",
-      "Você será redirecionado para o catálogo completo de pintura.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Continuar",
-          style: "default",
-          onPress: () => {
-            router.push(`/pintura/catalogo/editar/${id}`);
-          },
-        },
-      ]
-    );
-  };
 
   if (isLoading) {
     return (

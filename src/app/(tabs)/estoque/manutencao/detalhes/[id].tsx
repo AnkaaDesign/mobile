@@ -17,7 +17,7 @@ export default function MaintenanceDetailsScreen() {
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: maintenance, isLoading, error, refetch } = useMaintenance(id, {
+  const { data: maintenanceResponse, isLoading, error, refetch } = useMaintenance(id, {
     include: {
       item: {
         include: {
@@ -55,6 +55,7 @@ export default function MaintenanceDetailsScreen() {
       },
     },
   });
+  const maintenance = (maintenanceResponse?.data || null) as any;
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);

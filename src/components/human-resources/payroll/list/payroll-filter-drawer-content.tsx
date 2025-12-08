@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { IconFilter, IconX, IconBuilding, IconBriefcase, IconUserCheck, IconUserMinus, IconCalendar } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -277,9 +277,9 @@ export function PayrollFilterDrawerContent({
             <ThemedText style={[styles.inputLabel, { color: colors.foreground }]}>Ano</ThemedText>
             <Combobox
               options={yearOptions}
-              selectedValues={localFilters.year ? [localFilters.year.toString()] : []}
-              onValueChange={(values) => {
-                const year = values[0] ? parseInt(values[0]) : undefined;
+              value={localFilters.year ? localFilters.year.toString() : ''}
+              onValueChange={(value) => {
+                const year = typeof value === 'string' && value ? parseInt(value) : undefined;
                 setLocalFilters((prev) => ({
                   ...prev,
                   year,
@@ -288,7 +288,6 @@ export function PayrollFilterDrawerContent({
               }}
               placeholder="Selecione o ano..."
               emptyText="Nenhum ano encontrado"
-              singleSelect
             />
           </View>
 
@@ -298,8 +297,9 @@ export function PayrollFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={monthOptions}
-              selectedValues={localFilters.months || []}
-              onValueChange={(months) => setLocalFilters((prev) => ({ ...prev, months }))}
+              value={localFilters.months || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, months: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder={
                 localFilters.year ? 'Selecione os meses...' : 'Selecione um ano primeiro'
               }
@@ -328,8 +328,9 @@ export function PayrollFilterDrawerContent({
           <View style={styles.inputGroup}>
             <Combobox
               options={sectorOptions}
-              selectedValues={localFilters.sectorIds || []}
-              onValueChange={handleSectorsChange}
+              value={localFilters.sectorIds || []}
+              mode="multiple"
+              onValueChange={(values) => handleSectorsChange(Array.isArray(values) ? values : values ? [values] : [])}
               placeholder="Todos os setores"
               searchPlaceholder="Buscar setores..."
               emptyText="Nenhum setor encontrado"
@@ -352,8 +353,9 @@ export function PayrollFilterDrawerContent({
           <View style={styles.inputGroup}>
             <Combobox
               options={positionOptions}
-              selectedValues={localFilters.positionIds || []}
-              onValueChange={handlePositionsChange}
+              value={localFilters.positionIds || []}
+              mode="multiple"
+              onValueChange={(values) => handlePositionsChange(Array.isArray(values) ? values : values ? [values] : [])}
               placeholder="Todos os cargos"
               searchPlaceholder="Buscar cargos..."
               emptyText="Nenhum cargo encontrado"
@@ -376,8 +378,9 @@ export function PayrollFilterDrawerContent({
           <View style={styles.inputGroup}>
             <Combobox
               options={userOptions}
-              selectedValues={localFilters.userIds || []}
-              onValueChange={(userIds) => setLocalFilters((prev) => ({ ...prev, userIds }))}
+              value={localFilters.userIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os usuários"
               searchPlaceholder="Buscar usuários..."
               emptyText="Nenhum usuário encontrado"
@@ -405,9 +408,10 @@ export function PayrollFilterDrawerContent({
           <View style={styles.inputGroup}>
             <Combobox
               options={userOptions}
-              selectedValues={localFilters.excludeUserIds || []}
-              onValueChange={(excludeUserIds) =>
-                setLocalFilters((prev) => ({ ...prev, excludeUserIds }))
+              value={localFilters.excludeUserIds || []}
+              mode="multiple"
+              onValueChange={(values) =>
+                setLocalFilters((prev) => ({ ...prev, excludeUserIds: Array.isArray(values) ? values : values ? [values] : [] }))
               }
               placeholder="Nenhuma exclusão"
               searchPlaceholder="Buscar usuários..."

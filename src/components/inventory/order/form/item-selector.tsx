@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { getItems, getItemCategories, getItemBrands, getSuppliers } from "@/api-client";
+import { getItems } from "@/api-client";
 import type { Item } from "@/types";
 
 interface OrderItemSelectorProps {
@@ -157,7 +157,7 @@ export function OrderItemSelector({
   }, [categoryIds, brandIds, supplierIds, showInactive]);
 
   // Custom render function for item options
-  const renderItemOption = useCallback((option: ComboboxOption, isSelected: boolean) => {
+  const renderItemOption = useCallback((option: ComboboxOption) => {
     const metadata = option.metadata;
     if (!metadata) {
       return (

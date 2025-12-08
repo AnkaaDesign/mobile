@@ -158,7 +158,7 @@ import { Button } from "@/components/ui/button";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useItemsInfiniteMobile } from "@/hooks";
 import { formatNumber, determineStockLevel } from "@/utils";
-import { STOCK_LEVEL, ITEM_CATEGORY_TYPE } from "@/constants";
+import { STOCK_LEVEL } from "@/constants";
 import { isTabletWidth, TABLET_WIDTH_THRESHOLD } from "@/lib/table-utils";
 
 // ============================================================================
@@ -177,9 +177,12 @@ interface ItemSelectorColumn {
 export interface ItemSelectorTableProps {
   selectedItems: Set<string>;
   quantities: Record<string, number>;
-  onSelectItem: (itemId: string) => void;
+  prices?: Record<string, number>;
+  onSelectItem: (itemId: string, item?: any) => void;
   onQuantityChange: (itemId: string, quantity: number) => void;
+  onPriceChange?: (itemId: string, price: number) => void;
   showQuantityInput?: boolean;
+  showPriceInput?: boolean;
   minQuantity?: number;
   maxQuantity?: number;
   allowZeroStock?: boolean;
@@ -413,45 +416,58 @@ const HeaderCell = memo(function HeaderCell({
   );
 });
 
-// Table Row with inline quantity input (web-style)
+// Table Row with inline quantity and price input (web-style)
 const TableRow = memo(function TableRow({
   item,
   columns,
   columnWidths,
   isSelected,
   quantity,
+  price,
   onSelect,
   onQuantityChange,
+  onPriceChange,
   showQuantityInput,
+  showPriceInput,
   minQuantity,
   maxQuantity,
   index,
   isTablet,
   qntColumnWidth,
+  priceColumnWidth,
 }: {
   item: any;
   columns: ItemSelectorColumn[];
   columnWidths: number[];
   isSelected: boolean;
   quantity: number;
+  price: number;
   onSelect: () => void;
   onQuantityChange: (value: number) => void;
+  onPriceChange?: (value: number) => void;
   showQuantityInput?: boolean;
+  showPriceInput?: boolean;
   minQuantity?: number;
   maxQuantity?: number;
   index: number;
   isTablet: boolean;
   qntColumnWidth: number;
+  priceColumnWidth: number;
 }) {
   const { colors } = useTheme();
   const availableStock = item.quantity || 0;
 
   const [localQuantity, setLocalQuantity] = useState(String(quantity));
+  const [localPrice, setLocalPrice] = useState(price > 0 ? price.toFixed(2).replace(".", ",") : "");
 
   // Sync local state when prop changes
   useEffect(() => {
     setLocalQuantity(String(quantity));
   }, [quantity]);
+
+  useEffect(() => {
+    setLocalPrice(price > 0 ? price.toFixed(2).replace(".", ",") : "");
+  }, [price]);
 
   const handleQuantityChange = useCallback(
     (text: string) => {
@@ -477,6 +493,25 @@ const TableRow = memo(function TableRow({
       onQuantityChange(validQuantity);
     }
   }, [localQuantity, minQuantity, maxQuantity, availableStock, onQuantityChange]);
+
+  const handlePriceChange = useCallback(
+    (text: string) => {
+      setLocalPrice(text);
+    },
+    []
+  );
+
+  const handlePriceBlur = useCallback(() => {
+    const normalizedValue = localPrice.replace(",", ".");
+    const numericValue = parseFloat(normalizedValue);
+    if (isNaN(numericValue) || localPrice === "" || numericValue < 0) {
+      setLocalPrice("0,00");
+      onPriceChange?.(0);
+    } else {
+      setLocalPrice(numericValue.toFixed(2).replace(".", ","));
+      onPriceChange?.(numericValue);
+    }
+  }, [localPrice, onPriceChange]);
 
   // Render quantity input cell for tablet
   const renderQuantityInputCell = () => {
@@ -505,6 +540,43 @@ const TableRow = memo(function TableRow({
           onBlur={handleQuantityBlur}
           onSubmitEditing={() => {
             handleQuantityBlur();
+            Keyboard.dismiss();
+          }}
+          keyboardType="decimal-pad"
+          returnKeyType="done"
+          selectTextOnFocus
+        />
+      </View>
+    );
+  };
+
+  // Render price input cell for tablet
+  const renderPriceInputCell = () => {
+    if (!isSelected) {
+      return (
+        <View style={[styles.cell, styles.qntCell, { width: priceColumnWidth }]}>
+          <ThemedText style={[styles.cellText, { color: colors.mutedForeground }]}>
+            -
+          </ThemedText>
+        </View>
+      );
+    }
+    return (
+      <View style={[styles.cell, styles.qntCell, { width: priceColumnWidth }]}>
+        <TextInput
+          style={[
+            styles.priceInputInline,
+            {
+              color: colors.foreground,
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+            },
+          ]}
+          value={localPrice}
+          onChangeText={handlePriceChange}
+          onBlur={handlePriceBlur}
+          onSubmitEditing={() => {
+            handlePriceBlur();
             Keyboard.dismiss();
           }}
           keyboardType="decimal-pad"
@@ -556,34 +628,69 @@ const TableRow = memo(function TableRow({
         ))}
         {/* Quantity input column for tablet */}
         {showQuantityInput && isTablet && renderQuantityInputCell()}
+        {/* Price input column for tablet */}
+        {showPriceInput && isTablet && renderPriceInputCell()}
       </View>
 
-      {/* Quantity Input - Second row when selected (mobile only) */}
-      {showQuantityInput && isSelected && !isTablet && (
+      {/* Quantity and Price Input - Second row when selected (mobile only) */}
+      {(showQuantityInput || showPriceInput) && isSelected && !isTablet && (
         <View style={[styles.quantityRow, { borderTopColor: colors.border }]}>
-          <ThemedText style={[styles.quantityLabel, { color: colors.mutedForeground }]}>
-            Quantidade:
-          </ThemedText>
-          <TextInput
-            style={[
-              styles.quantityInputExpanded,
-              {
-                color: colors.foreground,
-                backgroundColor: colors.background,
-                borderColor: colors.border,
-              },
-            ]}
-            value={localQuantity}
-            onChangeText={handleQuantityChange}
-            onBlur={handleQuantityBlur}
-            onSubmitEditing={() => {
-              handleQuantityBlur();
-              Keyboard.dismiss();
-            }}
-            keyboardType="decimal-pad"
-            returnKeyType="done"
-            selectTextOnFocus
-          />
+          {showQuantityInput && (
+            <>
+              <ThemedText style={[styles.quantityLabel, { color: colors.mutedForeground }]}>
+                {showPriceInput ? "Qnt:" : "Quantidade:"}
+              </ThemedText>
+              <TextInput
+                style={[
+                  styles.quantityInputExpanded,
+                  {
+                    color: colors.foreground,
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                    flex: showPriceInput ? 0.4 : 1,
+                  },
+                ]}
+                value={localQuantity}
+                onChangeText={handleQuantityChange}
+                onBlur={handleQuantityBlur}
+                onSubmitEditing={() => {
+                  handleQuantityBlur();
+                  Keyboard.dismiss();
+                }}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                selectTextOnFocus
+              />
+            </>
+          )}
+          {showPriceInput && (
+            <>
+              <ThemedText style={[styles.quantityLabel, { color: colors.mutedForeground, marginLeft: showQuantityInput ? 12 : 0 }]}>
+                Preço:
+              </ThemedText>
+              <TextInput
+                style={[
+                  styles.quantityInputExpanded,
+                  {
+                    color: colors.foreground,
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                    flex: showQuantityInput ? 0.6 : 1,
+                  },
+                ]}
+                value={localPrice}
+                onChangeText={handlePriceChange}
+                onBlur={handlePriceBlur}
+                onSubmitEditing={() => {
+                  handlePriceBlur();
+                  Keyboard.dismiss();
+                }}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                selectTextOnFocus
+              />
+            </>
+          )}
         </View>
       )}
     </TouchableOpacity>
@@ -611,12 +718,14 @@ const LoadingSkeleton = memo(function LoadingSkeleton() {
 export function ItemSelectorTable({
   selectedItems,
   quantities,
+  prices = {},
   onSelectItem,
   onQuantityChange,
+  onPriceChange,
   showQuantityInput = true,
+  showPriceInput = false,
   minQuantity = 1,
   maxQuantity,
-  allowZeroStock = false,
   categoryType,
   showSelectedOnly = false,
   searchTerm = "",
@@ -624,7 +733,6 @@ export function ItemSelectorTable({
   categoryIds = [],
   brandIds = [],
   supplierIds = [],
-  onShowSelectedOnlyChange,
   onSearchTermChange,
   onShowInactiveChange,
   onCategoryIdsChange,
@@ -669,7 +777,7 @@ export function ItemSelectorTable({
   const queryParams = useMemo(() => {
     const params: any = {
       orderBy: { [sortField]: sortDirection },
-      include: { brand: true, category: true },
+      include: { brand: true, category: true, prices: { orderBy: { createdAt: "desc" }, take: 1 } },
     };
 
     const whereConditions: any = {};
@@ -737,10 +845,11 @@ export function ItemSelectorTable({
   // Tablet detection
   const isTablet = screenWidth >= TABLET_WIDTH_THRESHOLD;
 
-  // Qnt column width for tablet (fixed width)
-  const QNT_COLUMN_WIDTH = 80;
+  // Column widths for tablet (fixed widths)
+  const QNT_COLUMN_WIDTH = 70;
+  const PRICE_COLUMN_WIDTH = 90;
 
-  // Calculate column widths (including quantity column)
+  // Calculate column widths (including quantity and price columns)
   const displayColumns = useMemo(
     () => COLUMNS.filter((col) => visibleColumns.has(col.key)),
     [COLUMNS, visibleColumns]
@@ -748,14 +857,16 @@ export function ItemSelectorTable({
 
   const columnWidths = useMemo(() => {
     // Full width minus container padding (spacing.md on each side)
-    // Also subtract qnt column width on tablet when showQuantityInput is true
-    const qntWidth = (showQuantityInput && isTablet) ? QNT_COLUMN_WIDTH : 0;
-    const availableWidth = screenWidth - spacing.md * 2 - qntWidth;
+    // Also subtract qnt/price column widths on tablet
+    // Use wider qnt column (QNT_COLUMN_WIDTH + 20) when no price input to accommodate "Quantidade" label
+    const qntWidth = (showQuantityInput && isTablet) ? (showPriceInput ? QNT_COLUMN_WIDTH : QNT_COLUMN_WIDTH + 20) : 0;
+    const priceWidth = (showPriceInput && isTablet) ? PRICE_COLUMN_WIDTH : 0;
+    const availableWidth = screenWidth - spacing.md * 2 - qntWidth - priceWidth;
     const totalRatio = displayColumns.reduce((sum, col) => sum + col.width, 0);
     return displayColumns.map((col) =>
       Math.floor((availableWidth * col.width) / totalRatio)
     );
-  }, [displayColumns, screenWidth, isTablet, showQuantityInput]);
+  }, [displayColumns, screenWidth, isTablet, showQuantityInput, showPriceInput]);
 
   // Handlers
   const handleSort = useCallback((field: string) => {
@@ -805,6 +916,22 @@ export function ItemSelectorTable({
     setVisibleColumns(new Set(getDefaultVisibleColumns()));
   }, []);
 
+  // Helper to get item's default price
+  const getItemDefaultPrice = useCallback((item: any): number => {
+    // Try to get the latest price from item's price history
+    if (item.prices && item.prices.length > 0) {
+      const sortedPrices = [...item.prices].sort((a: any, b: any) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      return sortedPrices[0].value || 0;
+    }
+    // Use item's current price
+    if (item.price !== null && item.price !== undefined) {
+      return item.price;
+    }
+    return 0;
+  }, []);
+
   const renderItem = useCallback(
     ({ item, index }: { item: any; index: number }) => (
       <TableRow
@@ -813,17 +940,21 @@ export function ItemSelectorTable({
         columnWidths={columnWidths}
         isSelected={selectedItems.has(item.id)}
         quantity={quantities[item.id] || minQuantity}
-        onSelect={() => onSelectItem(item.id)}
+        price={prices[item.id] ?? getItemDefaultPrice(item)}
+        onSelect={() => onSelectItem(item.id, item)}
         onQuantityChange={(value) => onQuantityChange(item.id, value)}
+        onPriceChange={onPriceChange ? (value) => onPriceChange(item.id, value) : undefined}
         showQuantityInput={showQuantityInput}
+        showPriceInput={showPriceInput}
         minQuantity={minQuantity}
         maxQuantity={maxQuantity || item.quantity}
         index={index}
         isTablet={isTablet}
-        qntColumnWidth={QNT_COLUMN_WIDTH}
+        qntColumnWidth={showPriceInput ? QNT_COLUMN_WIDTH : QNT_COLUMN_WIDTH + 20}
+        priceColumnWidth={PRICE_COLUMN_WIDTH}
       />
     ),
-    [selectedItems, quantities, displayColumns, columnWidths, onSelectItem, onQuantityChange, showQuantityInput, minQuantity, maxQuantity, isTablet]
+    [selectedItems, quantities, prices, displayColumns, columnWidths, onSelectItem, onQuantityChange, onPriceChange, showQuantityInput, showPriceInput, minQuantity, maxQuantity, isTablet, getItemDefaultPrice]
   );
 
   const handleEndReached = useCallback(() => {
@@ -888,13 +1019,26 @@ export function ItemSelectorTable({
           ))}
           {/* Qnt header column for tablet */}
           {showQuantityInput && isTablet && (
-            <View style={[styles.headerCell, { width: QNT_COLUMN_WIDTH }]}>
+            <View style={[styles.headerCell, { width: showPriceInput ? QNT_COLUMN_WIDTH : QNT_COLUMN_WIDTH + 20 }]}>
               <View style={styles.headerCellContent}>
                 <ThemedText
                   style={[styles.headerText, { color: colors.foreground }]}
                   numberOfLines={1}
                 >
-                  Qnt
+                  {showPriceInput ? "Qnt" : "Quantidade"}
+                </ThemedText>
+              </View>
+            </View>
+          )}
+          {/* Price header column for tablet */}
+          {showPriceInput && isTablet && (
+            <View style={[styles.headerCell, { width: PRICE_COLUMN_WIDTH }]}>
+              <View style={styles.headerCellContent}>
+                <ThemedText
+                  style={[styles.headerText, { color: colors.foreground }]}
+                  numberOfLines={1}
+                >
+                  Preço
                 </ThemedText>
               </View>
             </View>
@@ -1054,7 +1198,8 @@ const styles = StyleSheet.create({
   quantityLabel: { fontSize: fontSize.sm, fontWeight: "500" },
   quantityInputExpanded: { flex: 1, height: 36, borderRadius: 6, borderWidth: 1, paddingHorizontal: 12, fontSize: fontSize.sm },
   quantityInlineContainer: { marginLeft: 8, justifyContent: "center" },
-  quantityInputInline: { width: 70, borderRadius: 6, borderWidth: 1, paddingHorizontal: 4, paddingVertical: 4, fontSize: fontSize.sm, textAlign: "center" },
+  quantityInputInline: { width: 60, borderRadius: 6, borderWidth: 1, paddingHorizontal: 4, paddingVertical: 4, fontSize: fontSize.sm, textAlign: "center" },
+  priceInputInline: { width: 80, borderRadius: 6, borderWidth: 1, paddingHorizontal: 4, paddingVertical: 4, fontSize: fontSize.sm, textAlign: "center" },
   tableFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, paddingHorizontal: 16, borderTopWidth: 1, minHeight: 36 },
   footerText: { fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
   emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: spacing.xl * 2 },

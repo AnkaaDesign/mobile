@@ -10,7 +10,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { Warning } from '@/types'
 
 function MyTeamWarningsContent() {
-  const { data: user } = useAuth()
+  const { user } = useAuth()
 
   // Create a modified config that filters warnings by user's sector
   const config = useMemo((): ListConfig<Warning> => {

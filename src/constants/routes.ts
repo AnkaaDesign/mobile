@@ -4,7 +4,6 @@ export const routes = {
   // Administration - Administração - Administration
   administration: {
     customers: {
-      batchEdit: "/administracao/clientes/editar-em-lote",
       create: "/administracao/clientes/cadastrar",
       details: (id: string) => `/administracao/clientes/detalhes/${id}`,
       edit: (id: string) => `/administracao/clientes/editar/${id}`,
@@ -12,7 +11,6 @@ export const routes = {
       root: "/administracao/clientes",
     },
     collaborators: {
-      batchEdit: "/administracao/colaboradores/editar-em-lote",
       create: "/administracao/colaboradores/cadastrar",
       details: (id: string) => `/administracao/colaboradores/detalhes/${id}`,
       edit: (id: string) => `/administracao/colaboradores/editar/${id}`,
@@ -35,7 +33,6 @@ export const routes = {
     },
     root: "/administracao",
     sectors: {
-      batchEdit: "/administracao/setores/editar-em-lote",
       create: "/administracao/setores/cadastrar",
       details: (id: string) => `/administracao/setores/detalhes/${id}`,
       edit: (id: string) => `/administracao/setores/editar/${id}`,
@@ -43,7 +40,6 @@ export const routes = {
       root: "/administracao/setores",
     },
     users: {
-      batchEdit: "/administracao/usuarios/editar-em-lote",
       create: "/administracao/usuarios/cadastrar",
       details: (id: string) => `/administracao/usuarios/detalhes/${id}`,
       edit: (id: string) => `/administracao/usuarios/editar/${id}`,
@@ -102,7 +98,6 @@ export const routes = {
 
   // Customers - Alias for administration customers for backward compatibility
   customers: {
-    batchEdit: "/administracao/clientes/editar-em-lote",
     create: "/administracao/clientes/cadastrar",
     details: (id: string) => `/administracao/clientes/detalhes/${id}`,
     edit: (id: string) => `/administracao/clientes/editar/${id}`,
@@ -116,10 +111,15 @@ export const routes = {
   // Home - Página inicial
   home: "/",
 
+  // Profile - Perfil - User Profile
+  profile: {
+    root: "/perfil",
+    edit: "/perfil/editar",
+  },
+
   // Financial - Financeiro - Financial Management
   financial: {
     customers: {
-      batchEdit: "/financeiro/clientes/editar-em-lote",
       create: "/financeiro/clientes/cadastrar",
       details: (id: string) => `/financeiro/clientes/detalhes/${id}`,
       edit: (id: string) => `/financeiro/clientes/editar/${id}`,
@@ -130,7 +130,18 @@ export const routes = {
 
   // Human Resources - Recursos Humanos - Human Resources
   humanResources: {
-    bonusSimulation: "/recursos-humanos/simulacao-bonus",
+    bonus: {
+      root: "/recursos-humanos/bonus",
+      list: "/recursos-humanos/bonus",
+      details: (id: string) => `/recursos-humanos/bonus/detalhes/${id}`,
+      simulation: "/recursos-humanos/bonus/simulacao",
+      performanceLevels: {
+        list: "/recursos-humanos/bonus/nivel-de-performance",
+        root: "/recursos-humanos/bonus/nivel-de-performance",
+      },
+    },
+    // Legacy route for backward compatibility
+    bonusSimulation: "/recursos-humanos/bonus/simulacao",
     calculations: {
       root: "/recursos-humanos/calculos",
     },
@@ -150,7 +161,6 @@ export const routes = {
       root: "/recursos-humanos/feriados",
     },
     positions: {
-      batchEdit: "/recursos-humanos/cargos/editar-em-lote",
       create: "/recursos-humanos/cargos/cadastrar",
       details: (id: string) => `/recursos-humanos/cargos/detalhes/${id}`,
       edit: (id: string) => `/recursos-humanos/cargos/editar/${id}`,
@@ -196,7 +206,6 @@ export const routes = {
       root: "/recursos-humanos/controle-ponto",
     },
     vacations: {
-      batchEdit: "/recursos-humanos/ferias/editar-em-lote",
       calendar: "/recursos-humanos/ferias/calendario",
       create: "/recursos-humanos/ferias/cadastrar",
       details: (id: string) => `/recursos-humanos/ferias/detalhes/${id}`,
@@ -204,7 +213,6 @@ export const routes = {
       root: "/recursos-humanos/ferias",
     },
     warnings: {
-      batchEdit: "/recursos-humanos/advertencias/editar-em-lote",
       create: "/recursos-humanos/advertencias/cadastrar",
       details: (id: string) => `/recursos-humanos/advertencias/detalhes/${id}`,
       edit: (id: string) => `/recursos-humanos/advertencias/editar/${id}`,
@@ -257,7 +265,6 @@ export const routes = {
       root: "/estoque/retiradas-externas",
     },
     borrows: {
-      batchEdit: "/estoque/emprestimos/editar-lote",
       create: "/estoque/emprestimos/cadastrar",
       details: (id: string) => `/estoque/emprestimos/detalhes/${id}`,
       edit: (id: string) => `/estoque/emprestimos/editar/${id}`,
@@ -279,7 +286,6 @@ export const routes = {
       },
     },
     activities: {
-      batchEdit: "/estoque/movimentacoes/editar-lote",
       create: "/estoque/movimentacoes/cadastrar",
       details: (id: string) => `/estoque/movimentacoes/detalhes/${id}`,
       edit: (id: string) => `/estoque/movimentacoes/editar/${id}`,
@@ -335,10 +341,8 @@ export const routes = {
       },
     },
     products: {
-      batchEdit: "/estoque/produtos/editar-em-lote",
       stockBalance: "/estoque/produtos/balanco-estoque",
       brands: {
-        batchEdit: "/estoque/produtos/marcas/editar-em-lote",
         create: "/estoque/produtos/marcas/cadastrar",
         details: (id: string) => `/estoque/produtos/marcas/detalhes/${id}`,
         edit: (id: string) => `/estoque/produtos/marcas/editar/${id}`,
@@ -346,7 +350,6 @@ export const routes = {
         root: "/estoque/produtos/marcas",
       },
       categories: {
-        batchEdit: "/estoque/produtos/categorias/editar-em-lote",
         create: "/estoque/produtos/categorias/cadastrar",
         details: (id: string) => `/estoque/produtos/categorias/detalhes/${id}`,
         edit: (id: string) => `/estoque/produtos/categorias/editar/${id}`,
@@ -361,7 +364,6 @@ export const routes = {
     },
     root: "/estoque",
     suppliers: {
-      batchEdit: "/estoque/fornecedores/editar-em-lote",
       create: "/estoque/fornecedores/cadastrar",
       details: (id: string) => `/estoque/fornecedores/detalhes/${id}`,
       edit: (id: string) => `/estoque/fornecedores/editar/${id}`,
@@ -489,6 +491,12 @@ export const routes = {
     myHolidays: {
       root: "/pessoal/feriados",
     },
+    preferences: {
+      root: "/pessoal/preferencias",
+      notifications: "/pessoal/preferencias/notificacoes",
+      privacy: "/pessoal/preferencias/privacidade",
+      theme: "/pessoal/preferencias/tema",
+    },
     myVacations: {
       details: (id: string) => `/pessoal/ferias/detalhes/${id}`,
       root: "/pessoal/ferias",
@@ -532,10 +540,9 @@ export const routes = {
       root: "/producao/aerografia",
     },
     cutting: {
-      create: "/producao/recorte/plano-de-recorte/cadastrar",
-      details: (id: string) => `/producao/recorte/plano-de-recorte/detalhes/${id}`,
-      edit: (id: string) => `/producao/recorte/plano-de-recorte/editar/${id}`,
-      list: "/producao/recorte/listar",
+      create: "/producao/recorte/cadastrar",
+      details: (id: string) => `/producao/recorte/detalhes/${id}`,
+      list: "/producao/recorte",
       root: "/producao/recorte",
     },
     history: {
@@ -552,7 +559,6 @@ export const routes = {
     root: "/producao",
     // Note: 'schedule' property name is kept for backward compatibility but routes point to 'cronograma'
     schedule: {
-      batchEdit: "/producao/cronograma/editar-em-lote",
       create: "/producao/cronograma/cadastrar",
       details: (id: string) => `/producao/cronograma/detalhes/${id}`,
       edit: (id: string) => `/producao/cronograma/editar/${id}`,
@@ -587,7 +593,6 @@ export const routes = {
 
   // Users - Alias for administration users (collaborators) for backward compatibility
   users: {
-    batchEdit: "/administracao/colaboradores/editar-em-lote",
     create: "/administracao/colaboradores/cadastrar",
     details: (id: string) => `/administracao/colaboradores/detalhes/${id}`,
     edit: (id: string) => `/administracao/colaboradores/editar/${id}`,

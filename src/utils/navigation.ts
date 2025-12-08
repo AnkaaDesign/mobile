@@ -9,6 +9,7 @@ export interface NavigationUser {
     privileges?: SECTOR_PRIVILEGES;
   };
   position?: {
+    bonifiable?: boolean;
     sector?: {
       privileges?: SECTOR_PRIVILEGES;
     };
@@ -26,6 +27,10 @@ export function getFilteredMenuForUser(menuItems: MenuItem[], user: NavigationUs
   if (userPrivilege) {
     filteredMenu = filterMenuByPrivileges(filteredMenu, userPrivilege as SECTOR_PRIVILEGES);
   }
+
+  // Apply bonifiable filtering - hide menu items that require bonifiable position
+  const isBonifiable = user?.position?.bonifiable ?? false;
+  filteredMenu = filterMenuByBonifiable(filteredMenu, isBonifiable);
 
   return filteredMenu;
 }
@@ -84,6 +89,36 @@ export function filterMenuByPrivileges(menuItems: MenuItem[], userPrivilege?: SE
         return {
           ...item,
           children: filterMenuByPrivileges(item.children, userPrivilege),
+        };
+      }
+      return item;
+    })
+    .filter((item) => {
+      // Remove items with no children after filtering
+      if (item.children && item.children.length === 0) return false;
+      return true;
+    });
+}
+
+/**
+ * Filter menu items based on bonifiable position requirement
+ * Hides menu items that require a bonifiable position if the user's position is not bonifiable
+ */
+export function filterMenuByBonifiable(menuItems: MenuItem[], isBonifiable: boolean): MenuItem[] {
+  return menuItems
+    .filter((item) => {
+      // If item requires bonifiable and user is not bonifiable, hide it
+      if (item.requiresBonifiable && !isBonifiable) {
+        return false;
+      }
+      return true;
+    })
+    .map((item) => {
+      // Recursively filter children
+      if (item.children) {
+        return {
+          ...item,
+          children: filterMenuByBonifiable(item.children, isBonifiable),
         };
       }
       return item;

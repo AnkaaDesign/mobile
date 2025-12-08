@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
 import { IconFilter, IconX, IconBriefcase, IconCurrencyDollar } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -179,8 +179,9 @@ export function PositionFilterDrawerContent({
             </ThemedText>
             <Combobox
               options={sectorOptions}
-              selectedValues={localFilters.sectorIds || []}
-              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sectorIds: values }))}
+              value={localFilters.sectorIds || []}
+              mode="multiple"
+              onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sectorIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder={sectors.length === 0 ? "Carregando setores..." : "Todos os setores"}
               searchPlaceholder="Buscar setores..."
               emptyText="Nenhum setor encontrado"

@@ -17,13 +17,14 @@ export default function MaintenanceScheduleDetailsScreen() {
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: schedule, isLoading, error, refetch } = useMaintenance(id, {
+  const { data: scheduleResponse, isLoading, error, refetch } = useMaintenance(id, {
     include: {
       item: true,
       lastRunSchedule: true,
       triggeredSchedules: true,
     },
   });
+  const schedule = (scheduleResponse?.data || null) as any;
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);

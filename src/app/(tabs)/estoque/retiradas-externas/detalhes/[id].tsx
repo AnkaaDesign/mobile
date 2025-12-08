@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { View, ScrollView, Alert, RefreshControl, StyleSheet } from "react-native";
+import { View, ScrollView, Alert, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { IconArrowLeft, IconEdit, IconTrash, IconRefresh, IconCheck, IconX, IconHistory } from "@tabler/icons-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { IconEdit, IconTrash, IconCheck, IconX, IconHistory } from "@tabler/icons-react-native";
 import { useExternalWithdrawal, useExternalWithdrawalMutations } from "@/hooks";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -18,13 +17,12 @@ import { EXTERNAL_WITHDRAWAL_STATUS, SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE }
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
-import { spacing, fontSize } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
 export default function ExternalWithdrawalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -36,8 +34,7 @@ export default function ExternalWithdrawalDetailScreen() {
   // Fetch withdrawal data
   const { data: response, isLoading, error, refetch } = useExternalWithdrawal(id!, {
     include: {
-      nfe: true,
-      receipt: true,
+      receipts: true,
       items: {
         include: {
           item: {
@@ -221,61 +218,52 @@ export default function ExternalWithdrawalDetailScreen() {
     withdrawal?.status !== EXTERNAL_WITHDRAWAL_STATUS.CANCELLED &&
     canManage;
 
-  return (
-    <ThemedView style={StyleSheet.flatten([styles.container, { paddingTop: insets.top }])}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <Button
-            variant="default"
-            size="icon"
-            onPress={handleGoBack}
-          >
-            <IconArrowLeft size={24} color={colors.foreground} />
-          </Button>
-          <ThemedText style={styles.headerTitle}>Retirada #{withdrawal?.id?.slice(-8).toUpperCase()}</ThemedText>
-        </View>
-        <View style={styles.headerRight}>
-          <Button
-            variant="default"
-            size="icon"
-            onPress={handleRefresh}
-          >
-            <IconRefresh size={24} color={colors.foreground} />
-          </Button>
-          {canEdit && (
-            <Button
-              variant="default"
-              size="icon"
-              onPress={handleEdit}
-            >
-              <IconEdit size={24} color={colors.foreground} />
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              variant="default"
-              size="icon"
-              onPress={handleDelete}
-            >
-              <IconTrash size={24} color={colors.destructive} />
-            </Button>
-          )}
-        </View>
-      </View>
+  // Generate page title
+  const pageTitle = `Retirada #${withdrawal?.id?.slice(-8).toUpperCase()}`;
 
-      {/* Content */}
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-          />
-        }
-      >
+  return (
+    <ScrollView
+      style={[styles.scrollView, { backgroundColor: colors.background }]}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
+      }
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.content}>
+        {/* Page Header Card */}
+        <Card style={styles.headerCard}>
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <ThemedText
+                style={[styles.pageTitle, { color: colors.foreground }]}
+                numberOfLines={2}
+              >
+                {pageTitle}
+              </ThemedText>
+            </View>
+            <View style={styles.headerActions}>
+              {canEdit && (
+                <TouchableOpacity
+                  onPress={handleEdit}
+                  style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                  activeOpacity={0.7}
+                >
+                  <IconEdit size={18} color={colors.primaryForeground} />
+                </TouchableOpacity>
+              )}
+              {canDelete && (
+                <TouchableOpacity
+                  onPress={handleDelete}
+                  style={[styles.actionButton, { backgroundColor: colors.destructive }]}
+                  activeOpacity={0.7}
+                >
+                  <IconTrash size={18} color={colors.destructiveForeground} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </Card>
+
         <View style={styles.cardsContainer}>
           {/* Withdrawal Info */}
           <ExternalWithdrawalInfoCard withdrawal={withdrawal} />
@@ -308,7 +296,7 @@ export default function ExternalWithdrawalDetailScreen() {
               {showMarkAsFullyReturned && (
                 <Button
                   onPress={handleMarkAsFullyReturned}
-                  style={styles.actionButton}
+                  style={styles.actionButtonLarge}
                 >
                   <IconCheck size={20} color={colors.primaryForeground} />
                   <ThemedText style={{ color: colors.primaryForeground }}>
@@ -319,7 +307,7 @@ export default function ExternalWithdrawalDetailScreen() {
               {showMarkAsCharged && (
                 <Button
                   onPress={handleMarkAsCharged}
-                  style={styles.actionButton}
+                  style={styles.actionButtonLarge}
                   variant="default"
                 >
                   <IconCheck size={20} color={colors.primaryForeground} />
@@ -331,7 +319,7 @@ export default function ExternalWithdrawalDetailScreen() {
               {showCancel && (
                 <Button
                   onPress={handleCancel}
-                  style={styles.actionButton}
+                  style={styles.actionButtonLarge}
                   variant="destructive"
                 >
                   <IconX size={20} color={colors.destructiveForeground} />
@@ -344,69 +332,78 @@ export default function ExternalWithdrawalDetailScreen() {
           )}
         </View>
 
-        {/* Bottom padding */}
-        <View style={{ paddingBottom: insets.bottom + spacing.lg }} />
-      </ScrollView>
-    </ThemedView>
+        {/* Bottom spacing for mobile navigation */}
+        <View style={{ height: spacing.xxl * 2 }} />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
   },
-  header: {
+  content: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
+  headerCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
+    paddingVertical: spacing.xs,
   },
   headerLeft: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  pageTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+  },
+  headerActions: {
     flexDirection: "row",
-    alignItems: "center",
     gap: spacing.sm,
-    flex: 1,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  headerRight: {
-    flexDirection: "row",
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
     alignItems: "center",
-    gap: spacing.xs,
-  },
-  contentContainer: {
-    flex: 1,
+    justifyContent: "center",
   },
   cardsContainer: {
-    padding: spacing.md,
     gap: spacing.md,
   },
   card: {
     padding: spacing.md,
   },
-  cardHeader: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: spacing.sm,
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
+  sectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+  },
   title: {
     fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
+    fontWeight: fontWeight.medium,
   },
   actionsCard: {
     gap: spacing.sm,
   },
-  actionButton: {
+  actionButtonLarge: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,

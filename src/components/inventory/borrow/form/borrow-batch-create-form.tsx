@@ -282,7 +282,7 @@ export function BorrowBatchCreateForm({
                 onBrandIdsChange={multiStepForm.setBrandIds}
                 onSupplierIdsChange={multiStepForm.setSupplierIds}
                 allowZeroStock={false}
-                emptyMessage="Nenhuma ferramenta encontrada"
+                emptyText="Nenhuma ferramenta encontrada"
               />
               {/* Validation Errors */}
               {multiStepForm.formTouched && Object.keys(multiStepForm.validation.errors).length > 0 && (
@@ -391,7 +391,7 @@ export function BorrowBatchCreateForm({
             </ScrollView>
           )}
 
-          {/* Action Bar - Same pattern as SimpleFormActionBar */}
+          {/* Action Bar - Same pattern as FormActionBar */}
           {!isKeyboardVisible && (
             <View
               style={[
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: "700",
   },
-  // Action bar - matches SimpleFormActionBar exactly
+  // Action bar - matches FormActionBar exactly
   actionBar: {
     flexDirection: "row",
     gap: formSpacing.rowGap,

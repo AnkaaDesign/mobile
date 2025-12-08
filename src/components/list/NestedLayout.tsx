@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { View, StyleSheet } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
 import { ThemedView } from '@/components/ui/themed-view'
@@ -112,7 +112,6 @@ export const NestedLayout = memo(function NestedLayout<T extends { id: string }>
   onParamError,
   validateParam = true,
 }: NestedLayoutProps<T>) {
-  const { colors } = useTheme()
   const params = useLocalSearchParams()
 
   // Extract the parameter value
