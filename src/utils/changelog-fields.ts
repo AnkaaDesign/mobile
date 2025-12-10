@@ -954,6 +954,24 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
         return value as any;
       }
       if (field === "services") {
+        // Format services with description and status
+        const statusLabels: Record<string, string> = {
+          PENDING: "Pendente",
+          IN_PROGRESS: "Em andamento",
+          COMPLETED: "Concluído",
+          CANCELLED: "Cancelado",
+        };
+
+        // If services have structure (description, status), format them nicely
+        if (value.length > 0 && typeof value[0] === "object" && value[0].description) {
+          return value.map((s: { description?: string; status?: string }) => {
+            const desc = s.description || "Serviço";
+            const status = s.status ? statusLabels[s.status] || s.status : "";
+            return status ? `${desc}\n${status}` : desc;
+          }).join("\n\n");
+        }
+
+        // Fallback to count
         return `${value.length} ${value.length === 1 ? "serviço" : "serviços"}`;
       }
       if (field === "commissions") {
@@ -1855,6 +1873,24 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       } else if ((value as any).action === "REMOVE_COMPONENT") {
         return `Componente removido (${(value as any).ratio.toFixed(2)}%)`;
       }
+    }
+
+    // Special handling for observation field in TASK
+    if (field === "observation" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+      const obs = value as any;
+      if (!obs) return "Nenhuma";
+
+      const description = obs.description || "";
+      const fileCount = obs.fileIds?.length || 0;
+
+      if (description && fileCount > 0) {
+        return `${description}\n${fileCount} ${fileCount === 1 ? "arquivo" : "arquivos"}`;
+      } else if (description) {
+        return description;
+      } else if (fileCount > 0) {
+        return `${fileCount} ${fileCount === 1 ? "arquivo" : "arquivos"}`;
+      }
+      return "Observação vazia";
     }
 
     // Special handling for delivery_completed field in PPE_DELIVERY

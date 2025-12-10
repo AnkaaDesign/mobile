@@ -24,10 +24,11 @@ export const Tags = memo(function Tags({
 }: FilterTagsProps) {
   const { colors } = useTheme()
 
-  // Get display label from field (prefer placeholder if string, fallback to label)
+  // Get display label from field (prefer label, fallback to placeholder)
   const getFieldLabel = (field: { label?: string; placeholder?: string | { min?: string; max?: string; from?: string; to?: string } }) => {
+    if (field.label) return field.label
     if (typeof field.placeholder === 'string') return field.placeholder
-    return field.label || ''
+    return ''
   }
 
   const tags = useMemo<FilterTag[]>(() => {

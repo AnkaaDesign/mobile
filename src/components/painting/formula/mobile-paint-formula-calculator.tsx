@@ -246,7 +246,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
           hasError: isErrorComponent,
         };
       })
-      .sort((a, b) => b.ratio - a.ratio);
+      .sort((a, b) => a.ratio - b.ratio); // Sort by ratio (lowest first)
   }, [formula, desiredVolume, itemsMap, correctionMode, errorRatio, errorComponentId, selectedComponents]);
 
   // Calculate totals

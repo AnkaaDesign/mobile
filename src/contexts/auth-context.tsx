@@ -74,36 +74,40 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setIsLoggingOut(true);
         cancelAllRequests();
 
-        try {
-          setUser(null);
-          setAccessToken(null);
-          setCachedToken(null);
-          await removeStoredToken();
-          await removeUserData();
-          setAuthToken(null);
+        // Batch state updates first (synchronous)
+        setUser(null);
+        setAccessToken(null);
+        setCachedToken(null);
+        setAuthToken(null);
 
-          if (queryClient) {
+        // Perform cleanup in background (non-blocking)
+        Promise.all([
+          removeStoredToken(),
+          removeUserData(),
+        ]).catch(() => {});
+
+        if (queryClient) {
+          try {
             queryClient.cancelQueries();
             queryClient.removeQueries({ queryKey: USER_QUERY_KEYS.all });
             queryClient.clear();
-          }
-
-          try {
-            const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
-            await AsyncStorage.removeItem("react-query-cache");
           } catch {}
-
-          setTimeout(() => {
-            try {
-              router.replace('/(autenticacao)/entrar' as any);
-            } catch (navError) {
-              console.error("Navigation error:", navError);
-            }
-            setTimeout(() => setIsLoggingOut(false), 500);
-          }, 100);
-        } catch (cleanupError) {
-          console.error("Error during auth cleanup:", cleanupError);
         }
+
+        // AsyncStorage cleanup in background
+        import('@react-native-async-storage/async-storage')
+          .then(m => m.default.removeItem("react-query-cache"))
+          .catch(() => {});
+
+        // Navigate after state is cleared - small delay to let React process state updates
+        setTimeout(() => {
+          try {
+            router.replace('/(autenticacao)/entrar' as any);
+          } catch (navError) {
+            console.error("Navigation error:", navError);
+          }
+          setIsLoggingOut(false);
+        }, 50);
       }
     };
 
@@ -404,52 +408,50 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = async (showAlert = false, alertMessage = "") => {
-    setLoading(true);
     setIsLoggingOut(true);
     cancelAllRequests();
 
-    try {
-      // Batch state updates
-      setUser(null);
-      setAccessToken(null);
-      setCachedToken(null);
+    // Batch state updates first (synchronous)
+    setUser(null);
+    setAccessToken(null);
+    setCachedToken(null);
+    setAuthToken(null);
+    setLoading(false);
 
-      await Promise.all([
-        removeStoredToken(),
-        removeUserData(),
-      ]);
-
-      setAuthToken(null);
-
-      if (queryClient) {
-        try {
-          queryClient.cancelQueries();
-          queryClient.removeQueries({ queryKey: USER_QUERY_KEYS.all });
-          queryClient.clear();
-        } catch {}
-      }
-
-      try {
-        const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
-        await AsyncStorage.removeItem("react-query-cache");
-      } catch {}
-
-      if (showAlert && alertMessage) {
-        Alert.alert("Acesso Bloqueado", alertMessage);
-      }
-    } catch (error) {
-      console.error("Error during logout:", error);
-    } finally {
-      setLoading(false);
-      setTimeout(() => {
-        try {
-          router.replace('/(autenticacao)/entrar' as any);
-        } catch (navError) {
-          console.error("Navigation error:", navError);
-        }
-        setTimeout(() => setIsLoggingOut(false), 500);
-      }, 100);
+    // Show alert if needed
+    if (showAlert && alertMessage) {
+      Alert.alert("Acesso Bloqueado", alertMessage);
     }
+
+    // Perform cleanup in background (non-blocking)
+    Promise.all([
+      removeStoredToken(),
+      removeUserData(),
+    ]).catch(() => {});
+
+    // React Query cleanup (non-blocking)
+    if (queryClient) {
+      try {
+        queryClient.cancelQueries();
+        queryClient.removeQueries({ queryKey: USER_QUERY_KEYS.all });
+        queryClient.clear();
+      } catch {}
+    }
+
+    // AsyncStorage cleanup in background
+    import('@react-native-async-storage/async-storage')
+      .then(m => m.default.removeItem("react-query-cache"))
+      .catch(() => {});
+
+    // Navigate after state is cleared - small delay to let React process state updates
+    setTimeout(() => {
+      try {
+        router.replace('/(autenticacao)/entrar' as any);
+      } catch (navError) {
+        console.error("Navigation error:", navError);
+      }
+      setIsLoggingOut(false);
+    }, 50);
   };
 
   const refreshUserData = async () => {

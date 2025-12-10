@@ -827,9 +827,9 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
               </Pressable>
 
               <Pressable
-                onPress={async () => {
+                onPress={() => {
                   closeUserMenu();
-                  await logout();
+                  logout();
                 }}
                 style={({ pressed }) => [
                   {

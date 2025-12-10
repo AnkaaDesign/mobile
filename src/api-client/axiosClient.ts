@@ -502,6 +502,13 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
         }
       }
 
+      // Handle FormData - let axios set the correct Content-Type for multipart/form-data
+      // This is critical for file uploads in React Native
+      if (config.data instanceof FormData) {
+        // Remove Content-Type header so axios/React Native can set the correct boundary
+        delete config.headers["Content-Type"];
+      }
+
       // Add cache-busting for GET requests (but not for cached responses)
       if (config.method === "get" && !finalConfig.enableCache) {
         config.params = { ...config.params, _t: Date.now() };

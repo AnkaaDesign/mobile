@@ -27,6 +27,10 @@ export interface FilePickerItem {
   type: string;
   size?: number;
   mimeType?: string;
+  // For existing files loaded from backend
+  id?: string;
+  uploaded?: boolean;
+  thumbnailUrl?: string; // Backend-provided thumbnail URL for existing files
 }
 
 export interface FilePickerProps {
@@ -325,7 +329,7 @@ export function FilePicker({
         <View style={styles.singleFilePreview}>
           {fileIsImage ? (
             <Image
-              source={{ uri: file.uri }}
+              source={{ uri: file.uploaded && file.thumbnailUrl ? file.thumbnailUrl : file.uri }}
               style={styles.singleFileImage}
               contentFit="cover"
             />
@@ -400,7 +404,7 @@ export function FilePicker({
                 >
                   {fileIsImage ? (
                     <Image
-                      source={{ uri: file.uri }}
+                      source={{ uri: file.uploaded && file.thumbnailUrl ? file.thumbnailUrl : file.uri }}
                       style={styles.previewImage}
                       contentFit="cover"
                     />

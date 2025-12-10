@@ -28,6 +28,7 @@ import { useSectors, useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES } from "@/constants";
 import { IconX } from "@tabler/icons-react-native";
+import { getFileThumbnailUrl } from "@/api-client";
 import { CustomerSelector } from "./customer-selector";
 import { ServiceSelector } from "./service-selector";
 import { GeneralPaintingSelector, LogoPaintsSelector } from "./paint-selector";
@@ -39,7 +40,7 @@ import type { Customer } from "@/types";
 // Enhanced Task Form Schema for Mobile with Cross-field Validation
 const taskFormSchema = z.object({
   name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres").max(200, "Nome muito longo"),
-  customerId: z.string().uuid("Cliente é obrigatório").min(1, "Cliente é obrigatório"),
+  customerId: z.string().uuid("Cliente inválido").nullable().optional(),
   sectorId: z.string().uuid().nullable().optional(),
   serialNumber: z.string()
     .nullable()
@@ -79,7 +80,7 @@ const taskFormSchema = z.object({
   services: z.array(z.object({
     description: z.string().min(3, "Mínimo de 3 caracteres").max(400, "Máximo de 400 caracteres"),
     status: z.enum(Object.values(SERVICE_ORDER_STATUS) as [string, ...string[]]).optional(),
-  })).min(1, "Pelo menos um serviço é obrigatório"),
+  })).optional(),
   // Budget detailed - line items
   budget: z.object({
     items: z.array(z.object({
@@ -206,12 +207,45 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
   const isDesignerSector = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
   const isLogisticSector = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
 
-  // File upload state
-  const [artworkFiles, setArtworkFiles] = useState<FilePickerItem[]>([]);
-  const [observationFiles, setObservationFiles] = useState<FilePickerItem[]>([]);
+  // File upload state - initialize artwork files from existing data in edit mode
+  const [artworkFiles, setArtworkFiles] = useState<FilePickerItem[]>(() => {
+    if (mode === "edit" && initialData?.artworks) {
+      // Convert existing files to FilePickerItem format
+      return initialData.artworks.map((file: any) => ({
+        id: file.id,
+        uri: file.url || file.path || "",
+        name: file.name || file.filename || "file",
+        type: file.mimeType || file.mimetype || file.type || "application/octet-stream",
+        size: file.size,
+        uploaded: true, // Mark as already uploaded
+        // Generate thumbnail URL for image files
+        thumbnailUrl: file.id ? getFileThumbnailUrl(file.id, "medium") : undefined,
+      }));
+    }
+    return [];
+  });
+  // Initialize observation files from existing data in edit mode
+  const [observationFiles, setObservationFiles] = useState<FilePickerItem[]>(() => {
+    if (mode === "edit" && initialData?.observation?.files) {
+      // Convert existing files to FilePickerItem format
+      return initialData.observation.files.map((file: any) => ({
+        id: file.id,
+        uri: file.url || file.path || "",
+        name: file.name || file.filename || "file",
+        type: file.mimeType || file.mimetype || file.type || "application/octet-stream",
+        size: file.size,
+        uploaded: true, // Mark as already uploaded
+        // Generate thumbnail URL for image files
+        thumbnailUrl: file.id ? getFileThumbnailUrl(file.id, "medium") : undefined,
+      }));
+    }
+    return [];
+  });
 
-  // Observation section state
-  const [isObservationOpen, setIsObservationOpen] = useState(false);
+  // Observation section state - auto-open if observation exists in edit mode
+  const [isObservationOpen, setIsObservationOpen] = useState(
+    () => mode === "edit" && !!initialData?.observation?.description
+  );
 
   // Layout state - Initialize with existingLayouts if available (edit mode)
   // Include photoUri for new photos that need to be uploaded
@@ -381,17 +415,35 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
     // Check if backside layout has a photo to upload (only backside supports photos)
     const hasLayoutPhotos = isLayoutOpen && layouts.back?.photoUri;
 
-    // If we have files, convert to FormData with context for proper file organization
-    if (artworkFiles.length > 0 || observationFiles.length > 0 || hasLayoutPhotos) {
-      // Prepare files with proper structure
+    // Filter only NEW files (not already uploaded)
+    const newArtworkFiles = artworkFiles.filter(f => !f.uploaded);
+    const newObservationFiles = observationFiles.filter(f => !f.uploaded);
+
+    // Debug logging for file upload
+    console.log('[TaskForm] File upload check:', {
+      artworkFilesCount: artworkFiles.length,
+      observationFilesCount: observationFiles.length,
+      newArtworkFilesCount: newArtworkFiles.length,
+      newObservationFilesCount: newObservationFiles.length,
+      hasLayoutPhotos,
+      isObservationOpen,
+    });
+
+    if (newObservationFiles.length > 0) {
+      console.log('[TaskForm] Observation files to upload:', newObservationFiles.map(f => ({ uri: f.uri, name: f.name, type: f.type })));
+    }
+
+    // If we have NEW files to upload, convert to FormData with context for proper file organization
+    if (newArtworkFiles.length > 0 || newObservationFiles.length > 0 || hasLayoutPhotos) {
+      // Prepare files with proper structure - only NEW files
       const files: Record<string, any[]> = {};
 
-      if (artworkFiles.length > 0) {
-        files.artworks = artworkFiles;
+      if (newArtworkFiles.length > 0) {
+        files.artworks = newArtworkFiles;
       }
 
-      if (observationFiles.length > 0) {
-        files.observationFiles = observationFiles;
+      if (newObservationFiles.length > 0) {
+        files.observationFiles = newObservationFiles;
       }
 
       // Prepare form data (excluding files)
@@ -430,10 +482,28 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
       if (data.finishedAt) formDataFields.finishedAt = data.finishedAt;
       if (data.paintIds && data.paintIds.length > 0) formDataFields.paintIds = data.paintIds;
 
+      // Include existing artwork IDs when uploading new artworks
+      // This ensures backend tracks the changes correctly in changelog
+      if (newArtworkFiles.length > 0) {
+        // Get IDs of existing (already uploaded) artwork files
+        const existingArtworkIds = artworkFiles
+          .filter(f => f.uploaded && f.id)
+          .map(f => f.id);
+        // Always include artworkIds (even if empty) so backend tracks the change
+        formDataFields.artworkIds = existingArtworkIds;
+      }
+
       // Add observation if section is open
       if (isObservationOpen && data.observation) {
+        // Get IDs of existing (already uploaded) files
+        const existingFileIds = observationFiles
+          .filter(f => f.uploaded && f.id)
+          .map(f => f.id);
+
         formDataFields.observation = {
           description: data.observation.description,
+          // Include existing file IDs so backend knows to keep them
+          ...(existingFileIds.length > 0 && { fileIds: existingFileIds }),
         };
       }
 
@@ -501,8 +571,15 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
 
       // Add observation if section is open (no files case)
       if (isObservationOpen && data.observation) {
+        // Get IDs of existing (already uploaded) files
+        const existingFileIds = observationFiles
+          .filter(f => f.uploaded && f.id)
+          .map(f => f.id);
+
         cleanedData.observation = {
           description: data.observation.description,
+          // Include existing file IDs so backend knows to keep them
+          ...(existingFileIds.length > 0 && { fileIds: existingFileIds }),
         };
       } else {
         delete cleanedData.observation;
@@ -586,7 +663,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
               </SimpleFormField>
 
               {/* Customer - Disabled for financial, warehouse, designer */}
-              <FormFieldGroup label="Cliente" required error={errors.customerId?.message}>
+              <FormFieldGroup label="Cliente" error={errors.customerId?.message}>
                 <Controller
                   control={form.control}
                   name="customerId"
@@ -896,7 +973,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
 
           {/* Services */}
           <FormCard title="Serviços" icon="IconTool">
-              <FormFieldGroup label="Serviços" required error={errors.services?.message}>
+              <FormFieldGroup label="Serviços" error={errors.services?.message}>
                 <Controller
                   control={form.control}
                   name="services"
@@ -1121,69 +1198,82 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
             return;
           }
 
-          // Trigger form validation and submission
-          form.handleSubmit(
-            // onValid - called when validation passes
-            (data) => {
-              console.log('[TaskForm] Validation passed, submitting...');
-              handleSubmit(data);
-            },
-            // onInvalid - called when validation fails
-            (errors) => {
-              console.log('[TaskForm] Validation failed:', errors);
+          // Error handler for validation failures
+          const onInvalidHandler = (errors: any) => {
+            console.log('[TaskForm] Validation failed:', errors);
 
-              // Get first error message to show to user
-              const errorMessages: string[] = [];
+            // Get first error message to show to user
+            const errorMessages: string[] = [];
 
-              if (errors.name) {
-                errorMessages.push(`Nome: ${errors.name.message}`);
-              }
-              if (errors.customerId) {
-                errorMessages.push(`Cliente: ${errors.customerId.message}`);
-              }
-              if (errors.services) {
-                const servicesError = errors.services as any;
-                if (servicesError.message) {
-                  errorMessages.push(`Serviços: ${servicesError.message}`);
-                } else if (servicesError.root?.message) {
-                  errorMessages.push(`Serviços: ${servicesError.root.message}`);
-                } else {
-                  errorMessages.push('Serviços: Pelo menos um serviço é obrigatório');
-                }
-              }
-              if (errors.term) {
-                errorMessages.push(`Prazo: ${errors.term.message}`);
-              }
-              if (errors.startedAt) {
-                errorMessages.push(`Data de início: ${errors.startedAt.message}`);
-              }
-              if (errors.finishedAt) {
-                errorMessages.push(`Data de conclusão: ${errors.finishedAt.message}`);
-              }
-
-              // Add other field errors
-              const handledFields = ['name', 'customerId', 'services', 'term', 'startedAt', 'finishedAt'];
-              Object.entries(errors).forEach(([key, value]) => {
-                if (!handledFields.includes(key) && value && typeof value === 'object' && 'message' in value) {
-                  errorMessages.push(`${key}: ${(value as any).message}`);
-                }
-              });
-
-              if (errorMessages.length > 0) {
-                Alert.alert(
-                  "Campos obrigatórios",
-                  errorMessages.join('\n'),
-                  [{ text: "OK" }]
-                );
-              } else {
-                Alert.alert(
-                  "Erro de validação",
-                  "Por favor, preencha todos os campos obrigatórios corretamente.",
-                  [{ text: "OK" }]
-                );
-              }
+            if (errors.name) {
+              errorMessages.push(`Nome: ${errors.name.message}`);
             }
-          )();
+            if (errors.customerId) {
+              errorMessages.push(`Cliente: ${errors.customerId.message}`);
+            }
+            if (errors.services) {
+              const servicesError = errors.services as any;
+              if (servicesError.message) {
+                errorMessages.push(`Serviços: ${servicesError.message}`);
+              } else if (servicesError.root?.message) {
+                errorMessages.push(`Serviços: ${servicesError.root.message}`);
+              }
+              // Note: Services are now optional, so no fallback error message needed
+            }
+            if (errors.term) {
+              errorMessages.push(`Prazo: ${errors.term.message}`);
+            }
+            if (errors.startedAt) {
+              errorMessages.push(`Data de início: ${errors.startedAt.message}`);
+            }
+            if (errors.finishedAt) {
+              errorMessages.push(`Data de conclusão: ${errors.finishedAt.message}`);
+            }
+
+            // Add other field errors
+            const handledFields = ['name', 'customerId', 'services', 'term', 'startedAt', 'finishedAt'];
+            Object.entries(errors).forEach(([key, value]) => {
+              if (!handledFields.includes(key) && value && typeof value === 'object' && 'message' in value) {
+                errorMessages.push(`${key}: ${(value as any).message}`);
+              }
+            });
+
+            if (errorMessages.length > 0) {
+              Alert.alert(
+                "Campos obrigatórios",
+                errorMessages.join('\n'),
+                [{ text: "OK" }]
+              );
+            } else {
+              Alert.alert(
+                "Erro de validação",
+                "Por favor, preencha todos os campos obrigatórios corretamente.",
+                [{ text: "OK" }]
+              );
+            }
+          };
+
+          // Use handleSubmitChanges for edit mode (only sends changed fields)
+          // Use handleSubmit for create mode (sends all fields)
+          if (mode === "edit" && 'handleSubmitChanges' in form) {
+            // Edit mode: only submit changed fields
+            (form as any).handleSubmitChanges(
+              (data: any) => {
+                console.log('[TaskForm Edit] Submitting only changed fields...');
+                handleSubmit(data);
+              },
+              onInvalidHandler
+            )();
+          } else {
+            // Create mode: submit all fields
+            form.handleSubmit(
+              (data) => {
+                console.log('[TaskForm Create] Validation passed, submitting...');
+                handleSubmit(data);
+              },
+              onInvalidHandler
+            )();
+          }
         }}
         isSubmitting={isSubmitting}
         canSubmit={!layoutWidthError}

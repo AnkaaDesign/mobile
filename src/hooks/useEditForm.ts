@@ -135,14 +135,22 @@ export function useEditForm<TFieldValues extends FieldValues = FieldValues, TCon
         if (key === "services") {
           // Explicitly check if it's an array before using filter
           if (Array.isArray(currentValue) && Array.isArray(originalValue)) {
-            const currentServices = currentValue as Array<{ description?: string }>;
-            const originalServices = originalValue as Array<{ description?: string }>;
+            const currentServices = currentValue as Array<{ description?: string; status?: string }>;
+            const originalServices = originalValue as Array<{ description?: string; status?: string }>;
 
             // Filter out empty services
             const filteredCurrent = currentServices.filter((s) => s && s.description && s.description.trim() !== "");
             const filteredOriginal = originalServices.filter((s) => s && s.description && s.description.trim() !== "");
 
-            if (!_.isEqual(filteredCurrent, filteredOriginal)) {
+            // Compare services ignoring order - sort by description for consistent comparison
+            const sortByDescription = (a: { description?: string }, b: { description?: string }) =>
+              (a.description || "").localeCompare(b.description || "");
+
+            const sortedCurrent = [...filteredCurrent].sort(sortByDescription);
+            const sortedOriginal = [...filteredOriginal].sort(sortByDescription);
+
+            // Only include in changes if content actually differs (not just order)
+            if (!_.isEqual(sortedCurrent, sortedOriginal)) {
               changedFields[typedKey] = filteredCurrent as TFieldValues[keyof TFieldValues];
             }
           } else if (currentValue !== originalValue) {
@@ -165,10 +173,14 @@ export function useEditForm<TFieldValues extends FieldValues = FieldValues, TCon
 
       console.log("Changed fields:", changedFields);
 
-      // Call onSubmit with changed fields
-      const result = onSubmit(changedFields);
-      if (onValid) onValid(changedFields);
-      return result;
+      // Call onValid callback if provided (this replaces the hook's onSubmit)
+      // This allows the caller to handle submission with the changed fields
+      if (onValid) {
+        return onValid(changedFields);
+      }
+
+      // Fallback to hook's onSubmit if no onValid callback provided
+      return onSubmit(changedFields);
     }, onInvalid);
   };
 

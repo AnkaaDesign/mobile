@@ -55,6 +55,12 @@ export default function EditScheduleScreen() {
       logoPaints: true,
       services: true,
       truck: true, // ✅ Include truck to get truckId
+      artworks: true, // ✅ Include artworks for edit mode
+      observation: {
+        include: {
+          files: true, // ✅ Include observation files
+        },
+      },
     },
   });
 
@@ -222,6 +228,15 @@ export default function EditScheduleScreen() {
           commission: task.commission ?? null,
           startedAt: task.startedAt ? new Date(task.startedAt) : null,
           finishedAt: task.finishedAt ? new Date(task.finishedAt) : null,
+          // Include observation with files for edit mode
+          observation: task.observation ? {
+            description: task.observation.description || "",
+            fileIds: task.observation.files?.map((f: any) => f.id) || [],
+            files: task.observation.files || [],
+          } : null,
+          // Include artworks for edit mode
+          artworks: (task as any).artworks || [],
+          artworkIds: (task as any).artworks?.map((f: any) => f.id) || [],
         }}
         initialCustomer={task.customer}
         existingLayouts={existingLayouts}

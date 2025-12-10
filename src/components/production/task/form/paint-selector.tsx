@@ -6,6 +6,9 @@ import { useTheme } from "@/lib/theme";
 import { fontSize, fontWeight, spacing } from "@/constants/design-system";
 import type { Paint } from "@/types";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
+import { PaintFinishPreview } from "@/components/painting/effects/paint-finish-preview";
+import { PAINT_FINISH } from "@/constants";
+import { IconFlask } from "@tabler/icons-react-native";
 
 // Paint finish labels
 const PAINT_FINISH_LABELS: Record<string, string> = {
@@ -33,17 +36,41 @@ interface PaintColorPreviewProps {
 
 function PaintColorPreview({ paint, size = 24 }: PaintColorPreviewProps) {
   const { colors } = useTheme();
+  const hexColor = paint.hex || "#888888";
 
-  // Use PaintPreview component - shows stored image if available, falls back to hex color
+  // Square preview with rounded corners (like web version)
+  // Priority: colorPreview image > finish effect > solid hex color
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
-      <PaintPreview
-        paint={paint}
-        baseColor={paint.hex || "#888888"}
-        width={size}
-        height={size}
-        borderRadius={0}
-      />
+    <View style={{
+      width: size,
+      height: size,
+      borderRadius: 4,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.border
+    }}>
+      {paint.colorPreview ? (
+        // Use stored color preview image if available
+        <PaintPreview
+          paint={paint}
+          baseColor={hexColor}
+          width={size}
+          height={size}
+          borderRadius={0}
+        />
+      ) : paint.finish ? (
+        // Render finish effect if paint has a finish type
+        <PaintFinishPreview
+          baseColor={hexColor}
+          finish={paint.finish as PAINT_FINISH}
+          width={size}
+          height={size}
+          disableAnimations={true}
+        />
+      ) : (
+        // Fallback to solid hex color
+        <View style={{ width: size, height: size, backgroundColor: hexColor }} />
+      )}
     </View>
   );
 }
@@ -146,6 +173,12 @@ function usePaintRenderOption() {
               )}
             </View>
           </View>
+
+          {/* Formula indicator */}
+          <IconFlask
+            size={16}
+            color={((paint._count?.formulas ?? 0) > 0 || (paint.formulas?.length ?? 0) > 0) ? "#16a34a" : colors.destructive}
+          />
         </View>
       );
     },
@@ -185,7 +218,16 @@ export function GeneralPaintingSelector({
       orderBy: { name: "asc" },
       page: page,
       take: 50,
-      include: { paintType: true, paintBrand: true },
+      include: {
+        paintType: true,
+        paintBrand: true,
+        formulas: true,
+        _count: {
+          select: {
+            formulas: true,
+          },
+        },
+      },
     };
 
     // Only add search filter if there's a search term
@@ -264,7 +306,16 @@ export function LogoPaintsSelector({
       orderBy: { name: "asc" },
       page: page,
       take: 50,
-      include: { paintType: true, paintBrand: true },
+      include: {
+        paintType: true,
+        paintBrand: true,
+        formulas: true,
+        _count: {
+          select: {
+            formulas: true,
+          },
+        },
+      },
     };
 
     // Only add search filter if there's a search term

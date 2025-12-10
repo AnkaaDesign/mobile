@@ -1,5 +1,5 @@
-import { useMemo, useCallback } from "react";
-import { View, ScrollView, TouchableOpacity , StyleSheet} from "react-native";
+import React, { useMemo, useCallback, useState } from "react";
+import { View, ScrollView, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,10 +19,19 @@ import {
   IconCheck,
   IconX,
   IconCalendar,
+  IconPhoto,
 } from "@tabler/icons-react-native";
-import type { ChangeLog } from '../../types';
+import type { ChangeLog } from "../../types";
 import { CHANGE_LOG_ENTITY_TYPE, CHANGE_ACTION, CHANGE_TRIGGERED_BY, CHANGE_LOG_ENTITY_TYPE_LABELS } from "@/constants";
+import {
+  CUT_TYPE_LABELS,
+  CUT_STATUS_LABELS,
+  CUT_ORIGIN_LABELS,
+  AIRBRUSHING_STATUS_LABELS,
+  PAINT_FINISH_LABELS,
+} from "@/constants/enum-labels";
 import { formatRelativeTime, getFieldLabel, formatFieldValue, getActionLabel } from "@/utils";
+import { getApiBaseUrl } from "@/utils/file";
 import { useChangeLogs } from "@/hooks";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
@@ -89,6 +98,364 @@ const groupChangelogsByEntity = (changelogs: ChangeLog[]) => {
   return groups;
 };
 
+// Helper function to parse JSON values
+const parseJsonValue = (val: any) => {
+  if (!val) return val;
+  if (typeof val === "string" && (val.trim().startsWith("[") || val.trim().startsWith("{"))) {
+    try {
+      return JSON.parse(val);
+    } catch (e) {
+      return val;
+    }
+  }
+  return val;
+};
+
+// Status labels for services
+const SERVICE_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pendente",
+  IN_PROGRESS: "Em Progresso",
+  COMPLETED: "Concluído",
+  CANCELLED: "Cancelado",
+};
+
+// Badge component for mobile
+const Badge = ({
+  children,
+  variant = "default",
+  colors,
+}: {
+  children: React.ReactNode;
+  variant?: "default" | "success" | "warning" | "destructive";
+  colors: any;
+}) => {
+  const variantStyles: Record<string, { bg: string; text: string }> = {
+    default: { bg: colors.muted + "60", text: colors.mutedForeground },
+    success: { bg: "#22c55e20", text: "#22c55e" },
+    warning: { bg: "#f9731620", text: "#f97316" },
+    destructive: { bg: "#ef444420", text: "#ef4444" },
+  };
+
+  const style = variantStyles[variant] || variantStyles.default;
+
+  return (
+    <View style={{ backgroundColor: style.bg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+      <ThemedText style={{ fontSize: 10, fontWeight: "500", color: style.text }}>{children}</ThemedText>
+    </View>
+  );
+};
+
+// File thumbnail component
+const FileThumbnail = ({ fileId, size = 48, colors }: { fileId?: string; size?: number; colors: any }) => {
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Build thumbnail URL - backend route is /files/thumbnail/{id}?size=small
+  const apiBaseUrl = getApiBaseUrl();
+  const thumbnailUrl = fileId ? `${apiBaseUrl}/files/thumbnail/${fileId}?size=small` : "";
+
+  // Also try direct serve endpoint as fallback for images
+  const serveUrl = fileId ? `${apiBaseUrl}/files/serve/${fileId}` : "";
+
+  // UUID validation
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isValidUuid = fileId && uuidRegex.test(fileId);
+
+  if (!fileId || !isValidUuid || hasError) {
+    return (
+      <View
+        style={{
+          width: size,
+          height: size,
+          backgroundColor: "#e5e5e5",
+          borderRadius: borderRadius.sm,
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: colors.border,
+        }}
+      >
+        <IconPhoto size={size * 0.4} color={colors.mutedForeground} />
+      </View>
+    );
+  }
+
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: "#e5e5e5",
+        borderRadius: borderRadius.sm,
+        overflow: "hidden",
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+      }}
+    >
+      <Image
+        source={{ uri: thumbnailUrl, cache: "force-cache" }}
+        style={{
+          width: size,
+          height: size,
+        }}
+        resizeMode="cover"
+        onLoad={() => setIsLoading(false)}
+        onError={() => setHasError(true)}
+      />
+      {isLoading && !hasError && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#e5e5e5",
+          }}
+        >
+          <IconPhoto size={size * 0.4} color={colors.mutedForeground} />
+        </View>
+      )}
+    </View>
+  );
+};
+
+// Paint color preview component
+const PaintColorPreview = ({ paint, size = 40, colors }: { paint: any; size?: number; colors: any }) => {
+  if (paint?.colorPreview) {
+    return (
+      <Image
+        source={{ uri: paint.colorPreview }}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: borderRadius.sm,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: colors.border,
+        }}
+        resizeMode="cover"
+      />
+    );
+  }
+
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: paint?.hex || "#888888",
+        borderRadius: borderRadius.sm,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+      }}
+    />
+  );
+};
+
+// Render cuts as cards
+const renderCutsCards = (cuts: any[], colors: any) => {
+  if (!Array.isArray(cuts) || cuts.length === 0) {
+    return <ThemedText style={{ color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>;
+  }
+
+  return (
+    <View style={{ gap: spacing.sm, marginTop: spacing.xs }}>
+      {cuts.map((cut: any, index: number) => (
+        <View
+          key={index}
+          style={{
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+            borderRadius: borderRadius.md,
+            padding: spacing.sm,
+            backgroundColor: colors.card,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.sm,
+          }}
+        >
+          {/* Cut Info */}
+          <View style={{ flex: 1, gap: 4 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
+              <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "600", flex: 1 }} numberOfLines={1}>
+                {cut.file?.filename || cut.file?.name || "Arquivo de recorte"}
+              </ThemedText>
+              {cut.status && (
+                <Badge colors={colors} variant={cut.status === "COMPLETED" ? "success" : "default"}>
+                  {CUT_STATUS_LABELS[cut.status] || cut.status}
+                </Badge>
+              )}
+            </View>
+
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+              {cut.type && (
+                <View style={{ flexDirection: "row", gap: 2 }}>
+                  <ThemedText style={{ fontSize: 10, color: colors.mutedForeground }}>Tipo:</ThemedText>
+                  <ThemedText style={{ fontSize: 10, color: colors.foreground }}>{CUT_TYPE_LABELS[cut.type] || cut.type}</ThemedText>
+                </View>
+              )}
+              {cut.quantity && (
+                <View style={{ flexDirection: "row", gap: 2 }}>
+                  <ThemedText style={{ fontSize: 10, color: colors.mutedForeground }}>Qtd:</ThemedText>
+                  <ThemedText style={{ fontSize: 10, color: colors.foreground }}>{cut.quantity}</ThemedText>
+                </View>
+              )}
+              {cut.origin && (
+                <View style={{ flexDirection: "row", gap: 2 }}>
+                  <ThemedText style={{ fontSize: 10, color: colors.mutedForeground }}>Origem:</ThemedText>
+                  <ThemedText style={{ fontSize: 10, color: colors.foreground }}>{CUT_ORIGIN_LABELS[cut.origin] || cut.origin}</ThemedText>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* File Preview */}
+          {(cut.file?.id || cut.fileId) && <FileThumbnail fileId={cut.file?.id || cut.fileId} size={48} colors={colors} />}
+        </View>
+      ))}
+    </View>
+  );
+};
+
+// Render services as cards
+const renderServicesCards = (services: any[], colors: any) => {
+  if (!Array.isArray(services) || services.length === 0) {
+    return <ThemedText style={{ color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>;
+  }
+
+  return (
+    <View style={{ gap: spacing.sm, marginTop: spacing.xs }}>
+      {services.map((service: any, index: number) => (
+        <View
+          key={index}
+          style={{
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+            borderRadius: borderRadius.md,
+            padding: spacing.sm,
+            backgroundColor: colors.card,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm }}>
+            <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "600", flex: 1 }} numberOfLines={1}>
+              {service.description || "Serviço"}
+            </ThemedText>
+            {service.status && (
+              <Badge colors={colors} variant={service.status === "COMPLETED" ? "success" : "default"}>
+                {SERVICE_STATUS_LABELS[service.status] || service.status}
+              </Badge>
+            )}
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+// Render airbrushings as cards
+const renderAirbrushingsCards = (airbrushings: any[], colors: any) => {
+  if (!Array.isArray(airbrushings) || airbrushings.length === 0) {
+    return <ThemedText style={{ color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>;
+  }
+
+  return (
+    <View style={{ gap: spacing.sm, marginTop: spacing.xs }}>
+      {airbrushings.map((airbrushing: any, index: number) => (
+        <View
+          key={index}
+          style={{
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+            borderRadius: borderRadius.md,
+            padding: spacing.sm,
+            backgroundColor: colors.card,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm }}>
+            <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "600", flex: 1 }} numberOfLines={1}>
+              {airbrushing.description || "Aerografia"}
+            </ThemedText>
+            {airbrushing.status && (
+              <Badge colors={colors} variant={airbrushing.status === "COMPLETED" ? "success" : "default"}>
+                {AIRBRUSHING_STATUS_LABELS[airbrushing.status] || airbrushing.status}
+              </Badge>
+            )}
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+// Render paints as cards
+const renderPaintsCards = (paints: any[], colors: any) => {
+  if (!Array.isArray(paints) || paints.length === 0) {
+    return <ThemedText style={{ color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>;
+  }
+
+  return (
+    <View style={{ gap: spacing.sm, marginTop: spacing.xs }}>
+      {paints.map((paint: any, index: number) => (
+        <View
+          key={paint.id || index}
+          style={{
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+            borderRadius: borderRadius.md,
+            padding: spacing.sm,
+            backgroundColor: colors.card,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "flex-start", gap: spacing.sm }}>
+            {/* Paint preview */}
+            <PaintColorPreview paint={paint} size={40} colors={colors} />
+
+            {/* Paint information */}
+            <View style={{ flex: 1, gap: 4 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs, flexWrap: "wrap" }}>
+                <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "600" }} numberOfLines={1}>
+                  {paint.name}
+                </ThemedText>
+                {paint.code && (
+                  <ThemedText style={{ fontSize: 10, color: colors.mutedForeground, fontFamily: "monospace" }}>{paint.code}</ThemedText>
+                )}
+              </View>
+
+              {/* Badges */}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                {paint.paintType?.name && <Badge colors={colors}>{paint.paintType.name}</Badge>}
+                {paint.finish && <Badge colors={colors}>{PAINT_FINISH_LABELS[paint.finish] || paint.finish}</Badge>}
+                {paint.paintBrand?.name && <Badge colors={colors}>{paint.paintBrand.name}</Badge>}
+              </View>
+            </View>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+// Render artworks/files as thumbnails
+const renderArtworksCards = (artworks: any[], colors: any) => {
+  if (!Array.isArray(artworks) || artworks.length === 0) {
+    return <ThemedText style={{ color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>Nenhum arquivo</ThemedText>;
+  }
+
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.xs, alignItems: "center" }}>
+      {artworks.map((file: any, idx: number) => {
+        const fileId = typeof file === "string" ? file : file.id;
+        return <FileThumbnail key={idx} fileId={fileId} size={48} colors={colors} />;
+      })}
+      <ThemedText style={{ fontSize: fontSize.sm, color: colors.mutedForeground }}>
+        ({artworks.length} arquivo{artworks.length > 1 ? "s" : ""})
+      </ThemedText>
+    </View>
+  );
+};
+
 export function ChangelogTimeline({ entityType, entityId, entityName, entityCreatedAt, maxHeight = 400, limit = 50 }: ChangelogTimelineProps) {
   const { colors } = useTheme();
 
@@ -144,6 +511,16 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
     const brandIds = new Set<string>();
     const supplierIds = new Set<string>();
     const userIds = new Set<string>();
+    const customerIds = new Set<string>();
+    const sectorIds = new Set<string>();
+    const paintIds = new Set<string>();
+    const formulaIds = new Set<string>();
+    const itemIds = new Set<string>();
+    const fileIds = new Set<string>();
+    const observationIds = new Set<string>();
+    const truckIds = new Set<string>();
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     changelogs.forEach((changelog) => {
       if (changelog.field === "categoryId") {
@@ -155,9 +532,50 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
       } else if (changelog.field === "supplierId") {
         if (changelog.oldValue && typeof changelog.oldValue === "string") supplierIds.add(changelog.oldValue);
         if (changelog.newValue && typeof changelog.newValue === "string") supplierIds.add(changelog.newValue);
-      } else if (changelog.field === "assignedToUserId") {
+      } else if (changelog.field === "assignedToUserId" || changelog.field === "createdById") {
         if (changelog.oldValue && typeof changelog.oldValue === "string") userIds.add(changelog.oldValue);
         if (changelog.newValue && typeof changelog.newValue === "string") userIds.add(changelog.newValue);
+      } else if (changelog.field === "customerId") {
+        if (changelog.oldValue && typeof changelog.oldValue === "string") customerIds.add(changelog.oldValue);
+        if (changelog.newValue && typeof changelog.newValue === "string") customerIds.add(changelog.newValue);
+      } else if (changelog.field === "sectorId") {
+        if (changelog.oldValue && typeof changelog.oldValue === "string" && uuidRegex.test(changelog.oldValue)) sectorIds.add(changelog.oldValue);
+        if (changelog.newValue && typeof changelog.newValue === "string" && uuidRegex.test(changelog.newValue)) sectorIds.add(changelog.newValue);
+      } else if (changelog.field === "paintId") {
+        if (changelog.oldValue && typeof changelog.oldValue === "string") paintIds.add(changelog.oldValue);
+        if (changelog.newValue && typeof changelog.newValue === "string") paintIds.add(changelog.newValue);
+      } else if (changelog.field === "logoPaints" || changelog.field === "paints" || changelog.field === "groundPaints" || changelog.field === "paintGrounds") {
+        // Extract paint IDs from arrays
+        const extractPaintIds = (val: any) => {
+          if (!val) return;
+          let parsed = parseJsonValue(val);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((item: any) => {
+              if (typeof item === "string" && uuidRegex.test(item)) {
+                paintIds.add(item);
+              } else if (item && typeof item === "object" && item.id) {
+                paintIds.add(item.id);
+              }
+            });
+          }
+        };
+        extractPaintIds(changelog.oldValue);
+        extractPaintIds(changelog.newValue);
+      } else if (changelog.field === "formulaId" || changelog.field === "formulaPaintId") {
+        if (changelog.oldValue && typeof changelog.oldValue === "string") formulaIds.add(changelog.oldValue);
+        if (changelog.newValue && typeof changelog.newValue === "string") formulaIds.add(changelog.newValue);
+      } else if (changelog.field === "itemId") {
+        if (changelog.oldValue && typeof changelog.oldValue === "string") itemIds.add(changelog.oldValue);
+        if (changelog.newValue && typeof changelog.newValue === "string") itemIds.add(changelog.newValue);
+      } else if (changelog.field === "budgetId" || changelog.field === "nfeId" || changelog.field === "receiptId") {
+        if (changelog.oldValue && typeof changelog.oldValue === "string") fileIds.add(changelog.oldValue);
+        if (changelog.newValue && typeof changelog.newValue === "string") fileIds.add(changelog.newValue);
+      } else if (changelog.field === "observationId") {
+        if (changelog.oldValue && typeof changelog.oldValue === "string") observationIds.add(changelog.oldValue);
+        if (changelog.newValue && typeof changelog.newValue === "string") observationIds.add(changelog.newValue);
+      } else if (changelog.field === "truckId") {
+        if (changelog.oldValue && typeof changelog.oldValue === "string") truckIds.add(changelog.oldValue);
+        if (changelog.newValue && typeof changelog.newValue === "string") truckIds.add(changelog.newValue);
       }
     });
 
@@ -166,6 +584,14 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
       brandIds: Array.from(brandIds),
       supplierIds: Array.from(supplierIds),
       userIds: Array.from(userIds),
+      customerIds: Array.from(customerIds),
+      sectorIds: Array.from(sectorIds),
+      paintIds: Array.from(paintIds),
+      formulaIds: Array.from(formulaIds),
+      itemIds: Array.from(itemIds),
+      fileIds: Array.from(fileIds),
+      observationIds: Array.from(observationIds),
+      truckIds: Array.from(truckIds),
     };
   }, [changelogs]);
 
@@ -226,14 +652,17 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
   }, [changelogs, entityType]);
 
   // Format value with entity name
-  const formatValueWithEntity = (value: any, field: string | null) => {
-    if (!field) return formatFieldValue(value, field, entityType);
+  const formatValueWithEntity = (value: any, field: string | null, metadata?: any) => {
+    if (!field) return formatFieldValue(value, field, entityType, metadata);
 
-    if (value === null || value === undefined) return "—";
+    if (value === null || value === undefined) return "Nenhum";
+
+    // Parse JSON strings if needed (backend stores as Json type which may come as strings)
+    let parsedValue = parseJsonValue(value);
 
     // Check if it's a UUID and we have entity details
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (typeof value === "string" && uuidRegex.test(value)) {
+    if (typeof parsedValue === "string" && uuidRegex.test(parsedValue)) {
       // Show loading state while fetching entity details
       if (isLoadingEntityDetails) {
         return "Carregando...";
@@ -242,25 +671,82 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
       // Check if we have entity details and they are Maps
       if (entityDetails) {
         try {
-          if (field === "categoryId" && entityDetails.categories && typeof entityDetails.categories.has === "function" && entityDetails.categories.has(value)) {
-            return entityDetails.categories.get(value) || "Categoria";
+          if (field === "categoryId" && entityDetails.categories?.has?.(parsedValue)) {
+            return entityDetails.categories.get(parsedValue) || "Categoria";
           }
-          if (field === "brandId" && entityDetails.brands && typeof entityDetails.brands.has === "function" && entityDetails.brands.has(value)) {
-            return entityDetails.brands.get(value) || "Marca";
+          if (field === "brandId" && entityDetails.brands?.has?.(parsedValue)) {
+            return entityDetails.brands.get(parsedValue) || "Marca";
           }
-          if (field === "supplierId" && entityDetails.suppliers && typeof entityDetails.suppliers.has === "function" && entityDetails.suppliers.has(value)) {
-            return entityDetails.suppliers.get(value) || "Fornecedor";
+          if (field === "supplierId" && entityDetails.suppliers?.has?.(parsedValue)) {
+            return entityDetails.suppliers.get(parsedValue) || "Fornecedor";
           }
-          if (field === "assignedToUserId" && entityDetails.users && typeof entityDetails.users.has === "function" && entityDetails.users.has(value)) {
-            return entityDetails.users.get(value) || "Usuário";
+          if ((field === "assignedToUserId" || field === "createdById") && entityDetails.users?.has?.(parsedValue)) {
+            return entityDetails.users.get(parsedValue) || "Usuário";
+          }
+          if (field === "customerId" && entityDetails.customers?.has?.(parsedValue)) {
+            return entityDetails.customers.get(parsedValue) || "Cliente";
+          }
+          if (field === "sectorId" && entityDetails.sectors?.has?.(parsedValue)) {
+            return entityDetails.sectors.get(parsedValue) || "Setor";
+          }
+          if (field === "paintId" && entityDetails.paints?.has?.(parsedValue)) {
+            // Return the full paint object for special rendering
+            return entityDetails.paints.get(parsedValue) || "Tinta";
+          }
+          if ((field === "formulaId" || field === "formulaPaintId") && entityDetails.formulas?.has?.(parsedValue)) {
+            return entityDetails.formulas.get(parsedValue) || "Fórmula";
+          }
+          if (field === "itemId" && entityDetails.items?.has?.(parsedValue)) {
+            return entityDetails.items.get(parsedValue) || "Item";
+          }
+          if ((field === "budgetId" || field === "nfeId" || field === "receiptId") && entityDetails.files?.has?.(parsedValue)) {
+            return entityDetails.files.get(parsedValue) || "Arquivo";
+          }
+          if (field === "observationId" && entityDetails.observations?.has?.(parsedValue)) {
+            return entityDetails.observations.get(parsedValue) || "Observação";
+          }
+          if (field === "truckId" && entityDetails.trucks?.has?.(parsedValue)) {
+            return entityDetails.trucks.get(parsedValue) || "Caminhão";
           }
         } catch (error) {
           console.error("Error accessing entity details:", error);
         }
       }
+
+      // Fallback labels when entity details not available
+      if (field === "categoryId") return "Categoria (carregando...)";
+      if (field === "brandId") return "Marca (carregando...)";
+      if (field === "supplierId") return "Fornecedor (carregando...)";
+      if (field === "assignedToUserId" || field === "createdById") return "Usuário (carregando...)";
+      if (field === "customerId") return "Cliente (carregando...)";
+      if (field === "sectorId") return "Setor (carregando...)";
+      if (field === "paintId") return "Tinta (carregando...)";
+      if (field === "formulaId" || field === "formulaPaintId") return "Fórmula (carregando...)";
+      if (field === "itemId") return "Item (carregando...)";
+      if (field === "budgetId" || field === "nfeId" || field === "receiptId") return "Arquivo (carregando...)";
+      if (field === "observationId") return "Observação (carregando...)";
+      if (field === "truckId") return "Caminhão (carregando...)";
     }
 
-    return formatFieldValue(value, field, entityType);
+    return formatFieldValue(parsedValue, field, entityType, metadata);
+  };
+
+  // Helper function to get full paint objects from entityDetails
+  const getPaintObjects = (paintIds: any) => {
+    if (!paintIds || !Array.isArray(paintIds)) return null;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    const paintObjects = paintIds
+      .map((id: string) => {
+        // ID could be a string UUID or already a full object
+        if (typeof id === "object" && id !== null) return id;
+        if (typeof id !== "string") return null;
+        if (!uuidRegex.test(id)) return null;
+        return entityDetails?.paints?.get?.(id) || null;
+      })
+      .filter(Boolean);
+
+    return paintObjects.length > 0 ? paintObjects : null;
   };
 
   // Retry handler
@@ -497,10 +983,21 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                           {/* Changes */}
                           {firstChange.action !== (CHANGE_ACTION.CREATE as any) && changelogGroup.length > 0 && (
                             <View style={styles.changesContainer}>
-                              {changelogGroup.map((changelog, changeIndex) => {
+                              {changelogGroup
+                                .filter((changelog) => {
+                                  // Exclude internal/system fields from display
+                                  if (changelog.field === "statusOrder") return false;
+                                  if (changelog.field === "colorOrder") return false;
+                                  return true;
+                                })
+                                .map((changelog, changeIndex) => {
                                 if (!changelog.field) return null;
 
-                                const showSeparator = changeIndex > 0 && changeIndex < changelogGroup.length;
+                                const showSeparator = changeIndex > 0;
+
+                                // Parse values for special field handling
+                                const oldParsed = parseJsonValue(changelog.oldValue);
+                                const newParsed = parseJsonValue(changelog.newValue);
 
                                 return (
                                   <View key={changelog.id}>
@@ -509,10 +1006,125 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                     <View style={styles.changeItem}>
                                       <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>{getFieldLabel(changelog.field, entityType)}</ThemedText>
 
-                                      {/* Handle array fields specially */}
-                                      {Array.isArray(changelog.oldValue) &&
-                                      Array.isArray(changelog.newValue) &&
+                                      {/* Special handling for cuts/cutRequest/cutPlan */}
+                                      {(changelog.field === "cuts" || changelog.field === "cutRequest" || changelog.field === "cutPlan") ? (
+                                        <View style={styles.fieldValues}>
+                                          <View>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
+                                            {renderCutsCards(oldParsed, colors)}
+                                          </View>
+                                          <View style={{ marginTop: spacing.sm }}>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
+                                            {renderCutsCards(newParsed, colors)}
+                                          </View>
+                                        </View>
+                                      ) : changelog.field === "services" ? (
+                                        /* Special handling for services */
+                                        <View style={styles.fieldValues}>
+                                          <View>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
+                                            {renderServicesCards(oldParsed, colors)}
+                                          </View>
+                                          <View style={{ marginTop: spacing.sm }}>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
+                                            {renderServicesCards(newParsed, colors)}
+                                          </View>
+                                        </View>
+                                      ) : changelog.field === "airbrushings" ? (
+                                        /* Special handling for airbrushings */
+                                        <View style={styles.fieldValues}>
+                                          <View>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
+                                            {renderAirbrushingsCards(oldParsed, colors)}
+                                          </View>
+                                          <View style={{ marginTop: spacing.sm }}>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
+                                            {renderAirbrushingsCards(newParsed, colors)}
+                                          </View>
+                                        </View>
+                                      ) : changelog.field === "paintId" ? (
+                                        /* Special handling for paintId - render as single paint card */
+                                        (() => {
+                                          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                                          const getFullPaint = (paintIdValue: any) => {
+                                            if (!paintIdValue || typeof paintIdValue !== "string") return null;
+                                            if (!uuidRegex.test(paintIdValue)) return null;
+                                            return entityDetails?.paints?.get?.(paintIdValue) || null;
+                                          };
+                                          const oldPaint = getFullPaint(changelog.oldValue);
+                                          const newPaint = getFullPaint(changelog.newValue);
+
+                                          return (
+                                            <View style={styles.fieldValues}>
+                                              <View>
+                                                <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
+                                                {oldPaint ? renderPaintsCards([oldPaint], colors) : (
+                                                  <ThemedText style={{ color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>
+                                                )}
+                                              </View>
+                                              <View style={{ marginTop: spacing.sm }}>
+                                                <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
+                                                {newPaint ? renderPaintsCards([newPaint], colors) : (
+                                                  <ThemedText style={{ color: "#22c55e", fontWeight: "500", marginLeft: 4 }}>—</ThemedText>
+                                                )}
+                                              </View>
+                                            </View>
+                                          );
+                                        })()
+                                      ) : (changelog.field === "logoPaints" || changelog.field === "paints" || changelog.field === "paintGrounds" || changelog.field === "groundPaints") ? (
+                                        /* Special handling for paint arrays */
+                                        (() => {
+                                          const oldPaints = getPaintObjects(oldParsed);
+                                          const newPaints = getPaintObjects(newParsed);
+
+                                          return (
+                                            <View style={styles.fieldValues}>
+                                              <View>
+                                                <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
+                                                {renderPaintsCards(oldPaints, colors)}
+                                              </View>
+                                              <View style={{ marginTop: spacing.sm }}>
+                                                <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
+                                                {renderPaintsCards(newPaints, colors)}
+                                              </View>
+                                            </View>
+                                          );
+                                        })()
+                                      ) : (changelog.field === "artworks" || changelog.field === "budgets" || changelog.field === "invoices" || changelog.field === "receipts") ? (
+                                        /* Special handling for file fields - show thumbnails */
+                                        <View style={styles.fieldValues}>
+                                          <View>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
+                                            {renderArtworksCards(oldParsed, colors)}
+                                          </View>
+                                          <View style={{ marginTop: spacing.sm }}>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
+                                            {renderArtworksCards(newParsed, colors)}
+                                          </View>
+                                        </View>
+                                      ) : (changelog.field === "logoId" || changelog.field === "logo") ? (
+                                        /* Special handling for logo fields */
+                                        <View style={styles.fieldValues}>
+                                          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
+                                            {changelog.oldValue ? (
+                                              <FileThumbnail fileId={changelog.oldValue as string} size={40} colors={colors} />
+                                            ) : (
+                                              <ThemedText style={{ color: colors.destructive, fontWeight: "500" }}>—</ThemedText>
+                                            )}
+                                          </View>
+                                          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.xs }}>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
+                                            {changelog.newValue ? (
+                                              <FileThumbnail fileId={changelog.newValue as string} size={40} colors={colors} />
+                                            ) : (
+                                              <ThemedText style={{ color: "#22c55e", fontWeight: "500" }}>—</ThemedText>
+                                            )}
+                                          </View>
+                                        </View>
+                                      ) : Array.isArray(changelog.oldValue) && Array.isArray(changelog.newValue) &&
                                       (changelog.field === "barcodes" || changelog.field === "barcode") ? (
+                                        /* Handle barcode arrays specially */
                                         <View style={styles.arrayChanges}>
                                           {(() => {
                                             const oldBarcodes = changelog.oldValue as string[];
@@ -542,6 +1154,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                           })()}
                                         </View>
                                       ) : (
+                                        /* Default field handling */
                                         <View style={styles.fieldValues}>
                                           {changelog.oldValue !== null && changelog.newValue === null ? (
                                             // Field removed
@@ -552,7 +1165,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                               </ThemedText>
                                             </View>
                                           ) : (
-                                            // Field updated
+                                            // Field updated - always show both "Antes:" and "Depois:"
                                             <>
                                               <View style={styles.valueRow}>
                                                 <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
@@ -561,7 +1174,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                                 </ThemedText>
                                               </View>
                                               <View style={styles.valueRow}>
-                                                <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Agora:</ThemedText>
+                                                <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
                                                 <ThemedText style={StyleSheet.flatten([styles.valueText, { color: colors.foreground }])}>
                                                   {formatValueWithEntity(changelog.newValue, changelog.field)}
                                                 </ThemedText>

@@ -177,6 +177,7 @@ export * from "./use-paint-brands-infinite-mobile";
 export * from "./use-deployments-infinite-mobile";
 export * from "./use-paint-productions-infinite-mobile";
 export * from "./use-paint-formula-components-infinite-mobile";
+export * from "./use-payrolls-infinite-mobile";
 
 // =====================================================
 // UI State Management Hooks

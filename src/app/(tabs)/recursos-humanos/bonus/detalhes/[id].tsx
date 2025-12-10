@@ -321,18 +321,22 @@ export default function BonusDetailScreen() {
                     {formatBonusAmount(bonus.baseBonus)}
                   </ThemedText>
                 </View>
-                {hasDiscounts && bonus.bonusDiscounts!.map((discount: any, index: number) => (
-                  <View key={discount.id || index} style={styles.detailRow}>
-                    <ThemedText style={[styles.detailLabel, { color: colors.destructive }]}>
-                      {discount.reference || `Desconto ${index + 1}`}:
-                    </ThemedText>
-                    <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
-                      -{discount.percentage
-                        ? `${discount.percentage}%`
-                        : formatCurrency(toNumber(discount.value))}
-                    </ThemedText>
-                  </View>
-                ))}
+                {hasDiscounts && bonus.bonusDiscounts!.map((discount: any, index: number) => {
+                  const percentageValue = toNumber(discount.percentage);
+                  const hasPercentage = percentageValue > 0;
+                  return (
+                    <View key={discount.id || index} style={styles.detailRow}>
+                      <ThemedText style={[styles.detailLabel, { color: colors.destructive }]}>
+                        {discount.reference || `Desconto ${index + 1}`}:
+                      </ThemedText>
+                      <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
+                        -{hasPercentage
+                          ? `${percentageValue}%`
+                          : formatCurrency(toNumber(discount.value))}
+                      </ThemedText>
+                    </View>
+                  );
+                })}
                 <View style={[styles.detailRow, { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border }]}>
                   <ThemedText style={[styles.detailLabel, { color: colors.foreground, fontWeight: '600' }]}>
                     Valor Liquido:
