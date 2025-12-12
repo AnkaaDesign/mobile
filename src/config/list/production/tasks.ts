@@ -328,8 +328,8 @@ export const tasksListConfig: ListConfig<Task> = {
               startedAt: new Date().toISOString(),
             }
 
-            if (!task.sectorId && user?.managedSectorId) {
-              updateData.sectorId = user.managedSectorId
+            if (!task.sectorId && user?.managedSector?.id) {
+              updateData.sectorId = user.managedSector.id
             }
 
             await updateTask(task.id, updateData)

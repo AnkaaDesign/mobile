@@ -137,10 +137,10 @@ export const bonusesListConfig: ListConfig<Bonus> = {
         width: 1.2,
         align: 'right',
         render: (bonus) => {
+          // Calculate discounts as baseBonus - netBonus (simpler and more accurate)
           const baseBonus = getNumericValue(bonus.baseBonus)
-          const totalDiscounts = (bonus.bonusDiscounts || []).reduce((sum, d) => {
-            return sum + (baseBonus * (d.percentage / 100))
-          }, 0)
+          const netBonus = getNumericValue(bonus.netBonus)
+          const totalDiscounts = baseBonus - netBonus
           return formatCurrency(totalDiscounts)
         },
         style: { color: '#ef4444' },

@@ -163,11 +163,11 @@ const ALL_ROUTES = [
   { name: "producao/aerografia/listar", title: "Aerografias" },
   { name: "producao/aerografia/detalhes/[id]", title: "Detalhes da Aerografia" },
   { name: "producao/aerografia/editar/[id]", title: "Editar Aerografia" },
-  { name: "producao/garagens/index", title: "Garagens" },
-  { name: "producao/garagens/cadastrar", title: "Cadastrar Garagem" },
-  { name: "producao/garagens/listar", title: "Garagens" },
-  { name: "producao/garagens/detalhes/[id]", title: "Detalhes da Garagem" },
-  { name: "producao/garagens/editar/[id]", title: "Editar Garagem" },
+  { name: "producao/garagens/index", title: "Barracões" },
+  { name: "producao/garagens/cadastrar", title: "Cadastrar Barracão" },
+  { name: "producao/garagens/listar", title: "Barracões" },
+  { name: "producao/garagens/detalhes/[id]", title: "Detalhes do Barracão" },
+  { name: "producao/garagens/editar/[id]", title: "Editar Barracão" },
   { name: "producao/observacoes/index", title: "Observações" },
   { name: "producao/observacoes/cadastrar", title: "Cadastrar Observação" },
   { name: "producao/observacoes/listar", title: "Observações" },
@@ -427,13 +427,15 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
       return true;
     }
 
-    // Catalogo routes - accessible for LEADER and DESIGNER users (view-only catalog)
+    // Catalogo routes - accessible for team leaders and DESIGNER users (view-only catalog)
+    // NOTE: Team leadership is now checked via user.managedSector, not privilege
     if (path === 'catalogo' || path.startsWith('catalogo/')) {
-      // Leaders and Designers get access to the view-only catalog
-      if (userPrivileges.includes(SECTOR_PRIVILEGES.LEADER) ||
-          userPrivileges.includes(SECTOR_PRIVILEGES.DESIGNER)) {
+      // Designers get access to the view-only catalog
+      if (userPrivileges.includes(SECTOR_PRIVILEGES.DESIGNER)) {
         return true;
       }
+      // Team leaders (users who manage a sector) also get access - check at component level
+      // For navigation filtering, we allow access and let component verify team leadership
       return false;
     }
 
@@ -455,13 +457,8 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     if (userPrivileges.includes(SECTOR_PRIVILEGES.FINANCIAL) && path.startsWith('financeiro/')) {
       return true;
     }
-    if (userPrivileges.includes(SECTOR_PRIVILEGES.LEADER) && (
-      path.startsWith('meu-pessoal/') ||
-      path.startsWith('producao/')
-      // Note: LEADER users should use /catalogo (view-only) instead of /pintura
-    )) {
-      return true;
-    }
+    // NOTE: Team leader routes (meu-pessoal/) are now filtered at component level
+    // via isTeamLeader() check, not by privilege. Remove privilege-based filter.
     // Note: DESIGNER users should use /catalogo (view-only) instead of /pintura
     if (userPrivileges.includes(SECTOR_PRIVILEGES.MAINTENANCE) && (
       path.startsWith('manutencao/') ||

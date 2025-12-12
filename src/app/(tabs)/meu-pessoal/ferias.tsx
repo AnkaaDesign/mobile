@@ -1,8 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { PrivilegeGuard } from "@/components/privilege-guard";
-import { SECTOR_PRIVILEGES } from "@/constants";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconFilter, IconLayoutGrid, IconList } from "@tabler/icons-react-native";
@@ -23,6 +21,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTableSort } from "@/hooks/useTableSort";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+import { isTeamLeader } from "@/utils/user";
 
 type ViewMode = "list" | "calendar";
 
@@ -50,7 +49,7 @@ export default function MyTeamVacationsScreen() {
 
   // Get current user to determine their sector
   const { data: currentUser } = useCurrentUser();
-  const isTeamLeader = !!currentUser?.managedSectorId;
+  const userIsTeamLeader = currentUser ? isTeamLeader(currentUser) : false;
 
   // Sorting
   const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
@@ -136,7 +135,7 @@ export default function MyTeamVacationsScreen() {
     shouldPrefetch,
   } = useTeamVacationsInfiniteMobile({
     ...queryParams,
-    enabled: isTeamLeader,
+    enabled: userIsTeamLeader,
   });
 
   // Type alias for vacations
@@ -211,29 +210,24 @@ export default function MyTeamVacationsScreen() {
 
   if (isInitialLoad) {
     return (
-      <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-        <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-          <View style={styles.loadingContainer}>
-            <ThemedText>Carregando férias da equipe...</ThemedText>
-          </View>
-        </ThemedView>
-      </PrivilegeGuard>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.loadingContainer}>
+          <ThemedText>Carregando férias da equipe...</ThemedText>
+        </View>
+      </ThemedView>
     );
   }
 
   if (error && vacations.length === 0) {
     return (
-      <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-        <ThemedView style={styles.container}>
-          <ErrorScreen message="Erro ao carregar férias" detail={error.message} onRetry={handleRefresh} />
-        </ThemedView>
-      </PrivilegeGuard>
+      <ThemedView style={styles.container}>
+        <ErrorScreen message="Erro ao carregar férias" detail={error.message} onRetry={handleRefresh} />
+      </ThemedView>
     );
   }
 
   return (
-    <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-      <>
+    <>
         <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
           {/* Search and Filter */}
           <View style={[styles.searchContainer]}>
@@ -347,7 +341,6 @@ export default function MyTeamVacationsScreen() {
           />
         </SlideInPanel>
       </>
-    </PrivilegeGuard>
   );
 }
 

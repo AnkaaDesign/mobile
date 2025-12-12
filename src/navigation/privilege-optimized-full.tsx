@@ -156,11 +156,11 @@ const ALL_ROUTES = [
   { name: "producao/aerografia/listar", title: "Aerografias" },
   { name: "producao/aerografia/detalhes/[id]", title: "Detalhes da Aerografia" },
   { name: "producao/aerografia/editar/[id]", title: "Editar Aerografia" },
-  { name: "producao/garagens/index", title: "Garagens" },
-  { name: "producao/garagens/cadastrar", title: "Cadastrar Garagem" },
-  { name: "producao/garagens/listar", title: "Garagens" },
-  { name: "producao/garagens/detalhes/[id]", title: "Detalhes da Garagem" },
-  { name: "producao/garagens/editar/[id]", title: "Editar Garagem" },
+  { name: "producao/garagens/index", title: "Barracões" },
+  { name: "producao/garagens/cadastrar", title: "Cadastrar Barracão" },
+  { name: "producao/garagens/listar", title: "Barracões" },
+  { name: "producao/garagens/detalhes/[id]", title: "Detalhes do Barracão" },
+  { name: "producao/garagens/editar/[id]", title: "Editar Barracão" },
   { name: "producao/observacoes/index", title: "Observações" },
   { name: "producao/observacoes/cadastrar", title: "Cadastrar Observação" },
   { name: "producao/observacoes/listar", title: "Observações" },
@@ -394,13 +394,8 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     if (userPrivileges.includes(SECTOR_PRIVILEGES.FINANCIAL) && path.startsWith('financeiro/')) {
       return true;
     }
-    if (userPrivileges.includes(SECTOR_PRIVILEGES.LEADER) && (
-      path.startsWith('meu-pessoal/') ||
-      path.startsWith('producao/') ||
-      path.startsWith('pintura/')
-    )) {
-      return true;
-    }
+    // Team leadership access is now checked at component level via isTeamLeader()
+    // based on user.managedSector?.id relationship, not privilege
     if (userPrivileges.includes(SECTOR_PRIVILEGES.DESIGNER) && path.startsWith('pintura/')) {
       return true;
     }

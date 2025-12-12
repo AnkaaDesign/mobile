@@ -30,6 +30,7 @@ import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from "@/constants";
 import { useServiceOrderMutations } from "@/hooks";
 // import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
+import { isTeamLeader } from "@/utils/user";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 
@@ -54,10 +55,11 @@ export const ServicesTableEnhanced: React.FC<ServicesTableEnhancedProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const { update } = useServiceOrderMutations();
 
-  // Check if user can edit service orders (Admin or Leader only)
+  // Check if user can edit service orders (Admin or team leaders only)
+  // Note: Team leadership is now determined by managedSector relationship (user.managedSector?.id)
   const canEditServiceOrders = useMemo(() => {
     return user && (
-      hasPrivilege(user, SECTOR_PRIVILEGES.LEADER) ||
+      isTeamLeader(user) ||
       hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN)
     );
   }, [user]);
@@ -297,7 +299,7 @@ export const ServicesTableEnhanced: React.FC<ServicesTableEnhancedProps> = ({
                   </View>
                 )}
 
-                {/* Status Select - Only for admin/leader */}
+                {/* Status Select - Only for admin/team leaders */}
                 {canEditServiceOrders && (
                   <View style={styles.statusSelectContainer}>
                     <ThemedText style={styles.statusSelectLabel}>Alterar Status:</ThemedText>

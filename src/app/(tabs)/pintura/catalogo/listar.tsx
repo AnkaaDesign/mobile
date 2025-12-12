@@ -65,9 +65,10 @@ export default function CatalogListScreen() {
   // const { toast } = useToast();
   const { delete: deletePaint } = usePaintMutations();
 
-  // Check user permissions - allow WAREHOUSE, LEADER, and ADMIN to edit/create
-  const canCreate = hasAnyPrivilege(user, [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN]);
-  const canEdit = hasAnyPrivilege(user, [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN]);
+  // Check user permissions - only WAREHOUSE and ADMIN can edit/create
+  // Team leaders have READ-ONLY access to the catalogue (they use catalogo-basico route)
+  const canCreate = hasAnyPrivilege(user, [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN]);
+  const canEdit = hasAnyPrivilege(user, [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN]);
   const canDelete = hasAnyPrivilege(user, [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN]);
 
   // View state - minimized (grid) or maximized (cards)

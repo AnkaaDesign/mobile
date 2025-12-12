@@ -59,6 +59,7 @@ export const personalEmployeesListConfig: ListConfig<User> = {
         align: 'center',
         render: (user) => STATUS_LABELS[user.status] || user.status,
         format: 'badge',
+        badgeEntity: 'USER',
       },
       {
         key: 'phone',

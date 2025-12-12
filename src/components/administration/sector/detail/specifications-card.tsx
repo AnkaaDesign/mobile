@@ -11,12 +11,11 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 
 // Map privileges to badge colors (same as web list page)
+// Note: Team leadership is now determined by managedSector relationship, not LEADER privilege
 const getPrivilegeColor = (privilege: string) => {
   switch (privilege) {
     case SECTOR_PRIVILEGES.ADMIN:
       return "red"; // Red - admin privileges
-    case SECTOR_PRIVILEGES.LEADER:
-      return "blue"; // Blue - leadership role (same as production)
     case SECTOR_PRIVILEGES.PRODUCTION:
       return "blue"; // Blue - production role
     case SECTOR_PRIVILEGES.HUMAN_RESOURCES:

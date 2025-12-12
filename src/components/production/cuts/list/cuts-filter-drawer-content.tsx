@@ -8,6 +8,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { CUT_STATUS, CUT_STATUS_LABELS, CUT_TYPE, CUT_TYPE_LABELS, CUT_ORIGIN, CUT_ORIGIN_LABELS, SECTOR_PRIVILEGES } from '@/constants';
 import { useSectors } from '@/hooks';
 import { useAuth } from '@/contexts/auth-context';
+import { isTeamLeader } from '@/utils/user';
 
 // Special value for tasks without a sector
 const UNDEFINED_SECTOR_VALUE = "__UNDEFINED__";
@@ -39,11 +40,11 @@ export function CutsFilterDrawerContent({
   // Initialize localFilters with filters value immediately
   const [localFilters, setLocalFilters] = useState(() => filters || {});
 
-  // Check if user has production or leader privileges (they have automatic sector filtering)
+  // Check if user is a team leader (they have automatic sector filtering)
+  // Note: Team leadership is now determined by managedSector relationship (user.managedSector?.id)
   const shouldHideSectorFilter = useMemo(() => {
-    const userPrivileges = user?.sector?.privileges;
-    return userPrivileges === SECTOR_PRIVILEGES.PRODUCTION || userPrivileges === SECTOR_PRIVILEGES.LEADER;
-  }, [user?.sector?.privileges]);
+    return isTeamLeader(user);
+  }, [user]);
 
   // Fetch production sectors (only if not hidden)
   const { data: sectorsData } = useSectors({ limit: 100, enabled: !shouldHideSectorFilter });
@@ -263,7 +264,7 @@ export function CutsFilterDrawerContent({
           </View>
         </View>
 
-        {/* Sector Filter - Hidden for production/leader users who have automatic sector filtering */}
+        {/* Sector Filter - Hidden for team leaders who have automatic sector filtering */}
         {!shouldHideSectorFilter && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>

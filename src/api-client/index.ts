@@ -56,6 +56,7 @@ export * from "./service";
 export * from "./serviceOrder";
 export * from "./supplier";
 export * from "./task";
+export * from "./team-staff";
 export * from "./throttler";
 export * from "./truck";
 export * from "./layout";

@@ -77,12 +77,12 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
         style: { fontWeight: '500' },
       },
       {
-        key: 'baseBonus',
+        key: 'netBonus',
         label: 'VALOR',
         sortable: true,
         width: 1.3,
         align: 'right',
-        render: (bonus) => formatBonusAmount(bonus.baseBonus),
+        render: (bonus) => formatBonusAmount(bonus.netBonus || bonus.baseBonus),
         style: { fontWeight: '600' },
       },
       {
@@ -117,11 +117,14 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
         width: 1.0,
         align: 'center',
         render: (bonus) => {
-          if (!bonus.bonusDiscounts || bonus.bonusDiscounts.length === 0) {
-            return '-'
-          }
-          return `${bonus.bonusDiscounts.length}`
+          // Calculate discounts as baseBonus - netBonus
+          const baseBonus = getNumericValue(bonus.baseBonus)
+          const netBonus = getNumericValue(bonus.netBonus)
+          const totalDiscounts = baseBonus - netBonus
+          if (totalDiscounts <= 0) return '-'
+          return formatBonusAmount(totalDiscounts)
         },
+        style: { color: '#ef4444' },
       },
       {
         key: 'calculationPeriod',
@@ -250,8 +253,14 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
       },
       {
         key: 'baseBonus',
-        label: 'Valor Base',
+        label: 'Valor Bruto',
         path: 'baseBonus',
+        format: (value) => formatBonusAmount(value)
+      },
+      {
+        key: 'netBonus',
+        label: 'Valor Líquido',
+        path: 'netBonus',
         format: (value) => formatBonusAmount(value)
       },
       {

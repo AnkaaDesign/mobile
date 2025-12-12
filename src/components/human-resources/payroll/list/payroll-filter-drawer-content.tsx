@@ -60,14 +60,14 @@ export function PayrollFilterDrawerContent({
   const sectors = sectorsData?.data || [];
   const positions = positionsData?.data || [];
 
-  // Get default sector IDs (production, warehouse, leader)
+  // Get default sector IDs (production, warehouse)
+  // Note: LEADER privilege was removed - team leadership is now based on managedSector
   const defaultSectorIds = useMemo(() => {
     return sectors
       .filter(
         (sector) =>
           sector.privilege === 'PRODUCTION' ||
-          sector.privilege === 'WAREHOUSE' ||
-          sector.privilege === 'LEADER'
+          sector.privilege === 'WAREHOUSE'
       )
       .map((sector) => sector.id);
   }, [sectors]);

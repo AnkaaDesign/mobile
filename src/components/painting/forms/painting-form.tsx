@@ -316,6 +316,26 @@ export function PaintForm(props: PaintFormProps) {
                   />
                 </FormFieldGroup>
 
+                {/* Color Picker */}
+                <FormFieldGroup
+                  label="Cor Base"
+                  required
+                  error={form.formState.errors.hex?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="hex"
+                    render={({ field: { onChange, value } }) => (
+                      <ColorPicker
+                        color={value || "#000000"}
+                        onColorChange={onChange}
+                        disabled={isSubmitting}
+                        transparent
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+
                 {/* Code */}
                 <FormFieldGroup
                   label="Código"
@@ -332,25 +352,6 @@ export function PaintForm(props: PaintFormProps) {
                         editable={!isSubmitting}
                         maxLength={20}
                         error={!!form.formState.errors.code}
-                      />
-                    )}
-                  />
-                </FormFieldGroup>
-
-                {/* Color Picker */}
-                <FormFieldGroup
-                  label="Cor Base"
-                  required
-                  error={form.formState.errors.hex?.message}
-                >
-                  <Controller
-                    control={form.control}
-                    name="hex"
-                    render={({ field: { onChange, value } }) => (
-                      <ColorPicker
-                        color={value || "#000000"}
-                        onColorChange={onChange}
-                        disabled={isSubmitting}
                       />
                     )}
                   />

@@ -662,7 +662,6 @@ export const ENTITY_BADGE_CONFIG = {
   // Sector Privileges
   SECTOR_PRIVILEGES: {
     [SECTOR_PRIVILEGES.ADMIN]: "red" as BadgeVariant,              // Red - admin privileges
-    [SECTOR_PRIVILEGES.LEADER]: "blue" as BadgeVariant,            // Blue - leadership role (same as production)
     [SECTOR_PRIVILEGES.PRODUCTION]: "blue" as BadgeVariant,        // Blue - production role
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "purple" as BadgeVariant, // Purple - HR specific
     [SECTOR_PRIVILEGES.FINANCIAL]: "purple" as BadgeVariant,       // Purple - financial role (same as HR)

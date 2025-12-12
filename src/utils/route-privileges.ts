@@ -28,12 +28,12 @@ export const ROUTE_PRIVILEGES: Record<
   // =====================
   
   '/(tabs)/administracao': 'ADMIN',
-  '/(tabs)/administracao/clientes': ['ADMIN', 'FINANCIAL', 'LEADER'],
-  '/(tabs)/administracao/clientes/listar': ['ADMIN', 'FINANCIAL', 'LEADER'],
-  '/(tabs)/administracao/clientes/cadastrar': ['ADMIN', 'FINANCIAL', 'LEADER'],
-  '/(tabs)/administracao/clientes/detalhes/[id]': ['ADMIN', 'FINANCIAL', 'LEADER'],
-  '/(tabs)/administracao/clientes/editar/[id]': ['ADMIN', 'FINANCIAL', 'LEADER'],
-  '/(tabs)/administracao/clientes/editar-em-lote': ['ADMIN', 'FINANCIAL', 'LEADER'],
+  '/(tabs)/administracao/clientes': ['ADMIN', 'FINANCIAL'],
+  '/(tabs)/administracao/clientes/listar': ['ADMIN', 'FINANCIAL'],
+  '/(tabs)/administracao/clientes/cadastrar': ['ADMIN', 'FINANCIAL'],
+  '/(tabs)/administracao/clientes/detalhes/[id]': ['ADMIN', 'FINANCIAL'],
+  '/(tabs)/administracao/clientes/editar/[id]': ['ADMIN', 'FINANCIAL'],
+  '/(tabs)/administracao/clientes/editar-em-lote': ['ADMIN', 'FINANCIAL'],
   
   '/(tabs)/administracao/colaboradores': 'HUMAN_RESOURCES',
   '/(tabs)/administracao/colaboradores/listar': 'HUMAN_RESOURCES',
@@ -130,14 +130,14 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/producao/cronograma': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC'],
   '/(tabs)/producao/cronograma/listar': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC'],
   '/(tabs)/producao/cronograma/cadastrar': ['PRODUCTION', 'WAREHOUSE'],
-  '/(tabs)/producao/cronograma/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'LEADER', 'ADMIN'],
-  '/(tabs)/producao/cronograma/editar/[id]': ['PRODUCTION', 'WAREHOUSE', 'FINANCIAL', 'LOGISTIC', 'LEADER', 'ADMIN'],
+  '/(tabs)/producao/cronograma/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'ADMIN'],
+  '/(tabs)/producao/cronograma/editar/[id]': ['PRODUCTION', 'WAREHOUSE', 'FINANCIAL', 'LOGISTIC', 'ADMIN'],
   '/(tabs)/producao/cronograma/operacoes-em-lote': ['PRODUCTION', 'WAREHOUSE'],
   
   // History
   '/(tabs)/producao/historico': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC'],
   '/(tabs)/producao/historico/listar': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC'],
-  '/(tabs)/producao/historico/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'LEADER', 'ADMIN'],
+  '/(tabs)/producao/historico/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'ADMIN'],
   
   // Airbrushings (Aerografia)
   '/(tabs)/producao/aerografia': ['PRODUCTION', 'WAREHOUSE', 'FINANCIAL'],
@@ -147,19 +147,19 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/producao/aerografia/editar/[id]': ['PRODUCTION', 'WAREHOUSE'],
   
   // Cutting (Recorte)
-  '/(tabs)/producao/recorte': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
-  '/(tabs)/producao/recorte/listar': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
+  '/(tabs)/producao/recorte': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'ADMIN'],
+  '/(tabs)/producao/recorte/listar': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'ADMIN'],
   '/(tabs)/producao/recorte/plano-de-recorte/cadastrar': ['PRODUCTION', 'WAREHOUSE'],
-  '/(tabs)/producao/recorte/plano-de-recorte/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
+  '/(tabs)/producao/recorte/plano-de-recorte/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'ADMIN'],
   '/(tabs)/producao/recorte/plano-de-recorte/editar/[id]': ['PRODUCTION', 'WAREHOUSE'],
-  '/(tabs)/producao/recorte/plano-de-recorte/listar': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
+  '/(tabs)/producao/recorte/plano-de-recorte/listar': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'ADMIN'],
   
   // Garages
-  '/(tabs)/producao/garagens': ['PRODUCTION', 'LOGISTIC', 'LEADER', 'ADMIN'],
-  '/(tabs)/producao/garagens/listar': ['PRODUCTION', 'LOGISTIC', 'LEADER', 'ADMIN'],
-  '/(tabs)/producao/garagens/cadastrar': ['PRODUCTION', 'LEADER', 'ADMIN'],
-  '/(tabs)/producao/garagens/detalhes/[id]': ['PRODUCTION', 'LOGISTIC', 'LEADER', 'ADMIN'],
-  '/(tabs)/producao/garagens/editar/[id]': ['PRODUCTION', 'LEADER', 'ADMIN'],
+  '/(tabs)/producao/garagens': ['PRODUCTION', 'LOGISTIC', 'ADMIN'],
+  '/(tabs)/producao/garagens/listar': ['PRODUCTION', 'LOGISTIC', 'ADMIN'],
+  '/(tabs)/producao/garagens/cadastrar': ['PRODUCTION', 'ADMIN'],
+  '/(tabs)/producao/garagens/detalhes/[id]': ['PRODUCTION', 'LOGISTIC', 'ADMIN'],
+  '/(tabs)/producao/garagens/editar/[id]': ['PRODUCTION', 'ADMIN'],
   
   // Observations
   '/(tabs)/producao/observacoes': ['PRODUCTION', 'WAREHOUSE'],
@@ -190,43 +190,40 @@ export const ROUTE_PRIVILEGES: Record<
   // PINTURA (PAINT)
   // =====================
   
-  '/(tabs)/pintura': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
-  
+  '/(tabs)/pintura': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
+
   // Catalog (Catálogo)
-  '/(tabs)/pintura/catalogo': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
-  '/(tabs)/pintura/catalogo/listar': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
+  '/(tabs)/pintura/catalogo': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
+  '/(tabs)/pintura/catalogo/listar': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
   '/(tabs)/pintura/catalogo/cadastrar': ['WAREHOUSE', 'ADMIN'],
-  '/(tabs)/pintura/catalogo/detalhes/[id]': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
+  '/(tabs)/pintura/catalogo/detalhes/[id]': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
   '/(tabs)/pintura/catalogo/editar/[id]': ['WAREHOUSE', 'ADMIN'],
-  
+
   // Formulas
-  '/(tabs)/pintura/formulas': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
-  '/(tabs)/pintura/formulas/listar': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
+  '/(tabs)/pintura/formulas': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
+  '/(tabs)/pintura/formulas/listar': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
   '/(tabs)/pintura/formulas/cadastrar': ['WAREHOUSE', 'ADMIN'], // CRITICAL: Mobile needs this screen
-  '/(tabs)/pintura/formulas/detalhes/[id]': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
+  '/(tabs)/pintura/formulas/detalhes/[id]': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
   '/(tabs)/pintura/formulas/editar/[id]': ['WAREHOUSE', 'ADMIN'], // CRITICAL: Mobile needs this screen
-  
+
   // Paint Brands
-  '/(tabs)/pintura/marcas-de-tinta': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
-  '/(tabs)/pintura/marcas-de-tinta/listar': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
+  '/(tabs)/pintura/marcas-de-tinta': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
+  '/(tabs)/pintura/marcas-de-tinta/listar': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
   '/(tabs)/pintura/marcas-de-tinta/cadastrar': ['WAREHOUSE', 'ADMIN'],
-  '/(tabs)/pintura/marcas-de-tinta/detalhes/[id]': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
+  '/(tabs)/pintura/marcas-de-tinta/detalhes/[id]': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
   '/(tabs)/pintura/marcas-de-tinta/editar/[id]': ['WAREHOUSE', 'ADMIN'],
-  
+
   // Paint Types
-  '/(tabs)/pintura/tipos-de-tinta': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
-  '/(tabs)/pintura/tipos-de-tinta/listar': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
+  '/(tabs)/pintura/tipos-de-tinta': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
+  '/(tabs)/pintura/tipos-de-tinta/listar': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
   '/(tabs)/pintura/tipos-de-tinta/cadastrar': ['WAREHOUSE', 'ADMIN'],
-  '/(tabs)/pintura/tipos-de-tinta/detalhes/[id]': ['WAREHOUSE', 'DESIGNER', 'LEADER', 'ADMIN'],
+  '/(tabs)/pintura/tipos-de-tinta/detalhes/[id]': ['WAREHOUSE', 'DESIGNER', 'ADMIN'],
   '/(tabs)/pintura/tipos-de-tinta/editar/[id]': ['WAREHOUSE', 'ADMIN'],
-  
+
   // Paint Productions
   '/(tabs)/pintura/producoes': ['PRODUCTION', 'WAREHOUSE', 'ADMIN'],
   '/(tabs)/pintura/producoes/listar': ['PRODUCTION', 'WAREHOUSE', 'ADMIN'],
   '/(tabs)/pintura/producoes/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'ADMIN'],
-  
-  // Basic Catalog (for leaders)
-  '/(tabs)/pintura/catalogo-basico': 'LEADER',
   
   // =====================
   // RECURSOS HUMANOS (HR)
@@ -303,13 +300,13 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/pessoal/preferences': 'BASIC',
   
   // =====================
-  // MEU PESSOAL (MY TEAM)
+  // MEU PESSOAL (MY TEAM) - Requires being a team leader (having managedSector)
   // =====================
-  
-  '/(tabs)/meu-pessoal': 'LEADER',
-  '/(tabs)/meu-pessoal/emprestimos': 'LEADER',
-  '/(tabs)/meu-pessoal/ferias': 'LEADER',
-  '/(tabs)/meu-pessoal/advertencias': 'LEADER',
+
+  '/(tabs)/meu-pessoal': 'BASIC', // Access is controlled by isTeamLeader check, not privilege
+  '/(tabs)/meu-pessoal/emprestimos': 'BASIC',
+  '/(tabs)/meu-pessoal/ferias': 'BASIC',
+  '/(tabs)/meu-pessoal/advertencias': 'BASIC',
   
   // =====================
   // SERVIDOR (SERVER)
@@ -347,10 +344,10 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/configuracoes': 'BASIC',
   
   // =====================
-  // CATALOG (standalone)
+  // CATALOG (standalone) - For team leaders only
   // =====================
-  
-  '/(tabs)/catalogo': 'LEADER',
+
+  '/(tabs)/catalogo': 'BASIC', // Access is controlled by isTeamLeader check, not privilege
 };
 
 /**

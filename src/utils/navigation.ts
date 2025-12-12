@@ -14,19 +14,22 @@ export interface NavigationUser {
       privileges?: SECTOR_PRIVILEGES;
     };
   };
+  managedSector?: {
+    id?: string;
+  } | null;
 }
 
 /**
  * Get filtered menu for a specific user and platform
  */
-export function getFilteredMenuForUser(menuItems: MenuItem[], user: NavigationUser, platform: "web" | "mobile"): MenuItem[] {
+export function getFilteredMenuForUser(menuItems: MenuItem[], user: NavigationUser | undefined, platform: "web" | "mobile"): MenuItem[] {
   let filteredMenu = filterMenuByPlatform(menuItems, platform);
 
-  // Apply privilege filtering if user has sector/privileges
+  // Apply privilege and team leader filtering
   const userPrivilege = user?.sector?.privileges || user?.position?.sector?.privileges;
-  if (userPrivilege) {
-    filteredMenu = filterMenuByPrivileges(filteredMenu, userPrivilege as SECTOR_PRIVILEGES);
-  }
+  const isTeamLeader = Boolean(user?.managedSector?.id);
+
+  filteredMenu = filterMenuByPrivilegesAndTeamLeader(filteredMenu, userPrivilege as SECTOR_PRIVILEGES | undefined, isTeamLeader);
 
   // Apply bonifiable filtering - hide menu items that require bonifiable position
   const isBonifiable = user?.position?.bonifiable ?? false;
@@ -53,42 +56,58 @@ export function getIconoirIcon(iconKey: string): string {
 }
 
 /**
- * Check if user has access to menu item based on privilege requirements
+ * Check if user has access to menu item based on privilege requirements and team leader status
  * Uses exact matching for menu display (following web behavior)
+ * TEAM_LEADER is a virtual privilege - checked via user.managedSector relationship
  * Note: This differs from route guards which use hierarchical checking
  */
-function hasMenuItemAccess(item: MenuItem, userPrivilege?: SECTOR_PRIVILEGES): boolean {
+function hasMenuItemAccess(item: MenuItem, userPrivilege?: SECTOR_PRIVILEGES, isTeamLeader: boolean = false): boolean {
   // If no privilege required, show to all
   if (!item.requiredPrivilege) return true;
+
+  // Handle array of privileges (OR logic)
+  if (Array.isArray(item.requiredPrivilege)) {
+    // Check if TEAM_LEADER is in the required privileges and user is a team leader
+    if (item.requiredPrivilege.includes(SECTOR_PRIVILEGES.TEAM_LEADER) && isTeamLeader) {
+      return true;
+    }
+
+    // If user has no privilege, hide privileged items (unless they're a team leader and that's allowed)
+    if (!userPrivilege) return false;
+
+    // User needs to have EXACTLY one of the specified privileges for menu display
+    // Filter out TEAM_LEADER since it's handled above via isTeamLeader check
+    const regularPrivileges = item.requiredPrivilege.filter(p => p !== SECTOR_PRIVILEGES.TEAM_LEADER);
+    return regularPrivileges.includes(userPrivilege);
+  }
+
+  // Handle single privilege
+  // Check if the required privilege is TEAM_LEADER
+  if (item.requiredPrivilege === SECTOR_PRIVILEGES.TEAM_LEADER) {
+    return isTeamLeader;
+  }
 
   // If user has no privilege, hide privileged items
   if (!userPrivilege) return false;
 
-  // Handle array of privileges (OR logic)
-  if (Array.isArray(item.requiredPrivilege)) {
-    // User needs to have EXACTLY one of the specified privileges for menu display
-    // This matches web sidebar behavior where menu items show for specific roles
-    return item.requiredPrivilege.includes(userPrivilege);
-  }
-
-  // Handle single privilege - exact match for menu display
+  // Exact match for menu display
   // Menu items are shown only to users with the exact privilege specified
   return userPrivilege === item.requiredPrivilege;
 }
 
 /**
- * Filter menu items based on user privileges
+ * Filter menu items based on user privileges and team leader status
  * Now supports both single privileges and arrays of privileges
  */
-export function filterMenuByPrivileges(menuItems: MenuItem[], userPrivilege?: SECTOR_PRIVILEGES): MenuItem[] {
+export function filterMenuByPrivilegesAndTeamLeader(menuItems: MenuItem[], userPrivilege?: SECTOR_PRIVILEGES, isTeamLeader: boolean = false): MenuItem[] {
   return menuItems
-    .filter((item) => hasMenuItemAccess(item, userPrivilege))
+    .filter((item) => hasMenuItemAccess(item, userPrivilege, isTeamLeader))
     .map((item) => {
       // Recursively filter children
       if (item.children) {
         return {
           ...item,
-          children: filterMenuByPrivileges(item.children, userPrivilege),
+          children: filterMenuByPrivilegesAndTeamLeader(item.children, userPrivilege, isTeamLeader),
         };
       }
       return item;
@@ -98,6 +117,15 @@ export function filterMenuByPrivileges(menuItems: MenuItem[], userPrivilege?: SE
       if (item.children && item.children.length === 0) return false;
       return true;
     });
+}
+
+/**
+ * Filter menu items based on user privileges
+ * Now supports both single privileges and arrays of privileges
+ * @deprecated Use filterMenuByPrivilegesAndTeamLeader instead
+ */
+export function filterMenuByPrivileges(menuItems: MenuItem[], userPrivilege?: SECTOR_PRIVILEGES): MenuItem[] {
+  return filterMenuByPrivilegesAndTeamLeader(menuItems, userPrivilege, false);
 }
 
 /**
@@ -417,19 +445,38 @@ function segmentsMatch(navSegments: string[], routeSegments: string[]): boolean 
 /**
  * Check if user has access to a specific menu item
  * Uses exact matching for menu display (following web behavior)
+ * TEAM_LEADER is a virtual privilege - checked via user.managedSector relationship
  * Note: For route access control, use privilege utils with hierarchical checking
  */
-export function hasAccessToMenuItem(item: MenuItem, userPrivilege?: SECTOR_PRIVILEGES): boolean {
+export function hasAccessToMenuItem(item: MenuItem, userPrivilege?: SECTOR_PRIVILEGES, isTeamLeader: boolean = false): boolean {
+  // If no privilege required, show to all
   if (!item.requiredPrivilege) return true;
-  if (!userPrivilege) return false;
 
   // Handle array of privileges (OR logic)
   if (Array.isArray(item.requiredPrivilege)) {
+    // Check if TEAM_LEADER is in the required privileges and user is a team leader
+    if (item.requiredPrivilege.includes(SECTOR_PRIVILEGES.TEAM_LEADER) && isTeamLeader) {
+      return true;
+    }
+
+    // If user has no privilege, hide privileged items (unless they're a team leader and that's allowed)
+    if (!userPrivilege) return false;
+
     // User needs to have EXACTLY one of the specified privileges for menu display
-    // This matches web sidebar behavior where specific menu items show for certain roles
-    return item.requiredPrivilege.includes(userPrivilege);
+    // Filter out TEAM_LEADER since it's handled above via isTeamLeader check
+    const regularPrivileges = item.requiredPrivilege.filter(p => p !== SECTOR_PRIVILEGES.TEAM_LEADER);
+    return regularPrivileges.includes(userPrivilege);
   }
 
-  // Handle single privilege - exact match for menu display
+  // Handle single privilege
+  // Check if the required privilege is TEAM_LEADER
+  if (item.requiredPrivilege === SECTOR_PRIVILEGES.TEAM_LEADER) {
+    return isTeamLeader;
+  }
+
+  // If user has no privilege, hide privileged items
+  if (!userPrivilege) return false;
+
+  // Exact match for menu display
   return userPrivilege === item.requiredPrivilege;
 }

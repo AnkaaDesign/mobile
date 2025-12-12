@@ -92,7 +92,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             status: USER_STATUS.EXPERIENCE_PERIOD_1,
             sectorId: null,
             positionId: null,
-            managedSectorId: null,
+            isSectorLeader: false,
             verified: false,
             performanceLevel: 0,
             address: "",
@@ -115,7 +115,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             status: user?.status || USER_STATUS.EXPERIENCE_PERIOD_1,
             sectorId: user?.sectorId || null,
             positionId: user?.positionId || null,
-            managedSectorId: user?.managedSectorId || null,
+            isSectorLeader: Boolean(user?.managedSector?.id),
             verified: user?.verified || false,
             performanceLevel: user?.performanceLevel || 0,
             address: user?.address || "",
@@ -458,28 +458,27 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             </FormFieldGroup>
           )}
 
-          {/* Managed Sector */}
+          {/* Sector Leader Switch */}
           <FormFieldGroup
-            label="Setor Gerenciado"
-            helper="Se o colaborador é líder de um setor"
-            error={form.formState.errors.managedSectorId?.message}
+            label="Líder do Setor"
+            helper={form.watch("sectorId")
+              ? "Marcar este colaborador como líder/gerente do setor selecionado"
+              : "Selecione um setor primeiro para poder definir o líder"
+            }
           >
-            <Controller
-              control={form.control}
-              name="managedSectorId"
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <Combobox
-                  options={sectorOptions}
-                  value={value || undefined}
-                  onValueChange={onChange}
-                  placeholder="Selecione o setor gerenciado"
-                  disabled={isLoading}
-                  searchable
-                  clearable
-                  error={error?.message}
-                />
-              )}
-            />
+            <View style={styles.switchRow}>
+              <Controller
+                control={form.control}
+                name="isSectorLeader"
+                render={({ field: { onChange, value } }) => (
+                  <Switch
+                    checked={value || false}
+                    onCheckedChange={onChange}
+                    disabled={isLoading || !form.watch("sectorId")}
+                  />
+                )}
+              />
+            </View>
           </FormFieldGroup>
 
           {/* Verified Toggle */}

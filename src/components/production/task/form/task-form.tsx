@@ -32,10 +32,12 @@ import { getFileThumbnailUrl } from "@/api-client";
 import { CustomerSelector } from "./customer-selector";
 import { ServiceSelector } from "./service-selector";
 import { GeneralPaintingSelector, LogoPaintsSelector } from "./paint-selector";
+import { SpotSelector } from "./spot-selector";
 import { LayoutForm } from "@/components/production/layout/layout-form";
 import { useAuth } from "@/hooks/useAuth";
 import type { LayoutCreateFormData } from "@/schemas";
-import type { Customer } from "@/types";
+import type { Customer, Paint } from "@/types";
+import { TRUCK_SPOT } from "@/constants";
 
 // Enhanced Task Form Schema for Mobile with Cross-field Validation
 const taskFormSchema = z.object({
@@ -66,6 +68,7 @@ const taskFormSchema = z.object({
       }, {
         message: "Número do chassi deve ter exatamente 17 caracteres alfanuméricos",
       }),
+    spot: z.string().nullable().optional(),
   }).nullable().optional(),
   details: z.string().max(1000, "Detalhes muito longos (máx. 1000 caracteres)").nullable().optional(),
   entryDate: z.date().nullable().optional(),
@@ -172,6 +175,8 @@ interface TaskFormProps {
   mode: "create" | "edit";
   initialData?: Partial<TaskFormData>;
   initialCustomer?: Customer;
+  initialGeneralPaint?: Paint;
+  initialLogoPaints?: Paint[];
   existingLayouts?: {
     left?: LayoutCreateFormData;
     right?: LayoutCreateFormData;
@@ -190,7 +195,7 @@ const TASK_STATUS_OPTIONS = [
   { value: TASK_STATUS.CANCELLED, label: "Cancelada" },
 ];
 
-export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, onSubmit, onCancel, isSubmitting: isSubmittingProp }: TaskFormProps) {
+export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPaint, initialLogoPaints, existingLayouts, onSubmit, onCancel, isSubmitting: isSubmittingProp }: TaskFormProps) {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { handlers, refs } = useKeyboardAwareScroll();
@@ -327,9 +332,11 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
     truck: initialData?.truck ? {
       plate: initialData.truck.plate || null,
       chassisNumber: initialData.truck.chassisNumber || null,
+      spot: (initialData.truck as any).spot || null,
     } : {
       plate: null,
       chassisNumber: null,
+      spot: null,
     },
     details: initialData?.details || null,
     entryDate: initialData?.entryDate || null,
@@ -507,25 +514,28 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
         };
       }
 
-      // Add layouts if present - only modified sides (following web implementation)
+      // Add layouts if present - consolidate into truck object (following web implementation)
       if (isLayoutOpen && modifiedLayoutSides.size > 0) {
-        const truckLayoutData: any = {};
+        // Start with existing truck data from form
+        const consolidatedTruck: any = formDataFields.truck || {};
 
         for (const side of modifiedLayoutSides) {
           const sideData = layouts[side];
           if (sideData && sideData.layoutSections && sideData.layoutSections.length > 0) {
+            // Map internal side names to API field names
+            const layoutFieldName = side === 'left' ? 'leftSideLayout' : side === 'right' ? 'rightSideLayout' : 'backSideLayout';
             const sideName = side === 'left' ? 'leftSide' : side === 'right' ? 'rightSide' : 'backSide';
-            truckLayoutData[sideName] = {
+
+            consolidatedTruck[layoutFieldName] = {
               height: sideData.height,
               layoutSections: sideData.layoutSections,
               photoId: sideData.photoId || null,
             };
-            console.log(`[TaskForm] Added modified ${sideName} to payload`);
+            console.log(`[TaskForm] Added ${layoutFieldName} to consolidated truck`);
 
             // Add layout photo if present (only backside supports photos)
             if (side === 'back' && sideData.photoUri) {
               // Backend expects: layoutPhotos.backSide
-              // Create a file-like object for the photo
               files[`layoutPhotos.${sideName}`] = [{
                 uri: sideData.photoUri,
                 name: `layout-${sideName}-${Date.now()}.jpg`,
@@ -536,10 +546,8 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           }
         }
 
-        if (Object.keys(truckLayoutData).length > 0) {
-          formDataFields.truckLayoutData = truckLayoutData;
-          console.log('[TaskForm] truckLayoutData:', truckLayoutData);
-        }
+        formDataFields.truck = consolidatedTruck;
+        console.log('[TaskForm] Consolidated truck:', consolidatedTruck);
       }
 
       // Create FormData with context for proper backend file organization
@@ -585,27 +593,28 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
         delete cleanedData.observation;
       }
 
-      // Add layouts if present - only modified sides (following web implementation)
+      // Add layouts if present - consolidate into truck object (following web implementation)
       if (isLayoutOpen && modifiedLayoutSides.size > 0) {
-        const truckLayoutData: any = {};
+        // Start with existing truck data from form
+        const consolidatedTruck: any = cleanedData.truck || {};
 
         for (const side of modifiedLayoutSides) {
           const sideData = layouts[side];
           if (sideData && sideData.layoutSections && sideData.layoutSections.length > 0) {
-            const sideName = side === 'left' ? 'leftSide' : side === 'right' ? 'rightSide' : 'backSide';
-            truckLayoutData[sideName] = {
+            // Map internal side names to API field names
+            const layoutFieldName = side === 'left' ? 'leftSideLayout' : side === 'right' ? 'rightSideLayout' : 'backSideLayout';
+
+            consolidatedTruck[layoutFieldName] = {
               height: sideData.height,
               layoutSections: sideData.layoutSections,
               photoId: sideData.photoId || null,
             };
-            console.log(`[TaskForm] Added modified ${sideName} to payload (JSON)`);
+            console.log(`[TaskForm] Added ${layoutFieldName} to consolidated truck (JSON)`);
           }
         }
 
-        if (Object.keys(truckLayoutData).length > 0) {
-          cleanedData.truckLayoutData = truckLayoutData;
-          console.log('[TaskForm] truckLayoutData (JSON):', truckLayoutData);
-        }
+        cleanedData.truck = consolidatedTruck;
+        console.log('[TaskForm] Consolidated truck (JSON):', consolidatedTruck);
       }
 
       await onSubmit(cleanedData);
@@ -897,80 +906,6 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           </FormCard>
           )}
 
-          {/* Observation Section - Only in edit mode, hidden for warehouse, financial, designer, logistic users */}
-          {mode === "edit" && !isWarehouseSector && !isFinancialSector && !isDesignerSector && !isLogisticSector && (
-            <Card>
-              <View style={[styles.collapsibleCardHeader, isObservationOpen && styles.collapsibleCardHeaderOpen, isObservationOpen && { borderBottomColor: colors.border }]}>
-                <View style={styles.collapsibleCardTitleRow}>
-                  <Icon name="file-text" size={20} color={colors.foreground} />
-                  <ThemedText style={styles.collapsibleCardTitle}>Observação</ThemedText>
-                </View>
-                {!isObservationOpen ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onPress={() => setIsObservationOpen(true)}
-                    disabled={isSubmitting}
-                  >
-                    <Icon name="plus" size={16} color={colors.foreground} />
-                    <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.sm }}>
-                      Adicionar
-                    </ThemedText>
-                  </Button>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => {
-                      setIsObservationOpen(false);
-                      setObservationFiles([]);
-                      form.setValue('observation', null);
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    <IconX size={18} color={colors.destructive} />
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {isObservationOpen && (
-                <View style={styles.collapsibleCardContent}>
-                  {/* Observation Description */}
-                  <SimpleFormField label="Descrição" required error={errors.observation?.description}>
-                    <Controller
-                      control={form.control}
-                      name="observation.description"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <Textarea
-                          value={value || ""}
-                          onChangeText={onChange}
-                          onBlur={onBlur}
-                          placeholder="Descreva problemas ou observações sobre a tarefa..."
-                          numberOfLines={4}
-                          error={!!errors.observation?.description}
-                        />
-                      )}
-                    />
-                  </SimpleFormField>
-
-                  {/* Observation Files */}
-                  <FilePicker
-                    value={observationFiles}
-                    onChange={setObservationFiles}
-                    maxFiles={10}
-                    label="Arquivos de Evidência"
-                    placeholder="Adicionar arquivos"
-                    helperText="Fotos, documentos ou outros arquivos"
-                    showCamera={true}
-                    showGallery={true}
-                    showFilePicker={true}
-                    disabled={isSubmitting}
-                    required
-                  />
-                </View>
-              )}
-            </Card>
-          )}
-
           {/* Services */}
           <FormCard title="Serviços" icon="IconTool">
               <FormFieldGroup label="Serviços" error={errors.services?.message}>
@@ -1001,6 +936,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                     onValueChange={onChange}
                     disabled={isSubmitting}
                     error={error?.message}
+                    initialPaint={initialGeneralPaint}
                   />
                 )}
               />
@@ -1015,6 +951,7 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                     onValueChange={onChange}
                     disabled={isSubmitting}
                     error={error?.message}
+                    initialPaints={initialLogoPaints}
                   />
                 )}
               />
@@ -1163,6 +1100,109 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
           </Card>
           )}
 
+          {/* Truck Spot Selector - Edit mode only, when layout data exists - after layout section */}
+          {mode === "edit" && (existingLayouts || isLayoutOpen) && (
+            <Controller
+              control={form.control}
+              name="truck.spot"
+              render={({ field: { onChange, value } }) => {
+                // Calculate truck length from layout sections
+                const leftLayout = layouts.left;
+                const leftSections = leftLayout?.layoutSections;
+                let truckLength: number | null = null;
+                if (leftSections && leftSections.length > 0) {
+                  const sectionsSum = leftSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
+                  // Add cabin if < 10m (1.8m cabin - average Brazilian truck cab)
+                  truckLength = sectionsSum < 10 ? sectionsSum + 1.8 : sectionsSum;
+                }
+
+                return (
+                  <SpotSelector
+                    truckLength={truckLength}
+                    currentSpot={value as TRUCK_SPOT | null}
+                    truckId={(initialData?.truck as any)?.id}
+                    onSpotChange={(spot) => onChange(spot)}
+                    disabled={isSubmitting}
+                  />
+                );
+              }}
+            />
+          )}
+
+          {/* Observation Section - Only in edit mode, after layout, hidden for warehouse, financial, designer, logistic users */}
+          {mode === "edit" && !isWarehouseSector && !isFinancialSector && !isDesignerSector && !isLogisticSector && (
+            <Card>
+              <View style={[styles.collapsibleCardHeader, isObservationOpen && styles.collapsibleCardHeaderOpen, isObservationOpen && { borderBottomColor: colors.border }]}>
+                <View style={styles.collapsibleCardTitleRow}>
+                  <Icon name="file-text" size={20} color={colors.foreground} />
+                  <ThemedText style={styles.collapsibleCardTitle}>Observação</ThemedText>
+                </View>
+                {!isObservationOpen ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onPress={() => setIsObservationOpen(true)}
+                    disabled={isSubmitting}
+                  >
+                    <Icon name="plus" size={16} color={colors.foreground} />
+                    <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.sm }}>
+                      Adicionar
+                    </ThemedText>
+                  </Button>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => {
+                      setIsObservationOpen(false);
+                      setObservationFiles([]);
+                      form.setValue('observation', null);
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    <IconX size={18} color={colors.destructive} />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {isObservationOpen && (
+                <View style={styles.collapsibleCardContent}>
+                  {/* Observation Description */}
+                  <SimpleFormField label="Descrição" required error={errors.observation?.description}>
+                    <Controller
+                      control={form.control}
+                      name="observation.description"
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <Textarea
+                          value={value || ""}
+                          onChangeText={onChange}
+                          onBlur={onBlur}
+                          placeholder="Descreva problemas ou observações sobre a tarefa..."
+                          numberOfLines={4}
+                          error={!!errors.observation?.description}
+                        />
+                      )}
+                    />
+                  </SimpleFormField>
+
+                  {/* Observation Files */}
+                  <FilePicker
+                    value={observationFiles}
+                    onChange={setObservationFiles}
+                    maxFiles={10}
+                    label="Arquivos de Evidência"
+                    placeholder="Adicionar arquivos"
+                    helperText="Fotos, documentos ou outros arquivos"
+                    showCamera={true}
+                    showGallery={true}
+                    showFilePicker={true}
+                    disabled={isSubmitting}
+                    required
+                  />
+                </View>
+              )}
+            </Card>
+          )}
+
           {/* Artworks - Last section, hidden for warehouse, financial, logistic users */}
           {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
             <FormCard title="Artes (Opcional)" icon="IconPhoto">
@@ -1172,7 +1212,8 @@ export function TaskForm({ mode, initialData, initialCustomer, existingLayouts, 
                   maxFiles={5}
                   placeholder="Adicionar arquivos de arte"
                   helperText="Imagens, PDFs ou outros arquivos"
-                  showCamera={true}
+                  showCamera={false}
+                  showVideoCamera={false}
                   showGallery={true}
                   showFilePicker={true}
                   disabled={isSubmitting}

@@ -50,7 +50,7 @@ export const personalMovementsListConfig: ListConfig<Activity> = {
         align: 'center',
         render: (activity) => ACTIVITY_OPERATION_LABELS[activity.operation] || activity.operation,
         format: 'badge',
-        component: 'status-badge',
+        badgeEntity: 'ACTIVITY',
       },
       {
         key: 'reason',

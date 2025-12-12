@@ -2,9 +2,8 @@
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
 import type { Task, TaskIncludes, TaskOrderBy } from "./task";
-import type { Garage, GarageIncludes, GarageOrderBy } from "./garage";
 import type { Layout, LayoutIncludes } from "./layout";
-import type { ORDER_BY_DIRECTION, TRUCK_MANUFACTURER } from '@/constants';
+import type { ORDER_BY_DIRECTION, TRUCK_MANUFACTURER, TRUCK_SPOT } from '@/constants';
 
 // =====================
 // Main Entity Interface
@@ -12,24 +11,20 @@ import type { ORDER_BY_DIRECTION, TRUCK_MANUFACTURER } from '@/constants';
 
 export interface Truck extends BaseEntity {
   // Identification
-  plate: string;
+  plate: string | null;
   chassisNumber: string | null;
   model: string;
   manufacturer: TRUCK_MANUFACTURER;
 
-  // Position
-  xPosition: number | null;
-  yPosition: number | null;
+  // Position (using spot enum instead of coordinates)
+  spot: TRUCK_SPOT | null;
 
   // Relations
   taskId: string;
-  garageId: string | null;
-  laneId: string | null;
   leftSideLayoutId: string | null;
   rightSideLayoutId: string | null;
   backSideLayoutId: string | null;
   task?: Task;
-  garage?: Garage;
   leftSideLayout?: Layout;
   rightSideLayout?: Layout;
   backSideLayout?: Layout;
@@ -44,11 +39,6 @@ export interface TruckIncludes {
     | boolean
     | {
         include?: TaskIncludes;
-      };
-  garage?:
-    | boolean
-    | {
-        include?: GarageIncludes;
       };
   leftSideLayout?:
     | boolean
@@ -76,15 +66,11 @@ export interface TruckOrderBy {
   plate?: ORDER_BY_DIRECTION;
   model?: ORDER_BY_DIRECTION;
   manufacturer?: ORDER_BY_DIRECTION;
-  xPosition?: ORDER_BY_DIRECTION;
-  yPosition?: ORDER_BY_DIRECTION;
+  spot?: ORDER_BY_DIRECTION;
   taskId?: ORDER_BY_DIRECTION;
-  garageId?: ORDER_BY_DIRECTION;
-  laneId?: ORDER_BY_DIRECTION;
   createdAt?: ORDER_BY_DIRECTION;
   updatedAt?: ORDER_BY_DIRECTION;
   task?: TaskOrderBy;
-  garage?: GarageOrderBy;
 }
 
 // =====================

@@ -1,9 +1,6 @@
 require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
 
-# Bypass Xcode version check (Xcode 16.0 with RN 0.81.4 requires 16.1)
-ENV['RCT_NEW_ARCH_BYPASS_XCODE_VERSION'] = '1'
-
 require 'json'
 podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
 

@@ -30,14 +30,18 @@ import {
   IconX,
   IconExternalLink,
   IconVectorBezier,
+  IconFile,
+  IconPlayerPlay,
 } from "@tabler/icons-react-native";
 import { SvgUri } from "react-native-svg";
+import Pdf from 'react-native-pdf';
 import { useTheme } from "@/lib/theme";
 
 import { Badge } from "@/components/ui/badge";
 import type { File as AnkaaFile } from '../../types';
 import { isImageFile, formatFileSize, getFileExtension } from '../../utils';
 import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MIN_ZOOM = 0.5;
@@ -58,10 +62,32 @@ const isSvgFile = (file: AnkaaFile): boolean => {
   return ext === "svg";
 };
 
-// Check if file can be previewed
+// PDF file detection
+const isPdfFile = (file: AnkaaFile): boolean => {
+  const pdfMimeTypes = ["application/pdf"];
+  if (pdfMimeTypes.includes(file.mimetype?.toLowerCase())) return true;
+  const ext = getFileExtension(file.filename).toLowerCase();
+  return ext === "pdf";
+};
+
+// Video file detection
+const isVideoFile = (file: AnkaaFile): boolean => {
+  const videoMimeTypes = ["video/mp4", "video/mpeg", "video/quicktime", "video/x-msvideo", "video/webm", "video/x-matroska"];
+  if (videoMimeTypes.some(type => file.mimetype?.toLowerCase().startsWith(type.split('/')[0]))) {
+    return file.mimetype?.toLowerCase().startsWith("video/");
+  }
+  const ext = getFileExtension(file.filename).toLowerCase();
+  return ["mp4", "avi", "mov", "wmv", "webm", "mkv", "m4v"].includes(ext);
+};
+
+// Check if file can be previewed (images, PDFs, videos, EPS with thumbnails)
 const isPreviewableFile = (file: AnkaaFile): boolean => {
   // SVG files can always be previewed with SvgUri
   if (isSvgFile(file)) {
+    return true;
+  }
+  // PDFs and videos are previewable
+  if (isPdfFile(file) || isVideoFile(file)) {
     return true;
   }
   return isImageFile(file) || (isEpsFile(file) && !!file.thumbnailUrl);
@@ -304,10 +330,6 @@ export function FilePreviewModal({
     }
   }, [currentFile, baseUrl, showControls]);
 
-  // Open file with appropriate viewer (uses share sheet which allows opening)
-  const handleOpenFile = useCallback(async () => {
-    await handleShare(); // Share sheet allows opening with appropriate apps
-  }, [handleShare]);
 
   // Pinch gesture - Native-like zoom with focal point
   const pinchGesture = Gesture.Pinch()
@@ -511,9 +533,11 @@ export function FilePreviewModal({
 
   if (!currentFile) return null;
 
-  const isPDF = getFileExtension(currentFile.filename).toLowerCase() === "pdf";
+  const isPDF = isPdfFile(currentFile);
+  const isVideo = isVideoFile(currentFile);
   const isEPS = isEpsFile(currentFile);
   const isSVG = isSvgFile(currentFile);
+  const isImage = isImageFile(currentFile) && !isSVG;
 
   // For EPS files, we need to use thumbnails (server renders them as PNG)
   // SVG files will be rendered directly with SvgUri
@@ -620,175 +644,204 @@ export function FilePreviewModal({
             </View>
 
             <View style={styles.headerRight}>
-              <TouchableOpacity style={styles.headerButton} onPress={onClose} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.headerButton} onPress={handleShare} activeOpacity={0.7}>
+                <IconExternalLink size={22} color="#ffffff" />
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.headerButton, { marginLeft: 8 }]} onPress={onClose} activeOpacity={0.7}>
                 <IconX size={24} color="#ffffff" />
               </TouchableOpacity>
             </View>
           </Animated.View>
 
-          {/* Image Container */}
+          {/* Content Container - handles different file types */}
           <View style={styles.imageContainer}>
             {isCurrentFilePreviewable ? (
               <>
-                <GestureDetector gesture={composedGesture}>
-                  <Animated.View style={styles.imageWrapper}>
-                    <Animated.View style={animatedImageStyle}>
-                      {isSVG ? (
-                        // Render SVG files with SvgUri for crisp vector rendering
-                        <View style={styles.svgContainer}>
-                          <SvgUri
-                            key={`svg-image-${currentFile.id}-${currentIndex}`}
-                            uri={getFileUrl(currentFile)}
-                            width={SCREEN_WIDTH}
-                            height={SCREEN_HEIGHT - 200}
-                            onLoad={() => {
-                              console.log('✅ [SvgUri] Loaded successfully:', currentFile.filename);
-                              handleImageLoad();
-                            }}
-                            onError={(error: Error) => {
-                              console.error('❌ [SvgUri] Failed to load:', {
-                                filename: currentFile.filename,
-                                url: getFileUrl(currentFile),
-                                error: error.message
-                              });
-                              handleImageError();
-                            }}
-                          />
-                        </View>
-                      ) : (
-                        // Render regular images (and EPS with thumbnail)
-                        <Image
-                          key={`main-image-${currentFile.id}-${currentIndex}`}
-                          source={{
-                            uri: (() => {
-                              // For EPS files, use thumbnail (server renders them as PNG)
-                              const url = needsThumbnail && currentFile.thumbnailUrl
-                                ? getFileThumbnailUrl(currentFile, "large")
-                                : getFileUrl(currentFile);
-                              console.log('🖼️ [MainImage] About to load:', {
-                                filename: currentFile.filename,
-                                isEPS,
-                                isSVG,
-                                needsThumbnail,
-                                hasThumbnailUrl: !!currentFile.thumbnailUrl,
-                                finalUrl: url,
-                                imageLoading,
-                                imageError
-                              });
-                              return url;
-                            })(),
-                            cache: 'reload'
-                          }}
-                          style={styles.image}
-                          resizeMode="contain"
-                          onLoadStart={() => {
-                            console.log('⏳ [MainImage] Load started:', currentFile.filename);
-                          }}
-                          onLoad={() => {
-                            console.log('✅ [MainImage] Loaded successfully:', currentFile.filename);
-                            handleImageLoad();
-                          }}
-                          onError={(error) => {
-                            console.error('❌ [MainImage] Failed to load:', {
-                              filename: currentFile.filename,
-                              url: needsThumbnail && currentFile.thumbnailUrl
-                                ? getFileThumbnailUrl(currentFile, "large")
-                                : getFileUrl(currentFile),
-                              error: error.nativeEvent
-                            });
-                            handleImageError();
-                          }}
-                          onLoadEnd={() => {
-                            console.log('🏁 [MainImage] Load ended (success or error):', currentFile.filename);
-                          }}
-                        />
-                      )}
-                    </Animated.View>
-
-                    {/* Loading Overlay */}
+                {/* PDF Viewer - Full screen inline */}
+                {isPDF && (
+                  <View style={styles.pdfContainer}>
+                    <Pdf
+                      key={`pdf-${currentFile.id}-${currentIndex}`}
+                      source={{
+                        uri: getFileUrl(currentFile),
+                        cache: true,
+                      }}
+                      trustAllCerts={false}
+                      onLoadComplete={(numberOfPages) => {
+                        console.log('[PDF Viewer] Loaded:', numberOfPages, 'pages');
+                        setImageLoading(false);
+                        setImageError(false);
+                      }}
+                      onError={(error) => {
+                        console.error('[PDF Viewer] Error:', error);
+                        setImageLoading(false);
+                        setImageError(true);
+                      }}
+                      onLoadProgress={(percent) => {
+                        console.log('[PDF Viewer] Progress:', Math.round(percent * 100) + '%');
+                      }}
+                      style={styles.pdfViewer}
+                      enablePaging={true}
+                      horizontal={false}
+                      spacing={10}
+                    />
                     {imageLoading && (
-                      <View style={styles.imageOverlay}>
+                      <View style={styles.pdfLoadingOverlay}>
                         <ActivityIndicator size="large" color={colors.primary} />
-                        <Text style={styles.loadingText}>Carregando...</Text>
+                        <Text style={styles.loadingText}>Carregando PDF...</Text>
                       </View>
                     )}
-
-                    {/* Error Overlay */}
                     {imageError && (
-                      <View style={styles.imageOverlay}>
+                      <View style={styles.pdfLoadingOverlay}>
                         <Text style={styles.errorIcon}>⚠️</Text>
-                        <Text style={styles.errorTitle}>Erro ao carregar</Text>
-                        <Text style={styles.errorText}>Não foi possível carregar a imagem</Text>
-                        <TouchableOpacity style={styles.errorButton} onPress={handleOpenFile} activeOpacity={0.7}>
+                        <Text style={styles.errorTitle}>Erro ao carregar PDF</Text>
+                        <TouchableOpacity style={styles.errorButton} onPress={handleShare} activeOpacity={0.7}>
                           <IconExternalLink size={16} color="#ffffff" />
-                          <Text style={styles.errorButtonText}>Abrir</Text>
+                          <Text style={styles.errorButtonText}>Abrir com...</Text>
                         </TouchableOpacity>
                       </View>
                     )}
-                  </Animated.View>
-                </GestureDetector>
+                  </View>
+                )}
+
+                {/* Video Preview - Show thumbnail with play button */}
+                {isVideo && (
+                  <View style={styles.videoContainer}>
+                    <TouchableOpacity style={styles.videoPreviewWrapper} onPress={handleShare} activeOpacity={0.7}>
+                      <IconPlayerPlay size={64} color={colors.primary} />
+                      <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
+                      <Text style={styles.filePreviewSubtitle}>Vídeo • {formatFileSize(currentFile.size)}</Text>
+                      <Text style={styles.filePreviewNote}>Toque para reproduzir</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* Image/SVG Viewer with gestures */}
+                {(isImage || isSVG || (isEPS && currentFile.thumbnailUrl)) && (
+                  <GestureDetector gesture={composedGesture}>
+                    <Animated.View style={styles.imageWrapper}>
+                      <Animated.View style={animatedImageStyle}>
+                        {isSVG ? (
+                          // Render SVG files with SvgUri for crisp vector rendering
+                          <View style={styles.svgContainer}>
+                            <SvgUri
+                              key={`svg-image-${currentFile.id}-${currentIndex}`}
+                              uri={getFileUrl(currentFile)}
+                              width={SCREEN_WIDTH}
+                              height={SCREEN_HEIGHT - 200}
+                              onLoad={() => {
+                                console.log('✅ [SvgUri] Loaded successfully:', currentFile.filename);
+                                handleImageLoad();
+                              }}
+                              onError={(error: Error) => {
+                                console.error('❌ [SvgUri] Failed to load:', {
+                                  filename: currentFile.filename,
+                                  url: getFileUrl(currentFile),
+                                  error: error.message
+                                });
+                                handleImageError();
+                              }}
+                            />
+                          </View>
+                        ) : (
+                          // Render regular images (and EPS with thumbnail)
+                          <Image
+                            key={`main-image-${currentFile.id}-${currentIndex}`}
+                            source={{
+                              uri: (() => {
+                                // For EPS files, use thumbnail (server renders them as PNG)
+                                const url = needsThumbnail && currentFile.thumbnailUrl
+                                  ? getFileThumbnailUrl(currentFile, "large")
+                                  : getFileUrl(currentFile);
+                                console.log('🖼️ [MainImage] About to load:', {
+                                  filename: currentFile.filename,
+                                  isEPS,
+                                  isSVG,
+                                  needsThumbnail,
+                                  hasThumbnailUrl: !!currentFile.thumbnailUrl,
+                                  finalUrl: url,
+                                  imageLoading,
+                                  imageError
+                                });
+                                return url;
+                              })(),
+                              cache: 'reload'
+                            }}
+                            style={styles.image}
+                            resizeMode="contain"
+                            onLoadStart={() => {
+                              console.log('⏳ [MainImage] Load started:', currentFile.filename);
+                            }}
+                            onLoad={() => {
+                              console.log('✅ [MainImage] Loaded successfully:', currentFile.filename);
+                              handleImageLoad();
+                            }}
+                            onError={(error) => {
+                              console.error('❌ [MainImage] Failed to load:', {
+                                filename: currentFile.filename,
+                                url: needsThumbnail && currentFile.thumbnailUrl
+                                  ? getFileThumbnailUrl(currentFile, "large")
+                                  : getFileUrl(currentFile),
+                                error: error.nativeEvent
+                              });
+                              handleImageError();
+                            }}
+                            onLoadEnd={() => {
+                              console.log('🏁 [MainImage] Load ended (success or error):', currentFile.filename);
+                            }}
+                          />
+                        )}
+                      </Animated.View>
+
+                      {/* Loading Overlay */}
+                      {imageLoading && (
+                        <View style={styles.imageOverlay}>
+                          <ActivityIndicator size="large" color={colors.primary} />
+                          <Text style={styles.loadingText}>Carregando...</Text>
+                        </View>
+                      )}
+
+                      {/* Error Overlay */}
+                      {imageError && (
+                        <View style={styles.imageOverlay}>
+                          <Text style={styles.errorIcon}>⚠️</Text>
+                          <Text style={styles.errorTitle}>Erro ao carregar</Text>
+                          <Text style={styles.errorText}>Não foi possível carregar a imagem</Text>
+                          <TouchableOpacity style={styles.errorButton} onPress={handleShare} activeOpacity={0.7}>
+                            <IconExternalLink size={16} color="#ffffff" />
+                            <Text style={styles.errorButtonText}>Abrir com...</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </Animated.View>
+                  </GestureDetector>
+                )}
               </>
             ) : (
-              // Non-previewable files
+              // Non-previewable files (EPS without thumbnail, etc.)
               <View style={styles.filePreviewContainer}>
-                <TouchableOpacity style={styles.filePreviewWrapper} onPress={showControls} activeOpacity={1}>
-                  {isPDF ? (
-                    <>
-                      <Text style={styles.filePreviewIcon}>📄</Text>
-                      <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
-                      <Text style={styles.filePreviewSubtitle}>Documento PDF • {formatFileSize(currentFile.size)}</Text>
-                      <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                        <IconExternalLink size={18} color="#ffffff" />
-                        <Text style={styles.fileActionButtonText}>Abrir</Text>
-                      </TouchableOpacity>
-                    </>
-                  ) : (isEPS || isSVG) && !currentFile.thumbnailUrl ? (
+                <TouchableOpacity style={styles.filePreviewWrapper} onPress={handleShare} activeOpacity={0.7}>
+                  {(isEPS || isSVG) && !currentFile.thumbnailUrl ? (
                     <>
                       <IconVectorBezier size={64} color={colors.primary} />
                       <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
                       <Text style={styles.filePreviewSubtitle}>
                         Arquivo {isSVG ? 'SVG' : 'EPS'} • {formatFileSize(currentFile.size)}
                       </Text>
-                      <Text style={styles.filePreviewNote}>Visualização não disponível</Text>
-                      <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                        <IconExternalLink size={18} color="#ffffff" />
-                        <Text style={styles.fileActionButtonText}>Abrir</Text>
-                      </TouchableOpacity>
+                      <Text style={styles.filePreviewNote}>Toque para abrir com outro app</Text>
                     </>
                   ) : (
                     <>
-                      <Text style={styles.filePreviewIcon}>📎</Text>
+                      <IconFile size={64} color={colors.mutedForeground} />
                       <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
                       <Text style={styles.filePreviewSubtitle}>{formatFileSize(currentFile.size)}</Text>
-                      <TouchableOpacity style={styles.fileActionButton} onPress={handleOpenFile} activeOpacity={0.7}>
-                        <IconExternalLink size={18} color="#ffffff" />
-                        <Text style={styles.fileActionButtonText}>Abrir</Text>
-                      </TouchableOpacity>
+                      <Text style={styles.filePreviewNote}>Toque para abrir com outro app</Text>
                     </>
                   )}
                 </TouchableOpacity>
               </View>
             )}
           </View>
-
-          {/* Bottom Controls */}
-          {isCurrentFilePreviewable && (
-            <Animated.View style={[
-              styles.bottomControls,
-              animatedControlsStyle,
-              { paddingBottom: insets.bottom + 12 }
-            ]}>
-              <View style={styles.controlsRow}>
-                {/* Action Controls */}
-                <View style={styles.actionControls}>
-                  <TouchableOpacity style={[styles.controlButton, styles.controlButtonPrimary]} onPress={handleOpenFile} activeOpacity={0.7}>
-                    <IconExternalLink size={20} color="#ffffff" />
-                    <Text style={styles.controlButtonTextPrimary}>Abrir</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Animated.View>
-          )}
 
           {/* Thumbnail Strip */}
           {isCurrentFilePreviewable && totalImages > 1 && showThumbnailStrip && (
@@ -800,6 +853,8 @@ export function FilePreviewModal({
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbnailScrollContent}>
                 {previewableFiles.map(({ file, originalIndex }, _index) => {
                   const isActive = originalIndex === currentIndex;
+                  const filePdf = isPdfFile(file);
+                  const fileVideo = isVideoFile(file);
 
                   return (
                     <TouchableOpacity
@@ -808,6 +863,7 @@ export function FilePreviewModal({
                       onPress={() => {
                         setCurrentIndex(originalIndex);
                         showControls();
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       }}
                       activeOpacity={0.7}
                     >
@@ -828,6 +884,14 @@ export function FilePreviewModal({
                           console.log('✅ [Thumbnail] Loaded successfully:', file.filename);
                         }}
                       />
+                      {/* File type badge for PDFs and videos */}
+                      {(filePdf || fileVideo) && (
+                        <View style={styles.thumbnailTypeBadge}>
+                          <Text style={styles.thumbnailTypeBadgeText}>
+                            {filePdf ? 'PDF' : 'VID'}
+                          </Text>
+                        </View>
+                      )}
                       {isActive && <View style={styles.thumbnailActiveOverlay} />}
                     </TouchableOpacity>
                   );
@@ -928,6 +992,38 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#e5e5e5", // neutral-200 - matches thumbnail and modal background
+  },
+  pdfContainer: {
+    flex: 1,
+    backgroundColor: "#1a1a1a",
+  },
+  pdfViewer: {
+    flex: 1,
+    backgroundColor: "#1a1a1a",
+  },
+  pdfLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    gap: 16,
+  },
+  videoContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1a1a1a",
+  },
+  videoPreviewWrapper: {
+    alignItems: "center",
+    gap: 16,
+    paddingHorizontal: 32,
+    backgroundColor: "#262626",
+    borderRadius: 16,
+    padding: 32,
+    maxWidth: SCREEN_WIDTH - 64,
+    borderWidth: 1,
+    borderColor: "#404040",
   },
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1183,5 +1279,19 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: "rgba(21, 128, 61, 0.1)", // green-700 with opacity
+  },
+  thumbnailTypeBadge: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  thumbnailTypeBadgeText: {
+    color: "#ffffff",
+    fontSize: 8,
+    fontWeight: "700",
   },
 });

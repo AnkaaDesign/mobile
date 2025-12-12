@@ -18,7 +18,8 @@ import { ErrorScreen } from '@/components/ui/error-screen'
 import { useTheme } from '@/lib/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { useTasksInfiniteMobile, useSectorsInfiniteMobile } from '@/hooks'
-import { SECTOR_PRIVILEGES, TASK_STATUS } from '@/constants'
+import { TASK_STATUS, SECTOR_PRIVILEGES } from '@/constants'
+import { isTeamLeader } from '@/utils/user'
 import { Search } from '@/components/list/Search'
 import { Filters } from '@/components/list/Filters'
 import { BulkActions } from '@/components/list/BulkActions'
@@ -79,20 +80,19 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   // Refreshing state
   const [refreshing, setRefreshing] = useState(false)
 
-  // Other sectors visibility state (for LEADER and PRODUCTION users)
+  // Other sectors visibility state (for team leaders only)
   const [showOtherSectors, setShowOtherSectors] = useState(false)
 
   // Modal state for admin actions
   const [sectorModalTask, setSectorModalTask] = useState<Task | null>(null)
   const [duplicateModalTask, setDuplicateModalTask] = useState<Task | null>(null)
 
-  // Check if user is LEADER or PRODUCTION (should see filtered view by default)
-  const isLeader = user?.sector?.privileges === SECTOR_PRIVILEGES.LEADER
-  const isProduction = user?.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION
-  const isLeaderOrProduction = isLeader || isProduction
-  // For LEADER: show tasks from the sector they manage (managedSectorId)
-  // For PRODUCTION: show tasks from their own sector (sector.id)
-  const userSectorId = isLeader ? user?.managedSectorId : user?.sector?.id
+  // Check if user is a team leader (should see filtered view by default)
+  // Note: Team leadership is now determined by managedSector relationship (user.managedSector?.id)
+  const userIsTeamLeader = user ? isTeamLeader(user) : false
+  const isLeaderOrProduction = userIsTeamLeader
+  // For team leaders: show tasks from the sector they manage (managedSector.id)
+  const userSectorId = userIsTeamLeader ? user?.managedSector?.id : user?.sector?.id
 
   // ============================================================================
   // Data Fetching
@@ -173,7 +173,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   }, [filteredTasks, sectors])
 
   // Convert to SectionList format
-  // For LEADER/PRODUCTION: show own sector first, then others (if enabled), then undefined last
+  // For team leaders: show own sector first, then others (if enabled), then undefined last
   const sections: SectionData[] = useMemo(() => {
     const result: SectionData[] = []
     const otherSections: SectionData[] = []
@@ -181,7 +181,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     // Find user's own sector
     const userSector = sectors.find((s: Sector) => s.id === userSectorId)
 
-    // 1. User's own sector first (always shown for LEADER/PRODUCTION)
+    // 1. User's own sector first (always shown for team leaders)
     if (userSector) {
       const userSectorTasks = tasksBySector.get(userSector.id)
       if (userSectorTasks && userSectorTasks.length > 0) {
@@ -208,13 +208,13 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
       }
     })
 
-    // For LEADER/PRODUCTION: only add other sectors if showOtherSectors is true
+    // For team leaders: only add other sectors if showOtherSectors is true
     // For other roles (ADMIN, etc.): always show all sectors
     if (!isLeaderOrProduction || showOtherSectors) {
       result.push(...otherSections)
     }
 
-    // 3. Undefined sector last (always shown for LEADER/PRODUCTION)
+    // 3. Undefined sector last (always shown for team leaders)
     const undefinedTasks = tasksBySector.get('undefined')
     if (undefinedTasks && undefinedTasks.length > 0) {
       result.push({
@@ -465,7 +465,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
         </View>
 
         <View style={styles.actions}>
-          {/* Toggle Other Sectors Button - only for LEADER and PRODUCTION users */}
+          {/* Toggle Other Sectors Button - only for team leaders */}
           {isLeaderOrProduction && (
             <TouchableOpacity
               onPress={() => setShowOtherSectors(!showOtherSectors)}

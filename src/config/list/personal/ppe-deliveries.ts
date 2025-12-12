@@ -48,7 +48,7 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         align: 'center',
         render: (delivery) => PPE_DELIVERY_STATUS_LABELS[delivery.status] || delivery.status,
         format: 'badge',
-        component: 'status-badge',
+        badgeEntity: 'PPE_DELIVERY',
       },
       {
         key: 'createdAt',

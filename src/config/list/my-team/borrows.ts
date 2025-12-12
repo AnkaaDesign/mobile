@@ -11,8 +11,11 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
   title: 'Empréstimos da Equipe',
 
   query: {
-    hook: 'useBorrowsInfiniteMobile',
-    defaultSort: { field: 'createdAt', direction: 'desc' },
+    hook: 'useTeamStaffBorrowsInfiniteMobile',
+    defaultSort: [
+      { field: 'status', direction: 'asc' },
+      { field: 'createdAt', direction: 'desc' },
+    ],
     pageSize: 25,
     include: {
       item: {
@@ -387,7 +390,8 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
   },
 
   permissions: {
-    view: 'LEADER',
+    // Note: Team leadership is now determined by managedSector, checked at component level
+    view: 'TEAM_LEADER',
   },
 
   emptyState: {

@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { Pressable, Animated, Easing, ActivityIndicator } from "react-native";
+import { Pressable, Animated, Easing } from "react-native";
 import { IconMoon, IconSun } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { impactHaptic } from "@/utils/haptics";
@@ -10,9 +10,7 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ size = 24}: ThemeToggleProps) {
-  const themeContext = useTheme();
-  console.log("ThemeToggle: Theme context:", themeContext);
-  const { isDark, setTheme } = themeContext;
+  const { isDark, setTheme } = useTheme();
   const [isToggling, setIsToggling] = useState(false);
 
   // Animation values
@@ -57,9 +55,7 @@ export function ThemeToggle({ size = 24}: ThemeToggleProps) {
   }, [isDark]);
 
   const toggleTheme = async () => {
-    console.log("ThemeToggle: Button pressed, current isDark:", isDark);
     if (isToggling) {
-      console.log("ThemeToggle: Already toggling, skipping");
       return; // Prevent multiple simultaneous toggles
     }
 
@@ -70,9 +66,7 @@ export function ThemeToggle({ size = 24}: ThemeToggleProps) {
     try {
       // Toggle between light and dark (not including system for simplicity)
       const newTheme = isDark ? "light" : "dark";
-      console.log("ThemeToggle: Setting theme to:", newTheme);
       await setTheme(newTheme);
-      console.log("ThemeToggle: Theme set successfully");
     } catch (error) {
       console.error("Failed to toggle theme:", error);
     } finally {
@@ -82,7 +76,6 @@ export function ThemeToggle({ size = 24}: ThemeToggleProps) {
 
   // Use appropriate colors for React Native
   const iconColor = isDark ? "#f5f5f5" : "#0a0a0a"; // neutral-100 : neutral-950
-  const pressedBackgroundColor = isDark ? "#262626" : "#f5f5f5"; // neutral-800 : neutral-100
 
   const sunRotationDegrees = sunRotation.interpolate({
     inputRange: [0, 90],
@@ -97,8 +90,6 @@ export function ThemeToggle({ size = 24}: ThemeToggleProps) {
   return (
     <Pressable
       onPress={toggleTheme}
-      onPressIn={() => console.log("ThemeToggle: Press started")}
-      onPressOut={() => console.log("ThemeToggle: Press ended")}
       disabled={isToggling}
       style={({ pressed }) => ({
         height: 40,
@@ -132,36 +123,25 @@ export function ThemeToggle({ size = 24}: ThemeToggleProps) {
           justifyContent: "center",
         }}
       >
-        {/* Show loading indicator when toggling */}
-        {isToggling ? (
-          <ActivityIndicator
-            size="small"
-            color="#15803d"
-            style={{ position: "absolute" }}
-          />
-        ) : (
-          <>
-            {/* Sun Icon */}
-            <Animated.View
-              style={{
-                position: "absolute",
-                transform: [{ scale: sunScale }, { rotate: sunRotationDegrees }],
-              }}
-            >
-              <IconSun size={size} color={iconColor} />
-            </Animated.View>
+        {/* Sun Icon */}
+        <Animated.View
+          style={{
+            position: "absolute",
+            transform: [{ scale: sunScale }, { rotate: sunRotationDegrees }],
+          }}
+        >
+          <IconSun size={size} color={iconColor} />
+        </Animated.View>
 
-            {/* Moon Icon */}
-            <Animated.View
-              style={{
-                position: "absolute",
-                transform: [{ scale: moonScale }, { rotate: moonRotationDegrees }],
-              }}
-            >
-              <IconMoon size={size} color={iconColor} />
-            </Animated.View>
-          </>
-        )}
+        {/* Moon Icon */}
+        <Animated.View
+          style={{
+            position: "absolute",
+            transform: [{ scale: moonScale }, { rotate: moonRotationDegrees }],
+          }}
+        >
+          <IconMoon size={size} color={iconColor} />
+        </Animated.View>
       </Animated.View>
     </Pressable>
   );

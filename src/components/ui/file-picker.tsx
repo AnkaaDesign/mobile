@@ -15,6 +15,7 @@ import {
   IconVideo,
   IconTable,
   IconPresentation,
+  IconVideoPlus,
 } from "@tabler/icons-react-native";
 import { ThemedText } from "./themed-text";
 import { useTheme } from "@/lib/theme";
@@ -52,6 +53,8 @@ export interface FilePickerProps {
   error?: string;
   /** Show camera option */
   showCamera?: boolean;
+  /** Show video recording option */
+  showVideoCamera?: boolean;
   /** Show gallery option */
   showGallery?: boolean;
   /** Show file picker option */
@@ -62,6 +65,8 @@ export interface FilePickerProps {
   acceptedFileTypes?: string[];
   /** Image quality (0-1) */
   imageQuality?: number;
+  /** Video max duration in seconds */
+  videoMaxDuration?: number;
   /** Show file size in preview */
   showFileSize?: boolean;
   /** Confirm before removing file */
@@ -82,11 +87,13 @@ export function FilePicker({
   disabled = false,
   error,
   showCamera = true,
+  showVideoCamera = true,
   showGallery = true,
   showFilePicker = true,
   multiple = true,
   acceptedFileTypes = ["*/*"],
   imageQuality = 0.8,
+  videoMaxDuration = 60,
   showFileSize = true,
   confirmRemove = false,
   previewSize = 100,
@@ -177,6 +184,51 @@ export function FilePicker({
     }
   };
 
+  // Handle video recording
+  const handleVideoCamera = async () => {
+    if (disabled || !canAddMore) return;
+
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permissao Necessaria", "Precisamos de permissao para usar a camera.");
+        return;
+      }
+
+      // Also request microphone permission for video recording
+      const { status: micStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (micStatus !== "granted") {
+        Alert.alert("Permissao Necessaria", "Precisamos de permissao para gravar audio.");
+        return;
+      }
+
+      setIsLoading(true);
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: false,
+        quality: 1,
+        videoMaxDuration: videoMaxDuration,
+      });
+
+      if (!result.canceled && result.assets?.[0]) {
+        const asset = result.assets[0];
+        const newFile: FilePickerItem = {
+          uri: asset.uri,
+          name: asset.fileName || `video_${Date.now()}.mp4`,
+          type: asset.mimeType || "video/mp4",
+          size: asset.fileSize,
+          mimeType: asset.mimeType || "video/mp4",
+        };
+        onChange([...value, newFile]);
+      }
+    } catch (err) {
+      console.error("Error recording video:", err);
+      Alert.alert("Erro", "Nao foi possivel gravar o video.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Handle gallery selection
   const handleGallery = async () => {
     if (disabled || !canAddMore) return;
@@ -190,7 +242,7 @@ export function FilePicker({
 
       setIsLoading(true);
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaTypeOptions.All, // Allow both images and videos
         allowsMultipleSelection: multiple && !isSingleFileMode,
         quality: imageQuality,
         allowsEditing: isSingleFileMode || !multiple,
@@ -200,13 +252,18 @@ export function FilePicker({
         const remainingSlots = maxFiles - value.length;
         const assetsToAdd = result.assets.slice(0, remainingSlots);
 
-        const newFiles: FilePickerItem[] = assetsToAdd.map((asset) => ({
-          uri: asset.uri,
-          name: asset.fileName || `image_${Date.now()}.jpg`,
-          type: asset.mimeType || "image/jpeg",
-          size: asset.fileSize,
-          mimeType: asset.mimeType || "image/jpeg",
-        }));
+        const newFiles: FilePickerItem[] = assetsToAdd.map((asset) => {
+          const isVideoAsset = asset.type === "video" || asset.mimeType?.startsWith("video/");
+          const defaultName = isVideoAsset ? `video_${Date.now()}.mp4` : `image_${Date.now()}.jpg`;
+          const defaultMimeType = isVideoAsset ? "video/mp4" : "image/jpeg";
+          return {
+            uri: asset.uri,
+            name: asset.fileName || defaultName,
+            type: asset.mimeType || defaultMimeType,
+            size: asset.fileSize,
+            mimeType: asset.mimeType || defaultMimeType,
+          };
+        });
 
         onChange([...value, ...newFiles]);
 
@@ -293,6 +350,9 @@ export function FilePicker({
 
     if (showCamera) {
       options.push({ text: "Tirar Foto", onPress: handleCamera });
+    }
+    if (showVideoCamera) {
+      options.push({ text: "Gravar Video", onPress: handleVideoCamera });
     }
     if (showGallery) {
       options.push({ text: "Escolher da Galeria", onPress: handleGallery });
@@ -506,6 +566,19 @@ export function FilePicker({
                       <IconCamera size={20} color={iconColor} />
                     </TouchableOpacity>
                   )}
+                  {showVideoCamera && (
+                    <TouchableOpacity
+                      onPress={(e) => {
+                        e.stopPropagation?.();
+                        handleVideoCamera();
+                      }}
+                      disabled={disabled}
+                      style={[styles.iconButton, { backgroundColor: colors.background }]}
+                      activeOpacity={0.7}
+                    >
+                      <IconVideoPlus size={20} color={iconColor} />
+                    </TouchableOpacity>
+                  )}
                   {showGallery && (
                     <TouchableOpacity
                       onPress={(e) => {
@@ -584,6 +657,19 @@ export function FilePicker({
                         activeOpacity={0.7}
                       >
                         <IconCamera size={20} color={iconColor} />
+                      </TouchableOpacity>
+                    )}
+                    {showVideoCamera && (
+                      <TouchableOpacity
+                        onPress={(e) => {
+                          e.stopPropagation?.();
+                          handleVideoCamera();
+                        }}
+                        disabled={disabled}
+                        style={[styles.iconButton, { backgroundColor: colors.background }]}
+                        activeOpacity={0.7}
+                      >
+                        <IconVideoPlus size={20} color={iconColor} />
                       </TouchableOpacity>
                     )}
                     {showGallery && (

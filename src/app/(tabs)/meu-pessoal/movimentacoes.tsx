@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { useAuth } from "@/contexts/auth-context";
-import { useActivitiesInfiniteMobile } from "@/hooks";
+import { useTeamStaffActivitiesInfiniteMobile } from "@/hooks";
 import type { Activity } from "@/types";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -23,6 +23,7 @@ import { TeamActivityColumnDrawerContent } from "@/components/my-team/activity/l
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { useTableSort } from "@/hooks/useTableSort";
 import { useColumnVisibility } from "@/hooks/useColumnVisibility";
+import { isTeamLeader } from "@/utils/user";
 
 export default function TeamActivitiesScreen() {
   const { colors } = useTheme();
@@ -49,7 +50,8 @@ export default function TeamActivitiesScreen() {
   }>({});
 
   // Check if user is a team leader
-  const isTeamLeader = currentUser?.managedSectorId || false;
+  const userIsTeamLeader = currentUser ? isTeamLeader(currentUser) : false;
+  const managedSectorId = currentUser?.managedSector?.id;
 
   const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
     [{ columnKey: "createdAt", direction: "desc", order: 0 }],
@@ -66,15 +68,11 @@ export default function TeamActivitiesScreen() {
     ["itemCode", "itemName", "quantity", "userName", "reason", "createdAt"]
   );
 
-  // Build API query
+  // Build API query - sector filtering is now handled by backend
   const buildWhereClause = useCallback(() => {
-    if (!isTeamLeader || !currentUser?.managedSectorId) return undefined;
+    if (!isTeamLeader) return undefined;
 
-    const where: any = {
-      user: {
-        sectorId: currentUser.managedSectorId,
-      },
-    };
+    const where: any = {};
 
     if (filters.operations?.length) {
       where.operation = { in: filters.operations };
@@ -113,10 +111,10 @@ export default function TeamActivitiesScreen() {
     }
 
     return where;
-  }, [isTeamLeader, currentUser?.managedSectorId, filters]);
+  }, [isTeamLeader, filters]);
 
   const queryParams = useMemo(() => {
-    if (!isTeamLeader || !currentUser?.managedSectorId) return null;
+    if (!isTeamLeader) return null;
 
     return {
       orderBy: buildOrderBy(
@@ -142,7 +140,7 @@ export default function TeamActivitiesScreen() {
         item: true,
       },
     };
-  }, [isTeamLeader, currentUser?.managedSectorId, searchText, buildWhereClause, buildOrderBy]);
+  }, [isTeamLeader, searchText, buildWhereClause, buildOrderBy]);
 
   const {
     items,
@@ -157,7 +155,7 @@ export default function TeamActivitiesScreen() {
     refresh,
     prefetchNext,
     shouldPrefetch,
-  } = useActivitiesInfiniteMobile(queryParams || {});
+  } = useTeamStaffActivitiesInfiniteMobile(queryParams || {});
 
   // Type alias for activities
   const activities = items as Activity[];

@@ -159,6 +159,7 @@ interface CellContentProps {
   format?: CellFormat
   style?: any
   badgeEntity?: string // Entity type for badge color resolution (e.g., 'ORDER', 'TASK', 'USER')
+  rawValue?: any // Raw value for badge color lookup (when different from rendered value)
   component?: string // Special component to render (e.g., 'file-thumbnail')
   onCellPress?: () => void // Callback when cell is pressed (for file-thumbnail)
 }
@@ -175,6 +176,7 @@ export const CellContent = memo(function CellContent({
   format,
   style,
   badgeEntity,
+  rawValue,
   component,
   onCellPress,
 }: CellContentProps) {
@@ -309,20 +311,23 @@ export const CellContent = memo(function CellContent({
     case 'badge':
     case 'status':
       try {
-        // Ensure value is safely converted to string
+        // Ensure value is safely converted to string for display
         const stringValue = value != null && value !== '' ? String(value) : '-'
 
+        // Use rawValue for badge lookup if provided, otherwise try to use the display value
+        const lookupValue = rawValue != null ? String(rawValue) : stringValue
+
         // For numeric badges without entity (like itemsCount), always use default (gray)
-        const isNumericWithoutEntity = !badgeEntity && !isNaN(Number(stringValue))
+        const isNumericWithoutEntity = !badgeEntity && !isNaN(Number(lookupValue))
 
         // Use centralized badge configuration with entity context
         const variant = isNumericWithoutEntity
           ? 'default' as BadgeVariant
-          : getBadgeVariant(stringValue, badgeEntity as any) as BadgeVariant
+          : getBadgeVariant(lookupValue, badgeEntity as any) as BadgeVariant
         const badgeColors = BADGE_COLORS[variant] || BADGE_COLORS.default
 
-        // Get human-readable label for display
-        const displayLabel = getStatusLabel(stringValue, badgeEntity)
+        // Use the rendered value for display (which may already be translated)
+        const displayLabel = stringValue
 
         return (
           <View style={{

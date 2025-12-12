@@ -47,7 +47,7 @@ const ROUTE_MODULES = {
     { name: "producao/index", title: "Produção" },
     { name: "producao/aerografia/index", title: "Aerografia" },
     { name: "producao/cronograma/index", title: "Cronograma" },
-    { name: "producao/garagens/index", title: "Garagens" },
+    { name: "producao/garagens/index", title: "Barracões" },
     { name: "producao/observacoes/index", title: "Observações" },
   ],
 

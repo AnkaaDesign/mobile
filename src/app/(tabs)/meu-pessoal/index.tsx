@@ -17,6 +17,7 @@ import {
   IconFingerprint,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { isTeamLeader } from "@/utils/user";
 
 interface TeamMenuItem {
   id: string;
@@ -33,8 +34,8 @@ export default function MeuPessoalScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
-  // Check if user is a team leader (has managedSectorId)
-  const isTeamLeader = user?.managedSectorId || false;
+  // Check if user is a team leader (manages a sector)
+  const userIsTeamLeader = user ? isTeamLeader(user) : false;
 
   const teamMenuItems: TeamMenuItem[] = [
     {
@@ -101,7 +102,7 @@ export default function MeuPessoalScreen() {
     }
   };
 
-  if (!isTeamLeader) {
+  if (!userIsTeamLeader) {
     return (
       <ThemedView style={[styles.container, { paddingBottom: insets.bottom }]}>
         <View style={styles.emptyContainer}>
@@ -146,7 +147,7 @@ export default function MeuPessoalScreen() {
         {/* Header */}
         <View style={styles.header}>
           <ThemedText style={[styles.title, { color: colors.foreground }]}>
-            Meu Pessoal
+            Minha Equipe
           </ThemedText>
           <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
             Gerencie os colaboradores do seu setor
@@ -193,17 +194,6 @@ export default function MeuPessoalScreen() {
           <ThemedText style={[styles.infoText, { color: colors.primary }]}>
             Como líder de equipe, você pode visualizar informações e métricas dos colaboradores
             do seu setor. Todas as informações são somente leitura.
-          </ThemedText>
-        </Card>
-
-        {/* Note about Minha Equipe */}
-        <Card style={[styles.noteCard, { backgroundColor: colors.muted }]}>
-          <ThemedText style={[styles.noteTitle, { color: colors.foreground }]}>
-            Nota
-          </ThemedText>
-          <ThemedText style={[styles.noteText, { color: colors.mutedForeground }]}>
-            Para uma visão mais detalhada dos membros da equipe, acesse também a seção
-            "Minha Equipe" no menu.
           </ThemedText>
         </Card>
       </ScrollView>
@@ -276,21 +266,8 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     padding: spacing.md,
-    marginBottom: spacing.md,
   },
   infoText: {
-    fontSize: fontSize.sm,
-    lineHeight: fontSize.sm * 1.5,
-  },
-  noteCard: {
-    padding: spacing.md,
-  },
-  noteTitle: {
-    fontSize: fontSize.base,
-    fontWeight: "600",
-    marginBottom: spacing.xs,
-  },
-  noteText: {
     fontSize: fontSize.sm,
     lineHeight: fontSize.sm * 1.5,
   },

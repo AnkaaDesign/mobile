@@ -23,10 +23,11 @@ export default function CreateObservationScreen() {
   const { createAsync } = useObservationMutations();
 
   // Permission check
+  // Team leadership is now determined by managedSector relationship
   const canCreate = React.useMemo(() => {
     if (!user) return false;
     return hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.LEADER) ||
+           Boolean(user.managedSector?.id) ||
            hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   }, [user]);
 
@@ -116,7 +117,7 @@ export default function CreateObservationScreen() {
       <ThemedView style={StyleSheet.flatten([styles.wrapper, { backgroundColor: colors.background }])}>
         <ErrorScreen
           message="Acesso negado"
-          detail="Você não tem permissão para criar observações. É necessário privilégio de Produção, Líder ou Administrador."
+          detail="Você não tem permissão para criar observações. É necessário privilégio de Produção, liderança de equipe ou Administrador."
         />
       </ThemedView>
     );

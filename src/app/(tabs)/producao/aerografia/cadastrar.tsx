@@ -34,7 +34,6 @@ export default function AirbrushingCreateScreen() {
   const canCreate = React.useMemo(() => {
     if (!user) return false;
     return hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.LEADER) ||
            hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   }, [user]);
 

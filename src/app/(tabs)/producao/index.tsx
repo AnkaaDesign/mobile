@@ -209,7 +209,7 @@ export default function ProducaoScreen() {
               { title: "Aerografias", value: data?.airbrushingMetrics?.totalAirbrushJobs?.value || 0, icon: "brush", color: "#a855f7" },
               { title: "Receita Total", value: formatCurrency(data?.revenueAnalysis?.revenueByMonth?.reduce((sum, item) => sum + item.value, 0) || 0), icon: "currency-dollar", color: "#f97316" },
               { title: "Taxa Utilização", value: `${data?.garageUtilization?.utilizationRate?.value || 0}%`, icon: "chart-bar", color: "#06b6d4" },
-              { title: "Total Garagens", value: data?.garageUtilization?.totalGarages?.value || 0, icon: "building", color: "#8b5cf6" },
+              { title: "Total Barracões", value: data?.garageUtilization?.totalGarages?.value || 0, icon: "building", color: "#8b5cf6" },
             ].map((metric) => (
               <View
                 key={metric.title}
@@ -421,7 +421,7 @@ export default function ProducaoScreen() {
         {/* Garage Utilization */}
         <View style={{ gap: 12 }}>
           <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
-            Utilização de Garagens
+            Utilização de Barracões
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
             <View
@@ -437,7 +437,7 @@ export default function ProducaoScreen() {
                 gap: 4,
               }}
             >
-              <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Total Garagens</Text>
+              <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Total Barracões</Text>
               <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 24 }}>
                 {data?.garageUtilization?.totalGarages?.value || 0}
               </Text>

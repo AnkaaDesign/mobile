@@ -19,6 +19,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconShieldCheck } from "@tabler/icons-react-native";
+import { isTeamLeader } from "@/utils/user";
 
 // Import hooks and components
 import { useTableSort } from "@/hooks/useTableSort";
@@ -44,7 +45,8 @@ export default function TeamEPIsScreen() {
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
   // Check if user is a team leader
-  const isTeamLeader = currentUser?.managedSectorId || false;
+  const userIsTeamLeader = currentUser ? isTeamLeader(currentUser) : false;
+  const managedSectorId = currentUser?.managedSector?.id;
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -75,7 +77,7 @@ export default function TeamEPIsScreen() {
   const buildWhereClause = useCallback(() => {
     const where: any = {
       user: {
-        sectorId: currentUser?.managedSectorId,
+        sectorId: managedSectorId,
       },
     };
 
@@ -109,10 +111,10 @@ export default function TeamEPIsScreen() {
     }
 
     return where;
-  }, [filters, currentUser?.managedSectorId]);
+  }, [filters, managedSectorId]);
 
   const queryParams = useMemo(() => {
-    if (!isTeamLeader || !currentUser?.managedSectorId) return null;
+    if (!userIsTeamLeader || !managedSectorId) return null;
 
     return {
       orderBy: buildOrderBy(
@@ -140,7 +142,7 @@ export default function TeamEPIsScreen() {
         reviewedByUser: true,
       },
     };
-  }, [isTeamLeader, currentUser?.managedSectorId, searchText, buildWhereClause, buildOrderBy]);
+  }, [userIsTeamLeader, managedSectorId, searchText, buildWhereClause, buildOrderBy]);
 
   const {
     deliveries,

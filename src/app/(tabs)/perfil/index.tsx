@@ -1,20 +1,21 @@
-import { useEffect, useState, useCallback } from "react";
-import { View, ScrollView, StyleSheet, TouchableOpacity, Alert, RefreshControl } from "react-native";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { View, ScrollView, StyleSheet, Alert, RefreshControl, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
 import { z } from "zod";
-import { ThemedView } from "@/components/ui/themed-view";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
 import { FormActionBar } from "@/components/forms/FormActionBar";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
 import { getProfile, updateProfile, uploadPhoto, deletePhoto } from "@/api-client/profile";
+import { useKeyboardAwareScroll } from "@/hooks";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import type { User } from "@/types";
 import { IconCamera, IconTrash } from "@tabler/icons-react-native";
 
@@ -36,6 +37,17 @@ type ProfileFormData = z.infer<typeof profileUpdateSchema>;
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const { refreshUserData } = useAuth();
+
+  // Keyboard-aware scrolling (same pattern as customer form)
+  const { handlers, refs } = useKeyboardAwareScroll();
+
+  // Memoize keyboard context value
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -231,30 +243,44 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.loadingContainer}>
+      <SafeAreaView style={[styles.safeArea, styles.loadingContainer, { backgroundColor: colors.background }]} edges={[]}>
         <ThemedText>Carregando...</ThemedText>
-      </ThemedView>
+      </SafeAreaView>
     );
   }
 
   if (!user) {
     return (
-      <ThemedView style={styles.loadingContainer}>
+      <SafeAreaView style={[styles.safeArea, styles.loadingContainer, { backgroundColor: colors.background }]} edges={[]}>
         <ThemedText>Usuário não encontrado</ThemedText>
-      </ThemedView>
+      </SafeAreaView>
     );
   }
 
+  // Check if form has changes
+  const hasChanges = form.formState.isDirty;
+
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-        }
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoid}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
+        <ScrollView
+          ref={refs.scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          onLayout={handlers.handleScrollViewLayout}
+          onScroll={handlers.handleScroll}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+          }
+        >
+        <KeyboardAwareFormProvider value={keyboardContextValue}>
         {/* Profile Photo Card */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ThemedText style={styles.cardTitle}>Foto de Perfil</ThemedText>
@@ -334,6 +360,7 @@ export default function ProfileScreen() {
               <View style={styles.inputContainer}>
                 <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>E-mail</ThemedText>
                 <Input
+                  fieldKey="email"
                   value={value || ""}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -354,6 +381,7 @@ export default function ProfileScreen() {
               <View style={styles.inputContainer}>
                 <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Telefone</ThemedText>
                 <Input
+                  fieldKey="phone"
                   type="phone"
                   value={value || ""}
                   onChangeText={onChange}
@@ -452,6 +480,7 @@ export default function ProfileScreen() {
                   <View style={styles.inputContainer}>
                     <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Endereço</ThemedText>
                     <Input
+                      fieldKey="address"
                       value={value || ""}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -470,6 +499,7 @@ export default function ProfileScreen() {
                   <View style={styles.inputContainer}>
                     <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Nº</ThemedText>
                     <Input
+                      fieldKey="addressNumber"
                       value={value || ""}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -489,6 +519,7 @@ export default function ProfileScreen() {
               <View style={styles.inputContainer}>
                 <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Complemento</ThemedText>
                 <Input
+                  fieldKey="addressComplement"
                   value={value || ""}
                   onChangeText={onChange}
                   onBlur={onBlur}
@@ -508,6 +539,7 @@ export default function ProfileScreen() {
                   <View style={styles.inputContainer}>
                     <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Bairro</ThemedText>
                     <Input
+                      fieldKey="neighborhood"
                       value={value || ""}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -526,6 +558,7 @@ export default function ProfileScreen() {
                   <View style={styles.inputContainer}>
                     <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>CEP</ThemedText>
                     <Input
+                      fieldKey="zipCode"
                       type="cep"
                       value={value || ""}
                       onChangeText={onChange}
@@ -554,6 +587,7 @@ export default function ProfileScreen() {
                   <View style={styles.inputContainer}>
                     <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Cidade</ThemedText>
                     <Input
+                      fieldKey="city"
                       value={value || ""}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -572,6 +606,7 @@ export default function ProfileScreen() {
                   <View style={styles.inputContainer}>
                     <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>UF</ThemedText>
                     <Input
+                      fieldKey="state"
                       value={value || ""}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -586,26 +621,32 @@ export default function ProfileScreen() {
             </View>
           </View>
         </Card>
+        </KeyboardAwareFormProvider>
+        </ScrollView>
 
-      </ScrollView>
-
-      {/* Action Bar */}
-      <FormActionBar
-        onCancel={handleRestore}
-        onSave={form.handleSubmit(onSubmit)}
-        isSubmitting={isSaving}
-        canSubmit={form.formState.isDirty}
-        cancelLabel="Restaurar"
-        submitLabel="Salvar"
-        submittingLabel="Salvando..."
-        showCancel={form.formState.isDirty}
-      />
-    </ThemedView>
+        {/* Action Bar - Only show when form has changes */}
+        {hasChanges && (
+          <FormActionBar
+            onCancel={handleRestore}
+            onSave={form.handleSubmit(onSubmit)}
+            isSubmitting={isSaving}
+            canSubmit={hasChanges}
+            cancelLabel="Restaurar"
+            submitLabel="Salvar"
+            submittingLabel="Salvando..."
+            showCancel={true}
+          />
+        )}
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    flex: 1,
+  },
+  keyboardAvoid: {
     flex: 1,
   },
   loadingContainer: {
@@ -617,7 +658,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: 0,
     gap: spacing.md,
   },
   card: {

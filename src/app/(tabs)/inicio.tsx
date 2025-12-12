@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { hasPrivilege } from "@/utils";
+import { hasPrivilege, isTeamLeader } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function HomeScreen() {
@@ -14,10 +14,23 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
+  // Return null if user is not logged in (during logout transition)
+  if (!user) {
+    return null;
+  }
+
   // Check user permissions
   const canAccessInventory = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
-  const canAccessPainting = hasPrivilege(user, SECTOR_PRIVILEGES.DESIGNER) ||
-                           hasPrivilege(user, SECTOR_PRIVILEGES.LEADER);
+  const isUserDesigner = hasPrivilege(user, SECTOR_PRIVILEGES.DESIGNER);
+  const isUserLeader = isTeamLeader(user);
+  // Team leadership is now determined by managedSector relationship
+  // Designers get full catalogue access, leaders get read-only access
+  const canAccessPainting = isUserDesigner || isUserLeader;
+  // Determine which catalogue route to use based on user role
+  // Designers go to full catalogue, leaders go to read-only basic catalogue
+  const catalogueRoute = isUserDesigner
+    ? routes.painting.catalog.root
+    : '/pintura/catalogo-basico';
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -101,7 +114,7 @@ export default function HomeScreen() {
 
           {canAccessPainting && (
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.painting.catalog.root) as any)}
+              onPress={() => router.push(routeToMobilePath(catalogueRoute) as any)}
               style={{
                 backgroundColor: colors.card,
                 padding: 16,

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Pressable, Modal, ActivityIndicator, InteractionManager } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { runOnJS } from 'react-native-reanimated';
+import Animated, { runOnJS, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import ColorPicker, { Panel1, HueSlider, Preview } from 'reanimated-color-picker';
 import type { returnedResults } from 'reanimated-color-picker';
 import { IconCheck, IconX } from '@tabler/icons-react-native';
@@ -17,6 +17,7 @@ interface ColorPickerComponentProps {
   onColorChange: (color: string) => void;
   label?: string;
   disabled?: boolean;
+  transparent?: boolean;
 }
 
 const isValidHex = (hex: string): boolean => {
@@ -37,37 +38,60 @@ const ensureValidColor = (color: string | undefined): string => {
   return '#FF0000';
 };
 
-export function ColorPickerComponent({ color, onColorChange, label, disabled = false }: ColorPickerComponentProps) {
+export function ColorPickerComponent({ color, onColorChange, label, disabled = false, transparent = false }: ColorPickerComponentProps) {
   const { colors } = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tempColor, setTempColor] = useState(() => ensureValidColor(color));
-  const [pickerReady, setPickerReady] = useState(false);
   const [pickerMounted, setPickerMounted] = useState(false);
+  const [pickerFullyRendered, setPickerFullyRendered] = useState(false);
   const interactionRef = useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | null>(null);
+
+  // Animated opacity for smooth fade-in
+  const pickerOpacity = useSharedValue(0);
+  const loadingOpacity = useSharedValue(1);
+
+  const pickerAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: pickerOpacity.value,
+  }));
+
+  const loadingAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: loadingOpacity.value,
+  }));
 
   // Handle modal show event - wait for interactions to complete before mounting picker
   const handleModalShow = useCallback(() => {
     // Use InteractionManager to wait for modal animation to complete
     interactionRef.current = InteractionManager.runAfterInteractions(() => {
       setPickerMounted(true);
-      // Additional small delay for the picker to initialize
-      setTimeout(() => {
-        setPickerReady(true);
-      }, 100);
     });
   }, []);
+
+  // Handle when the picker has fully rendered (called from onLayout of the picker container)
+  const handlePickerLayout = useCallback(() => {
+    if (pickerMounted && !pickerFullyRendered) {
+      // Give an extra delay to ensure the color picker canvas is fully painted
+      setTimeout(() => {
+        setPickerFullyRendered(true);
+        // Fade in the picker and fade out the loading
+        pickerOpacity.value = withTiming(1, { duration: 200 });
+        loadingOpacity.value = withTiming(0, { duration: 150 });
+      }, 350);
+    }
+  }, [pickerMounted, pickerFullyRendered, pickerOpacity, loadingOpacity]);
 
   // Reset picker state when modal closes
   useEffect(() => {
     if (!isModalOpen) {
-      setPickerReady(false);
       setPickerMounted(false);
+      setPickerFullyRendered(false);
+      pickerOpacity.value = 0;
+      loadingOpacity.value = 1;
       if (interactionRef.current) {
         interactionRef.current.cancel();
         interactionRef.current = null;
       }
     }
-  }, [isModalOpen]);
+  }, [isModalOpen, pickerOpacity, loadingOpacity]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -125,7 +149,7 @@ export function ColorPickerComponent({ color, onColorChange, label, disabled = f
           style={[
             styles.trigger,
             {
-              backgroundColor: colors.background,
+              backgroundColor: transparent ? 'transparent' : colors.input,
               borderColor: colors.border,
             },
           ]}
@@ -182,10 +206,10 @@ export function ColorPickerComponent({ color, onColorChange, label, disabled = f
                 </TouchableOpacity>
               </View>
 
-              {/* Only mount picker after modal animation completes */}
-              {pickerMounted && pickerReady ? (
-                <>
-                  <View style={styles.modalBody}>
+              {/* Picker content - always mounted, starts invisible */}
+              <Animated.View style={pickerAnimatedStyle}>
+                <View style={styles.modalBody} onLayout={handlePickerLayout}>
+                  {pickerMounted && (
                     <ColorPicker
                       value={tempColor}
                       onComplete={handleColorSelect}
@@ -196,43 +220,50 @@ export function ColorPickerComponent({ color, onColorChange, label, disabled = f
                       <Panel1 style={styles.panel} />
                       <HueSlider style={styles.hueSlider} />
                     </ColorPicker>
-                  </View>
-
-                  {/* Action Bar - same style as paint form */}
-                  <View
-                    style={[
-                      styles.actionBar,
-                      {
-                        borderColor: colors.border,
-                        backgroundColor: colors.card,
-                      },
-                    ]}
-                  >
-                    <View style={styles.buttonWrapper}>
-                      <Button variant="outline" onPress={handleCancel}>
-                        <IconX size={18} color={colors.mutedForeground} />
-                        <Text style={styles.buttonText}>Cancelar</Text>
-                      </Button>
-                    </View>
-
-                    <View style={styles.buttonWrapper}>
-                      <Button
-                        variant="default"
-                        onPress={handleApply}
-                        disabled={!isValidHex(tempColor)}
-                      >
-                        <IconCheck size={18} color={colors.primaryForeground} />
-                        <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
-                          Aplicar
-                        </Text>
-                      </Button>
-                    </View>
-                  </View>
-                </>
-              ) : (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color={colors.primary} />
+                  )}
+                  {!pickerMounted && <View style={styles.pickerPlaceholder} />}
                 </View>
+
+                {/* Action Bar - same style as paint form */}
+                <View
+                  style={[
+                    styles.actionBar,
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: colors.card,
+                    },
+                  ]}
+                >
+                  <View style={styles.buttonWrapper}>
+                    <Button variant="outline" onPress={handleCancel}>
+                      <IconX size={18} color={colors.mutedForeground} />
+                      <Text style={styles.buttonText}>Cancelar</Text>
+                    </Button>
+                  </View>
+
+                  <View style={styles.buttonWrapper}>
+                    <Button
+                      variant="default"
+                      onPress={handleApply}
+                      disabled={!isValidHex(tempColor)}
+                    >
+                      <IconCheck size={18} color={colors.primaryForeground} />
+                      <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
+                        Aplicar
+                      </Text>
+                    </Button>
+                  </View>
+                </View>
+              </Animated.View>
+
+              {/* Loading overlay - fades out when picker is ready */}
+              {!pickerFullyRendered && (
+                <Animated.View
+                  style={[styles.loadingOverlay, loadingAnimatedStyle, { backgroundColor: colors.background }]}
+                  pointerEvents="none"
+                >
+                  <ActivityIndicator size="large" color={colors.primary} />
+                </Animated.View>
               )}
             </View>
           </View>
@@ -311,10 +342,15 @@ const styles = StyleSheet.create({
   modalBody: {
     padding: spacing.md,
   },
-  loadingContainer: {
-    height: 300,
+  pickerPlaceholder: {
+    height: 312, // preview (50) + panel (200) + hueSlider (30) + gaps (32)
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
+    borderBottomLeftRadius: formLayout.cardBorderRadius,
+    borderBottomRightRadius: formLayout.cardBorderRadius,
   },
   colorPicker: {
     width: '100%',

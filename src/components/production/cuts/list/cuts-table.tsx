@@ -106,7 +106,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (cut: Cut) => {
-      const variant = getBadgeVariantFromStatus(cut.status, "CUT_STATUS");
+      const variant = getBadgeVariantFromStatus(cut.status, "CUT");
       return (
         <Badge variant={variant} size="sm">
           <ThemedText style={styles.badgeText} numberOfLines={1} ellipsizeMode="tail">

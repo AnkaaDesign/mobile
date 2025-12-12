@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useTaskDetail, useTaskMutations, useLayoutsByTruck } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
-import { hasPrivilege, formatCurrency, formatDate } from "@/utils";
+import { hasPrivilege, formatCurrency, formatDate, isTeamLeader } from "@/utils";
 import { useMemo } from "react";
 // import { showToast } from "@/components/ui/toast";
 import { TaskInfoCard } from "@/components/production/task/detail/task-info-card";
@@ -68,10 +68,11 @@ export default function ScheduleDetailsScreen() {
   const canViewDocuments = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
                            userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
 
-  // Check if user can view truck layout (admin/logistic/leader only)
+  // Check if user can view truck layout (admin/logistic/team leaders only)
+  // Team leadership is now determined by managedSector relationship
   const canViewTruckLayout = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
                               userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
-                              userPrivilege === SECTOR_PRIVILEGES.LEADER;
+                              isTeamLeader(user);
 
   // Check if user is from Financial sector
   const isFinancialSector = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
@@ -319,6 +320,60 @@ export default function ScheduleDetailsScreen() {
               )}
             />
           )}
+
+          {/* Observation Card - Before Artworks */}
+          {(task as any)?.observation && (
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconAlertCircle size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Observação</ThemedText>
+                  {(task as any).observation.files && (task as any).observation.files.length > 0 && (
+                    <Badge variant="secondary">
+                      {(task as any).observation.files.length}
+                    </Badge>
+                  )}
+                </View>
+              </View>
+              <View style={styles.sectionContent}>
+                <View style={[styles.observationContent, { backgroundColor: colors.mutedForeground + '10', borderRadius: borderRadius.md, padding: spacing.md }]}>
+                  <ThemedText style={{ fontSize: fontSize.sm, color: colors.foreground }}>
+                    {(task as any).observation.description}
+                  </ThemedText>
+                </View>
+
+                {(task as any).observation.files && (task as any).observation.files.length > 0 && (
+                  <View style={{ marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm }}>
+                      <IconFiles size={16} color={colors.mutedForeground} />
+                      <ThemedText style={{ fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>
+                        Arquivos Anexados
+                      </ThemedText>
+                    </View>
+                    <View style={styles.gridContainer}>
+                      {(task as any).observation.files.map((file: any, index: number) => (
+                        <FileItem
+                          key={file.id}
+                          file={file}
+                          viewMode="grid"
+                          baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                          onPress={() => {
+                            fileViewer.actions.viewFiles((task as any).observation.files, index);
+                          }}
+                          showFilename={false}
+                          showFileSize={false}
+                          showRelativeTime={false}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
+            </Card>
+          )}
+
+          {/* Observations Table - Before Artworks */}
+          <ObservationsTable taskId={id as string} maxHeight={400} />
 
           {/* Artworks Section */}
           {(task as any)?.artworks && (task as any).artworks.length > 0 && (
@@ -589,68 +644,15 @@ export default function ScheduleDetailsScreen() {
           )}
 
           {/* Cuts Table - Hidden for Financial sector users */}
-          {/* LEADER can swipe to request new cuts for tasks in their managed sector */}
+          {/* Team leaders can swipe to request new cuts for tasks in their managed sector */}
           {!isFinancialSector && <CutsTable taskId={id as string} taskSectorId={task.sectorId} maxHeight={400} />}
-
-          {/* Observation Card */}
-          {(task as any)?.observation && (
-            <Card style={styles.sectionCard}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <View style={styles.sectionHeaderLeft}>
-                  <IconAlertCircle size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.sectionTitle}>Observação</ThemedText>
-                  {(task as any).observation.files && (task as any).observation.files.length > 0 && (
-                    <Badge variant="secondary">
-                      {(task as any).observation.files.length}
-                    </Badge>
-                  )}
-                </View>
-              </View>
-              <View style={styles.sectionContent}>
-                <View style={[styles.observationContent, { backgroundColor: colors.mutedForeground + '10', borderRadius: borderRadius.md, padding: spacing.md }]}>
-                  <ThemedText style={{ fontSize: fontSize.sm, color: colors.foreground }}>
-                    {(task as any).observation.description}
-                  </ThemedText>
-                </View>
-
-                {(task as any).observation.files && (task as any).observation.files.length > 0 && (
-                  <View style={{ marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm }}>
-                      <IconFiles size={16} color={colors.mutedForeground} />
-                      <ThemedText style={{ fontSize: fontSize.sm, fontWeight: fontWeight.semibold }}>
-                        Arquivos Anexados
-                      </ThemedText>
-                    </View>
-                    <View style={styles.gridContainer}>
-                      {(task as any).observation.files.map((file: any, index: number) => (
-                        <FileItem
-                          key={file.id}
-                          file={file}
-                          viewMode="grid"
-                          baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                          onPress={() => {
-                            fileViewer.actions.viewFiles((task as any).observation.files, index);
-                          }}
-                          showFilename={false}
-                          showFileSize={false}
-                          showRelativeTime={false}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                )}
-              </View>
-            </Card>
-          )}
 
           {/* Airbrushings Table */}
           <AirbrushingsTable taskId={id as string} maxHeight={400} />
 
-          {/* Observations Table */}
-          <ObservationsTable taskId={id as string} maxHeight={400} />
-
-          {/* Changelog History - Only for Admin/Financial (all changes) or Leader (sector changes) */}
-          {(canViewDocuments || hasPrivilege(user, SECTOR_PRIVILEGES.LEADER)) && (
+          {/* Changelog History - Only for Admin/Financial (all changes) or team leaders (sector changes) */}
+          {/* Team leadership is now determined by managedSector relationship */}
+          {(canViewDocuments || isTeamLeader(user)) && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>

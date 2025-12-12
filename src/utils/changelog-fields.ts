@@ -228,7 +228,6 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     lastLoginAt: "Último Login",
 
     // External integrations
-    secullumId: "ID Secullum",
     preferenceId: "ID de Preferências",
     avatarId: "Avatar",
 

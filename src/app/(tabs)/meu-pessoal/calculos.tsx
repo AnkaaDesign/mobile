@@ -5,11 +5,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
 import { Combobox } from "@/components/ui/combobox";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
-import { PrivilegeGuard } from "@/components/privilege-guard";
-import { SECTOR_PRIVILEGES, USER_STATUS } from "@/constants";
+import { USER_STATUS } from "@/constants";
 import { useTheme } from "@/lib/theme";
-import { useSecullumCalculations } from "@/hooks/secullum";
-import { useUsers, useCurrentUser } from "@/hooks";
+import { useTeamStaffUsers, useTeamStaffCalculations } from "@/hooks";
 import { getBonusPeriod } from "@/utils";
 import { CalculationsTable, CalculationsColumnDrawer } from "@/components/personal/calculations";
 import { format } from "date-fns";
@@ -99,13 +97,9 @@ export default function TeamCalculationsScreen() {
     () => new Set(DEFAULT_VISIBLE_COLUMNS)
   );
 
-  // Get current user to determine their managed sector
-  const { data: currentUser, isLoading: isLoadingCurrentUser } = useCurrentUser();
-
-  // Fetch users for selector - only from managed sector
-  const { data: usersData, isLoading: usersLoading } = useUsers({
+  // Fetch users for selector - automatically filtered by managed sector on backend
+  const { data: usersData, isLoading: usersLoading } = useTeamStaffUsers({
     where: {
-      sectorId: currentUser?.managedSectorId,
       status: {
         in: [
           USER_STATUS.EXPERIENCE_PERIOD_1,
@@ -116,7 +110,6 @@ export default function TeamCalculationsScreen() {
     },
     orderBy: { name: "asc" },
     take: 100,
-    enabled: !!currentUser?.managedSectorId,
   });
 
   // Set first user as default when users are loaded
@@ -149,13 +142,13 @@ export default function TeamCalculationsScreen() {
   const startDate = format(periodDates.startDate, "yyyy-MM-dd");
   const endDate = format(periodDates.endDate, "yyyy-MM-dd");
 
-  // Fetch calculations
+  // Fetch calculations - automatically filtered by managed sector on backend
   const {
     data: calculationsData,
     isLoading,
     error,
     refetch,
-  } = useSecullumCalculations(
+  } = useTeamStaffCalculations(
     selectedUserId ? {
       userId: selectedUserId,
       startDate,
@@ -165,14 +158,39 @@ export default function TeamCalculationsScreen() {
 
   // Parse calculation data
   const calculations: CalculationRow[] = useMemo(() => {
-    const apiResponse = calculationsData?.data || calculationsData;
+    // Debug: Log the raw response structure
+    console.log('[TeamCalculations] Raw calculationsData:', JSON.stringify(calculationsData, null, 2)?.substring(0, 500));
 
-    if (apiResponse && 'success' in apiResponse && apiResponse.success === false) {
+    if (!calculationsData) {
+      console.log('[TeamCalculations] No data yet');
       return [];
     }
 
-    const secullumData = apiResponse && 'data' in apiResponse ? apiResponse.data : null;
-    if (!secullumData) return [];
+    // The API response structure is: { success, message, data: { Colunas, Linhas, Totais } }
+    // axios wraps it in .data, and the hook returns response.data
+    // So calculationsData = { success, message, data: { Colunas, Linhas, Totais } }
+
+    // Check for error response
+    if (calculationsData.success === false) {
+      console.log('[TeamCalculations] API returned error:', calculationsData.message);
+      return [];
+    }
+
+    // Get the Secullum data - it's directly in calculationsData.data
+    const secullumData = calculationsData.data;
+
+    console.log('[TeamCalculations] Secullum data structure:', {
+      hasData: !!secullumData,
+      hasColumns: !!secullumData?.Colunas,
+      hasRows: !!secullumData?.Linhas,
+      columnsCount: secullumData?.Colunas?.length,
+      rowsCount: secullumData?.Linhas?.length,
+    });
+
+    if (!secullumData) {
+      console.log('[TeamCalculations] No secullum data in response');
+      return [];
+    }
 
     const { Colunas = [], Linhas = [] } = secullumData;
 
@@ -246,7 +264,7 @@ export default function TeamCalculationsScreen() {
     setRefreshing(true);
     try {
       // Invalidate cache to force fresh data
-      await queryClient.invalidateQueries({ queryKey: ['secullum', 'calculations'] });
+      await queryClient.invalidateQueries({ queryKey: ['team-staff', 'calculations'] });
       await refetch();
     } finally {
       setRefreshing(false);
@@ -280,21 +298,18 @@ export default function TeamCalculationsScreen() {
       || 'Erro ao carregar cálculos';
 
     return (
-      <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-        <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-          <ErrorScreen
-            message="Erro ao carregar cálculos"
-            detail={errorMessage}
-            onRetry={handleRefresh}
-          />
-        </ThemedView>
-      </PrivilegeGuard>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+        <ErrorScreen
+          message="Erro ao carregar cálculos"
+          detail={errorMessage}
+          onRetry={handleRefresh}
+        />
+      </ThemedView>
     );
   }
 
   return (
-    <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.LEADER}>
-      <>
+    <>
         <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
           {/* Header: User Selector + Month Navigator + Column Button */}
           <View style={styles.headerContainer}>
@@ -304,7 +319,7 @@ export default function TeamCalculationsScreen() {
               onValueChange={(value) => setSelectedUserId(typeof value === 'string' ? value : value?.[0] ?? '')}
               options={userOptions}
               placeholder="Selecionar colaborador"
-              disabled={usersLoading || isLoadingCurrentUser}
+              disabled={usersLoading}
             />
 
             {/* Month Navigator + Column Button */}
@@ -368,7 +383,6 @@ export default function TeamCalculationsScreen() {
           />
         </SlideInPanel>
       </>
-    </PrivilegeGuard>
   );
 }
 

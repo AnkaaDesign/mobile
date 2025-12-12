@@ -34,9 +34,9 @@ interface RouteConfig {
 }
 
 // Privilege hierarchy - higher privileges include lower ones
+// Note: Team leadership is now determined by managedSector relationship, not privilege
 const PRIVILEGE_HIERARCHY: Record<SECTOR_PRIVILEGES, number> = {
   [SECTOR_PRIVILEGES.ADMIN]: 10,
-  [SECTOR_PRIVILEGES.LEADER]: 9,
   [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: 8,
   [SECTOR_PRIVILEGES.FINANCIAL]: 7,
   [SECTOR_PRIVILEGES.PRODUCTION]: 6,
@@ -86,7 +86,7 @@ const PRIVILEGED_ROUTES: Record<string, RouteConfig[]> = {
     { name: "producao/index", title: "Produção", module: "production" },
     { name: "producao/cronograma/index", title: "Cronograma", module: "production" },
     { name: "producao/aerografia/index", title: "Aerografia", module: "production" },
-    { name: "producao/garagens/index", title: "Garagens", module: "production" },
+    { name: "producao/garagens/index", title: "Barracões", module: "production" },
     { name: "producao/observacoes/index", title: "Observações", module: "production" },
     { name: "producao/ordens-de-servico/listar", title: "Ordens de Serviço", module: "production" },
     { name: "producao/servicos/listar", title: "Serviços", module: "production" },
@@ -110,15 +110,9 @@ const PRIVILEGED_ROUTES: Record<string, RouteConfig[]> = {
     { name: "financeiro/clientes/listar", title: "Clientes", module: "financial" },
   ],
 
-  // LEADER routes (inherits from multiple)
-  [SECTOR_PRIVILEGES.LEADER]: [
-    { name: "meu-pessoal/index", title: "Meu Pessoal", module: "personal" },
-    { name: "meu-pessoal/advertencias", title: "Avisos da Equipe", module: "personal" },
-    { name: "meu-pessoal/ferias", title: "Férias da Equipe", module: "personal" },
-    { name: "meu-pessoal/emprestimos", title: "Empréstimos da Equipe", module: "personal" },
-    { name: "pintura/catalogo-basico/index", title: "Catálogo", module: "painting" },
-    { name: "pintura/catalogo/index", title: "Catálogo Completo", module: "painting" },
-  ],
+  // Team leadership routes - Note: Access is now controlled at component level via isTeamLeader()
+  // checking user.managedSector?.id relationship, not privilege-based
+  // These routes are available to users who manage a sector (team leaders)
 
   // MAINTENANCE routes
   [SECTOR_PRIVILEGES.MAINTENANCE]: [
@@ -191,18 +185,8 @@ function getUserAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[]): RouteConf
       });
     }
 
-    // Leader gets production and some inventory
-    if (privilege === SECTOR_PRIVILEGES.LEADER) {
-      PRIVILEGED_ROUTES[SECTOR_PRIVILEGES.PRODUCTION]?.forEach(route => {
-        accessibleRoutes.add(route);
-      });
-      // Add specific inventory routes for leaders
-      const leaderInventoryRoutes = [
-        { name: "estoque/produtos/index", title: "Produtos", module: "inventory" },
-        { name: "estoque/emprestimos/index", title: "Empréstimos", module: "inventory" },
-      ];
-      leaderInventoryRoutes.forEach(route => accessibleRoutes.add(route));
-    }
+    // Note: Team leadership access (meu-pessoal/*) is now controlled at component level
+    // via isTeamLeader() checking user.managedSector?.id, not privilege-based
   });
 
   // Cache the result

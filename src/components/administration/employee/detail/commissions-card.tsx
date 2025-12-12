@@ -22,13 +22,15 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
   const bonuses = employee.bonuses?.slice(0, maxItems) || [];
   const totalBonuses = employee._count?.bonuses || employee.bonuses?.length || 0;
 
-  // Calculate total earnings from bonuses
+  // Calculate total earnings from bonuses (use netBonus if available, fallback to baseBonus)
   const totalEarnings = useMemo(() => {
     if (!employee.bonuses || employee.bonuses.length === 0) return 0;
     return employee.bonuses.reduce((sum, bonus) => {
-      const value = typeof bonus.baseBonus === 'number'
-        ? bonus.baseBonus
-        : bonus.baseBonus?.toNumber() || 0;
+      // Prefer netBonus (after discounts), fallback to baseBonus
+      const bonusValue = bonus.netBonus ?? bonus.baseBonus;
+      const value = typeof bonusValue === 'number'
+        ? bonusValue
+        : bonusValue?.toNumber() || 0;
       return sum + value;
     }, 0);
   }, [employee.bonuses]);
@@ -106,9 +108,11 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
               {bonuses.map((bonus, index) => {
                 const monthYear = `${bonus.month.toString().padStart(2, "0")}/${bonus.year}`;
 
-                const bonusAmount = typeof bonus.baseBonus === 'number'
-                  ? bonus.baseBonus
-                  : bonus.baseBonus.toNumber();
+                // Prefer netBonus (after discounts), fallback to baseBonus
+                const bonusValue = bonus.netBonus ?? bonus.baseBonus;
+                const bonusAmount = typeof bonusValue === 'number'
+                  ? bonusValue
+                  : bonusValue?.toNumber() || 0;
                 const taskCount = typeof bonus.weightedTasks === 'number'
                   ? bonus.weightedTasks
                   : (bonus.weightedTasks as any)?.toNumber?.() || 0;

@@ -7,7 +7,7 @@ interface MenuItem {
   icon: string; // Icon name (generic, will be mapped to platform-specific icons)
   path?: string;
   children?: MenuItem[];
-  requiredPrivilege?: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]; // Support single privilege or array
+  requiredPrivilege?: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]; // Support single privilege or array (use TEAM_LEADER for team leader access)
   isControlPanel?: boolean; // Indicates if this is a control panel/dashboard
   isDynamic?: boolean; // Indicates if this is a dynamic route
   onlyInStaging?: boolean; // Only show in staging environment
@@ -79,13 +79,13 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // CATALOGO - View-only for Leaders and Designers (separate from Pintura module)
+  // CATALOGO - View-only for Designers and Team Leaders (separate from Pintura module)
   {
     id: "catalogo",
     title: "Catalogo",
     icon: "palette",
     path: "/catalogo",
-    requiredPrivilege: [SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.DESIGNER],
+    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.TEAM_LEADER],
     children: [{ id: "catalogo-detalhes", title: "Detalhes", icon: "eye", path: "/catalogo/detalhes/:id", isDynamic: true }],
   },
 
@@ -277,30 +277,32 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // MEU PESSOAL
+  // MINHA EQUIPE (for team leaders - manages their sector's staff)
+  // Only visible to users who are sector managers (have managedSector relation)
   {
-    id: "meu-pessoal",
-    title: "Meu Pessoal",
+    id: "minha-equipe",
+    title: "Minha Equipe",
     icon: "team",
     path: "/meu-pessoal",
-    requiredPrivilege: SECTOR_PRIVILEGES.LEADER,
+    requiredPrivilege: [SECTOR_PRIVILEGES.TEAM_LEADER], // Only visible to sector managers
     children: [
-      { id: "advertencias-equipe", title: "Advertencias", icon: "alertTriangle", path: "/meu-pessoal/advertencias", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
-      { id: "movimentacoes-equipe", title: "Movimentações", icon: "activity", path: "/meu-pessoal/movimentacoes", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
-      { id: "usuarios-equipe", title: "Colaboradores", icon: "users", path: "/meu-pessoal/usuarios", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
-      { id: "emprestimos-equipe", title: "Emprestimos", icon: "loan", path: "/meu-pessoal/emprestimos", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
-      { id: "epis-equipe", title: "EPIs", icon: "helmet", path: "/meu-pessoal/epis", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
-      { id: "ferias-equipe", title: "Ferias", icon: "calendarWeek", path: "/meu-pessoal/ferias", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
-      { id: "calculos-equipe", title: "Controle de Ponto", icon: "fingerprint", path: "/meu-pessoal/calculos", requiredPrivilege: SECTOR_PRIVILEGES.LEADER },
+      { id: "membros-equipe", title: "Membros", icon: "users", path: "/meu-pessoal/usuarios" },
+      { id: "emprestimos-equipe", title: "Empréstimos", icon: "loan", path: "/meu-pessoal/emprestimos" },
+      { id: "ferias-equipe", title: "Férias", icon: "calendarWeek", path: "/meu-pessoal/ferias" },
+      { id: "advertencias-equipe", title: "Advertências", icon: "alertTriangle", path: "/meu-pessoal/advertencias" },
+      { id: "epis-equipe", title: "Entregas de EPI", icon: "helmet", path: "/meu-pessoal/epis" },
+      { id: "movimentacoes-equipe", title: "Movimentações", icon: "activity", path: "/meu-pessoal/movimentacoes" },
+      { id: "calculos-equipe", title: "Controle de Ponto", icon: "fingerprint", path: "/meu-pessoal/calculos" },
     ],
   },
 
-  // PESSOAL
+  // PESSOAL - Only for production workers (PRODUCTION, DESIGNER, WAREHOUSE)
   {
     id: "pessoal",
     title: "Pessoal",
     icon: "userCircle",
     path: "/pessoal",
+    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.WAREHOUSE],
     children: [
       { id: "meus-feriados", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
       {
@@ -405,7 +407,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Producao",
     icon: "factory",
     path: "/producao",
-    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
+    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
     children: [
       {
         id: "aerografia",
@@ -431,13 +433,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
         ],
       },
       { id: "cronograma-em-espera", title: "Em Espera", icon: "pause", path: "/producao/cronograma/em-espera", requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] },
+      { id: "garagens", title: "Barracões", icon: "warehouse", path: "/producao/garagens", requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN] },
       { id: "historico", title: "Historico", icon: "history", path: "/producao/historico" },
       {
         id: "observacoes",
         title: "Observacoes",
         icon: "note",
         path: "/producao/observacoes",
-        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.ADMIN],
         children: [
           { id: "observacoes-cadastrar", title: "Cadastrar", icon: "plus", path: "/producao/observacoes/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
           { id: "observacoes-detalhes", title: "Detalhes", icon: "eye", path: "/producao/observacoes/detalhes/:id", isDynamic: true },
@@ -449,7 +452,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Recorte",
         icon: "scissors",
         path: "/producao/recorte",
-        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LEADER, SECTOR_PRIVILEGES.ADMIN],
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.ADMIN],
         children: [
           {
             id: "plano-de-recorte",
@@ -648,7 +651,8 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL],
   },
 
-  // Catalogo de Tintas - Direct access for DESIGNER only
+  // Catalogo de Tintas - Direct access for DESIGNER only (full edit capabilities)
+  // Team leaders use the read-only "/catalogo" menu instead
   {
     id: "catalogo-tintas-direct",
     title: "Catalogo de Tintas",

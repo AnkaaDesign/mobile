@@ -12,7 +12,10 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
 
   query: {
     hook: 'useMyBorrowsInfiniteMobile',
-    defaultSort: { field: 'createdAt', direction: 'desc' },
+    defaultSort: [
+      { field: 'status', direction: 'asc' },
+      { field: 'createdAt', direction: 'desc' },
+    ],
     pageSize: 25,
     include: {
       item: {
@@ -50,7 +53,7 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
         align: 'center',
         render: (borrow) => BORROW_STATUS_LABELS[borrow.status] || borrow.status,
         format: 'badge',
-        component: 'status-badge',
+        badgeEntity: 'BORROW',
       },
       {
         key: 'item.uniCode',

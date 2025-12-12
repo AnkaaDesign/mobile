@@ -293,11 +293,37 @@ export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({
   const viewFiles = useCallback((files: AnkaaFile[], initialIndex: number) => {
     console.log('[File Viewer] View files:', files.length, 'initial index:', initialIndex);
 
-    // Filter to only image files for gallery view
-    const imageFiles = files.filter(f => isImageFile(f));
+    // Import canPreviewFile to check which files are previewable
+    const canPreviewFile = (file: AnkaaFile): boolean => {
+      // Check if image
+      if (isImageFile(file)) return true;
 
-    if (imageFiles.length === 0) {
-      // No images, try to view the target file individually
+      // Check if PDF
+      const pdfMimeTypes = ['application/pdf'];
+      const isPdf = pdfMimeTypes.includes(file.mimetype?.toLowerCase() || '') ||
+                    file.filename?.toLowerCase().endsWith('.pdf');
+      if (isPdf) return true;
+
+      // Check if video
+      const isVideo = file.mimetype?.toLowerCase().startsWith('video/') ||
+                      ['mp4', 'avi', 'mov', 'wmv', 'webm', 'mkv', 'm4v'].some(ext =>
+                        file.filename?.toLowerCase().endsWith(`.${ext}`)
+                      );
+      if (isVideo) return true;
+
+      // Check if EPS with thumbnail
+      const epsMimeTypes = ['application/postscript', 'application/x-eps', 'application/eps', 'image/eps', 'image/x-eps'];
+      const isEps = epsMimeTypes.includes(file.mimetype?.toLowerCase() || '');
+      if (isEps && file.thumbnailUrl) return true;
+
+      return false;
+    };
+
+    // Filter to previewable files (images, PDFs, videos, EPS with thumbnails)
+    const previewableFiles = files.filter(f => canPreviewFile(f));
+
+    if (previewableFiles.length === 0) {
+      // No previewable files, try to view the target file individually (will open share sheet)
       if (files[initialIndex]) {
         viewFile(files[initialIndex]);
       }
@@ -306,10 +332,11 @@ export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({
 
     // Find the index of the initial file in the filtered array
     const targetFile = files[initialIndex];
-    const adjustedIndex = imageFiles.findIndex(f => f.id === targetFile?.id);
+    const adjustedIndex = previewableFiles.findIndex(f => f.id === targetFile?.id);
     const finalIndex = adjustedIndex >= 0 ? adjustedIndex : 0;
 
-    openImageModal(imageFiles, finalIndex);
+    // Open the unified image modal (which now handles PDFs and videos too)
+    openImageModal(previewableFiles, finalIndex);
   }, [viewFile, openImageModal]);
 
   // =====================

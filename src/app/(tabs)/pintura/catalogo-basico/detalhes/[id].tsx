@@ -18,20 +18,20 @@ import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege } from "@/utils";
+import { hasPrivilege, isTeamLeader } from "@/utils";
 import { IconPaint } from "@tabler/icons-react-native";
 
 /**
  * Basic Catalog Details Screen
  *
- * This screen provides a read-only view of paint catalog items for leaders.
+ * This screen provides a read-only view of paint catalog items for team leaders.
  * Unlike the full painting catalog, this screen:
  * - Shows essential paint information (specifications, formulas, related paints)
  * - Does not allow editing or deleting
  * - Does not show tasks or production history (warehouse-specific features)
- * - Is accessible to users with LEADER privileges without requiring WAREHOUSE access
+ * - Is accessible to team leaders (managedSector relationship) without requiring WAREHOUSE access
  *
- * Use case: Leaders need to view paint information to understand production
+ * Use case: Team leaders need to view paint information to understand production
  * requirements without having full warehouse management access.
  */
 export default function CatalogoBasicoDetailsScreen() {
@@ -40,8 +40,9 @@ export default function CatalogoBasicoDetailsScreen() {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
 
-  // Check user permissions - leaders can view, warehouse can edit
-  const isLeader = hasPrivilege(user, SECTOR_PRIVILEGES.LEADER);
+  // Check user permissions - team leaders can view, warehouse can edit
+  // Team leadership is now determined by managedSector relationship
+  const isLeader = isTeamLeader(user);
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
 
   const {
@@ -147,12 +148,12 @@ export default function CatalogoBasicoDetailsScreen() {
             </View>
           </Card>
 
-          {/* Read-only notice for leaders */}
+          {/* Read-only notice for team leaders */}
           {isLeader && !canEdit && (
             <Alert variant="default">
               <Icon name="info" size={16} />
               <AlertDescription>
-                Você está visualizando o catálogo básico. Para editar ou gerenciar esta tinta, é necessário acesso ao módulo de almoxarifado.
+                Você está visualizando o catálogo básico como líder de equipe. Para editar ou gerenciar esta tinta, é necessário acesso ao módulo de almoxarifado.
               </AlertDescription>
             </Alert>
           )}

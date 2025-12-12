@@ -239,6 +239,8 @@ export default function EditScheduleScreen() {
           artworkIds: (task as any).artworks?.map((f: any) => f.id) || [],
         }}
         initialCustomer={task.customer}
+        initialGeneralPaint={task.generalPainting}
+        initialLogoPaints={task.logoPaints}
         existingLayouts={existingLayouts}
         onSubmit={handleSubmit}
         onCancel={handleCancel}

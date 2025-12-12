@@ -2,7 +2,7 @@
 
 import type { Sector } from '../types';
 import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from '../constants';
-import { getSectorPrivilegeLevel, canAccessSector, canAccessAnyPrivilege, canAccessAllPrivileges } from "./privilege";
+import { getSectorPrivilegeSortOrder, canAccessSector, canAccessAnyPrivilege, canAccessAllPrivileges } from "./privilege";
 
 // =====================
 // Display Formatters
@@ -25,10 +25,10 @@ export const getSectorFullDisplay = (sector: Sector): string => {
 };
 
 // =====================
-// Privilege Management (imported from constants)
+// Privilege Management (imported from privilege.ts)
 // =====================
-// Functions getSectorPrivilegeLevel, canAccessSector, canAccessAnyPrivilege, canAccessAllPrivileges
-// are now imported from @ankaa/constants to maintain proper package dependency hierarchy
+// Functions getSectorPrivilegeSortOrder, canAccessSector, canAccessAnyPrivilege, canAccessAllPrivileges
+// are imported from ./privilege.ts
 
 export const getSectorPrivilegeDescription = (privilege: SECTOR_PRIVILEGES): string => {
   const descriptions = {
@@ -38,7 +38,6 @@ export const getSectorPrivilegeDescription = (privilege: SECTOR_PRIVILEGES): str
     [SECTOR_PRIVILEGES.DESIGNER]: "Acesso a design e recorte",
     [SECTOR_PRIVILEGES.LOGISTIC]: "Acesso a logística e garagens",
     [SECTOR_PRIVILEGES.PRODUCTION]: "Acesso a funcionalidades de produção",
-    [SECTOR_PRIVILEGES.LEADER]: "Acesso de supervisão e liderança",
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "Acesso a recursos humanos",
     [SECTOR_PRIVILEGES.FINANCIAL]: "Acesso financeiro",
     [SECTOR_PRIVILEGES.ADMIN]: "Acesso administrativo completo",
@@ -55,7 +54,6 @@ export const getSectorPrivilegeColor = (privilege: SECTOR_PRIVILEGES): string =>
     [SECTOR_PRIVILEGES.DESIGNER]: "indigo",
     [SECTOR_PRIVILEGES.LOGISTIC]: "cyan",
     [SECTOR_PRIVILEGES.PRODUCTION]: "green",
-    [SECTOR_PRIVILEGES.LEADER]: "yellow",
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "pink",
     [SECTOR_PRIVILEGES.FINANCIAL]: "orange",
     [SECTOR_PRIVILEGES.ADMIN]: "red",
@@ -72,7 +70,6 @@ export const getSectorPrivilegeBadgeVariant = (privilege: SECTOR_PRIVILEGES): "d
     [SECTOR_PRIVILEGES.DESIGNER]: "default" as const,
     [SECTOR_PRIVILEGES.LOGISTIC]: "default" as const,
     [SECTOR_PRIVILEGES.PRODUCTION]: "default" as const,
-    [SECTOR_PRIVILEGES.LEADER]: "default" as const,
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "secondary" as const,
     [SECTOR_PRIVILEGES.FINANCIAL]: "secondary" as const,
     [SECTOR_PRIVILEGES.ADMIN]: "destructive" as const,
@@ -101,7 +98,7 @@ export const sectorUtils = {
   getSectorFullDisplay,
 
   // Privileges
-  getSectorPrivilegeLevel,
+  getSectorPrivilegeSortOrder,
   canAccessSector,
   canAccessAnyPrivilege,
   canAccessAllPrivileges,

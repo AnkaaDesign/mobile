@@ -1,6 +1,5 @@
 import type { User } from '../types';
 import { USER_STATUS, SECTOR_PRIVILEGES, VERIFICATION_TYPE } from '../constants';
-import { getSectorPrivilegeLevel } from "./privilege";
 import { dateUtils } from "./date";
 
 /**
@@ -317,10 +316,11 @@ export function isUserAdmin(user: User): boolean {
 }
 
 /**
- * Check if user is leader
+ * Check if user is leader (manages a sector)
+ * DEPRECATED: Use isTeamLeader instead
  */
 export function isUserLeader(user: User): boolean {
-  return hasPrivilege(user, SECTOR_PRIVILEGES.LEADER);
+  return isTeamLeader(user);
 }
 
 /**
@@ -460,31 +460,34 @@ export function calculateUserStats(users: User[]) {
 /**
  * Check if user is a team leader (manages a sector)
  */
-export function isTeamLeader(user: User): boolean {
-  return Boolean(user.managedSectorId);
+export function isTeamLeader(user: User | null | undefined): boolean {
+  if (!user) return false;
+  return Boolean(user.managedSector?.id);
 }
 
 /**
  * Check if user can manage another user (is their team leader)
  */
 export function canManageUser(manager: User, targetUser: User): boolean {
-  if (!isTeamLeader(manager) || !manager.managedSectorId) {
+  const managedSectorId = manager.managedSector?.id;
+  if (!isTeamLeader(manager) || !managedSectorId) {
     return false;
   }
 
   // Manager can manage users in the sector they manage
-  return targetUser.sectorId === manager.managedSectorId;
+  return targetUser.sectorId === managedSectorId;
 }
 
 /**
  * Get users that a leader manages (team members)
  */
 export function getTeamMembers(leader: User, allUsers: User[]): User[] {
-  if (!isTeamLeader(leader) || !leader.managedSectorId) {
+  const managedSectorId = leader.managedSector?.id;
+  if (!isTeamLeader(leader) || !managedSectorId) {
     return [];
   }
 
-  return allUsers.filter((user) => user.sectorId === leader.managedSectorId);
+  return allUsers.filter((user) => user.sectorId === managedSectorId);
 }
 
 /**
@@ -500,24 +503,25 @@ export function getUsersInSameSector(user: User, allUsers: User[]): User[] {
 
 /**
  * Check if user has both sector membership and leadership privileges
+ * DEPRECATED: Leadership is now determined by managedSector relationship
  */
 export function isUserLeaderWithPrivileges(user: User): boolean {
-  return isUserLeader(user) && isTeamLeader(user);
+  return isTeamLeader(user);
 }
 
 /**
  * Get sector that user manages (if any)
  */
 export function getManagedSector(user: User): string | null {
-  return user.managedSectorId;
+  return user.managedSector?.id || null;
 }
 
 /**
  * Check if user can access team management features
  */
 export function canAccessTeamManagement(user: User): boolean {
-  // User must be a leader OR have sufficient privileges
-  return isUserLeader(user) || isTeamLeader(user);
+  // User must be a team leader (manages a sector)
+  return isTeamLeader(user);
 }
 
 // =====================

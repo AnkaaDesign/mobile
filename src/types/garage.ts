@@ -1,155 +1,223 @@
 // packages/interfaces/src/garage.ts
+//
+// NOTE: Garages are now static configuration - not database entities
+// Trucks have a `spot` field (TRUCK_SPOT enum) that indicates
+// their location in the static garage structure.
 
-import type { ORDER_BY_DIRECTION } from '@/constants';
-import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
-import type { Truck, TruckIncludes } from "./truck";
+import { TRUCK_SPOT } from '@/constants';
 
 // =====================
-// Main Entity Interfaces
+// Static Configuration
 // =====================
 
-export interface ParkingSpot extends BaseEntity {
-  name: string;
-  length: number;
-  garageLaneId: string;
+export const GARAGE_CONFIG = {
+  GARAGE_LENGTH: 45,
+  GARAGE_WIDTH: 25,
+  LANE_LENGTH: 35,
+  LANE_WIDTH: 3,
+  LANE_SPACING: 4,
+  TRUCK_MIN_SPACING: 1,
+  TRUCK_WIDTH_TOP_VIEW: 2.8,
+  CABIN_LENGTH: 1.8,
+  CABIN_THRESHOLD: 10,
+  MAX_TRUCKS_PER_LANE: 3,
+  MIN_TRUCK_LENGTH: 5,
+} as const;
 
-  // Relations
-  garageLane?: GarageLane;
-}
+// =====================
+// Type Definitions
+// =====================
 
-export interface GarageLane extends BaseEntity {
-  width: number;
-  length: number;
+export type GarageId = 'B1' | 'B2' | 'B3';
+export type LaneId = 'A' | 'B' | 'C';
+export type SpotNumber = 1 | 2 | 3;
+
+export interface Lane {
+  id: LaneId;
   xPosition: number;
-  yPosition: number;
-  garageId: string;
-
-  // Relations
-  garage?: Garage;
-  parkingSpots?: ParkingSpot[];
+  width: number;
+  length: number;
 }
 
-export interface Garage extends BaseEntity {
+export interface Garage {
+  id: GarageId;
   name: string;
   width: number;
   length: number;
-
-  // Relations
-  lanes?: GarageLane[];
-  trucks?: Truck[];
+  lanes: Lane[];
 }
 
 // =====================
-// Include Types
+// Static Garage Data
 // =====================
 
-export interface GarageIncludes {
-  lanes?:
-    | boolean
-    | {
-        include?: GarageLaneIncludes;
-      };
-  trucks?:
-    | boolean
-    | {
-        include?: TruckIncludes;
-      };
+export const LANES: Lane[] = [
+  {
+    id: 'A',
+    xPosition: GARAGE_CONFIG.LANE_SPACING,
+    width: GARAGE_CONFIG.LANE_WIDTH,
+    length: GARAGE_CONFIG.LANE_LENGTH,
+  },
+  {
+    id: 'B',
+    xPosition: GARAGE_CONFIG.LANE_SPACING + GARAGE_CONFIG.LANE_WIDTH + GARAGE_CONFIG.LANE_SPACING,
+    width: GARAGE_CONFIG.LANE_WIDTH,
+    length: GARAGE_CONFIG.LANE_LENGTH,
+  },
+  {
+    id: 'C',
+    xPosition:
+      GARAGE_CONFIG.LANE_SPACING +
+      2 * (GARAGE_CONFIG.LANE_WIDTH + GARAGE_CONFIG.LANE_SPACING),
+    width: GARAGE_CONFIG.LANE_WIDTH,
+    length: GARAGE_CONFIG.LANE_LENGTH,
+  },
+];
+
+export const GARAGES: Garage[] = [
+  {
+    id: 'B1',
+    name: 'Barracão 1',
+    width: GARAGE_CONFIG.GARAGE_WIDTH,
+    length: GARAGE_CONFIG.GARAGE_LENGTH,
+    lanes: LANES,
+  },
+  {
+    id: 'B2',
+    name: 'Barracão 2',
+    width: GARAGE_CONFIG.GARAGE_WIDTH,
+    length: GARAGE_CONFIG.GARAGE_LENGTH,
+    lanes: LANES,
+  },
+  {
+    id: 'B3',
+    name: 'Barracão 3',
+    width: GARAGE_CONFIG.GARAGE_WIDTH,
+    length: GARAGE_CONFIG.GARAGE_LENGTH,
+    lanes: LANES,
+  },
+];
+
+// =====================
+// Utility Functions
+// =====================
+
+export interface ParsedSpot {
+  garage: GarageId | null;
+  lane: LaneId | null;
+  spotNumber: SpotNumber | null;
 }
 
-export interface GarageLaneIncludes {
-  garage?:
-    | boolean
-    | {
-        include?: GarageIncludes;
-      };
-  parkingSpots?:
-    | boolean
-    | {
-        include?: ParkingSpotIncludes;
-      };
+/**
+ * Parse a spot enum value into its components
+ */
+export function parseSpot(spot: TRUCK_SPOT | string | null): ParsedSpot {
+  if (!spot || spot === TRUCK_SPOT.PATIO || spot === 'PATIO') {
+    return { garage: null, lane: null, spotNumber: null };
+  }
+
+  const spotString = typeof spot === 'string' ? spot : spot.toString();
+  const match = spotString.match(/^B(\d)_([ABC])(\d)$/);
+
+  if (!match) {
+    return { garage: null, lane: null, spotNumber: null };
+  }
+
+  return {
+    garage: `B${match[1]}` as GarageId,
+    lane: match[2] as LaneId,
+    spotNumber: parseInt(match[3], 10) as SpotNumber,
+  };
 }
 
-export interface ParkingSpotIncludes {
-  garageLane?:
-    | boolean
-    | {
-        include?: GarageLaneIncludes;
-      };
+/**
+ * Build a spot enum value from components
+ */
+export function buildSpot(
+  garageId: GarageId,
+  laneId: LaneId,
+  spotNumber: SpotNumber,
+): TRUCK_SPOT {
+  const key = `${garageId}_${laneId}${spotNumber}` as keyof typeof TRUCK_SPOT;
+  return TRUCK_SPOT[key];
+}
+
+/**
+ * Get a garage by ID
+ */
+export function getGarage(garageId: GarageId): Garage | undefined {
+  return GARAGES.find((g) => g.id === garageId);
+}
+
+/**
+ * Get a lane by ID
+ */
+export function getLane(laneId: LaneId): Lane | undefined {
+  return LANES.find((l) => l.id === laneId);
+}
+
+/**
+ * Calculate truck length for garage display
+ * Trucks under 10m need an extra 2.8m for the cabin
+ */
+export function calculateTruckGarageLength(layoutSectionsWidthSum: number): number {
+  if (layoutSectionsWidthSum < GARAGE_CONFIG.CABIN_THRESHOLD) {
+    return layoutSectionsWidthSum + GARAGE_CONFIG.CABIN_LENGTH;
+  }
+  return layoutSectionsWidthSum;
+}
+
+/**
+ * Calculate the sum of layout section widths
+ */
+export function calculateLayoutSectionsSum(
+  sections: Array<{ width: number }> | undefined | null,
+): number {
+  if (!sections || sections.length === 0) {
+    return GARAGE_CONFIG.MIN_TRUCK_LENGTH;
+  }
+  return sections.reduce((sum, section) => sum + section.width, 0);
 }
 
 // =====================
-// Order By Types
+// Spot Labels
 // =====================
 
-export interface GarageOrderBy {
-  id?: ORDER_BY_DIRECTION;
-  name?: ORDER_BY_DIRECTION;
-  width?: ORDER_BY_DIRECTION;
-  length?: ORDER_BY_DIRECTION;
-  createdAt?: ORDER_BY_DIRECTION;
-  updatedAt?: ORDER_BY_DIRECTION;
+export const SPOT_LABELS: Record<TRUCK_SPOT, string> = {
+  [TRUCK_SPOT.B1_F1_V1]: 'B1 - Faixa 1 - Vaga 1',
+  [TRUCK_SPOT.B1_F1_V2]: 'B1 - Faixa 1 - Vaga 2',
+  [TRUCK_SPOT.B1_F1_V3]: 'B1 - Faixa 1 - Vaga 3',
+  [TRUCK_SPOT.B1_F2_V1]: 'B1 - Faixa 2 - Vaga 1',
+  [TRUCK_SPOT.B1_F2_V2]: 'B1 - Faixa 2 - Vaga 2',
+  [TRUCK_SPOT.B1_F2_V3]: 'B1 - Faixa 2 - Vaga 3',
+  [TRUCK_SPOT.B1_F3_V1]: 'B1 - Faixa 3 - Vaga 1',
+  [TRUCK_SPOT.B1_F3_V2]: 'B1 - Faixa 3 - Vaga 2',
+  [TRUCK_SPOT.B1_F3_V3]: 'B1 - Faixa 3 - Vaga 3',
+  [TRUCK_SPOT.B2_F1_V1]: 'B2 - Faixa 1 - Vaga 1',
+  [TRUCK_SPOT.B2_F1_V2]: 'B2 - Faixa 1 - Vaga 2',
+  [TRUCK_SPOT.B2_F1_V3]: 'B2 - Faixa 1 - Vaga 3',
+  [TRUCK_SPOT.B2_F2_V1]: 'B2 - Faixa 2 - Vaga 1',
+  [TRUCK_SPOT.B2_F2_V2]: 'B2 - Faixa 2 - Vaga 2',
+  [TRUCK_SPOT.B2_F2_V3]: 'B2 - Faixa 2 - Vaga 3',
+  [TRUCK_SPOT.B2_F3_V1]: 'B2 - Faixa 3 - Vaga 1',
+  [TRUCK_SPOT.B2_F3_V2]: 'B2 - Faixa 3 - Vaga 2',
+  [TRUCK_SPOT.B2_F3_V3]: 'B2 - Faixa 3 - Vaga 3',
+  [TRUCK_SPOT.B3_F1_V1]: 'B3 - Faixa 1 - Vaga 1',
+  [TRUCK_SPOT.B3_F1_V2]: 'B3 - Faixa 1 - Vaga 2',
+  [TRUCK_SPOT.B3_F1_V3]: 'B3 - Faixa 1 - Vaga 3',
+  [TRUCK_SPOT.B3_F2_V1]: 'B3 - Faixa 2 - Vaga 1',
+  [TRUCK_SPOT.B3_F2_V2]: 'B3 - Faixa 2 - Vaga 2',
+  [TRUCK_SPOT.B3_F2_V3]: 'B3 - Faixa 2 - Vaga 3',
+  [TRUCK_SPOT.B3_F3_V1]: 'B3 - Faixa 3 - Vaga 1',
+  [TRUCK_SPOT.B3_F3_V2]: 'B3 - Faixa 3 - Vaga 2',
+  [TRUCK_SPOT.B3_F3_V3]: 'B3 - Faixa 3 - Vaga 3',
+  [TRUCK_SPOT.PATIO]: 'Pátio',
+};
+
+/**
+ * Get human-readable label for a spot
+ */
+export function getSpotLabel(spot: TRUCK_SPOT | null): string {
+  if (!spot) return 'Sem vaga';
+  return SPOT_LABELS[spot] || spot;
 }
-
-export interface GarageLaneOrderBy {
-  id?: ORDER_BY_DIRECTION;
-  width?: ORDER_BY_DIRECTION;
-  length?: ORDER_BY_DIRECTION;
-  xPosition?: ORDER_BY_DIRECTION;
-  yPosition?: ORDER_BY_DIRECTION;
-  createdAt?: ORDER_BY_DIRECTION;
-  updatedAt?: ORDER_BY_DIRECTION;
-  garage?: GarageOrderBy;
-}
-
-export interface ParkingSpotOrderBy {
-  id?: ORDER_BY_DIRECTION;
-  name?: ORDER_BY_DIRECTION;
-  length?: ORDER_BY_DIRECTION;
-  createdAt?: ORDER_BY_DIRECTION;
-  updatedAt?: ORDER_BY_DIRECTION;
-  garageLane?: GarageLaneOrderBy;
-}
-
-// =====================
-// Response Interfaces
-// =====================
-
-// Garage responses
-export type GarageGetUniqueResponse = BaseGetUniqueResponse<Garage>;
-export type GarageGetManyResponse = BaseGetManyResponse<Garage>;
-export type GarageCreateResponse = BaseCreateResponse<Garage>;
-export type GarageUpdateResponse = BaseUpdateResponse<Garage>;
-export type GarageDeleteResponse = BaseDeleteResponse;
-
-// GarageLane responses
-export type GarageLaneGetUniqueResponse = BaseGetUniqueResponse<GarageLane>;
-export type GarageLaneGetManyResponse = BaseGetManyResponse<GarageLane>;
-export type GarageLaneCreateResponse = BaseCreateResponse<GarageLane>;
-export type GarageLaneUpdateResponse = BaseUpdateResponse<GarageLane>;
-export type GarageLaneDeleteResponse = BaseDeleteResponse;
-
-// ParkingSpot responses
-export type ParkingSpotGetUniqueResponse = BaseGetUniqueResponse<ParkingSpot>;
-export type ParkingSpotGetManyResponse = BaseGetManyResponse<ParkingSpot>;
-export type ParkingSpotCreateResponse = BaseCreateResponse<ParkingSpot>;
-export type ParkingSpotUpdateResponse = BaseUpdateResponse<ParkingSpot>;
-export type ParkingSpotDeleteResponse = BaseDeleteResponse;
-
-// =====================
-// Batch Operation Responses
-// =====================
-
-// Garage batch operations
-export type GarageBatchCreateResponse<T = any> = BaseBatchResponse<Garage, T>;
-export type GarageBatchUpdateResponse<T = any> = BaseBatchResponse<Garage, T & { id: string }>;
-export type GarageBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
-
-// GarageLane batch operations
-export type GarageLaneBatchCreateResponse<T = any> = BaseBatchResponse<GarageLane, T>;
-export type GarageLaneBatchUpdateResponse<T = any> = BaseBatchResponse<GarageLane, T & { id: string }>;
-export type GarageLaneBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
-
-// ParkingSpot batch operations
-export type ParkingSpotBatchCreateResponse<T = any> = BaseBatchResponse<ParkingSpot, T>;
-export type ParkingSpotBatchUpdateResponse<T = any> = BaseBatchResponse<ParkingSpot, T & { id: string }>;
-export type ParkingSpotBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

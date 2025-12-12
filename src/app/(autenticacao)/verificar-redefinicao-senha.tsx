@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from "react-native";
+import { View, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 
 import { ThemedView } from "@/components/ui/themed-view";
@@ -21,7 +21,6 @@ export default function VerifyPasswordCodeScreen() {
     returnTo: string;
   }>();
 
-  const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,46 +40,24 @@ export default function VerifyPasswordCodeScreen() {
       return;
     }
 
-    setIsLoading(true);
-    setError("");
-
-    try {
-      await authService.verifyCode({
-        contact: contactValue,
-        code: code.trim(),
-      });
-
-      console.log("Código Verificado! Agora você pode criar uma nova senha.");
-      // Navigate to password reset page with verified code
-      router.replace({
-        pathname: `/(autenticacao)/redefinir-senha/${code.trim()}` as any,
-        params: {
-          contact: contactValue,
-          code: code.trim(),
-          returnTo: returnTo || '/(autenticacao)/entrar',
-        },
-      });
-    } catch (error) {
-      console.error("Verification failed:", error);
-
-      let errorMessage = "Código inválido. Verifique o código e tente novamente.";
-
-      if (error instanceof Error) {
-        if (error.message.includes("Limite de requisições excedido")) {
-          errorMessage = "Muitas tentativas. Aguarde um minuto antes de tentar novamente.";
-        } else if (error.message.includes("expired") || error.message.includes("expirou")) {
-          errorMessage = "O código expirou. Solicite um novo código.";
-        } else if (error.message.includes("invalid") || error.message.includes("inválido")) {
-          errorMessage = "Código inválido. Verifique o código e tente novamente.";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
+    // Validate code format (6 digits)
+    const trimmedCode = code.trim();
+    if (!/^\d{6}$/.test(trimmedCode)) {
+      setError("O código deve conter 6 dígitos numéricos.");
+      return;
     }
+
+    // Navigate directly to password reset page - the code will be validated
+    // when the user submits the new password via /auth/password-reset endpoint
+    console.log("Código informado. Redirecionando para definir nova senha.");
+    router.replace({
+      pathname: `/(autenticacao)/redefinir-senha/${trimmedCode}` as any,
+      params: {
+        contact: contactValue,
+        code: trimmedCode,
+        returnTo: returnTo || '/(autenticacao)/entrar',
+      },
+    });
   };
 
   const handleResendCode = async () => {
@@ -93,12 +70,16 @@ export default function VerifyPasswordCodeScreen() {
     setError("");
 
     try {
-      await authService.resendVerification({ contact: contactValue });
+      // Use password reset request endpoint to resend code (not account verification)
+      await authService.requestPasswordReset({ contact: contactValue });
 
       const contactType = contactValue.includes("@") ? "email" : "SMS";
       console.log(`Código reenviado! Um novo código foi enviado por ${contactType}.`);
     } catch (error) {
       console.error("Resend failed:", error);
+      if (error instanceof Error) {
+        setError(error.message);
+      }
     } finally {
       setIsResending(false);
     }
@@ -119,9 +100,11 @@ export default function VerifyPasswordCodeScreen() {
   return (
     <ThemedView style={{ flex: 1 }}>
       <ThemedSafeAreaView style={{ flex: 1 }}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-            <ThemedScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.lg }}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+          <ThemedScrollView
+            contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.lg }}
+            keyboardShouldPersistTaps="handled"
+          >
               <Card style={{ borderColor: "transparent", ...shadow.lg, maxWidth: 400, width: "100%" }}>
                 <ThemedView style={{ backgroundColor: "transparent", position: "absolute", right: 8, top: 8 }}>
                   <ThemeToggle size={24} />
@@ -148,7 +131,7 @@ export default function VerifyPasswordCodeScreen() {
                     contact={contactValue}
                     onSubmit={handleVerification}
                     onResendCode={handleResendCode}
-                    isLoading={isLoading}
+                    isLoading={false}
                     isResending={isResending}
                     error={error}
                     contactInfo={displayContact}
@@ -167,7 +150,6 @@ export default function VerifyPasswordCodeScreen() {
               </Card>
             </ThemedScrollView>
           </KeyboardAvoidingView>
-        </TouchableWithoutFeedback>
       </ThemedSafeAreaView>
     </ThemedView>
   );

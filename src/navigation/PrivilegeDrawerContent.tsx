@@ -31,7 +31,6 @@ const PrivilegeBadge = memo<{ privilege: SECTOR_PRIVILEGES; isDark: boolean }>(
     const getPrivilegeColor = () => {
       switch (privilege) {
         case SECTOR_PRIVILEGES.ADMIN: return '#dc2626'; // red
-        case SECTOR_PRIVILEGES.LEADER: return '#2563eb'; // blue (same as production)
         case SECTOR_PRIVILEGES.PRODUCTION: return '#2563eb'; // blue
         case SECTOR_PRIVILEGES.HUMAN_RESOURCES: return '#9333ea'; // purple
         case SECTOR_PRIVILEGES.FINANCIAL: return '#9333ea'; // purple (same as HR)
@@ -46,7 +45,6 @@ const PrivilegeBadge = memo<{ privilege: SECTOR_PRIVILEGES; isDark: boolean }>(
     const getPrivilegeLabel = () => {
       switch (privilege) {
         case SECTOR_PRIVILEGES.ADMIN: return 'ADM';
-        case SECTOR_PRIVILEGES.LEADER: return 'LDR';
         case SECTOR_PRIVILEGES.HUMAN_RESOURCES: return 'RH';
         case SECTOR_PRIVILEGES.FINANCIAL: return 'FIN';
         case SECTOR_PRIVILEGES.PRODUCTION: return 'PRD';
@@ -218,9 +216,9 @@ function PrivilegeDrawerContent({
   }, [accessibleRoutes]);
 
   // Get highest privilege for display
+  // Note: Team leadership is now determined by managedSector relationship, not privilege
   const highestPrivilege = useMemo(() => {
     if (userPrivileges.includes(SECTOR_PRIVILEGES.ADMIN)) return SECTOR_PRIVILEGES.ADMIN;
-    if (userPrivileges.includes(SECTOR_PRIVILEGES.LEADER)) return SECTOR_PRIVILEGES.LEADER;
     if (userPrivileges.includes(SECTOR_PRIVILEGES.HUMAN_RESOURCES)) return SECTOR_PRIVILEGES.HUMAN_RESOURCES;
     return userPrivileges[0] || SECTOR_PRIVILEGES.BASIC;
   }, [userPrivileges]);

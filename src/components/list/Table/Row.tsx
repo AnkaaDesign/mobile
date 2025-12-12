@@ -102,23 +102,28 @@ export const Row = memo(function Row<T extends { id: string }>({
                   </View>
                 )}
 
-                {columns.map((column, colIndex) => (
-                  <Cell
-                    key={column.key}
-                    width={column.width}
-                    align={column.align}
-                    style={colIndex === columns.length - 1 ? { paddingLeft: 4 } : undefined}
-                  >
-                    <CellContent
-                      value={column.render(item)}
-                      format={column.format}
-                      style={column.style}
-                      badgeEntity={column.badgeEntity}
-                      component={column.component}
-                      onCellPress={column.onCellPress ? () => column.onCellPress!(item) : undefined}
-                    />
-                  </Cell>
-                ))}
+                {columns.map((column, colIndex) => {
+                  // Extract raw value from item using column key for badge lookup
+                  const rawValue = column.badgeEntity ? (item as any)[column.key.split('.')[0]] : undefined
+                  return (
+                    <Cell
+                      key={column.key}
+                      width={column.width}
+                      align={column.align}
+                      style={colIndex === columns.length - 1 ? { paddingLeft: 4 } : undefined}
+                    >
+                      <CellContent
+                        value={column.render(item)}
+                        format={column.format}
+                        style={column.style}
+                        badgeEntity={column.badgeEntity}
+                        rawValue={rawValue}
+                        component={column.component}
+                        onCellPress={column.onCellPress ? () => column.onCellPress!(item) : undefined}
+                      />
+                    </Cell>
+                  )
+                })}
               </Pressable>
             </ScrollView>
             </View>
@@ -144,23 +149,28 @@ export const Row = memo(function Row<T extends { id: string }>({
               </View>
             )}
 
-            {columns.map((column, colIndex) => (
-              <Cell
-                key={column.key}
-                width={column.width}
-                align={column.align}
-                style={colIndex === columns.length - 1 ? { paddingLeft: 4 } : undefined}
-              >
-                <CellContent
-                  value={column.render(item)}
-                  format={column.format}
-                  style={column.style}
-                  badgeEntity={column.badgeEntity}
-                  component={column.component}
-                  onCellPress={column.onCellPress ? () => column.onCellPress!(item) : undefined}
-                />
-              </Cell>
-            ))}
+            {columns.map((column, colIndex) => {
+              // Extract raw value from item using column key for badge lookup
+              const rawValue = column.badgeEntity ? (item as any)[column.key.split('.')[0]] : undefined
+              return (
+                <Cell
+                  key={column.key}
+                  width={column.width}
+                  align={column.align}
+                  style={colIndex === columns.length - 1 ? { paddingLeft: 4 } : undefined}
+                >
+                  <CellContent
+                    value={column.render(item)}
+                    format={column.format}
+                    style={column.style}
+                    badgeEntity={column.badgeEntity}
+                    rawValue={rawValue}
+                    component={column.component}
+                    onCellPress={column.onCellPress ? () => column.onCellPress!(item) : undefined}
+                  />
+                </Cell>
+              )
+            })}
           </Pressable>
         </ScrollView>
       )}

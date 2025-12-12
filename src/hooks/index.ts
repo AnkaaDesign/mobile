@@ -180,6 +180,17 @@ export * from "./use-paint-formula-components-infinite-mobile";
 export * from "./use-payrolls-infinite-mobile";
 
 // =====================================================
+// Team Staff Hooks (Secure Backend-Filtered Endpoints)
+// =====================================================
+export * from "./use-team-staff-users";
+export * from "./use-team-staff-calculations";
+export * from "./use-team-staff-borrows-infinite-mobile";
+export * from "./use-team-staff-vacations-infinite-mobile";
+export * from "./use-team-staff-epis-infinite-mobile";
+export * from "./use-team-staff-activities-infinite-mobile";
+export * from "./use-team-staff-warnings-infinite-mobile";
+
+// =====================================================
 // UI State Management Hooks
 // =====================================================
 export * from "./useFilterState";

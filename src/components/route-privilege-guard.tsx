@@ -28,8 +28,8 @@ const MOBILE_ROUTE_PRIVILEGES: Record<string, SECTOR_PRIVILEGES | SECTOR_PRIVILE
   // Human Resources routes
   "human-resources": SECTOR_PRIVILEGES.HUMAN_RESOURCES,
 
-  // Statistics routes
-  statistics: SECTOR_PRIVILEGES.LEADER,
+  // Statistics routes (removed LEADER privilege - team leadership is now based on managedSector)
+  // statistics: SECTOR_PRIVILEGES.BASIC,
 
   // Personal routes (accessible to all authenticated users)
   personal: SECTOR_PRIVILEGES.BASIC,
@@ -45,17 +45,19 @@ const MOBILE_ROUTE_PRIVILEGES: Record<string, SECTOR_PRIVILEGES | SECTOR_PRIVILE
 /**
  * Sensitive operations that require elevated privileges
  * These routes require higher privileges regardless of their parent module
+ * Note: Team leadership is now determined by managedSector relationship, not LEADER privilege
  */
 const SENSITIVE_OPERATIONS: Record<string, SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]> = {
-  create: SECTOR_PRIVILEGES.LEADER, // Creation operations
-  edit: SECTOR_PRIVILEGES.LEADER, // Edit operations
+  // Creation and edit operations now use BASIC (authenticated) - specific permissions checked in components
+  create: SECTOR_PRIVILEGES.BASIC,
+  edit: SECTOR_PRIVILEGES.BASIC,
   delete: SECTOR_PRIVILEGES.ADMIN, // Delete operations (admin only)
 
   // Specific sensitive operations
   employees: SECTOR_PRIVILEGES.ADMIN, // Employee management
   sectors: SECTOR_PRIVILEGES.ADMIN, // Department management
   positions: SECTOR_PRIVILEGES.ADMIN, // Position management
-  commissions: SECTOR_PRIVILEGES.LEADER, // Commission management
+  commissions: SECTOR_PRIVILEGES.BASIC, // Commission management (checked in component)
   automatic: SECTOR_PRIVILEGES.ADMIN, // Automatic orders
   deliveries: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN], // PPE deliveries
 };

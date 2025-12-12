@@ -11,6 +11,7 @@ import { IconShieldCheck, IconEdit, IconTrash } from "@tabler/icons-react-native
 // import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants/enums";
+import { isTeamLeader } from "@/utils/user";
 
 // Import modular components
 import {
@@ -104,7 +105,8 @@ export default function TeamPpeDeliveryDetailScreen() {
   }, [refetch]);
 
   // Check if user has access (team leader with matching sector)
-  const hasAccess = currentUser?.managedSectorId && delivery?.user?.sectorId === currentUser.managedSectorId;
+  const managedSectorId = currentUser?.managedSector?.id;
+  const hasAccess = currentUser && isTeamLeader(currentUser) && delivery?.user?.sectorId === managedSectorId;
 
   if (isLoading) {
     return (

@@ -37,7 +37,7 @@ export const personalWarningsListConfig: ListConfig<Warning> = {
         align: 'center',
         render: (warning) => WARNING_SEVERITY_LABELS[warning.severity] || warning.severity,
         format: 'badge',
-        component: 'severity-badge',
+        badgeEntity: 'WARNING',
       },
       {
         key: 'category',

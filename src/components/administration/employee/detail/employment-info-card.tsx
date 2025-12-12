@@ -157,22 +157,6 @@ export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
           </View>
         )}
 
-        {employee.secullumId && (
-          <View style={styles.detailRow}>
-            <View style={styles.detailIcon}>
-              <IconUserCheck size={20} color={colors.mutedForeground} />
-            </View>
-            <View style={styles.detailContent}>
-              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-                ID Secullum
-              </ThemedText>
-              <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-                {employee.secullumId}
-              </ThemedText>
-            </View>
-          </View>
-        )}
-
         {/* Performance Level */}
         {employee.performanceLevel !== undefined && employee.performanceLevel !== null && (
           <View style={styles.performanceRow}>

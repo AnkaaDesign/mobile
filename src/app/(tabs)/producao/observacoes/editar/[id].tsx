@@ -23,10 +23,11 @@ export default function EditObservationScreen() {
   const { updateAsync } = useObservationMutations();
 
   // Permission check
+  // Team leadership is now determined by managedSector relationship
   const canEdit = React.useMemo(() => {
     if (!user) return false;
     return hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.LEADER) ||
+           Boolean(user.managedSector?.id) ||
            hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   }, [user]);
 
@@ -129,7 +130,7 @@ export default function EditObservationScreen() {
       <ThemedView style={StyleSheet.flatten([styles.wrapper, { backgroundColor: colors.background }])}>
         <ErrorScreen
           message="Acesso negado"
-          detail="Você não tem permissão para editar observações. É necessário privilégio de Produção, Líder ou Administrador."
+          detail="Você não tem permissão para editar observações. É necessário privilégio de Produção, liderança de equipe ou Administrador."
         />
       </ThemedView>
     );

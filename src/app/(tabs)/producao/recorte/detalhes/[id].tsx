@@ -22,7 +22,7 @@ import {
   CHANGE_LOG_ENTITY_TYPE,
   routes,
 } from "@/constants";
-import { hasPrivilege, formatDate } from "@/utils";
+import { hasPrivilege, formatDate, isTeamLeader } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
@@ -61,7 +61,8 @@ export default function CuttingDetailsScreen() {
 
   // Check permissions
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-  const canRequestCut = hasPrivilege(user, SECTOR_PRIVILEGES.LEADER) ||
+  // Team leadership is now determined by managedSector relationship
+  const canRequestCut = isTeamLeader(user) ||
                         hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   const canChangeStatus =
     hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) ||

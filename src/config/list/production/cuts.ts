@@ -7,11 +7,11 @@ import { isTabletWidth } from '@/lib/table-utils'
 // Special value for tasks without a sector
 const UNDEFINED_SECTOR_VALUE = "__UNDEFINED__";
 
-// Helper function to get sector-based where clause for production/leader users
+// Helper function to get sector-based where clause for production/team leader users
 const getSectorBasedWhere = (user: User | null) => {
   if (!user?.sector) return {};
 
-  const { privileges, id: userSectorId, managedSectorId } = user.sector;
+  const { privileges, id: userSectorId } = user.sector;
 
   // Production users can only see cuts from their own sector
   if (privileges === SECTOR_PRIVILEGES.PRODUCTION) {
@@ -22,12 +22,11 @@ const getSectorBasedWhere = (user: User | null) => {
     };
   }
 
-  // Leader users can see cuts from their sector and managed sector
-  if (privileges === SECTOR_PRIVILEGES.LEADER) {
+  // Team leaders (users who manage a sector) can see cuts from their sector and managed sector
+  const managedSectorId = user.managedSector?.id;
+  if (managedSectorId) {
     const sectorIds = [userSectorId];
-    if (managedSectorId) {
-      sectorIds.push(managedSectorId);
-    }
+    sectorIds.push(managedSectorId);
     return {
       task: {
         sectorId: { in: sectorIds },
@@ -109,7 +108,7 @@ export const cutsListConfig: ListConfig<Cut> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (cut) => cut.status,
+        render: (cut) => STATUS_LABELS[cut.status] || cut.status,
         format: 'badge',
         badgeEntity: 'CUT',
       },

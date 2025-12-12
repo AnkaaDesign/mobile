@@ -9,7 +9,7 @@ export const myTeamWarningsListConfig: ListConfig<Warning> = {
   title: 'Advertências da Equipe',
 
   query: {
-    hook: 'useTeamWarningsInfiniteMobile',
+    hook: 'useTeamStaffWarningsInfiniteMobile',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {

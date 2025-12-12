@@ -63,7 +63,6 @@ export default function AirbrushingDetailScreen() {
   const canEdit = useCallback(() => {
     if (!user) return false;
     return hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.LEADER) ||
            hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   }, [user]);
 

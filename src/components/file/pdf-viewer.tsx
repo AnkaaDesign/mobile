@@ -42,6 +42,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [controlsVisible, _setControlsVisible] = useState(true);
 
@@ -90,11 +91,18 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
     }
   }, [file, onShare]);
 
+  // Handle load progress
+  const handleLoadProgress = useCallback((percent: number) => {
+    console.log('[PDF Viewer] Loading progress:', percent);
+    setLoadProgress(percent);
+  }, []);
+
   // Close modal
   const handleClose = useCallback(() => {
     setCurrentPage(1);
     setTotalPages(0);
     setLoading(true);
+    setLoadProgress(0);
     setError(null);
     onOpenChange(false);
   }, [onOpenChange]);
@@ -191,9 +199,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
               renderActivityIndicator={() => (
                 <ActivityIndicator size="large" color="#0066cc" style={styles.loader} />
               )}
-              onLoadProgress={(percent) => {
-                console.log('[PDF Viewer] Loading progress:', percent);
-              }}
+              onLoadProgress={handleLoadProgress}
             />
           )}
         </View>
@@ -261,11 +267,17 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
           </View>
         )}
 
-        {/* Loading Indicator */}
+        {/* Loading Indicator with Progress Bar */}
         {loading && !error && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color="#0066cc" />
             <Text style={styles.loadingText}>Carregando PDF...</Text>
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { width: `${Math.round(loadProgress * 100)}%` }]} />
+              </View>
+              <Text style={styles.progressText}>{Math.round(loadProgress * 100)}%</Text>
+            </View>
           </View>
         )}
       </View>
@@ -425,6 +437,28 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     marginTop: 12,
+  },
+  progressContainer: {
+    alignItems: 'center',
+    marginTop: 16,
+    width: '80%',
+  },
+  progressBar: {
+    width: '100%',
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#0066cc',
+    borderRadius: 3,
+  },
+  progressText: {
+    color: '#999',
+    fontSize: 12,
+    marginTop: 8,
   },
 });
 

@@ -57,7 +57,7 @@ export const personalVacationsListConfig: ListConfig<Vacation> = {
         align: 'center',
         render: (vacation) => VACATION_STATUS_LABELS[vacation.status] || vacation.status,
         format: 'badge',
-        component: 'status-badge',
+        badgeEntity: 'VACATION',
       },
       {
         key: 'type',

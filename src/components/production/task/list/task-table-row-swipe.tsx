@@ -2,9 +2,10 @@ import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
 import { IconEdit, IconTrash, IconPlayerPlay, IconCheck, IconRuler } from "@tabler/icons-react-native";
 import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
-import { TASK_STATUS, SECTOR_PRIVILEGES } from "@/constants";
+import { TASK_STATUS } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { canEditTasks, canDeleteTasks, canLeaderManageTask, canEditLayoutsOnly } from "@/utils/permissions/entity-permissions";
+import { isTeamLeader } from "@/utils/user";
 
 interface TaskTableRowSwipeProps {
   children: React.ReactNode | ((isActive: boolean) => React.ReactNode);
@@ -40,11 +41,12 @@ const TaskTableRowSwipeComponent = ({
   const { user } = useAuth();
 
   // Permission checks
-  const isLeader = user?.sector?.privileges === SECTOR_PRIVILEGES.LEADER;
+  // Note: Team leadership is now determined by managedSector relationship (user.managedSector?.id)
+  const userIsTeamLeader = isTeamLeader(user);
   const canEdit = canEditTasks(user); // ADMIN, DESIGNER, FINANCIAL, LOGISTIC
   const canDelete = canDeleteTasks(user); // ADMIN only
-  const canLeaderManage = isLeader && canLeaderManageTask(user, taskSectorId);
-  const canEditLayoutOnly = canEditLayoutsOnly(user); // LEADER, LOGISTIC only (not ADMIN)
+  const canLeaderManage = userIsTeamLeader && canLeaderManageTask(user, taskSectorId);
+  const canEditLayoutOnly = canEditLayoutsOnly(user); // Team leaders, LOGISTIC only (not ADMIN)
 
   // Build actions array based on user role and task status
   const actions: SwipeAction[] = [];
@@ -62,7 +64,7 @@ const TaskTableRowSwipeComponent = ({
     });
   }
 
-  // Layout Edit action - available to LEADER and LOGISTIC only
+  // Layout Edit action - available to team leaders and LOGISTIC only
   // ADMIN can edit layouts via the regular edit page, so they don't need this action
   if (onEditLayout && canEditLayoutOnly) {
     actions.push({
@@ -88,7 +90,7 @@ const TaskTableRowSwipeComponent = ({
     });
   }
 
-  // LEADER: Can start/finish tasks in their sector OR tasks without sector
+  // Team leaders: Can start/finish tasks in their managed sector OR tasks without sector
   if (canLeaderManage) {
     // Show "Start" button if task is PENDING
     if (taskStatus === TASK_STATUS.PENDING && onStart) {
@@ -120,7 +122,7 @@ const TaskTableRowSwipeComponent = ({
       entityId={taskId}
       entityName={taskName}
       actions={actions}
-      canPerformActions={(user) => canEditTasks(user) || canDeleteTasks(user) || canEditLayoutsOnly(user) || (isLeader && canLeaderManageTask(user, taskSectorId))}
+      canPerformActions={(user) => canEditTasks(user) || canDeleteTasks(user) || canEditLayoutsOnly(user) || (isTeamLeader(user) && canLeaderManageTask(user, taskSectorId))}
       style={style}
       disabled={disabled}
     >

@@ -16,16 +16,18 @@ interface InputOTPProps {
 
 export function InputOTP({ value = "", onChange, maxLength = 6, disabled = false, error = false, autoFocus = false, onComplete }: InputOTPProps) {
   const { colors } = useTheme();
-  const inputRefs = useRef<(TextInput | null)[]>([]);
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const inputRef = useRef<TextInput>(null);
+  const [isFocused, setIsFocused] = useState(false);
 
   // Convert string value to array of characters
   const valueArray = value.split("").slice(0, maxLength);
 
-  // Auto-focus first input
+  // Auto-focus
   useEffect(() => {
-    if (autoFocus && inputRefs.current[0]) {
-      inputRefs.current[0].focus();
+    if (autoFocus && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
   }, [autoFocus]);
 
@@ -36,126 +38,85 @@ export function InputOTP({ value = "", onChange, maxLength = 6, disabled = false
     }
   }, [value, maxLength, onComplete]);
 
-  const handleChangeText = (text: string, index: number) => {
+  const handleChangeText = (text: string) => {
     // Only allow numeric input
     const numericText = text.replace(/[^0-9]/g, "");
-
-    if (numericText.length > 1) {
-      // Handle paste - distribute digits across inputs
-      const newValue = numericText.slice(0, maxLength);
-      onChange(newValue);
-
-      // Focus the next empty input or the last input
-      const nextIndex = Math.min(newValue.length, maxLength - 1);
-      inputRefs.current[nextIndex]?.focus();
-    } else if (numericText.length === 1) {
-      // Single digit input
-      const newArray = [...valueArray];
-      newArray[index] = numericText;
-
-      // Fill any gaps with empty strings
-      const newValue = newArray.join("").padEnd(index + 1, "");
-      onChange(newValue.slice(0, maxLength));
-
-      // Move to next input
-      if (index < maxLength - 1) {
-        inputRefs.current[index + 1]?.focus();
-      }
-    }
+    onChange(numericText.slice(0, maxLength));
   };
 
-  const handleKeyPress = (key: string, index: number) => {
-    if (key === "Backspace") {
-      if (valueArray[index]) {
-        // Clear current digit
-        const newArray = [...valueArray];
-        newArray[index] = "";
-        onChange(newArray.join("").slice(0, index));
-      } else if (index > 0) {
-        // Move to previous input and clear it
-        const newArray = [...valueArray];
-        newArray[index - 1] = "";
-        onChange(newArray.join("").slice(0, index - 1));
-        inputRefs.current[index - 1]?.focus();
-      }
-    }
-  };
-
-  const handleFocus = (index: number) => {
-    setFocusedIndex(index);
-
-    // Select all text when focused
-    inputRefs.current[index]?.setNativeProps({
-      selection: { start: 0, end: 1 },
-    });
+  const handleFocus = () => {
+    setIsFocused(true);
   };
 
   const handleBlur = () => {
-    setFocusedIndex(null);
+    setIsFocused(false);
   };
 
-  const handlePressSlot = (index: number) => {
+  const handlePress = () => {
     if (!disabled) {
-      inputRefs.current[index]?.focus();
+      inputRef.current?.focus();
     }
   };
 
+  // Determine which slot should show the cursor
+  const cursorIndex = Math.min(value.length, maxLength - 1);
+
   return (
     <View style={styles.container}>
-      <View style={styles.inputGroup}>
-        {Array.from({ length: maxLength }).map((_, index) => {
-          const isFocused = focusedIndex === index;
-          const hasValue = !!valueArray[index as keyof typeof valueArray];
+      <Pressable onPress={handlePress} disabled={disabled}>
+        <View style={styles.inputGroup}>
+          {Array.from({ length: maxLength }).map((_, index) => {
+            const char = valueArray[index] || "";
+            const showCursor = isFocused && index === cursorIndex && value.length < maxLength;
+            const isFilledAndFocused = isFocused && index === value.length - 1 && value.length === maxLength;
 
-          return (
-            <Pressable
-              key={index}
-              onPress={() => handlePressSlot(index)}
-              disabled={disabled}
-              accessible
-              accessibilityRole="none"
-              accessibilityLabel={`Dígito ${index + 1} de ${maxLength}`}
-              accessibilityValue={{ text: valueArray[index] || "vazio" }}
-            >
+            return (
               <View
+                key={index}
                 style={StyleSheet.flatten([
                   styles.slot,
                   {
                     backgroundColor: disabled ? colors.muted : colors.input,
-                    borderColor: error ? colors.destructive : isFocused ? colors.ring : hasValue ? colors.primary : colors.border,
+                    borderColor: error
+                      ? colors.destructive
+                      : (showCursor || isFilledAndFocused)
+                        ? colors.ring
+                        : char
+                          ? colors.primary
+                          : colors.border,
                     opacity: disabled ? 0.5 : 1,
                   },
-                  isFocused && styles.focusedSlot,
+                  (showCursor || isFilledAndFocused) && styles.focusedSlot,
                   error && styles.errorSlot,
                 ])}
               >
-                <TextInput
-                  ref={(ref) => (inputRefs.current[index] = ref)}
-                  style={[
-                    styles.input,
-                    {
-                      color: colors.foreground,
-                    },
-                  ]}
-                  value={valueArray[index] || ""}
-                  onChangeText={(text) => handleChangeText(text, index)}
-                  onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
-                  onFocus={() => handleFocus(index)}
-                  onBlur={handleBlur}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  selectTextOnFocus
-                  editable={!disabled}
-                  caretHidden
-                  accessible={false}
-                  importantForAccessibility="no-hide-descendants"
-                />
-                {isFocused && !valueArray[index] && <View style={StyleSheet.flatten([styles.caret, { backgroundColor: colors.foreground }])} />}
+                <ThemedText size="xl" weight="semibold" style={{ textAlign: "center" }}>
+                  {char}
+                </ThemedText>
+                {showCursor && (
+                  <View style={StyleSheet.flatten([styles.caret, { backgroundColor: colors.foreground }])} />
+                )}
               </View>
-            </Pressable>
-          );
-        })}
-      </View>
+            );
+          })}
+        </View>
+      </Pressable>
+
+      {/* Hidden TextInput that captures all keyboard input */}
+      <TextInput
+        ref={inputRef}
+        style={styles.hiddenInput}
+        value={value}
+        onChangeText={handleChangeText}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        keyboardType="number-pad"
+        maxLength={maxLength}
+        editable={!disabled}
+        caretHidden
+        autoComplete="one-time-code"
+        textContentType="oneTimeCode"
+      />
     </View>
   );
 }
@@ -204,6 +165,7 @@ export function InputOTPSlot({ value, isFocused, error, disabled }: InputOTPSlot
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
+    position: "relative",
   },
   inputGroup: {
     flexDirection: "row",
@@ -234,14 +196,14 @@ const styles = StyleSheet.create({
   errorSlot: {
     backgroundColor: "rgba(239, 68, 68, 0.1)",
   },
-  input: {
-    fontSize: 20,
-    fontWeight: "600",
-    textAlign: "center",
-    width: "100%",
-    height: "100%",
+  hiddenInput: {
     position: "absolute",
     opacity: 0,
+    height: 1,
+    width: 1,
+    // Position it off-screen but still focusable
+    top: 0,
+    left: 0,
   },
   caret: {
     width: 2,

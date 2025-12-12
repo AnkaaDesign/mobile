@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from "react-native";
+import { View, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 
 import { ThemedView } from "@/components/ui/themed-view";
@@ -107,9 +107,11 @@ export default function VerificationCodeScreen() {
   return (
     <ThemedView style={{ flex: 1 }}>
       <ThemedSafeAreaView style={{ flex: 1 }}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-            <ThemedScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.lg }}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+          <ThemedScrollView
+            contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.lg }}
+            keyboardShouldPersistTaps="handled"
+          >
               <Card style={{ borderColor: "transparent", ...shadow.lg, maxWidth: 400, width: "100%" }}>
                 <ThemedView style={{ backgroundColor: "transparent", position: "absolute", right: 8, top: 8 }}>
                   <ThemeToggle size={24} />
@@ -155,7 +157,6 @@ export default function VerificationCodeScreen() {
               </Card>
             </ThemedScrollView>
           </KeyboardAvoidingView>
-        </TouchableWithoutFeedback>
       </ThemedSafeAreaView>
     </ThemedView>
   );

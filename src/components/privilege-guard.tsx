@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from "@/constants";
 import { hasAnyPrivilege, hasPrivilege, hasAllPrivileges } from "@/utils";
 import { getSectorPrivilegesLabel } from "@/utils";
+import { isTeamLeader } from "@/utils/user";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -266,6 +267,6 @@ export function usePrivilegeCheck() {
     hasAllPrivilegeAccess,
     canAccess,
     isAdmin: user ? hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) : false,
-    isLeader: user ? hasPrivilege(user, SECTOR_PRIVILEGES.LEADER) : false,
+    isTeamLeader: isTeamLeader(user),
   };
 }

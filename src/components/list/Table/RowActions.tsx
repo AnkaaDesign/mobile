@@ -29,8 +29,20 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
 
   // Filter visible actions, excluding 'view' since it's handled by row click
   // Pass user to visible function for permission checks
+  // Also check canPerform for permission-based action filtering
   const visibleActions = actions.filter(
-    (action) => action.key !== 'view' && (!action.visible || action.visible(item, user))
+    (action) => {
+      // Always exclude 'view' action (handled by row click)
+      if (action.key === 'view') return false
+
+      // Check item-level visibility
+      if (action.visible && !action.visible(item, user)) return false
+
+      // Check user permission (canPerform)
+      if (action.canPerform && !action.canPerform(user)) return false
+
+      return true
+    }
   )
 
   const handleOpen = useCallback(() => {

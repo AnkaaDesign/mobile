@@ -37,8 +37,9 @@ export const PRELOAD_CONFIGS: PreloadConfig[] = [
   },
 
   // Production workers - Load production module
+  // Note: Team leadership is now determined by managedSector relationship, not privilege
   {
-    role: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.LEADER],
+    role: SECTOR_PRIVILEGES.PRODUCTION,
     modules: ['production'],
     priority: 'high',
     delay: 500,

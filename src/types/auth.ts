@@ -20,7 +20,6 @@ export interface AuthUser {
   requirePasswordChange?: boolean;
   verified?: boolean;
   sectorId?: string | null;
-  managedSectorId?: string | null;
   sector?: {
     id: string;
     name: string;

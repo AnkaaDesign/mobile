@@ -113,24 +113,26 @@ export default function CuttingListScreen() {
     }
 
     const { privileges, id: userSectorId } = user.sector;
-    // Use user.managedSectorId directly (not from sector object)
-    const managedSectorId = user.managedSectorId;
-    const isProductionOrLeader = privileges === SECTOR_PRIVILEGES.PRODUCTION || privileges === SECTOR_PRIVILEGES.LEADER;
+    // Use user.managedSector?.id (the sector they manage)
+    const managedSectorId = user.managedSector?.id;
+    // Team leadership is now determined by managedSector relationship
+    const isProductionOrLeader = privileges === SECTOR_PRIVILEGES.PRODUCTION || Boolean(managedSectorId);
 
     // Filter out 'sectorIds' field for production/leader users (they have automatic filtering)
     const filteredFields = isProductionOrLeader && cutsListConfig.filters?.fields
       ? cutsListConfig.filters.fields.filter(field => field.key !== 'sectorIds')
       : cutsListConfig.filters?.fields;
 
-    // Build request action for LEADER and ADMIN users
-    const canRequestCut = privileges === SECTOR_PRIVILEGES.LEADER || privileges === SECTOR_PRIVILEGES.ADMIN;
+    // Build request action for team leaders and ADMIN users
+    // Team leadership is now determined by managedSector relationship
+    const canRequestCut = Boolean(managedSectorId) || privileges === SECTOR_PRIVILEGES.ADMIN;
     const requestAction = canRequestCut ? {
       key: 'request',
       label: 'Solicitar Recorte',
       icon: 'cut',
       variant: 'default' as const,
       visible: (cut: Cut) => {
-        // ADMIN can request for any cut, LEADER only for their managed sector
+        // ADMIN can request for any cut, team leaders only for their managed sector
         if (privileges === SECTOR_PRIVILEGES.ADMIN) return true;
         const taskSectorId = cut.task?.sectorId;
         return canRequestCutForTask(user, taskSectorId);
@@ -196,10 +198,11 @@ export default function CuttingListScreen() {
       };
     }
 
-    // Leader users can see cuts from tasks in their MANAGED sector only
-    if (privileges === SECTOR_PRIVILEGES.LEADER) {
-      // Only use managedSectorId - LEADER sees cuts from managed sector, not their own
-      const sectorIds = managedSectorId ? [managedSectorId] : [];
+    // Team leaders can see cuts from tasks in their MANAGED sector only
+    // Team leadership is now determined by managedSector relationship
+    if (managedSectorId) {
+      // Only use managedSectorId - team leaders see cuts from managed sector, not their own
+      const sectorIds = [managedSectorId];
 
       return {
         ...cutsListConfig,
@@ -208,7 +211,7 @@ export default function CuttingListScreen() {
           where: {
             ...cutsListConfig.query.where,
             task: {
-              sectorId: sectorIds.length > 0 ? { in: sectorIds } : undefined,
+              sectorId: { in: sectorIds },
             },
           },
         },

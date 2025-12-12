@@ -5,7 +5,7 @@ import { View, ActivityIndicator, Alert } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { TaskForm } from "@/components/production/task/form/task-form";
-import { useTaskMutations, useLayoutMutations } from "@/hooks";
+import { useTaskMutations } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from '@/utils/route-mapper';
@@ -16,7 +16,6 @@ export default function CreateScheduleScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const { createAsync, isLoading } = useTaskMutations();
-  const { createOrUpdateTruckLayout } = useLayoutMutations();
   const [checkingPermission, setCheckingPermission] = useState(true);
 
   // Check permissions - Only ADMIN and FINANCIAL can create tasks
@@ -58,105 +57,15 @@ export default function CreateScheduleScreen() {
   const handleSubmit = async (data: any) => {
     try {
       console.log('[CreateSchedule] Starting task creation...');
+      console.log('[CreateSchedule] Task data:', JSON.stringify(data, null, 2));
 
-      // Extract layouts from data if present (they come as truckLayoutData from form)
-      const { truckLayoutData, layouts: taskLayouts, ...taskData } = data;
-      const layoutsToCreate = truckLayoutData || taskLayouts;
-
-      console.log('[CreateSchedule] Task data:', JSON.stringify(taskData, null, 2));
-      console.log('[CreateSchedule] Layouts to create:', layoutsToCreate);
-
-      const result = await createAsync(taskData);
+      // Layouts are now consolidated in the truck object (leftSideLayout, rightSideLayout, backSideLayout)
+      // The backend handles everything in a single transaction
+      const result = await createAsync(data);
       console.log('[CreateSchedule] API result:', result);
 
       if (result.success && result.data) {
-        const createdTask = result.data;
-        const truckId = createdTask.truck?.id;
-
-        console.log('[CreateSchedule] Task created successfully, truckId:', truckId);
-
-        // Create layouts if truck was created and layouts exist
-        if (truckId && layoutsToCreate) {
-          console.log('[CreateSchedule] Creating layouts for truck:', truckId);
-
-          const layoutPromises = [];
-
-          // Transform layout data to match API schema
-          const transformLayoutForAPI = (layoutData: any) => {
-            if (!layoutData?.layoutSections) return null;
-
-            // CRITICAL FIX: Clone the object to ensure arrays don't get corrupted by Axios (aligned with web)
-            const layoutSections = layoutData.layoutSections.map((section: any, index: number) => ({
-              width: section.width,
-              isDoor: section.isDoor,
-              doorHeight: section.isDoor ? section.doorHeight : null,
-              position: index,
-            }));
-
-            const transformed = {
-              height: layoutData.height,
-              layoutSections,
-              photoId: layoutData.photoId || null,
-            };
-
-            // Clone to prevent Axios corruption (like web does)
-            return JSON.parse(JSON.stringify(transformed));
-          };
-
-          // Create layouts for each side - check both old format (left/right/back) and new format (leftSide/rightSide/backSide)
-          const leftLayout = layoutsToCreate.left || layoutsToCreate.leftSide;
-          const rightLayout = layoutsToCreate.right || layoutsToCreate.rightSide;
-          const backLayout = layoutsToCreate.back || layoutsToCreate.backSide;
-
-          if (leftLayout?.layoutSections?.length > 0) {
-            const leftLayoutData = transformLayoutForAPI(leftLayout);
-            if (leftLayoutData) {
-              console.log('[CreateSchedule] Adding left layout:', leftLayoutData);
-              layoutPromises.push(
-                createOrUpdateTruckLayout({ truckId, side: 'left', data: leftLayoutData })
-              );
-            }
-          }
-
-          if (rightLayout?.layoutSections?.length > 0) {
-            const rightLayoutData = transformLayoutForAPI(rightLayout);
-            if (rightLayoutData) {
-              console.log('[CreateSchedule] Adding right layout:', rightLayoutData);
-              layoutPromises.push(
-                createOrUpdateTruckLayout({ truckId, side: 'right', data: rightLayoutData })
-              );
-            }
-          }
-
-          if (backLayout?.layoutSections?.length > 0) {
-            const backLayoutData = transformLayoutForAPI(backLayout);
-            if (backLayoutData) {
-              console.log('[CreateSchedule] Adding back layout:', backLayoutData);
-              layoutPromises.push(
-                createOrUpdateTruckLayout({ truckId, side: 'back', data: backLayoutData })
-              );
-            }
-          }
-
-          // Create all layouts in parallel
-          if (layoutPromises.length > 0) {
-            try {
-              await Promise.all(layoutPromises);
-              console.log('[CreateSchedule] Successfully created all layouts for truck:', truckId);
-            } catch (layoutError: any) {
-              console.error('[CreateSchedule] Error creating layouts:', layoutError);
-              // Task was created successfully, show partial success message
-              Alert.alert(
-                "Tarefa criada",
-                `Tarefa criada, mas erro ao criar layouts: ${layoutError?.message || 'Erro desconhecido'}`
-              );
-              // Still navigate since task was created
-              router.replace(routeToMobilePath(routes.production.schedule.root) as any);
-              return;
-            }
-          }
-        }
-
+        console.log('[CreateSchedule] Task created successfully');
         // API client already shows success alert
         router.replace(routeToMobilePath(routes.production.schedule.root) as any);
       } else {
