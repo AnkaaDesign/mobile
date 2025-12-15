@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Combobox } from '@/components/ui/combobox';
-import { Label } from '@/components/ui/label';
 import { ThemedText } from '@/components/ui/themed-text';
 import { useTheme } from '@/lib/theme';
 import { spacing, fontSize } from '@/constants/design-system';
@@ -284,10 +283,6 @@ export function SpotSelector({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Label style={styles.label}>Local do Caminhão</Label>
-      </View>
-
       {!truckLength || truckLength <= 0 ? (
         <ThemedText style={[styles.placeholder, { color: colors.mutedForeground }]}>
           Preencha o layout do caminhao para selecionar o local
@@ -346,15 +341,6 @@ export function SpotSelector({
 const styles = StyleSheet.create({
   container: {
     gap: spacing.sm,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: '500',
   },
   placeholder: {
     fontSize: fontSize.sm,

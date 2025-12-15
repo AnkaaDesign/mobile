@@ -962,7 +962,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
           <Card>
             <View style={[styles.collapsibleCardHeader, isLayoutOpen && styles.collapsibleCardHeaderOpen, isLayoutOpen && { borderBottomColor: colors.border }]}>
               <View style={styles.collapsibleCardTitleRow}>
-                <Icon name="ruler" size={20} color={colors.foreground} />
+                <Icon name="IconRuler" size={20} color={colors.mutedForeground} />
                 <ThemedText style={styles.collapsibleCardTitle}>Layout do Caminhão</ThemedText>
               </View>
               {!isLayoutOpen ? (
@@ -1102,31 +1102,33 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
 
           {/* Truck Spot Selector - Edit mode only, when layout data exists - after layout section */}
           {mode === "edit" && (existingLayouts || isLayoutOpen) && (
-            <Controller
-              control={form.control}
-              name="truck.spot"
-              render={({ field: { onChange, value } }) => {
-                // Calculate truck length from layout sections
-                const leftLayout = layouts.left;
-                const leftSections = leftLayout?.layoutSections;
-                let truckLength: number | null = null;
-                if (leftSections && leftSections.length > 0) {
-                  const sectionsSum = leftSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
-                  // Add cabin if < 10m (1.8m cabin - average Brazilian truck cab)
-                  truckLength = sectionsSum < 10 ? sectionsSum + 1.8 : sectionsSum;
-                }
+            <FormCard title="Local do Caminhão" icon="IconMapPin">
+              <Controller
+                control={form.control}
+                name="truck.spot"
+                render={({ field: { onChange, value } }) => {
+                  // Calculate truck length from layout sections
+                  const leftLayout = layouts.left;
+                  const leftSections = leftLayout?.layoutSections;
+                  let truckLength: number | null = null;
+                  if (leftSections && leftSections.length > 0) {
+                    const sectionsSum = leftSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
+                    // Add cabin if < 10m (1.8m cabin - average Brazilian truck cab)
+                    truckLength = sectionsSum < 10 ? sectionsSum + 1.8 : sectionsSum;
+                  }
 
-                return (
-                  <SpotSelector
-                    truckLength={truckLength}
-                    currentSpot={value as TRUCK_SPOT | null}
-                    truckId={(initialData?.truck as any)?.id}
-                    onSpotChange={(spot) => onChange(spot)}
-                    disabled={isSubmitting}
-                  />
-                );
-              }}
-            />
+                  return (
+                    <SpotSelector
+                      truckLength={truckLength}
+                      currentSpot={value as TRUCK_SPOT | null}
+                      truckId={(initialData?.truck as any)?.id}
+                      onSpotChange={(spot) => onChange(spot)}
+                      disabled={isSubmitting}
+                    />
+                  );
+                }}
+              />
+            </FormCard>
           )}
 
           {/* Observation Section - Only in edit mode, after layout, hidden for warehouse, financial, designer, logistic users */}
@@ -1134,7 +1136,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
             <Card>
               <View style={[styles.collapsibleCardHeader, isObservationOpen && styles.collapsibleCardHeaderOpen, isObservationOpen && { borderBottomColor: colors.border }]}>
                 <View style={styles.collapsibleCardTitleRow}>
-                  <Icon name="file-text" size={20} color={colors.foreground} />
+                  <Icon name="IconFileText" size={20} color={colors.mutedForeground} />
                   <ThemedText style={styles.collapsibleCardTitle}>Observação</ThemedText>
                 </View>
                 {!isObservationOpen ? (
@@ -1205,7 +1207,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
 
           {/* Artworks - Last section, hidden for warehouse, financial, logistic users */}
           {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
-            <FormCard title="Artes (Opcional)" icon="IconPhoto">
+            <FormCard title="Artes (Opcional)" icon="IconPhotoPlus">
                 <FilePicker
                   value={artworkFiles}
                   onChange={setArtworkFiles}
@@ -1488,8 +1490,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   collapsibleCardTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+    fontSize: 16,
+    fontWeight: "500" as any,
   },
   artworkPreviewContainer: {
     width: 100,
