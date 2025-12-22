@@ -10,6 +10,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import type { Task } from '../../../../types';
 import { TaskStatusBadge } from "../list/task-status-badge";
 import { formatChassis } from "@/utils";
+import { getSpotLabel } from "@/types/garage";
 
 import {
   IconHash,
@@ -20,6 +21,7 @@ import {
   IconTruck,
   IconFileText,
   IconClipboardList,
+  IconMapPin,
 } from "@tabler/icons-react-native";
 
 interface TaskInfoCardProps {
@@ -32,6 +34,7 @@ interface TaskInfoCardProps {
       height?: number;
       plate?: string;
       chassisNumber?: string;
+      spot?: string | null;
     };
     customer?: {
       fantasyName: string;
@@ -121,6 +124,19 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Caminhão</ThemedText>
               <ThemedText style={[styles.value, { color: colors.foreground }]}>
                 {truckDimensions.width}cm × {truckDimensions.height}cm
+              </ThemedText>
+            </View>
+          </View>
+        )}
+
+        {/* Local (Truck Spot) */}
+        {task.truck?.spot && (
+          <View style={styles.infoItem}>
+            <IconMapPin size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Local</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                {getSpotLabel(task.truck.spot as any)}
               </ThemedText>
             </View>
           </View>

@@ -518,6 +518,17 @@ export const itemsListConfig: ListConfig<Item> = {
       route: '/estoque/produtos/cadastrar',
       canCreate: canEditItems,
     },
+    toolbar: [
+      {
+        key: 'stock-balance',
+        label: 'Balanco',
+        icon: 'clipboard-check',
+        variant: 'secondary',
+        onPress: (router: any) => {
+          router.push('/estoque/balanco/cadastrar')
+        },
+      },
+    ],
     bulk: [
       {
         key: 'batch-edit',

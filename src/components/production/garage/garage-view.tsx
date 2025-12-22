@@ -561,6 +561,11 @@ const TruckElement = memo(function TruckElement({
           <SvgText x={svgWidth / 2} y={strokePadding + 9} textAnchor="middle" fill={textColor} fontSize={6}>
             {`${displayLength.toFixed(1).replace('.', ',')}m`}
           </SvgText>
+          {truck.serialNumber && (
+            <SvgText x={svgWidth / 2} y={svgHeight - strokePadding - 3} textAnchor="middle" fill={textColor} fontSize={6}>
+              {truck.serialNumber}
+            </SvgText>
+          )}
         </Svg>
       </Animated.View>
     </GestureDetector>

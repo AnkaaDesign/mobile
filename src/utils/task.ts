@@ -394,6 +394,20 @@ export function getTaskRowColor(task: Task, isDark: boolean = false): string {
   }
 }
 
+/**
+ * Format truck spot in short format for badge display
+ * Examples: "B1-F1-V1", "B2-F3-V2", "Pátio"
+ * Returns null if no spot is assigned
+ */
+export function formatTruckSpotShort(spot: string | null | undefined): string | null {
+  if (!spot) return null;
+  if (spot === 'PATIO') return 'Pátio';
+
+  // Convert B1_F1_V1 to B1-F1-V1
+  const formatted = spot.replace(/_/g, '-');
+  return formatted;
+}
+
 // Re-export getHoursBetween from date utils to avoid duplication
 export { getHoursBetween } from "./date";
 

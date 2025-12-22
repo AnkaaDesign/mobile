@@ -5,7 +5,9 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconCalendar, IconCurrencyDollar } from "@tabler/icons-react-native";
-import { formatDate, formatCurrency } from '@/utils';
+import { formatDate, formatCurrency, hasPrivilege } from '@/utils';
+import { useAuth } from "@/contexts/auth-context";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 interface AirbrushingDatesCardProps {
   airbrushing: any;
@@ -13,8 +15,18 @@ interface AirbrushingDatesCardProps {
 
 export function AirbrushingDatesCard({ airbrushing }: AirbrushingDatesCardProps) {
   const { colors } = useTheme();
+  const { user } = useAuth();
 
-  const hasDateInfo = airbrushing.startDate || airbrushing.finishDate || airbrushing.price;
+  // Check if user can view financial data (ADMIN or FINANCIAL only)
+  const canViewFinancials = user && (
+    hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) ||
+    hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL)
+  );
+
+  // Only show price if user has permission
+  const showPrice = canViewFinancials && airbrushing.price;
+
+  const hasDateInfo = airbrushing.startDate || airbrushing.finishDate || showPrice;
 
   if (!hasDateInfo) {
     return (
@@ -86,8 +98,8 @@ export function AirbrushingDatesCard({ airbrushing }: AirbrushingDatesCardProps)
             </View>
           )}
 
-          {/* Price Section */}
-          {airbrushing.price && (
+          {/* Price Section - Only visible to ADMIN and FINANCIAL users */}
+          {showPrice && (
             <View style={StyleSheet.flatten([
               styles.section,
               (airbrushing.startDate || airbrushing.finishDate) && styles.priceSection,

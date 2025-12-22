@@ -37,6 +37,17 @@ export function useList<T extends { id: string }>(
     return fields.filter((field) => !field.canView || field.canView(user))
   }, [config.filters?.fields, user])
 
+  // Filter columns based on user permissions (canView check)
+  const accessibleColumns = useMemo(() => {
+    return config.table.columns.filter((column) => !column.canView || column.canView(user))
+  }, [config.table.columns, user])
+
+  // Filter default visible columns to only include accessible ones
+  const accessibleDefaultVisible = useMemo(() => {
+    const accessibleKeys = new Set(accessibleColumns.map((col) => col.key))
+    return config.table.defaultVisible.filter((key) => accessibleKeys.has(key))
+  }, [accessibleColumns, config.table.defaultVisible])
+
   const filters = useFilters({
     fields: accessibleFilterFields,
     defaultValues: config.filters?.defaultValues,
@@ -61,10 +72,10 @@ export function useList<T extends { id: string }>(
   // Data fetching
   const query = useInfiniteQuery(queryParams)
 
-  // Table management
+  // Table management (using accessible columns and default visible)
   const table = useTable({
-    columns: config.table.columns,
-    defaultVisible: config.table.defaultVisible,
+    columns: accessibleColumns,
+    defaultVisible: accessibleDefaultVisible,
     storageKey: config.key,
   })
 
@@ -116,7 +127,7 @@ export function useList<T extends { id: string }>(
     // Table
     table: {
       data: query.items || [],
-      columns: config.table.columns,
+      columns: accessibleColumns,
       visibleColumns: table.visibleColumns,
       onToggleColumn: table.onToggleColumn,
       onResetColumns: table.onResetColumns,

@@ -14,7 +14,8 @@ import { TaskPriorityIndicator } from "./task-priority-indicator";
 import { DeadlineCountdown } from "./deadline-countdown";
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
 import { formatDate, formatCurrency } from "@/utils";
-import { extendedColors } from "@/lib/theme/extended-colors";
+import { formatTruckSpotShort } from "@/utils/task";
+import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import { TASK_STATUS, PRIORITY_TYPE } from "@/constants";
 import type { SortConfig } from "@/lib/sort-utils";
 import { TaskSectorModal } from "../modals/task-sector-modal";
@@ -193,6 +194,46 @@ export const createColumnDefinitions = (): TableColumn[] => [
     },
   },
   {
+    key: "local",
+    header: "LOCAL",
+    align: "center",
+    sortable: false,
+    width: 0,
+    accessor: (task: Task) => {
+      const spotLabel = formatTruckSpotShort(task.truck?.spot);
+      if (!spotLabel) {
+        return (
+          <View style={styles.centerAlign}>
+            <ThemedText style={styles.mutedText}>-</ThemedText>
+          </View>
+        );
+      }
+      return (
+        <View style={styles.centerAlign}>
+          <Badge
+            variant="secondary"
+            size="sm"
+            style={{
+              backgroundColor: badgeColors.muted.background,
+              borderWidth: 0,
+            }}
+          >
+            <ThemedText
+              style={{
+                color: badgeColors.muted.text,
+                fontSize: fontSize.xs,
+                fontWeight: fontWeight.medium,
+                fontFamily: "monospace",
+              }}
+            >
+              {spotLabel}
+            </ThemedText>
+          </Badge>
+        </View>
+      );
+    },
+  },
+  {
     key: "entryDate",
     header: "ENTRADA",
     align: "left",
@@ -363,6 +404,7 @@ export const TaskTable = React.memo<TaskTableProps>(
         term: 1.2,
         price: 1.2,
         servicesCount: 0.9,
+        local: 1.0,
         entryDate: 1.2,
         startedAt: 1.2,
         finishedAt: 1.2,
@@ -874,6 +916,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     opacity: 0.6,
     marginTop: 2,
+  },
+  mutedText: {
+    fontSize: fontSize.xs,
+    opacity: 0.5,
   },
   monoText: {
     fontFamily: "monospace",

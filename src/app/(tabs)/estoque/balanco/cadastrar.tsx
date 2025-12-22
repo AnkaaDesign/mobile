@@ -1,0 +1,19 @@
+import { useRouter } from "expo-router";
+import { ThemedView } from "@/components/ui/themed-view";
+import { StockBalanceBatchCreateForm } from "@/components/inventory/stock-balance/form";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
+
+export default function StockBalanceCreateScreen() {
+  const router = useRouter();
+
+  const handleCancel = () => {
+    router.replace(routeToMobilePath(routes.inventory.products.list) as any);
+  };
+
+  return (
+    <ThemedView style={{ flex: 1 }}>
+      <StockBalanceBatchCreateForm onCancel={handleCancel} />
+    </ThemedView>
+  );
+}

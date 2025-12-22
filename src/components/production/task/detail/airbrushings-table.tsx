@@ -13,8 +13,10 @@ import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-sl
 import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { useAirbrushingsInfiniteMobile } from "@/hooks";
 import { AirbrushingTable, createColumnDefinitions } from "@/components/production/airbrushing/list/airbrushing-table";
-import { routes } from "@/constants";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { routeToMobilePath } from "@/utils/route-mapper";
+import { useAuth } from "@/contexts/auth-context";
+import { hasPrivilege } from "@/utils";
 
 interface AirbrushingsTableProps {
   taskId: string;
@@ -23,13 +25,20 @@ interface AirbrushingsTableProps {
 
 export function AirbrushingsTable({ taskId, maxHeight = 400 }: AirbrushingsTableProps) {
   const { colors } = useTheme();
+  const { user } = useAuth();
+
+  // Check if user can view financial data (ADMIN or FINANCIAL only)
+  const canViewFinancials = user && (
+    hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) ||
+    hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL)
+  );
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
-  // Use only status and price columns for task detail view
+  // Use only status and price columns for task detail view (price only for ADMIN/FINANCIAL)
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
-    return ["status", "price"];
+    return canViewFinancials ? ["status", "price"] : ["status"];
   });
 
   // Search state
@@ -78,10 +87,10 @@ export function AirbrushingsTable({ taskId, maxHeight = 400 }: AirbrushingsTable
     setVisibleColumnKeys(newColumnsArray);
   }, []);
 
-  // Get default visible columns (for the task detail view)
+  // Get default visible columns (for the task detail view) - price only for ADMIN/FINANCIAL
   const getDefaultVisibleColumns = useCallback(() => {
-    return ["status", "price"];
-  }, []);
+    return canViewFinancials ? ["status", "price"] : ["status"];
+  }, [canViewFinancials]);
 
   // Handle opening column panel
   const handleOpenColumns = useCallback(() => {

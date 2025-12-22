@@ -312,6 +312,18 @@ export function canDeleteAirbrushings(user: User | null): boolean {
   ]);
 }
 
+/**
+ * Can user view airbrushing financial data (price)?
+ * Only ADMIN and FINANCIAL can view airbrushing prices
+ */
+export function canViewAirbrushingFinancials(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.FINANCIAL,
+  ]);
+}
+
 // =====================
 // OBSERVATION PERMISSIONS
 // =====================

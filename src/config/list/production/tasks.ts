@@ -292,8 +292,8 @@ export const tasksListConfig: ListConfig<Task> = {
       },
     ],
     defaultVisible: isTabletWidth()
-      ? ['name', 'measures', 'serialNumber', 'remainingTime']
-      : ['name', 'serialNumber', 'remainingTime'],
+      ? ['name', 'measures', 'serialNumber', 'local', 'remainingTime']
+      : ['name', 'serialNumber', 'local', 'remainingTime'],
     rowHeight: 48,
     getRowStyle: (task, isDark) => ({
       backgroundColor: getRowBackgroundColor(task, isDark),

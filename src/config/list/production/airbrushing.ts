@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Airbrushing } from '@/types'
-import { canEditAirbrushings, canDeleteAirbrushings } from '@/utils/permissions/entity-permissions'
+import { canEditAirbrushings, canDeleteAirbrushings, canViewAirbrushingFinancials } from '@/utils/permissions/entity-permissions'
 import { AIRBRUSHING_STATUS } from '@/constants/enums'
 
 
@@ -61,6 +61,7 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
         align: 'right',
         render: (airbrushing) => String(airbrushing.price || 0),
         format: 'currency',
+        canView: canViewAirbrushingFinancials,
       },
       {
         key: 'customer',

@@ -50,6 +50,8 @@ export interface TableColumn<T = any> {
   badgeEntity?: string // Entity type for badge color resolution (e.g., 'ORDER', 'TASK', 'USER')
   /** Custom press handler for cell - when provided, prevents default row press */
   onCellPress?: (item: T) => void
+  /** Permission check - if provided, column will only be shown if this returns true */
+  canView?: (user: any) => boolean
 }
 
 export interface TableAction<T = any> {

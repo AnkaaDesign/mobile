@@ -6,6 +6,7 @@ export function getDefaultVisibleColumns(): Set<string> {
   return new Set([
     "name",                    // NOME/LOGOMARCA (includes paint square)
     "serialNumber",            // Nº SÉRIE
+    "local",                   // LOCAL (truck spot badge)
     "remainingTime"            // TEMPO RESTANTE
   ]);
 }
