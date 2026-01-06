@@ -51,12 +51,12 @@ export function PersonalActivityFilterTags({
 
     // Operations
     if (filters.operations && filters.operations.length > 0) {
-      filters.operations.forEach((operation) => {
+      filters.operations.forEach((operation: string) => {
         tags.push({
           key: `operation-${operation}`,
-          label: `Operação: ${ACTIVITY_OPERATION_LABELS[operation] || operation}`,
+          label: `Operação: ${ACTIVITY_OPERATION_LABELS[operation as keyof typeof ACTIVITY_OPERATION_LABELS] || operation}`,
           onRemove: () => {
-            const newOperations = filters.operations!.filter((op) => op !== operation);
+            const newOperations = filters.operations!.filter((op: string) => op !== operation);
             onFilterChange({
               ...filters,
               operations: newOperations.length > 0 ? newOperations : undefined,
@@ -68,12 +68,12 @@ export function PersonalActivityFilterTags({
 
     // Reasons
     if (filters.reasons && filters.reasons.length > 0) {
-      filters.reasons.forEach((reason) => {
+      filters.reasons.forEach((reason: string) => {
         tags.push({
           key: `reason-${reason}`,
-          label: `Motivo: ${ACTIVITY_REASON_LABELS[reason] || reason}`,
+          label: `Motivo: ${ACTIVITY_REASON_LABELS[reason as keyof typeof ACTIVITY_REASON_LABELS] || reason}`,
           onRemove: () => {
-            const newReasons = filters.reasons!.filter((r) => r !== reason);
+            const newReasons = filters.reasons!.filter((r: string) => r !== reason);
             onFilterChange({
               ...filters,
               reasons: newReasons.length > 0 ? newReasons : undefined,

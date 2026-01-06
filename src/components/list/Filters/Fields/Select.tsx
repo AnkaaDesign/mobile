@@ -28,7 +28,6 @@ const SelectFieldComponent = function SelectField({
   // Prepare options
   const options = useMemo(() => {
     if (providedOptions) return providedOptions
-    if (field.options?.data) return field.options.data
     if (field.options) return field.options
     return []
   }, [providedOptions, field.options])

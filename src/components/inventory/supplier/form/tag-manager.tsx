@@ -70,7 +70,7 @@ export function TagManager({ tags, onChange }: TagManagerProps) {
           <Input
             ref={inputRef}
             value={newTag}
-            onChangeText={setNewTag}
+            onChangeText={(value: string | number | null) => setNewTag(value?.toString() || "")}
             placeholder="Digite a tag"
             maxLength={50}
             autoCapitalize="characters"

@@ -118,7 +118,7 @@ export function CutRequestModal({
         },
       );
 
-      onSuccess?.(response.data.success);
+      onSuccess?.(response.data?.success);
       reset();
       onClose();
     } catch (error) {
@@ -174,9 +174,11 @@ export function CutRequestModal({
           {/* Content */}
           <View style={styles.content}>
             {/* File name */}
-            <ThemedText style={[styles.fileName, { color: colors.mutedForeground }]} numberOfLines={1}>
-              {fileName}
-            </ThemedText>
+            {fileName && (
+              <ThemedText style={[styles.fileName, { color: colors.mutedForeground }]} numberOfLines={1}>
+                {fileName}
+              </ThemedText>
+            )}
 
             {/* Current cut info */}
             {cutItem && (
@@ -231,7 +233,7 @@ export function CutRequestModal({
                       }}
                       keyboardType="numeric"
                       placeholder="1"
-                      error={errors.quantity?.message}
+                      error={!!errors.quantity?.message}
                     />
                   )}
                 />

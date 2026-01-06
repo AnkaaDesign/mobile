@@ -158,7 +158,7 @@ export function useBackupProgress(
     });
 
     // Set up interpolation interval if enabled
-    let intervalId: NodeJS.Timeout;
+    let intervalId: ReturnType<typeof setInterval>;
     if (interpolate) {
       intervalId = setInterval(estimateProgress, 100);
     }

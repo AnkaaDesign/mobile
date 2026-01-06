@@ -188,9 +188,9 @@ interface TaskFormProps {
 }
 
 const TASK_STATUS_OPTIONS = [
-  { value: TASK_STATUS.PENDING, label: "Aguardando" },
+  { value: TASK_STATUS.PREPARATION, label: "Em Preparação" },
+  { value: TASK_STATUS.WAITING_PRODUCTION, label: "Aguardando Produção" },
   { value: TASK_STATUS.IN_PRODUCTION, label: "Em Produção" },
-  { value: TASK_STATUS.ON_HOLD, label: "Em Espera" },
   { value: TASK_STATUS.COMPLETED, label: "Concluída" },
   { value: TASK_STATUS.CANCELLED, label: "Cancelada" },
 ];
@@ -346,7 +346,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
     artworkIds: initialData?.artworkIds || [],
     observation: initialData?.observation || null,
     services: initialData?.services || [{ description: "", status: SERVICE_ORDER_STATUS.PENDING }],
-    status: initialData?.status || TASK_STATUS.PENDING,
+    status: initialData?.status || TASK_STATUS.PREPARATION,
     commission: initialData?.commission || COMMISSION_STATUS.FULL_COMMISSION,
     startedAt: initialData?.startedAt || null,
     finishedAt: initialData?.finishedAt || null,
@@ -795,7 +795,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                     name="status"
                     render={({ field: { onChange, value } }) => (
                       <Combobox
-                        value={value || TASK_STATUS.PENDING}
+                        value={value || TASK_STATUS.WAITING_PRODUCTION}
                         onValueChange={onChange}
                         options={TASK_STATUS_OPTIONS}
                         placeholder="Selecione o status"

@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from '../../../../utils';
-import type { Paint, Formula } from '../../../../types';
+import type { Paint, PaintFormula } from '../../../../types';
 import { routes } from '@/constants';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import * as Clipboard from 'expo-clipboard';
@@ -28,7 +28,7 @@ export function PaintFormulasCard({ paint }: PaintFormulasCardProps) {
     router.push(routeToMobilePath(routes.painting.formulas.details(formulaId)) as any);
   };
 
-  const handleFormulaCopy = async (formula: Formula) => {
+  const handleFormulaCopy = async (formula: PaintFormula) => {
     try {
       const formulaText = `Fórmula: ${formula.description || 'Sem descrição'}
 Componentes: ${formula.components?.length || 0}
@@ -55,7 +55,7 @@ Densidade: ${formula.density != null ? `${Number(formula.density).toFixed(3)} g/
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
-          <Icon name="flask" size={20} style={{ color: colors.mutedForeground }} />
+          <Icon name="flask" size={20} color={colors.mutedForeground} />
           <Text style={styles.title}>
             Fórmulas ({paint.formulas?.length || 0})
           </Text>

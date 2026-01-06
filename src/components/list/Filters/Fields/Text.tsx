@@ -6,7 +6,7 @@ import type { FilterField } from '../../types'
 interface TextFieldProps {
   field: FilterField
   value: string | undefined
-  onChange: (value: string | undefined) => void
+  onChange: (value: string | number | null) => void
   onFocus?: () => void
 }
 
@@ -17,7 +17,7 @@ export const TextField = memo(function TextField({
   onFocus,
 }: TextFieldProps) {
   const handleChange = (text: string) => {
-    onChange(text || undefined)
+    onChange(text || null)
   }
 
   // Use placeholder as the main identifier (clean approach)
@@ -29,7 +29,7 @@ export const TextField = memo(function TextField({
     <View style={styles.container}>
       <Input
         value={value || ''}
-        onChangeText={handleChange}
+        onChangeText={handleChange as any}
         placeholder={placeholder}
         onFocus={onFocus}
       />

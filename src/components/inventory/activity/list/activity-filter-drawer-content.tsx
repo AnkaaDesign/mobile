@@ -382,7 +382,7 @@ export function ActivityFilterDrawerContent({
                 placeholder="Mínimo"
                 value={localFilters.quantityRange?.min?.toString() || ""}
                 onChangeText={(value) => {
-                  const numValue = value ? parseFloat(value) : undefined;
+                  const numValue = (typeof value === 'string' && value) ? parseFloat(value) : undefined;
                   setLocalFilters((prev) => ({
                     ...prev,
                     quantityRange: {
@@ -399,7 +399,7 @@ export function ActivityFilterDrawerContent({
                 placeholder="Máximo"
                 value={localFilters.quantityRange?.max?.toString() || ""}
                 onChangeText={(value) => {
-                  const numValue = value ? parseFloat(value) : undefined;
+                  const numValue = (typeof value === 'string' && value) ? parseFloat(value) : undefined;
                   setLocalFilters((prev) => ({
                     ...prev,
                     quantityRange: {

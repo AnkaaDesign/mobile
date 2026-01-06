@@ -18,7 +18,10 @@ export class LocalStorageAdapter implements StorageAdapter {
 
   getItem(key: string): string | null {
     try {
-      return localStorage.getItem(this.prefix + key);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem(this.prefix + key);
+      }
+      return null;
     } catch {
       return null;
     }
@@ -26,7 +29,9 @@ export class LocalStorageAdapter implements StorageAdapter {
 
   setItem(key: string, value: string): void {
     try {
-      localStorage.setItem(this.prefix + key, value);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(this.prefix + key, value);
+      }
     } catch {
       // Silently fail
     }
@@ -34,7 +39,9 @@ export class LocalStorageAdapter implements StorageAdapter {
 
   removeItem(key: string): void {
     try {
-      localStorage.removeItem(this.prefix + key);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(this.prefix + key);
+      }
     } catch {
       // Silently fail
     }
@@ -42,12 +49,14 @@ export class LocalStorageAdapter implements StorageAdapter {
 
   clear(): void {
     try {
-      const keys = Object.keys(localStorage);
-      keys.forEach((key) => {
-        if (key.startsWith(this.prefix)) {
-          localStorage.removeItem(key);
-        }
-      });
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const keys = Object.keys(window.localStorage);
+        keys.forEach((key) => {
+          if (key.startsWith(this.prefix)) {
+            window.localStorage.removeItem(key);
+          }
+        });
+      }
     } catch {
       // Silently fail
     }

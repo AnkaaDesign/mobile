@@ -121,7 +121,7 @@ export const useLiveBonusCalculation = (
     queryFn: async () => {
       const response = await bonusService.getLiveBonuses(year, month);
       // The API returns PayrollData with bonuses array
-      return response.data || { bonuses: [], meta: Record<string, unknown>, summary: {} };
+      return response.data || { bonuses: [], meta: {} as Record<string, unknown>, summary: {} };
     },
     staleTime: 1000 * 30, // 30 seconds - fresh calculation data
     refetchInterval: options?.refetchInterval ?? 1000 * 60, // Refresh every minute by default

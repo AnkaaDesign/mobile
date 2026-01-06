@@ -1,6 +1,7 @@
 // packages/utils/src/file-compression.ts
 // File compression utilities for images and videos with network awareness
 
+// @ts-ignore - expo-image-manipulator may not have types in this environment
 import * as ImageManipulator from 'expo-image-manipulator';
 import NetInfo from '@react-native-community/netinfo';
 import { isImageFile, isVideoFile } from './file-utils';

@@ -11,6 +11,25 @@ const config = getDefaultConfig(projectRoot);
 // 1. Watch all relevant folders
 config.watchFolders = [workspaceRoot];
 
+// 1.5. Configure watcher to ignore .claude and other problematic directories
+config.watcher = {
+  ...config.watcher,
+  watchman: {
+    ...config.watcher?.watchman,
+  },
+  additionalExts: config.watcher?.additionalExts || [],
+  healthCheck: {
+    enabled: true,
+  },
+};
+
+// Add blocklist to ignore .claude directory and other hidden folders
+config.resolver.blockList = [
+  /\.claude/,
+  /\/\.git\//,
+  /\/\.cache\//,
+];
+
 // 2. Let Metro know where to resolve packages from
 config.resolver.nodeModulesPaths = [path.resolve(projectRoot, "node_modules"), path.resolve(workspaceRoot, "node_modules")];
 

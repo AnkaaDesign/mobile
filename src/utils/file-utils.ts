@@ -1015,6 +1015,16 @@ export const getFileMetadata = (
 };
 
 export const createFileHash = async (file: File): Promise<string> => {
+  // Check if arrayBuffer method exists
+  if (typeof file.arrayBuffer !== 'function') {
+    throw new Error('File.arrayBuffer is not supported in this environment');
+  }
+
+  // Check if crypto.subtle is available
+  if (typeof crypto === 'undefined' || !crypto.subtle) {
+    throw new Error('crypto.subtle is not available in this environment');
+  }
+
   const arrayBuffer = await file.arrayBuffer();
   const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));

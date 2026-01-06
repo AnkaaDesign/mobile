@@ -45,7 +45,7 @@ export const taskIncludeSchema: z.ZodSchema = z.lazy(() =>
       invoices: z.boolean().optional(), // Many-to-many relation with File
       receipts: z.boolean().optional(), // Many-to-many relation with File
       reimbursements: z.boolean().optional(), // Many-to-many relation with File
-      reimbursementInvoices: z.boolean().optional(), // Many-to-many relation with File
+      invoiceReimbursements: z.boolean().optional(), // Many-to-many relation with File
       // Legacy field names for backwards compatibility (mapped in repository)
       budget: z.boolean().optional(), // @deprecated Use budgets instead
       nfe: z.boolean().optional(), // @deprecated Use nfes instead
@@ -609,10 +609,10 @@ const taskTransform = (data: any): any => {
   }
 
   if (data.isPending === true) {
-    andConditions.push({ status: TASK_STATUS.PENDING });
+    andConditions.push({ status: TASK_STATUS.WAITING_PRODUCTION });
     delete data.isPending;
   } else if (data.isPending === false) {
-    andConditions.push({ status: { not: TASK_STATUS.PENDING } });
+    andConditions.push({ status: { not: TASK_STATUS.WAITING_PRODUCTION } });
     delete data.isPending;
   }
 
@@ -1146,7 +1146,7 @@ export const taskCreateSchema = z
       .enum(Object.values(TASK_STATUS) as [string, ...string[]], {
         errorMap: () => ({ message: "status inválido" }),
       })
-      .default(TASK_STATUS.PENDING),
+      .default(TASK_STATUS.PREPARATION),
     serialNumber: z
       .string()
       .optional()
@@ -1161,16 +1161,22 @@ export const taskCreateSchema = z
     term: nullableDate.optional(),
     startedAt: nullableDate.optional(),
     finishedAt: nullableDate.optional(),
+    forecastDate: nullableDate.optional(),
     paintId: z.string().uuid("Tinta inválida").nullable().optional(),
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
+    invoiceToId: z.string().uuid("Cliente para faturamento inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
+    negotiatingWith: z.object({
+      name: z.string(),
+      phone: z.string(),
+    }).nullable().optional(),
 
     // Relations - Many-to-many file relations (arrays)
     budgetIds: z.array(z.string().uuid("Budget inválido")).optional(),
     invoiceIds: z.array(z.string().uuid("Invoice inválida")).optional(), // Maps to nfes
     receiptIds: z.array(z.string().uuid("Receipt inválido")).optional(),
     reimbursementIds: z.array(z.string().uuid("Reimbursement inválido")).optional(),
-    reimbursementInvoiceIds: z.array(z.string().uuid("Reimbursement invoice inválida")).optional(),
+    invoiceReimbursementIds: z.array(z.string().uuid("Invoice reimbursement inválida")).optional(),
     fileIds: z.array(z.string().uuid("File inválido")).optional(), // Maps to artworks
     paintIds: z.array(z.string().uuid("Paint inválida")).optional(), // Maps to logoPaints
     // Legacy field names for backwards compatibility
@@ -1256,16 +1262,22 @@ export const taskUpdateSchema = z
     term: nullableDate.optional(),
     startedAt: nullableDate.optional(),
     finishedAt: nullableDate.optional(),
+    forecastDate: nullableDate.optional(),
     paintId: z.string().uuid("Tinta inválida").nullable().optional(),
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
+    invoiceToId: z.string().uuid("Cliente para faturamento inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
+    negotiatingWith: z.object({
+      name: z.string(),
+      phone: z.string(),
+    }).nullable().optional(),
 
     // Relations - Many-to-many file relations (arrays)
     budgetIds: z.array(z.string().uuid("Budget inválido")).optional(),
     invoiceIds: z.array(z.string().uuid("Invoice inválida")).optional(), // Maps to nfes
     receiptIds: z.array(z.string().uuid("Receipt inválido")).optional(),
     reimbursementIds: z.array(z.string().uuid("Reimbursement inválido")).optional(),
-    reimbursementInvoiceIds: z.array(z.string().uuid("Reimbursement invoice inválida")).optional(),
+    invoiceReimbursementIds: z.array(z.string().uuid("Invoice reimbursement inválida")).optional(),
     fileIds: z.array(z.string().uuid("File inválido")).optional(), // Maps to artworks
     paintIds: z.array(z.string().uuid("Paint inválida")).optional(), // Maps to logoPaints
     // Legacy field names for backwards compatibility
@@ -1419,7 +1431,7 @@ export const mapTaskToFormData = createMapToFormDataHelper<Task, TaskUpdateFormD
   invoiceIds: task.invoices?.map((nfe) => nfe.id),
   receiptIds: task.receipts?.map((receipt) => receipt.id),
   reimbursementIds: task.reimbursements?.map((reimbursement) => reimbursement.id),
-  reimbursementInvoiceIds: task.reimbursementInvoices?.map((reimbursementInvoice) => reimbursementInvoice.id),
+  invoiceReimbursementIds: task.invoiceReimbursements?.map((invoiceReimbursement) => invoiceReimbursement.id),
   fileIds: task.artworks?.map((artwork) => artwork.id),
   paintIds: task.logoPaints?.map((paint) => paint.id),
   // Complex relations need to be handled separately

@@ -107,7 +107,7 @@ export function WarningEmployeeCard({ warning }: WarningEmployeeCardProps) {
           </View>
 
           {/* Contact Information Section */}
-          {(employee.email || (employee.phones && employee.phones.length > 0)) && (
+          {(employee.email || employee.phone) && (
             <View style={StyleSheet.flatten([styles.section, styles.contactSection, { borderTopColor: colors.border + "50" }])}>
               <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
                 Contato
@@ -131,22 +131,18 @@ export function WarningEmployeeCard({ warning }: WarningEmployeeCardProps) {
                   </View>
                 )}
 
-                {employee.phones && employee.phones.length > 0 && (
-                  <>
-                    {employee.phones.map((phone: string, index: number) => (
-                      <View key={index} style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                        <View style={styles.fieldLabelWithIcon}>
-                          <IconPhone size={16} color={colors.mutedForeground} />
-                          <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                            Telefone{employee.phones.length > 1 ? ` ${index + 1}` : ""}
-                          </ThemedText>
-                        </View>
-                        <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
-                          {formatBrazilianPhone(phone)}
-                        </ThemedText>
-                      </View>
-                    ))}
-                  </>
+                {employee.phone && (
+                  <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
+                    <View style={styles.fieldLabelWithIcon}>
+                      <IconPhone size={16} color={colors.mutedForeground} />
+                      <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
+                        Telefone
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                      {formatBrazilianPhone(employee.phone)}
+                    </ThemedText>
+                  </View>
                 )}
               </View>
             </View>

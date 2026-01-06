@@ -138,7 +138,7 @@ export function CategorySelector({ disabled, required, initialCategory, onCatego
                 onCategoryChange?.(newCategoryId);
               }
             }}
-            createNewText={(value) => `Criar categoria "${value}"`}
+            createNewText={(value: string) => `Criar categoria "${value}"`}
             isCreating={isCreating}
           />
         </View>

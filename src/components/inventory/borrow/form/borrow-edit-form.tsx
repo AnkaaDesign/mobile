@@ -70,7 +70,7 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
       itemId: borrow.itemId || borrow.item?.id || "",
       quantity: borrow.quantity || 1,
       returnedAt: borrow.returnedAt ? new Date(borrow.returnedAt) : null,
-      status: borrow.status,
+      status: borrow.status as typeof BORROW_STATUS.ACTIVE | typeof BORROW_STATUS.RETURNED | typeof BORROW_STATUS.LOST | undefined,
     },
     mode: "onChange",
   });
@@ -109,9 +109,11 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
   });
 
   // Fetch selected item details for validation
-  const { data: selectedItem, isLoading: isLoadingItem } = useItem(selectedItemId, {
+  const { data: selectedItemResponse, isLoading: isLoadingItem } = useItem(selectedItemId, {
     enabled: !!selectedItemId,
   });
+
+  const selectedItem = selectedItemResponse as any;
 
   // Stock validation logic matching web implementation
   const stockValidation = useMemo(() => {
@@ -122,7 +124,7 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
     const errors: string[] = [];
 
     // Calculate available stock (accounting for active borrows and current borrow quantity)
-    const activeBorrowsQuantity = selectedItem.activeBorrowsQuantity || 0;
+    const activeBorrowsQuantity = selectedItem.borrows?.filter((b: any) => b.status === BORROW_STATUS.ACTIVE).reduce((sum: number, b: any) => sum + b.quantity, 0) || 0;
     const availableStock = selectedItem.quantity - activeBorrowsQuantity + borrow.quantity;
 
     // Validation 1: Check stock availability
@@ -131,12 +133,12 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
     }
 
     // Validation 2: Check if item category is TOOL
-    if (selectedItem.itemCategory?.type !== "TOOL") {
+    if (selectedItem.category?.type !== "TOOL") {
       errors.push("Apenas ferramentas podem ser emprestadas");
     }
 
     // Validation 3: Check if item is active
-    if (!selectedItem.active && !isReturned) {
+    if (!selectedItem.isActive && !isReturned) {
       errors.push("Item inativo não pode ser emprestado");
     }
 
@@ -145,8 +147,8 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
       errors,
       availableStock,
       itemName: selectedItem.name,
-      categoryType: selectedItem.itemCategory?.type,
-      isActive: selectedItem.active,
+      categoryType: selectedItem.category?.type,
+      isActive: selectedItem.isActive,
     };
   }, [selectedItem, selectedQuantity, borrow.quantity, isReturned]);
 
@@ -295,7 +297,8 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
                     <Input
                       value={value?.toString() || ""}
                       onChangeText={(text) => {
-                        const num = parseInt(text.replace(/[^0-9]/g, ""), 10);
+                        const sanitized = typeof text === 'string' ? text.replace(/[^0-9]/g, "") : "";
+                        const num = parseInt(sanitized, 10);
                         onChange(isNaN(num) ? 1 : num);
                       }}
                       placeholder="1"
@@ -387,9 +390,8 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
                   render={({ field: { onChange, value } }) => (
                     <View>
                       <DateTimePicker
-                        value={value}
-                        onChange={onChange}
-                        mode="date"
+                        value={value || undefined}
+                        onChange={(date) => onChange(date || null)}
                         disabled={isSubmitting}
                         maximumDate={new Date()}
                         minimumDate={new Date(borrow.createdAt)}
@@ -439,7 +441,7 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
 
         <Button
           variant="default"
-          onPress={form.handleSubmit(handleSubmit)}
+          onPress={form.handleSubmit(handleSubmit as any)}
           disabled={!form.formState.isValid || isSubmitting || !stockValidation.isValid || !returnDateValidation.isValid}
           style={styles.actionButton}
         >

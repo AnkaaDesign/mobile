@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { TRUCK_SPOT, TASK_STATUS, SECTOR_PRIVILEGES } from '@/constants';
 import { batchUpdateSpots } from '@/api-client/truck';
+import { isTeamLeader } from '@/utils/user';
 import type { GarageTruck } from '@/components/production/garage/garage-view';
 
 export default function GaragesScreen() {
@@ -18,8 +19,9 @@ export default function GaragesScreen() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Check privileges - only ADMIN, LOGISTIC, or team leaders can edit positions
-  const { isAdmin, isTeamLeader, canAccess } = usePrivileges();
-  const canEditGaragePositions = isAdmin || isTeamLeader || canAccess([SECTOR_PRIVILEGES.LOGISTIC]);
+  const { isAdmin, user, canAccess } = usePrivileges();
+  const userIsTeamLeader = isTeamLeader(user);
+  const canEditGaragePositions = isAdmin || userIsTeamLeader || canAccess([SECTOR_PRIVILEGES.LOGISTIC]);
 
   // Fetch tasks with trucks AND their layouts for dimensions
   const { data: tasksResponse, isLoading, error, refetch } = useTasks({
@@ -51,7 +53,7 @@ export default function GaragesScreen() {
     return tasksResponse.data
       .filter((task) => {
         if (!task.truck) return false;
-        return task.status === TASK_STATUS.IN_PRODUCTION || task.status === TASK_STATUS.PENDING;
+        return task.status === TASK_STATUS.IN_PRODUCTION || task.status === TASK_STATUS.WAITING_PRODUCTION;
       })
       .map((task): GarageTruck => {
         const truck = task.truck as any;

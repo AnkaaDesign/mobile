@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from '@/constants/enum-labels';
-import { PAINT_FINISH } from '@/constants/enums';
+import { PAINT_FINISH, TRUCK_MANUFACTURER } from '@/constants/enums';
 import { IconBrush, IconAlertCircle } from "@tabler/icons-react-native";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
 
@@ -42,7 +42,7 @@ export const TaskGeneralPaintCard: React.FC<TaskGeneralPaintCardProps> = ({
 }) => {
   const { colors, isDark } = useTheme();
   const badgeStyle = isDark ? BADGE_COLORS.dark : BADGE_COLORS.light;
-  const manufacturerLabel = paint.manufacturer ? TRUCK_MANUFACTURER_LABELS[paint.manufacturer] || paint.manufacturer : null;
+  const manufacturerLabel = paint.manufacturer ? TRUCK_MANUFACTURER_LABELS[paint.manufacturer as TRUCK_MANUFACTURER] || paint.manufacturer : null;
 
   return (
     <Card style={styles.card}>

@@ -37,30 +37,58 @@ function transformImageUrl(url: string): string {
   if (url.startsWith('data:')) return url;
 
   try {
-    // Parse the URL
-    const urlObj = new URL(url);
     const apiBaseUrl = getApiBaseUrl();
 
-    // Transform localhost URLs to use the API base URL
-    // This handles the case where API returns localhost URLs but mobile needs IP-based URLs
-    if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
-      const apiUrlObj = new URL(apiBaseUrl);
-      // Keep the path but use the mobile's API host
-      urlObj.protocol = apiUrlObj.protocol;
-      urlObj.hostname = apiUrlObj.hostname;
-      urlObj.port = apiUrlObj.port;
+    // Simple hostname check without using URL API
+    const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
+
+    if (isLocalhost) {
+      // Extract the path from the URL
+      const pathStart = url.indexOf('/', url.indexOf('://') + 3);
+      const path = pathStart !== -1 ? url.substring(pathStart) : '/';
+
+      // Encode path segments individually (preserving slashes)
+      const encodedPath = path
+        .split('/')
+        .map((segment: string) => encodeURIComponent(segment))
+        .join('/');
+
+      // Reconstruct the URL with API base URL
+      return `${apiBaseUrl}${encodedPath}`;
     }
 
-    // Encode path segments individually (preserving slashes)
-    const encodedPath = urlObj.pathname
+    // For non-localhost URLs, just encode the path
+    const urlParts = url.split('?');
+    const baseUrl = urlParts[0];
+    const queryString = urlParts[1] ? `?${urlParts[1]}` : '';
+
+    // Extract protocol, host, and path
+    const protocolEnd = baseUrl.indexOf('://');
+    if (protocolEnd === -1) {
+      // Relative URL
+      return encodeURI(url);
+    }
+
+    const protocol = baseUrl.substring(0, protocolEnd + 3);
+    const rest = baseUrl.substring(protocolEnd + 3);
+    const pathStart = rest.indexOf('/');
+
+    if (pathStart === -1) {
+      return url; // No path, return as-is
+    }
+
+    const host = rest.substring(0, pathStart);
+    const path = rest.substring(pathStart);
+
+    // Encode path segments
+    const encodedPath = path
       .split('/')
       .map(segment => encodeURIComponent(segment))
       .join('/');
 
-    // Reconstruct the URL
-    return `${urlObj.origin}${encodedPath}${urlObj.search}`;
+    return `${protocol}${host}${encodedPath}${queryString}`;
   } catch {
-    // If URL parsing fails, try basic encoding
+    // If parsing fails, try basic encoding
     return encodeURI(url);
   }
 }

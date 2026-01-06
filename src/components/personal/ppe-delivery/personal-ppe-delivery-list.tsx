@@ -224,7 +224,7 @@ export function PersonalPpeDeliveryList({ className }: PersonalPpeDeliveryListPr
       <PersonalPpeDeliveryFilterModal
         visible={isFilterModalVisible}
         filters={filters}
-        onApplyFilters={(newFilters) => {
+        onApplyFilters={(newFilters: any) => {
           setFilters(newFilters);
           setIsFilterModalVisible(false);
         }}

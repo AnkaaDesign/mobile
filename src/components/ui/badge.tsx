@@ -9,8 +9,8 @@ export interface BadgeProps {
   children?: React.ReactNode;
   variant?: BadgeVariant;
   size?: "default" | "sm" | "md" | "lg";
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: ViewStyle | ViewStyle[];
+  textStyle?: TextStyle | TextStyle[];
   className?: string;
 }
 

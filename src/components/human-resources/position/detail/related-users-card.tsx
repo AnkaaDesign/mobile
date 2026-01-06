@@ -167,19 +167,10 @@ export function RelatedUsersCard({ position, maxHeight = 500 }: RelatedUsersCard
           ) : (
             <View style={[styles.tableContainer, { maxHeight }]}>
               <UserTable
-                users={filteredUsers}
+                users={filteredUsers as any}
                 onUserPress={handleUserPress}
-                enableSwipeActions={false}
-                visibleColumnKeys={visibleColumnKeys}
                 onEndReached={() => canLoadMore && loadMore()}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={
-                  isFetchingNextPage ? (
-                    <View style={styles.footerLoader}>
-                      <ActivityIndicator size="small" color={colors.primary} />
-                    </View>
-                  ) : null
-                }
+                loadingMore={isFetchingNextPage}
               />
             </View>
           )}

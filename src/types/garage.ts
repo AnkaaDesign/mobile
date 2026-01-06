@@ -1,10 +1,13 @@
 // packages/interfaces/src/garage.ts
 //
-// NOTE: Garages are now static configuration - not database entities
+// NOTE: This file contains BOTH:
+// 1. Static garage configuration (Garage, Lane) - used for visualization
+// 2. Database entities (GarageLane, ParkingSpot) - if they exist in the database
 // Trucks have a `spot` field (TRUCK_SPOT enum) that indicates
 // their location in the static garage structure.
 
 import { TRUCK_SPOT } from '@/constants';
+import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
 
 // =====================
 // Static Configuration
@@ -32,26 +35,31 @@ export type GarageId = 'B1' | 'B2' | 'B3';
 export type LaneId = 'A' | 'B' | 'C';
 export type SpotNumber = 1 | 2 | 3;
 
-export interface Lane {
+// Static configuration types (for visualization)
+export interface StaticLane {
   id: LaneId;
   xPosition: number;
   width: number;
   length: number;
 }
 
-export interface Garage {
+export interface StaticGarage {
   id: GarageId;
   name: string;
   width: number;
   length: number;
-  lanes: Lane[];
+  lanes: StaticLane[];
 }
+
+// Backward compatibility aliases
+export type Lane = StaticLane;
+export type Garage = GarageEntity; // Main database entity (defined below)
 
 // =====================
 // Static Garage Data
 // =====================
 
-export const LANES: Lane[] = [
+export const LANES: StaticLane[] = [
   {
     id: 'A',
     xPosition: GARAGE_CONFIG.LANE_SPACING,
@@ -74,7 +82,7 @@ export const LANES: Lane[] = [
   },
 ];
 
-export const GARAGES: Garage[] = [
+export const GARAGES: StaticGarage[] = [
   {
     id: 'B1',
     name: 'Barracão 1',
@@ -145,14 +153,14 @@ export function buildSpot(
 /**
  * Get a garage by ID
  */
-export function getGarage(garageId: GarageId): Garage | undefined {
+export function getGarage(garageId: GarageId): StaticGarage | undefined {
   return GARAGES.find((g) => g.id === garageId);
 }
 
 /**
  * Get a lane by ID
  */
-export function getLane(laneId: LaneId): Lane | undefined {
+export function getLane(laneId: LaneId): StaticLane | undefined {
   return LANES.find((l) => l.id === laneId);
 }
 
@@ -221,3 +229,107 @@ export function getSpotLabel(spot: TRUCK_SPOT | null): string {
   if (!spot) return 'Sem vaga';
   return SPOT_LABELS[spot] || spot;
 }
+
+// =====================
+// Database Entity Interfaces
+// =====================
+
+/**
+ * Database entity for Garage (if database-backed implementation exists)
+ * This is separate from the static Garage configuration above
+ */
+export interface GarageEntity extends BaseEntity {
+  name: string;
+  width: number;
+  length: number;
+  description?: string | null;
+  location?: string | null;
+  metadata?: Record<string, any> | null;
+
+  // Relations
+  lanes?: GarageLane[];
+  trucks?: any[]; // Truck type from truck.ts
+}
+
+/**
+ * Database entity for GarageLane
+ */
+export interface GarageLane extends BaseEntity {
+  garageId: string;
+  name?: string | null;
+  width: number;
+  length: number;
+  xPosition: number;
+  yPosition: number;
+  metadata?: Record<string, any> | null;
+
+  // Relations
+  garage?: GarageEntity;
+  parkingSpots?: ParkingSpot[];
+}
+
+/**
+ * Database entity for ParkingSpot
+ */
+export interface ParkingSpot extends BaseEntity {
+  garageLaneId: string;
+  name: string;
+  length: number;
+
+  // Relations
+  garageLane?: GarageLane;
+}
+
+// =====================
+// Response Types - Garage
+// =====================
+
+export type GarageGetUniqueResponse = BaseGetUniqueResponse<GarageEntity>;
+export type GarageGetManyResponse = BaseGetManyResponse<GarageEntity>;
+export type GarageCreateResponse = BaseCreateResponse<GarageEntity>;
+export type GarageUpdateResponse = BaseUpdateResponse<GarageEntity>;
+export type GarageDeleteResponse = BaseDeleteResponse;
+
+// =====================
+// Batch Response Types - Garage
+// =====================
+
+export type GarageBatchCreateResponse<T = any> = BaseBatchResponse<GarageEntity, T>;
+export type GarageBatchUpdateResponse<T = any> = BaseBatchResponse<GarageEntity, T & { id: string }>;
+export type GarageBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
+
+// =====================
+// Response Types - GarageLane
+// =====================
+
+export type GarageLaneGetUniqueResponse = BaseGetUniqueResponse<GarageLane>;
+export type GarageLaneGetManyResponse = BaseGetManyResponse<GarageLane>;
+export type GarageLaneCreateResponse = BaseCreateResponse<GarageLane>;
+export type GarageLaneUpdateResponse = BaseUpdateResponse<GarageLane>;
+export type GarageLaneDeleteResponse = BaseDeleteResponse;
+
+// =====================
+// Batch Response Types - GarageLane
+// =====================
+
+export type GarageLaneBatchCreateResponse<T = any> = BaseBatchResponse<GarageLane, T>;
+export type GarageLaneBatchUpdateResponse<T = any> = BaseBatchResponse<GarageLane, T & { id: string }>;
+export type GarageLaneBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
+
+// =====================
+// Response Types - ParkingSpot
+// =====================
+
+export type ParkingSpotGetUniqueResponse = BaseGetUniqueResponse<ParkingSpot>;
+export type ParkingSpotGetManyResponse = BaseGetManyResponse<ParkingSpot>;
+export type ParkingSpotCreateResponse = BaseCreateResponse<ParkingSpot>;
+export type ParkingSpotUpdateResponse = BaseUpdateResponse<ParkingSpot>;
+export type ParkingSpotDeleteResponse = BaseDeleteResponse;
+
+// =====================
+// Batch Response Types - ParkingSpot
+// =====================
+
+export type ParkingSpotBatchCreateResponse<T = any> = BaseBatchResponse<ParkingSpot, T>;
+export type ParkingSpotBatchUpdateResponse<T = any> = BaseBatchResponse<ParkingSpot, T & { id: string }>;
+export type ParkingSpotBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;

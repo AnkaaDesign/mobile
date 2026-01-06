@@ -109,7 +109,7 @@ function convertNavigationPathToFilePath(navPath: string): string {
     'producao': 'production',
     'aerografia': 'airbrushing',
     'cronograma': 'schedule',
-    'em-espera': 'on-hold',
+    'agenda': 'agenda',
     'historico': 'history',
     'observacoes': 'observations',
     'recorte': 'cutting',

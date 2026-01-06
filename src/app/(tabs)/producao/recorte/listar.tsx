@@ -236,6 +236,10 @@ export default function CuttingListScreen() {
         columns: columnsWithFileCellPress,
         actions: actionsWithCustom,
       },
+      filters: cutsListConfig.filters ? {
+        ...cutsListConfig.filters,
+        fields: filteredFields,
+      } : undefined,
     };
   }, [user, handleCutRequest, handleStartCut, handleCompleteCut, handleFileCellPress]);
 

@@ -174,7 +174,7 @@ export function useList<T extends { id: string }>(
       selectedIds: selection.selectedIds,
       onToggle: selection.onToggle,
       onToggleAll: () => {
-        const allIds = (query.items || []).map((item) => item.id)
+        const allIds = (query.items || []).map((item: any) => item.id)
         selection.onToggleAll(allIds)
       },
       onClear: selection.onClear,

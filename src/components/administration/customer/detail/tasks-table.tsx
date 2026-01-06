@@ -8,7 +8,7 @@ import { ListActionButton } from "@/components/ui/list-action-button";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconClipboardList, IconAlertCircle, IconList } from "@tabler/icons-react-native";
-import type { Customer } from '../../../../types';
+import type { Customer, Task } from '../../../../types';
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
@@ -65,11 +65,11 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
   });
 
   // Filter tasks based on search (client-side for already loaded items)
-  const filteredTasks = useMemo(() => {
-    if (!debouncedSearch) return tasks;
+  const filteredTasks = useMemo((): Task[] => {
+    if (!debouncedSearch) return tasks as Task[];
 
     const lowerSearch = debouncedSearch.toLowerCase();
-    return tasks.filter((task: any) => {
+    return (tasks as Task[]).filter((task) => {
       return (
         task.name?.toLowerCase().includes(lowerSearch) ||
         task.serialNumber?.toLowerCase().includes(lowerSearch) ||

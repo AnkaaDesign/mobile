@@ -99,7 +99,7 @@ export function FormulaManager({ formulas, onFormulasChange, paintId, availableI
           <Input
             placeholder="Ex: Fórmula Principal, Variação Clara, etc."
             value={form.watch("description")}
-            onChangeText={(value) => form.setValue("description", value)}
+            onChangeText={(value) => form.setValue("description", value || "")}
             style={form.formState.errors.description ? { borderColor: colors.destructive } : undefined}
             onFocus={() => keyboardContext?.onFieldFocus('formulaDescription')}
           />

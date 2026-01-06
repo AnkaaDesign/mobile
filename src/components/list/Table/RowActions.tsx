@@ -11,7 +11,7 @@ import type { TableAction } from '../types'
 
 interface RowActionsProps<T extends { id: string }> {
   item: T
-  actions: TableAction<T>[]
+  actions: Array<TableAction<T>>
   children: (closeActions: () => void) => React.ReactNode
 }
 
@@ -25,7 +25,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
   const { user } = useAuth()
   const swipeableRef = useRef<Swipeable>(null)
   const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow()
-  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Filter visible actions, excluding 'view' since it's handled by row click
   // Pass user to visible function for permission checks

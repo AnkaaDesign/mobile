@@ -278,7 +278,7 @@ export function PerformanceLevelFilterDrawerContent({
                 placeholder="Mín"
                 value={localFilters.performanceLevelRange?.min?.toString() || ""}
                 onChangeText={(value) => {
-                  const numValue = value ? parseInt(value, 10) : undefined;
+                  const numValue = value ? parseInt(String(value), 10) : undefined;
                   const clampedValue = numValue !== undefined ? Math.max(0, Math.min(5, numValue)) : undefined;
                   setLocalFilters((prev) => ({
                     ...prev,
@@ -300,7 +300,7 @@ export function PerformanceLevelFilterDrawerContent({
                 placeholder="Máx"
                 value={localFilters.performanceLevelRange?.max?.toString() || ""}
                 onChangeText={(value) => {
-                  const numValue = value ? parseInt(value, 10) : undefined;
+                  const numValue = value ? parseInt(String(value), 10) : undefined;
                   const clampedValue = numValue !== undefined ? Math.max(0, Math.min(5, numValue)) : undefined;
                   setLocalFilters((prev) => ({
                     ...prev,

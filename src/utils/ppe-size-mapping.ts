@@ -67,7 +67,7 @@ export function groupItemsByPpeSize(items: Item[]): Record<string, Item[]> {
 export function createPpeSizeMeasure(size: string): Omit<Measure, 'id' | 'itemId' | 'createdAt' | 'updatedAt'> {
   return {
     measureType: MEASURE_TYPE.SIZE,
-    unit: size, // Size is stored in the unit field
+    unit: size as MEASURE_UNIT | null, // Size is stored in the unit field
     value: null, // No numeric value for SIZE measures
   };
 }

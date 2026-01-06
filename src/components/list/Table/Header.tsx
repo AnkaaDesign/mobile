@@ -56,8 +56,8 @@ export const Header = memo(function Header<T>({
           {selection?.enabled && (
             <View style={styles.checkboxCell}>
               <Checkbox
-                checked={allSelected}
-                indeterminate={someSelected}
+                checked={allSelected || false}
+                indeterminate={someSelected || false}
                 onCheckedChange={selection.onToggleAll}
               />
             </View>

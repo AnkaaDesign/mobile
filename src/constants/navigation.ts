@@ -24,6 +24,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
     path: "/",
   },
 
+  // NOTIFICACOES - Centro de Notificacoes (accessible to all users)
+  {
+    id: "notifications",
+    title: "Notificacoes",
+    icon: "bell",
+    path: "/notifications",
+  },
+
   // ADMINISTRACAO
   {
     id: "administracao",
@@ -432,7 +440,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "cronograma-cadastrar", title: "Nova Tarefa", icon: "plus", path: "/producao/cronograma/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
         ],
       },
-      { id: "cronograma-em-espera", title: "Em Espera", icon: "pause", path: "/producao/cronograma/em-espera", requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] },
+      { id: "cronograma-agenda", title: "Agenda", icon: "clipboard-list", path: "/producao/agenda", requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN] },
       { id: "garagens", title: "Barracões", icon: "warehouse", path: "/producao/garagens", requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN] },
       { id: "historico", title: "Historico", icon: "history", path: "/producao/historico" },
       {
@@ -679,12 +687,12 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC],
   },
 
-  // Em Espera - Direct access for DESIGNER, FINANCIAL, LOGISTIC
+  // Agenda - Direct access for DESIGNER, FINANCIAL, LOGISTIC
   {
-    id: "em-espera-direct",
-    title: "Em Espera",
-    icon: "pause",
-    path: "/producao/cronograma/em-espera",
+    id: "agenda-direct",
+    title: "Agenda",
+    icon: "clipboard-list",
+    path: "/producao/agenda",
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC],
   },
 

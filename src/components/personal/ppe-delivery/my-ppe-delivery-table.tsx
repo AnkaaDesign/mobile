@@ -54,9 +54,9 @@ export const createColumnDefinitions = (): TableColumn[] => [
         <ThemedText style={styles.cellText} numberOfLines={1}>
           {delivery.item?.name || "-"}
         </ThemedText>
-        {delivery.item?.ppeSize && (
+        {delivery.size && (
           <ThemedText style={styles.mutedText} numberOfLines={1}>
-            Tam: {delivery.item.ppeSize}
+            Tam: {delivery.size}
           </ThemedText>
         )}
       </View>
@@ -120,7 +120,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
           case "DELIVERED":
             return { bg: badgeColors.success.background, text: badgeColors.success.text };
           case "REPROVED":
-            return { bg: badgeColors.danger.background, text: badgeColors.danger.text };
+            return { bg: badgeColors.error.background, text: badgeColors.error.text };
           case "CANCELLED":
             return { bg: badgeColors.muted.background, text: badgeColors.muted.text };
           default:
@@ -162,7 +162,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (delivery: PpeDelivery) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {delivery.item?.expirationDate ? formatDate(new Date(delivery.item.expirationDate)) : "-"}
+        {delivery.expirationDate ? formatDate(new Date(delivery.expirationDate)) : "-"}
       </ThemedText>
     ),
   },
@@ -183,7 +183,6 @@ export const MyPpeDeliveryTable = React.memo<MyPpeDeliveryTableProps>(
     visibleColumnKeys = ["itemName", "quantity", "deliveryDate", "status"],
   }) => {
     const { colors } = useTheme();
-    const { activeRow } = useSwipeRow();
 
     const allColumns = useMemo(() => createColumnDefinitions(), []);
 
@@ -253,7 +252,7 @@ export const MyPpeDeliveryTable = React.memo<MyPpeDeliveryTableProps>(
         <View style={styles.sortIconContainer}>
           {sortState === "asc" && <Icon name="chevron-up" size={14} color={colors.primary} />}
           {sortState === "desc" && <Icon name="chevron-down" size={14} color={colors.primary} />}
-          {!sortState && <Icon name="chevron-up" size={14} color={colors.mutedForeground} style={{ opacity: 0.3 }} />}
+          {!sortState && <Icon name="chevron-up" size={14} color={colors.mutedForeground} opacity={0.3} />}
         </View>
       );
     };

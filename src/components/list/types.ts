@@ -236,6 +236,10 @@ export interface BulkActionsProps {
 // Layout Types
 // ============================================================================
 
+export interface FilterSection {
+  fields: FilterField[]
+}
+
 export interface LayoutProps {
   children: ReactNode
   header?: ReactNode

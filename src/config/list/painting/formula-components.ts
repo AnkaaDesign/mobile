@@ -148,9 +148,9 @@ export function createFormulaComponentsListConfig(
           queryKey: ['brands', 'filter'],
           queryFn: async (searchTerm: string, page: number = 1) => {
             try {
-              const { getBrands } = await import('@/api-client')
+              const { getItemBrands } = await import('@/api-client')
               const pageSize = 20
-              const response = await getBrands({
+              const response = await getItemBrands({
                 where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
                 orderBy: { name: 'asc' },
                 limit: pageSize,
@@ -180,9 +180,9 @@ export function createFormulaComponentsListConfig(
           queryKey: ['categories', 'filter'],
           queryFn: async (searchTerm: string, page: number = 1) => {
             try {
-              const { getCategories } = await import('@/api-client')
+              const { getItemCategories } = await import('@/api-client')
               const pageSize = 20
-              const response = await getCategories({
+              const response = await getItemCategories({
                 where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
                 orderBy: { name: 'asc' },
                 limit: pageSize,

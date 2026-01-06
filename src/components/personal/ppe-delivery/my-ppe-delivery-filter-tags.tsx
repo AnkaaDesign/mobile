@@ -69,20 +69,20 @@ export function MyPpeDeliveryFilterTags({ filters, searchText, onFilterChange, o
         )}
 
         {/* Status tags */}
-        {filters.status?.map((status) => (
+        {filters.status?.map((status: string) => (
           <Pressable key={status} onPress={() => handleRemoveStatus(status)}>
             <Badge variant="secondary" style={styles.tag}>
-              <ThemedText style={styles.tagText}>{PPE_DELIVERY_STATUS_LABELS[status] || status}</ThemedText>
+              <ThemedText style={styles.tagText}>{PPE_DELIVERY_STATUS_LABELS[status as keyof typeof PPE_DELIVERY_STATUS_LABELS] || status}</ThemedText>
               <Icon name="x" size={14} color={colors.mutedForeground} />
             </Badge>
           </Pressable>
         ))}
 
         {/* PPE Type tags */}
-        {filters.ppeTypes?.map((ppeType) => (
+        {filters.ppeTypes?.map((ppeType: string) => (
           <Pressable key={ppeType} onPress={() => handleRemovePpeType(ppeType)}>
             <Badge variant="secondary" style={styles.tag}>
-              <ThemedText style={styles.tagText}>{PPE_TYPE_LABELS[ppeType] || ppeType}</ThemedText>
+              <ThemedText style={styles.tagText}>{PPE_TYPE_LABELS[ppeType as keyof typeof PPE_TYPE_LABELS] || ppeType}</ThemedText>
               <Icon name="x" size={14} color={colors.mutedForeground} />
             </Badge>
           </Pressable>

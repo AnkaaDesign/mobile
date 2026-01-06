@@ -90,7 +90,7 @@ export function LogFilterTags({ filters, searchText, onFilterChange, onSearchCha
 
     // Level filters
     if (filters.levels && filters.levels.length > 0) {
-      filters.levels.forEach((level) => {
+      filters.levels.forEach((level: string) => {
         tags.push(
           <Badge key={`level-${level}`} style={{ ...styles.filterTag, backgroundColor: LOG_LEVEL_COLORS[level] }}>
             <View style={styles.tagContent}>
@@ -107,7 +107,7 @@ export function LogFilterTags({ filters, searchText, onFilterChange, onSearchCha
 
     // Source filters
     if (filters.sources && filters.sources.length > 0) {
-      filters.sources.forEach((source) => {
+      filters.sources.forEach((source: string) => {
         tags.push(
           <Badge key={`source-${source}`} variant="secondary" style={{ ...styles.filterTag, backgroundColor: colors.primary }}>
             <View style={styles.tagContent}>

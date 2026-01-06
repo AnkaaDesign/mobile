@@ -4,6 +4,7 @@
  * Matches web implementation patterns while adapting for React Native
  */
 
+// @ts-ignore - expo-constants may not have types in this environment
 import Constants from 'expo-constants';
 import type { File as AnkaaFile } from '../types';
 

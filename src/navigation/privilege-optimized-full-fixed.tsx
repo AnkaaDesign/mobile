@@ -29,6 +29,8 @@ const ALL_ROUTES = [
   { name: "perfil", title: "Meu Perfil" },
   { name: "perfil/index", title: "Meu Perfil" },
   { name: "configuracoes", title: "Configurações" },
+  { name: "notifications", title: "Notificações" },
+  { name: "notifications/index", title: "Notificações" },
 
   // Catalogo - View-only for Leaders (separate from Pintura module)
   { name: "catalogo", title: "Catálogo" },
@@ -152,7 +154,7 @@ const ALL_ROUTES = [
   { name: "producao/index", title: "Produção" },
   { name: "producao/cronograma/index", title: "Cronograma" },
   { name: "producao/cronograma/cadastrar", title: "Cadastrar Cronograma" },
-  { name: "producao/cronograma/em-espera", title: "Cronograma Em Espera" },
+  { name: "producao/agenda", title: "Agenda" },
   { name: "producao/cronograma/listar", title: "Cronograma" },
   { name: "producao/cronograma/operacoes-em-lote", title: "Operações em Lote" },
   { name: "producao/cronograma/detalhes/[id]", title: "Detalhes do Cronograma" },
@@ -423,7 +425,7 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     const path = route.name;
 
     // Core routes always accessible
-    if (['inicio', 'perfil', 'perfil/index', 'configuracoes'].includes(path)) {
+    if (['inicio', 'perfil', 'perfil/index', 'configuracoes', 'notifications', 'notifications/index'].includes(path)) {
       return true;
     }
 
@@ -444,8 +446,8 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
       return true;
     }
     if (userPrivileges.includes(SECTOR_PRIVILEGES.PRODUCTION) && path.startsWith('producao/')) {
-      // Production sector has limited access - exclude aerografia, em espera, and garagens
-      const restrictedPaths = ['producao/aerografia/', 'producao/cronograma/em-espera', 'producao/garagens/'];
+      // Production sector has limited access - exclude aerografia and garagens
+      const restrictedPaths = ['producao/aerografia/', 'producao/garagens/'];
       const isRestricted = restrictedPaths.some(restricted => path.startsWith(restricted) || path === restricted);
       if (!isRestricted) {
         return true;
@@ -561,6 +563,7 @@ export function PrivilegeOptimizedFullLayout() {
 
         return {
           headerTitle: title, // Use the proper title, not the route name
+          headerTitleAlign: 'center', // Center title on both iOS and Android
           headerTitleStyle: {
             color: headerText,
             fontSize: 18,

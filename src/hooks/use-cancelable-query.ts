@@ -69,10 +69,10 @@ export function useCancelableQuery({
   }, []);
 
   // Cleanup function for aborting requests
-  const cleanupRequest = useCallback((requestInfo: QueryRequestInfo, reason: string) => {
+  const cleanupRequest = useCallback((requestInfo: QueryRequestInfo, _reason?: string) => {
     try {
       if (!requestInfo.abortController.signal.aborted) {
-        requestInfo.abortController.abort(reason);
+        requestInfo.abortController.abort();
       }
       activeRequestsRef.current.delete(requestInfo.requestId);
     } catch (error) {
@@ -234,27 +234,21 @@ export function useQueryWithCancellation<TData = unknown, TError = unknown>(
 
         // Abort combined when either signal aborts
         if (context.signal) {
-          context.signal.addEventListener(
-            "abort",
-            () => {
-              if (!combinedController.signal.aborted) {
-                combinedController.abort("React Query cancelled");
-              }
-            },
-            { once: true },
-          );
+          const onContextAbort = () => {
+            if (!combinedController.signal.aborted) {
+              combinedController.abort();
+            }
+          };
+          context.signal.addEventListener("abort", onContextAbort, { once: true });
         }
 
         if (requestInfo.abortController.signal) {
-          requestInfo.abortController.signal.addEventListener(
-            "abort",
-            () => {
-              if (!combinedController.signal.aborted) {
-                combinedController.abort("Manual cancellation");
-              }
-            },
-            { once: true },
-          );
+          const onRequestAbort = () => {
+            if (!combinedController.signal.aborted) {
+              combinedController.abort();
+            }
+          };
+          requestInfo.abortController.signal.addEventListener("abort", onRequestAbort, { once: true });
         }
 
         // Execute the original query function with combined signal
@@ -360,27 +354,21 @@ export function useInfiniteQueryWithCancellation<TData = unknown, TError = unkno
         const combinedController = new AbortController();
 
         if (context.signal) {
-          context.signal.addEventListener(
-            "abort",
-            () => {
-              if (!combinedController.signal.aborted) {
-                combinedController.abort("React Query cancelled");
-              }
-            },
-            { once: true },
-          );
+          const onContextAbort = () => {
+            if (!combinedController.signal.aborted) {
+              combinedController.abort();
+            }
+          };
+          context.signal.addEventListener("abort", onContextAbort, { once: true });
         }
 
         if (requestInfo.abortController.signal) {
-          requestInfo.abortController.signal.addEventListener(
-            "abort",
-            () => {
-              if (!combinedController.signal.aborted) {
-                combinedController.abort("Manual cancellation");
-              }
-            },
-            { once: true },
-          );
+          const onRequestAbort = () => {
+            if (!combinedController.signal.aborted) {
+              combinedController.abort();
+            }
+          };
+          requestInfo.abortController.signal.addEventListener("abort", onRequestAbort, { once: true });
         }
 
         const result = await queryFn({
@@ -456,7 +444,7 @@ export function usePrefetchWithCancellation() {
       try {
         await queryClient.prefetchQuery({
           queryKey,
-          queryFn: (context) =>
+          queryFn: (context: any) =>
             queryFn({
               ...context,
               signal: abortController.signal,
@@ -473,7 +461,7 @@ export function usePrefetchWithCancellation() {
   const cancelAllPrefetch = useCallback(() => {
     activeRequestsRef.current.forEach((controller) => {
       if (!controller.signal.aborted) {
-        controller.abort("All prefetch cancelled");
+        controller.abort();
       }
     });
     activeRequestsRef.current.clear();

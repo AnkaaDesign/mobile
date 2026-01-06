@@ -105,7 +105,7 @@ export function PpeDeliveryFilterDrawerContent({
     () =>
       items.map((item) => ({
         value: item.id,
-        label: `${item.name}${item.ppeSize ? ` - ${item.ppeSize}` : ""}`,
+        label: item.name,
       })),
     [items]
   );

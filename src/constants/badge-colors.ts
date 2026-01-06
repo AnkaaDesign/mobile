@@ -375,13 +375,11 @@ export const ENTITY_BADGE_CONFIG = {
 
   // Task Status
   TASK: {
-    [TASK_STATUS.PENDING]: "gray" as BadgeVariant,           // Gray - not started yet
-    [TASK_STATUS.IN_PRODUCTION]: "blue" as BadgeVariant,     // Blue - in progress
-    [TASK_STATUS.ON_HOLD]: "orange" as BadgeVariant,         // Orange - paused
-    [TASK_STATUS.COMPLETED]: "green" as BadgeVariant,        // Green - finished
-    [TASK_STATUS.CANCELLED]: "red" as BadgeVariant,          // Red - cancelled
-    [TASK_STATUS.INVOICED]: "purple" as BadgeVariant,        // Purple - invoiced (financial)
-    [TASK_STATUS.SETTLED]: "teal" as BadgeVariant,           // Teal - settled/finalized
+    [TASK_STATUS.PREPARATION]: "orange" as BadgeVariant,            // Orange - in preparation
+    [TASK_STATUS.WAITING_PRODUCTION]: "gray" as BadgeVariant,       // Gray - waiting for production
+    [TASK_STATUS.IN_PRODUCTION]: "blue" as BadgeVariant,            // Blue - in progress
+    [TASK_STATUS.COMPLETED]: "green" as BadgeVariant,               // Green - finished
+    [TASK_STATUS.CANCELLED]: "red" as BadgeVariant,                 // Red - cancelled
   },
 
   // Maintenance Status

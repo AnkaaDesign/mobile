@@ -17,6 +17,7 @@ import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
+import type { Airbrushing } from "@/types";
 
 interface AirbrushingsTableProps {
   taskId: string;
@@ -65,7 +66,7 @@ export function AirbrushingsTable({ taskId, maxHeight = 400 }: AirbrushingsTable
     },
     orderBy: { createdAt: "desc" },
     enabled: !!taskId,
-  });
+  }) as { items: Airbrushing[]; isLoading: boolean; error: Error | null; loadMore: () => void; canLoadMore: boolean; isFetchingNextPage: boolean; totalCount: number };
 
   // Filter airbrushings based on search (client-side for already loaded items)
   const filteredAirbrushings = useMemo(() => {
@@ -102,7 +103,7 @@ export function AirbrushingsTable({ taskId, maxHeight = 400 }: AirbrushingsTable
   }, []);
 
   const handleAirbrushingPress = (airbrushingId: string) => {
-    router.push(routeToMobilePath(routes.production.airbrushing.details(airbrushingId)) as any);
+    router.push(routeToMobilePath(routes.production.airbrushings.details(airbrushingId)) as any);
   };
 
   // Don't show if no airbrushings and not loading

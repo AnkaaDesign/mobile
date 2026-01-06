@@ -2,14 +2,19 @@ import { FAVORITE_PAGES } from '../constants';
 
 const FAVORITES_KEY = "ankaa_favorite_pages";
 
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+
 export interface FavoritePage {
   page: FAVORITE_PAGES;
   addedAt: string;
 }
 
 export function getFavoritePages(): FavoritePage[] {
+  if (!isBrowser) return [];
+
   try {
-    const storedData = localStorage.getItem(FAVORITES_KEY);
+    const storedData = window.localStorage.getItem(FAVORITES_KEY);
     if (!storedData) return [];
 
     return JSON.parse(storedData) as FavoritePage[];
@@ -25,6 +30,8 @@ export function isFavoritePage(page: FAVORITE_PAGES): boolean {
 }
 
 export function toggleFavoritePage(page: FAVORITE_PAGES): boolean {
+  if (!isBrowser) return false;
+
   try {
     const favorites = getFavoritePages();
     const existingIndex = favorites.findIndex((fav) => fav.page === page);
@@ -32,7 +39,7 @@ export function toggleFavoritePage(page: FAVORITE_PAGES): boolean {
     if (existingIndex >= 0) {
       // Remove from favorites
       favorites.splice(existingIndex, 1);
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+      window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
       return false; // Now not favorited
     } else {
       // Add to favorites
@@ -40,7 +47,7 @@ export function toggleFavoritePage(page: FAVORITE_PAGES): boolean {
         page,
         addedAt: new Date().toISOString(),
       });
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+      window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
       return true; // Now favorited
     }
   } catch (error) {
@@ -50,6 +57,8 @@ export function toggleFavoritePage(page: FAVORITE_PAGES): boolean {
 }
 
 export function addFavoritePage(page: FAVORITE_PAGES): boolean {
+  if (!isBrowser) return false;
+
   try {
     const favorites = getFavoritePages();
     const alreadyExists = favorites.some((fav) => fav.page === page);
@@ -59,7 +68,7 @@ export function addFavoritePage(page: FAVORITE_PAGES): boolean {
         page,
         addedAt: new Date().toISOString(),
       });
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+      window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
     }
 
     return true;
@@ -70,12 +79,14 @@ export function addFavoritePage(page: FAVORITE_PAGES): boolean {
 }
 
 export function removeFavoritePage(page: FAVORITE_PAGES): boolean {
+  if (!isBrowser) return false;
+
   try {
     const favorites = getFavoritePages();
     const filteredFavorites = favorites.filter((fav) => fav.page !== page);
 
     if (filteredFavorites.length !== favorites.length) {
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(filteredFavorites));
+      window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(filteredFavorites));
       return true;
     }
 
@@ -87,8 +98,10 @@ export function removeFavoritePage(page: FAVORITE_PAGES): boolean {
 }
 
 export function clearFavoritePages(): void {
+  if (!isBrowser) return;
+
   try {
-    localStorage.removeItem(FAVORITES_KEY);
+    window.localStorage.removeItem(FAVORITES_KEY);
   } catch (error) {
     console.error("Failed to clear favorite pages:", error);
   }

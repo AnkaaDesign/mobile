@@ -426,7 +426,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
                 name="admissional"
                 render={({ field: { onChange, value } }) => (
                   <DatePicker
-                    value={value}
+                    value={value ?? undefined}
                     onChange={onChange}
                     placeholder="Selecione a data"
                     disabled={isLoading}
@@ -448,7 +448,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
                 name="dismissedAt"
                 render={({ field: { onChange, value } }) => (
                   <DatePicker
-                    value={value}
+                    value={value ?? undefined}
                     onChange={onChange}
                     placeholder="Selecione a data"
                     disabled={isLoading}

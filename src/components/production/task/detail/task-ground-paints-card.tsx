@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconLayers } from "@tabler/icons-react-native";
+import { IconLayersLinked } from "@tabler/icons-react-native";
 import { PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from "@/constants";
 import type { Paint } from "@/types";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
@@ -36,7 +36,7 @@ export function TaskGroundPaintsCard({ groundPaints }: TaskGroundPaintsCardProps
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
-          <IconLayers size={20} color={colors.primary} />
+          <IconLayersLinked size={20} color={colors.primary} />
           <ThemedText style={styles.title}>Fundos Recomendados</ThemedText>
           <Badge variant="secondary" size="sm" style={{ marginLeft: spacing.xs }}>
             {groundPaints.length}

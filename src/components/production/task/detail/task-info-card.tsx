@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 
-import type { Task } from '../../../../types';
+import type { Task, Truck } from '../../../../types';
 import { TaskStatusBadge } from "../list/task-status-badge";
 import { formatChassis } from "@/utils";
 import { getSpotLabel } from "@/types/garage";
@@ -26,16 +26,7 @@ import {
 
 interface TaskInfoCardProps {
   task: Task & {
-    // Note: plate and chassisNumber are accessed via task.truck.plate and task.truck.chassisNumber
-    truck?: {
-      id: string;
-      name?: string;
-      width?: number;
-      height?: number;
-      plate?: string;
-      chassisNumber?: string;
-      spot?: string | null;
-    };
+    truck?: Truck;
     customer?: {
       fantasyName: string;
     };

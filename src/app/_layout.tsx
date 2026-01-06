@@ -20,9 +20,11 @@ import { FavoritesProvider } from "@/contexts/favorites-context";
 import { FileViewerProvider } from "@/components/file";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { PortalHost } from "@rn-primitives/portal";
+import { PushNotificationsProvider } from "@/contexts/push-notifications-context-wrapper";
 import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, LogBox } from "react-native";
 import { AppStatusBar } from "@/components/app-status-bar";
+import { DeepLinkHandler } from "@/components/deep-link-handler";
 // Toast system removed - API client uses native Alert/ToastAndroid via setup-notifications.ts
 import NetInfo from "@react-native-community/netinfo";
 import { updateApiUrl } from '../api-client';
@@ -141,6 +143,7 @@ if (process.env.NODE_ENV === "production") {
 export default function RootLayout() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
+
   // Initialize network state and listen for changes
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -168,7 +171,9 @@ export default function RootLayout() {
         <ThemeProvider>
           <QueryClientProvider client={queryClient}>
             <AuthProvider>
-              <ErrorBoundary>
+              <PushNotificationsProvider>
+                <DeepLinkHandler />
+                <ErrorBoundary>
                 <SidebarProvider>
                   <FavoritesProvider>
                     <FileViewerProvider baseUrl={process.env.EXPO_PUBLIC_API_URL}>
@@ -212,7 +217,8 @@ export default function RootLayout() {
                     </FileViewerProvider>
                   </FavoritesProvider>
                 </SidebarProvider>
-              </ErrorBoundary>
+                </ErrorBoundary>
+              </PushNotificationsProvider>
             </AuthProvider>
           </QueryClientProvider>
         </ThemeProvider>

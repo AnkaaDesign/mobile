@@ -220,7 +220,7 @@ export function transformFormDataForAPI(formData: OrderFormData): OrderCreateFor
     status: ORDER_STATUS.CREATED,
     supplierId: formData.supplierId || undefined,
     notes: formData.notes?.trim() || undefined,
-    budgetId: formData.budgetId || undefined,
+    budgetIds: formData.budgetId ? [formData.budgetId] : undefined,
     nfeId: formData.nfeId || undefined,
     receiptId: formData.receiptId || undefined,
     items,

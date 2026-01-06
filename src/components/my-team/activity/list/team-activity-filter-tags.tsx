@@ -5,7 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from '@/constants';
+import { ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS, ACTIVITY_OPERATION, ACTIVITY_REASON } from '@/constants';
 
 interface TeamActivityFilterTagsProps {
   filters: {
@@ -52,12 +52,12 @@ export function TeamActivityFilterTags({
 
     // Operations
     if (filters.operations && filters.operations.length > 0) {
-      filters.operations.forEach((operation) => {
+      filters.operations.forEach((operation: string) => {
         tags.push({
           key: `operation-${operation}`,
-          label: `Operação: ${ACTIVITY_OPERATION_LABELS[operation] || operation}`,
+          label: `Operação: ${ACTIVITY_OPERATION_LABELS[operation as ACTIVITY_OPERATION] || operation}`,
           onRemove: () => {
-            const newOperations = filters.operations!.filter((op) => op !== operation);
+            const newOperations = filters.operations!.filter((op: string) => op !== operation);
             onFilterChange({
               ...filters,
               operations: newOperations.length > 0 ? newOperations : undefined,
@@ -69,12 +69,12 @@ export function TeamActivityFilterTags({
 
     // Reasons
     if (filters.reasons && filters.reasons.length > 0) {
-      filters.reasons.forEach((reason) => {
+      filters.reasons.forEach((reason: string) => {
         tags.push({
           key: `reason-${reason}`,
-          label: `Motivo: ${ACTIVITY_REASON_LABELS[reason] || reason}`,
+          label: `Motivo: ${ACTIVITY_REASON_LABELS[reason as ACTIVITY_REASON] || reason}`,
           onRemove: () => {
-            const newReasons = filters.reasons!.filter((r) => r !== reason);
+            const newReasons = filters.reasons!.filter((r: string) => r !== reason);
             onFilterChange({
               ...filters,
               reasons: newReasons.length > 0 ? newReasons : undefined,

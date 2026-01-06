@@ -565,9 +565,9 @@ export const routes = {
       list: "/producao/cronograma",
       root: "/producao/cronograma",
     },
-    scheduleOnHold: {
-      root: "/producao/cronograma/em-espera",
-      details: (id: string) => `/producao/cronograma/em-espera/detalhes/${id}`,
+    agenda: {
+      root: "/producao/agenda",
+      details: (id: string) => `/producao/cronograma/detalhes/${id}`,
     },
     serviceOrders: {
       create: "/producao/ordens-de-servico/cadastrar",

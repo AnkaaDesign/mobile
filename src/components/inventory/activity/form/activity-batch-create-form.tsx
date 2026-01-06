@@ -67,7 +67,7 @@ interface ActivityBatchCreateFormProps {
     orderId?: string | null;
     orderItemId?: string | null;
     items: Array<{ itemId: string; quantity: number }>;
-  }) => Promise<BatchOperationResult<ActivityBatchResult, ActivityBatchResult> | void>;
+  }) => Promise<BatchOperationResult<any, any> | void>;
   onCancel: () => void;
   isSubmitting?: boolean;
 }
@@ -417,7 +417,6 @@ export function ActivityBatchCreateForm({
                 onBrandIdsChange={multiStepForm.setBrandIds}
                 onSupplierIdsChange={multiStepForm.setSupplierIds}
                 allowZeroStock={true}
-                emptyText="Nenhum item encontrado"
               />
               {/* Validation Errors */}
               {multiStepForm.formTouched && Object.keys(multiStepForm.validation.errors).length > 0 && (
@@ -458,7 +457,7 @@ export function ActivityBatchCreateForm({
                         </Label>
                         <Combobox
                           value={value}
-                          onValueChange={(val) => handleFormChange("operation", val || ACTIVITY_OPERATION.INBOUND)}
+                          onValueChange={(val) => handleFormChange("operation", (Array.isArray(val) ? val[0] : val) || ACTIVITY_OPERATION.INBOUND)}
                           options={OPERATION_OPTIONS}
                           placeholder="Selecione a operação"
                           searchable={false}
@@ -483,7 +482,7 @@ export function ActivityBatchCreateForm({
                         </Label>
                         <Combobox
                           value={value || ""}
-                          onValueChange={(val) => handleFormChange("userId", val || null)}
+                          onValueChange={(val) => handleFormChange("userId", (Array.isArray(val) ? val[0] : val) || null)}
                           options={userOptions}
                           placeholder="Selecione um usuário (opcional)"
                           searchPlaceholder="Buscar usuário..."
@@ -510,7 +509,7 @@ export function ActivityBatchCreateForm({
                         </Label>
                         <Combobox
                           value={value || ""}
-                          onValueChange={(val) => handleFormChange("reason", val || null)}
+                          onValueChange={(val) => handleFormChange("reason", (Array.isArray(val) ? val[0] : val) || null)}
                           options={REASON_OPTIONS}
                           placeholder="Selecione um motivo"
                           searchPlaceholder="Buscar motivo..."
@@ -537,7 +536,7 @@ export function ActivityBatchCreateForm({
                           </Label>
                           <Combobox
                             value={value || ""}
-                            onValueChange={(val) => handleFormChange("orderId", val || null)}
+                            onValueChange={(val) => handleFormChange("orderId", (Array.isArray(val) ? val[0] : val) || null)}
                             options={orderOptions}
                             placeholder="Selecione um pedido"
                             searchPlaceholder="Buscar pedido..."
@@ -569,7 +568,7 @@ export function ActivityBatchCreateForm({
                           <Label style={styles.fieldLabel}>Item do Pedido</Label>
                           <Combobox
                             value={value || ""}
-                            onValueChange={(val) => handleFormChange("orderItemId", val || null)}
+                            onValueChange={(val) => handleFormChange("orderItemId", (Array.isArray(val) ? val[0] : val) || null)}
                             options={orderItemOptions}
                             placeholder="Selecione um item do pedido"
                             emptyText="Nenhum item encontrado no pedido"

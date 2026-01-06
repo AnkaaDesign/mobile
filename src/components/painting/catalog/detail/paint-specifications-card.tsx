@@ -102,7 +102,7 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
-          <Icon name="info" size={20} style={{ color: colors.mutedForeground }} />
+          <Icon name="info" size={20} color={colors.mutedForeground} />
           <Text style={styles.title}>Especificações</Text>
         </View>
       </View>
@@ -144,7 +144,7 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
                   <TouchableOpacity
                     onPress={() => copyToClipboard(paint.hex.toUpperCase(), 'HEX')}
                   >
-                    <Icon name="copy" size={16} style={{ color: colors.foreground, opacity: 0.5 }} />
+                    <Icon name="copy" size={16} color={colors.foreground} opacity={0.5} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -160,7 +160,7 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
                         copyToClipboard(`${rgb.r}, ${rgb.g}, ${rgb.b}`, 'RGB')
                       }
                     >
-                      <Icon name="copy" size={16} style={{ color: colors.foreground, opacity: 0.5 }} />
+                      <Icon name="copy" size={16} color={colors.foreground} opacity={0.5} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -177,7 +177,7 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
                         copyToClipboard(`L:${lab.l} a:${lab.a} b:${lab.b}`, 'LAB')
                       }
                     >
-                      <Icon name="copy" size={16} style={{ color: colors.foreground, opacity: 0.5 }} />
+                      <Icon name="copy" size={16} color={colors.foreground} opacity={0.5} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -237,7 +237,7 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
                   {paint.tags.map((tag) => (
                     <Badge
                       key={tag}
-                      style={[styles.tagBadge, { backgroundColor: tagBadgeStyle.bg }]}
+                      style={{ ...styles.tagBadge, backgroundColor: tagBadgeStyle.bg }}
                     >
                       <Text style={[styles.tagBadgeText, { color: tagBadgeStyle.text }]}>
                         {tag}

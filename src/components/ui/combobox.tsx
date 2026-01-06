@@ -43,7 +43,7 @@ interface ComboboxProps<TData = ComboboxOption> {
 
   // Create functionality
   allowCreate?: boolean;
-  onCreate?: (value: string) => void | Promise<void>;
+  onCreate?: (value: string) => void | Promise<void> | TData | Promise<TData>;
   createLabel?: (value: string) => string;
   isCreating?: boolean;
   queryKeysToInvalidate?: unknown[][];
@@ -523,18 +523,76 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   const handleCreate = useCallback(async () => {
     if (!onCreate || !search.trim()) return;
 
+    const searchValue = search.trim();
+
     try {
-      await onCreate(search.trim());
+      // Call onCreate and get the newly created item
+      const createdItem = await onCreate(searchValue);
 
-      if (queryKeysToInvalidate.length > 0) {
-        await Promise.all(queryKeysToInvalidate.map((key) => queryClient.invalidateQueries({ queryKey: key })));
+      // If onCreate returned the created item, process it
+      if (createdItem) {
+        const itemValue = getOptionValueRef.current(createdItem as TData);
+        console.log("[Combobox] ✅ Service created, extracted value:", itemValue, "Type:", typeof itemValue);
+
+        // Validate the extracted value
+        if (!itemValue || (typeof itemValue === "string" && itemValue.trim() === "")) {
+          console.error("[Combobox] ❌ Invalid itemValue extracted:", itemValue);
+          return;
+        }
+
+        // Add to cache immediately (synchronous)
+        allItemsCacheRef.current.set(itemValue, createdItem as TData);
+        console.log("[Combobox] ✅ Added to cache. Cache size:", allItemsCacheRef.current.size);
+
+        // Add to allAsyncOptions state FIRST so it's in the options when we select
+        if (async) {
+          setAllAsyncOptions((prev) => {
+            // Check if it already exists to avoid duplicates
+            const exists = prev.some((item) => getOptionValueRef.current(item) === itemValue);
+            if (exists) {
+              console.log("[Combobox] ℹ️ Item already exists in options");
+              return prev;
+            }
+            console.log("[Combobox] ✅ Adding item to options");
+            return [createdItem as TData, ...prev];
+          });
+        }
+
+        // Invalidate related query keys to refresh data
+        if (queryKeysToInvalidate.length > 0) {
+          try {
+            await Promise.all(queryKeysToInvalidate.map((key) => queryClient.invalidateQueries({ queryKey: key })));
+          } catch (error) {
+            console.error("[Combobox] Error invalidating queries:", error);
+          }
+        }
+
+        // CRITICAL: Wait for React Native to process the state updates
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Call onValueChange to update the form field
+        console.log("[Combobox] ✅ Calling onValueChange with value:", itemValue);
+        onValueChange?.(itemValue);
+        console.log("[Combobox] ✅ onValueChange called");
+
+        // Wait for form to process the update
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        // Close the modal
+        console.log("[Combobox] ✅ Closing modal");
+        handleClose();
+      } else {
+        // Original behavior - just close
+        if (queryKeysToInvalidate.length > 0) {
+          await Promise.all(queryKeysToInvalidate.map((key) => queryClient.invalidateQueries({ queryKey: key })));
+        }
+        handleClose();
       }
-
-      handleClose();
     } catch (error) {
+      console.error("[Combobox] Error creating item:", error);
       // Error handling done by parent
     }
-  }, [onCreate, search, queryKeysToInvalidate, queryClient, handleClose]);
+  }, [onCreate, search, queryKeysToInvalidate, queryClient, handleClose, async, onValueChange]);
 
   const handleClear = useCallback(
     (e?: any) => {

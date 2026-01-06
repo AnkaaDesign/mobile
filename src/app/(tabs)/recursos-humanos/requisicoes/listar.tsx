@@ -52,7 +52,7 @@ export default function RequisitionsListScreen() {
   const requests = useMemo(() => {
     if (!requestsData?.data || !Array.isArray(requestsData.data)) return [];
 
-    let items = requestsData.data.map((request: any, index: number) => ({
+    let items: TimeAdjustmentRequest[] = requestsData.data.map((request: any, index: number) => ({
       id: request.id || `request-${index}`,
       employeeName: request.employeeName || request.NomeFuncionario || request.FuncionarioNome || "Funcionário não identificado",
       date: request.date || request.Data || "",
@@ -69,7 +69,7 @@ export default function RequisitionsListScreen() {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      items = items.filter((request: TimeAdjustmentRequest) =>
+      items = items.filter((request) =>
         request.employeeName?.toLowerCase().includes(query) ||
         request.date?.toLowerCase().includes(query) ||
         request.justification?.toLowerCase().includes(query)

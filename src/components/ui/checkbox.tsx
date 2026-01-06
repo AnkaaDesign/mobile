@@ -5,6 +5,7 @@ import { useTheme } from "@/lib/theme";
 
 export interface CheckboxProps {
   checked?: boolean;
+  indeterminate?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   disabled?: boolean;
   style?: ViewStyle;
@@ -15,7 +16,7 @@ export interface CheckboxProps {
   testID?: string;
 }
 
-const Checkbox = React.forwardRef<View, CheckboxProps>(({ checked = false, onCheckedChange, disabled = false, style, className, label, accessibilityLabel, accessibilityHint, testID, ...props }, ref) => {
+const Checkbox = React.forwardRef<View, CheckboxProps>(({ checked = false, indeterminate = false, onCheckedChange, disabled = false, style, className, label, accessibilityLabel, accessibilityHint, testID, ...props }, ref) => {
   const { colors } = useTheme();
   const [isFocused, setIsFocused] = React.useState(false);
   const [_isPressed, _setIsPressed] = React.useState(false);

@@ -155,7 +155,7 @@ export default function CreatePPEDeliveryScreen() {
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
                     value={String(value || 0)}
-                    onChangeText={(text) => {
+                    onChangeText={(text: string | number | null) => {
                       if (!text) {
                         onChange(0);
                         return;

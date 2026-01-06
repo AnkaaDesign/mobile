@@ -78,7 +78,7 @@ function hasMenuItemAccess(item: MenuItem, userPrivilege?: SECTOR_PRIVILEGES, is
     // User needs to have EXACTLY one of the specified privileges for menu display
     // Filter out TEAM_LEADER since it's handled above via isTeamLeader check
     const regularPrivileges = item.requiredPrivilege.filter(p => p !== SECTOR_PRIVILEGES.TEAM_LEADER);
-    return regularPrivileges.includes(userPrivilege);
+    return userPrivilege ? regularPrivileges.includes(userPrivilege) : false;
   }
 
   // Handle single privilege
@@ -365,7 +365,7 @@ function convertPortuguesePathToEnglish(portuguesePath: string): string[] {
     'producao': 'production',
     'aerografia': 'airbrushing',
     'cronograma': 'schedule',
-    'em-espera': 'on-hold',
+    'agenda': 'agenda',
     'garagens': 'garages',
     'historico': 'history',
     'observacoes': 'observations',
@@ -465,7 +465,7 @@ export function hasAccessToMenuItem(item: MenuItem, userPrivilege?: SECTOR_PRIVI
     // User needs to have EXACTLY one of the specified privileges for menu display
     // Filter out TEAM_LEADER since it's handled above via isTeamLeader check
     const regularPrivileges = item.requiredPrivilege.filter(p => p !== SECTOR_PRIVILEGES.TEAM_LEADER);
-    return regularPrivileges.includes(userPrivilege);
+    return userPrivilege ? regularPrivileges.includes(userPrivilege) : false;
   }
 
   // Handle single privilege

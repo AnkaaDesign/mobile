@@ -156,7 +156,7 @@ export function EmployeeFilterDrawerContent({
               onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, statuses: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os status"
               searchPlaceholder="Buscar status..."
-              emptyMessage="Nenhum status encontrado"
+              emptyText="Nenhum status encontrado"
             />
           </View>
         </View>
@@ -181,7 +181,7 @@ export function EmployeeFilterDrawerContent({
               onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, positionIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os cargos"
               searchPlaceholder="Buscar cargos..."
-              emptyMessage="Nenhum cargo encontrado"
+              emptyText="Nenhum cargo encontrado"
             />
           </View>
         </View>
@@ -206,7 +206,7 @@ export function EmployeeFilterDrawerContent({
               onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sectorIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os setores"
               searchPlaceholder="Buscar setores..."
-              emptyMessage="Nenhum setor encontrado"
+              emptyText="Nenhum setor encontrado"
             />
           </View>
         </View>

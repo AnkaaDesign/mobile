@@ -27,20 +27,20 @@ interface SchedulesTableProps {
 }
 
 // Column definitions for PPE schedules
-const createColumnDefinitions = () => [
+const createColumnDefinitions = (): Array<{ key: string; header: string; width: number }> => [
   {
     key: "assignment",
-    label: "Atribuição",
+    header: "Atribuição",
     width: 150,
   },
   {
     key: "frequency",
-    label: "Frequência",
+    header: "Frequência",
     width: 120,
   },
   {
     key: "status",
-    label: "Status",
+    header: "Status",
     width: 100,
   },
 ];
@@ -61,21 +61,21 @@ export function SchedulesTable({ item, maxHeight = 500 }: SchedulesTableProps) {
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Fetch schedules for this specific item with infinite scroll
-  const {
-    items: schedules,
-    isLoading,
-    error,
-    loadMore,
-    canLoadMore,
-    isFetchingNextPage,
-    totalCount,
-  } = usePpeSchedulesInfiniteMobile({
+  const result = usePpeSchedulesInfiniteMobile({
     where: {
       itemId: item.id,
     },
     orderBy: { nextRun: "asc" },
     enabled: !!item.id,
   });
+
+  const schedules = result.schedules || [];
+  const isLoading = result.isLoading;
+  const error = result.error;
+  const loadMore = result.loadMore;
+  const canLoadMore = result.canLoadMore;
+  const isFetchingNextPage = result.isFetchingNextPage;
+  const totalCount = result.totalCount;
 
   // Filter schedules based on search (client-side for already loaded items)
   const filteredSchedules = useMemo(() => {

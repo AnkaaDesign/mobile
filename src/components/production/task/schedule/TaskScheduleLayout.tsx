@@ -63,10 +63,12 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   // Sort state
   const [sortConfig, setSortConfig] = useState<SortConfig>(config.query.defaultSort)
 
-  // Filter state
-  const [filterValues, setFilterValues] = useState<FilterValue>({
-    status: [TASK_STATUS.PENDING, TASK_STATUS.IN_PRODUCTION],
-  })
+  // Filter state - use config's default values if provided
+  const [filterValues, setFilterValues] = useState<FilterValue>(
+    config.filters?.defaultValues || {
+      status: [TASK_STATUS.WAITING_PRODUCTION, TASK_STATUS.IN_PRODUCTION],
+    }
+  )
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   // Selection state
@@ -373,7 +375,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 
   const handleFilterClear = useCallback(() => {
     setFilterValues({
-      status: [TASK_STATUS.PENDING, TASK_STATUS.IN_PRODUCTION],
+      status: [TASK_STATUS.WAITING_PRODUCTION, TASK_STATUS.IN_PRODUCTION],
     })
   }, [])
 

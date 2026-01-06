@@ -234,7 +234,8 @@ export function ActivityEditForm({
                       <Input
                         value={value?.toString() || ""}
                         onChangeText={(text) => {
-                          const num = parseFloat(text);
+                          const textStr = typeof text === 'string' ? text : String(text || "0");
+                          const num = parseFloat(textStr);
                           onChange(isNaN(num) ? 0 : num);
                         }}
                         keyboardType="decimal-pad"

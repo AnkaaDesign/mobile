@@ -19,7 +19,7 @@ interface QueryErrorStats {
 class QueryErrorMonitor {
   private stats: QueryErrorStats = {
     totalErrors: 0,
-    errorTypes: Record<string, unknown>,
+    errorTypes: {} as Record<string, number>,
     networkErrors: 0,
     authErrors: 0,
     validationErrors: 0,
@@ -115,7 +115,7 @@ class QueryErrorMonitor {
   reset() {
     this.stats = {
       totalErrors: 0,
-      errorTypes: Record<string, unknown>,
+      errorTypes: {} as Record<string, number>,
       networkErrors: 0,
       authErrors: 0,
       validationErrors: 0,

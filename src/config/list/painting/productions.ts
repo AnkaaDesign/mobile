@@ -226,9 +226,9 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
         queryKey: ['formulas', 'filter'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
-            const { getFormulas } = await import('@/api-client')
+            const { getPaintFormulas } = await import('@/api-client')
             const pageSize = 20
-            const response = await getFormulas({
+            const response = await getPaintFormulas({
               where: searchTerm ? { code: { contains: searchTerm, mode: 'insensitive' } } : undefined,
               orderBy: { code: 'asc' },
               limit: pageSize,

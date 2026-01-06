@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { ACTIVITY_OPERATION, ACTIVITY_REASON } from '../constants';
 
+// Add polyfills for Node.js environments (btoa, atob are browser-only)
+const btoa = (typeof globalThis !== 'undefined' && (globalThis as any).btoa) || ((str: string) => Buffer.from(str, 'binary').toString('base64'));
+const atob = (typeof globalThis !== 'undefined' && (globalThis as any).atob) || ((str: string) => Buffer.from(str, 'base64').toString('binary'));
+
 // =====================
 // Base URL State Configuration
 // =====================
@@ -232,7 +236,7 @@ function decompressUuidArray(compressed: string): string[] {
  * Implements compression and optimization strategies
  */
 export function serializeActivityFormToUrlParams(state: Partial<ActivityFormUrlState>): URLSearchParams {
-  const params = new URLSearchParams();
+  const params = new URLSearchParams() as any;
 
   // Only include non-default values to keep URL clean
   if (state.step && state.step !== 1) {
@@ -398,7 +402,7 @@ export function serializeActivityFormToUrlParams(state: Partial<ActivityFormUrlS
 /**
  * Deserializes URL parameters back to activity form state
  */
-export function deserializeUrlParamsToActivityForm(searchParams: URLSearchParams): Partial<ActivityFormUrlState> {
+export function deserializeUrlParamsToActivityForm(searchParams: URLSearchParams | any): Partial<ActivityFormUrlState> {
   const state: Partial<ActivityFormUrlState> = {};
 
   // Parse step

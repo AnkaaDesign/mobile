@@ -18,10 +18,9 @@ export default function CreateScheduleScreen() {
   const { createAsync, isLoading } = useTaskMutations();
   const [checkingPermission, setCheckingPermission] = useState(true);
 
-  // Check permissions - Only ADMIN and FINANCIAL can create tasks
+  // Check permissions - Only ADMIN can create tasks
   const userPrivilege = user?.sector?.privileges;
-  const canCreate = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-                    userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+  const canCreate = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
 
   useEffect(() => {
     // Wait for user to load

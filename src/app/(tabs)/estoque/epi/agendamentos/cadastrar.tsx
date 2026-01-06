@@ -24,7 +24,7 @@ export default function CreatePPEScheduleScreen() {
       name: "",
       frequency: SCHEDULE_FREQUENCY.MONTHLY,
       frequencyCount: 1,
-      assignmentType: ASSIGNMENT_TYPE.INDIVIDUAL,
+      assignmentType: ASSIGNMENT_TYPE.ALL,
       ppeTypes: [] as string[],
       isActive: true,
     },
@@ -155,7 +155,7 @@ export default function CreatePPEScheduleScreen() {
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
                     value={String(value || 1)}
-                    onChangeText={(text) => {
+                    onChangeText={(text: string | number | null) => {
                       if (!text) {
                         onChange(1);
                         return;

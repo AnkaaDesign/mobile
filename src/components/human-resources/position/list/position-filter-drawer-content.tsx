@@ -208,7 +208,7 @@ export function PositionFilterDrawerContent({
                 placeholder="Mínimo"
                 value={localFilters.remunerationRange?.min?.toString() || ""}
                 onChangeText={(value) => {
-                  const numValue = value ? parseFloat(value) : undefined;
+                  const numValue = value ? parseFloat(String(value)) : undefined;
                   setLocalFilters((prev) => ({
                     ...prev,
                     remunerationRange: {
@@ -229,7 +229,7 @@ export function PositionFilterDrawerContent({
                 placeholder="Máximo"
                 value={localFilters.remunerationRange?.max?.toString() || ""}
                 onChangeText={(value) => {
-                  const numValue = value ? parseFloat(value) : undefined;
+                  const numValue = value ? parseFloat(String(value)) : undefined;
                   setLocalFilters((prev) => ({
                     ...prev,
                     remunerationRange: {

@@ -147,9 +147,9 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         queryKey: ['categories', 'filter', 'ppe'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
-            const { getCategories } = await import('@/api-client')
+            const { getItemCategories } = await import('@/api-client')
             const pageSize = 20
-            const response = await getCategories({
+            const response = await getItemCategories({
               where: {
                 ...(searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : {}),
                 type: 'PPE',

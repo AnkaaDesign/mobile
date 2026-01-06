@@ -25,7 +25,7 @@ export function PerformanceCard({ employee }: PerformanceCardProps) {
 
     const completed = tasks.filter(t => t.status === TASK_STATUS.COMPLETED).length;
     const inProgress = tasks.filter(t => t.status === TASK_STATUS.IN_PRODUCTION).length;
-    const pending = tasks.filter(t => t.status === TASK_STATUS.PENDING).length;
+    const pending = tasks.filter(t => t.status === TASK_STATUS.WAITING_PRODUCTION).length;
     const cancelled = tasks.filter(t => t.status === TASK_STATUS.CANCELLED).length;
 
     const completionRate = total > 0 ? (completed / total) * 100 : 0;

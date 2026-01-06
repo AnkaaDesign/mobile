@@ -68,21 +68,6 @@ export function TeamPpeDeliveryCard({ delivery }: TeamPpeDeliveryCardProps) {
           </View>
         )}
 
-        {/* Review Date */}
-        {delivery.reviewDate && (
-          <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.fieldLabelWithIcon}>
-              <IconClock size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
-                Data de Aprovação
-              </ThemedText>
-            </View>
-            <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-              {formatDateTime(new Date(delivery.reviewDate))}
-            </ThemedText>
-          </View>
-        )}
-
         {/* Created At */}
         <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
           <View style={styles.fieldLabelWithIcon}>
@@ -96,14 +81,14 @@ export function TeamPpeDeliveryCard({ delivery }: TeamPpeDeliveryCardProps) {
           </ThemedText>
         </View>
 
-        {/* Notes */}
-        {delivery.notes && (
+        {/* Reason */}
+        {delivery.reason && (
           <View style={[styles.notesContainer, { backgroundColor: colors.muted + "30", borderColor: colors.border }]}>
             <ThemedText style={[styles.notesLabel, { color: colors.mutedForeground }]}>
-              Observações
+              Motivo
             </ThemedText>
             <ThemedText style={[styles.notesText, { color: colors.foreground }]}>
-              {delivery.notes}
+              {delivery.reason}
             </ThemedText>
           </View>
         )}

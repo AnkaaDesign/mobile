@@ -35,7 +35,7 @@ export interface User extends BaseEntity {
   pis: string | null;
   cpf: string | null;
   verified: boolean;
-  birth: Date; // Date of birth
+  birth: Date | null; // Date of birth (optional in database)
   admissional: Date | null;
   performanceLevel: number;
   sectorId: string | null;
@@ -57,6 +57,7 @@ export interface User extends BaseEntity {
   profilePictureUrl: string | null; // Profile picture URL
 
   // Status timestamp tracking
+  effectedAt: Date | null; // When user became permanently effected/hired
   contractedAt: Date | null;
   exp1StartAt: Date | null;
   exp1EndAt: Date | null;
@@ -238,6 +239,7 @@ export interface UserOrderBy {
   payrollNumber?: ORDER_BY_DIRECTION;
   birth?: ORDER_BY_DIRECTION;
   admissional?: ORDER_BY_DIRECTION;
+  effectedAt?: ORDER_BY_DIRECTION;
   contractedAt?: ORDER_BY_DIRECTION;
   exp1StartAt?: ORDER_BY_DIRECTION;
   exp1EndAt?: ORDER_BY_DIRECTION;

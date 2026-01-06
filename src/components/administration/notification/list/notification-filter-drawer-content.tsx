@@ -173,7 +173,7 @@ export function NotificationFilterDrawerContent({
               onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, importance: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todas as importâncias"
               searchPlaceholder="Buscar importâncias..."
-              emptyMessage="Nenhuma importância encontrada"
+              emptyText="Nenhuma importância encontrada"
             />
           </View>
         </View>
@@ -198,7 +198,7 @@ export function NotificationFilterDrawerContent({
               onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, types: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os tipos"
               searchPlaceholder="Buscar tipos..."
-              emptyMessage="Nenhum tipo encontrado"
+              emptyText="Nenhum tipo encontrado"
             />
           </View>
         </View>

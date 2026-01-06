@@ -44,13 +44,13 @@ export function getPositionLevel(positionName: string | null | undefined | any):
  * Period runs from 26th of previous month to 25th of current month
  * @param year The year as number
  * @param month The month as number (1-12)
- * @returns Start date of the bonus period at 00:00:00.000
+ * @returns Start date of the bonus period at 00:00:00.000 UTC
  */
 export function getBonusPeriodStart(year: number, month: number): Date {
   if (month === 1) {
-    return new Date(year - 1, 11, 26, 0, 0, 0, 0); // Dec 26 of previous year
+    return new Date(Date.UTC(year - 1, 11, 26, 0, 0, 0, 0)); // Dec 26 of previous year UTC
   }
-  return new Date(year, month - 2, 26, 0, 0, 0, 0); // Day 26 of previous month
+  return new Date(Date.UTC(year, month - 2, 26, 0, 0, 0, 0)); // Day 26 of previous month UTC
 }
 
 /**
@@ -58,10 +58,10 @@ export function getBonusPeriodStart(year: number, month: number): Date {
  * Period runs from 26th of previous month to 25th of current month
  * @param year The year as number
  * @param month The month as number (1-12)
- * @returns End date of the bonus period at 23:59:59.999
+ * @returns End date of the bonus period at 23:59:59.999 UTC
  */
 export function getBonusPeriodEnd(year: number, month: number): Date {
-  return new Date(year, month - 1, 25, 23, 59, 59, 999); // Day 25 of current month
+  return new Date(Date.UTC(year, month - 1, 25, 23, 59, 59, 999)); // Day 25 of current month UTC
 }
 
 /**

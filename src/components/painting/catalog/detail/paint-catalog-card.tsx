@@ -103,21 +103,21 @@ export function PaintCatalogCard({ paint, onPress }: PaintCatalogCardProps) {
           {/* Badges - unified neutral style */}
           <View style={styles.badgeContainer}>
             {paintTypeLabel && (
-              <Badge style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
+              <Badge style={{ ...styles.badge, backgroundColor: badgeStyle.bg }}>
                 <Text style={[styles.badgeText, { color: badgeStyle.text }]}>
                   {paintTypeLabel}
                 </Text>
               </Badge>
             )}
 
-            <Badge style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
+            <Badge style={{ ...styles.badge, backgroundColor: badgeStyle.bg }}>
               <Text style={[styles.badgeText, { color: badgeStyle.text }]}>
                 {finishLabel}
               </Text>
             </Badge>
 
             {brandLabel && (
-              <Badge style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
+              <Badge style={{ ...styles.badge, backgroundColor: badgeStyle.bg }}>
                 <Text style={[styles.badgeText, { color: badgeStyle.text }]}>
                   {brandLabel}
                 </Text>
@@ -125,7 +125,7 @@ export function PaintCatalogCard({ paint, onPress }: PaintCatalogCardProps) {
             )}
 
             {manufacturerLabel && (
-              <Badge style={[styles.badge, styles.manufacturerBadge, { backgroundColor: badgeStyle.bg }]}>
+              <Badge style={{ ...styles.badge, ...styles.manufacturerBadge, backgroundColor: badgeStyle.bg }}>
                 <Text style={[styles.badgeText, { color: badgeStyle.text }]} numberOfLines={1}>
                   {manufacturerLabel}
                 </Text>
@@ -144,7 +144,7 @@ export function PaintCatalogCard({ paint, onPress }: PaintCatalogCardProps) {
                 {paint.tags.map((tag, index) => (
                   <Badge
                     key={index}
-                    style={[styles.badge, { backgroundColor: tagBadgeStyle.bg }]}
+                    style={{ ...styles.badge, backgroundColor: tagBadgeStyle.bg }}
                   >
                     <Text style={[styles.badgeText, { color: tagBadgeStyle.text }]}>
                       {tag}

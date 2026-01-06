@@ -41,7 +41,7 @@ interface BorrowBatchCreateFormProps {
   onSubmit: (data: {
     userId: string;
     items: Array<{ itemId: string; quantity: number }>;
-  }) => Promise<BatchOperationResult<BorrowBatchResult, BorrowBatchResult> | void>;
+  }) => Promise<BatchOperationResult<any, any> | void>;
   onCancel: () => void;
   isSubmitting?: boolean;
 }
@@ -282,7 +282,6 @@ export function BorrowBatchCreateForm({
                 onBrandIdsChange={multiStepForm.setBrandIds}
                 onSupplierIdsChange={multiStepForm.setSupplierIds}
                 allowZeroStock={false}
-                emptyText="Nenhuma ferramenta encontrada"
               />
               {/* Validation Errors */}
               {multiStepForm.formTouched && Object.keys(multiStepForm.validation.errors).length > 0 && (

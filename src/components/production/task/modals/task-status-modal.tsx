@@ -27,11 +27,18 @@ interface StatusOption {
 
 const STATUS_OPTIONS: StatusOption[] = [
   {
-    value: TASK_STATUS.PENDING,
-    label: "Aguardando",
-    description: "Tarefa aguardando início",
+    value: TASK_STATUS.PREPARATION,
+    label: "Em Preparação",
+    description: "Tarefa sendo preparada",
+    icon: <IconPlayerPause size={24} color="white" />,
+    color: "#f97316", // orange-500 (in preparation)
+  },
+  {
+    value: TASK_STATUS.WAITING_PRODUCTION,
+    label: "Aguardando Produção",
+    description: "Tarefa aguardando início da produção",
     icon: <IconClock size={24} color="white" />,
-    color: "#737373", // neutral-500 (gray - not started)
+    color: "#737373", // neutral-500 (waiting)
   },
   {
     value: TASK_STATUS.IN_PRODUCTION,
@@ -41,32 +48,11 @@ const STATUS_OPTIONS: StatusOption[] = [
     color: "#2563eb", // blue-600 (in progress)
   },
   {
-    value: TASK_STATUS.ON_HOLD,
-    label: "Em Espera",
-    description: "Tarefa pausada temporariamente",
-    icon: <IconPlayerPause size={24} color="white" />,
-    color: "#f97316", // orange-500 (paused)
-  },
-  {
     value: TASK_STATUS.COMPLETED,
     label: "Concluída",
     description: "Tarefa finalizada",
     icon: <IconCheck size={24} color="white" />,
     color: "#15803d", // green-700 (finished)
-  },
-  {
-    value: TASK_STATUS.INVOICED,
-    label: "Faturado",
-    description: "Tarefa faturada",
-    icon: <IconReceipt size={24} color="white" />,
-    color: "#9333ea", // purple-600 (financial)
-  },
-  {
-    value: TASK_STATUS.SETTLED,
-    label: "Liquidado",
-    description: "Tarefa totalmente paga",
-    icon: <IconCash size={24} color="white" />,
-    color: "#14b8a6", // teal-500 (settled)
   },
   {
     value: TASK_STATUS.CANCELLED,

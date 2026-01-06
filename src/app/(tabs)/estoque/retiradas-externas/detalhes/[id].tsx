@@ -340,6 +340,9 @@ export default function ExternalWithdrawalDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
   },
@@ -383,6 +386,14 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
   },
   sectionHeader: {
     flexDirection: "row",

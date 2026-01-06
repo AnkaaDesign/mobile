@@ -33,7 +33,6 @@ const ActivityTableRowSwipeComponent = ({
             onPress: () => onDelete(activityId),
             closeOnPress: false,
             confirmDelete: true,
-            deleteMessage: `Tem certeza que deseja excluir "${activityDescription}"? Esta ação é irreversível e afetará o estoque.`,
           },
         ]
       : []),
@@ -42,6 +41,7 @@ const ActivityTableRowSwipeComponent = ({
   return (
     <TableRowSwipe
       entityId={activityId}
+      confirmDeleteMessage={`Tem certeza que deseja excluir "${activityDescription}"? Esta ação é irreversível e afetará o estoque.`}
       entityName={activityDescription}
       actions={actions}
       style={style}

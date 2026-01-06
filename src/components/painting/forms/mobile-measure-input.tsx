@@ -82,11 +82,11 @@ export function MobileMeasureInput({
     onMeasureChange?.(measures);
   }, [weight, volume, density, onMeasureChange]);
 
-  const handleWeightChange = (value: string) => {
-    setWeight(value);
+  const handleWeightChange = (value: string | number | null) => {
+    setWeight(value ? String(value) : "");
     // Auto-calculate volume if density is set and auto-calc is off
     if (!autoCalculateDensity && density && value) {
-      const weightValue = parseFloat(value);
+      const weightValue = parseFloat(String(value));
       const densityValue = parseFloat(density);
       if (weightValue > 0 && densityValue > 0) {
         const calculatedVolume = weightValue / densityValue;
@@ -95,11 +95,11 @@ export function MobileMeasureInput({
     }
   };
 
-  const handleVolumeChange = (value: string) => {
-    setVolume(value);
+  const handleVolumeChange = (value: string | number | null) => {
+    setVolume(value ? String(value) : "");
     // Auto-calculate weight if density is set and auto-calc is off
     if (!autoCalculateDensity && density && value) {
-      const volumeValue = parseFloat(value);
+      const volumeValue = parseFloat(String(value));
       const densityValue = parseFloat(density);
       if (volumeValue > 0 && densityValue > 0) {
         const calculatedWeight = volumeValue * densityValue;
@@ -108,8 +108,8 @@ export function MobileMeasureInput({
     }
   };
 
-  const handleDensityChange = (value: string) => {
-    setDensity(value);
+  const handleDensityChange = (value: string | number | null) => {
+    setDensity(value ? String(value) : "");
     setAutoCalculateDensity(false);
     setCalculationResult(null);
   };

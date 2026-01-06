@@ -32,17 +32,20 @@ interface WarningFormProps {
 }
 
 const SEVERITY_LABELS = {
-  [WARNING_SEVERITY.LOW]: "Baixa",
-  [WARNING_SEVERITY.MEDIUM]: "Média",
-  [WARNING_SEVERITY.HIGH]: "Alta",
+  [WARNING_SEVERITY.VERBAL]: "Verbal",
+  [WARNING_SEVERITY.WRITTEN]: "Escrita",
+  [WARNING_SEVERITY.SUSPENSION]: "Suspensão",
+  [WARNING_SEVERITY.FINAL_WARNING]: "Advertência Final",
 };
 
 const CATEGORY_LABELS = {
-  [WARNING_CATEGORY.ABSENCE]: "Ausência",
-  [WARNING_CATEGORY.DELAY]: "Atraso",
-  [WARNING_CATEGORY.BEHAVIOR]: "Comportamento",
   [WARNING_CATEGORY.SAFETY]: "Segurança",
-  [WARNING_CATEGORY.QUALITY]: "Qualidade",
+  [WARNING_CATEGORY.MISCONDUCT]: "Má Conduta",
+  [WARNING_CATEGORY.INSUBORDINATION]: "Insubordinação",
+  [WARNING_CATEGORY.POLICY_VIOLATION]: "Violação de Política",
+  [WARNING_CATEGORY.ATTENDANCE]: "Assiduidade",
+  [WARNING_CATEGORY.PERFORMANCE]: "Desempenho",
+  [WARNING_CATEGORY.BEHAVIOR]: "Comportamento",
   [WARNING_CATEGORY.OTHER]: "Outro",
 };
 
@@ -82,8 +85,8 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
 
   // Default values for create mode
   const createDefaults: WarningCreateFormData = {
-    severity: undefined,
-    category: undefined,
+    severity: "" as any,
+    category: "" as any,
     reason: "",
     description: "",
     isActive: true,
@@ -334,15 +337,14 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
                   render={({ field: { onChange, value }, fieldState: { error } }) => (
                     <Combobox
                       async
-                      loadOptions={loadCollaboratorOptions}
+                      queryFn={loadCollaboratorOptions as any}
                       initialOptions={initialCollaboratorOptions}
-                      value={value}
+                      value={value || ""}
                       onValueChange={onChange}
                       placeholder="Selecione o colaborador"
                       searchPlaceholder="Buscar colaborador..."
                       disabled={isLoading}
                       searchable
-                      clearable={false}
                       error={error?.message}
                     />
                   )}
@@ -360,15 +362,14 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
                   render={({ field: { onChange, value }, fieldState: { error } }) => (
                     <Combobox
                       async
-                      loadOptions={loadSupervisorOptions}
+                      queryFn={loadSupervisorOptions as any}
                       initialOptions={initialSupervisorOptions}
-                      value={value}
+                      value={value || ""}
                       onValueChange={onChange}
                       placeholder="Selecione o supervisor"
                       searchPlaceholder="Buscar supervisor..."
                       disabled={isLoading}
                       searchable
-                      clearable={false}
                       error={error?.message}
                     />
                   )}
@@ -388,8 +389,8 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
                 render={({ field: { onChange, value } }) => (
                   <Combobox
                     async
-                    multiple
-                    loadOptions={loadWitnessOptions}
+                    mode="multiple"
+                    queryFn={loadWitnessOptions as any}
                     initialOptions={initialWitnessOptions}
                     value={value || []}
                     onValueChange={onChange}
@@ -397,7 +398,6 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
                     searchPlaceholder="Buscar testemunhas..."
                     disabled={isLoading}
                     searchable
-                    clearable
                   />
                 )}
               />
@@ -460,8 +460,8 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
                       name="isActive"
                       render={({ field: { onChange, value } }) => (
                         <Switch
-                          value={value || false}
-                          onValueChange={onChange}
+                          checked={value || false}
+                          onCheckedChange={onChange}
                           disabled={isLoading}
                         />
                       )}

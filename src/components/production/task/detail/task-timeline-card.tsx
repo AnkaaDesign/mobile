@@ -25,12 +25,10 @@ export const TaskTimelineCard: React.FC<TaskTimelineCardProps> = ({ task, activi
 
   const getStatusIcon = (status: TASK_STATUS) => {
     switch (status) {
-      case TASK_STATUS.PENDING:
+      case TASK_STATUS.WAITING_PRODUCTION:
         return IconClock;
       case TASK_STATUS.IN_PRODUCTION:
         return IconPlayerPlay;
-      case TASK_STATUS.ON_HOLD:
-        return IconPlayerPause;
       case TASK_STATUS.COMPLETED:
         return IconCircleCheck;
       case TASK_STATUS.CANCELLED:
@@ -42,12 +40,10 @@ export const TaskTimelineCard: React.FC<TaskTimelineCardProps> = ({ task, activi
 
   const getStatusColor = (status: TASK_STATUS) => {
     switch (status) {
-      case TASK_STATUS.PENDING:
+      case TASK_STATUS.WAITING_PRODUCTION:
         return "#f59e0b";
       case TASK_STATUS.IN_PRODUCTION:
         return colors.primary;
-      case TASK_STATUS.ON_HOLD:
-        return "#ef4444";
       case TASK_STATUS.COMPLETED:
         return "#10b981";
       case TASK_STATUS.CANCELLED:
@@ -89,7 +85,7 @@ export const TaskTimelineCard: React.FC<TaskTimelineCardProps> = ({ task, activi
   }
 
   // Add current status if different from created
-  if (task.status !== TASK_STATUS.PENDING) {
+  if (task.status !== TASK_STATUS.WAITING_PRODUCTION) {
     const StatusIcon = getStatusIcon(task.status);
     timelineEvents.push({
       id: "current-status",

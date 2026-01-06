@@ -19,7 +19,7 @@ import {
 // import { showToast } from "@/components/ui/toast";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { Badge } from "@/components/ui/badge";
-import { TASK_STATUS_LABELS } from "@/constants";
+import { TASK_STATUS_LABELS, TASK_STATUS } from "@/constants";
 
 export default function MovementDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -111,7 +111,7 @@ export default function MovementDetailScreen() {
                 )}
               </View>
             </View>
-            <Badge variant={task.status === 'COMPLETED' ? 'success' : task.status === 'IN_PROGRESS' ? 'warning' : 'default'}>
+            <Badge variant={task.status === TASK_STATUS.COMPLETED ? 'success' : task.status === TASK_STATUS.IN_PRODUCTION ? 'warning' : 'default'}>
               {TASK_STATUS_LABELS[task.status] || task.status}
             </Badge>
           </View>

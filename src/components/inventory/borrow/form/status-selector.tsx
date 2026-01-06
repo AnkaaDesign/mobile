@@ -142,7 +142,7 @@ export function BorrowStatusSelector({
           )}
           <Combobox
             value={selectedStatus}
-            onValueChange={handleStatusChange}
+            onValueChange={(val) => handleStatusChange(Array.isArray(val) ? val[0] : val)}
             options={statusOptions}
             placeholder="Selecione o status"
             emptyText="Nenhum status disponível"

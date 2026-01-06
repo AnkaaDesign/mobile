@@ -16,7 +16,7 @@ interface RowProps<T extends { id: string }> {
     selectedIds: Set<string>
     onToggle: (id: string) => void
   }
-  actions?: TableAction<T>[]
+  actions?: Array<TableAction<T>>
   onPress?: (item: T) => void
   getRowStyle?: (item: T, isDark?: boolean) => { backgroundColor?: string; borderLeftColor?: string; borderLeftWidth?: number } | undefined
 }
@@ -80,7 +80,7 @@ export const Row = memo(function Row<T extends { id: string }>({
   return (
     <View style={[styles.rowWrapper, { backgroundColor }, borderStyle]}>
       {hasActions ? (
-        <RowActions item={item} actions={actions}>
+        <RowActions item={item} actions={actions as any}>
           {(closeActions) => (
             <View style={{ backgroundColor }}>
               <ScrollView

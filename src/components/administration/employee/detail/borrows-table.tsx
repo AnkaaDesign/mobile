@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconPackage, IconAlertCircle, IconList } from "@tabler/icons-react-native";
-import type { User } from "@/types";
+import type { User, Borrow } from "@/types";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { useDebounce } from "@/hooks/useDebouncedSearch";
@@ -25,17 +25,17 @@ const createColumnDefinitions = () => {
   return [
     {
       key: "item",
-      label: "Item",
+      header: "Item",
       sortable: false,
     },
     {
       key: "quantity",
-      label: "Quantidade",
+      header: "Quantidade",
       sortable: true,
     },
     {
       key: "status",
-      label: "Status",
+      header: "Status",
       sortable: true,
     },
   ];
@@ -104,7 +104,7 @@ export function BorrowsTable({ employee, maxHeight = 500 }: BorrowsTableProps) {
     if (!debouncedSearch) return borrows;
 
     const searchLower = debouncedSearch.toLowerCase();
-    return borrows.filter((borrow) => {
+    return borrows.filter((borrow: Borrow) => {
       const itemName = borrow.item?.name?.toLowerCase() || "";
       const statusLabel = getStatusLabel(borrow.status).toLowerCase();
 
@@ -136,7 +136,7 @@ export function BorrowsTable({ employee, maxHeight = 500 }: BorrowsTableProps) {
   }, []);
 
   // Render borrow row
-  const renderBorrowRow = useCallback(({ item: borrow, index }: { item: any; index: number }) => {
+  const renderBorrowRow = useCallback(({ item: borrow, index }: { item: Borrow; index: number }) => {
     const isEven = index % 2 === 0;
     const backgroundColor = isEven ? colors.background : colors.card;
 
@@ -240,7 +240,7 @@ export function BorrowsTable({ employee, maxHeight = 500 }: BorrowsTableProps) {
               <FlatList
                 data={filteredBorrows}
                 renderItem={renderBorrowRow}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item: Borrow) => item.id}
                 onEndReached={() => canLoadMore && loadMore()}
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={

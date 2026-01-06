@@ -24,7 +24,7 @@ export function usePersistedState<T>(
 ): [T, (value: T | ((prev: T) => T)) => void, boolean] {
   const [state, setState] = useState<T>(defaultValue);
   const [isLoading, setIsLoading] = useState(true);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
 
   // Load initial value from storage
@@ -154,7 +154,7 @@ export function useStorageValue() {
     }
   }, []);
 
-  const getAllKeys = useCallback(async (): Promise<string[]> => {
+  const getAllKeys = useCallback(async (): Promise<readonly string[]> => {
     try {
       return await AsyncStorage.getAllKeys();
     } catch (error) {

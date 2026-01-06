@@ -113,14 +113,14 @@ export function PaintFilterDrawer({
 
     // Remove any empty values
     Object.keys(cleanedFilters).forEach((key) => {
-      const value = cleanedFilters[key];
+      const value = cleanedFilters[key as keyof typeof cleanedFilters];
       if (
         value === "" ||
         value === null ||
         value === undefined ||
         (Array.isArray(value) && value.length === 0)
       ) {
-        delete cleanedFilters[key];
+        delete cleanedFilters[key as keyof typeof cleanedFilters];
       }
     });
 
@@ -243,8 +243,8 @@ export function PaintFilterDrawer({
               <Slider
                 value={localFilters.similarColorThreshold || 15}
                 onValueChange={(value) => handleChange("similarColorThreshold", value)}
-                min={0}
-                max={100}
+                minimumValue={0}
+                maximumValue={100}
                 step={5}
               />
             </View>

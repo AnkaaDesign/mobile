@@ -130,8 +130,8 @@ export function ReturnDateInput({
         </Label>
       )}
       <DatePicker
-        value={value}
-        onChange={handleDateChange}
+        value={value || undefined}
+        onChange={(date) => handleDateChange(date || null)}
         mode="date"
         disabled={disabled}
         maximumDate={today}

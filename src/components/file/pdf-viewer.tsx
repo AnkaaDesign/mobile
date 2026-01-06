@@ -15,8 +15,15 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Pdf from 'react-native-pdf';
 import { IconX, IconChevronLeft, IconChevronRight, IconDownload, IconShare } from '@tabler/icons-react-native';
+
+// Conditionally import react-native-pdf (not supported in Expo Go)
+let Pdf: any = null;
+try {
+  Pdf = require('react-native-pdf').default;
+} catch (error) {
+  console.warn('react-native-pdf not available in Expo Go');
+}
 import type { File as AnkaaFile } from '../../types';
 import { getFileUrl } from '../../utils/file-viewer-utils';
 // import { showToast } from '../ui/toast';
@@ -155,7 +162,24 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
 
         {/* PDF View */}
         <View style={styles.pdfContainer}>
-          {error ? (
+          {!Pdf ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorTitle}>Visualização de PDF Indisponível</Text>
+              <Text style={styles.errorMessage}>
+                A visualização de PDF não está disponível no Expo Go. Use um development build ou baixe o arquivo.
+              </Text>
+              <View style={styles.errorActions}>
+                {onDownload && (
+                  <Pressable
+                    style={[styles.button, styles.buttonPrimary]}
+                    onPress={handleDownload}
+                  >
+                    <Text style={styles.buttonTextPrimary}>Baixar PDF</Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          ) : error ? (
             <View style={styles.errorContainer}>
               <Text style={styles.errorTitle}>Erro ao Carregar PDF</Text>
               <Text style={styles.errorMessage}>{error}</Text>

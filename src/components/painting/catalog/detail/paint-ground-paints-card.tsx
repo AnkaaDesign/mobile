@@ -35,7 +35,7 @@ export function PaintGroundPaintsCard({ paint }: PaintGroundPaintsCardProps) {
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
-          <Icon name="layers" size={20} style={{ color: colors.mutedForeground }} />
+          <Icon name="layers" size={20} color={colors.mutedForeground} />
           <Text style={styles.title}>Fundos Recomendados</Text>
         </View>
       </View>
@@ -73,13 +73,13 @@ export function PaintGroundPaintsCard({ paint }: PaintGroundPaintsCardProps) {
 
                     <View className="flex-row flex-wrap gap-1">
                       {groundPaint.paintType && (
-                        <Badge style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
+                        <Badge style={{ ...styles.badge, backgroundColor: badgeStyle.bg }}>
                           <Text style={[styles.badgeText, { color: badgeStyle.text }]}>{groundPaint.paintType.name}</Text>
                         </Badge>
                       )}
 
                       {groundPaint.paintBrand && (
-                        <Badge style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
+                        <Badge style={{ ...styles.badge, backgroundColor: badgeStyle.bg }}>
                           <Text style={[styles.badgeText, { color: badgeStyle.text }]}>{groundPaint.paintBrand.name}</Text>
                         </Badge>
                       )}

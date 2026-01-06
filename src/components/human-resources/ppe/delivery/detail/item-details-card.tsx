@@ -53,15 +53,7 @@ export function ItemDetailsCard({ delivery }: ItemDetailsCardProps) {
             </View>
           )}
 
-          {item.ppeSize && (
-            <View style={styles.infoRow}>
-              <View style={styles.infoLabelContainer}>
-                <IconRuler size={16} color={colors.mutedForeground} style={styles.infoIcon} />
-                <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Tamanho</ThemedText>
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{item.ppeSize}</ThemedText>
-            </View>
-          )}
+          {/* Size information removed - no longer on Item type */}
 
           {item.ppeCA && (
             <View style={styles.infoRow}>

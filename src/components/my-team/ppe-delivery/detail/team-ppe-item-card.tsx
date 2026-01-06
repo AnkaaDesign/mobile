@@ -72,7 +72,7 @@ export function TeamPpeItemCard({ delivery }: TeamPpeItemCardProps) {
         )}
 
         {/* PPE CA (Certificate) */}
-        {item.ppeCa && (
+        {item.ppeCA && (
           <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
             <View style={styles.fieldLabelWithIcon}>
               <IconCertificate size={16} color={colors.mutedForeground} />
@@ -81,22 +81,7 @@ export function TeamPpeItemCard({ delivery }: TeamPpeItemCardProps) {
               </ThemedText>
             </View>
             <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-              {item.ppeCa}
-            </ThemedText>
-          </View>
-        )}
-
-        {/* PPE Size */}
-        {item.ppeSize && (
-          <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.fieldLabelWithIcon}>
-              <IconRuler size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
-                Tamanho
-              </ThemedText>
-            </View>
-            <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-              {item.ppeSize}
+              {item.ppeCA}
             </ThemedText>
           </View>
         )}
@@ -113,18 +98,6 @@ export function TeamPpeItemCard({ delivery }: TeamPpeItemCardProps) {
             {delivery.quantity || 1}
           </ThemedText>
         </View>
-
-        {/* Description */}
-        {item.description && (
-          <View style={[styles.descriptionContainer, { backgroundColor: colors.muted + "30", borderColor: colors.border }]}>
-            <ThemedText style={[styles.descriptionLabel, { color: colors.mutedForeground }]}>
-              Descrição
-            </ThemedText>
-            <ThemedText style={[styles.descriptionText, { color: colors.foreground }]}>
-              {item.description}
-            </ThemedText>
-          </View>
-        )}
       </View>
     </Card>
   );

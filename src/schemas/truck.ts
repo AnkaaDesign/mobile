@@ -589,7 +589,9 @@ export const truckCreateSchema = z.object({
     .min(1, "Placa é obrigatória")
     .max(8, "Placa deve ter no máximo 8 caracteres")
     .transform((val) => val.toUpperCase().replace(/[^A-Z0-9]/g, ""))
-    .refine((val) => brazilianPlateRegex.test(val), "Formato de placa inválido (ex: ABC1234 ou ABC-1234)"),
+    .refine((val) => brazilianPlateRegex.test(val), "Formato de placa inválido (ex: ABC1234 ou ABC-1234)")
+    .nullable()
+    .optional(),
 
   model: createNameSchema(1, 100, "Modelo"),
 
@@ -597,16 +599,10 @@ export const truckCreateSchema = z.object({
     errorMap: () => ({ message: "Montadora inválida" }),
   }),
 
-  // Optional position fields
-  xPosition: z.number().nullable().optional(),
-  yPosition: z.number().nullable().optional(),
-
   // Required relation
   taskId: z.string().uuid("Tarefa inválida"),
 
   // Optional relations
-  garageId: z.string().uuid("Garagem inválida").nullable().optional(),
-  laneId: z.string().uuid("Faixa inválida").nullable().optional(),
   leftSideLayoutId: z.string().uuid("Layout inválido").nullable().optional(),
   rightSideLayoutId: z.string().uuid("Layout inválido").nullable().optional(),
   backSideLayoutId: z.string().uuid("Layout inválido").nullable().optional(),
@@ -620,6 +616,7 @@ export const truckUpdateSchema = z.object({
     .max(8, "Placa deve ter no máximo 8 caracteres")
     .transform((val) => val.toUpperCase().replace(/[^A-Z0-9]/g, ""))
     .refine((val) => brazilianPlateRegex.test(val), "Formato de placa inválido (ex: ABC1234 ou ABC-1234)")
+    .nullable()
     .optional(),
 
   model: createNameSchema(1, 100, "Modelo").optional(),
@@ -630,14 +627,8 @@ export const truckUpdateSchema = z.object({
     })
     .optional(),
 
-  // Optional position fields
-  xPosition: z.number().nullable().optional(),
-  yPosition: z.number().nullable().optional(),
-
   // Optional relations
   taskId: z.string().uuid("Tarefa inválida").optional(),
-  garageId: z.string().uuid("Garagem inválida").nullable().optional(),
-  laneId: z.string().uuid("Faixa inválida").nullable().optional(),
   leftSideLayoutId: z.string().uuid("Layout inválido").nullable().optional(),
   rightSideLayoutId: z.string().uuid("Layout inválido").nullable().optional(),
   backSideLayoutId: z.string().uuid("Layout inválido").nullable().optional(),
@@ -709,14 +700,11 @@ export type TruckBatchQueryFormData = z.infer<typeof truckBatchQuerySchema>;
 // =====================
 
 export const mapTruckToFormData = createMapToFormDataHelper<Truck, TruckUpdateFormData>((truck) => ({
-  plate: truck.plate,
+  plate: truck.plate || undefined,
   model: truck.model,
   manufacturer: truck.manufacturer,
-  xPosition: truck.xPosition || undefined,
-  yPosition: truck.yPosition || undefined,
+  // Note: xPosition, yPosition, garageId, laneId removed - now using spot field
   taskId: truck.taskId,
-  garageId: truck.garageId || undefined,
-  laneId: truck.laneId || undefined,
   leftSideLayoutId: truck.leftSideLayoutId || undefined,
   rightSideLayoutId: truck.rightSideLayoutId || undefined,
   backSideLayoutId: truck.backSideLayoutId || undefined,

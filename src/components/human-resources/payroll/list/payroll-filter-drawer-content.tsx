@@ -66,8 +66,8 @@ export function PayrollFilterDrawerContent({
     return sectors
       .filter(
         (sector) =>
-          sector.privilege === 'PRODUCTION' ||
-          sector.privilege === 'WAREHOUSE'
+          sector.privileges?.includes('PRODUCTION') ||
+          sector.privileges?.includes('WAREHOUSE')
       )
       .map((sector) => sector.id);
   }, [sectors]);

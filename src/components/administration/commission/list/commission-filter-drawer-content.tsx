@@ -45,37 +45,48 @@ export function CommissionFilterDrawerContent({
   const tasks = tasksData?.data || [];
 
   // Initialize localFilters from current filters
-  const [localFilters, setLocalFilters] = useState<FilterState>(() => ({
-    statuses: filters.statuses || [],
-    userIds: filters.userIds || [],
-    taskIds: filters.taskIds || [],
-    createdAfter: filters.createdAt?.gte,
-    createdBefore: filters.createdAt?.lte,
-  }));
+  const [localFilters, setLocalFilters] = useState<FilterState>(() => {
+    const createdAtGte = filters.where?.createdAt?.gte;
+    const createdAtLte = filters.where?.createdAt?.lte;
+
+    return {
+      statuses: filters.where?.statuses || [],
+      userIds: filters.where?.userIds || [],
+      taskIds: filters.where?.taskIds || [],
+      createdAfter: createdAtGte instanceof Date ? createdAtGte : createdAtGte ? new Date(createdAtGte) : undefined,
+      createdBefore: createdAtLte instanceof Date ? createdAtLte : createdAtLte ? new Date(createdAtLte) : undefined,
+    };
+  });
 
   const handleApply = useCallback(() => {
     const newFilters: Partial<CommissionGetManyFormData> = {};
 
+    const whereFilters: any = {};
+
     if (localFilters.statuses && localFilters.statuses.length > 0) {
-      newFilters.statuses = localFilters.statuses;
+      whereFilters.statuses = localFilters.statuses;
     }
 
     if (localFilters.userIds && localFilters.userIds.length > 0) {
-      newFilters.userIds = localFilters.userIds;
+      whereFilters.userIds = localFilters.userIds;
     }
 
     if (localFilters.taskIds && localFilters.taskIds.length > 0) {
-      newFilters.taskIds = localFilters.taskIds;
+      whereFilters.taskIds = localFilters.taskIds;
     }
 
     if (localFilters.createdAfter || localFilters.createdBefore) {
-      newFilters.createdAt = {};
+      whereFilters.createdAt = {};
       if (localFilters.createdAfter) {
-        newFilters.createdAt.gte = localFilters.createdAfter;
+        whereFilters.createdAt.gte = localFilters.createdAfter;
       }
       if (localFilters.createdBefore) {
-        newFilters.createdAt.lte = localFilters.createdBefore;
+        whereFilters.createdAt.lte = localFilters.createdBefore;
       }
+    }
+
+    if (Object.keys(whereFilters).length > 0) {
+      newFilters.where = whereFilters;
     }
 
     onFiltersChange(newFilters);

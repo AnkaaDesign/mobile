@@ -1,0 +1,62 @@
+{
+  "description": "Required dependencies for the notification service",
+  "note": "Add these to your mobile/package.json dependencies",
+  "dependencies": {
+    "expo-notifications": "~0.28.18",
+    "expo-background-fetch": "~13.0.1",
+    "expo-task-manager": "~12.0.2",
+    "expo-haptics": "~15.0.7",
+    "expo-linking": "~8.0.8",
+    "expo-constants": "~17.0.3"
+  },
+  "installCommand": "npm install expo-notifications expo-background-fetch expo-task-manager expo-haptics expo-linking expo-constants",
+  "appJsonConfiguration": {
+    "expo": {
+      "plugins": [
+        [
+          "expo-notifications",
+          {
+            "icon": "./assets/notification-icon.png",
+            "color": "#ffffff",
+            "sounds": [
+              "./assets/sounds/urgent.wav",
+              "./assets/sounds/success.wav",
+              "./assets/sounds/warning.wav",
+              "./assets/sounds/info.wav",
+              "./assets/sounds/task.wav",
+              "./assets/sounds/order.wav",
+              "./assets/sounds/message.wav"
+            ]
+          }
+        ]
+      ],
+      "ios": {
+        "infoPlist": {
+          "UIBackgroundModes": [
+            "remote-notification",
+            "fetch"
+          ]
+        }
+      },
+      "android": {
+        "useNextNotificationsApi": true,
+        "adaptiveIcon": {
+          "foregroundImage": "./assets/adaptive-icon.png"
+        }
+      }
+    }
+  },
+  "soundFiles": {
+    "location": "assets/sounds/",
+    "files": [
+      "urgent.wav",
+      "success.wav",
+      "warning.wav",
+      "info.wav",
+      "task.wav",
+      "order.wav",
+      "message.wav"
+    ],
+    "requirements": "Sound files should be in WAV, AIFF, or CAF format and under 30 seconds"
+  }
+}

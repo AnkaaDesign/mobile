@@ -13,39 +13,7 @@ import { CalculationsTable, CalculationsColumnDrawer } from "@/components/person
 import { USER_STATUS } from "@/constants";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
-
-interface CalculationRow {
-  id: string;
-  date: string;
-  entrada1?: string;
-  saida1?: string;
-  entrada2?: string;
-  saida2?: string;
-  entrada3?: string;
-  saida3?: string;
-  normais?: string;
-  faltas?: string;
-  ex50?: string;
-  ex100?: string;
-  ex150?: string;
-  dsr?: string;
-  dsrDeb?: string;
-  not?: string;
-  exNot?: string;
-  ajuste?: string;
-  abono2?: string;
-  abono3?: string;
-  abono4?: string;
-  atras?: string;
-  adian?: string;
-  folga?: string;
-  carga?: string;
-  justPa?: string;
-  tPlusMinus?: string;
-  exInt?: string;
-  notTot?: string;
-  refeicao?: string;
-}
+import type { CalculationRow } from "@/types/secullum";
 
 const COLUMN_DEFINITIONS = [
   { key: "date", label: "Data" },

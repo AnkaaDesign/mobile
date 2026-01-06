@@ -130,6 +130,17 @@ export default function ScheduleDetailsScreen() {
 
   const task = response?.data;
 
+  // Get display name with fallbacks
+  const getTaskDisplayName = (task: any) => {
+    if (task.name) return task.name;
+    if (task.customer?.fantasyName) return task.customer.fantasyName;
+    if (task.serialNumber) return `Série ${task.serialNumber}`;
+    if ((task as any).truck?.plate) return (task as any).truck.plate;
+    return "Sem nome";
+  };
+
+  const taskDisplayName = task ? getTaskDisplayName(task) : "Carregando...";
+
   // Fetch layouts for truck dimensions
   const { data: layouts } = useLayoutsByTruck((task as any)?.truck?.id || '', {
     include: { layoutSections: true },
@@ -227,7 +238,7 @@ export default function ScheduleDetailsScreen() {
             <View style={styles.headerContent}>
               <View style={styles.headerLeft}>
                 <ThemedText style={StyleSheet.flatten([styles.taskTitle, { color: colors.foreground }])} numberOfLines={2}>
-                  {task.name}
+                  {taskDisplayName}
                 </ThemedText>
               </View>
               <View style={styles.headerActions}>
@@ -279,7 +290,7 @@ export default function ScheduleDetailsScreen() {
                 </View>
               </View>
               <View style={styles.sectionContent}>
-                <TruckLayoutPreview truckId={(task as any).truck.id} taskName={task.name} />
+                <TruckLayoutPreview truckId={(task as any).truck.id} taskName={taskDisplayName} />
               </View>
             </Card>
           )}
@@ -664,7 +675,7 @@ export default function ScheduleDetailsScreen() {
                 <ChangelogTimeline
                   entityType={CHANGE_LOG_ENTITY_TYPE.TASK}
                   entityId={task.id}
-                  entityName={task.name}
+                  entityName={taskDisplayName}
                   entityCreatedAt={task.createdAt}
                   maxHeight={400}
                 />

@@ -169,7 +169,7 @@ export const successHaptic = async (): Promise<void> => {
     async () => {
       // Android fallback: two quick light impacts
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise<void>((resolve) => setTimeout(() => resolve(), 100));
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     },
   );
@@ -247,7 +247,7 @@ export const customHapticPattern = async (
       if (step.type === "impact") {
         await Haptics.impactAsync(step.style || Haptics.ImpactFeedbackStyle.Medium);
       } else if (step.type === "wait" && step.duration) {
-        await new Promise((resolve) => setTimeout(resolve, step.duration));
+        await new Promise<void>((resolve) => setTimeout(() => resolve(), step.duration));
       }
     }
   } catch (error) {

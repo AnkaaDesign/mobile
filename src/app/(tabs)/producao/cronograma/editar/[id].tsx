@@ -231,7 +231,7 @@ export default function EditScheduleScreen() {
           // Include observation with files for edit mode
           observation: task.observation ? {
             description: task.observation.description || "",
-            fileIds: task.observation.files?.map((f: any) => f.id) || [],
+            fileIds: (task.observation.files?.map((f) => f.id) || []) as string[],
             files: task.observation.files || [],
           } : null,
           // Include artworks for edit mode

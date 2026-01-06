@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { StyleSheet, ScrollView } from "react-native";
 import { Chip } from "@/components/ui/chip";
 import { spacing } from "@/constants/design-system";
-import { WARNING_CATEGORY_LABELS, WARNING_SEVERITY_LABELS } from "@/constants";
+import { WARNING_CATEGORY, WARNING_CATEGORY_LABELS, WARNING_SEVERITY, WARNING_SEVERITY_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
 import type { PersonalWarningFilters } from "./personal-warning-filter-modal";
 
@@ -25,22 +25,22 @@ export const PersonalWarningFilterTags = ({ filters, onRemoveFilter }: PersonalW
 
     // Severity filters
     if (filters.severities && filters.severities.length > 0) {
-      filters.severities.forEach((severity) => {
+      filters.severities.forEach((severity: WARNING_SEVERITY) => {
         tags.push({
           key: "severities",
           value: severity,
-          label: WARNING_SEVERITY_LABELS[severity as keyof typeof WARNING_SEVERITY_LABELS] || severity,
+          label: WARNING_SEVERITY_LABELS[severity] || severity,
         });
       });
     }
 
     // Category filters
     if (filters.categories && filters.categories.length > 0) {
-      filters.categories.forEach((category) => {
+      filters.categories.forEach((category: WARNING_CATEGORY) => {
         tags.push({
           key: "categories",
           value: category,
-          label: WARNING_CATEGORY_LABELS[category as keyof typeof WARNING_CATEGORY_LABELS] || category,
+          label: WARNING_CATEGORY_LABELS[category] || category,
         });
       });
     }

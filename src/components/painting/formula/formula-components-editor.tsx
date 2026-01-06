@@ -82,7 +82,7 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
     }
   }, [fields.length, append]);
 
-  const handleAmountChange = (index: number, value: string | null | undefined) => {
+  const handleAmountChange = (index: number, value: string | number | null) => {
     // Allow empty string or null for clearing
     if (!value || value === "") {
       setValue(`components.${index}.weightInGrams`, 0);
@@ -90,12 +90,15 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
       return;
     }
 
+    // Convert to string for processing
+    const stringValue = String(value);
+
     // Store the raw input value for display
-    setValue(`components.${index}.rawInput`, value);
+    setValue(`components.${index}.rawInput`, stringValue);
 
     // Parse and sum all numbers separated by spaces (e.g., "40 5" = 45)
-    const stringValue = String(value).replace(",", ".");
-    const parts = stringValue.split(/\s+/).filter(part => part.trim() !== "");
+    const processedValue = stringValue.replace(",", ".");
+    const parts = processedValue.split(/\s+/).filter(part => part.trim() !== "");
     let total = 0;
     for (const part of parts) {
       const num = parseFloat(part.replace(",", "."));
@@ -205,7 +208,8 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
         <Input
           value={calculateRatio(index)}
           editable={false}
-          style={[styles.ratioInput, { color: colors.mutedForeground }]}
+          inputStyle={styles.ratioInput}
+          style={{ color: colors.mutedForeground } as any}
         />
       </View>
 
@@ -217,7 +221,7 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
           onBlur={() => handleAmountBlur(index)}
           keyboardType="decimal-pad"
           placeholder="0"
-          style={styles.weightInput}
+          inputStyle={styles.weightInput}
         />
       </View>
 
@@ -259,7 +263,7 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
               onBlur={() => handleAmountBlur(index)}
               keyboardType="decimal-pad"
               placeholder="0"
-              style={styles.phoneWeightInput}
+              inputStyle={styles.phoneWeightInput}
               suffix="g"
             />
           </View>

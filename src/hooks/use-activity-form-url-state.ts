@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { z } from "zod";
 import { ACTIVITY_OPERATION } from "../constants";
-import { useUrlFilters } from "./use-url-filters";
+import { useUrlFilters } from "./common/use-url-filters";
 
 /**
  * Activity Form URL State Hook

@@ -2,7 +2,7 @@
 import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { IconX, IconAlertTriangle, IconBell, IconCheck, IconClock, IconCategory } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { NOTIFICATION_IMPORTANCE, NOTIFICATION_IMPORTANCE_LABELS, ALERT_TYPE_LABELS } from "@/constants";
+import { NOTIFICATION_IMPORTANCE, NOTIFICATION_IMPORTANCE_LABELS, ALERT_TYPE, ALERT_TYPE_LABELS } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -62,7 +62,7 @@ export function AlertFilterTags({ filters, onFilterChange, onClearAll }: AlertFi
 
     // Severity filters
     if (filters.severities && filters.severities.length > 0) {
-      filters.severities.forEach((severity) => {
+      filters.severities.forEach((severity: NOTIFICATION_IMPORTANCE) => {
         const severityColor = getSeverityColor(severity);
         tags.push(
           <Badge
@@ -89,7 +89,7 @@ export function AlertFilterTags({ filters, onFilterChange, onClearAll }: AlertFi
 
     // Type filters
     if (filters.types && filters.types.length > 0) {
-      filters.types.forEach((type) => {
+      filters.types.forEach((type: ALERT_TYPE) => {
         tags.push(
           <Badge
             key={`type-${type}`}
@@ -183,7 +183,7 @@ export function AlertFilterTags({ filters, onFilterChange, onClearAll }: AlertFi
 
     // Source filters
     if (filters.sources && filters.sources.length > 0) {
-      filters.sources.forEach((source) => {
+      filters.sources.forEach((source: string) => {
         tags.push(
           <Badge
             key={`source-${source}`}

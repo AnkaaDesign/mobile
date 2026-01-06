@@ -53,8 +53,13 @@ function getFileThumbnailUrl(file: AnkaaFile, size: 'small' | 'medium' | 'large'
 
   if (file.thumbnailUrl) {
     if (file.thumbnailUrl.startsWith('http://') || file.thumbnailUrl.startsWith('https://')) {
-      const urlObj = new URL(file.thumbnailUrl)
-      return `${apiUrl}${urlObj.pathname}?size=${size}`
+      try {
+        const urlObj = new URL(file.thumbnailUrl)
+        const pathname = (urlObj as any).pathname || ''
+        return `${apiUrl}${pathname}?size=${size}`
+      } catch {
+        return `${apiUrl}/files/thumbnail/${file.id}?size=${size}`
+      }
     }
     return `${apiUrl}/files/thumbnail/${file.id}?size=${size}`
   }
@@ -130,11 +135,11 @@ const FileThumbnail = memo(function FileThumbnail({
             )}
           </>
         ) : (
-          <FileTypeIcon filename={filename} mimeType={file.mimetype} size="sm" />
+          <FileTypeIcon filename={filename} mimeType={(file.mimetype || '') as string} size="sm" />
         )}
       </View>
       <ThemedText style={{ fontSize: 12, flex: 1 }} numberOfLines={2} ellipsizeMode="middle">
-        {filename}
+        {filename as string}
       </ThemedText>
     </View>
   )

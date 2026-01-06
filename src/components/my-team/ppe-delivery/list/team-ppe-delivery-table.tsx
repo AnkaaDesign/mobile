@@ -83,11 +83,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
         <ThemedText style={styles.cellText} numberOfLines={1}>
           {delivery.item?.name || "-"}
         </ThemedText>
-        {delivery.item?.ppeSize && (
-          <ThemedText style={styles.mutedText} numberOfLines={1}>
-            Tam: {delivery.item.ppeSize}
-          </ThemedText>
-        )}
       </View>
     ),
   },
@@ -121,7 +116,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
           case "DELIVERED":
             return { bg: badgeColors.success.background, text: badgeColors.success.text };
           case "REPROVED":
-            return { bg: badgeColors.danger.background, text: badgeColors.danger.text };
+            return { bg: badgeColors.error.background, text: badgeColors.error.text };
           case "CANCELLED":
             return { bg: badgeColors.muted.background, text: badgeColors.muted.text };
           default:

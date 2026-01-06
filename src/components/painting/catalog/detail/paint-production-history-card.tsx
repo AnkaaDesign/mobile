@@ -80,17 +80,6 @@ const createProductionColumnDefinitions = (): ProductionColumn[] => [
       </ThemedText>
     ),
   },
-  {
-    key: "notes",
-    header: "OBSERVAÇÕES",
-    align: "left",
-    width: 0,
-    accessor: (production: PaintProduction) => (
-      <ThemedText style={styles.cellText} numberOfLines={1}>
-        {production.notes || "-"}
-      </ThemedText>
-    ),
-  },
 ];
 
 export function PaintProductionHistoryCard({
@@ -139,8 +128,7 @@ export function PaintProductionHistoryCard({
 
     const searchLower = debouncedSearch.toLowerCase();
     return productions.filter((production: any) =>
-      production.formula?.description?.toLowerCase().includes(searchLower) ||
-      production.notes?.toLowerCase().includes(searchLower)
+      production.formula?.description?.toLowerCase().includes(searchLower)
     );
   }, [productions, debouncedSearch]);
 
@@ -153,7 +141,6 @@ export function PaintProductionHistoryCard({
       volumeLiters: 1.2,
       createdAt: 1.8,
       "formula.description": 2.0,
-      notes: 2.0,
     };
 
     const visible = allColumns.filter((col) => visibleColumnKeys.includes(col.key));

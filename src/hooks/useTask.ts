@@ -240,8 +240,8 @@ export function useTaskMutations() {
       });
 
       // Invalidate layout queries if truck exists (layouts are saved with task)
-      if (response.data?.truck?.id || response.data?.truckId) {
-        const truckId = response.data.truck?.id || response.data.truckId;
+      if (response.data?.truck?.id) {
+        const truckId = response.data.truck?.id;
         queryClient.invalidateQueries({
           queryKey: layoutQueryKeys.byTruck(truckId),
         });

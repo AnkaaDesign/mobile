@@ -370,7 +370,7 @@ const TruckElement = memo(function TruckElement({
   const translateY = useSharedValue(0);
   const isDragging = useSharedValue(false);
   const hasNavigated = useSharedValue(false);
-  const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // NOTE: We intentionally DON'T reset translation when baseX/baseY changes
   // This allows trucks to stay under the finger during garage transitions

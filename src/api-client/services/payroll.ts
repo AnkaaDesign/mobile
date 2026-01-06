@@ -201,4 +201,26 @@ export const payrollService = {
         },
       }
     ),
+
+  // =====================================================
+  // Discount Management
+  // =====================================================
+
+  /**
+   * Add a discount to a payroll
+   */
+  addDiscount: (payrollId: string, discount: any) =>
+    apiClient.post<Payroll>(`/payroll/${payrollId}/discounts`, discount),
+
+  /**
+   * Remove a discount from a payroll
+   */
+  removeDiscount: (payrollId: string, discountId: string) =>
+    apiClient.delete(`/payroll/${payrollId}/discounts/${discountId}`),
+
+  /**
+   * Update a discount in a payroll
+   */
+  updateDiscount: (payrollId: string, discountId: string, discount: any) =>
+    apiClient.put<Payroll>(`/payroll/${payrollId}/discounts/${discountId}`, discount),
 };

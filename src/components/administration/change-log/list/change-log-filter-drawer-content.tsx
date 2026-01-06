@@ -210,7 +210,7 @@ export function ChangeLogFilterDrawerContent({
               onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, userIds: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todos os usuários"
               searchPlaceholder="Buscar usuários..."
-              emptyMessage="Nenhum usuário encontrado"
+              emptyText="Nenhum usuário encontrado"
             />
           </View>
         </View>

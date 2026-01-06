@@ -18,7 +18,7 @@ export function BorrowItemCard({ borrow }: BorrowItemCardProps) {
 
   const handleNavigateToItem = () => {
     if (borrow.item?.id) {
-      router.push(routeToMobilePath(routes.inventory.items.detail(borrow.item.id)) as any);
+      router.push(routeToMobilePath(routes.inventory.products.details(borrow.item.id)) as any);
     }
   };
 
@@ -79,13 +79,13 @@ export function BorrowItemCard({ borrow }: BorrowItemCardProps) {
 
         {/* Item Details */}
         <View style={styles.fieldsContainer}>
-          {borrow.item.code && (
+          {borrow.item.uniCode && (
             <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
               <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
                 Código
               </ThemedText>
               <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-                {borrow.item.code}
+                {borrow.item.uniCode}
               </ThemedText>
             </View>
           )}
@@ -112,40 +112,17 @@ export function BorrowItemCard({ borrow }: BorrowItemCardProps) {
             </View>
           )}
 
-          {borrow.item.location && (
-            <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
-                Localização
-              </ThemedText>
-              <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-                {borrow.item.location}
-              </ThemedText>
-            </View>
-          )}
-
-          {borrow.item.stockQuantity !== undefined && (
+          {borrow.item.quantity !== undefined && (
             <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
               <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
                 Estoque Atual
               </ThemedText>
               <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-                {borrow.item.stockQuantity}
+                {borrow.item.quantity}
               </ThemedText>
             </View>
           )}
         </View>
-
-        {/* Item Description */}
-        {borrow.item.description && (
-          <View style={[styles.descriptionSection, { borderTopColor: colors.border + "50" }]}>
-            <ThemedText style={[styles.subsectionHeader, { color: colors.foreground }]}>
-              Descrição do Item
-            </ThemedText>
-            <ThemedText style={[styles.descriptionText, { color: colors.mutedForeground }]}>
-              {borrow.item.description}
-            </ThemedText>
-          </View>
-        )}
       </View>
     </Card>
   );

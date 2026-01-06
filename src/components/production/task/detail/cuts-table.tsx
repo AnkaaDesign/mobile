@@ -67,7 +67,7 @@ export function CutsTable({ taskId, taskSectorId, maxHeight = 400 }: CutsTablePr
     },
     orderBy: { createdAt: "desc" },
     enabled: !!taskId,
-  });
+  }) as { items: Cut[]; isLoading: boolean; error: Error | null; loadMore: () => void; canLoadMore: boolean; isFetchingNextPage: boolean; totalCount: number };
 
   // Filter cuts based on search (client-side for already loaded cuts)
   const filteredCuts = useMemo(() => {
@@ -110,9 +110,9 @@ export function CutsTable({ taskId, taskSectorId, maxHeight = 400 }: CutsTablePr
 
   // Handle cut request - open modal with selected cut
   const handleCutRequest = useCallback((cutId: string) => {
-    const cut = cuts.find(c => c.id === cutId);
+    const cut = cuts.find((c: Cut) => c.id === cutId);
     if (cut) {
-      setSelectedCutForRequest(cut);
+      setSelectedCutForRequest(cut as Cut);
       setIsRequestModalOpen(true);
     }
   }, [cuts]);

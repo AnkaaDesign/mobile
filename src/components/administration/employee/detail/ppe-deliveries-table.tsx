@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconShield, IconAlertCircle, IconList } from "@tabler/icons-react-native";
-import type { User } from "@/types";
+import type { User, PpeDelivery } from "@/types";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { useDebounce } from "@/hooks/useDebouncedSearch";
@@ -25,17 +25,17 @@ const createColumnDefinitions = () => {
   return [
     {
       key: "item",
-      label: "Item",
+      header: "Item",
       sortable: false,
     },
     {
       key: "quantity",
-      label: "Quantidade",
+      header: "Quantidade",
       sortable: true,
     },
     {
       key: "status",
-      label: "Status",
+      header: "Status",
       sortable: true,
     },
   ];
@@ -107,7 +107,7 @@ export function PpeDeliveriesTable({ employee, maxHeight = 500 }: PpeDeliveriesT
     if (!debouncedSearch) return ppeDeliveries;
 
     const searchLower = debouncedSearch.toLowerCase();
-    return ppeDeliveries.filter((delivery) => {
+    return ppeDeliveries.filter((delivery: PpeDelivery) => {
       const itemName = delivery.item?.name?.toLowerCase() || "";
       const statusLabel = getStatusLabel(delivery.status).toLowerCase();
 
@@ -139,7 +139,7 @@ export function PpeDeliveriesTable({ employee, maxHeight = 500 }: PpeDeliveriesT
   }, []);
 
   // Render PPE delivery row
-  const renderPpeDeliveryRow = useCallback(({ item: delivery, index }: { item: any; index: number }) => {
+  const renderPpeDeliveryRow = useCallback(({ item: delivery, index }: { item: PpeDelivery; index: number }) => {
     const isEven = index % 2 === 0;
     const backgroundColor = isEven ? colors.background : colors.card;
 
@@ -243,7 +243,7 @@ export function PpeDeliveriesTable({ employee, maxHeight = 500 }: PpeDeliveriesT
               <FlatList
                 data={filteredPpeDeliveries}
                 renderItem={renderPpeDeliveryRow}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item: PpeDelivery) => item.id}
                 onEndReached={() => canLoadMore && loadMore()}
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={

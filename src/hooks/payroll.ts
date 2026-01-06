@@ -46,14 +46,20 @@ const payrollServiceAdapter = {
     payrollService.getMany(params).then(response => response.data),
   getById: (id: string, params?: PayrollGetByIdParams) =>
     payrollService.getById(id, params).then(response => response.data),
-  create: (data: PayrollCreateFormData) =>
-    payrollService.create(data).then(response => response.data),
+  create: (_data: PayrollCreateFormData) => {
+    // Payrolls are created by cronjob, not manually
+    console.warn('Manual payroll creation is not supported - use generateMonthlyPayrolls');
+    return Promise.reject(new Error('Manual payroll creation is not supported'));
+  },
   update: (id: string, data: PayrollUpdateFormData) =>
     payrollService.update(id, data).then(response => response.data),
   delete: (id: string) =>
     payrollService.delete(id).then(() => undefined),
-  batchCreate: (data: PayrollBatchCreateFormData) =>
-    payrollService.batchCreate(data).then(response => response.data),
+  batchCreate: (_data: PayrollBatchCreateFormData) => {
+    // Payrolls are created by cronjob, not manually
+    console.warn('Manual payroll batch creation is not supported - use generateMonthlyPayrolls');
+    return Promise.resolve({ created: 0, skipped: 0 });
+  },
   batchUpdate: (data: PayrollBatchUpdateFormData) =>
     payrollService.batchUpdate(data).then(response => response.data),
   batchDelete: (data: PayrollBatchDeleteFormData) =>
@@ -191,16 +197,16 @@ export const usePayrollDetailsWithBonus = (userId: string, year: number, month: 
           },
         });
 
-        if (response.data) {
-          return response.data;
+        if (response.data && response.data.data) {
+          return response.data.data;
         }
       } catch (error: any) {
         // If no saved payroll exists (404), fall back to live calculation
         if (error?.response?.status === 404) {
           try {
             const liveResponse = await payrollService.getLiveCalculation(userId, year, month);
-            if (liveResponse.data) {
-              return liveResponse.data.payroll || liveResponse.data;
+            if (liveResponse.data && liveResponse.data.data) {
+              return liveResponse.data.data.payroll || liveResponse.data.data;
             }
           } catch (liveError) {
             throw liveError;

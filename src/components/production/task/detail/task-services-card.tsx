@@ -77,8 +77,8 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
       <View style={styles.content}>
         {validServices.map((service, index) => {
           // Use centralized badge configuration
-          const badgeVariant = getBadgeVariant(service.status, "SERVICE_ORDER");
-          const statusLabel = SERVICE_ORDER_STATUS_LABELS[service.status] || service.status;
+          const badgeVariant = service.status ? getBadgeVariant(service.status, "SERVICE_ORDER") : "default";
+          const statusLabel = service.status ? (SERVICE_ORDER_STATUS_LABELS[service.status] || service.status) : "N/A";
 
           return (
             <View
@@ -99,7 +99,7 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
                   <Combobox
                     key={`status-${service.id}`}
                     options={statusOptions}
-                    value={service.status}
+                    value={service.status || undefined}
                     onValueChange={(value) => {
                       console.log('[TaskServicesCard] Combobox onValueChange:', { serviceId: service.id, value });
                       handleStatusChange(service.id, value as SERVICE_ORDER_STATUS);

@@ -146,7 +146,7 @@ export function useMultiStepForm<TFormData = Record<string, unknown>>(
   >({});
 
   // Refs for debouncing
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load state from AsyncStorage on mount
   useEffect(() => {

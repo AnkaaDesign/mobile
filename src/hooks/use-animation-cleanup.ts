@@ -22,7 +22,7 @@ interface UseAnimationCleanupReturn {
 
 export const useAnimationCleanup = (): UseAnimationCleanupReturn => {
   const animationsRef = useRef<Map<string, AnimationConfig>>(new Map());
-  const cleanupTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const cleanupTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   /**
    * Register an animation for tracking and automatic cleanup
@@ -201,16 +201,16 @@ export const useAnimationWithCleanup = (
  * Hook for preventing memory leaks in component lifecycle
  */
 export const useMemoryLeakPrevention = (componentName?: string) => {
-  const timeoutsRef = useRef<Set<NodeJS.Timeout>>(new Set());
-  const intervalsRef = useRef<Set<NodeJS.Timeout>>(new Set());
+  const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const intervalsRef = useRef<Set<ReturnType<typeof setInterval>>>(new Set());
   const listenersRef = useRef<Map<string, () => void>>(new Map());
 
-  const addTimeout = useCallback((timeout: NodeJS.Timeout) => {
+  const addTimeout = useCallback((timeout: ReturnType<typeof setTimeout>) => {
     timeoutsRef.current.add(timeout);
     return timeout;
   }, []);
 
-  const addInterval = useCallback((interval: NodeJS.Timeout) => {
+  const addInterval = useCallback((interval: ReturnType<typeof setInterval>) => {
     intervalsRef.current.add(interval);
     return interval;
   }, []);

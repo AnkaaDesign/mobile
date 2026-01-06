@@ -17,7 +17,7 @@ import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/conte
 import { IconFileText } from "@tabler/icons-react-native";
 
 import { type Service } from '../../../../types';
-import { serviceCreateSchema, serviceUpdateSchema } from '../../../../schemas';
+import { serviceCreateSchema, serviceUpdateSchema, type ServiceCreateFormData, type ServiceUpdateFormData } from '../../../../schemas';
 
 interface ServiceFormProps {
   service?: Service;

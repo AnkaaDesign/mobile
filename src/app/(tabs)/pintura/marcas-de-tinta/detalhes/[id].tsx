@@ -265,12 +265,12 @@ export default function PaintBrandDetailsScreen() {
                           )}
                           {paint.finish && (
                             <Badge variant="secondary" size="sm">
-                              {PAINT_FINISH_LABELS[paint.finish] || paint.finish}
+                              {PAINT_FINISH_LABELS[paint.finish as keyof typeof PAINT_FINISH_LABELS] || paint.finish}
                             </Badge>
                           )}
                           {paint.manufacturer && (
                             <Badge variant="outline" size="sm">
-                              {TRUCK_MANUFACTURER_LABELS[paint.manufacturer] || paint.manufacturer}
+                              {TRUCK_MANUFACTURER_LABELS[paint.manufacturer as keyof typeof TRUCK_MANUFACTURER_LABELS] || paint.manufacturer}
                             </Badge>
                           )}
                         </View>

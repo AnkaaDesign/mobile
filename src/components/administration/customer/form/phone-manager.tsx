@@ -73,7 +73,7 @@ export function PhoneManager({ phones, onChange }: PhoneManagerProps) {
           <Input
             ref={inputRef}
             value={newPhone ? formatBrazilianPhone(newPhone) : ""}
-            onChangeText={(text) => setNewPhone(cleanPhone(text))}
+            onChangeText={(text: string | number | null) => setNewPhone(cleanPhone(text?.toString() || ""))}
             placeholder="(00) 00000-0000"
             keyboardType="phone-pad"
             maxLength={15}

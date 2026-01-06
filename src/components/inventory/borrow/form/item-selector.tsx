@@ -49,8 +49,8 @@ export function BorrowItemSelector({
       description: `Estoque: ${initialItem.quantity || 0}`,
       metadata: {
         quantity: initialItem.quantity,
-        category: initialItem.itemCategory,
-        brand: initialItem.itemBrand,
+        category: initialItem.category,
+        brand: initialItem.brand,
         isActive: initialItem.isActive,
       },
     }];
@@ -83,7 +83,7 @@ export function BorrowItemSelector({
     });
 
     const items = response.data || [];
-    const total = response.total || 0;
+    const total = items.length;
     const hasMore = (page * pageSize) < total;
 
     return {
@@ -93,8 +93,8 @@ export function BorrowItemSelector({
         description: `Estoque: ${item.quantity || 0}`,
         metadata: {
           quantity: item.quantity,
-          category: item.itemCategory,
-          brand: item.itemBrand,
+          category: item.category,
+          brand: item.brand,
           isActive: item.isActive,
         },
       })) as ComboboxOption[],
@@ -154,7 +154,7 @@ export function BorrowItemSelector({
         pageSize={50}
         debounceMs={300}
         value={value || ""}
-        onValueChange={onValueChange}
+        onValueChange={(val) => onValueChange(Array.isArray(val) ? val[0] : val || undefined)}
         placeholder="Selecione um item"
         emptyText="Nenhum item disponível"
         searchPlaceholder="Buscar por nome ou código..."

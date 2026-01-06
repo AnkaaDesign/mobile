@@ -25,20 +25,20 @@ interface DeliveriesTableProps {
 }
 
 // Column definitions for PPE deliveries
-const createColumnDefinitions = () => [
+const createColumnDefinitions = (): Array<{ key: string; header: string; width: number }> => [
   {
     key: "user",
-    label: "Usuário",
+    header: "Usuário",
     width: 150,
   },
   {
     key: "quantity",
-    label: "Quantidade",
+    header: "Quantidade",
     width: 100,
   },
   {
     key: "status",
-    label: "Status",
+    header: "Status",
     width: 120,
   },
 ];

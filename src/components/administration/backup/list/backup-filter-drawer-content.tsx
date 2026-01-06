@@ -175,13 +175,13 @@ export function BackupFilterDrawerContent({
                   activeOpacity={0.7}
                 >
                   <Badge
-                    style={[
+                    style={StyleSheet.flatten([
                       styles.typeChip,
                       {
                         backgroundColor: isSelected ? colors.primary : colors.muted,
                         borderColor: isSelected ? colors.primary : colors.border,
                       },
-                    ]}
+                    ])}
                   >
                     <ThemedText
                       style={[

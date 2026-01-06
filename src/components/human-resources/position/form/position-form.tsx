@@ -184,8 +184,8 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
                 name="bonifiable"
                 render={({ field: { onChange, value } }) => (
                   <Switch
-                    value={value || false}
-                    onValueChange={onChange}
+                    checked={value || false}
+                    onCheckedChange={onChange}
                     disabled={isLoading}
                   />
                 )}

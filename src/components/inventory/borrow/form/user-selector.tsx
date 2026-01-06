@@ -74,7 +74,7 @@ export function BorrowUserSelector({
     });
 
     const users = response.data || [];
-    const total = response.total || 0;
+    const total = users.length;
     const hasMore = (page * pageSize) < total;
 
     return {
@@ -147,7 +147,7 @@ export function BorrowUserSelector({
         pageSize={50}
         debounceMs={300}
         value={value || ""}
-        onValueChange={onValueChange}
+        onValueChange={(val) => onValueChange(Array.isArray(val) ? val[0] : val)}
         placeholder="Selecione um usuário"
         emptyText="Nenhum usuário encontrado"
         searchPlaceholder="Buscar por nome, e-mail ou CPF..."

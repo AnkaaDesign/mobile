@@ -24,7 +24,7 @@ export function useUrlFilters<T extends Record<string, any>>(filterConfigs: { [K
   getFilter: <K extends keyof T>(key: K) => T[K] | undefined;
 } {
   // Use a Map to store separate timeout for each field
-  const debounceTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const debounceTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // Initialize state with default values
   const initialState = useMemo(() => {

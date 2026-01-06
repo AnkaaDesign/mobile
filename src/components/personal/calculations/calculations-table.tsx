@@ -5,6 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { Icon } from "@/components/ui/icon";
+import type { CalculationRow } from "@/types/secullum";
 
 const FIXED_COLUMN_WIDTH = 80;
 const SCROLLABLE_COLUMN_WIDTH = 70;
@@ -13,12 +14,6 @@ const HEADER_HEIGHT = 36;
 
 // Day abbreviations in Portuguese
 const DAY_ABBREV = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-
-interface CalculationRow {
-  id: string;
-  date: string;
-  [key: string]: string | undefined;
-}
 
 interface ColumnDefinition {
   key: string;
@@ -100,7 +95,7 @@ export const CalculationsTable = React.memo<CalculationsTableProps>(({
   const renderScrollableRow = useCallback(({ item, index }: { item: CalculationRow; index: number }) => (
     <View style={[styles.scrollableRow, { backgroundColor: getRowBg(index), borderBottomColor: colors.border }]}>
       {displayColumns.map((column) => {
-        const value = item[column.key];
+        const value = item[column.key as keyof CalculationRow];
         const isEmpty = !value || value === "0" || value === "00:00";
 
         return (

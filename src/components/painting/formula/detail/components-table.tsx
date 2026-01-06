@@ -67,13 +67,13 @@ const createComponentColumnDefinitions = (): ComponentColumn[] => [
     ),
   },
   {
-    key: "item.code",
+    key: "item.uniCode",
     header: "CÓDIGO",
     align: "left",
     width: 0,
     accessor: (component: PaintFormulaComponent) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {component.item?.code || "-"}
+        {component.item?.uniCode || "-"}
       </ThemedText>
     ),
   },
@@ -151,7 +151,7 @@ export function FormulaComponentsTable({
     const searchLower = debouncedSearch.toLowerCase();
     return components.filter((component: PaintFormulaComponent) =>
       component.item?.name?.toLowerCase().includes(searchLower) ||
-      component.item?.code?.toLowerCase().includes(searchLower) ||
+      component.item?.uniCode?.toLowerCase().includes(searchLower) ||
       component.item?.brand?.name?.toLowerCase().includes(searchLower) ||
       component.item?.category?.name?.toLowerCase().includes(searchLower)
     );

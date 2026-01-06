@@ -15,6 +15,7 @@ import { useObservationsInfiniteMobile } from "@/hooks";
 import { ObservationTable, createColumnDefinitions } from "@/components/production/observation/list/observation-table";
 import { routes } from "@/constants";
 import { routeToMobilePath } from "@/utils/route-mapper";
+import type { Observation } from "@/types";
 
 interface ObservationsTableProps {
   taskId: string;
@@ -54,7 +55,7 @@ export function ObservationsTable({ taskId, maxHeight = 400 }: ObservationsTable
     },
     orderBy: { createdAt: "desc" },
     enabled: !!taskId,
-  });
+  }) as { items: Observation[]; isLoading: boolean; error: Error | null; loadMore: () => void; canLoadMore: boolean; isFetchingNextPage: boolean; totalCount: number };
 
   // Filter observations based on search (client-side for already loaded items)
   const filteredObservations = useMemo(() => {

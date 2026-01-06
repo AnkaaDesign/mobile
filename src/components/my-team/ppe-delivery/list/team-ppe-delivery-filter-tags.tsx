@@ -5,7 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { PPE_DELIVERY_STATUS_LABELS } from '@/constants';
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '@/constants';
 
 interface TeamPpeDeliveryFilterTagsProps {
   filters: {
@@ -52,12 +52,12 @@ export function TeamPpeDeliveryFilterTags({
 
     // Status filters
     if (filters.status?.length) {
-      filters.status.forEach((status) => {
+      filters.status.forEach((status: string) => {
         tags.push({
           key: `status-${status}`,
-          label: `Status: ${PPE_DELIVERY_STATUS_LABELS[status] || status}`,
+          label: `Status: ${PPE_DELIVERY_STATUS_LABELS[status as PPE_DELIVERY_STATUS] || status}`,
           onRemove: () => {
-            const newStatuses = filters.status?.filter((s) => s !== status) || [];
+            const newStatuses = filters.status?.filter((s: string) => s !== status) || [];
             onFilterChange({
               ...filters,
               status: newStatuses.length > 0 ? newStatuses : undefined,

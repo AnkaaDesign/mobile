@@ -98,7 +98,6 @@ const routeToFavoritePageMap: Record<string, FAVORITE_PAGES> = {
   "/recursos-humanos/epi": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_LISTAR,
   "/recursos-humanos/epi/entregas": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_ENTREGAS_LISTAR,
   "/recursos-humanos/epi/agendamentos": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_AGENDAMENTOS_LISTAR,
-  "/recursos-humanos/epi/tamanhos": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_TAMANHOS_LISTAR,
   "/recursos-humanos/setores": FAVORITE_PAGES.RECURSOS_HUMANOS_SETORES_LISTAR,
 
   // Human Resources - Create Pages
@@ -109,7 +108,6 @@ const routeToFavoritePageMap: Record<string, FAVORITE_PAGES> = {
   "/recursos-humanos/epi/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_CADASTRAR,
   "/recursos-humanos/epi/entregas/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_ENTREGAS_CADASTRAR,
   "/recursos-humanos/epi/agendamentos/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_AGENDAMENTOS_CADASTRAR,
-  "/recursos-humanos/epi/tamanhos/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_TAMANHOS_CADASTRAR,
   "/recursos-humanos/setores/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_SETORES_CADASTRAR,
 
   // Personal - List Pages

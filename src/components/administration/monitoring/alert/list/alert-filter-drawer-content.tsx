@@ -183,7 +183,7 @@ export function AlertFilterDrawerContent({
               onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, severities: (Array.isArray(values) ? values : values ? [values] : []) as NOTIFICATION_IMPORTANCE[] }))}
               placeholder="Todas as severidades"
               searchPlaceholder="Buscar severidades..."
-              emptyMessage="Nenhuma severidade encontrada"
+              emptyText="Nenhuma severidade encontrada"
             />
           </View>
         </View>
@@ -208,7 +208,7 @@ export function AlertFilterDrawerContent({
               onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, types: (Array.isArray(values) ? values : values ? [values] : []) as ALERT_TYPE[] }))}
               placeholder="Todos os tipos"
               searchPlaceholder="Buscar tipos..."
-              emptyMessage="Nenhum tipo encontrado"
+              emptyText="Nenhum tipo encontrado"
             />
           </View>
         </View>
@@ -309,7 +309,7 @@ export function AlertFilterDrawerContent({
               onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sources: Array.isArray(values) ? values : values ? [values] : [] }))}
               placeholder="Todas as origens"
               searchPlaceholder="Buscar origens..."
-              emptyMessage="Nenhuma origem encontrada"
+              emptyText="Nenhuma origem encontrada"
             />
           </View>
         </View>

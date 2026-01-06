@@ -147,13 +147,11 @@ export const USER_STATUS_LABELS: Record<USER_STATUS, string> = {
 };
 
 export const TASK_STATUS_LABELS: Record<TASK_STATUS, string> = {
-  [TASK_STATUS.PENDING]: "Aguardando",
+  [TASK_STATUS.PREPARATION]: "Em Preparação",
+  [TASK_STATUS.WAITING_PRODUCTION]: "Aguardando Produção",
   [TASK_STATUS.IN_PRODUCTION]: "Em Produção",
   [TASK_STATUS.COMPLETED]: "Concluído",
   [TASK_STATUS.CANCELLED]: "Cancelado",
-  [TASK_STATUS.ON_HOLD]: "Em Espera",
-  [TASK_STATUS.INVOICED]: "Faturado",
-  [TASK_STATUS.SETTLED]: "Liquidado",
 };
 
 export const SERVICE_ORDER_STATUS_LABELS: Record<SERVICE_ORDER_STATUS, string> = {
@@ -219,6 +217,7 @@ export const MAINTENANCE_SCHEDULE_STATUS_LABELS: Record<MAINTENANCE_SCHEDULE_STA
 export const BORROW_STATUS_LABELS: Record<BORROW_STATUS, string> = {
   [BORROW_STATUS.ACTIVE]: "Ativo",
   [BORROW_STATUS.RETURNED]: "Devolvido",
+  [BORROW_STATUS.OVERDUE]: "Atrasado",
   [BORROW_STATUS.LOST]: "Perdido",
 };
 

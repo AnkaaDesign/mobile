@@ -34,8 +34,15 @@ import {
   IconPlayerPlay,
 } from "@tabler/icons-react-native";
 import { SvgUri } from "react-native-svg";
-import Pdf from 'react-native-pdf';
 import { useTheme } from "@/lib/theme";
+
+// Conditionally import react-native-pdf (not supported in Expo Go)
+let Pdf: any = null;
+try {
+  Pdf = require('react-native-pdf').default;
+} catch (error) {
+  console.warn('react-native-pdf not available in Expo Go');
+}
 
 import { Badge } from "@/components/ui/badge";
 import type { File as AnkaaFile } from '../../types';
@@ -660,46 +667,60 @@ export function FilePreviewModal({
                 {/* PDF Viewer - Full screen inline */}
                 {isPDF && (
                   <View style={styles.pdfContainer}>
-                    <Pdf
-                      key={`pdf-${currentFile.id}-${currentIndex}`}
-                      source={{
-                        uri: getFileUrl(currentFile),
-                        cache: true,
-                      }}
-                      trustAllCerts={false}
-                      onLoadComplete={(numberOfPages) => {
-                        console.log('[PDF Viewer] Loaded:', numberOfPages, 'pages');
-                        setImageLoading(false);
-                        setImageError(false);
-                      }}
-                      onError={(error) => {
-                        console.error('[PDF Viewer] Error:', error);
-                        setImageLoading(false);
-                        setImageError(true);
-                      }}
-                      onLoadProgress={(percent) => {
-                        console.log('[PDF Viewer] Progress:', Math.round(percent * 100) + '%');
-                      }}
-                      style={styles.pdfViewer}
-                      enablePaging={true}
-                      horizontal={false}
-                      spacing={10}
-                    />
-                    {imageLoading && (
+                    {!Pdf ? (
                       <View style={styles.pdfLoadingOverlay}>
-                        <ActivityIndicator size="large" color={colors.primary} />
-                        <Text style={styles.loadingText}>Carregando PDF...</Text>
-                      </View>
-                    )}
-                    {imageError && (
-                      <View style={styles.pdfLoadingOverlay}>
-                        <Text style={styles.errorIcon}>⚠️</Text>
-                        <Text style={styles.errorTitle}>Erro ao carregar PDF</Text>
+                        <Text style={styles.errorIcon}>📄</Text>
+                        <Text style={styles.errorTitle}>PDF não disponível no Expo Go</Text>
+                        <Text style={styles.errorMessage}>Use um development build para visualizar PDFs</Text>
                         <TouchableOpacity style={styles.errorButton} onPress={handleShare} activeOpacity={0.7}>
                           <IconExternalLink size={16} color="#ffffff" />
                           <Text style={styles.errorButtonText}>Abrir com...</Text>
                         </TouchableOpacity>
                       </View>
+                    ) : (
+                      <>
+                        <Pdf
+                          key={`pdf-${currentFile.id}-${currentIndex}`}
+                          source={{
+                            uri: getFileUrl(currentFile),
+                            cache: true,
+                          }}
+                          trustAllCerts={false}
+                          onLoadComplete={(numberOfPages) => {
+                            console.log('[PDF Viewer] Loaded:', numberOfPages, 'pages');
+                            setImageLoading(false);
+                            setImageError(false);
+                          }}
+                          onError={(error) => {
+                            console.error('[PDF Viewer] Error:', error);
+                            setImageLoading(false);
+                            setImageError(true);
+                          }}
+                          onLoadProgress={(percent) => {
+                            console.log('[PDF Viewer] Progress:', Math.round(percent * 100) + '%');
+                          }}
+                          style={styles.pdfViewer}
+                          enablePaging={true}
+                          horizontal={false}
+                          spacing={10}
+                        />
+                        {imageLoading && (
+                          <View style={styles.pdfLoadingOverlay}>
+                            <ActivityIndicator size="large" color={colors.primary} />
+                            <Text style={styles.loadingText}>Carregando PDF...</Text>
+                          </View>
+                        )}
+                        {imageError && (
+                          <View style={styles.pdfLoadingOverlay}>
+                            <Text style={styles.errorIcon}>⚠️</Text>
+                            <Text style={styles.errorTitle}>Erro ao carregar PDF</Text>
+                            <TouchableOpacity style={styles.errorButton} onPress={handleShare} activeOpacity={0.7}>
+                              <IconExternalLink size={16} color="#ffffff" />
+                              <Text style={styles.errorButtonText}>Abrir com...</Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </>
                     )}
                   </View>
                 )}

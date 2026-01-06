@@ -998,9 +998,9 @@ export const userUpdateSchema = z
   )
   .refine(
     (data) => {
-      // Prevent CONTRACTED users from being set to experience periods
+      // Prevent EFFECTED users from being set to experience periods
       if (
-        data.currentStatus === USER_STATUS.CONTRACTED &&
+        data.currentStatus === USER_STATUS.EFFECTED &&
         data.status &&
         (data.status === USER_STATUS.EXPERIENCE_PERIOD_1 || data.status === USER_STATUS.EXPERIENCE_PERIOD_2)
       ) {
@@ -1009,7 +1009,7 @@ export const userUpdateSchema = z
       return true;
     },
     {
-      message: "Colaboradores CONTRATADOS não podem ser alterados para períodos de experiência",
+      message: "Colaboradores EFETIVADOS não podem ser alterados para períodos de experiência",
       path: ["status"],
     }
   )
@@ -1120,8 +1120,8 @@ export type UserWhere = z.infer<typeof userWhereSchema>;
  */
 export const USER_STATUS_TRANSITIONS: Record<USER_STATUS, USER_STATUS[]> = {
   [USER_STATUS.EXPERIENCE_PERIOD_1]: [USER_STATUS.EXPERIENCE_PERIOD_2, USER_STATUS.DISMISSED],
-  [USER_STATUS.EXPERIENCE_PERIOD_2]: [USER_STATUS.CONTRACTED, USER_STATUS.DISMISSED],
-  [USER_STATUS.CONTRACTED]: [USER_STATUS.DISMISSED],
+  [USER_STATUS.EXPERIENCE_PERIOD_2]: [USER_STATUS.EFFECTED, USER_STATUS.DISMISSED],
+  [USER_STATUS.EFFECTED]: [USER_STATUS.DISMISSED],
   [USER_STATUS.DISMISSED]: [], // No transitions allowed from DISMISSED
 };
 
@@ -1154,7 +1154,7 @@ export function getStatusTransitionError(currentStatus: USER_STATUS | string, ne
   const statusLabels: Record<string, string> = {
     [USER_STATUS.EXPERIENCE_PERIOD_1]: "Experiência 1",
     [USER_STATUS.EXPERIENCE_PERIOD_2]: "Experiência 2",
-    [USER_STATUS.CONTRACTED]: "Contratado",
+    [USER_STATUS.EFFECTED]: "Efetivado",
     [USER_STATUS.DISMISSED]: "Demitido",
   };
 
@@ -1162,8 +1162,8 @@ export function getStatusTransitionError(currentStatus: USER_STATUS | string, ne
     return "Colaboradores demitidos não podem ter o status alterado";
   }
 
-  if (currentStatus === USER_STATUS.CONTRACTED && (newStatus === USER_STATUS.EXPERIENCE_PERIOD_1 || newStatus === USER_STATUS.EXPERIENCE_PERIOD_2)) {
-    return "Colaboradores contratados não podem retornar ao período de experiência";
+  if (currentStatus === USER_STATUS.EFFECTED && (newStatus === USER_STATUS.EXPERIENCE_PERIOD_1 || newStatus === USER_STATUS.EXPERIENCE_PERIOD_2)) {
+    return "Colaboradores efetivados não podem retornar ao período de experiência";
   }
 
   const allowedTransitions = USER_STATUS_TRANSITIONS[currentStatus as USER_STATUS] || [];

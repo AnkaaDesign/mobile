@@ -51,7 +51,7 @@ export function checkUserBorrowPermission(user: User | null): ValidationError | 
   }
 
   // Check if user is active
-  if (user.status !== "ACTIVE") {
+  if (user.status !== ("ACTIVE" as any)) {
     return {
       field: "user",
       message: "Usuário inativo não pode fazer empréstimos",
@@ -197,7 +197,7 @@ export function checkItemBorrowRestrictions(item: Item | null, user: User | null
   }
 
   // Check if item is a PPE and user has PPE configuration
-  if (item.category?.type === ITEM_CATEGORY_TYPE.PPE) {
+  if (item.category?.type === ITEM_CATEGORY_TYPE.PPE as any) {
     // Check if user has PPE size configured if required
     if (!user.ppeSize) {
       return {

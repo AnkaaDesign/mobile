@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconShirt, IconShoe, IconBoxSeam, IconMask, IconBulb, IconCertificate, IconPackage, IconUser, IconRuler, IconShield } from "@tabler/icons-react-native";
 import type { Item } from "../../../../types";
-import { PPE_TYPE_LABELS, PPE_SIZE_LABELS, PPE_DELIVERY_MODE_LABELS, PPE_TYPE } from "@/constants";
+import { PPE_TYPE_LABELS, PPE_SIZE_LABELS, PPE_DELIVERY_MODE_LABELS, PPE_TYPE, PPE_SIZE } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 
@@ -66,7 +66,7 @@ export function PpeInfoCard({ item }: PpeInfoCardProps) {
                     <IconRuler size={16} color={colors.mutedForeground} />
                     <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Tamanho</ThemedText>
                   </View>
-                  <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{PPE_SIZE_LABELS[item.ppeSize]}</ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{PPE_SIZE_LABELS[item.ppeSize as PPE_SIZE]}</ThemedText>
                 </View>
               )}
               {item.ppeCA && (

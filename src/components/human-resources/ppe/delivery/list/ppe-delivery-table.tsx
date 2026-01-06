@@ -86,7 +86,7 @@ export const PpeDeliveryTable = memo(({ deliveries, isLoading, error, onDelivery
               </ThemedText>
             </View>
             <ThemedText style={styles.ppeDetails} numberOfLines={1}>
-              {delivery.item?.ppeSize ? `Tamanho: ${delivery.item.ppeSize}` : "-"}
+              {delivery.item?.ppeType || "-"}
             </ThemedText>
             <ThemedText style={styles.quantity}>{delivery.quantity} un</ThemedText>
           </View>

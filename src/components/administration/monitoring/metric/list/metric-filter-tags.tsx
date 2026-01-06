@@ -44,12 +44,12 @@ export function MetricFilterTags({
 
     // Category filters
     if (filters.categories && filters.categories.length > 0) {
-      filters.categories.forEach((category) => {
+      filters.categories.forEach((category: MetricCategory) => {
         tags.push({
           key: `category-${category}`,
           label: CATEGORY_LABELS[category],
           onRemove: () => {
-            const newCategories = filters.categories?.filter((c) => c !== category);
+            const newCategories = filters.categories?.filter((c: MetricCategory) => c !== category);
             onFilterChange({
               ...filters,
               categories: newCategories && newCategories.length > 0 ? newCategories : undefined,

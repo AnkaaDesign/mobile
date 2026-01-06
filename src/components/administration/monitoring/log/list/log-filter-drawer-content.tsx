@@ -213,7 +213,7 @@ export function LogFilterDrawerContent({
                 onValueChange={(values) => setLocalFilters((prev) => ({ ...prev, sources: Array.isArray(values) ? values : values ? [values] : [] }))}
                 placeholder="Todos os serviços"
                 searchPlaceholder="Buscar serviços..."
-                emptyMessage="Nenhum serviço encontrado"
+                emptyText="Nenhum serviço encontrado"
               />
             </View>
           </View>

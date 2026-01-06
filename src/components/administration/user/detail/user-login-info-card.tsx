@@ -7,7 +7,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { IconLogin, IconShieldCheck, IconShieldOff, IconKey, IconClock } from "@tabler/icons-react-native";
 import type { User } from '../../../../types';
 import { formatDateTime, formatRelativeTime } from "@/utils";
-import { VERIFICATION_TYPE_LABELS } from "@/constants";
+import { VERIFICATION_TYPE, VERIFICATION_TYPE_LABELS } from "@/constants";
 
 interface UserLoginInfoCardProps {
   user: User;
@@ -100,7 +100,7 @@ export function UserLoginInfoCard({ user }: UserLoginInfoCardProps) {
                   Tipo de Verificação
                 </ThemedText>
                 <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-                  {VERIFICATION_TYPE_LABELS[user.verificationType]}
+                  {VERIFICATION_TYPE_LABELS[user.verificationType as VERIFICATION_TYPE]}
                 </ThemedText>
               </View>
             </View>

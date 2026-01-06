@@ -174,7 +174,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
                       <Combobox
                         options={yearOptions}
                         value={value?.toString() || ""}
-                        onValueChange={(val) => onChange(parseInt(val, 10))}
+                        onValueChange={(val) => onChange(parseInt(String(val), 10))}
                         placeholder="Selecione o ano"
                         disabled={isLoading}
                         searchable={false}
@@ -197,7 +197,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
                       <Combobox
                         options={monthOptions}
                         value={value?.toString() || ""}
-                        onValueChange={(val) => onChange(parseInt(val, 10))}
+                        onValueChange={(val) => onChange(parseInt(String(val), 10))}
                         placeholder="Selecione o mês"
                         disabled={isLoading}
                         searchable={false}
@@ -268,7 +268,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
                       <Combobox
                         options={PERFORMANCE_LEVELS}
                         value={value?.toString() || ""}
-                        onValueChange={(val) => onChange(parseInt(val, 10))}
+                        onValueChange={(val) => onChange(parseInt(String(val), 10))}
                         placeholder="Selecione o nível"
                         disabled={isLoading}
                         searchable={false}
@@ -310,7 +310,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
                 Período da Bonificação:
               </Text>
               <Text style={[styles.periodValue, { color: colors.mutedForeground }]}>
-                26/{String(form.watch("month") - 1).padStart(2, '0')} a 25/{String(form.watch("month")).padStart(2, '0')}/{form.watch("year")}
+                26/{String((form.watch("month") ?? 1) - 1).padStart(2, '0')} a 25/{String(form.watch("month") ?? 1).padStart(2, '0')}/{form.watch("year")}
               </Text>
             </View>
           )}
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: formSpacing.containerPaddingHorizontal,
     paddingTop: formSpacing.containerPaddingVertical,
     paddingBottom: 0, // No spacing - action bar has its own margin
-    gap: formSpacing.sectionGap,
+    gap: formSpacing.cardMarginBottom,
   },
   fieldGroup: {
     gap: spacing.lg,

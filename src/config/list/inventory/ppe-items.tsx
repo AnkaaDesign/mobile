@@ -217,9 +217,9 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         queryKey: ['categories', 'filter', 'ppe'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
-            const { getCategories } = await import('@/api-client')
+            const { getItemCategories } = await import('@/api-client')
             const pageSize = 20
-            const response = await getCategories({
+            const response = await getItemCategories({
               where: {
                 type: 'PPE',
                 ...(searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : {}),
@@ -252,9 +252,9 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         queryKey: ['brands', 'filter'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
-            const { getBrands } = await import('@/api-client')
+            const { getItemBrands } = await import('@/api-client')
             const pageSize = 20
-            const response = await getBrands({
+            const response = await getItemBrands({
               where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
               orderBy: { name: 'asc' },
               limit: pageSize,

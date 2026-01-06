@@ -30,14 +30,13 @@ import { PAINT_FINISH } from '@/constants/enums'
 // Statuses that should show the countdown
 const COUNTDOWN_STATUSES = [
   TASK_STATUS.IN_PRODUCTION,
-  TASK_STATUS.PENDING,
-  TASK_STATUS.ON_HOLD,
+  TASK_STATUS.WAITING_PRODUCTION,
 ]
 
 // Get row background color based on status and deadline
 // Matches web version logic exactly
 const getRowBackgroundColor = (task: Task, isDark: boolean = false) => {
-  // Non-production tasks (PENDING, COMPLETED, CANCELLED, ON_HOLD) use neutral gray
+  // Non-production tasks (PREPARATION, WAITING_PRODUCTION, COMPLETED, CANCELLED) use neutral gray
   if (task.status !== TASK_STATUS.IN_PRODUCTION) {
     return isDark ? '#262626' : '#f5f5f5' // neutral-800 / neutral-100
   }
@@ -317,7 +316,7 @@ export const tasksListConfig: ListConfig<Task> = {
         variant: 'default',
         canPerform: isLeader,
         visible: (task: Task, user: any) => {
-          if (task.status !== TASK_STATUS.PENDING) return false
+          if (task.status !== TASK_STATUS.WAITING_PRODUCTION) return false
           return canLeaderManageTask(user, task.sectorId)
         },
         onPress: async (task: Task, router: any, context?: { user?: any }) => {
@@ -437,7 +436,7 @@ export const tasksListConfig: ListConfig<Task> = {
 
   filters: {
     defaultValues: {
-      status: [TASK_STATUS.PENDING, TASK_STATUS.IN_PRODUCTION],
+      status: [TASK_STATUS.WAITING_PRODUCTION, TASK_STATUS.IN_PRODUCTION],
     },
     fields: [
       {
@@ -518,11 +517,7 @@ export const tasksListConfig: ListConfig<Task> = {
   },
 
   actions: {
-    create: {
-      label: 'Cadastrar Tarefa',
-      route: '/producao/cronograma/cadastrar',
-      canCreate: canCreateTasks,
-    },
+    // Note: Create button removed from schedule page - now only available on agenda page (em-preparacao)
     bulk: [
       {
         key: 'update-status',

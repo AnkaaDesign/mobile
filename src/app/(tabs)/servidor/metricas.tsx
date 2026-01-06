@@ -213,7 +213,7 @@ export default function ServerMetricsScreen() {
         },
         ssdHealth: ssdData?.data,
         raidStatus: raidData?.data,
-        historicalData: history.map((h: HistoricalDataPoint) => ({
+        historicalData: history.map((h) => ({
           timestamp: h.timestamp,
           cpu: h.resources?.cpu || 0,
           memory: h.resources?.memory || 0,
@@ -247,7 +247,7 @@ export default function ServerMetricsScreen() {
       console.error('Export error:', error);
       Alert.alert('Erro', 'Erro ao exportar métricas');
     }
-  }, [metricsData, temperatureData, ssdData, raidData, historyData, selectedTimeRange]);
+  }, [metrics, temperatureData, ssdData, raidData, history, alerts, selectedTimeRange]);
 
   // Utility functions
   const formatBytes = (bytes: number) => {
@@ -330,7 +330,16 @@ export default function ServerMetricsScreen() {
   const temperature = temperatureData?.data?.primary?.value || metrics?.cpu?.temperature || 0;
   const load = metrics?.cpu?.loadAverage?.[0] || 0;
   const cores = metrics?.cpu?.cores || 1;
-  const history = (historyData?.data || []) as HistoricalDataPoint[];
+  // Convert SystemHealth[] to HistoricalDataPoint[] format
+  const history: HistoricalDataPoint[] = (historyData?.data || []).map((item: any) => ({
+    timestamp: item.createdAt || item.timestamp || new Date().toISOString(),
+    resources: {
+      cpu: item.resources?.cpu || 0,
+      memory: item.resources?.memory || 0,
+      disk: item.resources?.disk || 0,
+    },
+    lastUpdated: item.lastUpdated || item.createdAt || new Date().toISOString(),
+  }));
 
   // Calculate alerts
   const alerts = useMemo(() => {
@@ -388,7 +397,7 @@ export default function ServerMetricsScreen() {
 
     // Check SSD health
     if (ssdData?.data && Array.isArray(ssdData.data)) {
-      ssdData.data.forEach((ssd: SsdHealthData) => {
+      ssdData.data.forEach((ssd) => {
         const health = getSsdHealthPercentage(ssd);
         if (health < 60) {
           alertList.push({
@@ -746,7 +755,7 @@ export default function ServerMetricsScreen() {
                 <ThemedText className="text-lg font-semibold">Saúde dos SSDs</ThemedText>
               </ThemedView>
 
-              {ssdData.data.map((ssd: SsdHealthData, index: number) => {
+              {ssdData.data.map((ssd, index) => {
                 const healthPercentage = getSsdHealthPercentage(ssd);
                 return (
                   <ThemedView

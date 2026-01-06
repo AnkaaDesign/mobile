@@ -215,9 +215,9 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         queryKey: ['brands', 'filter'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
-            const { getBrands } = await import('@/api-client')
+            const { getItemBrands } = await import('@/api-client')
             const pageSize = 20
-            const response = await getBrands({
+            const response = await getItemBrands({
               where: searchTerm ? { name: { contains: searchTerm, mode: 'insensitive' } } : undefined,
               orderBy: { name: 'asc' },
               limit: pageSize,

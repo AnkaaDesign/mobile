@@ -92,8 +92,8 @@ const TaskTableRowSwipeComponent = ({
 
   // Team leaders: Can start/finish tasks in their managed sector OR tasks without sector
   if (canLeaderManage) {
-    // Show "Start" button if task is PENDING
-    if (taskStatus === TASK_STATUS.PENDING && onStart) {
+    // Show "Start" button if task is WAITING_PRODUCTION
+    if (taskStatus === TASK_STATUS.WAITING_PRODUCTION && onStart) {
       actions.push({
         key: "start",
         label: "Iniciar",

@@ -372,7 +372,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
                   </Text>
                 <Input
                   value={desiredVolume}
-                  onChangeText={setDesiredVolume}
+                  onChangeText={(value) => setDesiredVolume(value?.toString() || "")}
                   keyboardType="numeric"
                   placeholder="Digite o volume desejado em ml"
                   style={styles.input}
@@ -663,7 +663,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
               <Text style={[styles.inputLabel, { color: colors.foreground }]}>Quantidade Real (g)</Text>
               <Input
                 value={actualAmount}
-                onChangeText={setActualAmount}
+                onChangeText={(value) => setActualAmount(value?.toString() || "")}
                 keyboardType="numeric"
                 placeholder="Digite a quantidade real em gramas"
                 onFocus={() => handlers.handleFieldFocus('actualAmount')}

@@ -41,9 +41,9 @@ export function TeamPpeStatusCard({ delivery }: TeamPpeStatusCardProps) {
         };
       case "REPROVED":
         return {
-          icon: <IconX size={24} color={badgeColors.danger.text} />,
+          icon: <IconX size={24} color={badgeColors.error.text} />,
           label: PPE_DELIVERY_STATUS_LABELS.REPROVED || "Reprovado",
-          color: badgeColors.danger,
+          color: badgeColors.error,
           description: "Solicitação reprovada",
         };
       case "CANCELLED":
@@ -109,13 +109,13 @@ export function TeamPpeStatusCard({ delivery }: TeamPpeStatusCardProps) {
         )}
 
         {/* Review Reason (if reproved) */}
-        {delivery.reviewReason && delivery.status === "REPROVED" && (
-          <View style={[styles.reasonContainer, { backgroundColor: badgeColors.danger.background, borderColor: badgeColors.danger.border }]}>
-            <ThemedText style={[styles.reasonLabel, { color: badgeColors.danger.text }]}>
+        {delivery.status === "REPROVED" && delivery.reason && (
+          <View style={[styles.reasonContainer, { backgroundColor: badgeColors.error.background, borderColor: badgeColors.error.border }]}>
+            <ThemedText style={[styles.reasonLabel, { color: badgeColors.error.text }]}>
               Motivo da Reprovação
             </ThemedText>
-            <ThemedText style={[styles.reasonText, { color: badgeColors.danger.text }]}>
-              {delivery.reviewReason}
+            <ThemedText style={[styles.reasonText, { color: badgeColors.error.text }]}>
+              {delivery.reason}
             </ThemedText>
           </View>
         )}

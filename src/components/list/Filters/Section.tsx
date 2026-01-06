@@ -1,10 +1,10 @@
 import { memo, useCallback } from 'react'
 import { View, StyleSheet } from 'react-native'
 import { SelectField, DateRangeField, NumberRangeField, ToggleField, TextField } from './Fields'
-import type { FilterSection as FilterSectionType, FilterValue, FilterField } from '../types'
+import type { FilterSection, FilterValue, FilterField } from '../types'
 
 interface SectionProps {
-  section: FilterSectionType
+  section: FilterSection
   values: FilterValue
   onChange: (values: FilterValue) => void
   optionsData?: Record<string, Array<{ label: string; value: any }>>

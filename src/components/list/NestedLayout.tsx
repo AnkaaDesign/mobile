@@ -3,9 +3,8 @@ import { View, StyleSheet } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
 import { ThemedView } from '@/components/ui/themed-view'
 import { ThemedText } from '@/components/ui/themed-text'
-import { useTheme } from '@/lib/theme'
-import { Layout } from './index'
-import type { ListConfig } from '../types'
+import { Layout } from './Layout'
+import type { ListConfig } from './types'
 
 /**
  * Props for NestedLayout component

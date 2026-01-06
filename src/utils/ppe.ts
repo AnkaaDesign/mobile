@@ -358,13 +358,13 @@ export function formatPpeScheduleSummary(schedule: PpeDeliverySchedule): string 
   const status = schedule.isActive ? "Ativo" : "Inativo";
   const ppeTypes = schedule.ppeItems?.map((item) => `${item.ppeType} (${item.quantity}x)`).join(", ") || "Não especificado";
 
-  const assignmentTypeLabels = {
+  const assignmentTypeLabels: Record<string, string> = {
     ALL: "Todos os usuários",
     ALL_EXCEPT: "Todos exceto alguns",
     SPECIFIC: "Usuários específicos",
   };
 
-  const assignmentLabel = assignmentTypeLabels[schedule.assignmentType] || schedule.assignmentType;
+  const assignmentLabel = assignmentTypeLabels[schedule.assignmentType as string] || schedule.assignmentType;
 
   return `${frequency} - ${ppeTypes} (${assignmentLabel}) - ${status}`;
 }
@@ -561,7 +561,7 @@ export function formatPpeItemName(item: Item): string {
   const ppeType = item.ppeType ? getPpeTypeLabel(item.ppeType) : "";
   // Extract size from measures array
   const sizeMeasure = item.measures?.find(m => m.measureType === "SIZE");
-  const ppeSize = sizeMeasure?.unit ? getPpeSizeLabel(sizeMeasure.unit as PPE_SIZE) : "";
+  const ppeSize = sizeMeasure?.unit ? getPpeSizeLabel(sizeMeasure.unit as unknown as PPE_SIZE) : "";
 
   if (ppeType && ppeSize) {
     return `${item.name} - ${ppeType} ${ppeSize}`;

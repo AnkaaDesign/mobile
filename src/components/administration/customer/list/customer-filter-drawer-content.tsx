@@ -158,7 +158,15 @@ export function CustomerFilterDrawerContent({
           icon={getFilterIcon('states')}
           placeholder="Ex: SP, RJ, MG"
           value={localFilters.states?.join(", ") || ""}
-          onChange={(value) => updateFilter('states', value ? value.split(",").map(s => s.trim()).filter(Boolean) : undefined)}
+          onChange={(value) => {
+            if (!value) {
+              updateFilter('states', undefined);
+              return;
+            }
+            // Type guard: extract string value from StringFilterValue or use string directly
+            const stringValue = typeof value === 'string' ? value : value.value;
+            updateFilter('states', stringValue.split(",").map(s => s.trim()).filter(Boolean));
+          }}
         />
 
         <Separator />
@@ -185,7 +193,7 @@ export function CustomerFilterDrawerContent({
             <Input
               placeholder="Digite tags separadas por vírgula..."
               value={customTags}
-              onChangeText={setCustomTags}
+              onChangeText={(text) => setCustomTags(text || '')}
               onSubmitEditing={handleAddTag}
               style={styles.tagInput}
             />

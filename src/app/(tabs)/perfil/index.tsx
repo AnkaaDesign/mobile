@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
 import { z } from "zod";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,7 @@ import { getProfile, updateProfile, uploadPhoto, deletePhoto } from "@/api-clien
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import type { User } from "@/types";
-import { IconCamera, IconTrash } from "@tabler/icons-react-native";
+import { IconCamera, IconTrash, IconBell } from "@tabler/icons-react-native";
 
 // Profile update schema (subset of fields user can edit)
 const profileUpdateSchema = z.object({
@@ -412,6 +413,28 @@ export default function ProfileScreen() {
           </View>
         </Card>
 
+        {/* Preferences Card */}
+        <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <ThemedText style={styles.cardTitle}>Preferências</ThemedText>
+          <ThemedText style={[styles.cardDescription, { color: colors.mutedForeground }]}>
+            Gerencie suas configurações e preferências
+          </ThemedText>
+
+          <Button
+            variant="outline"
+            onPress={() => router.push("/(tabs)/perfil/notification-preferences")}
+            style={styles.preferenceButton}
+          >
+            <IconBell size={20} color={colors.foreground} />
+            <View style={styles.preferenceButtonContent}>
+              <ThemedText style={styles.preferenceButtonTitle}>Notificações</ThemedText>
+              <ThemedText style={[styles.preferenceButtonDescription, { color: colors.mutedForeground }]}>
+                Configure como você deseja ser notificado
+              </ThemedText>
+            </View>
+          </Button>
+        </Card>
+
         {/* Measures Card (Read-only) */}
         {user.ppeSize && (
           <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -772,5 +795,24 @@ const styles = StyleSheet.create({
   },
   stateField: {
     width: 80,
+  },
+  preferenceButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    padding: spacing.md,
+    marginTop: spacing.sm,
+  },
+  preferenceButtonContent: {
+    flex: 1,
+    marginLeft: spacing.sm,
+  },
+  preferenceButtonTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    marginBottom: spacing.xs,
+  },
+  preferenceButtonDescription: {
+    fontSize: 13,
   },
 });

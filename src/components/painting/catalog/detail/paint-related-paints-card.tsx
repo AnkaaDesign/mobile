@@ -109,7 +109,7 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
                 {/* Paint Brand Badge */}
                 {relatedPaint.paintBrand?.name && (
                   <Badge
-                    style={[styles.badge, { backgroundColor: badgeStyle.bg }]}
+                    style={{ ...styles.badge, backgroundColor: badgeStyle.bg }}
                   >
                     <ThemedText
                       style={[styles.badgeText, { color: badgeStyle.text }]}
@@ -123,7 +123,7 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
                 {/* Finish Badge */}
                 {relatedPaint.finish && (
                   <Badge
-                    style={[styles.badge, { backgroundColor: badgeStyle.bg }]}
+                    style={{ ...styles.badge, backgroundColor: badgeStyle.bg }}
                   >
                     <ThemedText
                       style={[styles.badgeText, { color: badgeStyle.text }]}

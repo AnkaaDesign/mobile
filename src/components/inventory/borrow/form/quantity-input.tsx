@@ -43,9 +43,9 @@ export function QuantityInput({
   }, [item, currentQuantity]);
 
   // Validate and constrain the quantity
-  const handleQuantityChange = (text: string) => {
+  const handleQuantityChange = (text: string | number | null) => {
     // Remove non-numeric characters
-    const cleanText = text.replace(/[^0-9]/g, "");
+    const cleanText = (text?.toString() || "").replace(/[^0-9]/g, "");
 
     // If empty, set to undefined temporarily
     if (cleanText === "" || cleanText === null) {
@@ -128,16 +128,12 @@ export function QuantityInput({
       )}
       <Input
         value={value?.toString() || ""}
-        onChangeText={handleQuantityChange}
+        onChangeText={(text) => handleQuantityChange(text)}
         onBlur={handleBlur}
         placeholder="1"
         keyboardType="numeric"
         editable={!disabled && !!selectedItemId}
         error={!!error || !!quantityError}
-        style={[
-          styles.input,
-          (!selectedItemId || disabled) && styles.inputDisabled,
-        ]}
       />
       {(error || quantityError) && (
         <ThemedText style={[styles.errorText, { color: colors.destructive }]}>

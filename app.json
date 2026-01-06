@@ -4,7 +4,7 @@
     "slug": "ankaa-design",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "myapp",
+    "scheme": "ankaadesign",
     "userInterfaceStyle": "automatic",
     "jsEngine": "hermes",
     "splash": {
@@ -17,18 +17,45 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ankaadesign.management",
-      "jsEngine": "hermes"
+      "jsEngine": "hermes",
+      "associatedDomains": [
+        "applinks:ankaadesign.com",
+        "applinks:www.ankaadesign.com"
+      ]
     },
     "android": {
       "package": "com.ankaadesign.management",
-      "jsEngine": "hermes"
+      "jsEngine": "hermes",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "ankaadesign.com",
+              "pathPrefix": "/app"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com",
+              "pathPrefix": "/app"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "platforms": [
       "ios",
       "android"
     ],
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true

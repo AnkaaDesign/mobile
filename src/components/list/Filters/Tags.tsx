@@ -14,7 +14,7 @@ interface FilterTag {
   onRemove: () => void
 }
 
-export const Tags = memo(function Tags({
+export const FilterTags = memo(function FilterTags({
   values,
   searchText,
   fields,
@@ -170,6 +170,9 @@ export const Tags = memo(function Tags({
     </View>
   )
 })
+
+// Also export as Tags for backward compatibility
+export const Tags = FilterTags
 
 const styles = StyleSheet.create({
   container: {

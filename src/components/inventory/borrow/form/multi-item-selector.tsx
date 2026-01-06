@@ -84,7 +84,7 @@ export function MultiItemSelector({
       });
 
       const items = response.data || [];
-      const total = response.total || 0;
+      const total = items.length;
       const hasMore = (page * pageSize) < total;
 
       const options: ComboboxOption[] = items.map((item) => {
@@ -94,8 +94,8 @@ export function MultiItemSelector({
           value: item.id,
           metadata: {
             quantity: item.quantity,
-            category: item.itemCategory,
-            brand: item.itemBrand,
+            category: item.category,
+            brand: item.brand,
           },
         };
       });
@@ -157,7 +157,7 @@ export function MultiItemSelector({
         pageSize={50}
         debounceMs={300}
         value={value}
-        onValueChange={onValueChange}
+        onValueChange={(val) => onValueChange(Array.isArray(val) ? val : val ? [val] : [])}
         placeholder={placeholder}
         emptyText={emptyText}
         searchPlaceholder={searchPlaceholder}

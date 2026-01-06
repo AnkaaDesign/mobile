@@ -41,7 +41,7 @@ export function BorrowUserCard({ borrow }: BorrowUserCardProps) {
 
   const handleNavigateToUser = () => {
     if (borrow.user?.id) {
-      router.push(routeToMobilePath(routes.administration.users.detail(borrow.user.id)) as any);
+      router.push(routeToMobilePath(routes.administration.users.details(borrow.user.id)) as any);
     }
   };
 

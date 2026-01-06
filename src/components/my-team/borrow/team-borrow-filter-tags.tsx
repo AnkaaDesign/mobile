@@ -4,7 +4,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { BORROW_STATUS_LABELS } from "@/constants";
+import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
 import type { User } from '../../../types';
 import type { TeamBorrowFilters } from './team-borrow-filter-modal';
@@ -27,7 +27,7 @@ export const TeamBorrowFilterTags = ({ filters, onRemoveFilter, teamMembers }: T
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container} contentContainerStyle={styles.content}>
       {/* User filters */}
-      {filters.userIds?.map((userId) => (
+      {filters.userIds?.map((userId: string) => (
         <Pressable
           key={`user-${userId}`}
           onPress={() => onRemoveFilter("userIds", userId)}
@@ -39,14 +39,14 @@ export const TeamBorrowFilterTags = ({ filters, onRemoveFilter, teamMembers }: T
       ))}
 
       {/* Status filters */}
-      {filters.statuses?.map((status) => (
+      {filters.statuses?.map((status: BORROW_STATUS) => (
         <Pressable
           key={`status-${status}`}
           onPress={() => onRemoveFilter("statuses", status)}
           style={[styles.tag, { backgroundColor: colors.primary + "20", borderColor: colors.primary }]}
         >
           <ThemedText style={[styles.tagText, { color: colors.primary }]}>
-            {BORROW_STATUS_LABELS[status as keyof typeof BORROW_STATUS_LABELS] || status}
+            {BORROW_STATUS_LABELS[status] || status}
           </ThemedText>
           <IconX size={14} color={colors.primary} />
         </Pressable>

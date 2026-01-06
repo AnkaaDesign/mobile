@@ -4,7 +4,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from "@/constants";
+import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON, ACTIVITY_REASON_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
 import type { User } from '../../../types';
 import type { TeamActivityFilters } from './team-activity-filter-modal';
@@ -27,7 +27,7 @@ export const TeamActivityFilterTags = ({ filters, onRemoveFilter, teamMembers }:
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container} contentContainerStyle={styles.content}>
       {/* User filters */}
-      {filters.userIds?.map((userId) => (
+      {filters.userIds?.map((userId: string) => (
         <Pressable
           key={`user-${userId}`}
           onPress={() => onRemoveFilter("userIds", userId)}
@@ -39,28 +39,28 @@ export const TeamActivityFilterTags = ({ filters, onRemoveFilter, teamMembers }:
       ))}
 
       {/* Operation filters */}
-      {filters.operations?.map((operation) => (
+      {filters.operations?.map((operation: ACTIVITY_OPERATION) => (
         <Pressable
           key={`operation-${operation}`}
           onPress={() => onRemoveFilter("operations", operation)}
           style={[styles.tag, { backgroundColor: colors.primary + "20", borderColor: colors.primary }]}
         >
           <ThemedText style={[styles.tagText, { color: colors.primary }]}>
-            {ACTIVITY_OPERATION_LABELS[operation as keyof typeof ACTIVITY_OPERATION_LABELS] || operation}
+            {ACTIVITY_OPERATION_LABELS[operation] || operation}
           </ThemedText>
           <IconX size={14} color={colors.primary} />
         </Pressable>
       ))}
 
       {/* Reason filters */}
-      {filters.reasons?.map((reason) => (
+      {filters.reasons?.map((reason: ACTIVITY_REASON) => (
         <Pressable
           key={`reason-${reason}`}
           onPress={() => onRemoveFilter("reasons", reason)}
           style={[styles.tag, { backgroundColor: colors.primary + "20", borderColor: colors.primary }]}
         >
           <ThemedText style={[styles.tagText, { color: colors.primary }]}>
-            {ACTIVITY_REASON_LABELS[reason as keyof typeof ACTIVITY_REASON_LABELS] || reason}
+            {ACTIVITY_REASON_LABELS[reason] || reason}
           </ThemedText>
           <IconX size={14} color={colors.primary} />
         </Pressable>

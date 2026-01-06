@@ -9,9 +9,14 @@ interface PageAccess {
 const PAGE_ACCESS_KEY = "ankaa_page_access";
 const MAX_TRACKED_PAGES = 20;
 
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+
 export function trackPageAccess(path: string, title: string, icon?: string): void {
+  if (!isBrowser) return;
+
   try {
-    const storedData = localStorage.getItem(PAGE_ACCESS_KEY);
+    const storedData = window.localStorage.getItem(PAGE_ACCESS_KEY);
     const pageAccesses: PageAccess[] = storedData ? JSON.parse(storedData) : [];
 
     const existingIndex = pageAccesses.findIndex((page) => page.path === path);
@@ -39,7 +44,7 @@ export function trackPageAccess(path: string, title: string, icon?: string): voi
       pageAccesses.splice(MAX_TRACKED_PAGES);
     }
 
-    localStorage.setItem(PAGE_ACCESS_KEY, JSON.stringify(pageAccesses));
+    window.localStorage.setItem(PAGE_ACCESS_KEY, JSON.stringify(pageAccesses));
   } catch (error) {
     // Fail silently if localStorage is not available
     console.error("Failed to track page access:", error);
@@ -47,8 +52,10 @@ export function trackPageAccess(path: string, title: string, icon?: string): voi
 }
 
 export function getMostAccessedPages(limit: number = 6): PageAccess[] {
+  if (!isBrowser) return [];
+
   try {
-    const storedData = localStorage.getItem(PAGE_ACCESS_KEY);
+    const storedData = window.localStorage.getItem(PAGE_ACCESS_KEY);
     if (!storedData) return [];
 
     const pageAccesses: PageAccess[] = JSON.parse(storedData);
@@ -67,8 +74,10 @@ export function getMostAccessedPages(limit: number = 6): PageAccess[] {
 }
 
 export function clearPageAccessHistory(): void {
+  if (!isBrowser) return;
+
   try {
-    localStorage.removeItem(PAGE_ACCESS_KEY);
+    window.localStorage.removeItem(PAGE_ACCESS_KEY);
   } catch (error) {
     console.error("Failed to clear page access history:", error);
   }
@@ -79,8 +88,12 @@ export function getPageAccessStats(): {
   totalAccesses: number;
   mostVisited: PageAccess | null;
 } {
+  if (!isBrowser) {
+    return { totalPages: 0, totalAccesses: 0, mostVisited: null };
+  }
+
   try {
-    const storedData = localStorage.getItem(PAGE_ACCESS_KEY);
+    const storedData = window.localStorage.getItem(PAGE_ACCESS_KEY);
     if (!storedData) {
       return { totalPages: 0, totalAccesses: 0, mostVisited: null };
     }

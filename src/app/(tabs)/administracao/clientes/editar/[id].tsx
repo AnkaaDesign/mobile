@@ -552,7 +552,7 @@ export default function CustomerEditScreen() {
               render={({ field: { onChange, value } }) => (
                 <Combobox
                   value={value || ""}
-                  onValueChange={onChange}
+                  onValueChange={(v) => onChange(v?.toString() || "")}
                   options={[...REGISTRATION_STATUS_OPTIONS]}
                   placeholder="Selecione a situação cadastral"
                   searchPlaceholder="Pesquisar situação..."
@@ -589,7 +589,7 @@ export default function CustomerEditScreen() {
               render={({ field: { onChange, value } }) => (
                 <Combobox
                   value={value || ""}
-                  onValueChange={onChange}
+                  onValueChange={(v) => onChange(v?.toString() || "")}
                   async
                   queryKey={["economic-activities"]}
                   queryFn={async (searchTerm: string) => {
@@ -690,7 +690,7 @@ export default function CustomerEditScreen() {
               render={({ field: { onChange, value } }) => (
                 <Combobox
                   value={value || ""}
-                  onValueChange={onChange}
+                  onValueChange={(v) => onChange(v?.toString() || "")}
                   options={[...STREET_TYPE_OPTIONS]}
                   placeholder="Selecione o tipo de logradouro"
                   searchPlaceholder="Pesquisar tipo..."
@@ -822,7 +822,7 @@ export default function CustomerEditScreen() {
                 render={({ field: { onChange, value } }) => (
                   <Combobox
                     value={value || ""}
-                    onValueChange={onChange}
+                    onValueChange={(v) => onChange(v?.toString() || "")}
                     options={stateOptions}
                     placeholder="Selecione"
                     searchable={false}

@@ -303,7 +303,7 @@ export function ActivityFormFilters({
                 options={categoryOptions}
                 value={localState.categoryIds || []}
                 onValueChange={(ids) =>
-                  setLocalState((prev) => ({ ...prev, categoryIds: ids }))
+                  setLocalState((prev) => ({ ...prev, categoryIds: Array.isArray(ids) ? ids : ids ? [ids] : [] }))
                 }
                 placeholder="Selecione categorias..."
                 emptyText="Nenhuma categoria encontrada"
@@ -327,7 +327,7 @@ export function ActivityFormFilters({
                 options={brandOptions}
                 value={localState.brandIds || []}
                 onValueChange={(ids) =>
-                  setLocalState((prev) => ({ ...prev, brandIds: ids }))
+                  setLocalState((prev) => ({ ...prev, brandIds: Array.isArray(ids) ? ids : ids ? [ids] : [] }))
                 }
                 placeholder="Selecione marcas..."
                 emptyText="Nenhuma marca encontrada"
@@ -351,7 +351,7 @@ export function ActivityFormFilters({
                 options={supplierOptions}
                 value={localState.supplierIds || []}
                 onValueChange={(ids) =>
-                  setLocalState((prev) => ({ ...prev, supplierIds: ids }))
+                  setLocalState((prev) => ({ ...prev, supplierIds: Array.isArray(ids) ? ids : ids ? [ids] : [] }))
                 }
                 placeholder="Selecione fornecedores..."
                 emptyText="Nenhum fornecedor encontrado"

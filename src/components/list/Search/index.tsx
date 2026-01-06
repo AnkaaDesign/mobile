@@ -13,7 +13,7 @@ export const Search = memo(function Search({
   debounce = 300,
 }: SearchProps) {
   const { colors } = useTheme()
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     return () => {

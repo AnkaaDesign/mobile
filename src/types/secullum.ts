@@ -107,3 +107,38 @@ export type AttendanceRecordsResponse = SecullumBaseResponse<{
   page: number;
   pageSize: number;
 }>;
+
+// Calculation/Time Clock Types
+export interface CalculationRow {
+  id: string;
+  date: string;
+  entrada1?: string;
+  saida1?: string;
+  entrada2?: string;
+  saida2?: string;
+  entrada3?: string;
+  saida3?: string;
+  normais?: string;
+  faltas?: string;
+  ex50?: string;
+  ex100?: string;
+  ex150?: string;
+  dsr?: string;
+  dsrDeb?: string;
+  not?: string;
+  exNot?: string;
+  ajuste?: string;
+  abono2?: string;
+  abono3?: string;
+  abono4?: string;
+  atras?: string;
+  adian?: string;
+  folga?: string;
+  carga?: string;
+  justPa?: string;
+  tPlusMinus?: string;
+  exInt?: string;
+  notTot?: string;
+  refeicao?: string;
+  [key: string]: string | undefined;
+}

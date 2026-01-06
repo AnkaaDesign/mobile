@@ -7,7 +7,7 @@ import { Header } from './Header'
 import { Row } from './Row'
 import { Empty } from './Empty'
 import { Loading } from './Loading'
-import type { TableProps } from '../types'
+import type { TableProps, TableColumn } from '../types'
 
 export const Table = memo(function Table<T extends { id: string }>({
   data,
@@ -44,7 +44,7 @@ export const Table = memo(function Table<T extends { id: string }>({
     return visible.map((col) => ({
       ...col,
       width: Math.floor((availableWidth * col.width) / totalRatio),
-    }))
+    })) as Array<TableColumn<T> & { width: number }>
   }, [columns, visibleColumns, screenWidth])
 
   // Render functions
@@ -53,11 +53,11 @@ export const Table = memo(function Table<T extends { id: string }>({
       <Row
         item={item}
         index={index}
-        columns={displayColumns}
+        columns={displayColumns as any}
         selection={selection}
-        actions={actions}
-        onPress={onRowPress}
-        getRowStyle={getRowStyle}
+        actions={actions as any}
+        onPress={onRowPress as any}
+        getRowStyle={getRowStyle as any}
       />
     ),
     [displayColumns, selection, actions, onRowPress, getRowStyle]
@@ -102,7 +102,7 @@ export const Table = memo(function Table<T extends { id: string }>({
         {/* Fixed Header */}
         <View style={[styles.headerContainer, { borderBottomColor: colors.border }]}>
           <Header
-            columns={displayColumns}
+            columns={displayColumns as any}
             sort={sort}
             selection={selection}
             totalItems={data.length}
