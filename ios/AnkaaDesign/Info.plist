@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>myapp</string>
+          <string>ankaadesign</string>
           <string>com.ankaadesign.management</string>
         </array>
       </dict>

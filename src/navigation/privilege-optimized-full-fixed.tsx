@@ -4,12 +4,14 @@
 import { useMemo, Suspense, lazy } from "react";
 import { Drawer } from "expo-router/drawer";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform } from "react-native";
+import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { SECTOR_PRIVILEGES } from '@/constants/enums';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useUnreadNotificationsCount } from "@/hooks/use-unread-notifications-count";
 
 // Performance monitoring
 const PERF_DEBUG = __DEV__;
@@ -500,6 +502,35 @@ interface ExtendedUser {
   [key: string]: any;
 }
 
+// Notification Bell component for header
+function NotificationBell({ color }: { color: string }) {
+  const router = useRouter();
+  const { count } = useUnreadNotificationsCount();
+  const { isDark } = useTheme();
+
+  return (
+    <Pressable
+      onPress={() => router.push('/pessoal/minhas-notificacoes' as any)}
+      style={({ pressed }) => [
+        styles.headerButton,
+        pressed && { backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)" }
+      ]}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+    >
+      <View>
+        <Icon name="bell" size="md" color={color} />
+        {count > 0 && (
+          <View style={styles.notificationBadge}>
+            <Text style={styles.notificationBadgeText}>
+              {count > 99 ? '99+' : count}
+            </Text>
+          </View>
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
 // Main optimized drawer layout with full menu structure
 export function PrivilegeOptimizedFullLayout() {
   const { user } = useAuth();
@@ -602,6 +633,7 @@ export function PrivilegeOptimizedFullLayout() {
           ),
           headerRight: () => (
             <View style={styles.headerRight}>
+              <NotificationBell color={headerText} />
               <Pressable
                 onPress={() => navigation.openDrawer()}
                 style={({ pressed }) => [
@@ -661,8 +693,28 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     flexDirection: 'row',
-    gap: 12, // Increased gap between buttons
+    gap: 8, // Gap between notification bell and menu
     paddingRight: Platform.OS === 'ios' ? 16 : 12, // More padding from edge
+    alignItems: 'center',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#dc2626', // red-600
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: '#fafafa', // Match header background light mode
+  },
+  notificationBadgeText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });
 

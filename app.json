@@ -4,10 +4,12 @@
     "slug": "ankaa-design",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon-1024.png",
     "scheme": "ankaadesign",
     "userInterfaceStyle": "automatic",
     "jsEngine": "hermes",
     "splash": {
+      "image": "./assets/icon-1024.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -19,8 +21,8 @@
       "bundleIdentifier": "com.ankaadesign.management",
       "jsEngine": "hermes",
       "associatedDomains": [
-        "applinks:ankaadesign.com",
-        "applinks:www.ankaadesign.com"
+        "applinks:ankaa.live",
+        "applinks:www.ankaa.live"
       ]
     },
     "android": {
@@ -33,12 +35,12 @@
           "data": [
             {
               "scheme": "https",
-              "host": "ankaadesign.com",
+              "host": "ankaa.live",
               "pathPrefix": "/app"
             },
             {
               "scheme": "https",
-              "host": "www.ankaadesign.com",
+              "host": "www.ankaa.live",
               "pathPrefix": "/app"
             }
           ],
