@@ -26,11 +26,11 @@ import { spacing, fontSize, borderRadius, fontWeight } from "@/constants/design-
 import { formSpacing } from "@/constants/form-styles";
 import { useSectors, useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import { TASK_STATUS, SERVICE_ORDER_STATUS, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES } from "@/constants";
+import { TASK_STATUS, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES } from "@/constants";
 import { IconX } from "@tabler/icons-react-native";
 import { getFileThumbnailUrl } from "@/api-client";
 import { CustomerSelector } from "./customer-selector";
-import { ServiceSelector } from "./service-selector";
+import { ServiceSelectorAutoGrouped } from "./service-selector-auto-grouped";
 import { GeneralPaintingSelector, LogoPaintsSelector } from "./paint-selector";
 import { SpotSelector } from "./spot-selector";
 import { LayoutForm } from "@/components/production/layout/layout-form";
@@ -80,9 +80,14 @@ const taskFormSchema = z.object({
     description: z.string().min(1, "Descrição é obrigatória"),
     fileIds: z.array(z.string().min(1, "ID do arquivo inválido")).optional(),
   }).nullable().optional(),
-  services: z.array(z.object({
+  serviceOrders: z.array(z.object({
     description: z.string().min(3, "Mínimo de 3 caracteres").max(400, "Máximo de 400 caracteres"),
-    status: z.enum(Object.values(SERVICE_ORDER_STATUS) as [string, ...string[]]).optional(),
+    status: z.enum(Object.values(SERVICE_ORDER_STATUS) as [string, ...string[]]).default(SERVICE_ORDER_STATUS.PENDING),
+    statusOrder: z.number().int().min(1).max(4).default(1).optional(),
+    type: z.enum(Object.values(SERVICE_ORDER_TYPE) as [string, ...string[]]).default(SERVICE_ORDER_TYPE.PRODUCTION),
+    assignedToId: z.string().uuid("Usuário inválido").nullable().optional(),
+    startedAt: z.date().nullable().optional(),
+    finishedAt: z.date().nullable().optional(),
   })).optional(),
   // Budget detailed - line items
   budget: z.object({
@@ -345,7 +350,21 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
     paintIds: initialData?.paintIds || [],
     artworkIds: initialData?.artworkIds || [],
     observation: initialData?.observation || null,
-    services: initialData?.services || [{ description: "", status: SERVICE_ORDER_STATUS.PENDING }],
+    serviceOrders: initialData?.serviceOrders || initialData?.services?.map((s: any) => ({
+      description: s.description || "",
+      status: s.status || SERVICE_ORDER_STATUS.PENDING,
+      statusOrder: s.statusOrder || 1,
+      type: s.type || SERVICE_ORDER_TYPE.PRODUCTION,
+      assignedToId: s.assignedToId || null,
+      startedAt: s.startedAt || null,
+      finishedAt: s.finishedAt || null,
+    })) || [{
+      description: "",
+      status: SERVICE_ORDER_STATUS.PENDING,
+      statusOrder: 1,
+      type: SERVICE_ORDER_TYPE.PRODUCTION,
+      assignedToId: null
+    }],
     status: initialData?.status || TASK_STATUS.PREPARATION,
     commission: initialData?.commission || COMMISSION_STATUS.FULL_COMMISSION,
     startedAt: initialData?.startedAt || null,
@@ -362,7 +381,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
           // In edit mode, submit only changed fields to optimize payload
           await handleSubmit(data as TaskFormData);
         },
-        fieldsToOmitIfUnchanged: ["services", "paintIds"], // Don't include if unchanged
+        fieldsToOmitIfUnchanged: ["serviceOrders", "paintIds"], // Don't include if unchanged
         defaultValues: defaultFormValues,
       })
     : useForm<TaskFormData>({
@@ -457,7 +476,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       const formDataFields: Record<string, any> = {
         name: data.name,
         customerId: data.customerId,
-        services: data.services, // Will be serialized as JSON in helper
+        serviceOrders: data.serviceOrders, // Will be serialized as JSON in helper
       };
 
       // Add optional fields
@@ -906,15 +925,15 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
           </FormCard>
           )}
 
-          {/* Services */}
-          <FormCard title="Serviços" icon="IconTool">
-              <FormFieldGroup label="Serviços" error={errors.services?.message}>
+          {/* Service Orders */}
+          <FormCard title="Ordens de Serviço" icon="IconTool">
+              <FormFieldGroup label="Ordens de Serviço" error={errors.serviceOrders?.message}>
                 <Controller
                   control={form.control}
-                  name="services"
+                  name="serviceOrders"
                   render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <ServiceSelector
-                      services={value}
+                    <ServiceSelectorAutoGrouped
+                      services={value || []}
                       onChange={onChange}
                       disabled={isSubmitting}
                       error={error?.message}
@@ -1254,14 +1273,14 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
             if (errors.customerId) {
               errorMessages.push(`Cliente: ${errors.customerId.message}`);
             }
-            if (errors.services) {
-              const servicesError = errors.services as any;
-              if (servicesError.message) {
-                errorMessages.push(`Serviços: ${servicesError.message}`);
-              } else if (servicesError.root?.message) {
-                errorMessages.push(`Serviços: ${servicesError.root.message}`);
+            if (errors.serviceOrders) {
+              const serviceOrdersError = errors.serviceOrders as any;
+              if (serviceOrdersError.message) {
+                errorMessages.push(`Ordens de Serviço: ${serviceOrdersError.message}`);
+              } else if (serviceOrdersError.root?.message) {
+                errorMessages.push(`Ordens de Serviço: ${serviceOrdersError.root.message}`);
               }
-              // Note: Services are now optional, so no fallback error message needed
+              // Note: Service orders are now optional, so no fallback error message needed
             }
             if (errors.term) {
               errorMessages.push(`Prazo: ${errors.term.message}`);
@@ -1274,7 +1293,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
             }
 
             // Add other field errors
-            const handledFields = ['name', 'customerId', 'services', 'term', 'startedAt', 'finishedAt'];
+            const handledFields = ['name', 'customerId', 'serviceOrders', 'term', 'startedAt', 'finishedAt'];
             Object.entries(errors).forEach(([key, value]) => {
               if (!handledFields.includes(key) && value && typeof value === 'object' && 'message' in value) {
                 errorMessages.push(`${key}: ${(value as any).message}`);

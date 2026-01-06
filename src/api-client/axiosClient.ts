@@ -576,11 +576,14 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
         const isAuthOperation = config.url?.includes("/auth/login") ||
                                 config.url?.includes("/auth/register") ||
                                 config.url?.includes("/auth/logout");
+        // Skip notifications for background operations that shouldn't show toasts
+        const isBackgroundOperation = config.url?.includes("/notifications/device-token") ||
+                                      config.url?.includes("/notifications/preferences");
 
         // Only show success if the response indicates success
         const isSuccess = response.data?.success !== false as boolean; // Show success unless explicitly false
 
-        if (!isBatchOperation && !isAuthOperation && isSuccess) {
+        if (!isBatchOperation && !isAuthOperation && !isBackgroundOperation && isSuccess) {
           const message = response.data?.message || getSuccessMessage(config.method);
           notify.success("Sucesso", message);
         }

@@ -197,15 +197,6 @@ export const tasksListConfig: ListConfig<Task> = {
         format: 'datetime',
       },
       {
-        key: 'finishedAt',
-        label: 'FINALIZADO EM',
-        sortable: true,
-        width: 1.3,
-        align: 'left',
-        render: (task) => task.finishedAt,
-        format: 'datetime',
-      },
-      {
         key: 'serialNumber',
         label: 'Nº SÉRIE',
         sortable: true,
@@ -505,7 +496,6 @@ export const tasksListConfig: ListConfig<Task> = {
       { key: 'sector', label: 'Setor', path: 'sector.name' },
       { key: 'entryDate', label: 'Entrada', path: 'entryDate', format: 'date' },
       { key: 'startedAt', label: 'Iniciado Em', path: 'startedAt', format: 'datetime' },
-      { key: 'finishedAt', label: 'Finalizado Em', path: 'finishedAt', format: 'datetime' },
       { key: 'term', label: 'Prazo', path: 'term', format: 'date' },
       { key: 'status', label: 'Status', path: 'status' },
       { key: 'priority', label: 'Prioridade', path: 'priority' },

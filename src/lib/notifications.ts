@@ -120,15 +120,15 @@ export function setupNotificationListeners(
   onNotificationClicked: (response: Notifications.NotificationResponse) => void
 ): () => void {
   // Listen for notifications received while app is in foreground
-  const receivedListener = Notifications.addNotificationReceivedListener(onNotificationReceived);
+  const receivedSubscription = Notifications.addNotificationReceivedListener(onNotificationReceived);
 
   // Listen for notification interactions (user tapped notification)
-  const clickListener = Notifications.addNotificationResponseReceivedListener(onNotificationClicked);
+  const responseSubscription = Notifications.addNotificationResponseReceivedListener(onNotificationClicked);
 
-  // Return cleanup function
+  // Return cleanup function - use .remove() method on subscription objects
   return () => {
-    Notifications.removeNotificationSubscription(receivedListener);
-    Notifications.removeNotificationSubscription(clickListener);
+    receivedSubscription.remove();
+    responseSubscription.remove();
   };
 }
 

@@ -1,13 +1,15 @@
-import React, { useCallback, useState, useMemo } from 'react';
-import { View, Pressable, StyleSheet, FlatList, ActivityIndicator, Platform, Dimensions } from 'react-native';
+import React, { useCallback, useState, useMemo, useEffect } from 'react';
+import { View, Pressable, StyleSheet, FlatList, ActivityIndicator, Platform, Dimensions, Linking, Text as RNText } from 'react-native';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/lib/theme';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { useUnreadNotifications, useMarkAsRead, useMarkAllAsRead } from '@/hooks/useNotification';
+import { usePushNotifications } from '@/contexts/push-notifications-context';
+import { useNotificationsInfinite, useMarkAsRead, useMarkAllAsRead } from '@/hooks/useNotification';
 import { extendedColors } from '@/lib/theme/extended-colors';
 import type { Notification } from '@/types';
 import { formatNotificationTime } from '@/utils/notifications/date-utils';
@@ -15,7 +17,7 @@ import { NOTIFICATION_TYPE } from '@/constants';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const POPOVER_WIDTH = Math.min(SCREEN_WIDTH - 32, 360);
+const POPOVER_WIDTH = SCREEN_WIDTH - 32; // Full width with 16px padding on each side
 
 interface NotificationPopoverProps {
   color: string;
@@ -190,25 +192,68 @@ function PopoverNotificationItem({
 export function NotificationPopover({ color }: NotificationPopoverProps) {
   const { colors, isDark } = useTheme();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { notification: pushNotification } = usePushNotifications();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Fetch unread notifications
-  const { data, isLoading, refetch } = useUnreadNotifications({
-    userId: user?.id || '',
-    enabled: !!user?.id,
-  });
+  // Fetch notifications with infinite scroll - filtered by current user
+  const {
+    data,
+    isLoading,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useNotificationsInfinite(
+    {
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      userIds: user?.id ? [user.id] : undefined,
+      include: {
+        seenBy: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    },
+    {
+      enabled: !!user?.id,
+      // Refetch every 30 seconds as fallback for real-time updates
+      refetchInterval: 30000,
+      refetchIntervalInBackground: false,
+    }
+  );
 
   // Mutations
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
-  // Get notifications list
-  const notifications = useMemo(() => {
-    return data?.data || [];
-  }, [data]);
+  // Real-time notification updates - refetch when push notification is received
+  useEffect(() => {
+    if (pushNotification) {
+      console.log('[NotificationPopover] Push notification received, refreshing...');
+      // Invalidate and refetch notification queries
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      refetch();
+    }
+  }, [pushNotification, queryClient, refetch]);
 
-  const unreadCount = notifications.length;
+  // Get notifications list from all pages and calculate unread status
+  const notifications = useMemo(() => {
+    const items = data?.pages?.flatMap(page => page.data) || [];
+    // Add isSeenByUser property based on seenBy relation
+    return items.map(notification => ({
+      ...notification,
+      isSeenByUser: notification.seenBy?.some((seen: any) => seen.userId === user?.id) ?? false,
+    }));
+  }, [data, user?.id]);
+
+  // Calculate unread count
+  const unreadCount = useMemo(() => {
+    return notifications.filter(n => !n.isSeenByUser).length;
+  }, [notifications]);
 
   // Handle notification press
   const handleNotificationPress = useCallback(async (notification: Notification) => {
@@ -223,15 +268,29 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
     // Navigate to notification target if available
     if (notification.actionUrl) {
       if (notification.actionUrl.startsWith('http://') || notification.actionUrl.startsWith('https://')) {
-        // For external URLs, use Linking
-        const { Linking } = require('react-native');
         Linking.openURL(notification.actionUrl);
       } else {
-        // For internal routes
         router.push(notification.actionUrl as any);
       }
     }
   }, [user?.id, markAsRead, router]);
+
+  // Handle load more on scroll
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Render footer with loading indicator
+  const renderFooter = useCallback(() => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={colors.primary} />
+      </View>
+    );
+  }, [isFetchingNextPage, colors.primary]);
 
   // Handle mark all as read
   const handleMarkAllAsRead = useCallback(async () => {
@@ -244,11 +303,6 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
     }
   }, [user?.id, unreadCount, markAllAsRead, refetch]);
 
-  // Handle view all
-  const handleViewAll = useCallback(() => {
-    setIsOpen(false);
-    router.push('/pessoal/minhas-notificacoes' as any);
-  }, [router]);
 
   // Render notification item
   const renderItem = useCallback(({ item }: { item: Notification }) => (
@@ -276,9 +330,9 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
             <Icon name="bell" size="md" color={color} />
             {unreadCount > 0 && (
               <View style={styles.notificationBadge}>
-                <Text style={styles.notificationBadgeText}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </Text>
+                <RNText style={styles.notificationBadgeText} numberOfLines={1}>
+                  {unreadCount > 99 ? '99+' : String(unreadCount)}
+                </RNText>
               </View>
             )}
           </View>
@@ -286,10 +340,19 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
       </PopoverTrigger>
 
       <PopoverContent
-        className="p-0 border-0"
-        align="end"
+        className="p-0 w-auto"
         sideOffset={8}
-        style={[styles.popoverContent, { backgroundColor: colors.card, width: POPOVER_WIDTH }]}
+        style={[
+          styles.popoverContent,
+          {
+            backgroundColor: colors.card,
+            width: POPOVER_WIDTH,
+            left: 16,
+            right: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+          }
+        ]}
       >
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
@@ -299,7 +362,9 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
             </Text>
             {unreadCount > 0 && (
               <View style={styles.countBadge}>
-                <Text style={styles.countBadgeText}>{unreadCount}</Text>
+                <RNText style={styles.countBadgeText} numberOfLines={1}>
+                  {String(unreadCount)}
+                </RNText>
               </View>
             )}
           </View>
@@ -337,30 +402,18 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
             </View>
           ) : (
             <FlatList
-              data={notifications.slice(0, 5)}
+              data={notifications}
               renderItem={renderItem}
               keyExtractor={keyExtractor}
               showsVerticalScrollIndicator={false}
               style={styles.list}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={renderFooter}
             />
           )}
         </View>
 
-        {/* Footer */}
-        {notifications.length > 0 && (
-          <View style={[styles.footer, { borderTopColor: colors.border }]}>
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={handleViewAll}
-              style={styles.viewAllButton}
-            >
-              <Text variant="small" style={{ color: colors.primary }}>
-                Ver todas as notificações
-              </Text>
-            </Button>
-          </View>
-        )}
       </PopoverContent>
     </Popover>
   );
@@ -374,22 +427,23 @@ const styles = StyleSheet.create({
   },
   notificationBadge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: -6,
+    right: -6,
     backgroundColor: '#dc2626',
     borderRadius: 10,
-    minWidth: 18,
-    height: 18,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 4,
     borderWidth: 2,
-    borderColor: '#fafafa',
+    borderColor: '#ffffff',
   },
   notificationBadgeText: {
     color: '#ffffff',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
+    textAlign: 'center',
   },
   popoverContent: {
     borderRadius: 12,
@@ -421,20 +475,21 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     minWidth: 20,
     height: 20,
+    paddingHorizontal: 6,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 6,
   },
   countBadgeText: {
     color: '#ffffff',
     fontSize: 11,
     fontWeight: '600',
+    textAlign: 'center',
   },
   listContainer: {
-    maxHeight: 320,
+    maxHeight: 400,
   },
   list: {
-    maxHeight: 320,
+    maxHeight: 400,
   },
   loadingContainer: {
     padding: 32,
@@ -449,12 +504,9 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 8,
   },
-  footer: {
-    borderTopWidth: 1,
-    padding: 8,
-  },
-  viewAllButton: {
-    width: '100%',
+  footerLoader: {
+    paddingVertical: 16,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   itemContainer: {

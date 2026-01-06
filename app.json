@@ -27,6 +27,7 @@
     },
     "android": {
       "package": "com.ankaadesign.management",
+      "googleServicesFile": "./google-services.json",
       "jsEngine": "hermes",
       "intentFilters": [
         {

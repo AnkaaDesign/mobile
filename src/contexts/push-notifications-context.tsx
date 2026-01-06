@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
-import { Platform, AppState, AppStateStatus } from 'react-native';
+import { Platform, AppState, AppStateStatus, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
@@ -82,19 +82,34 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
   // Register push token with backend
   const registerToken = useCallback(async () => {
     if (!Device.isDevice) {
-      console.log('Push notifications only work on physical devices');
+      console.log('[PUSH] Push notifications only work on physical devices');
       return;
     }
 
     try {
+      console.log('[PUSH] Requesting push token...');
       const token = await registerForPushNotifications(projectId);
 
       if (!token) {
-        console.log('Failed to get push token');
+        console.log('[PUSH] Failed to get push token');
         return;
       }
 
+      console.log('[PUSH] ========================================');
+      console.log('[PUSH] TOKEN:', token);
+      console.log('[PUSH] ========================================');
+
       setExpoPushToken(token);
+
+      // Show alert in dev mode for easy copying
+      if (__DEV__) {
+        Alert.alert(
+          'Push Token',
+          token,
+          [{ text: 'OK' }],
+          { cancelable: true }
+        );
+      }
 
       // Register token with backend if user is authenticated
       if (isAuthenticated) {
@@ -106,12 +121,12 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
         });
 
         setIsRegistered(true);
-        console.log('Push token registered with backend:', token);
+        console.log('[PUSH] Token registered with backend successfully');
       } else {
-        console.log('User not authenticated, token not registered with backend');
+        console.log('[PUSH] User not authenticated, token not registered with backend');
       }
     } catch (error) {
-      console.error('Error registering push token:', error);
+      console.error('[PUSH] Error registering push token:', error);
     }
   }, [isAuthenticated, projectId]);
 

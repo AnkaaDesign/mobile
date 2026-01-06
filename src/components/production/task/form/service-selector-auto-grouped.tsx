@@ -7,10 +7,10 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, SERVICE_ORDER_TYPE_LABELS } from "@/constants/enums";
+import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, SERVICE_ORDER_TYPE_LABELS, USER_STATUS } from "@/constants/enums";
 import { useServiceMutations } from "@/hooks";
-import { serviceService } from "@/api-client";
-import type { Service } from "@/types";
+import { serviceService, getUsers } from "@/api-client";
+import type { Service, User } from "@/types";
 
 interface ServiceOrder {
   status: string;
@@ -135,6 +135,16 @@ export function ServiceSelectorAutoGrouped({
     [services, onChange]
   );
 
+  // Handle updating assigned user
+  const handleAssignedToChange = useCallback(
+    (index: number, userId: string | null) => {
+      const updated = [...services];
+      updated[index] = { ...updated[index], assignedToId: userId };
+      onChange(updated);
+    },
+    [services, onChange]
+  );
+
   // Clear creating state callback
   const clearCreatingState = useCallback(() => {
     setCreatingServiceIndex(null);
@@ -171,6 +181,7 @@ export function ServiceSelectorAutoGrouped({
             onCreateService={handleCreateService}
             onDescriptionChange={handleServiceDescriptionChange}
             onTypeChange={handleServiceTypeChange}
+            onAssignedToChange={handleAssignedToChange}
             getOptionLabel={getOptionLabel}
             getOptionValue={getOptionValue}
             isGrouped={true}
@@ -198,6 +209,7 @@ export function ServiceSelectorAutoGrouped({
               onCreateService={handleCreateService}
               onDescriptionChange={handleServiceDescriptionChange}
               onTypeChange={handleServiceTypeChange}
+              onAssignedToChange={handleAssignedToChange}
               getOptionLabel={getOptionLabel}
               getOptionValue={getOptionValue}
               isGrouped={false}
@@ -239,10 +251,12 @@ interface ServiceRowProps {
   onCreateService: (description: string, type: string, index: number) => Promise<Service | undefined>;
   onDescriptionChange: (index: number, description: string | undefined) => void;
   onTypeChange: (index: number, type: string) => void;
+  onAssignedToChange: (index: number, userId: string | null) => void;
   getOptionLabel: (service: Service) => string;
   getOptionValue: (service: Service) => string;
   isGrouped: boolean;
   clearCreatingState: () => void;
+  initialAssignedUser?: User;
 }
 
 function ServiceRow({
@@ -255,10 +269,12 @@ function ServiceRow({
   onCreateService,
   onDescriptionChange,
   onTypeChange,
+  onAssignedToChange,
   getOptionLabel,
   getOptionValue,
   isGrouped,
   clearCreatingState,
+  initialAssignedUser,
 }: ServiceRowProps) {
   const { colors } = useTheme();
 
@@ -275,6 +291,56 @@ function ServiceRow({
       } as Service,
     ];
   }, [service]);
+
+  // Get initial user options for assigned user
+  const getUserInitialOptions = useMemo(() => {
+    if (!initialAssignedUser) return [];
+    return [{
+      value: initialAssignedUser.id,
+      label: initialAssignedUser.name,
+    }];
+  }, [initialAssignedUser?.id]);
+
+  // Search function for users
+  const searchUsers = useCallback(async (
+    searchTerm: string,
+    page: number = 1
+  ): Promise<{
+    data: { value: string; label: string }[];
+    hasMore: boolean;
+  }> => {
+    try {
+      const queryParams: any = {
+        statuses: [
+          USER_STATUS.EXPERIENCE_PERIOD_1,
+          USER_STATUS.EXPERIENCE_PERIOD_2,
+          USER_STATUS.EFFECTED
+        ],
+        orderBy: { name: "asc" },
+        page: page,
+        take: 50,
+      };
+
+      if (searchTerm && searchTerm.trim()) {
+        queryParams.searchingFor = searchTerm.trim();
+      }
+
+      const response = await getUsers(queryParams);
+      const users = response.data || [];
+      const hasMore = response.meta?.hasNextPage || false;
+
+      return {
+        data: users.map((user) => ({
+          value: user.id,
+          label: user.name,
+        })),
+        hasMore,
+      };
+    } catch (error) {
+      console.error("[ServiceRow] Error fetching users:", error);
+      return { data: [], hasMore: false };
+    }
+  }, []);
 
   // Search function for Combobox - filtered by type
   const searchServices = async (
@@ -355,32 +421,19 @@ function ServiceRow({
         <Combobox<Service>
           value={service.description}
           onValueChange={(newValue) => {
-            console.log("[ServiceRow] 📥 onValueChange received value:", newValue, "Type:", typeof newValue);
-            console.log("[ServiceRow] 📥 Current service.description before change:", service.description);
-
             // Update the service description
             onDescriptionChange(index, newValue as string | undefined);
-            console.log("[ServiceRow] 📥 onDescriptionChange called");
 
             // CRITICAL: DON'T clear creating state immediately
             // Wait for much longer to ensure form value is fully propagated
             // and the Combobox is displaying the correct value BEFORE re-grouping
             setTimeout(() => {
-              console.log("[ServiceRow] 📥 About to clear creating state");
-              console.log("[ServiceRow] 📥 Current service.description:", service.description);
-
               // Only clear if the description is actually set
               if (service.description && service.description === newValue) {
-                console.log("[ServiceRow] ✅ Description confirmed, clearing creating state");
                 clearCreatingState();
               } else {
-                console.error("[ServiceRow] ❌ Description mismatch!", {
-                  expected: newValue,
-                  actual: service.description,
-                });
                 // Try again after a delay
                 setTimeout(() => {
-                  console.log("[ServiceRow] 🔄 Retry: Clearing creating state");
                   clearCreatingState();
                 }, 500);
               }
@@ -415,6 +468,27 @@ function ServiceRow({
           debounceMs={300}
           clearable={false}
           hideDescription={true}
+        />
+      </View>
+
+      {/* Assigned User Field */}
+      <View style={styles.userContainer}>
+        <Combobox
+          value={service.assignedToId || ""}
+          onValueChange={(value) => onAssignedToChange(index, value ? (value as string) : null)}
+          placeholder="Responsável"
+          emptyText="Nenhum usuário encontrado"
+          searchPlaceholder="Buscar usuário..."
+          disabled={disabled}
+          async={true}
+          queryKey={["users", "service-order", index]}
+          queryFn={searchUsers}
+          initialOptions={getUserInitialOptions}
+          minSearchLength={0}
+          pageSize={50}
+          debounceMs={300}
+          clearable={true}
+          searchable={true}
         />
       </View>
 
@@ -467,15 +541,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.xs,
+    flexWrap: "wrap",
   },
   typeContainer: {
     width: 140,
   },
   descriptionContainer: {
     flex: 1,
+    minWidth: 150,
   },
   descriptionWithType: {
     // Additional styles when type selector is visible
+  },
+  userContainer: {
+    width: 140,
   },
   removeButton: {
     minWidth: 0,

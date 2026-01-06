@@ -31,7 +31,7 @@ export default function ProductionPreparationScreen() {
     // Configure default visible columns for agenda
     table: {
       ...tasksListConfig.table,
-      defaultVisible: ['name', 'serialNumber', 'forecastDate'],
+      defaultVisible: ['name', 'customer.fantasyName', 'serialNumber', 'term', 'services'],
     },
     // Add create action for agenda page
     actions: {

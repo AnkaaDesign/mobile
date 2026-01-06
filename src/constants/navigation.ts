@@ -24,13 +24,9 @@ export const NAVIGATION_MENU: MenuItem[] = [
     path: "/",
   },
 
-  // NOTIFICACOES - Centro de Notificacoes (accessible to all users)
-  {
-    id: "notifications",
-    title: "Notificacoes",
-    icon: "bell",
-    path: "/notifications",
-  },
+  // NOTE: Notifications removed from root menu - accessed via header popover (like web version)
+  // Personal notifications: click bell icon in header -> popover -> "Ver todas"
+  // Admin notifications management: /administracao/notificacoes
 
   // ADMINISTRACAO
   {
@@ -429,6 +425,8 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "aerografia-editar", title: "Editar", icon: "edit", path: "/producao/aerografia/editar/:id", isDynamic: true, requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
         ],
       },
+      { id: "agenda", title: "Agenda", icon: "clipboard-list", path: "/producao/agenda", requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN] },
+      { id: "garagens", title: "Barracões", icon: "warehouse", path: "/producao/garagens", requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN] },
       {
         id: "cronograma",
         title: "Cronograma",
@@ -440,8 +438,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "cronograma-cadastrar", title: "Nova Tarefa", icon: "plus", path: "/producao/cronograma/cadastrar", requiredPrivilege: SECTOR_PRIVILEGES.ADMIN },
         ],
       },
-      { id: "cronograma-agenda", title: "Agenda", icon: "clipboard-list", path: "/producao/agenda", requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN] },
-      { id: "garagens", title: "Barracões", icon: "warehouse", path: "/producao/garagens", requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN] },
       { id: "historico", title: "Historico", icon: "history", path: "/producao/historico" },
       {
         id: "observacoes",
