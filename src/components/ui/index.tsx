@@ -114,3 +114,6 @@ export * from "./phone-input";
 export * from "./zipcode-input";
 export * from "./address-form";
 export * from "./file-picker";
+
+// Message content rendering
+export * from "./message-block-renderer";

@@ -3,6 +3,7 @@ import { Platform, AppState, AppStateStatus, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import {
   registerForPushNotifications,
   setupNotificationListeners,
@@ -36,8 +37,13 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
   const appState = useRef<AppStateStatus>(AppState.currentState);
   const hasHandledInitialNotification = useRef(false);
 
-  // Get project ID from app.json
-  const projectId = 'f8f06f52-853f-4ab6-a783-181208687fa7';
+  // Get project ID from app.json dynamically
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId || 'f8f06f52-853f-4ab6-a783-181208687fa7';
+
+  // Log project ID for debugging
+  useEffect(() => {
+    console.log('[PUSH] Using Expo Project ID:', projectId);
+  }, []);
 
   // Handle notification received while app is in foreground
   const handleNotificationReceived = useCallback((notification: Notifications.Notification) => {
@@ -47,65 +53,96 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
 
   // Handle notification tap - navigate to deep link
   const handleNotificationResponse = useCallback((response: Notifications.NotificationResponse) => {
-    console.log('Notification tapped:', response);
+    console.log('[PUSH] ========================================');
+    console.log('[PUSH] Notification tapped - processing response');
+    console.log('[PUSH] Action identifier:', response.actionIdentifier);
+    console.log('[PUSH] Notification ID:', response.notification.request.identifier);
+    console.log('[PUSH] Notification data:', JSON.stringify(response.notification.request.content.data, null, 2));
+    console.log('[PUSH] ========================================');
 
     const deepLink = handleNotificationTap(response);
+    console.log('[PUSH] Deep link extracted:', deepLink || 'No deep link found');
 
     if (deepLink) {
       try {
         // Parse deep link and navigate
         // Expected format: ankaadesign://path or https://ankaadesign.com/app/path
         let path = deepLink;
+        console.log('[PUSH] Original deep link:', path);
 
         // Remove scheme if present
         if (path.startsWith('ankaadesign://')) {
           path = path.replace('ankaadesign://', '/');
+          console.log('[PUSH] Removed custom scheme, path:', path);
         } else if (path.includes('/app/')) {
           // Extract path after /app/
           const appIndex = path.indexOf('/app/');
           path = path.substring(appIndex + 4);
+          console.log('[PUSH] Extracted path after /app/, path:', path);
         }
 
         // Ensure path starts with /
         if (!path.startsWith('/')) {
           path = '/' + path;
+          console.log('[PUSH] Added leading slash, path:', path);
         }
 
-        console.log('Navigating to:', path);
+        console.log('[PUSH] ✅ Final navigation path:', path);
+        console.log('[PUSH] Navigating...');
         router.push(path as any);
-      } catch (error) {
-        console.error('Error navigating from notification:', error);
+        console.log('[PUSH] ✅ Navigation initiated successfully');
+      } catch (error: any) {
+        console.error('[PUSH] ========================================');
+        console.error('[PUSH] ❌ Error navigating from notification');
+        console.error('[PUSH] Error:', error?.message);
+        console.error('[PUSH] Stack:', error?.stack);
+        console.error('[PUSH] ========================================');
       }
+    } else {
+      console.warn('[PUSH] ⚠️ No deep link to navigate to');
+      console.log('[PUSH] Notification will be displayed but no navigation will occur');
     }
   }, [router]);
 
   // Register push token with backend
   const registerToken = useCallback(async () => {
+    console.log('[PUSH] ========================================');
+    console.log('[PUSH] Starting token registration flow');
+    console.log('[PUSH] Device check:', Device.isDevice ? 'Physical device' : 'Simulator/Emulator');
+    console.log('[PUSH] Platform:', Platform.OS);
+    console.log('[PUSH] Authenticated:', isAuthenticated);
+    console.log('[PUSH] ========================================');
+
     if (!Device.isDevice) {
-      console.log('[PUSH] Push notifications only work on physical devices');
+      console.warn('[PUSH] ⚠️ Push notifications only work on physical devices');
       return;
     }
 
     try {
-      console.log('[PUSH] Requesting push token...');
+      console.log('[PUSH] Step 1: Requesting Expo push token...');
       const token = await registerForPushNotifications(projectId);
 
       if (!token) {
-        console.log('[PUSH] Failed to get push token');
+        console.error('[PUSH] ❌ Failed to get push token - registerForPushNotifications returned null/undefined');
+        console.log('[PUSH] Possible causes:');
+        console.log('[PUSH]   - User denied notification permissions');
+        console.log('[PUSH]   - Device not configured for push notifications');
+        console.log('[PUSH]   - Expo project ID mismatch');
         return;
       }
 
-      console.log('[PUSH] ========================================');
-      console.log('[PUSH] TOKEN:', token);
-      console.log('[PUSH] ========================================');
+      console.log('[PUSH] ✅ Step 1 Complete: Received Expo push token');
+      console.log('[PUSH] Token:', token);
+      console.log('[PUSH] Token length:', token.length);
+      console.log('[PUSH] Token format:', token.startsWith('ExponentPushToken[') ? 'Valid Expo format' : 'Invalid format');
 
       setExpoPushToken(token);
 
       // Show alert in dev mode for easy copying
       if (__DEV__) {
         Alert.alert(
-          'Push Token',
-          token,
+          'Push Token Received',
+          `${token}\n\nPlatform: ${Platform.OS}\nAuthenticated: ${isAuthenticated}`,
           [{ text: 'OK' }],
           { cancelable: true }
         );
@@ -115,20 +152,34 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
       if (isAuthenticated) {
         const platform = Platform.OS === 'ios' ? 'IOS' : 'ANDROID';
 
+        console.log('[PUSH] Step 2: Registering token with backend...');
+        console.log('[PUSH] Platform:', platform);
+        console.log('[PUSH] User ID:', user?.id || 'unknown');
+
         await pushNotificationService.registerToken({
           token,
           platform,
         });
 
         setIsRegistered(true);
-        console.log('[PUSH] Token registered with backend successfully');
+        console.log('[PUSH] ✅ Step 2 Complete: Token registered with backend successfully');
+        console.log('[PUSH] ========================================');
+        console.log('[PUSH] 🎉 Registration flow completed successfully!');
+        console.log('[PUSH] ========================================');
       } else {
-        console.log('[PUSH] User not authenticated, token not registered with backend');
+        console.warn('[PUSH] ⚠️ Step 2 Skipped: User not authenticated');
+        console.log('[PUSH] Token will be registered when user logs in');
       }
-    } catch (error) {
-      console.error('[PUSH] Error registering push token:', error);
+    } catch (error: any) {
+      console.error('[PUSH] ========================================');
+      console.error('[PUSH] ❌ Error during push token registration');
+      console.error('[PUSH] Error type:', error?.constructor?.name);
+      console.error('[PUSH] Error message:', error?.message);
+      console.error('[PUSH] Error details:', JSON.stringify(error, null, 2));
+      console.error('[PUSH] Stack trace:', error?.stack);
+      console.error('[PUSH] ========================================');
     }
-  }, [isAuthenticated, projectId]);
+  }, [isAuthenticated, projectId, user]);
 
   // Unregister push token
   const unregisterToken = useCallback(async () => {

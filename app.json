@@ -27,7 +27,6 @@
     },
     "android": {
       "package": "com.ankaadesign.management",
-      "googleServicesFile": "./google-services.json",
       "jsEngine": "hermes",
       "intentFilters": [
         {
@@ -58,7 +57,14 @@
     ],
     "plugins": [
       "expo-router",
-      "expo-notifications"
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#000000",
+          "mode": "production"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

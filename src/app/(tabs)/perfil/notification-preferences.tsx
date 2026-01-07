@@ -1,404 +1,393 @@
 import { useEffect, useState, useCallback } from "react";
-import { View, ScrollView, StyleSheet, Alert, RefreshControl, Text } from "react-native";
+import { View, ScrollView, StyleSheet, Alert, RefreshControl, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { NOTIFICATION_CHANNEL, ALERT_TYPE } from "@/constants";
-import type { NotificationPreference } from "@/types/preferences";
+import { notificationPreferenceService } from "@/api-client";
+import type { UserNotificationPreference } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
 
-// Define notification groups
-const NOTIFICATION_GROUPS = {
-  TASK: {
-    title: "Task Notifications",
-    description: "Notifications related to tasks and assignments",
-    types: [
-      {
-        type: "TASK_ASSIGNED",
-        label: "Task Assigned",
-        description: "When a new task is assigned to you",
-        mandatory: false,
-      },
-      {
-        type: "TASK_STATUS_CHANGE",
-        label: "Task Status Changes",
-        description: "When a task status is updated",
-        mandatory: true,
-      },
-      {
-        type: "TASK_DUE_SOON",
-        label: "Task Due Soon",
-        description: "Reminders for upcoming task deadlines",
-        mandatory: false,
-      },
-      {
-        type: "TASK_OVERDUE",
-        label: "Task Overdue",
-        description: "When a task becomes overdue",
-        mandatory: true,
-      },
-    ],
-  },
-  ORDER: {
-    title: "Order Notifications",
-    description: "Notifications about inventory orders",
-    types: [
-      {
-        type: "ORDER_CREATED",
-        label: "Order Created",
-        description: "When a new order is created",
-        mandatory: false,
-      },
-      {
-        type: "ORDER_STATUS_CHANGE",
-        label: "Order Status Updates",
-        description: "When order status changes",
-        mandatory: false,
-      },
-      {
-        type: "ORDER_RECEIVED",
-        label: "Order Received",
-        description: "When an order is received",
-        mandatory: false,
-      },
-      {
-        type: "DELIVERY_DELAY",
-        label: "Delivery Delays",
-        description: "Alerts for delayed deliveries",
-        mandatory: true,
-      },
-    ],
-  },
-  INVENTORY: {
-    title: "Inventory Notifications",
-    description: "Stock and inventory alerts",
-    types: [
-      {
-        type: "LOW_STOCK",
-        label: "Low Stock",
-        description: "When items are running low",
-        mandatory: true,
-      },
-      {
-        type: "STOCK_OUT",
-        label: "Stock Out",
-        description: "When items are out of stock",
-        mandatory: true,
-      },
-      {
-        type: "REORDER_NEEDED",
-        label: "Reorder Needed",
-        description: "When items need to be reordered",
-        mandatory: false,
-      },
-    ],
-  },
-  HR: {
-    title: "HR Notifications",
-    description: "Human resources and employee-related notifications",
-    types: [
-      {
-        type: "VACATION_APPROVED",
-        label: "Vacation Approved",
-        description: "When your vacation request is approved",
-        mandatory: false,
-      },
-      {
-        type: "VACATION_REJECTED",
-        label: "Vacation Rejected",
-        description: "When your vacation request is rejected",
-        mandatory: false,
-      },
-      {
-        type: "WARNING_ISSUED",
-        label: "Warning Issued",
-        description: "When you receive a warning",
-        mandatory: true,
-      },
-      {
-        type: "PPE_DELIVERY",
-        label: "PPE Delivery",
-        description: "PPE equipment delivery notifications",
-        mandatory: false,
-      },
-    ],
-  },
-  SYSTEM: {
-    title: "System Notifications",
-    description: "System alerts and updates",
-    types: [
-      {
-        type: "SYSTEM_UPDATE",
-        label: "System Updates",
-        description: "Important system updates and announcements",
-        mandatory: true,
-      },
-      {
-        type: "MAINTENANCE",
-        label: "Maintenance Alerts",
-        description: "Scheduled maintenance notifications",
-        mandatory: true,
-      },
-    ],
-  },
+// =====================
+// Types and Constants
+// =====================
+
+type NotificationChannel = "IN_APP" | "EMAIL" | "PUSH" | "WHATSAPP";
+
+const ALL_CHANNELS: NotificationChannel[] = ["IN_APP", "EMAIL", "PUSH", "WHATSAPP"];
+
+interface NotificationEventPreference {
+  channels: NotificationChannel[];
+  mandatory: boolean;
+}
+
+interface NotificationPreferences {
+  task: Record<string, NotificationEventPreference>;
+  order: Record<string, NotificationEventPreference>;
+  stock: Record<string, NotificationEventPreference>;
+  system: Record<string, NotificationEventPreference>;
+  vacation: Record<string, NotificationEventPreference>;
+}
+
+// =====================
+// Channel Metadata
+// =====================
+
+const channelMetadata: Record<NotificationChannel, { label: string; icon: string; color: string }> = {
+  IN_APP: { label: "In-App", icon: "🔔", color: "#f97316" },
+  EMAIL: { label: "E-mail", icon: "📧", color: "#a855f7" },
+  PUSH: { label: "Push", icon: "📱", color: "#3b82f6" },
+  WHATSAPP: { label: "WhatsApp", icon: "💬", color: "#22c55e" },
 };
 
-type NotificationChannelType = "push" | "email" | "sms";
+// =====================
+// Section Data
+// =====================
 
-interface PreferenceState {
-  [key: string]: NotificationChannelType[];
-}
-
-interface ChannelTogglesProps {
-  channels: NotificationChannelType[];
-  selected: NotificationChannelType[];
-  disabled: boolean;
-  onChange: (channels: NotificationChannelType[]) => void;
-}
-
-function ChannelToggles({ channels, selected, disabled, onChange }: ChannelTogglesProps) {
-  const { colors } = useTheme();
-
-  const toggle = (channel: NotificationChannelType) => {
-    if (disabled) return;
-
-    const newSelected = selected.includes(channel)
-      ? selected.filter((c) => c !== channel)
-      : [...selected, channel];
-
-    onChange(newSelected);
-  };
-
-  const getChannelIcon = (channel: NotificationChannelType) => {
-    switch (channel) {
-      case "push":
-        return "📱";
-      case "email":
-        return "📧";
-      case "sms":
-        return "💬";
-      default:
-        return "🔔";
-    }
-  };
-
-  const getChannelLabel = (channel: NotificationChannelType) => {
-    switch (channel) {
-      case "push":
-        return "Push";
-      case "email":
-        return "Email";
-      case "sms":
-        return "SMS";
-      default:
-        return channel;
-    }
-  };
-
-  return (
-    <View style={styles.channelToggles}>
-      {channels.map((channel) => {
-        const isSelected = selected.includes(channel);
-        return (
-          <View key={channel} style={styles.channelToggle}>
-            <View
-              style={[
-                styles.channelToggleButton,
-                {
-                  backgroundColor: isSelected ? colors.primary : colors.muted,
-                  opacity: disabled ? 0.5 : 1,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <Text style={styles.channelIcon}>{getChannelIcon(channel)}</Text>
-              <ThemedText
-                style={[
-                  styles.channelLabel,
-                  { color: isSelected ? colors.primaryForeground : colors.mutedForeground },
-                ]}
-              >
-                {getChannelLabel(channel)}
-              </ThemedText>
-              <Switch
-                checked={isSelected}
-                onCheckedChange={() => toggle(channel)}
-                disabled={disabled}
-              />
-            </View>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
-interface PreferenceItemProps {
-  type: string;
+interface NotificationEvent {
+  key: string;
   label: string;
   description: string;
   mandatory: boolean;
-  selected: NotificationChannelType[];
-  onChange: (channels: NotificationChannelType[]) => void;
 }
 
-function PreferenceItem({
-  type,
+interface NotificationSection {
+  id: string;
+  title: string;
+  icon: string;
+  events: NotificationEvent[];
+}
+
+const notificationSections: NotificationSection[] = [
+  {
+    id: "task",
+    title: "Tarefas",
+    icon: "📋",
+    events: [
+      // Lifecycle
+      { key: "created", label: "Nova Tarefa", description: "Quando uma nova tarefa é criada", mandatory: false },
+      { key: "status", label: "Mudança de Status", description: "Quando o status de uma tarefa é alterado", mandatory: true },
+      { key: "finishedAt", label: "Conclusão", description: "Quando uma tarefa é concluída", mandatory: false },
+      { key: "overdue", label: "Tarefa Atrasada", description: "Quando uma tarefa está atrasada", mandatory: true },
+      // Basic info
+      { key: "name", label: "Nome Alterado", description: "Quando o nome da tarefa é alterado", mandatory: false },
+      { key: "details", label: "Detalhes Alterados", description: "Quando os detalhes da tarefa são modificados", mandatory: false },
+      { key: "serialNumber", label: "Número de Série", description: "Quando o número de série é alterado", mandatory: false },
+      // Dates
+      { key: "entryDate", label: "Data de Entrada", description: "Quando a data de entrada é definida/alterada", mandatory: false },
+      { key: "term", label: "Prazo Alterado", description: "Quando o prazo da tarefa é alterado", mandatory: true },
+      { key: "forecastDate", label: "Data Prevista", description: "Quando a previsão de disponibilidade é alterada", mandatory: false },
+      { key: "startedAt", label: "Início da Produção", description: "Quando a produção é iniciada", mandatory: false },
+      { key: "deadline", label: "Prazo Próximo", description: "Quando uma tarefa está próxima do prazo", mandatory: true },
+      // Assignment
+      { key: "sector", label: "Setor Alterado", description: "Quando o setor responsável é alterado", mandatory: false },
+      { key: "customer", label: "Cliente Alterado", description: "Quando o cliente da tarefa é alterado", mandatory: false },
+      // Artwork
+      { key: "artworks", label: "Atualização de Arte", description: "Quando arquivos de arte são adicionados/removidos", mandatory: false },
+      // Negotiation
+      { key: "negotiatingWith", label: "Negociação", description: "Quando o contato de negociação é alterado", mandatory: false },
+      // Production
+      { key: "paint", label: "Pintura Geral", description: "Quando a pintura geral é definida/alterada", mandatory: false },
+      { key: "observation", label: "Observação", description: "Quando observações são adicionadas", mandatory: false },
+      // Financial (ADMIN/FINANCIAL only)
+      { key: "invoiceTo", label: "Faturar Para", description: "Quando o cliente de faturamento é alterado", mandatory: false },
+      { key: "commission", label: "Comissão", description: "Quando o status de comissão é alterado", mandatory: false },
+      { key: "budgets", label: "Orçamentos", description: "Quando orçamentos são adicionados/removidos", mandatory: false },
+      { key: "invoices", label: "Notas Fiscais", description: "Quando notas fiscais são adicionadas/removidas", mandatory: true },
+      { key: "receipts", label: "Comprovantes", description: "Quando comprovantes são adicionados/removidos", mandatory: false },
+      { key: "reimbursements", label: "Reembolsos", description: "Quando documentos de reembolso são alterados", mandatory: false },
+      { key: "invoiceReimbursements", label: "NF de Reembolso", description: "Quando NFs de reembolso são alteradas", mandatory: false },
+    ],
+  },
+  {
+    id: "order",
+    title: "Pedidos",
+    icon: "🛒",
+    events: [
+      { key: "created", label: "Novo Pedido", description: "Quando um novo pedido é criado", mandatory: false },
+      { key: "status", label: "Mudança de Status", description: "Quando o status de um pedido é alterado", mandatory: false },
+      { key: "fulfilled", label: "Pedido Finalizado", description: "Quando um pedido é finalizado/entregue", mandatory: false },
+      { key: "cancelled", label: "Pedido Cancelado", description: "Quando um pedido é cancelado", mandatory: false },
+      { key: "overdue", label: "Pedido Atrasado", description: "Quando um pedido está atrasado", mandatory: true },
+    ],
+  },
+  {
+    id: "stock",
+    title: "Estoque",
+    icon: "📦",
+    events: [
+      { key: "low", label: "Estoque Baixo", description: "Quando um item está abaixo do mínimo", mandatory: false },
+      { key: "out", label: "Estoque Esgotado", description: "Quando um item fica sem estoque", mandatory: true },
+      { key: "restock", label: "Reabastecimento", description: "Quando é necessário reabastecer", mandatory: false },
+    ],
+  },
+  {
+    id: "system",
+    title: "Sistema",
+    icon: "🛡️",
+    events: [
+      { key: "maintenance", label: "Manutenção", description: "Avisos de manutenção programada", mandatory: true },
+      { key: "update", label: "Atualizações", description: "Novidades e atualizações do sistema", mandatory: false },
+      { key: "security", label: "Segurança", description: "Alertas de segurança importantes", mandatory: true },
+    ],
+  },
+  {
+    id: "vacation",
+    title: "Férias",
+    icon: "📅",
+    events: [
+      { key: "requested", label: "Solicitação", description: "Quando férias são solicitadas", mandatory: false },
+      { key: "approved", label: "Aprovação", description: "Quando férias são aprovadas", mandatory: true },
+      { key: "rejected", label: "Rejeição", description: "Quando férias são rejeitadas", mandatory: true },
+      { key: "reminder", label: "Lembrete", description: "Lembretes sobre férias próximas", mandatory: false },
+    ],
+  },
+];
+
+// =====================
+// Default Preferences
+// =====================
+
+const createDefaultPreference = (mandatory: boolean): NotificationEventPreference => ({
+  channels: mandatory ? ["IN_APP", "EMAIL"] : ["IN_APP"],
+  mandatory,
+});
+
+const defaultPreferences: NotificationPreferences = {
+  task: {
+    // Lifecycle
+    created: createDefaultPreference(false),
+    status: createDefaultPreference(true),
+    finishedAt: createDefaultPreference(false),
+    overdue: createDefaultPreference(true),
+    // Basic info
+    name: createDefaultPreference(false),
+    details: createDefaultPreference(false),
+    serialNumber: createDefaultPreference(false),
+    // Dates
+    entryDate: createDefaultPreference(false),
+    term: createDefaultPreference(true),
+    forecastDate: createDefaultPreference(false),
+    startedAt: createDefaultPreference(false),
+    deadline: createDefaultPreference(true),
+    // Assignment
+    sector: createDefaultPreference(false),
+    customer: createDefaultPreference(false),
+    // Artwork
+    artworks: createDefaultPreference(false),
+    // Negotiation
+    negotiatingWith: createDefaultPreference(false),
+    // Production
+    paint: createDefaultPreference(false),
+    observation: createDefaultPreference(false),
+    // Financial (ADMIN/FINANCIAL only)
+    invoiceTo: createDefaultPreference(false),
+    commission: createDefaultPreference(false),
+    budgets: createDefaultPreference(false),
+    invoices: createDefaultPreference(true),
+    receipts: createDefaultPreference(false),
+    reimbursements: createDefaultPreference(false),
+    invoiceReimbursements: createDefaultPreference(false),
+  },
+  order: {
+    created: createDefaultPreference(false),
+    status: createDefaultPreference(false),
+    fulfilled: createDefaultPreference(false),
+    cancelled: createDefaultPreference(false),
+    overdue: createDefaultPreference(true),
+  },
+  stock: {
+    low: createDefaultPreference(false),
+    out: createDefaultPreference(true),
+    restock: createDefaultPreference(false),
+  },
+  system: {
+    maintenance: createDefaultPreference(true),
+    update: createDefaultPreference(false),
+    security: createDefaultPreference(true),
+  },
+  vacation: {
+    requested: createDefaultPreference(false),
+    approved: createDefaultPreference(true),
+    rejected: createDefaultPreference(true),
+    reminder: createDefaultPreference(false),
+  },
+};
+
+// =====================
+// PreferenceRow Component
+// =====================
+
+interface PreferenceRowProps {
+  label: string;
+  description: string;
+  selectedChannels: NotificationChannel[];
+  onChange: (channels: NotificationChannel[]) => void;
+  mandatory: boolean;
+}
+
+function PreferenceRow({
   label,
   description,
-  mandatory,
-  selected,
+  selectedChannels,
   onChange,
-}: PreferenceItemProps) {
+  mandatory,
+}: PreferenceRowProps) {
   const { colors } = useTheme();
 
-  return (
-    <View style={[styles.preferenceItem, { borderBottomColor: colors.border }]}>
-      <View style={styles.preferenceHeader}>
-        <View style={styles.preferenceInfo}>
-          <View style={styles.preferenceTitleRow}>
-            <ThemedText style={styles.preferenceLabel}>{label}</ThemedText>
-            {mandatory && (
-              <View style={[styles.mandatoryBadge, { backgroundColor: colors.destructive }]}>
-                <ThemedText style={[styles.mandatoryText, { color: colors.destructiveForeground }]}>
-                  Mandatory
-                </ThemedText>
-              </View>
-            )}
-          </View>
-          <ThemedText style={[styles.preferenceDescription, { color: colors.mutedForeground }]}>
-            {description}
-          </ThemedText>
-        </View>
-      </View>
+  const handleChannelToggle = (channel: NotificationChannel) => {
+    if (mandatory) {
+      Alert.alert("Não é possível modificar", "Esta notificação é obrigatória e não pode ser desativada.");
+      return;
+    }
 
-      <ChannelToggles
-        channels={["push", "email", "sms"]}
-        selected={selected}
-        disabled={mandatory}
-        onChange={onChange}
-      />
+    const newChannels = selectedChannels.includes(channel)
+      ? selectedChannels.filter((c) => c !== channel)
+      : [...selectedChannels, channel];
+
+    if (newChannels.length === 0) {
+      Alert.alert("Seleção inválida", "Pelo menos um canal deve estar selecionado");
+      return;
+    }
+
+    onChange(newChannels);
+  };
+
+  return (
+    <View style={[styles.preferenceRow, { borderBottomColor: colors.border }]}>
+      <View style={styles.preferenceInfo}>
+        <View style={styles.labelRow}>
+          <ThemedText style={styles.preferenceLabel}>{label}</ThemedText>
+          {mandatory && (
+            <View style={[styles.mandatoryBadge, { backgroundColor: colors.destructive }]}>
+              <Text style={[styles.mandatoryText, { color: colors.destructiveForeground }]}>
+                OBRIGATÓRIA
+              </Text>
+            </View>
+          )}
+        </View>
+        <ThemedText style={[styles.preferenceDescription, { color: colors.mutedForeground }]}>
+          {description}
+        </ThemedText>
+      </View>
+      <View style={styles.channelsRow}>
+        {ALL_CHANNELS.map((channel) => {
+          const metadata = channelMetadata[channel];
+          const isSelected = selectedChannels.includes(channel);
+
+          return (
+            <TouchableOpacity
+              key={channel}
+              onPress={() => handleChannelToggle(channel)}
+              disabled={mandatory}
+              style={[
+                styles.channelButton,
+                {
+                  borderColor: isSelected ? colors.primary : colors.border,
+                  backgroundColor: isSelected ? `${metadata.color}15` : colors.card,
+                  opacity: mandatory ? 0.7 : 1,
+                },
+              ]}
+            >
+              <Text style={styles.channelIcon}>{metadata.icon}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
-interface PreferenceSectionProps {
-  title: string;
-  description: string;
-  types: Array<{
-    type: string;
-    label: string;
-    description: string;
-    mandatory: boolean;
-  }>;
-  preferences: PreferenceState;
-  onChange: (type: string, channels: NotificationChannelType[]) => void;
-}
-
-function PreferenceSection({
-  title,
-  description,
-  types,
-  preferences,
-  onChange,
-}: PreferenceSectionProps) {
-  const { colors } = useTheme();
-
-  return (
-    <Accordion type="multiple" collapsible className="w-full">
-      <AccordionItem value={title}>
-        <AccordionTrigger>
-          <View style={styles.sectionHeader}>
-            <ThemedText style={styles.sectionTitle}>{title}</ThemedText>
-            <ThemedText style={[styles.sectionDescription, { color: colors.mutedForeground }]}>
-              {description}
-            </ThemedText>
-          </View>
-        </AccordionTrigger>
-        <AccordionContent>
-          <View style={styles.sectionContent}>
-            {types.map((item) => (
-              <PreferenceItem
-                key={item.type}
-                type={item.type}
-                label={item.label}
-                description={item.description}
-                mandatory={item.mandatory}
-                selected={preferences[item.type] || []}
-                onChange={(channels) => onChange(item.type, channels)}
-              />
-            ))}
-          </View>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  );
-}
+// =====================
+// Main Component
+// =====================
 
 export default function NotificationPreferencesScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
 
-  const [preferences, setPreferences] = useState<PreferenceState>({});
-  const [originalPreferences, setOriginalPreferences] = useState<PreferenceState>({});
+  const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
+  const [originalPreferences, setOriginalPreferences] = useState<NotificationPreferences>(defaultPreferences);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Initialize default preferences
-  const initializeDefaultPreferences = useCallback(() => {
-    const defaults: PreferenceState = {};
+  /**
+   * Transform API preferences to local format
+   */
+  const transformPreferencesToLocal = (
+    apiPreferences: UserNotificationPreference[]
+  ): NotificationPreferences => {
+    const local = { ...defaultPreferences };
 
-    Object.values(NOTIFICATION_GROUPS).forEach((group) => {
-      group.types.forEach((item) => {
-        if (item.mandatory) {
-          // Mandatory notifications have all channels enabled
-          defaults[item.type] = ["push", "email", "sms"];
-        } else {
-          // Optional notifications default to push only
-          defaults[item.type] = ["push"];
-        }
-      });
-    });
+    for (const pref of apiPreferences) {
+      const section = pref.notificationType.toLowerCase() as keyof NotificationPreferences;
+      const eventKey = pref.eventType || 'default';
 
-    return defaults;
-  }, []);
+      if (local[section] && eventKey in local[section]) {
+        (local[section] as Record<string, NotificationEventPreference>)[eventKey] = {
+          channels: pref.channels as NotificationChannel[],
+          mandatory: pref.isMandatory,
+        };
+      }
+    }
 
-  // Load preferences from API
+    return local;
+  };
+
+  /**
+   * Transform local preferences to API format
+   */
+  const transformLocalToApi = (
+    local: NotificationPreferences
+  ): Array<{ type: string; eventType: string; channels: string[] }> => {
+    const apiPrefs: Array<{ type: string; eventType: string; channels: string[] }> = [];
+
+    for (const [sectionKey, section] of Object.entries(local)) {
+      const type = sectionKey.toUpperCase(); // e.g., "task" -> "TASK"
+
+      for (const [eventKey, eventData] of Object.entries(section as Record<string, NotificationEventPreference>)) {
+        apiPrefs.push({
+          type,
+          eventType: eventKey,
+          channels: eventData.channels,
+        });
+      }
+    }
+
+    return apiPrefs;
+  };
+
   const loadPreferences = useCallback(async () => {
+    if (!user?.id) return;
+
     try {
       setIsLoading(true);
 
-      // TODO: Replace with actual API call
-      // const response = await getPreferences({ userId: user?.id });
-      // if (response.success && response.data) {
-      //   const loadedPrefs = parseApiPreferences(response.data);
-      //   setPreferences(loadedPrefs);
-      //   setOriginalPreferences(loadedPrefs);
-      // } else {
-      //   const defaults = initializeDefaultPreferences();
-      //   setPreferences(defaults);
-      //   setOriginalPreferences(defaults);
-      // }
+      const response = await notificationPreferenceService.getPreferences(user.id);
 
-      // For now, use defaults
-      const defaults = initializeDefaultPreferences();
-      setPreferences(defaults);
-      setOriginalPreferences(defaults);
+      if (response.data?.success && response.data?.data && response.data.data.length > 0) {
+        const localPrefs = transformPreferencesToLocal(response.data.data);
+        setPreferences(localPrefs);
+        setOriginalPreferences(localPrefs);
+      } else {
+        // No preferences saved yet, use defaults
+        setPreferences(defaultPreferences);
+        setOriginalPreferences(defaultPreferences);
+      }
     } catch (error: any) {
-      Alert.alert("Error", "Failed to load notification preferences");
-      const defaults = initializeDefaultPreferences();
-      setPreferences(defaults);
-      setOriginalPreferences(defaults);
+      console.error("Error loading preferences:", error);
+      Alert.alert("Erro", "Falha ao carregar preferências de notificação");
+      setPreferences(defaultPreferences);
+      setOriginalPreferences(defaultPreferences);
     } finally {
       setIsLoading(false);
     }
-  }, [user, initializeDefaultPreferences]);
+  }, [user?.id]);
 
   useEffect(() => {
     loadPreferences();
@@ -410,61 +399,43 @@ export default function NotificationPreferencesScreen() {
     setIsRefreshing(false);
   }, [loadPreferences]);
 
-  const handlePreferenceChange = (type: string, channels: NotificationChannelType[]) => {
-    // Check if it's a mandatory notification
-    let isMandatory = false;
-    Object.values(NOTIFICATION_GROUPS).forEach((group) => {
-      const item = group.types.find((t) => t.type === type);
-      if (item?.mandatory) {
-        isMandatory = true;
-      }
-    });
-
-    if (isMandatory) {
-      Alert.alert(
-        "Cannot Modify",
-        "This notification type is mandatory and cannot be disabled.",
-        [{ text: "OK" }]
-      );
-      return;
-    }
-
-    // Validate at least one channel is selected
-    if (channels.length === 0) {
-      Alert.alert(
-        "Invalid Selection",
-        "At least one notification channel must be enabled.",
-        [{ text: "OK" }]
-      );
-      return;
-    }
-
+  const handlePreferenceChange = (sectionKey: string, eventKey: string, channels: NotificationChannel[]) => {
     setPreferences((prev) => ({
       ...prev,
-      [type]: channels,
+      [sectionKey]: {
+        ...prev[sectionKey as keyof NotificationPreferences],
+        [eventKey]: {
+          ...prev[sectionKey as keyof NotificationPreferences][eventKey],
+          channels,
+        },
+      },
     }));
   };
 
   const handleSave = async () => {
+    if (!user?.id) {
+      Alert.alert("Erro", "Usuário não encontrado");
+      return;
+    }
+
     try {
       setIsSaving(true);
 
-      // TODO: Implement API call to save preferences
-      // const response = await updatePreferences(user?.preferencesId, {
-      //   notifications: formatPreferencesForApi(preferences),
-      // });
+      const apiPrefs = transformLocalToApi(preferences);
 
-      // if (response.success) {
-      //   setOriginalPreferences(preferences);
-      //   Alert.alert("Success", "Notification preferences saved successfully");
-      // }
+      const response = await notificationPreferenceService.batchUpdatePreferences(user.id, {
+        preferences: apiPrefs,
+      });
 
-      // For now, simulate success
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setOriginalPreferences(preferences);
-      Alert.alert("Success", "Notification preferences saved successfully");
+      if (response.data?.success) {
+        setOriginalPreferences(preferences);
+        Alert.alert("Sucesso", `${response.data.data?.updated || 0} preferências salvas com sucesso!`);
+      } else {
+        Alert.alert("Erro", response.data?.message || "Erro ao salvar preferências");
+      }
     } catch (error: any) {
-      Alert.alert("Error", "Failed to save notification preferences");
+      console.error("Error saving preferences:", error);
+      Alert.alert("Erro", "Falha ao salvar preferências de notificação");
     } finally {
       setIsSaving(false);
     }
@@ -472,16 +443,16 @@ export default function NotificationPreferencesScreen() {
 
   const handleReset = () => {
     Alert.alert(
-      "Reset to Defaults",
-      "Are you sure you want to reset all notification preferences to default values?",
+      "Restaurar Padrão",
+      "Tem certeza que deseja restaurar todas as preferências para os valores padrão?",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "Cancelar", style: "cancel" },
         {
-          text: "Reset",
+          text: "Restaurar",
           style: "destructive",
           onPress: () => {
-            const defaults = initializeDefaultPreferences();
-            setPreferences(defaults);
+            setPreferences(defaultPreferences);
+            Alert.alert("Sucesso", "Preferências restauradas para o padrão");
           },
         },
       ]
@@ -490,6 +461,7 @@ export default function NotificationPreferencesScreen() {
 
   const handleCancel = () => {
     setPreferences(originalPreferences);
+    Alert.alert("Cancelado", "Alterações descartadas");
   };
 
   const hasChanges = JSON.stringify(preferences) !== JSON.stringify(originalPreferences);
@@ -500,7 +472,7 @@ export default function NotificationPreferencesScreen() {
         style={[styles.safeArea, styles.loadingContainer, { backgroundColor: colors.background }]}
         edges={[]}
       >
-        <ThemedText>Loading preferences...</ThemedText>
+        <ThemedText>Carregando preferências...</ThemedText>
       </SafeAreaView>
     );
   }
@@ -515,24 +487,71 @@ export default function NotificationPreferencesScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <ThemedText style={styles.title}>Notification Preferences</ThemedText>
+          <ThemedText style={styles.title}>Preferências de Notificação</ThemedText>
           <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Choose how you want to be notified
+            Escolha como deseja ser notificado
           </ThemedText>
         </View>
 
-        {/* Notification Groups */}
-        {Object.entries(NOTIFICATION_GROUPS).map(([key, group]) => (
-          <Card key={key} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <PreferenceSection
-              title={group.title}
-              description={group.description}
-              types={group.types}
-              preferences={preferences}
-              onChange={handlePreferenceChange}
-            />
-          </Card>
-        ))}
+        {/* Channel Legend */}
+        <View style={[styles.legend, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <ThemedText style={[styles.legendLabel, { color: colors.mutedForeground }]}>Canais:</ThemedText>
+          {ALL_CHANNELS.map((channel) => {
+            const metadata = channelMetadata[channel];
+            return (
+              <View key={channel} style={styles.legendItem}>
+                <Text style={styles.legendIcon}>{metadata.icon}</Text>
+                <ThemedText style={styles.legendText}>{metadata.label}</ThemedText>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Notification Sections */}
+        <Accordion type="multiple" collapsible className="w-full">
+          {notificationSections.map((section) => {
+            const sectionKey = section.id as keyof NotificationPreferences;
+
+            return (
+              <Card
+                key={section.id}
+                style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+              >
+                <AccordionItem value={section.id}>
+                  <AccordionTrigger>
+                    <View style={styles.sectionHeader}>
+                      <View style={styles.sectionTitleRow}>
+                        <Text style={styles.sectionIcon}>{section.icon}</Text>
+                        <ThemedText style={styles.sectionTitle}>{section.title}</ThemedText>
+                      </View>
+                      <ThemedText style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
+                        {section.events.length} eventos
+                      </ThemedText>
+                    </View>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <View style={styles.sectionContent}>
+                      {section.events.map((event) => {
+                        const eventPref = preferences[sectionKey][event.key];
+
+                        return (
+                          <PreferenceRow
+                            key={event.key}
+                            label={event.label}
+                            description={event.description}
+                            selectedChannels={eventPref?.channels || []}
+                            onChange={(channels) => handlePreferenceChange(sectionKey, event.key, channels)}
+                            mandatory={event.mandatory}
+                          />
+                        );
+                      })}
+                    </View>
+                  </AccordionContent>
+                </AccordionItem>
+              </Card>
+            );
+          })}
+        </Accordion>
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
@@ -541,7 +560,9 @@ export default function NotificationPreferencesScreen() {
             disabled={!hasChanges || isSaving}
             style={styles.actionButton}
           >
-            <ThemedText>{isSaving ? "Saving..." : "Save Changes"}</ThemedText>
+            <ThemedText style={{ color: "#fff" }}>
+              {isSaving ? "Salvando..." : "Salvar Alterações"}
+            </ThemedText>
           </Button>
 
           {hasChanges && (
@@ -551,7 +572,7 @@ export default function NotificationPreferencesScreen() {
               disabled={isSaving}
               style={styles.actionButton}
             >
-              <ThemedText>Cancel</ThemedText>
+              <ThemedText>Cancelar</ThemedText>
             </Button>
           )}
 
@@ -561,7 +582,7 @@ export default function NotificationPreferencesScreen() {
             disabled={isSaving}
             style={styles.actionButton}
           >
-            <ThemedText>Reset to Defaults</ThemedText>
+            <ThemedText>Restaurar Padrão</ThemedText>
           </Button>
         </View>
       </ScrollView>
@@ -598,6 +619,31 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
   },
+  legend: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    marginBottom: spacing.md,
+  },
+  legendLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  legendIcon: {
+    fontSize: 16,
+  },
+  legendText: {
+    fontSize: 13,
+  },
   card: {
     padding: spacing.md,
     borderRadius: borderRadius.lg,
@@ -607,35 +653,42 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flex: 1,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: spacing.xs,
-  },
-  sectionDescription: {
-    fontSize: 13,
-  },
-  sectionContent: {
-    gap: spacing.sm,
-  },
-  preferenceItem: {
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  preferenceHeader: {
-    marginBottom: spacing.sm,
-  },
-  preferenceInfo: {
-    flex: 1,
-  },
-  preferenceTitleRow: {
+  sectionTitleRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
     marginBottom: spacing.xs,
   },
+  sectionIcon: {
+    fontSize: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+  },
+  sectionContent: {
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  preferenceRow: {
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    gap: spacing.sm,
+  },
+  preferenceInfo: {
+    gap: spacing.xs,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    flexWrap: "wrap",
+  },
   preferenceLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "500",
   },
   mandatoryBadge: {
@@ -644,34 +697,28 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
   },
   mandatoryText: {
-    fontSize: 10,
-    fontWeight: "600",
+    fontSize: 9,
+    fontWeight: "700",
     textTransform: "uppercase",
   },
   preferenceDescription: {
     fontSize: 13,
   },
-  channelToggles: {
-    gap: spacing.sm,
-  },
-  channelToggle: {
-    marginVertical: spacing.xs,
-  },
-  channelToggleButton: {
+  channelsRow: {
     flexDirection: "row",
-    alignItems: "center",
-    padding: spacing.sm,
+    gap: spacing.xs,
+    flexWrap: "wrap",
+  },
+  channelButton: {
+    width: 48,
+    height: 48,
     borderRadius: borderRadius.md,
-    borderWidth: 1,
-    gap: spacing.sm,
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
   },
   channelIcon: {
     fontSize: 20,
-  },
-  channelLabel: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "500",
   },
   actionButtons: {
     gap: spacing.sm,
