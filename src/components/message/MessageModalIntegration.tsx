@@ -14,7 +14,7 @@
 import React, { useEffect } from "react";
 import { MessageModal } from "./MessageModal";
 import { useUnviewedMessages } from "@/hooks/useUnviewedMessages";
-import { getUnreadNotifications, markAsRead, markAllAsRead } from "@/api-client/notification";
+import { apiClient } from "@/api-client/axiosClient";
 
 interface MessageModalProviderProps {
   /**
@@ -30,12 +30,6 @@ interface MessageModalProviderProps {
   autoShow?: boolean;
 
   /**
-   * Maximum number of messages to fetch
-   * @default 50
-   */
-  maxMessages?: number;
-
-  /**
    * Whether to enable debug logging
    * @default false
    */
@@ -45,12 +39,11 @@ interface MessageModalProviderProps {
 /**
  * MessageModal Provider Component
  *
- * Manages the message modal state and integrates with the notification API
+ * Manages the message modal state and integrates with the message API
  */
 export function MessageModalProvider({
   userId: providedUserId,
   autoShow = true,
-  maxMessages = 50,
   debug = false,
 }: MessageModalProviderProps = {}) {
   // You can uncomment this if you have an auth context
@@ -64,8 +57,7 @@ export function MessageModalProvider({
     unviewedMessages,
     showModal,
     closeModal,
-    markAsRead: markMessageAsRead,
-    markAllAsRead: markAllMessagesAsRead,
+    dismissForToday,
     dontShowAgain,
     refresh,
     isLoading,
@@ -83,18 +75,15 @@ export function MessageModalProvider({
 
       try {
         if (debug) {
-          console.log("[MessageModalProvider] Fetching unread notifications for user:", userId);
+          console.log("[MessageModalProvider] Fetching unviewed messages for user:", userId);
         }
 
-        const response = await getUnreadNotifications(userId, {
-          limit: maxMessages,
-          orderBy: { sentAt: "desc" },
-        });
-
-        const messages = response.data || [];
+        // Call the /messages/unviewed endpoint
+        const response = await apiClient.get("/messages/unviewed");
+        const messages = response.data?.data || [];
 
         if (debug) {
-          console.log("[MessageModalProvider] Fetched", messages.length, "unread messages");
+          console.log("[MessageModalProvider] Fetched", messages.length, "unviewed messages");
         }
 
         return messages;
@@ -141,64 +130,39 @@ export function MessageModalProvider({
       visible={showModal}
       onClose={closeModal}
       messages={unviewedMessages}
-      onMarkAsRead={async (messageId) => {
+      onDismissForToday={async (messageId) => {
         try {
           if (debug) {
-            console.log("[MessageModalProvider] Marking message as read:", messageId);
+            console.log("[MessageModalProvider] Dismissing for today:", messageId);
           }
 
-          // Mark as read locally first (for immediate UI update)
-          await markMessageAsRead(messageId);
-
-          // Then mark as read on the server
-          await markAsRead(messageId, userId);
+          // Dismiss for today locally (stored in AsyncStorage)
+          await dismissForToday(messageId);
 
           if (debug) {
-            console.log("[MessageModalProvider] Successfully marked message as read");
+            console.log("[MessageModalProvider] Successfully dismissed for today");
           }
         } catch (error) {
-          console.error("[MessageModalProvider] Failed to mark message as read:", error);
-          // The local state has already been updated, so the UI still reflects the change
-        }
-      }}
-      onMarkAllAsRead={async () => {
-        try {
-          if (debug) {
-            console.log("[MessageModalProvider] Marking all messages as read");
-          }
-
-          // Mark all as read locally first
-          await markAllMessagesAsRead();
-
-          // Then mark all as read on the server
-          await markAllAsRead(userId);
-
-          if (debug) {
-            console.log("[MessageModalProvider] Successfully marked all messages as read");
-          }
-        } catch (error) {
-          console.error("[MessageModalProvider] Failed to mark all messages as read:", error);
-          // The local state has already been updated, so the UI still reflects the change
+          console.error("[MessageModalProvider] Failed to dismiss for today:", error);
         }
       }}
       onDontShowAgain={async (messageId) => {
         try {
           if (debug) {
-            console.log("[MessageModalProvider] Don't show again:", messageId);
+            console.log("[MessageModalProvider] Don't show again (permanent):", messageId);
           }
 
-          // Dismiss the message locally (persisted to AsyncStorage)
+          // Dismiss locally first (for immediate UI update)
           await dontShowAgain(messageId);
 
-          // Optionally, you can also mark it as read on the server
-          // to ensure it doesn't show up in the unread count
-          await markAsRead(messageId, userId);
+          // Then mark as viewed on the server (permanent)
+          await apiClient.post(`/messages/${messageId}/mark-viewed`);
 
           if (debug) {
-            console.log("[MessageModalProvider] Successfully dismissed message");
+            console.log("[MessageModalProvider] Successfully marked as permanently viewed");
           }
         } catch (error) {
-          console.error("[MessageModalProvider] Failed to dismiss message:", error);
+          console.error("[MessageModalProvider] Failed to mark as viewed:", error);
           // The local state has already been updated, so the UI still reflects the change
         }
       }}

@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Notification } from "@/types";
 
-const STORAGE_KEY = "@ankaa/dismissed_messages";
-const VIEWED_MESSAGES_KEY = "@ankaa/viewed_messages";
+// Storage key for daily dismissed messages
+const DAILY_DISMISSED_KEY = "@ankaa/daily_dismissed_messages";
 
 export interface UseUnviewedMessagesOptions {
   userId?: string;
@@ -19,10 +19,16 @@ export interface UseUnviewedMessagesResult {
   error: Error | null;
   openModal: () => void;
   closeModal: () => void;
-  markAsRead: (messageId: string) => Promise<void>;
-  markAllAsRead: () => Promise<void>;
+  /** Dismiss for today only - will show again tomorrow */
+  dismissForToday: (messageId: string) => Promise<void>;
+  /** Don't show again - permanent dismiss */
   dontShowAgain: (messageId: string) => Promise<void>;
   refresh: () => Promise<void>;
+}
+
+// Get today's date as YYYY-MM-DD
+function getTodayDate(): string {
+  return new Date().toISOString().split("T")[0];
 }
 
 /**
@@ -30,10 +36,10 @@ export interface UseUnviewedMessagesResult {
  *
  * Features:
  * - Fetches unviewed messages
- * - Tracks which messages have been dismissed
+ * - Tracks which messages have been dismissed for today (local storage)
  * - Manages modal visibility
  * - Auto-shows modal on first mount if there are unviewed messages
- * - Persists dismissed messages across app sessions
+ * - Messages dismissed today will show again tomorrow
  */
 export function useUnviewedMessages(
   options: UseUnviewedMessagesOptions = {}
@@ -41,58 +47,57 @@ export function useUnviewedMessages(
   const { userId, autoShow = true, fetchMessages } = options;
 
   const [messages, setMessages] = useState<Notification[]>([]);
-  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
-  const [viewedIds, setViewedIds] = useState<Set<string>>(new Set());
+  const [dailyDismissed, setDailyDismissed] = useState<Record<string, string>>({});
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [hasAutoShown, setHasAutoShown] = useState(false);
 
-  // Load dismissed messages from storage
-  const loadDismissedMessages = useCallback(async () => {
+  // Load and cleanup daily dismissed messages from storage
+  const loadDailyDismissed = useCallback(async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
+      const stored = await AsyncStorage.getItem(DAILY_DISMISSED_KEY);
       if (stored) {
-        const dismissed = JSON.parse(stored);
-        setDismissedIds(new Set(dismissed));
+        const parsed = JSON.parse(stored) as Record<string, string>;
+        const today = getTodayDate();
+
+        // Clean up old entries (keep only today's dismissals)
+        const cleaned: Record<string, string> = {};
+        for (const [messageId, date] of Object.entries(parsed)) {
+          if (date === today) {
+            cleaned[messageId] = date;
+          }
+        }
+
+        setDailyDismissed(cleaned);
+
+        // Save cleaned version back if different
+        if (Object.keys(parsed).length !== Object.keys(cleaned).length) {
+          await AsyncStorage.setItem(DAILY_DISMISSED_KEY, JSON.stringify(cleaned));
+        }
       }
     } catch (err) {
-      console.error("[useUnviewedMessages] Failed to load dismissed messages:", err);
+      console.error("[useUnviewedMessages] Failed to load daily dismissed:", err);
     }
   }, []);
 
-  // Load viewed messages from storage
-  const loadViewedMessages = useCallback(async () => {
+  // Save daily dismissed messages to storage
+  const saveDailyDismissed = useCallback(async (dismissed: Record<string, string>) => {
     try {
-      const stored = await AsyncStorage.getItem(VIEWED_MESSAGES_KEY);
-      if (stored) {
-        const viewed = JSON.parse(stored);
-        setViewedIds(new Set(viewed));
-      }
+      await AsyncStorage.setItem(DAILY_DISMISSED_KEY, JSON.stringify(dismissed));
     } catch (err) {
-      console.error("[useUnviewedMessages] Failed to load viewed messages:", err);
+      console.error("[useUnviewedMessages] Failed to save daily dismissed:", err);
     }
   }, []);
 
-  // Save dismissed messages to storage
-  const saveDismissedMessages = useCallback(async (ids: Set<string>) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(ids)));
-    } catch (err) {
-      console.error("[useUnviewedMessages] Failed to save dismissed messages:", err);
-    }
-  }, []);
+  // Check if a message was dismissed today
+  const isDismissedToday = useCallback((messageId: string): boolean => {
+    const dismissedDate = dailyDismissed[messageId];
+    if (!dismissedDate) return false;
+    return dismissedDate === getTodayDate();
+  }, [dailyDismissed]);
 
-  // Save viewed messages to storage
-  const saveViewedMessages = useCallback(async (ids: Set<string>) => {
-    try {
-      await AsyncStorage.setItem(VIEWED_MESSAGES_KEY, JSON.stringify(Array.from(ids)));
-    } catch (err) {
-      console.error("[useUnviewedMessages] Failed to save viewed messages:", err);
-    }
-  }, []);
-
-  // Fetch messages
+  // Fetch messages from API
   const loadMessages = useCallback(async () => {
     if (!fetchMessages || !userId) {
       return;
@@ -105,7 +110,7 @@ export function useUnviewedMessages(
       const fetchedMessages = await fetchMessages();
       setMessages(fetchedMessages);
 
-      console.log("[useUnviewedMessages] Loaded", fetchedMessages.length, "messages");
+      console.log("[useUnviewedMessages] Loaded", fetchedMessages.length, "messages from API");
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       setError(error);
@@ -115,9 +120,9 @@ export function useUnviewedMessages(
     }
   }, [fetchMessages, userId]);
 
-  // Filter unviewed messages (not dismissed and not marked as read)
+  // Filter unviewed messages (exclude those dismissed today)
   const unviewedMessages = messages.filter(
-    (msg) => !dismissedIds.has(msg.id) && !viewedIds.has(msg.id)
+    (msg) => !isDismissedToday(msg.id)
   );
 
   // Open modal
@@ -130,38 +135,37 @@ export function useUnviewedMessages(
     setShowModal(false);
   }, []);
 
-  // Mark a message as read
-  const markAsRead = useCallback(
+  // Dismiss for today only (store locally, will show again tomorrow)
+  const dismissForToday = useCallback(
     async (messageId: string) => {
-      const newViewedIds = new Set(viewedIds).add(messageId);
-      setViewedIds(newViewedIds);
-      await saveViewedMessages(newViewedIds);
+      console.log("[useUnviewedMessages] Dismissing for today:", messageId);
 
-      console.log("[useUnviewedMessages] Marked message as read:", messageId);
+      const newDismissed = {
+        ...dailyDismissed,
+        [messageId]: getTodayDate(),
+      };
+
+      setDailyDismissed(newDismissed);
+      await saveDailyDismissed(newDismissed);
     },
-    [viewedIds, saveViewedMessages]
+    [dailyDismissed, saveDailyDismissed]
   );
 
-  // Mark all messages as read
-  const markAllAsRead = useCallback(async () => {
-    const allMessageIds = messages.map((msg) => msg.id);
-    const newViewedIds = new Set([...viewedIds, ...allMessageIds]);
-    setViewedIds(newViewedIds);
-    await saveViewedMessages(newViewedIds);
-
-    console.log("[useUnviewedMessages] Marked all messages as read");
-  }, [messages, viewedIds, saveViewedMessages]);
-
-  // Don't show a message again
+  // Don't show again (this will be handled by the integration to call the API)
   const dontShowAgain = useCallback(
     async (messageId: string) => {
-      const newDismissedIds = new Set(dismissedIds).add(messageId);
-      setDismissedIds(newDismissedIds);
-      await saveDismissedMessages(newDismissedIds);
+      console.log("[useUnviewedMessages] Don't show again (permanent):", messageId);
 
-      console.log("[useUnviewedMessages] Don't show again:", messageId);
+      // Also dismiss locally for immediate UI update
+      const newDismissed = {
+        ...dailyDismissed,
+        [messageId]: getTodayDate(),
+      };
+
+      setDailyDismissed(newDismissed);
+      await saveDailyDismissed(newDismissed);
     },
-    [dismissedIds, saveDismissedMessages]
+    [dailyDismissed, saveDailyDismissed]
   );
 
   // Refresh messages
@@ -169,11 +173,10 @@ export function useUnviewedMessages(
     await loadMessages();
   }, [loadMessages]);
 
-  // Load dismissed and viewed messages on mount
+  // Load daily dismissed messages on mount
   useEffect(() => {
-    loadDismissedMessages();
-    loadViewedMessages();
-  }, [loadDismissedMessages, loadViewedMessages]);
+    loadDailyDismissed();
+  }, [loadDailyDismissed]);
 
   // Load messages when userId changes
   useEffect(() => {
@@ -198,8 +201,7 @@ export function useUnviewedMessages(
     error,
     openModal,
     closeModal,
-    markAsRead,
-    markAllAsRead,
+    dismissForToday,
     dontShowAgain,
     refresh,
   };

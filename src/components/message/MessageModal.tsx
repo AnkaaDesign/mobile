@@ -22,7 +22,7 @@ import Animated, {
   FadeOut,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { IconX, IconChevronLeft, IconChevronRight } from "@tabler/icons-react-native";
+import { IconX, IconChevronLeft, IconChevronRight, IconEyeOff } from "@tabler/icons-react-native";
 
 import { ThemedView, ThemedText } from "@/components/ui";
 import { Button } from "@/components/ui/button";
@@ -36,20 +36,21 @@ const SWIPE_VELOCITY_THRESHOLD = 500;
 
 export interface MessageModalProps {
   visible: boolean;
+  /** Called when user closes (X button or backdrop) - dismiss for today only */
   onClose: () => void;
   messages: Notification[];
-  onMarkAsRead?: (messageId: string) => void;
+  /** Called when user clicks "Não mostrar novamente" - permanent dismiss */
   onDontShowAgain?: (messageId: string) => void;
-  onMarkAllAsRead?: () => void;
+  /** Called when user closes a specific message (for daily dismiss tracking) */
+  onDismissForToday?: (messageId: string) => void;
 }
 
 export function MessageModal({
   visible,
   onClose,
   messages,
-  onMarkAsRead,
   onDontShowAgain,
-  onMarkAllAsRead,
+  onDismissForToday,
 }: MessageModalProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -81,13 +82,13 @@ export function MessageModal({
   useEffect(() => {
     if (Platform.OS === "android" && visible) {
       const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
-        onClose();
+        handleClose();
         return true;
       });
 
       return () => backHandler.remove();
     }
-  }, [visible, onClose]);
+  }, [visible]);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -126,28 +127,16 @@ export function MessageModal({
     }
   }, [currentIndex, totalMessages, translateX, opacity, scale]);
 
-  // Mark current message as read
-  const handleMarkAsRead = useCallback(() => {
-    if (!currentMessage) return;
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onMarkAsRead?.(currentMessage.id);
-
-    // Dismiss the message from the list
-    setDismissed((prev) => new Set(prev).add(currentMessage.id));
-
-    // If this was the last message, close the modal
-    if (totalMessages === 1) {
-      setTimeout(() => {
-        onClose();
-      }, 300);
-    } else if (currentIndex === totalMessages - 1) {
-      // If we're at the last message, go to the previous one
-      setCurrentIndex((prev) => Math.max(0, prev - 1));
+  // Close - dismiss for today only
+  const handleClose = useCallback(() => {
+    if (currentMessage) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onDismissForToday?.(currentMessage.id);
     }
-  }, [currentMessage, totalMessages, currentIndex, onMarkAsRead, onClose]);
+    onClose();
+  }, [currentMessage, onClose, onDismissForToday]);
 
-  // Don't show this message again
+  // Don't show this message again (permanent)
   const handleDontShowAgain = useCallback(() => {
     if (!currentMessage) return;
 
@@ -167,13 +156,6 @@ export function MessageModal({
       setCurrentIndex((prev) => Math.max(0, prev - 1));
     }
   }, [currentMessage, totalMessages, currentIndex, onDontShowAgain, onClose]);
-
-  // Mark all as read
-  const handleMarkAllAsRead = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onMarkAllAsRead?.();
-    onClose();
-  }, [onMarkAllAsRead, onClose]);
 
   // Pan gesture for swipe navigation
   const panGesture = Gesture.Pan()
@@ -238,7 +220,7 @@ export function MessageModal({
       transparent
       animationType="none"
       statusBarTranslucent
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <Animated.View
         entering={FadeIn.duration(transitions.normal)}
@@ -249,7 +231,7 @@ export function MessageModal({
         <TouchableOpacity
           style={[styles.backdrop, { backgroundColor: `rgba(0, 0, 0, 0.6)` }]}
           activeOpacity={1}
-          onPress={onClose}
+          onPress={handleClose}
         />
 
         {/* Modal Content */}
@@ -273,7 +255,7 @@ export function MessageModal({
                   borderColor: colors.border,
                 },
               ]}
-              onPress={onClose}
+              onPress={handleClose}
               activeOpacity={0.7}
             >
               <IconX size={24} color={colors.foreground} />
@@ -341,33 +323,14 @@ export function MessageModal({
                 {/* Actions */}
                 <View style={styles.actionsContainer}>
                   <Button
-                    variant="default"
-                    size="default"
-                    onPress={handleMarkAsRead}
-                    style={styles.actionButton}
-                  >
-                    Marcar como lida
-                  </Button>
-
-                  <Button
-                    variant="ghost"
+                    variant="outline"
                     size="default"
                     onPress={handleDontShowAgain}
                     style={styles.actionButton}
+                    icon={<IconEyeOff size={18} color={colors.foreground} />}
                   >
                     Não mostrar novamente
                   </Button>
-
-                  {totalMessages > 1 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onPress={handleMarkAllAsRead}
-                      style={[styles.actionButton, styles.markAllButton]}
-                    >
-                      Marcar todas como lidas
-                    </Button>
-                  )}
                 </View>
 
                 {/* Navigation Arrows (for larger screens) */}
@@ -513,9 +476,6 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     width: "100%",
-  },
-  markAllButton: {
-    marginTop: spacing.xs,
   },
   navigationContainer: {
     flexDirection: "row",
